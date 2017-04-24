@@ -275,7 +275,7 @@ static bool isInitVCL()
 
 //ADD LIBRAS
 #ifdef _WIN32
-PROCESS_INFORMATION processInfo;
+PROCESS_INFORMATION process_info;
 #endif
 //END LIBRAS
 bool InitVCL()
@@ -290,11 +290,11 @@ bool InitVCL()
 	STARTUPINFO info={sizeof(info)};
 	const TCHAR* target = _T("LIBRASOffice.exe");
 
-	CreateProcess(target, NULL, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo);
+	CreateProcess(target, NULL, NULL, NULL, TRUE, 0, NULL, NULL, &info, &process_info);
 	{
-		WaitForSingleObject(processInfo.hProcess, INFINITE);
-		CloseHandle(processInfo.hProcess);
-		CloseHandle(processInfo.hThread);
+		WaitForSingleObject(process_info.hProcess, INFINITE);
+		CloseHandle(process_info.hProcess);
+		CloseHandle(process_info.hThread);
 	}
 	#endif
 	//END LIBRAS
@@ -389,8 +389,8 @@ void DeInitVCL()
 {
 	//ADD LIBRAS
 	#ifdef _WIN32
-	CloseHandle(processInfo.hProcess);
-    CloseHandle(processInfo.hThread);
+	CloseHandle(process_info.hProcess);
+    CloseHandle(process_info.hThread);
 	
 	system ("taskkill /F /IM javaw.exe /T");
 	#endif
