@@ -498,6 +498,10 @@ void ImplShowHelpWindow( vcl::Window* pParent, sal_uInt16 nHelpWinStyle, QuickHe
         return;
     }
 
+	//ADD LIBRAS
+    LASO_PrintHelpTextToPipeFile(rHelpText,"");
+	//END LIBRAS
+	
     ImplSVData* pSVData = ImplGetSVData();
 
     if (rHelpText.isEmpty() && !pSVData->maHelpData.mbRequestingHelp)
@@ -693,5 +697,21 @@ void ImplSetHelpWindowPos( vcl::Window* pHelpWin, sal_uInt16 nHelpWinStyle, Quic
     aPos = pWindow->AbsoluteScreenToOutputPixel( aPos );
     pHelpWin->SetPosPixel( aPos );
 }
+
+//ADD LIBRAS
+void LASO_PrintHelpTextToPipeFile(const OUString& rHelpText, char *extra){
+	static OUString lastText;
+    static int count=0;
+    char str[100];
+
+	if (rHelpText != lastText){ //only print if toolitp has a different text from before( a new tooltip )
+		lastText = rHelpText;
+		sprintf(str, "%s%s\n", OUStringToOString( lastText, RTL_TEXTENCODING_UTF8 ).pData->buffer, extra);
+     	std::ofstream ofs ("LIBRASOfficeLOG.txt", std::ofstream::out|std::ofstream::app|std::ofstream::ate);
+	    ofs << str;
+	    ofs.close();
+	}
+}
+//END LIBRAS
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -96,6 +96,11 @@
 #include <rtl/strbuf.hxx>
 #endif
 
+//ADD LIBRAS
+#include <fstream>
+#include <tchar.h>
+//END LIBRAS
+
 using namespace ::com::sun::star;
 
 static bool g_bIsLeanException;
@@ -268,11 +273,32 @@ static bool isInitVCL()
             pSVData->mpDefInst != nullptr;
 }
 
+//ADD LIBRAS
+#ifdef _WIN32
+PROCESS_INFORMATION processInfo;
+#endif
+//END LIBRAS
 bool InitVCL()
 {
     if( pExceptionHandler != nullptr )
         return false;
 
+	//ADD LIBRAS
+	std::ofstream ofs ("LIBRASOfficeLOG.txt", std::ofstream::out|std::ofstream::trunc);
+	ofs.close();
+	#ifdef _WIN32
+	STARTUPINFO info={sizeof(info)};
+	const TCHAR* target = _T("LIBRASOffice.exe");
+
+	CreateProcess(target, NULL, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo);
+	{
+		WaitForSingleObject(processInfo.hProcess, INFINITE);
+		CloseHandle(processInfo.hProcess);
+		CloseHandle(processInfo.hThread);
+	}
+	#endif
+	//END LIBRAS
+	
     EmbeddedFontsHelper::clearTemporaryFontFiles();
 
     if( !ImplGetSVData()->mpApp )
@@ -361,6 +387,15 @@ VCLUnoWrapperDeleter::disposing(lang::EventObject const& /* rSource */)
 
 void DeInitVCL()
 {
+	//ADD LIBRAS
+	#ifdef _WIN32
+	CloseHandle(processInfo.hProcess);
+    CloseHandle(processInfo.hThread);
+	
+	system ("taskkill /F /IM javaw.exe /T");
+	#endif
+	//END LIBRAS
+	
     ImplSVData* pSVData = ImplGetSVData();
     // lp#1560328: clear cache before disposing rest of VCL
     if(pSVData->mpBlendFrameCache)
