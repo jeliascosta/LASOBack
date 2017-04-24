@@ -16,8 +16,10 @@
 
 namespace vcl {
 
+//ADD LIBRAS
 /*static*/ const OUString
-IconThemeSelector::FALLBACK_ICON_THEME_ID("tango");
+IconThemeSelector::FALLBACK_ICON_THEME_ID("galaxy");
+//END LIBRAS
 
 namespace {
 
