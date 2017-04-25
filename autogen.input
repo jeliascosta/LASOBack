@@ -1,3 +1,4 @@
+#//ADD LIBRAS
 --enable-odk
 --enable-ext-languagetool
 --with-epm
@@ -6,3 +7,4 @@
 --with-extra-buildid=LIBRASOffice MAR/2017
 --with-vendor=Jonathan Elias Sousa da Costa
 --with-build-version=Desenvolvido por Jonathan Elias
+#//END LIBRAS

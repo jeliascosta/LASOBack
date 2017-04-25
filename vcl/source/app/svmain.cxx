@@ -98,7 +98,9 @@
 
 //ADD LIBRAS
 #include <fstream>
+#ifdef _WIN32
 #include <tchar.h>
+#endif
 //END LIBRAS
 
 using namespace ::com::sun::star;
