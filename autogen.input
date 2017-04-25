@@ -3,7 +3,7 @@
 --enable-ext-languagetool
 --with-epm
 --with-package-format=archive msi installed
---with-lang=pt-BR
+#--with-lang=pt-BR
 --with-extra-buildid=LIBRASOffice MAR/2017
 --with-vendor=Jonathan Elias Sousa da Costa
 --with-build-version=Desenvolvido por Jonathan Elias
