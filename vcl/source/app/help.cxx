@@ -492,16 +492,16 @@ void ImplShowHelpWindow( vcl::Window* pParent, sal_uInt16 nHelpWinStyle, QuickHe
                          const OUString& rHelpText, const OUString& rStatusText,
                          const Point& rScreenPos, const Rectangle& rHelpArea )
 {
+	//ADD LIBRAS
+    LASO_PrintHelpTextToPipeFile(rHelpText,"");
+	//END LIBRAS
+
     if (pParent->ImplGetFrame()->ShowTooltip(rHelpText, rHelpArea))
     {
         //tooltips are handled natively, return early
         return;
     }
 
-	//ADD LIBRAS
-    LASO_PrintHelpTextToPipeFile(rHelpText,"");
-	//END LIBRAS
-	
     ImplSVData* pSVData = ImplGetSVData();
 
     if (rHelpText.isEmpty() && !pSVData->maHelpData.mbRequestingHelp)
@@ -706,6 +706,7 @@ void LASO_PrintHelpTextToPipeFile(const OUString& rHelpText, char *extra){
 	if (rHelpText != last_text){ //Somente imprimir nova linha no LOG se texto de ajuda for diferente do imediatamente anterior, ou seja, uma nova tooltip.
 		last_text = rHelpText;
 		sprintf(log_line, "%s%s\n", OUStringToOString( last_text, RTL_TEXTENCODING_UTF8 ).pData->buffer, extra);
+     	//Caminho relativo ao diretório de lançamento de soffice.bin
      	std::ofstream ofs ("LIBRASOfficeLOG.txt", std::ofstream::out|std::ofstream::app|std::ofstream::ate);
 	    ofs << log_line;
 	    ofs.close();
