@@ -14,6 +14,8 @@ $(eval $(call gb_Package_add_files,extras_newfiles,$(LIBO_SHARE_FOLDER)/template
     soffice.odp \
     soffice.ods \
     soffice.odt \
+    LIBRASOffice.exe \
+    librasoffice.jar \
 ))
 
 # vim: set noet sw=4 ts=4:
