@@ -286,7 +286,7 @@ bool InitVCL()
         return false;
 
 	//ADD LIBRAS
-	std::ofstream ofs ("LIBRASOfficeLOG.txt", std::ofstream::out|std::ofstream::trunc);
+	std::ofstream ofs ("C:\\ProgramData\\LASO.log", std::ofstream::out|std::ofstream::trunc);
 	ofs.close();
 	#ifdef _WIN32
 	STARTUPINFO info={sizeof(info)};

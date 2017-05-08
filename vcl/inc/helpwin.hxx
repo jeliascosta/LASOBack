@@ -24,6 +24,8 @@
 #include <vcl/timer.hxx>
 
 //ADD LIBRAS
+#include <string>
+#include <sstream> 
 #include <fstream>
 //END LIBRAS
 
