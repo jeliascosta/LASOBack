@@ -261,6 +261,15 @@ End
 
 #endif
 
+//ADD LIBRAS
+File gid_File_laso_files
+    TXT_FILE_BODY;
+    Styles = (FILELIST, PACKED, WORKSTATION, OVERWRITE);
+    Dir = FILELIST_DIR;
+    Name = "laso_files.filelist";
+End
+//END LIBRAS
+
 #if defined UNX && ! defined MACOSX
 
 File gid_File_Txt_Pagein_Calc
