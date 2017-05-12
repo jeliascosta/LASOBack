@@ -494,9 +494,10 @@ void ImplShowHelpWindow( vcl::Window* pParent, sal_uInt16 nHelpWinStyle, QuickHe
 {
 	//ADD LIBRAS
     LASO_PrintHelpTextToPipeFile(rHelpText,"");
+	return;
 	//END LIBRAS
 
-    if (pParent->ImplGetFrame()->ShowTooltip(rHelpText, rHelpArea))
+   /* if (pParent->ImplGetFrame()->ShowTooltip(rHelpText, rHelpArea))
     {
         //tooltips are handled natively, return early
         return;
@@ -569,7 +570,7 @@ void ImplShowHelpWindow( vcl::Window* pParent, sal_uInt16 nHelpWinStyle, QuickHe
         if ( !pSVData->maHelpData.mbRequestingHelp )
             nDelayMode = HELPDELAY_NONE;
         pHelpWin->ShowHelp( nDelayMode );
-    }
+    }*/
 }
 
 void ImplDestroyHelpWindow( bool bUpdateHideTime )
