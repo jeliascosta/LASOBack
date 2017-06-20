@@ -17,8 +17,8 @@ build_goal:=$(if $(filter build check,$(MAKECMDGOALS)),all)\
  $(if $(filter check,$(MAKECMDGOALS)),subsequentcheck)\
  $(filter all build-l10n-only build-non-l10n-only debugrun help showmodules translations $(gb_Top_MODULE_CHECK_TARGETS) check packageinfo,$(MAKECMDGOALS))
 
-SRCDIR := C:/cygwin/home/KR7/lode/dev/LASOBack
-BUILDDIR := C:/cygwin/home/KR7/lode/dev/LASOBack
+SRCDIR := C:/cygwin/home/lipedev/lode/dev/LASOBack
+BUILDDIR := C:/cygwin/home/lipedev/lode/dev/LASOBack
 GIT_BUILD := $(if $(wildcard $(SRCDIR)/.git),T)
 
 # Run autogen.sh if needed and force make to restart itself.
