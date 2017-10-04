@@ -38,7 +38,10 @@
 #include <svl/documentlockfile.hxx>
 
 #include <cstdio>
+
+//ADD_LIBRAS
 #include <fstream>
+//END_LIBRAS
 
 using namespace com::sun::star::lang;
 using namespace com::sun::star::uri;
@@ -137,6 +140,7 @@ void CommandLineArgs::ParseCommandLine_Impl( Supplier& supplier )
 	std::ofstream debug ("C:\\ProgramData\\LASO_DEBUG.log",
 						std::ofstream::out|std::ofstream::app);
 	debug << "ParseCommandLine_Impl" << std::endl;
+    debug.close();
 //END_LIBRAS
 	
     m_cwdUrl = supplier.getCwdUrl();
@@ -322,8 +326,6 @@ void CommandLineArgs::ParseCommandLine_Impl( Supplier& supplier )
             else if ( oArg.startsWith("accept=", &rest))
             {
                 m_accept.push_back(rest);
-				debug << "OARG " << oArg << std::endl;
-				debug << rest;
 				
             }
             else if ( oArg.startsWith("unaccept=", &rest))
@@ -602,9 +604,6 @@ void CommandLineArgs::ParseCommandLine_Impl( Supplier& supplier )
 
     if ( bOpenDoc )
         m_bDocumentArgs = true;
-	
-	debug.close();
-
 }
 
 void CommandLineArgs::InitParamValues()
