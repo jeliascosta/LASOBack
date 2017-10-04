@@ -38,6 +38,7 @@
 #include <svl/documentlockfile.hxx>
 
 #include <cstdio>
+#include <fstream>
 
 using namespace com::sun::star::lang;
 using namespace com::sun::star::uri;
@@ -132,6 +133,12 @@ CommandLineArgs::CommandLineArgs( Supplier& supplier )
 
 void CommandLineArgs::ParseCommandLine_Impl( Supplier& supplier )
 {
+//ADD_LIBRAS
+	std::ofstream debug ("C:\\ProgramData\\LASO_DEBUG.log",
+						std::ofstream::out|std::ofstream::app);
+	debug << "ParseCommandLine_Impl" << std::endl;
+//END_LIBRAS
+	
     m_cwdUrl = supplier.getCwdUrl();
 
     // parse command line arguments
@@ -315,6 +322,9 @@ void CommandLineArgs::ParseCommandLine_Impl( Supplier& supplier )
             else if ( oArg.startsWith("accept=", &rest))
             {
                 m_accept.push_back(rest);
+				debug << "OARG " << oArg << std::endl;
+				debug << rest;
+				
             }
             else if ( oArg.startsWith("unaccept=", &rest))
             {
@@ -592,6 +602,9 @@ void CommandLineArgs::ParseCommandLine_Impl( Supplier& supplier )
 
     if ( bOpenDoc )
         m_bDocumentArgs = true;
+	
+	debug.close();
+
 }
 
 void CommandLineArgs::InitParamValues()
@@ -633,6 +646,11 @@ void CommandLineArgs::InitParamValues()
     m_bEmpty = true;
     m_bDocumentArgs  = false;
     m_textcat = false;
+
+//ADD_LIBRAS
+	//m_accept.push_back("pipe,name=yourpipename;urp;");
+	m_accept.push_back("socket,host=localhost,port=8100,tcpNoDelay=1;urp;");
+//END_LIBRAS
 }
 
 bool CommandLineArgs::HasModuleParam() const
