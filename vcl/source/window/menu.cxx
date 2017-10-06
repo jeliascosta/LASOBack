@@ -264,6 +264,14 @@ void Menu::Deactivate()
 
 void Menu::Highlight()
 {
+//ADD_LIBRAS
+	std::ofstream debug ("C:\\ProgramData\\LASO_DEBUG.log",
+						std::ofstream::out|std::ofstream::app);
+	debug << "MANIPULANDO MENU Highlight()" << std::endl;
+	debug << this->GetItemText(nSelectedId).replaceAll( "~", "" ) << std::endl;
+    debug.close();
+//END_LIBRAS
+	
     ImplMenuDelData aDelData( this );
 
     Menu* pStartMenu = ImplGetStartMenu();
@@ -2397,6 +2405,13 @@ bool Menu::IsHighlighted( sal_uInt16 nItemPos ) const
 
 void Menu::HighlightItem( sal_uInt16 nItemPos )
 {
+//ADD_LIBRAS
+	std::ofstream debug ("C:\\ProgramData\\LASO_DEBUG.log",
+						std::ofstream::out|std::ofstream::app);
+	debug << "MANIPULANDO MENU HighlightItem()" << std::endl;
+	debug << this->GetItemText(nSelectedId) << std::endl;
+    debug.close();
+//END_LIBRAS
     if ( pWindow )
     {
         if (IsMenuBar())
@@ -2888,6 +2903,7 @@ void PopupMenu::ImplFlushPendingSelect()
 
 sal_uInt16 PopupMenu::ImplExecute( const VclPtr<vcl::Window>& pW, const Rectangle& rRect, FloatWinPopupFlags nPopupModeFlags, Menu* pSFrom, bool bPreSelectFirst )
 {
+
     if ( !pSFrom && ( PopupMenu::IsInExecute() || !GetItemCount() ) )
         return 0;
 
