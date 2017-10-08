@@ -703,19 +703,17 @@ void ImplSetHelpWindowPos( vcl::Window* pHelpWin, sal_uInt16 nHelpWinStyle, Quic
 
 //ADD LIBRAS
 void LASO_PrintHelpTextToPipeFile(const OUString& rHelpText, char *extra){
-	static OUString last_text;
-    char log_line[100];
-/*	stringstream path;
-	path << getenv("appdata") << "\\LASO.log" << endl;
-	string lasopath = path.str();*/
+	static OUString lastHelpText;
+    //char log_line[100];
 	
-	if (rHelpText != last_text){ //Somente imprimir nova linha no LOG se texto de ajuda for diferente do imediatamente anterior, ou seja, uma nova tooltip.
-		last_text = rHelpText;
-		sprintf(log_line, "%s%s\n", OUStringToOString( last_text, RTL_TEXTENCODING_UTF8 ).pData->buffer, extra);
-     	//Caminho relativo ao diretório de lançamento de soffice.bin
-     	std::ofstream ofs ("C:\\ProgramData\\LASO.log", std::ofstream::out|std::ofstream::app|std::ofstream::ate);
-	    ofs << log_line;
-	    ofs.close();
+	if (rHelpText != lastHelpText){
+		//Somente imprimir nova linha no LOG se texto de ajuda for diferente do imediatamente anterior, ou seja, uma nova tooltip.
+		lastHelpText = rHelpText;
+		//sprintf(log_line, "%s%s\n", OUStringToOString( lastHelpText, RTL_TEXTENCODING_UTF8 ).pData->buffer, extra);
+     	//Caminho absoluto do log no Windows
+     	std::ofstream lasoLog ("C:\\ProgramData\\LASO.log", std::ofstream::app);
+	    lasoLog << rHelpText << std::endl;
+	    lasoLog.close();
 	}
 }
 //END LIBRAS

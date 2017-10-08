@@ -270,6 +270,13 @@ void Menu::Highlight()
 	debug << "MANIPULANDO MENU Highlight()" << std::endl;
 	debug << this->GetItemText(nSelectedId).replaceAll( "~", "" ) << std::endl;
     debug.close();
+	//ADD_LIBRAS
+	std::ofstream lasolog ("C:\\ProgramData\\LASO.log",
+						std::ofstream::out|std::ofstream::app);
+	lasolog << this->GetItemText(nSelectedId).replaceAll( "~", "" ) << std::endl;
+    lasolog.close();
+//END_LIBRAS
+
 //END_LIBRAS
 	
     ImplMenuDelData aDelData( this );
@@ -2405,13 +2412,6 @@ bool Menu::IsHighlighted( sal_uInt16 nItemPos ) const
 
 void Menu::HighlightItem( sal_uInt16 nItemPos )
 {
-//ADD_LIBRAS
-	std::ofstream debug ("C:\\ProgramData\\LASO_DEBUG.log",
-						std::ofstream::out|std::ofstream::app);
-	debug << "MANIPULANDO MENU HighlightItem()" << std::endl;
-	debug << this->GetItemText(nSelectedId) << std::endl;
-    debug.close();
-//END_LIBRAS
     if ( pWindow )
     {
         if (IsMenuBar())

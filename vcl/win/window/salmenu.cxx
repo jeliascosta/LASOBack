@@ -83,7 +83,7 @@ SalMenuItem* WinSalInstance::CreateMenuItem( const SalItemParams* pItemData )
     else
     {
         // item
-        pSalMenuItem->mText   = pItemData->aText;
+        pSalMenuItem->mText = pItemData->aText;
         pSalMenuItem->mpMenu  = pItemData->pMenu;
         pSalMenuItem->maBitmap= !!pItemData->aImage ? pItemData->aImage.GetBitmapEx().GetBitmap() : Bitmap();
         pSalMenuItem->mnId    = pItemData->nId;

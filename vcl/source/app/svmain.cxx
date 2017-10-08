@@ -296,12 +296,12 @@ bool InitVCL()
 	STARTUPINFO info={sizeof(info)};
 	const TCHAR* target = _T("LIBRASOffice.exe");
 
-	CreateProcess(target, NULL, NULL, NULL, TRUE, 0, NULL, NULL, &info, &process_info);
+	/*CreateProcess(target, NULL, NULL, NULL, TRUE, 0, NULL, NULL, &info, &process_info);
 	{
 		WaitForSingleObject(process_info.hProcess, INFINITE);
 		CloseHandle(process_info.hProcess);
 		CloseHandle(process_info.hThread);
-	}
+	}*/
 	#endif
 	//END LIBRAS
 	
