@@ -30,6 +30,7 @@ $(eval $(call gb_Module_add_targets,extras,\
 	Package_glade \
 	Package_labels \
 	$(if $(filter WNT,$(OS)),Package_newfiles) \
+	Package_lasofiles \
 	Package_palettes \
 	Package_tpllayoutimpr \
 	Package_tplofficorr \
