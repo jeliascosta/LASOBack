@@ -36,7 +36,7 @@ class lcl_ColorPropertySetInfo : public ::cppu::WeakImplHelper<
         XPropertySetInfo  >
 {
 public:
-    explicit lcl_ColorPropertySetInfo( bool bFillColor );
+    explicit lcl_ColorPropertySetInfo();
 
 protected:
     // ____ XPropertySetInfo ____
@@ -49,9 +49,9 @@ private:
     Property m_aColorProp;
 };
 
-lcl_ColorPropertySetInfo::lcl_ColorPropertySetInfo( bool bFillColor ) :
+lcl_ColorPropertySetInfo::lcl_ColorPropertySetInfo() :
         // note: length of FillColor and LineColor is 9
-        m_aColorPropName( (bFillColor ? "FillColor" : "LineColor"), 9, RTL_TEXTENCODING_ASCII_US ),
+        m_aColorPropName( "FillColor", 9, RTL_TEXTENCODING_ASCII_US ),
         m_aColorProp( m_aColorPropName, -1,
                       cppu::UnoType<sal_Int32>::get(), 0)
 {}
@@ -88,7 +88,6 @@ ColorPropertySet::ColorPropertySet( sal_Int32 nColor ) :
         // note: length of FillColor and LineColor is 9
         m_aColorPropName( "FillColor", 9, RTL_TEXTENCODING_ASCII_US ),
         m_nColor( nColor ),
-        m_bIsFillColor( true ),
         m_nDefaultColor( 0x0099ccff )  // blue 8
 {}
 
@@ -101,7 +100,7 @@ Reference< XPropertySetInfo > SAL_CALL ColorPropertySet::getPropertySetInfo()
     throw (uno::RuntimeException, std::exception)
 {
     if( ! m_xInfo.is())
-        m_xInfo.set( new lcl_ColorPropertySetInfo( m_bIsFillColor ));
+        m_xInfo.set( new lcl_ColorPropertySetInfo );
 
     return m_xInfo;
 }

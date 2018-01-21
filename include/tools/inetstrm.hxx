@@ -21,7 +21,6 @@
 
 #include <tools/toolsdllapi.h>
 #include <sal/types.h>
-#include <rtl/ustring.hxx>
 
 class INetMIMEMessage;
 class SvMemoryStream;
@@ -32,7 +31,6 @@ class TOOLS_DLLPUBLIC INetMIMEMessageStream
     INetMIMEMessage *pSourceMsg;
     bool            bHeaderGenerated;
 
-    sal_uIntPtr           nBufSiz;
     sal_Char       *pBuffer;
     sal_Char       *pRead;
     sal_Char       *pWrite;

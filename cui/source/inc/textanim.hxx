@@ -63,20 +63,25 @@ private:
     const SfxItemSet&   rOutAttrs;
     SdrTextAniKind      eAniKind;
     FieldUnit           eFUnit;
-    SfxMapUnit          eUnit;
+    MapUnit             eUnit;
 
-    DECL_LINK_TYPED( SelectEffectHdl_Impl, ListBox&, void );
-    DECL_LINK_TYPED( ClickEndlessHdl_Impl, Button*, void );
-    DECL_LINK_TYPED( ClickAutoHdl_Impl, Button*, void );
-    DECL_LINK_TYPED( ClickPixelHdl_Impl, Button*, void );
-    DECL_LINK_TYPED( ClickDirectionHdl_Impl, Button*, void );
+    DECL_LINK( SelectEffectHdl_Impl, ListBox&, void );
+    DECL_LINK( ClickEndlessHdl_Impl, Button*, void );
+    DECL_LINK( ClickAutoHdl_Impl, Button*, void );
+    DECL_LINK( ClickPixelHdl_Impl, Button*, void );
+    DECL_LINK( ClickDirectionHdl_Impl, Button*, void );
 
     void                SelectDirection( SdrTextAniDirection nValue );
     sal_uInt16              GetSelectedDirection();
 
+    TriState m_aUpState;
+    TriState m_aLeftState;
+    TriState m_aRightState;
+    TriState m_aDownState;
+
 public:
     SvxTextAnimationPage( vcl::Window* pWindow, const SfxItemSet& rInAttrs );
-    virtual ~SvxTextAnimationPage();
+    virtual ~SvxTextAnimationPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window*, const SfxItemSet* );

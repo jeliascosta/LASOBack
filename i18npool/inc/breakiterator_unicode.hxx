@@ -37,7 +37,7 @@ class BreakIterator_Unicode : public BreakIteratorImpl
 {
 public:
     BreakIterator_Unicode();
-    virtual ~BreakIterator_Unicode();
+    virtual ~BreakIterator_Unicode() override;
 
     virtual sal_Int32 SAL_CALL previousCharacters( const OUString& Text, sal_Int32 nStartPos,
         const css::lang::Locale& nLocale, sal_Int16 nCharacterIteratorMode, sal_Int32 nCount,
@@ -73,7 +73,6 @@ public:
 
 protected:
     const sal_Char *cBreakIterator, *lineRule;
-    Boundary result; // for word break iterator
 
     struct BI_Data
     {

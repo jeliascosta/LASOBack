@@ -24,21 +24,18 @@
 #include "address.hxx"
 #include <xmloff/xmlimp.hxx>
 #include "xmlimprt.hxx"
+#include "importcontext.hxx"
 
 
-class ScXMLConsolidationContext : public SvXMLImportContext
+class ScXMLConsolidationContext : public ScXMLImportContext
 {
 private:
     OUString             sSourceList;
     OUString             sUseLabel;
-    ScAddress                   aTargetAddr;
-    ScSubTotalFunc              eFunction;
-    bool                        bLinkToSource;
-    bool                        bTargetAddr;
-
-protected:
-    const ScXMLImport&          GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
-    ScXMLImport&                GetScImport()       { return static_cast<ScXMLImport&>(GetImport()); }
+    ScAddress            aTargetAddr;
+    ScSubTotalFunc       eFunction;
+    bool                 bLinkToSource;
+    bool                 bTargetAddr;
 
 public:
                                 ScXMLConsolidationContext(
@@ -47,7 +44,7 @@ public:
                                     const OUString& rLName,
                                     const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList
                                     );
-    virtual                     ~ScXMLConsolidationContext();
+    virtual                     ~ScXMLConsolidationContext() override;
 
     virtual SvXMLImportContext* CreateChildContext(
                                     sal_uInt16 nPrefix,

@@ -48,8 +48,8 @@ class SW_DLLPUBLIC SwCondCollItem : public SfxPoolItem
     OUString                    m_sStyles[COND_COMMAND_COUNT];
 
 public:
-    SwCondCollItem(sal_uInt16 nWhich = FN_COND_COLL);
-    virtual ~SwCondCollItem();
+    SwCondCollItem();
+    virtual ~SwCondCollItem() override;
 
 
     virtual SfxPoolItem*        Clone( SfxItemPool *pPool = nullptr ) const override;

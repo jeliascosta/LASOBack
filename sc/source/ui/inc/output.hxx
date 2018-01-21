@@ -286,9 +286,9 @@ public:
     void    SetSingleGrid( bool bNewMode );
     void    SetGridColor( const Color& rColor );
     void    SetMarkClipped( bool bSet );
-    void    SetShowNullValues ( bool bSet = true );
-    void    SetShowFormulas   ( bool bSet = true );
-    void    SetShowSpellErrors( bool bSet = true );
+    void    SetShowNullValues ( bool bSet );
+    void    SetShowFormulas   ( bool bSet );
+    void    SetShowSpellErrors( bool bSet );
     void    SetMirrorWidth( long nNew );
     long    GetScrW() const     { return nScrW; }
     long    GetScrH() const     { return nScrH; }
@@ -299,7 +299,7 @@ public:
     void    DrawStrings( bool bPixelToLogic = false );
 
     /// Draw all strings, or provide Rectangle where the text (defined by rAddress) would be drawn.
-    Rectangle LayoutStrings(bool bPixelToLogic = false, bool bPaint = true, const ScAddress &rAddress = ScAddress());
+    Rectangle LayoutStrings(bool bPixelToLogic, bool bPaint = true, const ScAddress &rAddress = ScAddress());
 
     void    DrawDocumentBackground();
     void    DrawBackground(vcl::RenderContext& rRenderContext);

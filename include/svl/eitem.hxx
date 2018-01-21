@@ -86,10 +86,12 @@ public:
     virtual bool operator ==(const SfxPoolItem & rItem) const override;
 
     virtual bool GetPresentation(SfxItemPresentation,
-                                                SfxMapUnit, SfxMapUnit,
+                                                MapUnit, MapUnit,
                                                 OUString & rText,
                                                 const IntlWrapper * = nullptr)
         const override;
+
+    virtual void dumpAsXml(struct _xmlTextWriter* pWriter) const override;
 
     virtual bool QueryValue(css::uno::Any& rVal, sal_uInt8 = 0) const override;
 

@@ -24,6 +24,7 @@
 #include "unx/salgdi.h"
 #include "unx/salvd.h"
 #include "textrender.hxx"
+#include "CommonSalLayout.hxx"
 
 GC
 X11SalGraphics::GetFontGC()
@@ -52,12 +53,17 @@ X11SalGraphics::GetFontGC()
     return pFontGC_;
 }
 
-void X11SalGraphics::DrawServerFontLayout( const ServerFontLayout& rLayout )
+void X11SalGraphics::DrawServerFontLayout( const GenericSalLayout& rLayout, const FreetypeFont& rFreetypeFont )
 {
-    mxTextRenderImpl->DrawServerFontLayout(rLayout);
+    mxTextRenderImpl->DrawServerFontLayout(rLayout, rFreetypeFont);
 }
 
-const FontCharMapPtr X11SalGraphics::GetFontCharMap() const
+void X11SalGraphics::DrawSalLayout( const CommonSalLayout& rLayout )
+{
+    DrawServerFontLayout( rLayout, rLayout.getFontData() );
+}
+
+const FontCharMapRef X11SalGraphics::GetFontCharMap() const
 {
     return mxTextRenderImpl->GetFontCharMap();
 }
@@ -100,7 +106,7 @@ void X11SalGraphics::GetDevFontList( PhysicalFontCollection* pFontCollection )
 }
 
 void
-X11SalGraphics::GetFontMetric( ImplFontMetricDataPtr &rxFontMetric, int nFallbackLevel )
+X11SalGraphics::GetFontMetric( ImplFontMetricDataRef &rxFontMetric, int nFallbackLevel )
 {
     mxTextRenderImpl->GetFontMetric(rxFontMetric, nFallbackLevel);
 }
@@ -157,7 +163,7 @@ const Ucs2SIntMap* X11SalGraphics::GetFontEncodingVector( const PhysicalFontFace
 
 void X11SalGraphics::GetGlyphWidths( const PhysicalFontFace* pFont,
                                    bool bVertical,
-                                   Int32Vector& rWidths,
+                                   std::vector< sal_Int32 >& rWidths,
                                    Ucs2UIntMap& rUnicodeEnc )
 {
     mxTextRenderImpl->GetGlyphWidths(pFont, bVertical, rWidths, rUnicodeEnc);

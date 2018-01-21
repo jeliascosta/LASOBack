@@ -42,9 +42,9 @@ xmlDocPtr XmlTestTools::parseXml(utl::TempFile& aTempFile)
 
 xmlDocPtr XmlTestTools::parseXmlStream(SvStream* pStream)
 {
-    sal_Size nSize = pStream->remainingSize();
+    std::size_t nSize = pStream->remainingSize();
     std::unique_ptr<sal_uInt8[]> pBuffer(new sal_uInt8[nSize + 1]);
-    pStream->Read(pBuffer.get(), nSize);
+    pStream->ReadBytes(pBuffer.get(), nSize);
     pBuffer[nSize] = 0;
     return xmlParseDoc(reinterpret_cast<xmlChar*>(pBuffer.get()));
 }

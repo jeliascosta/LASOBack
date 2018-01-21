@@ -179,7 +179,7 @@ OSaveAsDlg::OSaveAsDlg( vcl::Window * pParent,
     : ModalDialog(pParent, "SaveDialog", "dbaccess/ui/savedialog.ui")
     , m_xContext( _rxContext )
 {
-    m_pImpl = new OSaveAsDlgImpl(this,_rType,_xConnection,rDefault,_rObjectNameCheck,_nFlags);
+    m_pImpl.reset( new OSaveAsDlgImpl(this,_rType,_xConnection,rDefault,_rObjectNameCheck,_nFlags) );
 
     switch (_rType) {
     case CommandType::QUERY:
@@ -261,7 +261,7 @@ OSaveAsDlg::OSaveAsDlg( vcl::Window * pParent,
     : ModalDialog(pParent, "SaveDialog", "dbaccess/ui/savedialog.ui")
     , m_xContext( _rxContext )
 {
-    m_pImpl = new OSaveAsDlgImpl(this,rDefault,_rObjectNameCheck,_nFlags);
+    m_pImpl.reset( new OSaveAsDlgImpl(this,rDefault,_rObjectNameCheck,_nFlags) );
     implInitOnlyTitle(_sLabel);
     implInit();
 }
@@ -273,11 +273,11 @@ OSaveAsDlg::~OSaveAsDlg()
 
 void OSaveAsDlg::dispose()
 {
-    DELETEZ(m_pImpl);
+    m_pImpl.reset();
     ModalDialog::dispose();
 }
 
-IMPL_LINK_TYPED(OSaveAsDlg, ButtonClickHdl, Button *, pButton, void)
+IMPL_LINK(OSaveAsDlg, ButtonClickHdl, Button *, pButton, void)
 {
     if (pButton == m_pImpl->m_pPB_OK) {
         m_pImpl->m_aName = m_pImpl->m_pTitle->GetText();
@@ -304,7 +304,7 @@ IMPL_LINK_TYPED(OSaveAsDlg, ButtonClickHdl, Button *, pButton, void)
     }
 }
 
-IMPL_LINK_TYPED(OSaveAsDlg, EditModifyHdl, Edit&, rEdit, void )
+IMPL_LINK(OSaveAsDlg, EditModifyHdl, Edit&, rEdit, void )
 {
     if (&rEdit == m_pImpl->m_pTitle)
         m_pImpl->m_pPB_OK->Enable(!m_pImpl->m_pTitle->GetText().isEmpty());

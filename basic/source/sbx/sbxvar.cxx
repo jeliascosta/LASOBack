@@ -30,6 +30,7 @@
 #include "sbunoobj.hxx"
 #include <math.h>
 #include <ctype.h>
+#include <rtl/character.hxx>
 
 #include <com/sun/star/uno/XInterface.hpp>
 using namespace com::sun::star::uno;
@@ -62,7 +63,6 @@ class SbxVariableImpl
 
 SbxVariable::SbxVariable() : SbxValue()
 {
-    mpSbxVariableImpl = nullptr;
     pCst = nullptr;
     pParent = nullptr;
     nUserData = 0;
@@ -75,14 +75,13 @@ SbxVariable::SbxVariable( const SbxVariable& r )
       mpPar( r.mpPar ),
       pInfo( r.pInfo )
 {
-    mpSbxVariableImpl = nullptr;
-    if( r.mpSbxVariableImpl != nullptr )
+    if( r.mpImpl != nullptr )
     {
-        mpSbxVariableImpl = new SbxVariableImpl( *r.mpSbxVariableImpl );
+        mpImpl.reset( new SbxVariableImpl( *r.mpImpl ) );
 #if HAVE_FEATURE_SCRIPTING
-        if( mpSbxVariableImpl->m_xComListener.is() )
+        if( mpImpl->m_xComListener.is() )
         {
-            registerComListenerVariableForBasic( this, mpSbxVariableImpl->m_pComListenerParentBasic );
+            registerComListenerVariableForBasic( this, mpImpl->m_pComListenerParentBasic );
         }
 #endif
     }
@@ -102,9 +101,23 @@ SbxVariable::SbxVariable( const SbxVariable& r )
     }
 }
 
-SbxVariable::SbxVariable( SbxDataType t, void* p ) : SbxValue( t, p )
+SbxEnsureParentVariable::SbxEnsureParentVariable(const SbxVariable& r)
+    : SbxVariable(r)
+    , xParent(const_cast<SbxVariable&>(r).GetParent())
 {
-    mpSbxVariableImpl = nullptr;
+    assert(GetParent() == xParent.get());
+}
+
+void SbxEnsureParentVariable::SetParent(SbxObject* p)
+{
+    assert(GetParent() == xParent.get());
+    SbxVariable::SetParent(p);
+    xParent = SbxObjectRef(p);
+    assert(GetParent() == xParent.get());
+}
+
+SbxVariable::SbxVariable( SbxDataType t ) : SbxValue( t )
+{
     pCst = nullptr;
     pParent = nullptr;
     nUserData = 0;
@@ -119,7 +132,6 @@ SbxVariable::~SbxVariable()
         removeDimAsNewRecoverItem( this );
     }
 #endif
-    delete mpSbxVariableImpl;
     delete pCst;
 }
 
@@ -136,7 +148,7 @@ SfxBroadcaster& SbxVariable::GetBroadcaster()
 
 SbxArray* SbxVariable::GetParameters() const
 {
-    return mpPar;
+    return mpPar.get();
 }
 
 
@@ -187,7 +199,7 @@ void SbxVariable::Broadcast( sal_uInt32 nHintId )
 
 SbxInfo* SbxVariable::GetInfo()
 {
-    if( !pInfo )
+    if( !pInfo.Is() )
     {
         Broadcast( SBX_HINT_INFOWANTED );
         if( pInfo.Is() )
@@ -195,7 +207,7 @@ SbxInfo* SbxVariable::GetInfo()
             SetModified( true );
         }
     }
-    return pInfo;
+    return pInfo.get();
 }
 
 void SbxVariable::SetInfo( SbxInfo* p )
@@ -227,7 +239,7 @@ const OUString& SbxVariable::GetName( SbxNameType t ) const
     // Request parameter-information (not for objects)
     const_cast<SbxVariable*>(this)->GetInfo();
     // Append nothing, if it is a simple property (no empty brackets)
-    if (!pInfo || (pInfo->m_Params.empty() && GetClass() == SbxClassType::Property))
+    if (!pInfo.Is() || (pInfo->m_Params.empty() && GetClass() == SbxClassType::Property))
     {
         return maName;
     }
@@ -243,7 +255,7 @@ const OUString& SbxVariable::GetName( SbxNameType t ) const
         }
         if( cType != ' ' )
         {
-            aTmp += OUString(sal_Unicode(cType));
+            aTmp += OUStringLiteral1(cType);
         }
     }
     aTmp += "(";
@@ -276,7 +288,7 @@ const OUString& SbxVariable::GetName( SbxNameType t ) const
         }
         if( cType != ' ' )
         {
-            aTmp += OUString((sal_Unicode)cType);
+            aTmp += OUStringLiteral1(cType);
             if( i->eType & SbxARRAY )
             {
                 aTmp += "()";
@@ -339,7 +351,7 @@ sal_uInt16 SbxVariable::MakeHashCode( const OUString& rName )
         {
             return 0;
         }
-        n = sal::static_int_cast< sal_uInt16 >( ( n << 3 ) + toupper( c ) );
+        n = sal::static_int_cast< sal_uInt16 >( ( n << 3 ) + rtl::toAsciiUpperCase( c ) );
     }
     return n;
 }
@@ -349,20 +361,16 @@ sal_uInt16 SbxVariable::MakeHashCode( const OUString& rName )
 SbxVariable& SbxVariable::operator=( const SbxVariable& r )
 {
     SbxValue::operator=( r );
-    delete mpSbxVariableImpl;
-    if( r.mpSbxVariableImpl != nullptr )
+    mpImpl.reset();
+    if( r.mpImpl != nullptr )
     {
-        mpSbxVariableImpl = new SbxVariableImpl( *r.mpSbxVariableImpl );
+        mpImpl.reset( new SbxVariableImpl( *r.mpImpl ) );
 #if HAVE_FEATURE_SCRIPTING
-        if( mpSbxVariableImpl->m_xComListener.is() )
+        if( mpImpl->m_xComListener.is() )
         {
-            registerComListenerVariableForBasic( this, mpSbxVariableImpl->m_pComListenerParentBasic );
+            registerComListenerVariableForBasic( this, mpImpl->m_pComListenerParentBasic );
         }
 #endif
-    }
-    else
-    {
-        mpSbxVariableImpl = nullptr;
     }
     return *this;
 }
@@ -431,11 +439,11 @@ void SbxVariable::SetParent( SbxObject* p )
 
 SbxVariableImpl* SbxVariable::getImpl()
 {
-    if( mpSbxVariableImpl == nullptr )
+    if(!mpImpl)
     {
-        mpSbxVariableImpl = new SbxVariableImpl();
+        mpImpl.reset(new SbxVariableImpl);
     }
-    return mpSbxVariableImpl;
+    return mpImpl.get();
 }
 
 const OUString& SbxVariable::GetDeclareClassName()
@@ -489,7 +497,7 @@ bool SbxVariable::LoadData( SvStream& rStrm, sal_uInt16 nVer )
     }
     else
     {
-        rStrm.SeekRel( -1L );
+        rStrm.SeekRel( -1 );
         rStrm.ReadUInt16( nType );
         maName = read_uInt16_lenPrefixed_uInt8s_ToOUString(rStrm,
                                                                 RTL_TEXTENCODING_ASCII_US);
@@ -552,7 +560,7 @@ bool SbxVariable::LoadData( SvStream& rStrm, sal_uInt16 nVer )
             break;
         default:
             aData.eType = SbxNULL;
-            DBG_ASSERT( false, "Loaded a non-supported data type" );
+            SAL_WARN( "basic", "Loaded a non-supported data type" );
             return false;
         }
         // putt value

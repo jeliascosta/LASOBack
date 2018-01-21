@@ -38,8 +38,7 @@ class SVT_DLLPUBLIC SvRTFParser : public SvParser
 {
     std::stack< RtfParserState_Impl > aParserStates;
     int              nOpenBrakets;
-    rtl_TextEncoding eCodeSet,
-                     eUNICodeSet;
+    rtl_TextEncoding eCodeSet;
     sal_uInt8        nUCharOverread;
 
 private:
@@ -54,10 +53,9 @@ protected:
     virtual int GetNextToken_() override;
 
     void ReadUnknownData();
-    virtual void ReadBitmapData();
-    virtual void ReadOLEData();
+    void ReadBitmapData();
 
-    virtual ~SvRTFParser();
+    virtual ~SvRTFParser() override;
 
     rtl_TextEncoding GetCodeSet() const             { return eCodeSet; }
     void SetEncoding( rtl_TextEncoding eEnc );

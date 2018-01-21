@@ -17,6 +17,7 @@ $(eval $(call gb_Module_add_targets,xmlsecurity,\
 
 $(eval $(call gb_Module_add_slowcheck_targets,xmlsecurity,\
     CppunitTest_xmlsecurity_signing \
+    CppunitTest_xmlsecurity_pdfsigning \
 ))
 
 $(eval $(call gb_Module_add_l10n_targets,xmlsecurity,\
@@ -30,5 +31,18 @@ $(eval $(call gb_Module_add_l10n_targets,xmlsecurity,\
 #$(eval $(call gb_Module_add_check_targets,xmlsecurity,\
 	CppunitTest_qa_certext \
 ))
+
+# screenshots
+$(eval $(call gb_Module_add_screenshot_targets,xmlsecurity,\
+    CppunitTest_xmlsecurity_dialogs_test \
+))
+
+ifneq (,$(filter DESKTOP,$(BUILD_TYPE)))
+
+$(eval $(call gb_Module_add_targets,xmlsecurity,\
+    Executable_pdfverify \
+))
+
+endif
 
 # vim: set noet sw=4 ts=4:

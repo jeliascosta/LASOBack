@@ -25,7 +25,7 @@
 #include <sal/types.h>
 #include <tools/debug.hxx>
 
-#include "ctfonts.hxx"
+#include "quartz/ctfonts.hxx"
 #include "CTRunData.hxx"
 #include "quartz/utils.h"
 
@@ -34,7 +34,7 @@ class CTLayout : public SalLayout
 {
 public:
     explicit        CTLayout( const CoreTextStyle* );
-    virtual         ~CTLayout();
+    virtual         ~CTLayout() override;
 
     virtual bool    LayoutText( ImplLayoutArgs& ) override;
     virtual void    AdjustLayout( ImplLayoutArgs& ) override;
@@ -42,8 +42,8 @@ public:
     virtual bool    DrawTextSpecial( SalGraphics& rGraphics, sal_uInt32 flags ) const override;
 
     virtual int     GetNextGlyphs( int nLen, sal_GlyphId* pOutGlyphIds, Point& rPos, int&,
-                                   DeviceCoordinate* pGlyphAdvances, int* pCharIndexes,
-                                   const PhysicalFontFace** pFallbackFonts ) const override;
+                                   DeviceCoordinate* pGlyphAdvances = nullptr, int* pCharIndexes = nullptr,
+                                   const PhysicalFontFace** pFallbackFonts = nullptr ) const override;
 
     virtual DeviceCoordinate GetTextWidth() const override;
     virtual DeviceCoordinate FillDXArray( DeviceCoordinate* pDXArray ) const override;
@@ -698,7 +698,7 @@ sal_Int32 CTLayout::GetTextBreak( DeviceCoordinate nMaxWidth, DeviceCoordinate n
 
 void CTLayout::GetCaretPositions( int nMaxIndex, long* pCaretXArray ) const
 {
-    DBG_ASSERT( ((nMaxIndex>0)&&!(nMaxIndex&1)),
+    SAL_WARN_IF( (nMaxIndex<=0) || (nMaxIndex&1), "vcl",
         "CTLayout::GetCaretPositions() : invalid number of caret pairs requested");
 
     // initialize the caret positions

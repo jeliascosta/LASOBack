@@ -28,6 +28,7 @@
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/lang/Locale.hpp>
 #include <com/sun/star/beans/XPropertyState.hpp>
+#include <svl/itemset.hxx>
 #include <vbahelper/vbahelperinterface.hxx>
 
 class ScCellRangesBase;
@@ -38,7 +39,6 @@ class ScVbaFormat : public InheritedHelperInterfaceWeakImpl< Ifc... >
 typedef InheritedHelperInterfaceWeakImpl< Ifc... > ScVbaFormat_BASE;
     css::lang::Locale m_aDefaultLocale;
 protected:
-    const css::lang::Locale& getDefaultLocale() { return m_aDefaultLocale; }
     css::uno::Reference< css::beans::XPropertySet > mxPropertySet;
     css::uno::Reference< css::util::XNumberFormatsSupplier > mxNumberFormatsSupplier;
     css::uno::Reference< css::util::XNumberFormats > xNumberFormats;
@@ -48,7 +48,7 @@ protected:
     bool mbCheckAmbiguoity;
     bool mbAddIndent;
     bool isAmbiguous(const OUString& _sPropertyName) throw ( css::script::BasicErrorException );
-    css::uno::Reference< css::beans::XPropertyState > getXPropertyState() throw ( css::uno::RuntimeException );
+    css::uno::Reference< css::beans::XPropertyState > const &  getXPropertyState() throw ( css::uno::RuntimeException );
     void initializeNumberFormats() throw ( css::script::BasicErrorException, css::uno::RuntimeException );
     SfxItemSet*  getCurrentDataSet( ) throw (css::uno::RuntimeException, std::exception);
 protected:

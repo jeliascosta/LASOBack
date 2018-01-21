@@ -23,7 +23,6 @@
 #include "DataSeriesHelper.hxx"
 #include "macros.hxx"
 #include "CommonConverters.hxx"
-#include "ContainerHelper.hxx"
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/chart2/data/XDataSink.hpp>
 #include <cppuhelper/supportsservice.hxx>
@@ -35,7 +34,6 @@
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::chart2;
 using namespace ::std;
-using namespace ::chart::ContainerHelper;
 
 using ::com::sun::star::uno::Reference;
 using ::com::sun::star::uno::Sequence;
@@ -122,7 +120,7 @@ InterpretedData SAL_CALL DataInterpreter::interpretDataSource(
         if( nSeriesIndex < aSeriesToReUse.getLength())
             xSeries.set( aSeriesToReUse[nSeriesIndex] );
         else
-            xSeries.set( new DataSeries( GetComponentContext() ));
+            xSeries.set( new DataSeries );
         OSL_ASSERT( xSeries.is() );
         Reference< data::XDataSink > xSink( xSeries, uno::UNO_QUERY );
         OSL_ASSERT( xSink.is() );
@@ -381,20 +379,8 @@ bool DataInterpreter::UseCategoriesAsX( const Sequence< beans::PropertyValue > &
     return bUseCategoriesAsX;
 }
 
-Sequence< OUString > DataInterpreter::getSupportedServiceNames_Static()
-{
-    Sequence<OUString> aServices { "com.sun.star.chart2.DataInterpreter" };
-    return aServices;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL DataInterpreter::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
-OUString DataInterpreter::getImplementationName_Static()
 {
     return OUString("com.sun.star.comp.chart2.DataInterpreter");
 }
@@ -408,7 +394,7 @@ sal_Bool SAL_CALL DataInterpreter::supportsService( const OUString& rServiceName
 css::uno::Sequence< OUString > SAL_CALL DataInterpreter::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return { "com.sun.star.chart2.DataInterpreter" };
 }
 
 } // namespace chart

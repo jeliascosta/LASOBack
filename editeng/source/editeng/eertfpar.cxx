@@ -53,16 +53,13 @@ ImportInfo::~ImportInfo()
 EditRTFParser::EditRTFParser(
     SvStream& rIn, EditSelection aSel, SfxItemPool& rAttrPool, EditEngine* pEditEngine) :
     SvxRTFParser(rAttrPool, rIn, nullptr),
+    aCurSel(aSel),
     mpEditEngine(pEditEngine),
-    aRTFMapMode(MAP_TWIP)
+    aRTFMapMode(MapUnit::MapTwip),
+    nDefFont(0),
+    nDefTab(0),
+    bLastActionInsertParaBreak(false)
 {
-    aCurSel         = aSel;
-    eDestCharSet    = RTL_TEXTENCODING_DONTKNOW;
-    nDefFont        = 0;
-    nDefTab         = 0;
-    nLastAction     = 0;
-    nDefFontHeight  = 0;
-
     SetInsPos(EditPosition(mpEditEngine, &aCurSel));
 
     // Convert the twips values ...
@@ -108,7 +105,7 @@ SvParserState EditRTFParser::CallParser()
         mpEditEngine->CallImportHandler(aImportInfo);
     }
 
-    if ( nLastAction == ACTION_INSERTPARABRK )
+    if (bLastActionInsertParaBreak)
     {
         ContentNode* pCurNode = aCurSel.Max().GetNode();
         sal_Int32 nPara = mpEditEngine->GetEditDoc().GetPos(pCurNode);
@@ -146,11 +143,11 @@ void EditRTFParser::AddRTFDefaultValues( const EditPaM& rStart, const EditPaM& r
 {
     // Problem: DefFont and DefFontHeight
     Size aSz( 12, 0 );
-    MapMode aPntMode( MAP_POINT );
+    MapMode aPntMode( MapUnit::MapPoint );
     MapMode _aEditMapMode(mpEditEngine->GetRefDevice()->GetMapMode().GetMapUnit());
     aSz = mpEditEngine->GetRefDevice()->LogicToLogic(aSz, &aPntMode, &_aEditMapMode);
     SvxFontHeightItem aFontHeightItem( aSz.Width(), 100, EE_CHAR_FONTHEIGHT );
-    vcl::Font aDefFont( GetDefFont() );
+    vcl::Font aDefFont( GetFont( nDefFont ) );
     SvxFontItem aFontItem( aDefFont.GetFamilyType(), aDefFont.GetFamilyName(),
                     aDefFont.GetStyleName(), aDefFont.GetPitch(), aDefFont.GetCharSet(), EE_CHAR_FONTINFO );
 
@@ -249,7 +246,7 @@ void EditRTFParser::InsertText()
         mpEditEngine->CallImportHandler(aImportInfo);
     }
     aCurSel = mpEditEngine->InsertText(aCurSel, aText);
-    nLastAction = ACTION_INSERTTEXT;
+    bLastActionInsertParaBreak = false;
 }
 
 void EditRTFParser::InsertPara()
@@ -260,7 +257,7 @@ void EditRTFParser::InsertPara()
         mpEditEngine->CallImportHandler(aImportInfo);
     }
     aCurSel = mpEditEngine->InsertParaBreak(aCurSel);
-    nLastAction = ACTION_INSERTPARABRK;
+    bLastActionInsertParaBreak = true;
 }
 
 void EditRTFParser::MovePos( bool const bForward )
@@ -293,7 +290,7 @@ void EditRTFParser::SetEndPrevPara( EditNodeIdx*& rpNodePos,
 
 bool EditRTFParser::IsEndPara( EditNodeIdx* pNd, sal_Int32 nCnt ) const
 {
-    return nCnt == ( static_cast<EditNodeIdx*>(pNd)->GetNode()->Len());
+    return nCnt == pNd->GetNode()->Len();
 }
 
 void EditRTFParser::SetAttrInDoc( SvxRTFItemStackType &rSet )
@@ -337,7 +334,7 @@ void EditRTFParser::SetAttrInDoc( SvxRTFItemStackType &rSet )
 
         if( ( DFLT_ESC_AUTO_SUPER != nEsc ) && ( DFLT_ESC_AUTO_SUB != nEsc ) )
         {
-            nEsc *= 10; //HalPoints => Twips was embezzled in RTFITEM.CXX!
+            nEsc *= 10; //HalfPoints => Twips was embezzled in RTFITEM.CXX!
             SvxFont aFont;
             mpEditEngine->SeekCursor(aStartPaM.GetNode(), aStartPaM.GetIndex()+1, aFont);
             nEsc = nEsc * 100 / aFont.GetFontSize().Height();
@@ -498,7 +495,7 @@ void EditRTFParser::CreateStyleSheets()
 
 void EditRTFParser::CalcValue()
 {
-    const MapUnit eDestUnit = static_cast< MapUnit >( aEditMapMode.GetMapUnit() );
+    const MapUnit eDestUnit = aEditMapMode.GetMapUnit();
     const MapUnit eSrcUnit  = aRTFMapMode.GetMapUnit();
     if (eDestUnit != eSrcUnit)
         nTokenValue = OutputDevice::LogicToLogic( (long)nTokenValue, eSrcUnit, eDestUnit );
@@ -566,7 +563,7 @@ void EditRTFParser::ReadField()
             SvxFieldItem aField( SvxURLField( aFldInst, aFldRslt, SVXURLFORMAT_REPR ), EE_FEATURE_FIELD  );
             aCurSel = mpEditEngine->InsertField(aCurSel, aField);
             mpEditEngine->UpdateFieldsOnly();
-            nLastAction = ACTION_INSERTTEXT;
+            bLastActionInsertParaBreak = false;
         }
     }
 

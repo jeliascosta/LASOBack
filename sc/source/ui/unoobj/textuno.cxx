@@ -184,7 +184,7 @@ void ScHeaderFooterContentObj::Init( const EditTextObject* pLeft,
 }
 
 ScHeaderFooterTextData::ScHeaderFooterTextData(
-    uno::WeakReference<sheet::XHeaderFooterContent> xContent, ScHeaderFooterPart nP, const EditTextObject* pTextObj) :
+    uno::WeakReference<sheet::XHeaderFooterContent> const & xContent, ScHeaderFooterPart nP, const EditTextObject* pTextObj) :
     mpTextObj(pTextObj ? pTextObj->Clone() : nullptr),
     xContentObj( xContent ),
     nPart( nP ),
@@ -211,7 +211,7 @@ SvxTextForwarder* ScHeaderFooterTextData::GetTextForwarder()
         ScHeaderEditEngine* pHdrEngine = new ScHeaderEditEngine( pEnginePool );
 
         pHdrEngine->EnableUndo( false );
-        pHdrEngine->SetRefMapMode( MAP_TWIP );
+        pHdrEngine->SetRefMapMode( MapUnit::MapTwip );
 
         //  default font must be set, independently of document
         //  -> use global pool from module
@@ -221,9 +221,12 @@ SvxTextForwarder* ScHeaderFooterTextData::GetTextForwarder()
         rPattern.FillEditItemSet( &aDefaults );
         //  FillEditItemSet adjusts font height to 1/100th mm,
         //  but for header/footer twips is needed, as in the PatternAttr:
-        aDefaults.Put( rPattern.GetItem(ATTR_FONT_HEIGHT), EE_CHAR_FONTHEIGHT );
-        aDefaults.Put( rPattern.GetItem(ATTR_CJK_FONT_HEIGHT), EE_CHAR_FONTHEIGHT_CJK );
-        aDefaults.Put( rPattern.GetItem(ATTR_CTL_FONT_HEIGHT), EE_CHAR_FONTHEIGHT_CTL );
+        std::unique_ptr<SfxPoolItem> pNewItem( rPattern.GetItem(ATTR_FONT_HEIGHT).CloneSetWhich(EE_CHAR_FONTHEIGHT) );
+        aDefaults.Put( *pNewItem );
+        pNewItem.reset( rPattern.GetItem(ATTR_CJK_FONT_HEIGHT).CloneSetWhich(EE_CHAR_FONTHEIGHT_CJK) );
+        aDefaults.Put( *pNewItem );
+        pNewItem.reset( rPattern.GetItem(ATTR_CTL_FONT_HEIGHT).CloneSetWhich(EE_CHAR_FONTHEIGHT_CTL) );
+        aDefaults.Put( *pNewItem );
         pHdrEngine->SetDefaults( aDefaults );
 
         ScHeaderFieldData aData;
@@ -856,7 +859,7 @@ ScDrawTextCursor* ScDrawTextCursor::getImplementation(const uno::Reference<uno::
 ScSimpleEditSourceHelper::ScSimpleEditSourceHelper()
 {
     SfxItemPool* pEnginePool = EditEngine::CreatePool();
-    pEnginePool->SetDefaultMetric( SFX_MAPUNIT_100TH_MM );
+    pEnginePool->SetDefaultMetric( MapUnit::Map100thMM );
     pEnginePool->FreezeIdRanges();
 
     pEditEngine = new ScFieldEditEngine(nullptr, pEnginePool, nullptr, true);     // TRUE: become owner of pool
@@ -957,7 +960,7 @@ SvxTextForwarder* ScCellTextData::GetTextForwarder()
         if (pDocShell)
             pEditEngine->SetRefDevice(pDocShell->GetRefDevice());
         else
-            pEditEngine->SetRefMapMode( MAP_100TH_MM );
+            pEditEngine->SetRefMapMode( MapUnit::Map100thMM );
         pForwarder = new SvxEditEngineForwarder(*pEditEngine);
     }
 
@@ -1028,9 +1031,9 @@ void ScCellTextData::Notify( SfxBroadcaster&, const SfxHint& rHint )
 
         //! Ref-Update
     }
-    else if ( dynamic_cast<const SfxSimpleHint*>(&rHint) )
+    else
     {
-        const sal_uInt32 nId = static_cast<const SfxSimpleHint&>(rHint).GetId();
+        const sal_uInt32 nId = rHint.GetId();
         if ( nId == SFX_HINT_DYING )
         {
             pDocShell = nullptr;                       // invalid now

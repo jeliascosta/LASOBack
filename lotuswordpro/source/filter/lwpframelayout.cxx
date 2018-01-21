@@ -1176,14 +1176,9 @@ void LwpDropcapLayout::XFConvert(XFContentContainer* pCont)
     }
 }
 
-LwpStory* LwpDropcapLayout::GetContentStory()
-{
-    return static_cast<LwpStory*>(m_Content.obj(VO_STORY).get());
-}
-
 void LwpDropcapLayout::RegisterStyle(LwpFoundry* pFoundry)
 {
-    LwpStory* pStory = GetContentStory();
+    LwpStory* pStory = static_cast<LwpStory*>(m_Content.obj(VO_STORY).get());
     if (pStory)
     {
         pStory->SetDropcapFlag(true);

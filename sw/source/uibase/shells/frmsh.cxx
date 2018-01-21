@@ -39,7 +39,7 @@
 #include <sfx2/dispatch.hxx>
 #include <sfx2/request.hxx>
 #include <sfx2/objface.hxx>
-#include <sfx2/sidebar/EnumContext.hxx>
+#include <vcl/EnumContext.hxx>
 #include <svx/hlnkitem.hxx>
 #include <svx/svdview.hxx>
 #include <vcl/msgbox.hxx>
@@ -84,6 +84,10 @@
 #include <svx/drawitem.hxx>
 #include <memory>
 
+#define SwFrameShell
+#include <sfx2/msg.hxx>
+#include "swslots.hxx"
+
 using ::editeng::SvxBorderLine;
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
@@ -101,10 +105,6 @@ static const SwFrameFormat* lcl_GetFrameFormatByName(SwWrtShell& rSh, const OUSt
     }
     return nullptr;
 }
-
-#define SwFrameShell
-#include <sfx2/msg.hxx>
-#include "swslots.hxx"
 
 SFX_IMPL_INTERFACE(SwFrameShell, SwBaseShell)
 
@@ -351,13 +351,15 @@ void SwFrameShell::Execute(SfxRequest &rReq)
             bool bApplyNewSize = false;
 
             Size aNewSize = aMgr.GetSize();
-            if ( SfxItemState::SET == pArgs->GetItemState( SID_ATTR_TRANSFORM_WIDTH, false, &pItem ) )
+            if (pArgs &&
+                SfxItemState::SET == pArgs->GetItemState(SID_ATTR_TRANSFORM_WIDTH, false, &pItem))
             {
                 aNewSize.setWidth( static_cast< const SfxUInt32Item* >(pItem)->GetValue() );
                 bApplyNewSize = true;
             }
 
-            if ( SfxItemState::SET == pArgs->GetItemState( SID_ATTR_TRANSFORM_HEIGHT, false, &pItem ) )
+            if (pArgs &&
+                SfxItemState::SET == pArgs->GetItemState(SID_ATTR_TRANSFORM_HEIGHT, false, &pItem))
             {
                 aNewSize.setHeight( static_cast< const SfxUInt32Item* >(pItem)->GetValue() );
                 bApplyNewSize = true;
@@ -402,9 +404,10 @@ void SwFrameShell::Execute(SfxRequest &rReq)
                     //UUUU items to hand over XPropertyList things like
                     // XColorList, XHatchList, XGradientList and XBitmapList
                     // to the Area TabPage
-                    SID_COLOR_TABLE,        SID_BITMAP_LIST,                        // [10179
+                    SID_COLOR_TABLE,        SID_PATTERN_LIST,                        // [10179
 
                     SID_HTML_MODE,          SID_HTML_MODE,                          // [10414
+                    SID_ALLOW_PADDING_WITHOUT_BORDERS, SID_ALLOW_PADDING_WITHOUT_BORDERS,   // [11139
                     FN_GET_PRINT_AREA,      FN_GET_PRINT_AREA,                      // [21032
                     FN_SURROUND,            FN_HORI_ORIENT,                         // [21303
                     FN_SET_FRM_NAME,        FN_KEEP_ASPECT_RATIO,                   // [21306
@@ -456,16 +459,19 @@ void SwFrameShell::Execute(SfxRequest &rReq)
                 const uno::Reference < embed::XEmbeddedObject > xObj( rSh.GetOleRef() );
                 aSet.Put( SfxBoolItem( FN_OLE_IS_MATH, xObj.is() && SotExchange::IsMath( xObj->getClassID() ) ) );
 
+                aSet.Put( SfxBoolItem( SID_ALLOW_PADDING_WITHOUT_BORDERS,
+                        rSh.GetDoc()->getIDocumentSettingAccess().get(DocumentSettingId::ALLOW_PADDING_WITHOUT_BORDERS) ) );
+
                 OString sDefPage;
                 if(pArgs && pArgs->GetItemState(FN_FORMAT_FRAME_DLG, false, &pItem) == SfxItemState::SET)
                     sDefPage = OUStringToOString(static_cast<const SfxStringItem *>(pItem)->GetValue(), RTL_TEXTENCODING_UTF8);
 
-                aSet.Put(SfxFrameItem( SID_DOCFRAME, &GetView().GetViewFrame()->GetTopFrame()));
+                aSet.Put(SfxFrameItem( SID_DOCFRAME, &GetView().GetViewFrame()->GetFrame()));
                 FieldUnit eMetric = ::GetDfltMetric(dynamic_cast<SwWebView*>( &GetView()) != nullptr );
                 SW_MOD()->PutItem(SfxUInt16Item(SID_ATTR_METRIC, static_cast< sal_uInt16 >(eMetric) ));
                 SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
                 assert(pFact);
-                std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateFrameTabDialog(
+                ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateFrameTabDialog(
                                                         nSel & nsSelectionType::SEL_GRF ? OUString("PictureDialog") :
                                                         nSel & nsSelectionType::SEL_OLE ? OUString("ObjectDialog"):
                                                                                         OUString("FrameDialog"),
@@ -610,6 +616,29 @@ void SwFrameShell::Execute(SfxRequest &rReq)
             rReq.SetReturnValue(SfxBoolItem(nSlot, bMirror));
         }
         break;
+        case FN_NAME_SHAPE:
+        {
+            bUpdateMgr = false;
+            SdrView* pSdrView = rSh.GetDrawViewWithValidMarkList();
+            if ( pSdrView &&
+                 pSdrView->GetMarkedObjectCount() == 1 )
+            {
+                OUString aName(rSh.GetFlyName());
+                SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
+                assert(pFact);
+                ScopedVclPtr<AbstractSvxObjectNameDialog> pDlg(
+                    pFact->CreateSvxObjectNameDialog( aName ));
+
+                assert(pDlg);
+
+                if ( pDlg->Execute() == RET_OK )
+                {
+                    pDlg->GetName(aName);
+                    rSh.SetFlyName(aName);
+                }
+            }
+        }
+        break;
         // #i73249#
         case FN_TITLE_DESCRIPTION_SHAPE:
         {
@@ -623,7 +652,7 @@ void SwFrameShell::Execute(SfxRequest &rReq)
 
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 assert(pFact);
-                std::unique_ptr<AbstractSvxObjectTitleDescDialog> pDlg(
+                ScopedVclPtr<AbstractSvxObjectTitleDescDialog> pDlg(
                     pFact->CreateSvxObjectTitleDescDialog( aTitle,
                                                            aDescription ));
                 assert(pDlg);
@@ -913,6 +942,7 @@ void SwFrameShell::GetState(SfxItemSet& rSet)
                 break;
                 // #i73249#
                 case FN_TITLE_DESCRIPTION_SHAPE:
+                case FN_NAME_SHAPE:
                 {
                     SwWrtShell &rWrtSh = GetShell();
                     SdrView* pSdrView = rWrtSh.GetDrawViewWithValidMarkList();
@@ -921,7 +951,6 @@ void SwFrameShell::GetState(SfxItemSet& rSet)
                     {
                         rSet.DisableItem( nWhich );
                     }
-
                 }
                 break;
 
@@ -943,7 +972,7 @@ SwFrameShell::SwFrameShell(SwView &_rView) :
     // #96392# Use this to announce it is the frame shell who creates the selection.
     SwTransferable::CreateSelection( _rView.GetWrtShell(), this );
 
-    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_Frame));
+    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context_Frame));
 }
 
 SwFrameShell::~SwFrameShell()
@@ -1009,7 +1038,8 @@ void SwFrameShell::ExecFrameStyle(SfxRequest& rReq)
                     if(!StarBASIC::IsRunning())
 #endif
                     {
-                        aNewBox.SetDistance( rBoxItem.GetDistance() );
+                        // TODO: should this copy 4 individual Dist instead?
+                        aNewBox.SetAllDistances(rBoxItem.GetSmallestDistance());
                     }
 
                     aBoxItem = aNewBox;
@@ -1115,7 +1145,7 @@ void SwFrameShell::ExecFrameStyle(SfxRequest& rReq)
     if (bDefault && (aBoxItem.GetTop() || aBoxItem.GetBottom() ||
         aBoxItem.GetLeft() || aBoxItem.GetRight()))
     {
-        aBoxItem.SetDistance(MIN_BORDER_DIST);
+        aBoxItem.SetAllDistances(MIN_BORDER_DIST);
     }
     aFrameSet.Put( aBoxItem );
     // Template AutoUpdate
@@ -1262,7 +1292,7 @@ void SwFrameShell::ExecDrawDlgTextFrame(SfxRequest& rReq)
 
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 assert(pFact);
-                std::unique_ptr<AbstractSvxAreaTabDialog> pDlg(pFact->CreateSvxAreaTabDialog(
+                ScopedVclPtr<AbstractSvxAreaTabDialog> pDlg(pFact->CreateSvxAreaTabDialog(
                     nullptr,
                     &aNewAttr,
                     pDoc,

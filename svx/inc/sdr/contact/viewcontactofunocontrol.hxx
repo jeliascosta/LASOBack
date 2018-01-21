@@ -42,7 +42,7 @@ namespace sdr { namespace contact {
 
     //= ViewContactOfUnoControl
 
-    class SVX_DLLPRIVATE ViewContactOfUnoControl : public ViewContactOfSdrObj
+    class ViewContactOfUnoControl : public ViewContactOfSdrObj
     {
     public:
         // access to SdrObject
@@ -52,7 +52,7 @@ namespace sdr { namespace contact {
         }
 
         explicit ViewContactOfUnoControl( SdrUnoObj& _rUnoObject );
-        virtual ~ViewContactOfUnoControl();
+        virtual ~ViewContactOfUnoControl() override;
 
         /** retrieves a temporary XControl instance, whose parent is the given window
             @seealso SdrUnoObj::GetTemporaryControlForWindow

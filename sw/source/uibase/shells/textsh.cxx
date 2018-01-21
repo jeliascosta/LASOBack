@@ -98,7 +98,7 @@
 
 #define SwTextShell
 #include <sfx2/msg.hxx>
-#include <sfx2/sidebar/EnumContext.hxx>
+#include <vcl/EnumContext.hxx>
 #include <swslots.hxx>
 #include <SwRewriter.hxx>
 #include <comcore.hrc>
@@ -355,7 +355,7 @@ void SwTextShell::ExecInsert(SfxRequest &rReq)
                 {
                     Size aSize(static_cast<const SvxSizeItem*>(pItem)->GetSize());
                     aSize = OutputDevice::LogicToLogic
-                                    ( aSize, MapMode( MAP_TWIP ), MapMode( MAP_100TH_MM ) );
+                                    ( aSize, MapMode( MapUnit::MapTwip ), MapMode( MapUnit::Map100thMM ) );
 
                     if(aSize.Width() > MINLAY&& aSize.Height()> MINLAY)
                     {
@@ -479,7 +479,7 @@ void SwTextShell::ExecInsert(SfxRequest &rReq)
             SW_MOD()->PutItem(SfxUInt16Item(SID_ATTR_METRIC, static_cast< sal_uInt16 >(eMetric)));
             SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
             OSL_ENSURE(pFact, "Dialog creation failed!");
-            std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateFrameTabDialog("FrameDialog",
+            ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateFrameTabDialog("FrameDialog",
                                                   GetView().GetViewFrame(),
                                                   &GetView().GetViewFrame()->GetWindow(),
                                                   aSet));
@@ -532,7 +532,7 @@ void SwTextShell::ExecInsert(SfxRequest &rReq)
     {
         SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
         OSL_ENSURE(pFact, "Dialog creation failed!");
-        std::unique_ptr<VclAbstractDialog> pColDlg(pFact->CreateVclAbstractDialog( GetView().GetWindow(), rSh, DLG_COLUMN));
+        ScopedVclPtr<VclAbstractDialog> pColDlg(pFact->CreateVclAbstractDialog( GetView().GetWindow(), rSh, DLG_COLUMN));
         OSL_ENSURE(pColDlg, "Dialog creation failed!");
         pColDlg->Execute();
     }
@@ -834,7 +834,7 @@ SwTextShell::SwTextShell(SwView &_rView) :
 {
     SetName("Text");
     SetHelpId(SW_TEXTSHELL);
-    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_Text));
+    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context_Text));
 }
 
 SwTextShell::~SwTextShell()
@@ -851,7 +851,7 @@ SfxItemSet SwTextShell::CreateInsertFrameItemSet(SwFlyFrameAttrMgr& rMgr)
         SID_ATTR_PAGE_SIZE,     SID_ATTR_PAGE_SIZE,
         FN_SET_FRM_NAME,        FN_SET_FRM_NAME,
         SID_HTML_MODE,          SID_HTML_MODE,
-        SID_COLOR_TABLE,        SID_BITMAP_LIST,
+        SID_COLOR_TABLE,        SID_PATTERN_LIST,
         0
     };
 
@@ -942,7 +942,7 @@ void SwTextShell::InsertSymbol( SfxRequest& rReq )
             aAllSet.Put( SfxStringItem( SID_FONT_NAME, aFont.GetFamilyName() ) );
 
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-        std::unique_ptr<SfxAbstractDialog> pDlg(pFact->CreateSfxDialog( GetView().GetWindow(), aAllSet,
+        ScopedVclPtr<SfxAbstractDialog> pDlg(pFact->CreateSfxDialog( GetView().GetWindow(), aAllSet,
             GetView().GetViewFrame()->GetFrame().GetFrameInterface(), RID_SVXDLG_CHARMAP ));
         if( RET_OK == pDlg->Execute() )
         {
@@ -1011,17 +1011,20 @@ void SwTextShell::InsertSymbol( SfxRequest& rReq )
             if( SvtScriptType::LATIN & nScript )
             {
                 aRestoreSet.Put( aSet.Get( RES_CHRATR_FONT ) );
-                aSet.Put( aNewFontItem, RES_CHRATR_FONT);
+                aNewFontItem.SetWhich(RES_CHRATR_FONT);
+                aSet.Put( aNewFontItem );
             }
             if( SvtScriptType::ASIAN & nScript )
             {
                 aRestoreSet.Put( aSet.Get( RES_CHRATR_CJK_FONT ) );
-                aSet.Put( aNewFontItem, RES_CHRATR_CJK_FONT );
+                aNewFontItem.SetWhich(RES_CHRATR_CJK_FONT);
+                aSet.Put( aNewFontItem );
             }
             if( SvtScriptType::COMPLEX & nScript )
             {
                 aRestoreSet.Put( aSet.Get( RES_CHRATR_CTL_FONT ) );
-                aSet.Put( aNewFontItem, RES_CHRATR_CTL_FONT );
+                aNewFontItem.SetWhich(RES_CHRATR_CTL_FONT);
+                aSet.Put( aNewFontItem );
             }
 
             rSh.SetMark();

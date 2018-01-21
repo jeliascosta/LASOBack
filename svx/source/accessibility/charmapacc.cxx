@@ -243,12 +243,13 @@ SvxShowCharSetItem::~SvxShowCharSetItem()
     if ( m_xAcc.is() )
     {
         m_pItem->ParentDestroyed();
-        ClearAccessible();
+        m_pItem = nullptr;
+        m_xAcc  = nullptr;
     }
 }
 
 
-uno::Reference< css::accessibility::XAccessible > SvxShowCharSetItem::GetAccessible()
+uno::Reference< css::accessibility::XAccessible > const & SvxShowCharSetItem::GetAccessible()
 {
     if( !m_xAcc.is() )
     {
@@ -259,15 +260,6 @@ uno::Reference< css::accessibility::XAccessible > SvxShowCharSetItem::GetAccessi
     return m_xAcc;
 }
 
-
-void SvxShowCharSetItem::ClearAccessible()
-{
-    if ( m_xAcc.is() )
-    {
-        m_pItem = nullptr;
-        m_xAcc  = nullptr;
-    }
-}
 
 
 SvxShowCharSetAcc::SvxShowCharSetAcc( SvxShowCharSetVirtualAcc* _pParent ) : OAccessibleSelectionHelper(new VCLExternalSolarLock())
@@ -651,7 +643,7 @@ OUString SAL_CALL SvxShowCharSetItemAcc::getAccessibleDescription()
 {
     OExternalLockGuard aGuard( this );
     ensureAlive();
-    OUString sDescription = SVX_RESSTR( RID_SVXSTR_CHARACTER_CODE );
+    OUString sDescription;
 
     const OUString aCharStr( mpParent->maText);
     sal_Int32 nStrIndex = 0;
@@ -667,7 +659,10 @@ OUString SAL_CALL SvxShowCharSetItemAcc::getAccessibleDescription()
     }
     if( c < 256 )
         snprintf( buf+6, 10, " (%" SAL_PRIuUINT32 ")", c );
-    sDescription += " " + OUString(buf, strlen(buf), RTL_TEXTENCODING_ASCII_US);
+
+    sDescription = SVX_RESSTR( RID_SVXSTR_CHARACTER_CODE )
+                 + " "
+                 + OUString(buf, strlen(buf), RTL_TEXTENCODING_ASCII_US);
 
     return sDescription;
 }
@@ -748,7 +743,7 @@ sal_Bool SvxShowCharSetItemAcc::doAccessibleAction ( sal_Int32 nIndex ) throw (I
     if( nIndex == 0 )
     {
         mpParent->mrParent.OutputIndex( mpParent->mnId );
-        return 1;
+        return true;
     }
     throw IndexOutOfBoundsException();
 }

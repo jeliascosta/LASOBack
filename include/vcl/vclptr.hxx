@@ -95,12 +95,6 @@ public:
         : m_rInnerRef(pBody, SAL_NO_ACQUIRE)
     {}
 
-    /** Copy constructor...
-     */
-    inline VclPtr (const VclPtr<reference_type> & handle)
-        : m_rInnerRef (handle.m_rInnerRef)
-    {}
-
     /** Up-casting conversion constructor: Copies interface reference.
 
         Does not work for up-casts to ambiguous bases.  For the special case of
@@ -157,7 +151,7 @@ public:
         m_rInnerRef.set(pBody);
     }
 
-    /** Up-casting assignment operator.
+    /** Up-casting copy assignment operator.
 
         Does not work for up-casts to ambiguous bases.
 
@@ -281,6 +275,12 @@ public:
         : VclPtr<reference_type>( new reference_type(std::forward<Arg>(arg)...), SAL_NO_ACQUIRE )
     {
     }
+
+    /**
+     * Override and disallow this, to prevent people accidentally calling it and actually
+     * getting VclPtr::Create and getting a naked VclPtr<> instance
+     */
+    template<typename... Arg> static VclPtrInstance< reference_type > Create(Arg &&... ) = delete;
 };
 
 template <class reference_type>
@@ -317,7 +317,7 @@ public:
     /**
        Assignment that releases the last reference.
      */
-    inline ScopedVclPtr<reference_type>& operator= (reference_type * pBody)
+    inline ScopedVclPtr<reference_type>& operator = (reference_type * pBody)
     {
         disposeAndReset(pBody);
         return *this;
@@ -339,6 +339,12 @@ public:
     {
     }
 
+    /**
+     * Override and disallow this, to prevent people accidentally calling it and actually
+     * getting VclPtr::Create and getting a naked VclPtr<> instance
+     */
+    template<typename... Arg> static ScopedVclPtr< reference_type > Create(Arg &&... ) = delete;
+
     ~ScopedVclPtr()
     {
         VclPtr<reference_type>::disposeAndClear();
@@ -349,7 +355,7 @@ private:
     // Most likely we don't want this default copy-construtor.
     ScopedVclPtr (const ScopedVclPtr<reference_type> &) = delete;
     // And certainly we don't want a default assignment operator.
-    ScopedVclPtr<reference_type>& operator= (const ScopedVclPtr<reference_type> &) = delete;
+    ScopedVclPtr<reference_type>& operator = (const ScopedVclPtr<reference_type> &) = delete;
     // And disallow reset as that doesn't call disposeAndClear on the original reference
     void reset() = delete;
     void reset(reference_type *pBody) = delete;
@@ -381,6 +387,12 @@ public:
         : ScopedVclPtr<reference_type>( new reference_type(std::forward<Arg>(arg)...), SAL_NO_ACQUIRE )
     {
     }
+
+    /**
+     * Override and disallow this, to prevent people accidentally calling it and actually
+     * getting VclPtr::Create and getting a naked VclPtr<> instance
+     */
+    template<typename... Arg> static ScopedVclPtrInstance< reference_type > Create(Arg &&...) = delete;
 
 private:
     // Prevent the above perfect forwarding ctor from hijacking (accidental)

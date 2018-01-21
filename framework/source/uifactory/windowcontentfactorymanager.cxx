@@ -50,7 +50,7 @@ class WindowContentFactoryManager : private cppu::BaseMutex,
 {
 public:
     explicit WindowContentFactoryManager( const css::uno::Reference< css::uno::XComponentContext>& rxContext );
-    virtual ~WindowContentFactoryManager();
+    virtual ~WindowContentFactoryManager() override;
 
     virtual OUString SAL_CALL getImplementationName()
         throw (css::uno::RuntimeException, std::exception) override
@@ -67,8 +67,7 @@ public:
     virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
         throw (css::uno::RuntimeException, std::exception) override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.ui.WindowContentFactoryManager" };
-        return aSeq;
+        return {"com.sun.star.ui.WindowContentFactoryManager"};
     }
 
     // XSingleComponentFactory

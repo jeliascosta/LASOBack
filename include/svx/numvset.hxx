@@ -58,7 +58,6 @@ enum class NumberingPageType
 class SVX_DLLPUBLIC SvxNumValueSet : public ValueSet
 {
     NumberingPageType ePageType;
-    bool            bHTMLMode;
     Rectangle       aOrgRect;
     VclPtr<VirtualDevice> pVDev;
 
@@ -74,9 +73,9 @@ class SVX_DLLPUBLIC SvxNumValueSet : public ValueSet
             css::container::XIndexAccess> > aOutlineSettings;
 
 public:
-    SvxNumValueSet(vcl::Window* pParent, WinBits nWinBits = WB_TABSTOP);
+    SvxNumValueSet(vcl::Window* pParent, WinBits nWinBits);
     void init(NumberingPageType eType);
-    virtual ~SvxNumValueSet();
+    virtual ~SvxNumValueSet() override;
     virtual void dispose() override;
 
     virtual void    UserDraw( const UserDrawEvent& rUDEvt ) override;
@@ -102,11 +101,11 @@ class SVX_DLLPUBLIC SvxBmpNumValueSet : public SvxNumValueSet
     void init();
 
 protected:
-        DECL_LINK_TYPED(FormatHdl_Impl, Idle *, void);
+        DECL_LINK(FormatHdl_Impl, Idle *, void);
 
 public:
-    SvxBmpNumValueSet(vcl::Window* pParent, WinBits nWinBits = WB_TABSTOP);
-    virtual ~SvxBmpNumValueSet();
+    SvxBmpNumValueSet(vcl::Window* pParent, WinBits nWinBits);
+    virtual ~SvxBmpNumValueSet() override;
     virtual void dispose() override;
 
     virtual void    UserDraw( const UserDrawEvent& rUDEvt ) override;

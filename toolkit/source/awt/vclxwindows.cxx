@@ -204,7 +204,7 @@ namespace toolkit
 //  class VCLXGraphicControl
 
 
-void VCLXGraphicControl::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXGraphicControl::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     VCLXWindow::ImplGetPropertyIds( rIds );
 }
@@ -324,7 +324,7 @@ css::uno::Any VCLXGraphicControl::getProperty( const OUString& PropertyName ) th
         break;
         default:
         {
-            aProp <<= VCLXWindow::getProperty( PropertyName );
+            aProp = VCLXWindow::getProperty( PropertyName );
         }
         break;
     }
@@ -335,7 +335,7 @@ css::uno::Any VCLXGraphicControl::getProperty( const OUString& PropertyName ) th
 //  class VCLXButton
 
 
-void VCLXButton::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXButton::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_BACKGROUNDCOLOR,
@@ -423,7 +423,7 @@ void VCLXButton::setLabel( const OUString& rLabel ) throw(css::uno::RuntimeExcep
 {
     SolarMutexGuard aGuard;
 
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if ( pWindow )
         pWindow->SetText( rLabel );
 }
@@ -561,7 +561,7 @@ css::uno::Any VCLXButton::getProperty( const OUString& PropertyName ) throw(css:
             break;
             default:
             {
-                aProp <<= VCLXGraphicControl::getProperty( PropertyName );
+                aProp = VCLXGraphicControl::getProperty( PropertyName );
             }
         }
     }
@@ -618,7 +618,7 @@ void VCLXButton::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
 //  class VCLXImageControl
 
 
-void VCLXImageControl::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXImageControl::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_BACKGROUNDCOLOR,
@@ -749,7 +749,7 @@ css::uno::Any VCLXImageControl::getProperty( const OUString& PropertyName ) thro
 //  class VCLXCheckBox
 
 
-void VCLXCheckBox::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXCheckBox::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_DEFAULTCONTROL,
@@ -847,7 +847,7 @@ void VCLXCheckBox::setLabel( const OUString& rLabel ) throw(css::uno::RuntimeExc
 {
     SolarMutexGuard aGuard;
 
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if ( pWindow )
         pWindow->SetText( rLabel );
 }
@@ -1000,7 +1000,7 @@ css::uno::Any VCLXCheckBox::getProperty( const OUString& PropertyName ) throw(cs
                 break;
             default:
             {
-                aProp <<= VCLXGraphicControl::getProperty( PropertyName );
+                aProp = VCLXGraphicControl::getProperty( PropertyName );
             }
         }
     }
@@ -1049,7 +1049,7 @@ void VCLXCheckBox::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
 
 //  class VCLXRadioButton
 
-void VCLXRadioButton::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXRadioButton::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_DEFAULTCONTROL,
@@ -1178,7 +1178,7 @@ css::uno::Any VCLXRadioButton::getProperty( const OUString& PropertyName ) throw
                 break;
             default:
             {
-                aProp <<= VCLXGraphicControl::getProperty( PropertyName );
+                aProp = VCLXGraphicControl::getProperty( PropertyName );
             }
         }
     }
@@ -1213,7 +1213,7 @@ void VCLXRadioButton::setLabel( const OUString& rLabel ) throw(css::uno::Runtime
 {
     SolarMutexGuard aGuard;
 
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if ( pWindow )
         pWindow->SetText( rLabel );
 }
@@ -1332,7 +1332,7 @@ void VCLXRadioButton::ImplClickedOrToggled( bool bToggled )
 
 //  class VCLXSpinField
 
-void VCLXSpinField::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXSpinField::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_MOUSE_WHEEL_BEHAVIOUR,
@@ -1410,7 +1410,7 @@ void VCLXSpinField::enableRepeat( sal_Bool bRepeat ) throw(css::uno::RuntimeExce
 {
     SolarMutexGuard aGuard;
 
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if ( pWindow )
     {
         WinBits nStyle = pWindow->GetStyle();
@@ -1465,7 +1465,7 @@ void VCLXSpinField::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
 
 //  class VCLXListBox
 
-void VCLXListBox::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXListBox::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_BACKGROUNDCOLOR,
@@ -1951,7 +1951,7 @@ css::uno::Any VCLXListBox::getProperty( const OUString& PropertyName ) throw(css
             break;
             default:
             {
-                aProp <<= VCLXWindow::getProperty( PropertyName );
+                aProp = VCLXWindow::getProperty( PropertyName );
             }
         }
     }
@@ -2154,7 +2154,7 @@ void SAL_CALL VCLXListBox::disposing( const EventObject& i_rEvent ) throw (Runti
 //  class VCLXMessageBox
 
 
-void VCLXMessageBox::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXMessageBox::GetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     VCLXTopWindow::ImplGetPropertyIds( rIds );
 }
@@ -2185,7 +2185,7 @@ void VCLXMessageBox::setCaptionText( const OUString& rText ) throw(css::uno::Run
 {
     SolarMutexGuard aGuard;
 
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if ( pWindow )
         pWindow->SetText( rText );
 }
@@ -2195,7 +2195,7 @@ OUString VCLXMessageBox::getCaptionText() throw(css::uno::RuntimeException, std:
     SolarMutexGuard aGuard;
 
     OUString aText;
-    vcl::Window* pWindow = GetWindow();
+    VclPtr<vcl::Window> pWindow = GetWindow();
     if ( pWindow )
         aText = pWindow->GetText();
     return aText;
@@ -2235,7 +2235,7 @@ css::awt::Size SAL_CALL VCLXMessageBox::getMinimumSize() throw(css::uno::Runtime
 
 //  class VCLXDialog
 
-void VCLXDialog::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXDialog::GetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     VCLXTopWindow::ImplGetPropertyIds( rIds );
 }
@@ -2420,7 +2420,7 @@ VCLXMultiPage::VCLXMultiPage() : maTabListeners( *this ), mTabId( 1 )
     OSL_TRACE("VCLXMultiPage::VCLXMultiPage()" );
 }
 
-void VCLXMultiPage::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXMultiPage::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_BACKGROUNDCOLOR,
@@ -2512,7 +2512,7 @@ uno::Any SAL_CALL VCLXMultiPage::getProperty( const OUString& PropertyName ) thr
         }
         break;
         default:
-            aProp <<= VCLXContainer::getProperty( PropertyName );
+            aProp = VCLXContainer::getProperty( PropertyName );
     }
     return aProp;
 }
@@ -2702,7 +2702,7 @@ VCLXTabPage::VCLXTabPage()
 {
 }
 
-void VCLXTabPage::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXTabPage::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_BACKGROUNDCOLOR,
@@ -2725,12 +2725,6 @@ void VCLXTabPage::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
 
 VCLXTabPage::~VCLXTabPage()
 {
-}
-
-css::uno::Any SAL_CALL VCLXTabPage::queryInterface(const css::uno::Type & rType )
-throw(css::uno::RuntimeException, std::exception)
-{
-    return VCLXContainer::queryInterface( rType );
 }
 
 // css::lang::XTypeProvider
@@ -3084,14 +3078,14 @@ css::uno::Any VCLXFixedHyperlink::getProperty( const OUString& PropertyName ) th
 
             default:
             {
-                aProp <<= VCLXWindow::getProperty( PropertyName );
+                aProp = VCLXWindow::getProperty( PropertyName );
             }
         }
     }
     return aProp;
 }
 
-void VCLXFixedHyperlink::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXFixedHyperlink::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_ALIGN,
@@ -3120,7 +3114,7 @@ void VCLXFixedHyperlink::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
 
 //  class VCLXFixedText
 
-void VCLXFixedText::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXFixedText::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_ALIGN,
@@ -3263,7 +3257,7 @@ css::awt::Size VCLXFixedText::calcAdjustedSize( const css::awt::Size& rMaxSize )
 
 //  class VCLXScrollBar
 
-void VCLXScrollBar::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXScrollBar::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_BACKGROUNDCOLOR,
@@ -3669,7 +3663,7 @@ css::uno::Any VCLXScrollBar::getProperty( const OUString& PropertyName ) throw(c
 
             default:
             {
-                aProp <<= VCLXWindow::getProperty( PropertyName );
+                aProp = VCLXWindow::getProperty( PropertyName );
             }
         }
     }
@@ -3699,15 +3693,15 @@ void VCLXScrollBar::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
 
                     // set adjustment type
                     ScrollType aType = pScrollBar->GetType();
-                    if ( aType == SCROLL_LINEUP || aType == SCROLL_LINEDOWN )
+                    if ( aType == ScrollType::LineUp || aType == ScrollType::LineDown )
                     {
                         aEvent.Type = css::awt::AdjustmentType_ADJUST_LINE;
                     }
-                    else if ( aType == SCROLL_PAGEUP || aType == SCROLL_PAGEDOWN )
+                    else if ( aType == ScrollType::PageUp || aType == ScrollType::PageDown )
                     {
                         aEvent.Type = css::awt::AdjustmentType_ADJUST_PAGE;
                     }
-                    else if ( aType == SCROLL_DRAG )
+                    else if ( aType == ScrollType::Drag )
                     {
                         aEvent.Type = css::awt::AdjustmentType_ADJUST_ABS;
                     }
@@ -3740,7 +3734,7 @@ css::awt::Size SAL_CALL VCLXScrollBar::getMinimumSize() throw(css::uno::RuntimeE
 //  class VCLXEdit
 
 
-void VCLXEdit::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXEdit::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_ALIGN,
@@ -4117,7 +4111,7 @@ void VCLXEdit::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
 //  class VCLXComboBox
 
 
-void VCLXComboBox::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXComboBox::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_AUTOCOMPLETE,
@@ -4394,7 +4388,7 @@ css::uno::Any VCLXComboBox::getProperty( const OUString& PropertyName ) throw(cs
             break;
             default:
             {
-                aProp <<= VCLXEdit::getProperty( PropertyName );
+                aProp = VCLXEdit::getProperty( PropertyName );
             }
         }
     }
@@ -4612,7 +4606,7 @@ void SAL_CALL VCLXComboBox::disposing( const EventObject& i_rEvent ) throw (Runt
 
 //  class VCLXFormattedSpinField
 
-void VCLXFormattedSpinField::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXFormattedSpinField::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     // Interestingly in the UnoControl API this is
     // - not derived from XEdit ultimately, (correct ?) - so cut this here ...
@@ -4707,7 +4701,7 @@ css::uno::Any VCLXFormattedSpinField::getProperty( const OUString& PropertyName 
             break;
             default:
             {
-                aProp <<= VCLXSpinField::getProperty( PropertyName );
+                aProp = VCLXSpinField::getProperty( PropertyName );
             }
         }
     }
@@ -4718,7 +4712,7 @@ css::uno::Any VCLXFormattedSpinField::getProperty( const OUString& PropertyName 
 //  class VCLXDateField
 
 
-void VCLXDateField::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXDateField::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_ALIGN,
@@ -4895,7 +4889,7 @@ css::uno::Any VCLXDateField::getProperty( const OUString& PropertyName ) throw(c
             break;
             default:
             {
-                aProp <<= VCLXFormattedSpinField::getProperty( PropertyName );
+                aProp = VCLXFormattedSpinField::getProperty( PropertyName );
             }
         }
     }
@@ -5067,7 +5061,7 @@ sal_Bool VCLXDateField::isStrictFormat() throw(css::uno::RuntimeException, std::
 //  class VCLXTimeField
 
 
-void VCLXTimeField::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXTimeField::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_ALIGN,
@@ -5365,7 +5359,7 @@ css::uno::Any VCLXTimeField::getProperty( const OUString& PropertyName ) throw(c
             break;
             default:
             {
-                aProp <<= VCLXFormattedSpinField::getProperty( PropertyName );
+                aProp = VCLXFormattedSpinField::getProperty( PropertyName );
             }
         }
     }
@@ -5376,7 +5370,7 @@ css::uno::Any VCLXTimeField::getProperty( const OUString& PropertyName ) throw(c
 //  class VCLXNumericField
 
 
-void VCLXNumericField::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXNumericField::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_ALIGN,
@@ -5708,7 +5702,7 @@ css::uno::Any VCLXNumericField::getProperty( const OUString& PropertyName ) thro
             break;
             default:
             {
-                aProp <<= VCLXFormattedSpinField::getProperty( PropertyName );
+                aProp = VCLXFormattedSpinField::getProperty( PropertyName );
             }
         }
     }
@@ -5720,7 +5714,7 @@ css::uno::Any VCLXNumericField::getProperty( const OUString& PropertyName ) thro
 //    class VCLXMetricField
 //    ----------------------------------------------------
 
-void VCLXMetricField::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXMetricField::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_ALIGN,
@@ -5957,7 +5951,7 @@ css::uno::Any VCLXMetricField::getProperty( const OUString& PropertyName ) throw
                 break;
             default:
             {
-                aProp <<= VCLXFormattedSpinField::getProperty( PropertyName );
+                aProp = VCLXFormattedSpinField::getProperty( PropertyName );
                 break;
             }
         }
@@ -5969,7 +5963,7 @@ css::uno::Any VCLXMetricField::getProperty( const OUString& PropertyName ) throw
 //  class VCLXCurrencyField
 
 
-void VCLXCurrencyField::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXCurrencyField::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_ALIGN,
@@ -6315,7 +6309,7 @@ css::uno::Any VCLXCurrencyField::getProperty( const OUString& PropertyName ) thr
             break;
             default:
             {
-                aProp <<= VCLXFormattedSpinField::getProperty( PropertyName );
+                aProp = VCLXFormattedSpinField::getProperty( PropertyName );
             }
         }
     }
@@ -6326,7 +6320,7 @@ css::uno::Any VCLXCurrencyField::getProperty( const OUString& PropertyName ) thr
 //  class VCLXPatternField
 
 
-void VCLXPatternField::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXPatternField::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_ALIGN,
@@ -6486,7 +6480,7 @@ css::uno::Any VCLXPatternField::getProperty( const OUString& PropertyName ) thro
             break;
             default:
             {
-                aProp <<= VCLXFormattedSpinField::getProperty( PropertyName );
+                aProp = VCLXFormattedSpinField::getProperty( PropertyName );
             }
         }
     }
@@ -6516,7 +6510,7 @@ VCLXFrame::VCLXFrame()
 {
 }
 
-void VCLXFrame::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
+void VCLXFrame::ImplGetPropertyIds( std::vector< sal_uInt16 > &rIds )
 {
     PushPropertyIds( rIds,
                      BASEPROPERTY_BACKGROUNDCOLOR,
@@ -6535,12 +6529,6 @@ void VCLXFrame::ImplGetPropertyIds( std::list< sal_uInt16 > &rIds )
 
 VCLXFrame::~VCLXFrame()
 {
-}
-
-css::uno::Any SAL_CALL VCLXFrame::queryInterface(const css::uno::Type & rType )
-throw(css::uno::RuntimeException, std::exception)
-{
-    return VCLXContainer::queryInterface( rType );
 }
 
 // css::lang::XTypeProvider

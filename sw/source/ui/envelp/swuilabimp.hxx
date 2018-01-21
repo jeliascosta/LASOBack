@@ -45,14 +45,12 @@ class SwLabPage : public SfxTabPage
     VclPtr<ListBox>          m_pHiddenSortTypeBox;
     VclPtr<FixedText>        m_pFormatInfo;
 
-    bool        m_bLabel;
-
-    DECL_LINK_TYPED(AddrHdl, Button*, void);
-    DECL_LINK_TYPED(DatabaseHdl, ListBox&, void );
-    DECL_LINK_TYPED(FieldHdl, Button *, void);
-    DECL_LINK_TYPED(PageHdl, Button *, void);
-    DECL_LINK_TYPED(MakeHdl, ListBox&, void);
-    DECL_LINK_TYPED(TypeHdl, ListBox&, void);
+    DECL_LINK(AddrHdl, Button*, void);
+    DECL_LINK(DatabaseHdl, ListBox&, void );
+    DECL_LINK(FieldHdl, Button *, void);
+    DECL_LINK(PageHdl, Button *, void);
+    DECL_LINK(MakeHdl, ListBox&, void);
+    DECL_LINK(TypeHdl, ListBox&, void);
 
     void DisplayFormat  ();
     SwLabRec* GetSelectedEntryPos();
@@ -63,13 +61,13 @@ class SwLabPage : public SfxTabPage
 public:
     SwLabPage(vcl::Window* pParent, const SfxItemSet& rSet);
 
-    virtual ~SwLabPage();
+    virtual ~SwLabPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window* pParent, const SfxItemSet* rSet);
 
     virtual void ActivatePage(const SfxItemSet& rSet) override;
-    virtual sfxpg DeactivatePage(SfxItemSet* pSet = nullptr) override;
+    virtual DeactivateRC DeactivatePage(SfxItemSet* pSet) override;
             void FillItem(SwLabItem& rItem);
     virtual bool FillItemSet(SfxItemSet* rSet) override;
     virtual void Reset(const SfxItemSet* rSet) override;
@@ -95,9 +93,9 @@ class SwVisitingCardPage : public SfxTabPage
     SwOneExampleFrame*  pExampleFrame;
     css::uno::Reference< css::text::XAutoTextContainer2 > m_xAutoText;
 
-    DECL_LINK_TYPED( AutoTextSelectTreeListBoxHdl, SvTreeListBox*, void );
-    DECL_LINK_TYPED( AutoTextSelectHdl, ListBox&, void );
-    DECL_LINK_TYPED( FrameControlInitializedHdl, SwOneExampleFrame&, void );
+    DECL_LINK( AutoTextSelectTreeListBoxHdl, SvTreeListBox*, void );
+    DECL_LINK( AutoTextSelectHdl, ListBox&, void );
+    DECL_LINK( FrameControlInitializedHdl, SwOneExampleFrame&, void );
 
     void            InitFrameControl();
     void            UpdateFields();
@@ -109,7 +107,7 @@ class SwVisitingCardPage : public SfxTabPage
                                     const OUString* pNames,
                                     const OUString* pValues );
 
-    virtual ~SwVisitingCardPage();
+    virtual ~SwVisitingCardPage() override;
     virtual void dispose() override;
 
     using TabPage::ActivatePage;
@@ -121,7 +119,7 @@ public:
     static VclPtr<SfxTabPage> Create(vcl::Window* pParent, const SfxItemSet* rSet);
 
     virtual void ActivatePage(const SfxItemSet& rSet) override;
-    virtual sfxpg DeactivatePage(SfxItemSet* pSet = nullptr) override;
+    virtual DeactivateRC DeactivatePage(SfxItemSet* pSet) override;
     virtual bool FillItemSet(SfxItemSet* rSet) override;
     virtual void Reset(const SfxItemSet* rSet) override;
 };
@@ -154,13 +152,13 @@ class SwPrivateDataPage : public SfxTabPage
 
 public:
     SwPrivateDataPage(vcl::Window* pParent, const SfxItemSet& rSet);
-    virtual ~SwPrivateDataPage();
+    virtual ~SwPrivateDataPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window* pParent, const SfxItemSet* rSet);
 
     virtual void ActivatePage(const SfxItemSet& rSet) override;
-    virtual sfxpg DeactivatePage(SfxItemSet* pSet = nullptr) override;
+    virtual DeactivateRC DeactivatePage(SfxItemSet* pSet) override;
     virtual bool FillItemSet(SfxItemSet* rSet) override;
     virtual void Reset(const SfxItemSet* rSet) override;
 };
@@ -191,13 +189,13 @@ class SwBusinessDataPage : public SfxTabPage
 
 public:
     SwBusinessDataPage(vcl::Window* pParent, const SfxItemSet& rSet);
-    virtual ~SwBusinessDataPage();
+    virtual ~SwBusinessDataPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window* pParent, const SfxItemSet* rSet);
 
     virtual void ActivatePage(const SfxItemSet& rSet) override;
-    virtual sfxpg DeactivatePage(SfxItemSet* pSet = nullptr) override;
+    virtual DeactivateRC DeactivatePage(SfxItemSet* pSet) override;
     virtual bool FillItemSet(SfxItemSet* rSet) override;
     virtual void Reset(const SfxItemSet* rSet) override;
 };

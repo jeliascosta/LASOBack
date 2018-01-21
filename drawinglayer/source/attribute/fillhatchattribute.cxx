@@ -36,7 +36,6 @@ namespace drawinglayer
             basegfx::BColor                         maColor;
             sal_uInt32                              mnMinimalDiscreteDistance;
 
-            // bitfield
             bool                                    mbFillBackground : 1;
 
             ImpFillHatchAttribute(
@@ -113,6 +112,11 @@ namespace drawinglayer
         {
         }
 
+        FillHatchAttribute::FillHatchAttribute(FillHatchAttribute&& rCandidate)
+        :   mpFillHatchAttribute(std::move(rCandidate.mpFillHatchAttribute))
+        {
+        }
+
         FillHatchAttribute::~FillHatchAttribute()
         {
         }
@@ -125,6 +129,12 @@ namespace drawinglayer
         FillHatchAttribute& FillHatchAttribute::operator=(const FillHatchAttribute& rCandidate)
         {
             mpFillHatchAttribute = rCandidate.mpFillHatchAttribute;
+            return *this;
+        }
+
+        FillHatchAttribute& FillHatchAttribute::operator=(FillHatchAttribute&& rCandidate)
+        {
+            mpFillHatchAttribute = std::move(rCandidate.mpFillHatchAttribute);
             return *this;
         }
 

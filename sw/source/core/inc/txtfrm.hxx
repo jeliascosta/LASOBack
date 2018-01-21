@@ -42,8 +42,6 @@ struct SwCursorMoveState;
 struct SwFillData;
 class SwPortionHandler;
 class SwScriptInfo;
-class SwViewOption;
-class SwWrongList;
 
 #define NON_PRINTING_CHARACTER_COLOR RGB_COLORDATA(0x26, 0x8b, 0xd2)
 
@@ -96,7 +94,7 @@ class SwTextFrame: public SwContentFrame
 
     // Evaluates the Preps in Format()
     bool CalcPreps();
-    void PrepWidows( const sal_uInt16 nNeed, bool bNotify = true );
+    void PrepWidows( const sal_uInt16 nNeed, bool bNotify );
     void InvalidateRange_( const SwCharRange &, const long = 0);
     inline void InvalidateRange( const SwCharRange &, const long = 0);
 
@@ -199,7 +197,7 @@ class SwTextFrame: public SwContentFrame
     void CalcHeightOfLastLine( const bool _bUseFont = false );
 
     virtual void DestroyImpl() override;
-    virtual ~SwTextFrame();
+    virtual ~SwTextFrame() override;
 
 protected:
     virtual void Modify( const SfxPoolItem*, const SfxPoolItem* ) override;
@@ -292,13 +290,13 @@ public:
     virtual bool LeftMargin(SwPaM *) const override;
     virtual bool RightMargin(SwPaM *, bool bAPI = false) const override;
 
-    virtual bool UnitUp(SwPaM *, const SwTwips nOffset = 0,
-                            bool bSetInReadOnly = false ) const override;
-    virtual bool UnitDown(SwPaM *, const SwTwips nOffset = 0,
-                            bool bSetInReadOnly = false ) const override;
-    bool UnitUp_(SwPaM *, const SwTwips nOffset = 0,
+    virtual bool UnitUp(SwPaM *, const SwTwips nOffset,
+                            bool bSetInReadOnly ) const override;
+    virtual bool UnitDown(SwPaM *, const SwTwips nOffset,
+                            bool bSetInReadOnly ) const override;
+    bool UnitUp_(SwPaM *, const SwTwips nOffset,
                             bool bSetInReadOnly = false ) const;
-    bool UnitDown_(SwPaM *, const SwTwips nOffset = 0,
+    bool UnitDown_(SwPaM *, const SwTwips nOffset,
                             bool bSetInReadOnly = false ) const;
 
     /**
@@ -420,7 +418,7 @@ public:
     void HideAndShowObjects();
 
     /// Footnote
-    void RemoveFootnote( const sal_Int32 nStart = 0,
+    void RemoveFootnote( const sal_Int32 nStart,
                     const sal_Int32 nLen = COMPLETE_STRING );
     inline SwTwips GetFootnoteFrameHeight() const;
     SwTextFrame *FindFootnoteRef( const SwTextFootnote *pFootnote );
@@ -793,8 +791,8 @@ public:
 
 class SwLayoutModeModifier
 {
-    const OutputDevice& rOut;
-    ComplexTextLayoutMode nOldLayoutMode;
+    const OutputDevice& m_rOut;
+    ComplexTextLayoutFlags m_nOldLayoutMode;
 public:
     SwLayoutModeModifier( const OutputDevice& rOutp );
     ~SwLayoutModeModifier();

@@ -73,12 +73,12 @@ public:
                         SfxDockingWindow( SfxBindings *pBindings,
                                           SfxChildWindow *pCW,
                                           vcl::Window* pParent,
-                                          WinBits nWinBits=0);
+                                          WinBits nWinBits);
                         SfxDockingWindow( SfxBindings *pBindings,
                                           SfxChildWindow *pCW,
                                           vcl::Window* pParent,
                                           const OString& rID, const OUString& rUIXMLDescription );
-                        virtual ~SfxDockingWindow();
+                        virtual ~SfxDockingWindow() override;
     virtual void        dispose() override;
 
     void                Initialize (SfxChildWinInfo* pInfo);
@@ -99,10 +99,9 @@ public:
     void                SetMinOutputSizePixel( const Size& rSize );
     const Size&         GetMinOutputSizePixel() const;
     virtual bool        Notify( NotifyEvent& rNEvt ) override;
-    DECL_LINK_TYPED(TimerHdl, Idle *, void);
+    DECL_LINK(TimerHdl, Idle *, void);
 
     SAL_DLLPRIVATE void Initialize_Impl();
-    SAL_DLLPRIVATE SplitWindowItemFlags GetWinBits_Impl() const;
     SAL_DLLPRIVATE void SetItemSize_Impl( const Size& rSize );
     SAL_DLLPRIVATE void Disappear_Impl();
     SAL_DLLPRIVATE void Reappear_Impl();

@@ -185,7 +185,7 @@ bool ScValidationData::DoScript( const ScAddress& rPos, const OUString& rInput,
 {
     ScDocument* pDocument = GetDocument();
     SfxObjectShell* pDocSh = pDocument->GetDocumentShell();
-    if ( !pDocSh || !ScDocument::CheckMacroWarn() )
+    if ( !pDocSh )
         return false;
 
     bool bScriptReturnedFalse = false;  // default: do not abort
@@ -271,7 +271,7 @@ bool ScValidationData::DoMacro( const ScAddress& rPos, const OUString& rInput,
 
     ScDocument* pDocument = GetDocument();
     SfxObjectShell* pDocSh = pDocument->GetDocumentShell();
-    if ( !pDocSh || !ScDocument::CheckMacroWarn() )
+    if ( !pDocSh )
         return false;
 
     bool bDone = false;
@@ -340,7 +340,7 @@ bool ScValidationData::DoMacro( const ScAddress& rPos, const OUString& rInput,
         if ( pCell )
             pDocument->LockTable( rPos.Tab() );
         SbxVariableRef refRes = new SbxVariable;
-        ErrCode eRet = pDocSh->CallBasic( aMacroStr.makeStringAndClear(), aBasicStr, refPar, refRes );
+        ErrCode eRet = pDocSh->CallBasic( aMacroStr.makeStringAndClear(), aBasicStr, refPar.get(), refRes.get() );
         if ( pCell )
             pDocument->UnlockTable( rPos.Tab() );
 
@@ -645,8 +645,8 @@ bool ScValidationData::GetSelectionFromFormula(
         // Use an interim matrix to create the TypedStrData below.
         xMatRef = new ScFullMatrix(1, 1, 0.0);
 
-        sal_uInt16 nErrCode = aValidationSrc.GetErrCode();
-        if (nErrCode)
+        FormulaError nErrCode = aValidationSrc.GetErrCode();
+        if (nErrCode != FormulaError::NONE)
         {
             /* TODO : to use later in an alert box?
              * OUString rStrResult = "...";
@@ -750,9 +750,9 @@ bool ScValidationData::GetSelectionFromFormula(
             }
             else
             {
-                sal_uInt16 nErr = nMatVal.GetError();
+                FormulaError nErr = nMatVal.GetError();
 
-                if( 0 != nErr )
+                if( FormulaError::NONE != nErr )
                 {
                     aValStr = ScGlobal::GetErrorString( nErr );
                 }

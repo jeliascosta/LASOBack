@@ -24,8 +24,8 @@
 #include <vcl/fixed.hxx>
 #include <vcl/group.hxx>
 #include <vcl/lstbox.hxx>
-#include <svtools/stdctrl.hxx>
 #include <svx/pagectrl.hxx>
+#include <svx/papersizelistbox.hxx>
 #include <svx/frmdirlbox.hxx>
 #include <editeng/svxenum.hxx>
 #include <i18nutil/paper.hxx>
@@ -76,7 +76,7 @@ class SvxPageDescPage : public SfxTabPage
     static const sal_uInt16 pRanges[];
 private:
     // paper format
-    VclPtr<ListBox>             m_pPaperSizeBox;
+    VclPtr<PaperSizeListBox>    m_pPaperSizeBox;
 
     VclPtr<MetricField>         m_pPaperWidthEdit;
     VclPtr<MetricField>         m_pPaperHeightEdit;
@@ -149,26 +149,26 @@ private:
     bool mbEnableDrawingLayerFillStyles : 1;
 
     void                Init_Impl();
-    DECL_LINK_TYPED(    LayoutHdl_Impl, ListBox&, void);
-    DECL_LINK_TYPED(    PaperBinHdl_Impl, Control&, void);
-    DECL_LINK_TYPED(    SwapOrientation_Impl, Button*, void );
+    DECL_LINK(    LayoutHdl_Impl, ListBox&, void);
+    DECL_LINK(    PaperBinHdl_Impl, Control&, void);
+    DECL_LINK(    SwapOrientation_Impl, Button*, void );
     void                SwapFirstValues_Impl( bool bSet );
-    DECL_LINK_TYPED(    BorderModify_Impl, Edit&, void);
+    DECL_LINK(    BorderModify_Impl, Edit&, void);
     void                InitHeadFoot_Impl( const SfxItemSet& rSet );
-    DECL_LINK_TYPED(    CenterHdl_Impl, Button*, void);
+    DECL_LINK(    CenterHdl_Impl, Button*, void);
     void                UpdateExample_Impl( bool bResetbackground = false );
 
-    DECL_LINK_TYPED(    PaperSizeSelect_Impl, ListBox&, void );
-    DECL_LINK_TYPED(    PaperSizeModify_Impl, Edit&, void);
+    DECL_LINK(    PaperSizeSelect_Impl, ListBox&, void );
+    DECL_LINK(    PaperSizeModify_Impl, Edit&, void);
 
-    DECL_LINK_TYPED(    FrameDirectionModify_Impl, ListBox&, void );
+    DECL_LINK(    FrameDirectionModify_Impl, ListBox&, void );
 
     void                ResetBackground_Impl( const SfxItemSet& rSet );
 
-    DECL_LINK_TYPED(    RangeHdl_Impl, Control&, void );
+    DECL_LINK(    RangeHdl_Impl, Control&, void );
     void                CalcMargin_Impl();
 
-    DECL_LINK_TYPED(    RegisterModify, Button*, void );
+    DECL_LINK(    RegisterModify, Button*, void );
 
     // page direction
     /** Disables vertical page direction entries in the text flow listbox. */
@@ -181,12 +181,9 @@ private:
 
     SvxPageDescPage( vcl::Window* pParent, const SfxItemSet& rSet );
 
-    //UUUU
-    void EnableDrawingLayerFillStyles(bool bNew) { mbEnableDrawingLayerFillStyles = bNew; }
-
 protected:
     virtual void        ActivatePage( const SfxItemSet& rSet ) override;
-    virtual sfxpg       DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC   DeactivatePage( SfxItemSet* pSet ) override;
 
 public:
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rSet );
@@ -197,10 +194,9 @@ public:
     virtual void        Reset( const SfxItemSet* rSet ) override;
     virtual void        FillUserData() override;
 
-    virtual ~SvxPageDescPage();
+    virtual ~SvxPageDescPage() override;
     virtual void        dispose() override;
 
-    void                SetMode( SvxModeType eMType ) { eMode = eMType; }
     void                SetPaperFormatRanges( Paper eStart, Paper eEnd )
                             { ePaperStart = eStart; ePaperEnd = eEnd; }
 

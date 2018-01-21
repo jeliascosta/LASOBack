@@ -31,7 +31,7 @@ RscMgr::RscMgr( Atom nId, sal_uInt32 nTypeId, RscTop * pSuperCl )
 {
 }
 
-sal_uInt32 RscMgr::Size()
+sal_uInt32 RscMgr::Size() const
 {
     return RscClass::Size() + ALIGNED_SIZE( sizeof( RscMgrInst ) );
 }
@@ -233,7 +233,7 @@ ERRTYPE RscMgr::WriteRcHeader( const RSCINST & rInst, RscWriteRc & rMem,
                 sal_uInt32          nLocalOff;  // local offset
             };
             */
-            sal_uInt32 nID = rId;
+            sal_uInt32 nID = rId.GetNumber();
             rMem.PutAt( nOldSize, nID );
             rMem.PutAt( nOldSize +4, (sal_uInt32)rInst.pClass->GetTypId() );
             rMem.PutAt( nOldSize +8, (sal_uInt32)(rMem.Size() - nOldSize) );

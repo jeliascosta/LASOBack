@@ -114,7 +114,7 @@ void Test::editMarker()
         m_pEditWindow->SetText(sMarkedText);
         m_pEditWindow->Flush();
         OUString sFinalText = m_pEditWindow->GetText();
-        CPPUNIT_ASSERT_MESSAGE("Should be equal text", sFinalText == sMarkedText);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should be equal text", sMarkedText, sFinalText);
     }
 
     {
@@ -143,7 +143,7 @@ void Test::editMarker()
 
         m_pEditWindow->Flush();
         OUString sFinalText = m_pEditWindow->GetText();
-        CPPUNIT_ASSERT_MESSAGE("Should be a under b under c", sFinalText == sTargetText);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should be a under b under c", sTargetText, sFinalText);
     }
 
     {
@@ -186,7 +186,7 @@ void Test::editUndoRedo()
         rEditEngine.SetText(0, sStringOne);
         m_xDocShRef->UpdateText();
         OUString sFinalText = m_xDocShRef->GetText();
-        CPPUNIT_ASSERT_MESSAGE("Strings must match", sStringOne == sFinalText);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Strings must match", sFinalText, sStringOne);
     }
 
     OUString sStringTwo("a over b");
@@ -194,7 +194,7 @@ void Test::editUndoRedo()
         rEditEngine.SetText(0, sStringTwo);
         m_xDocShRef->UpdateText();
         OUString sFinalText = m_xDocShRef->GetText();
-        CPPUNIT_ASSERT_MESSAGE("Strings must match", sStringTwo == sFinalText);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Strings must match", sFinalText, sStringTwo);
     }
 
     SfxRequest aUndo(SID_UNDO, SfxCallMode::SYNCHRON, SmDocShell::GetPool());
@@ -203,7 +203,7 @@ void Test::editUndoRedo()
         m_xDocShRef->Execute(aUndo);
         m_xDocShRef->UpdateText();
         OUString sFinalText = m_xDocShRef->GetText();
-        CPPUNIT_ASSERT_MESSAGE("Strings much match", sStringOne == sFinalText);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Strings much match", sFinalText, sStringOne);
     }
 
     {
@@ -218,7 +218,7 @@ void Test::editUndoRedo()
         m_xDocShRef->Execute(aRedo);
         m_xDocShRef->UpdateText();
         OUString sFinalText = m_xDocShRef->GetText();
-        CPPUNIT_ASSERT_MESSAGE("Strings much match", sStringOne == sFinalText);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Strings much match", sFinalText, sStringOne);
     }
 
     {
@@ -253,7 +253,7 @@ void Test::viewZoom()
         rEditEngine.SetText(0, sStringOne);
         m_xDocShRef->UpdateText();
         OUString sFinalText = m_xDocShRef->GetText();
-        CPPUNIT_ASSERT_MESSAGE("Strings must match", sStringOne == sFinalText);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Strings must match", sFinalText, sStringOne);
     }
 
     SmGraphicWindow &rGraphicWindow = m_pViewShell->GetGraphicWindow();
@@ -271,7 +271,7 @@ void Test::viewZoom()
         SfxRequest aZoomOut(SID_ZOOMOUT, SfxCallMode::SYNCHRON, m_pViewShell->GetPool());
         m_pViewShell->Execute(aZoomOut);
         nFinalZoom = rGraphicWindow.GetZoom();
-        CPPUNIT_ASSERT_MESSAGE("Should be equal", nFinalZoom == nOrigZoom);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should be equal", nOrigZoom, nFinalZoom);
     }
 
     sal_uInt16 nOptimalZoom=0;
@@ -289,7 +289,7 @@ void Test::viewZoom()
         SfxRequest aZoom(SID_ATTR_ZOOM, SfxCallMode::SYNCHRON, aSet);
         m_pViewShell->Execute(aZoom);
         nFinalZoom = rGraphicWindow.GetZoom();
-        CPPUNIT_ASSERT_MESSAGE("Should be optimal zoom", nFinalZoom == nOptimalZoom);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should be optimal zoom", nOptimalZoom, nFinalZoom);
     }
 
 //To-Do: investigate GetPrinter logic of SvxZoomType::PAGEWIDTH/SvxZoomType::WHOLEPAGE to ensure
@@ -335,7 +335,7 @@ void Test::viewZoom()
         SfxRequest aZoom(SID_ATTR_ZOOM, SfxCallMode::SYNCHRON, aSet);
         m_pViewShell->Execute(aZoom);
         nFinalZoom = rGraphicWindow.GetZoom();
-        CPPUNIT_ASSERT_MESSAGE("Should be 50%", nFinalZoom == 50);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should be 50%", static_cast<sal_uInt16>(50), nFinalZoom);
     }
 
     {
@@ -344,7 +344,7 @@ void Test::viewZoom()
         SfxRequest aZoom(SID_ATTR_ZOOM, SfxCallMode::SYNCHRON, aSet);
         m_pViewShell->Execute(aZoom);
         nFinalZoom = rGraphicWindow.GetZoom();
-        CPPUNIT_ASSERT_MESSAGE("Should be Clipped to 25%", nFinalZoom == 25);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should be Clipped to 25%", static_cast<sal_uInt16>(25), nFinalZoom);
     }
 
     {
@@ -353,7 +353,7 @@ void Test::viewZoom()
         SfxRequest aZoom(SID_ATTR_ZOOM, SfxCallMode::SYNCHRON, aSet);
         m_pViewShell->Execute(aZoom);
         nFinalZoom = rGraphicWindow.GetZoom();
-        CPPUNIT_ASSERT_MESSAGE("Should be Clipped to 800%", nFinalZoom == 800);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Should be Clipped to 800%", static_cast<sal_uInt16>(800), nFinalZoom);
     }
 
 }

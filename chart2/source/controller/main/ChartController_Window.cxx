@@ -58,7 +58,6 @@
 #include <comphelper/propertysequence.hxx>
 #include <comphelper/propertyvalue.hxx>
 
-#include <svtools/contextmenuhelper.hxx>
 #include <toolkit/awt/vclxmenu.hxx>
 
 #include <svx/svxids.hrc>
@@ -230,7 +229,7 @@ void SAL_CALL ChartController::setPosSize(
 
     if(xWindow.is() && m_pChartWindow)
     {
-        Size aLogicSize = m_pChartWindow->PixelToLogic( Size( Width, Height ), MapMode( MAP_100TH_MM )  );
+        Size aLogicSize = m_pChartWindow->PixelToLogic( Size( Width, Height ), MapMode( MapUnit::Map100thMM )  );
 
         //todo: for standalone chart: detect whether we are standalone
         //change map mode to fit new size
@@ -240,7 +239,7 @@ void SAL_CALL ChartController::setPosSize(
         sal_Int32 nScaleYNumerator = aLogicSize.Height();
         sal_Int32 nScaleYDenominator = aModelPageSize.Height;
         MapMode aNewMapMode(
-                    MAP_100TH_MM,
+                    MapUnit::Map100thMM,
                     Point(0,0),
                     Fraction(nScaleXNumerator, nScaleXDenominator),
                     Fraction(nScaleYNumerator, nScaleYDenominator) );
@@ -530,7 +529,7 @@ void ChartController::stopDoubleClickWaiting()
     m_bWaitingForDoubleClick = false;
 }
 
-IMPL_LINK_NOARG_TYPED(ChartController, DoubleClickWaitingHdl, Timer *, void)
+IMPL_LINK_NOARG(ChartController, DoubleClickWaitingHdl, Timer *, void)
 {
     m_bWaitingForDoubleClick = false;
 
@@ -582,7 +581,7 @@ void ChartController::execute_MouseButtonDown( const MouseEvent& rMEvt )
         SdrViewEvent aVEvt;
         if ( pDrawViewWrapper->IsTextEditHit( aMPos ) ||
              // #i12587# support for shapes in chart
-             ( rMEvt.IsRight() && pDrawViewWrapper->PickAnything( rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt ) == SDRHIT_MARKEDOBJECT ) )
+             ( rMEvt.IsRight() && pDrawViewWrapper->PickAnything( rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt ) == SdrHitKind::MarkedObject ) )
         {
             pDrawViewWrapper->MouseButtonDown(rMEvt,m_pChartWindow);
             return;
@@ -652,7 +651,7 @@ void ChartController::execute_MouseButtonDown( const MouseEvent& rMEvt )
 
         if( !m_aSelection.isRotateableObjectSelected( getModel() ) )
         {
-                m_eDragMode = SDRDRAG_MOVE;
+                m_eDragMode = SdrDragMode::Move;
                 pDrawViewWrapper->SetDragMode(m_eDragMode);
         }
 
@@ -667,7 +666,7 @@ void ChartController::execute_MouseButtonDown( const MouseEvent& rMEvt )
 
         //change selection to 3D scene if rotate mode
         SdrDragMode eDragMode = pDrawViewWrapper->GetDragMode();
-        if( SDRDRAG_ROTATE==eDragMode )
+        if( SdrDragMode::Rotate==eDragMode )
         {
             E3dScene* pScene = SelectionHelper::getSceneToRotate( pDrawViewWrapper->getNamedSdrObject( m_aSelection.getSelectedCID() ) );
             if( pScene )
@@ -676,11 +675,11 @@ void ChartController::execute_MouseButtonDown( const MouseEvent& rMEvt )
                 if(pHitSelectionHdl)
                 {
                     SdrHdlKind eKind = pHitSelectionHdl->GetKind();
-                    if( eKind==HDL_UPPER || eKind==HDL_LOWER )
+                    if( eKind==SdrHdlKind::Upper || eKind==SdrHdlKind::Lower )
                         eRotationDirection = DragMethod_RotateDiagram::ROTATIONDIRECTION_X;
-                    else if( eKind==HDL_LEFT || eKind==HDL_RIGHT )
+                    else if( eKind==SdrHdlKind::Left || eKind==SdrHdlKind::Right )
                         eRotationDirection = DragMethod_RotateDiagram::ROTATIONDIRECTION_Y;
-                    else if( eKind==HDL_UPLFT || eKind==HDL_UPRGT || eKind==HDL_LWLFT || eKind==HDL_LWRGT )
+                    else if( eKind==SdrHdlKind::UpperLeft || eKind==SdrHdlKind::UpperRight || eKind==SdrHdlKind::LowerLeft || eKind==SdrHdlKind::LowerRight )
                         eRotationDirection = DragMethod_RotateDiagram::ROTATIONDIRECTION_Z;
                 }
                 pDragMethod = new DragMethod_RotateDiagram( *pDrawViewWrapper, m_aSelection.getSelectedCID(), getModel(), eRotationDirection );
@@ -744,7 +743,7 @@ void ChartController::execute_MouseButtonUp( const MouseEvent& rMEvt )
         // #i12587# support for shapes in chart
         if ( m_eDrawMode == CHARTDRAW_INSERT && pDrawViewWrapper->IsCreateObj() )
         {
-            pDrawViewWrapper->EndCreateObj( SDRCREATE_FORCEEND );
+            pDrawViewWrapper->EndCreateObj( SdrCreateCmd::ForceEnd );
             {
                 HiddenUndoContext aUndoContext( m_xUndoManager );
                     // don't want the positioning Undo action to appear in the UI
@@ -811,9 +810,9 @@ void ChartController::execute_MouseButtonUp( const MouseEvent& rMEvt )
                         if( pE3dObject )
                             aObjectRect = pE3dObject->GetScene()->GetSnapRect();
 
-                        ActionDescriptionProvider::ActionType eActionType(ActionDescriptionProvider::MOVE);
+                        ActionDescriptionProvider::ActionType eActionType(ActionDescriptionProvider::ActionType::Move);
                         if( !bIsMoveOnly && m_aSelection.isResizeableObjectSelected() )
-                            eActionType = ActionDescriptionProvider::RESIZE;
+                            eActionType = ActionDescriptionProvider::ActionType::Resize;
 
                         ObjectType eObjectType = ObjectIdentifier::getObjectType( m_aSelection.getSelectedCID() );
 
@@ -852,10 +851,10 @@ void ChartController::execute_MouseButtonUp( const MouseEvent& rMEvt )
                 bool bIsRotateable = m_aSelection.isRotateableObjectSelected( getModel() );
 
                 //toggle between move and rotate
-                if( bIsRotateable && bClickedTwiceOnDragableObject && SDRDRAG_MOVE==m_eDragMode )
-                    m_eDragMode=SDRDRAG_ROTATE;
+                if( bIsRotateable && bClickedTwiceOnDragableObject && SdrDragMode::Move==m_eDragMode )
+                    m_eDragMode=SdrDragMode::Rotate;
                 else
-                    m_eDragMode=SDRDRAG_MOVE;
+                    m_eDragMode=SdrDragMode::Move;
 
                 pDrawViewWrapper->SetDragMode(m_eDragMode);
 
@@ -962,31 +961,10 @@ void ChartController::execute_Command( const CommandEvent& rCEvt )
                 aPos = m_pChartWindow->GetPointerState().maPos;
         }
 
+        OUString aMenuName;
         if ( isShapeContext() )
-        {
             // #i12587# support for shapes in chart
-            OUString aMenuName = m_pDrawViewWrapper->IsTextEdit() ? OUString( "drawtext" ) : OUString( "draw" );
-            css::uno::Sequence< css::uno::Any > aArgs( 3 );
-            aArgs[0] <<= comphelper::makePropertyValue( "Value", aMenuName );
-            aArgs[1] <<= comphelper::makePropertyValue( "Frame", m_xFrame );
-            aArgs[2] <<= comphelper::makePropertyValue( "IsContextMenu", true );
-
-            css::uno::Reference< css::frame::XPopupMenuController > xPopupController(
-                m_xCC->getServiceManager()->createInstanceWithArgumentsAndContext(
-                "com.sun.star.comp.framework.ResourceMenuController", aArgs, m_xCC ), css::uno::UNO_QUERY );
-
-            if ( !xPopupController.is() || !xPopupMenu.is() )
-                return;
-
-            xPopupController->setPopupMenu( xPopupMenu );
-            xPopupMenu->execute( css::uno::Reference< css::awt::XWindowPeer >( m_xFrame->getContainerWindow(), css::uno::UNO_QUERY ),
-                                 css::awt::Rectangle( aPos.X(), aPos.Y(), 0, 0 ),
-                                 css::awt::PopupMenuDirection::EXECUTE_DEFAULT );
-
-            css::uno::Reference< css::lang::XComponent > xComponent( xPopupController, css::uno::UNO_QUERY );
-            if ( xComponent.is() )
-                xComponent->dispose();
-        }
+            aMenuName = m_pDrawViewWrapper->IsTextEdit() ? OUString( "drawtext" ) : OUString( "draw" );
         else
         {
             // todo: the context menu should be specified by an xml file in uiconfig
@@ -1236,11 +1214,29 @@ void ChartController::execute_Command( const CommandEvent& rCEvt )
                 lcl_insertMenuCommand( xPopupMenu, nUniqueId++, ".uno:DataRanges" );
                 lcl_insertMenuCommand( xPopupMenu, nUniqueId++, ".uno:DiagramData" );
                 lcl_insertMenuCommand( xPopupMenu, nUniqueId++, ".uno:View3D" );
-
-                ::svt::ContextMenuHelper aContextMenuHelper( m_xFrame );
-                aContextMenuHelper.completeAndExecute( aPos, xPopupMenu );
             }
         }
+
+        css::uno::Sequence< css::uno::Any > aArgs( 3 );
+        aArgs[0] <<= comphelper::makePropertyValue( "IsContextMenu", true );
+        aArgs[1] <<= comphelper::makePropertyValue( "Frame", m_xFrame );
+        aArgs[2] <<= comphelper::makePropertyValue( "Value", aMenuName );
+
+        css::uno::Reference< css::frame::XPopupMenuController > xPopupController(
+            m_xCC->getServiceManager()->createInstanceWithArgumentsAndContext(
+            "com.sun.star.comp.framework.ResourceMenuController", aArgs, m_xCC ), css::uno::UNO_QUERY );
+
+        if ( !xPopupController.is() || !xPopupMenu.is() )
+            return;
+
+        xPopupController->setPopupMenu( xPopupMenu );
+        xPopupMenu->execute( css::uno::Reference< css::awt::XWindowPeer >( m_xFrame->getContainerWindow(), css::uno::UNO_QUERY ),
+                             css::awt::Rectangle( aPos.X(), aPos.Y(), 0, 0 ),
+                             css::awt::PopupMenuDirection::EXECUTE_DEFAULT );
+
+        css::uno::Reference< css::lang::XComponent > xComponent( xPopupController, css::uno::UNO_QUERY );
+        if ( xComponent.is() )
+            xComponent->dispose();
     }
     else if( ( rCEvt.GetCommand() == CommandEventId::StartExtTextInput ) ||
              ( rCEvt.GetCommand() == CommandEventId::ExtTextInput ) ||
@@ -1313,9 +1309,9 @@ bool ChartController::execute_KeyInput( const KeyEvent& rKEvt )
             {
                 aNewSelection = aNewOID.getAny();
             }
-            if ( m_eDragMode == SDRDRAG_ROTATE && !SelectionHelper::isRotateableObject( aNewOID.getObjectCID(), getModel() ) )
+            if ( m_eDragMode == SdrDragMode::Rotate && !SelectionHelper::isRotateableObject( aNewOID.getObjectCID(), getModel() ) )
             {
-                m_eDragMode = SDRDRAG_MOVE;
+                m_eDragMode = SdrDragMode::Move;
             }
             bReturn = select( aNewSelection );
         }
@@ -1752,9 +1748,9 @@ bool ChartController::impl_moveOrResizeObject(
 
         if( bResult )
         {
-            ActionDescriptionProvider::ActionType eActionType(ActionDescriptionProvider::MOVE);
+            ActionDescriptionProvider::ActionType eActionType(ActionDescriptionProvider::ActionType::Move);
             if( bNeedResize )
-                eActionType = ActionDescriptionProvider::RESIZE;
+                eActionType = ActionDescriptionProvider::ActionType::Resize;
 
             ObjectType eObjectType = ObjectIdentifier::getObjectType( rCID );
             UndoGuard aUndoGuard( ActionDescriptionProvider::createDescription(
@@ -1949,7 +1945,7 @@ void ChartController::impl_SetMousePointer( const MouseEvent & rEvent )
     }
     else if( ObjectIdentifier::isDragableObject( aHitObjectCID ) )
     {
-        if( (m_eDragMode == SDRDRAG_ROTATE)
+        if( (m_eDragMode == SdrDragMode::Rotate)
             && SelectionHelper::isRotateableObject( aHitObjectCID
                 , getModel() ) )
             m_pChartWindow->SetPointer( Pointer( PointerStyle::Rotate ) );
@@ -1970,6 +1966,11 @@ void ChartController::impl_SetMousePointer( const MouseEvent & rEvent )
     }
     else
         m_pChartWindow->SetPointer( Pointer( PointerStyle::Arrow ));
+}
+
+css::uno::Reference<css::uno::XInterface> const & ChartController::getChartView()
+{
+    return m_xChartView;
 }
 
 } //namespace chart

@@ -57,10 +57,9 @@ using namespace ::xmloff::token;
 using uno::Any;
 
 SvXMLImportItemMapper::SvXMLImportItemMapper(
-                                SvXMLItemMapEntriesRef rMapEntries,
-                                sal_uInt16 nUnknWhich ) :
+                                SvXMLItemMapEntriesRef const & rMapEntries ) :
     mrMapEntries( rMapEntries ),
-    nUnknownWhich( nUnknWhich )
+    nUnknownWhich( RES_UNKNOWNATR_CONTAINER )
 {
 }
 
@@ -76,7 +75,7 @@ SvXMLImportItemMapper::setMapEntries( SvXMLItemMapEntriesRef rMapEntries )
 
 // fills the given itemset with the attributes in the given list
 void SvXMLImportItemMapper::importXML( SfxItemSet& rSet,
-                                      uno::Reference< xml::sax::XAttributeList > xAttrList,
+                                      uno::Reference< xml::sax::XAttributeList > const & xAttrList,
                                       const SvXMLUnitConverter& rUnitConverter,
                                       const SvXMLNamespaceMap& rNamespaceMap )
 {
@@ -109,8 +108,8 @@ void SvXMLImportItemMapper::importXML( SfxItemSet& rSet,
                 SfxItemState eState = rSet.GetItemState( pEntry->nWhichId, true,
                                                          &pItem );
 
-                // if its not set, try the pool
-                if(SfxItemState::SET != eState && SFX_WHICH_MAX > pEntry->nWhichId )
+                // if it's not set, try the pool
+                if (SfxItemState::SET != eState && SfxItemPool::IsWhich(pEntry->nWhichId))
                     pItem = &rSet.GetPool()->GetDefaultItem(pEntry->nWhichId);
 
                 // do we have an item?
@@ -596,7 +595,7 @@ bool SvXMLImportItemMapper::PutXMLValue(
 
             if( eEnum == 0 )
             {
-                rFormatBreak.SetValue( SVX_BREAK_NONE );
+                rFormatBreak.SetValue( SvxBreak::NONE );
                 bOk = true;
             }
             else
@@ -604,14 +603,14 @@ bool SvXMLImportItemMapper::PutXMLValue(
                 switch( nMemberId )
                 {
                     case MID_BREAK_BEFORE:
-                        rFormatBreak.SetValue( static_cast< sal_uInt16 >((eEnum == 1) ?
-                                             SVX_BREAK_COLUMN_BEFORE :
-                                             SVX_BREAK_PAGE_BEFORE) );
+                        rFormatBreak.SetValue( eEnum == 1 ?
+                                               SvxBreak::ColumnBefore :
+                                               SvxBreak::PageBefore );
                         break;
                     case MID_BREAK_AFTER:
-                        rFormatBreak.SetValue( static_cast< sal_uInt16 >((eEnum == 1) ?
-                                             SVX_BREAK_COLUMN_AFTER :
-                                             SVX_BREAK_PAGE_AFTER) );
+                        rFormatBreak.SetValue( eEnum == 1 ?
+                                               SvxBreak::ColumnAfter :
+                                               SvxBreak::PageAfter );
                         break;
                 }
                 bOk = true;

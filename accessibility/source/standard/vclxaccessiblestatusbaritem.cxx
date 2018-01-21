@@ -17,10 +17,10 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/standard/vclxaccessiblestatusbaritem.hxx>
+#include <standard/vclxaccessiblestatusbaritem.hxx>
 #include <toolkit/helper/externallock.hxx>
 #include <toolkit/helper/convert.hxx>
-#include <accessibility/helper/characterattributeshelper.hxx>
+#include <helper/characterattributeshelper.hxx>
 
 #include <com/sun/star/accessibility/AccessibleEventId.hpp>
 #include <com/sun/star/accessibility/AccessibleRole.hpp>
@@ -232,8 +232,7 @@ sal_Bool VCLXAccessibleStatusBarItem::supportsService( const OUString& rServiceN
 
 Sequence< OUString > VCLXAccessibleStatusBarItem::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleStatusBarItem" };
-    return aNames;
+    return { "com.sun.star.awt.AccessibleStatusBarItem" };
 }
 
 

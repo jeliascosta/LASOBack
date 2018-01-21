@@ -59,11 +59,6 @@ bool ChartFrameLoader::impl_checkCancel()
 OUString SAL_CALL ChartFrameLoader::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString ChartFrameLoader::getImplementationName_Static()
-{
     return OUString(CHART_FRAMELOADER_SERVICE_IMPLEMENTATION_NAME);
 }
 
@@ -76,13 +71,7 @@ sal_Bool SAL_CALL ChartFrameLoader::supportsService( const OUString& rServiceNam
 css::uno::Sequence< OUString > SAL_CALL ChartFrameLoader::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
-}
-
-uno::Sequence< OUString > ChartFrameLoader::getSupportedServiceNames_Static()
-{
-    uno::Sequence<OUString> aSNS { CHART_FRAMELOADER_SERVICE_NAME };
-    return aSNS;
+    return { CHART_FRAMELOADER_SERVICE_NAME };
 }
 
 // frame::XFrameLoader

@@ -43,8 +43,8 @@ public:
     HierarchyResultSetDataSupplier(
                     const css::uno::Reference< css::uno::XComponentContext >& rxContext,
                     const rtl::Reference< HierarchyContent >& rContent,
-                    sal_Int32 nOpenMode = css::ucb::OpenMode::ALL );
-    virtual ~HierarchyResultSetDataSupplier();
+                    sal_Int32 nOpenMode );
+    virtual ~HierarchyResultSetDataSupplier() override;
 
     virtual OUString queryContentIdentifierString( sal_uInt32 nIndex ) override;
     virtual css::uno::Reference< css::ucb::XContentIdentifier >

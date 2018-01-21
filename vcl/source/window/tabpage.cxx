@@ -71,12 +71,14 @@ void TabPage::ImplInitSettings()
 
 TabPage::TabPage( vcl::Window* pParent, WinBits nStyle ) :
     Window( WINDOW_TABPAGE )
+    , IContext()
 {
     ImplInit( pParent, nStyle );
 }
 
 TabPage::TabPage(vcl::Window *pParent, const OString& rID, const OUString& rUIXMLDescription)
     : Window(WINDOW_TABPAGE)
+    , IContext()
 {
     ImplInit(pParent, 0);
     m_pUIBuilder = new VclBuilder(this, getUIRootDir(), rUIXMLDescription, rID);
@@ -102,8 +104,8 @@ void TabPage::StateChanged( StateChangedType nType )
 
     if ( nType == StateChangedType::InitShow )
     {
-        if ( GetSettings().GetStyleSettings().GetAutoMnemonic() )
-            ImplWindowAutoMnemonic( this );
+        if (GetSettings().GetStyleSettings().GetAutoMnemonic())
+            Accelerator::GenerateAutoMnemonicsOnHierarchy(this);
         // FIXME: no layouting, workaround some clipping issues
         ImplAdjustNWFSizes();
     }
@@ -139,10 +141,9 @@ void TabPage::Paint( vcl::RenderContext& rRenderContext, const Rectangle& )
             nState &= ~ControlState::ENABLED;
         if ( HasFocus() )
             nState |= ControlState::FOCUSED;
-        Point aPoint;
         // pass the whole window region to NWF as the tab body might be a gradient or bitmap
         // that has to be scaled properly, clipping makes sure that we do not paint too much
-        Rectangle aCtrlRegion( aPoint, GetOutputSizePixel() );
+        Rectangle aCtrlRegion( Point(), GetOutputSizePixel() );
         rRenderContext.DrawNativeControl( ControlType::TabBody, part, aCtrlRegion, nState,
                 aControlValue, OUString() );
     }

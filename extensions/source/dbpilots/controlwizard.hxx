@@ -66,7 +66,7 @@ namespace dbp
                                         getFormConnection() const;
     public:
         OControlWizardPage( OControlWizard* _pParent, const OString& rID, const OUString& rUIXMLDescription );
-        virtual ~OControlWizardPage();
+        virtual ~OControlWizardPage() override;
         virtual void dispose() override;
 
     protected:
@@ -101,10 +101,10 @@ namespace dbp
             const css::uno::Reference< css::beans::XPropertySet >& _rxObjectModel,
             const css::uno::Reference< css::uno::XComponentContext >& _rxContext
         );
-        virtual ~OControlWizard();
+        virtual ~OControlWizard() override;
 
         // make the some base class methods public
-        bool    travelNext() { return OControlWizard_Base::travelNext(); }
+        using OControlWizard_Base::travelNext;
 
     public:
         const css::uno::Reference< css::uno::XComponentContext >&
@@ -112,7 +112,7 @@ namespace dbp
 
         const OControlWizardContext&    getContext() const { return m_aContext; }
         bool                        updateContext(const OAccessRegulator&);
-        void                            setFormConnection(const OAccessRegulator&, const css::uno::Reference< css::sdbc::XConnection >& _rxConn, bool _bAutoDispose = true );
+        void                            setFormConnection(const OAccessRegulator&, const css::uno::Reference< css::sdbc::XConnection >& _rxConn, bool _bAutoDispose );
             css::uno::Reference< css::sdbc::XConnection >
                                         getFormConnection(const OAccessRegulator&) const;
 
@@ -147,7 +147,7 @@ namespace dbp
         void implDetermineShape();
 
         // made private. Not to be used by derived (or external) classes
-        virtual void ActivatePage() override;
+        using OControlWizard_Base::ActivatePage;
     };
 
 

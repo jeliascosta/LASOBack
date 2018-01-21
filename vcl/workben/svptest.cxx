@@ -85,13 +85,7 @@ class MyWin : public WorkWindow
 public:
                  MyWin( vcl::Window* pParent, WinBits nWinStyle );
 
-    virtual void MouseMove( const MouseEvent& rMEvt ) override;
-    virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
-    virtual void MouseButtonUp( const MouseEvent& rMEvt ) override;
-    virtual void KeyInput( const KeyEvent& rKEvt ) override;
-    virtual void KeyUp( const KeyEvent& rKEvt ) override;
     virtual void Paint( vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect ) override;
-    virtual void Resize() override;
 };
 
 void Main()
@@ -126,31 +120,6 @@ MyWin::MyWin( vcl::Window* pParent, WinBits nWinStyle ) :
         }
     }
     Bitmap::ReleaseAccess( pAcc );
-}
-
-void MyWin::MouseMove( const MouseEvent& rMEvt )
-{
-    WorkWindow::MouseMove( rMEvt );
-}
-
-void MyWin::MouseButtonDown( const MouseEvent& rMEvt )
-{
-    WorkWindow::MouseButtonDown( rMEvt );
-}
-
-void MyWin::MouseButtonUp( const MouseEvent& rMEvt )
-{
-    WorkWindow::MouseButtonUp( rMEvt );
-}
-
-void MyWin::KeyInput( const KeyEvent& rKEvt )
-{
-    WorkWindow::KeyInput( rKEvt );
-}
-
-void MyWin::KeyUp( const KeyEvent& rKEvt )
-{
-    WorkWindow::KeyUp( rKEvt );
 }
 
 static Point project( const Point& rPoint )
@@ -230,7 +199,7 @@ void MyWin::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
     WorkWindow::Paint(rRenderContext, rRect);
 
     rRenderContext.Push();
-    MapMode aMapMode(MAP_100TH_MM);
+    MapMode aMapMode(MapUnit::Map100thMM);
 
     rRenderContext.SetMapMode(aMapMode);
 
@@ -293,7 +262,7 @@ void MyWin::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
     Color aLightGreen(0, 0xff, 0);
     Color aDarkGreen(0, 0x40, 0);
 
-    Gradient aGradient(GradientStyle_LINEAR, aBlack, aWhite);
+    Gradient aGradient(GradientStyle::Linear, aBlack, aWhite);
     aGradient.SetAngle(900);
     rRenderContext.DrawGradient(Rectangle(Point(1000, 4500),
                                 Size(aPaperSize.Width() - 2000, 500)),
@@ -314,7 +283,7 @@ void MyWin::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
                                 Size(aPaperSize.Width() - 2000, 500)),
                                 aGradient);
 
-    LineInfo aLineInfo(LINE_SOLID, 200);
+    LineInfo aLineInfo(LineStyle::Solid, 200);
     double sind = sin(DELTA * M_PI / 180.0);
     double cosd = cos(DELTA * M_PI / 180.0);
     double factor = 1 + (DELTA / 1000.0);
@@ -350,11 +319,6 @@ void MyWin::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
         aP2 = aPoint;
     }
     rRenderContext.Pop();
-}
-
-void MyWin::Resize()
-{
-    WorkWindow::Resize();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

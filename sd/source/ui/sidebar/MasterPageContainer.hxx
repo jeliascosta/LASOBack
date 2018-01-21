@@ -53,14 +53,14 @@ class MasterPageContainerChangeEvent;
     Entries are accessed via a Token, which is mostly a numerical index but
     whose values do not necessarily have to be consecutive.
 */
-class MasterPageContainer
+class MasterPageContainer final
 {
 public:
     typedef int Token;
     static const Token NIL_TOKEN = -1;
 
     MasterPageContainer();
-    virtual ~MasterPageContainer();
+    ~MasterPageContainer();
 
     void AddChangeListener (const Link<MasterPageContainerChangeEvent&,void>& rLink);
     void RemoveChangeListener (const Link<MasterPageContainerChangeEvent&,void>& rLink);
@@ -134,7 +134,7 @@ public:
     OUString GetURLForToken (Token aToken);
     OUString GetPageNameForToken (Token aToken);
     OUString GetStyleNameForToken (Token aToken);
-    SdPage* GetPageObjectForToken (Token aToken, bool bLoad=true);
+    SdPage* GetPageObjectForToken (Token aToken, bool bLoad);
     Origin GetOriginForToken (Token aToken);
     sal_Int32 GetTemplateIndexForToken (Token aToken);
     std::shared_ptr<MasterPageDescriptor> GetDescriptorForToken (Token aToken);

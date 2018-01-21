@@ -90,10 +90,8 @@ class ScaResPublisher : public Resource
 public:
     explicit ScaResPublisher( const ScaResId& rResId ) : Resource( rResId ) {}
 
-    bool             IsAvailableRes( const ResId& rResId ) const
-                                    { return Resource::IsAvailableRes( rResId ); }
-    void                 FreeResource()
-                                    { Resource::FreeResource(); }
+    using Resource::IsAvailableRes;
+    using Resource::FreeResource;
 };
 
 
@@ -127,7 +125,7 @@ struct ScaFuncDataBase
     bool                    bWithOpt;           // first parameter is internal
 };
 
-class ScaFuncData
+class ScaFuncData final
 {
 private:
     OUString                    aIntName;           // internal name (get***)
@@ -142,7 +140,7 @@ private:
 
 public:
                                 ScaFuncData( const ScaFuncDataBase& rBaseData, ResMgr& rRscMgr );
-    virtual                     ~ScaFuncData();
+                                ~ScaFuncData();
 
     inline sal_uInt16           GetUINameID() const     { return nUINameID; }
     inline sal_uInt16           GetDescrID() const      { return nDescrID; }
@@ -195,12 +193,11 @@ private:
     ResMgr&                     GetResMgr() throw( css::uno::RuntimeException, std::exception );
     void                        InitData();
 
-    OUString                    GetDisplFuncStr( sal_uInt16 nResId ) throw( css::uno::RuntimeException, std::exception );
     OUString                    GetFuncDescrStr( sal_uInt16 nResId, sal_uInt16 nStrIndex ) throw( css::uno::RuntimeException, std::exception );
 
 public:
                                 ScaDateAddIn();
-    virtual                     ~ScaDateAddIn() =default;
+    virtual                     ~ScaDateAddIn() override =default;
 
     static OUString      getImplementationName_Static();
     static css::uno::Sequence< OUString > getSupportedServiceNames_Static();

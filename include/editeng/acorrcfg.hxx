@@ -34,11 +34,11 @@ private:
 
 public:
     SvxBaseAutoCorrCfg(SvxAutoCorrCfg& rParent);
-    virtual ~SvxBaseAutoCorrCfg();
+    virtual ~SvxBaseAutoCorrCfg() override;
 
     void                    Load(bool bInit);
     virtual void            Notify( const css::uno::Sequence<OUString>& aPropertyNames) override;
-    void                    SetModified() {ConfigItem::SetModified();}
+    using ConfigItem::SetModified;
 };
 
 class EDITENG_DLLPUBLIC SvxSwAutoCorrCfg : public utl::ConfigItem
@@ -51,16 +51,16 @@ private:
 
 public:
     SvxSwAutoCorrCfg(SvxAutoCorrCfg& rParent);
-    virtual ~SvxSwAutoCorrCfg();
+    virtual ~SvxSwAutoCorrCfg() override;
 
     void                    Load(bool bInit);
     virtual void            Notify( const css::uno::Sequence<OUString>& aPropertyNames) override;
-    void                    SetModified() {ConfigItem::SetModified();}
+    using ConfigItem::SetModified;
 };
 /*--------------------------------------------------------------------
     Description:   Configuration for Auto Correction
  --------------------------------------------------------------------*/
-class EDITENG_DLLPUBLIC SvxAutoCorrCfg
+class EDITENG_DLLPUBLIC SvxAutoCorrCfg final
 {
     friend class SvxBaseAutoCorrCfg;
     friend class SvxSwAutoCorrCfg;
@@ -111,7 +111,7 @@ public:
     bool IsSearchInAllCategories() const        { return bSearchInAllCategories;}
 
     SvxAutoCorrCfg();
-    virtual ~SvxAutoCorrCfg();
+    ~SvxAutoCorrCfg();
     static SvxAutoCorrCfg& Get();
 };
 

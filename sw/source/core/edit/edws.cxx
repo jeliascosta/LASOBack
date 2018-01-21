@@ -145,8 +145,6 @@ bool SwEditShell::HasOtherCnt() const
     return false;
 }
 
-// access control functions for file name handling
-
 SwActContext::SwActContext(SwEditShell *pShell)
     : m_rShell(*pShell)
 {
@@ -224,11 +222,17 @@ SwUndoId SwEditShell::EndUndo(SwUndoId eUndoId, const SwRewriter *pRewriter)
 { return GetDoc()->GetIDocumentUndoRedo().EndUndo(eUndoId, pRewriter); }
 
 bool     SwEditShell::GetLastUndoInfo(OUString *const o_pStr,
-                                      SwUndoId *const o_pId) const
-{ return GetDoc()->GetIDocumentUndoRedo().GetLastUndoInfo(o_pStr, o_pId); }
+                                      SwUndoId *const o_pId,
+                                      const SwView* pView) const
+{
+    return GetDoc()->GetIDocumentUndoRedo().GetLastUndoInfo(o_pStr, o_pId, pView);
+}
 
-bool     SwEditShell::GetFirstRedoInfo(OUString *const o_pStr) const
-{ return GetDoc()->GetIDocumentUndoRedo().GetFirstRedoInfo(o_pStr); }
+bool SwEditShell::GetFirstRedoInfo(OUString *const o_pStr,
+                                   const SwView* pView) const
+{
+    return GetDoc()->GetIDocumentUndoRedo().GetFirstRedoInfo(o_pStr, nullptr, pView);
+}
 
 SwUndoId SwEditShell::GetRepeatInfo(OUString *const o_pStr) const
 { return GetDoc()->GetIDocumentUndoRedo().GetRepeatInfo(o_pStr); }

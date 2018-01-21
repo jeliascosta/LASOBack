@@ -84,6 +84,11 @@ namespace drawinglayer
         {
         }
 
+        SdrLightingAttribute::SdrLightingAttribute(SdrLightingAttribute&& rCandidate)
+        :   mpSdrLightingAttribute(std::move(rCandidate.mpSdrLightingAttribute))
+        {
+        }
+
         SdrLightingAttribute::~SdrLightingAttribute()
         {
         }
@@ -96,6 +101,12 @@ namespace drawinglayer
         SdrLightingAttribute& SdrLightingAttribute::operator=(const SdrLightingAttribute& rCandidate)
         {
             mpSdrLightingAttribute = rCandidate.mpSdrLightingAttribute;
+            return *this;
+        }
+
+        SdrLightingAttribute& SdrLightingAttribute::operator=(SdrLightingAttribute&& rCandidate)
+        {
+            mpSdrLightingAttribute = std::move(rCandidate.mpSdrLightingAttribute);
             return *this;
         }
 

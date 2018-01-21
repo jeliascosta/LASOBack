@@ -30,12 +30,12 @@ enum SvxCaseMap
     SVX_CASEMAP_END
 };
 
-enum SvxEscapement
+enum class SvxEscapement
 {
-    SVX_ESCAPEMENT_OFF,
-    SVX_ESCAPEMENT_SUPERSCRIPT,
-    SVX_ESCAPEMENT_SUBSCRIPT,
-    SVX_ESCAPEMENT_END
+    Off,
+    Superscript,
+    Subscript,
+    End
 };
 
 enum SvxShadowLocation
@@ -48,30 +48,28 @@ enum SvxShadowLocation
     SVX_SHADOW_END
 };
 
-enum SvxTabAdjust
+enum class SvxTabAdjust
 {
-    SVX_TAB_ADJUST_LEFT = 0,
-    SVX_TAB_ADJUST_RIGHT,
-    SVX_TAB_ADJUST_DECIMAL,
-    SVX_TAB_ADJUST_CENTER,
-    SVX_TAB_ADJUST_DEFAULT,
-    SVX_TAB_ADJUST_END
+    Left,
+    Right,
+    Decimal,
+    Center,
+    Default,
+    End
 };
 
-enum SvxLineSpace
+enum class SvxLineSpaceRule
 {
-    SVX_LINE_SPACE_AUTO,
-    SVX_LINE_SPACE_FIX,
-    SVX_LINE_SPACE_MIN,
-    SVX_LINE_SPACE_END
+    Auto,
+    Fix,
+    Min
 };
 
-enum SvxInterLineSpace
+enum class SvxInterLineSpaceRule
 {
-    SVX_INTER_LINE_SPACE_OFF,
-    SVX_INTER_LINE_SPACE_PROP,
-    SVX_INTER_LINE_SPACE_FIX,
-    SVX_INTER_LINE_SPACE_END
+    Off,
+    Prop,
+    Fix
 };
 
 enum SvxAdjust
@@ -84,25 +82,16 @@ enum SvxAdjust
     SVX_ADJUST_END
 };
 
-enum SvxSpecialLineSpace
+enum class SvxBreak
 {
-    SVX_LINESPACE_USER,
-    SVX_LINESPACE_ONE_LINE,
-    SVX_LINESPACE_ONE_POINT_FIVE_LINES,
-    SVX_LINESPACE_TWO_LINES,
-    SVX_LINESPACE_END
-};
-
-enum SvxBreak
-{
-    SVX_BREAK_NONE,
-    SVX_BREAK_COLUMN_BEFORE,
-    SVX_BREAK_COLUMN_AFTER,
-    SVX_BREAK_COLUMN_BOTH,
-    SVX_BREAK_PAGE_BEFORE,
-    SVX_BREAK_PAGE_AFTER,
-    SVX_BREAK_PAGE_BOTH,
-    SVX_BREAK_END
+    NONE,
+    ColumnBefore,
+    ColumnAfter,
+    ColumnBoth,
+    PageBefore,
+    PageAfter,
+    PageBoth,
+    End
 };
 
 enum SvxCellHorJustify
@@ -115,10 +104,10 @@ enum SvxCellHorJustify
     SVX_HOR_JUSTIFY_REPEAT
 };
 
-enum SvxCellJustifyMethod
+enum class SvxCellJustifyMethod
 {
-    SVX_JUSTIFY_METHOD_AUTO,
-    SVX_JUSTIFY_METHOD_DISTRIBUTE
+    Auto,
+    Distribute
 };
 
 enum SvxCellVerJustify
@@ -148,35 +137,17 @@ enum SvxDrawAlignEnum
     SVX_OBJECT_ALIGN_DOWN
 };
 
-enum SvxDrawBezierEnum
+enum class SvxSpellArea
 {
-    SVX_BEZIER_MOVE,
-    SVX_BEZIER_INSERT,
-    SVX_BEZIER_DELETE,
-    SVX_BEZIER_CUTLINE,
-    SVX_BEZIER_CONVERT,
-    SVX_BEZIER_EDGE,
-    SVX_BEZIER_SMOOTH,
-    SVX_BEZIER_SYMMTR,
-    SVX_BEZIER_CLOSE,
-    SVX_BEZIER_ELIMINATE_POINTS
+    Body = 0,
+    BodyEnd,
+    BodyStart,
+    Other
 };
 
-enum SvxSpellArea
-{
-    SVX_SPELL_BODY = 0,
-    SVX_SPELL_BODY_END,
-    SVX_SPELL_BODY_START,
-    SVX_SPELL_OTHER
-};
-
-enum SvxFrameAnchor
-{
-    SVX_FLY_AT_CNTNT,       // Paragraph-based frame
-    SVX_FLY_IN_CNTNT,       // Character-based frame
-    SVX_FLY_PAGE            // Page-based frame
-};
-
+/**
+ * these must match the values in css::style::NumberingType
+ */
 enum SvxExtNumType
 {
     SVX_NUM_CHARS_UPPER_LETTER, // Counts from a-z, aa - az, ba - bz, ...
@@ -204,13 +175,6 @@ enum SvxExtNumType
     SVX_NUM_AIU_HALFWIDTH_JA,
     SVX_NUM_IROHA_FULLWIDTH_JA,
     SVX_NUM_IROHA_HALFWIDTH_JA
-};
-
-enum SvxCompareMode
-{
-    SVX_CMP_AUTO = 0,
-    SVX_CMP_BY_WORD,
-    SVX_CMP_BY_CHAR
 };
 
 #endif

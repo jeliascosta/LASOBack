@@ -17,7 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <tchar.h>
 #include "helppopupwindow.hxx"
 #include <osl/diagnose.h>
 
@@ -28,11 +27,11 @@ using osl::Mutex;
 namespace /* private */
 {
 
-    const LPCTSTR CURRENT_INSTANCE = TEXT("CurrInst");
+    const PCWSTR CURRENT_INSTANCE = L"CurrInst";
 
 };
 
-#define HELPPOPUPWND_CLASS_NAME TEXT("hlppopupwnd###")
+#define HELPPOPUPWND_CLASS_NAME L"hlppopupwnd###"
 
 const sal_Int32 MAX_CHARS_PER_LINE = 55;
 
@@ -64,13 +63,13 @@ CHelpPopupWindow::CHelpPopupWindow(
     m_vMargins( 0 ),
     m_avCharWidth( 0 ),
     m_avCharHeight( 0 ),
-    m_hwnd( NULL ),
+    m_hwnd( nullptr ),
     m_hwndParent( hwndParent ),
     m_hInstance( hInstance ),
-    m_hBitmapShadow( NULL ),
-    m_hBrushShadow( NULL )
+    m_hBitmapShadow( nullptr ),
+    m_hBrushShadow( nullptr )
 {
-    m_bWndClassRegistered = RegisterWindowClass( ) ? sal_True : sal_False;
+    m_bWndClassRegistered = RegisterWindowClass( );
 
     // create a pattern brush for the window shadow
     WORD aPattern[] = { 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55 };
@@ -102,26 +101,26 @@ void SAL_CALL CHelpPopupWindow::setText( const OUString& aHelpText )
 
 void SAL_CALL CHelpPopupWindow::show( sal_Int32 x, sal_Int32 y )
 {
-    OSL_ENSURE( NULL == m_hwnd, "method should not be called twice in sequence" );
+    OSL_ENSURE( nullptr == m_hwnd, "method should not be called twice in sequence" );
 
     // we create a window with length and height of 0
     // first in order to get a device context of this
     // window, then we calculate the upper left corner
     // and the dimensions and resize the window
 
-    m_hwnd = CreateWindowEx(
+    m_hwnd = CreateWindowExW(
         0,
         HELPPOPUPWND_CLASS_NAME,
-        NULL,
+        nullptr,
         WS_POPUP,
         0,
         0,
         0,
         0,
         m_hwndParent,
-        NULL,
+        nullptr,
         m_hInstance,
-        (LPVOID)this );
+        this );
 
     OSL_ENSURE( m_hwnd, "creating help popup window failed" );
 
@@ -167,9 +166,9 @@ void SAL_CALL CHelpPopupWindow::calcWindowRect( LPRECT lprect )
     if ( m_HelpText.getLength( ) <= MAX_CHARS_PER_LINE )
         nFormat |= DT_SINGLELINE;
 
-    DrawText(
+    DrawTextW(
       hdc,
-      reinterpret_cast<LPCTSTR>(m_HelpText.getStr( )),
+      reinterpret_cast<PCWSTR>(m_HelpText.getStr( )),
       m_HelpText.getLength( ),
       lprect,
       nFormat );
@@ -205,7 +204,7 @@ void SAL_CALL CHelpPopupWindow::adjustWindowSize( sal_Int32* cx_new, sal_Int32* 
     // adjust the window size
     SetWindowPos(
         m_hwnd,
-        NULL,
+        nullptr,
         0,
         0,
         rect.right,
@@ -252,7 +251,7 @@ void SAL_CALL CHelpPopupWindow::adjustWindowPos(
 
     SetWindowPos(
         m_hwnd,
-        NULL,
+        nullptr,
         popX,
         popY,
         0,
@@ -334,9 +333,9 @@ void SAL_CALL CHelpPopupWindow::onPaint( HWND hWnd, HDC hdc )
     if ( m_HelpText.getLength( ) <= MAX_CHARS_PER_LINE )
         nFormat |= DT_SINGLELINE;
 
-    DrawText(
+    DrawTextW(
         hdc,
-        (LPWSTR)m_HelpText.getStr( ),
+        m_HelpText.getStr( ),
         m_HelpText.getLength( ),
         &rect,
         nFormat );
@@ -382,7 +381,7 @@ void SAL_CALL CHelpPopupWindow::onPaint( HWND hWnd, HDC hdc )
 
 void SAL_CALL CHelpPopupWindow::onNcDestroy()
 {
-    m_hwnd = NULL;
+    m_hwnd = nullptr;
 }
 
 
@@ -427,11 +426,11 @@ LRESULT CALLBACK CHelpPopupWindow::WndProc(
 
                 OSL_ASSERT( lpcs->lpCreateParams );
 
-                CHelpPopupWindow* pImpl = reinterpret_cast< CHelpPopupWindow* >(
+                CHelpPopupWindow* pImpl = static_cast< CHelpPopupWindow* >(
                     lpcs->lpCreateParams );
 
                 // connect the instance handle to the window
-                SetProp( hWnd, CURRENT_INSTANCE, pImpl );
+                SetPropW( hWnd, CURRENT_INSTANCE, pImpl );
 
                 pImpl->onCreate( hWnd );
 
@@ -442,8 +441,8 @@ LRESULT CALLBACK CHelpPopupWindow::WndProc(
 
         case WM_PAINT:
             {
-                CHelpPopupWindow* pImpl = reinterpret_cast< CHelpPopupWindow* >(
-                GetProp( hWnd, CURRENT_INSTANCE ) );
+                CHelpPopupWindow* pImpl = static_cast< CHelpPopupWindow* >(
+                GetPropW( hWnd, CURRENT_INSTANCE ) );
 
                 OSL_ASSERT( pImpl );
 
@@ -458,8 +457,8 @@ LRESULT CALLBACK CHelpPopupWindow::WndProc(
          case WM_NCDESTROY:
             {
                 // RemoveProp returns the saved value on success
-                CHelpPopupWindow* pImpl = reinterpret_cast< CHelpPopupWindow* >(
-                    RemoveProp( hWnd, CURRENT_INSTANCE ) );
+                CHelpPopupWindow* pImpl = static_cast< CHelpPopupWindow* >(
+                    RemovePropW( hWnd, CURRENT_INSTANCE ) );
 
                 OSL_ASSERT( pImpl );
 
@@ -498,8 +497,8 @@ ATOM SAL_CALL CHelpPopupWindow::RegisterWindowClass( )
         wndClsEx.cbSize        = sizeof(wndClsEx);
         wndClsEx.lpfnWndProc   = CHelpPopupWindow::WndProc;
         wndClsEx.hInstance     = m_hInstance;
-        wndClsEx.hCursor       = LoadCursor(NULL, IDC_ARROW);
-        wndClsEx.hbrBackground = (HBRUSH)GetStockObject( NULL_BRUSH );
+        wndClsEx.hCursor       = LoadCursor(nullptr, IDC_ARROW);
+        wndClsEx.hbrBackground = static_cast<HBRUSH>(GetStockObject( NULL_BRUSH ));
         wndClsEx.lpszClassName = HELPPOPUPWND_CLASS_NAME;
 
         // register the preview window class
@@ -507,7 +506,7 @@ ATOM SAL_CALL CHelpPopupWindow::RegisterWindowClass( )
         //               if the dll is unloaded
         //     Win2000 - the window class must be unregistered manually
         //               if the dll is unloaded
-        s_ClassAtom = RegisterClassEx( &wndClsEx );
+        s_ClassAtom = RegisterClassExW( &wndClsEx );
         OSL_ASSERT(s_ClassAtom);
     }
 
@@ -539,8 +538,8 @@ void SAL_CALL CHelpPopupWindow::UnregisterWindowClass( )
 
     if ( 0 == s_RegisterWndClassCount )
     {
-        if ( !UnregisterClass(
-                 (LPCTSTR)(DWORD_PTR)MAKELONG( s_ClassAtom, 0 ), m_hInstance ) )
+        if ( !UnregisterClassW(
+                 reinterpret_cast<PCWSTR>((DWORD_PTR)MAKELONG( s_ClassAtom, 0 )), m_hInstance ) )
         {
             OSL_FAIL( "unregister window class failed" );
         }

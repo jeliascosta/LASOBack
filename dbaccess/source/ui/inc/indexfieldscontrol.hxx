@@ -53,7 +53,7 @@ namespace dbaui
 
     public:
         IndexFieldsControl( vcl::Window* _pParent, WinBits nWinStyle);
-        virtual ~IndexFieldsControl();
+        virtual ~IndexFieldsControl() override;
         virtual void dispose() override;
 
         void Init(const css::uno::Sequence< OUString >& _rAvailableFields, sal_Int32 _nMaxColumnsInIndex,bool _bAddIndexAppendix);
@@ -62,7 +62,7 @@ namespace dbaui
         void commitTo(IndexFields& _rFields);
 
         bool SaveModified() override;
-        bool IsModified() const override;
+        using EditBrowseBox::IsModified;
 
         const IndexFields&  GetSavedValue() const { return m_aSavedValue; }
         void                SaveValue() { m_aSavedValue = m_aFields; }
@@ -86,7 +86,7 @@ namespace dbaui
 
         bool isNewField() const { return GetCurRow() >= (sal_Int32)m_aFields.size(); }
 
-        DECL_LINK_TYPED( OnListEntrySelected, DbaMouseDownListBoxController&, void );
+        DECL_LINK( OnListEntrySelected, DbaMouseDownListBoxController&, void );
 
     private:
         using ::svt::EditBrowseBox::Init;

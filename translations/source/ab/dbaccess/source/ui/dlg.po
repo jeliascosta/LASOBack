@@ -3,16 +3,17 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2015-01-07 11:08+0100\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"POT-Creation-Date: 2015-08-25 12:34+0200\n"
+"PO-Revision-Date: 2017-08-06 09:58+0000\n"
+"Last-Translator: Андрей Абухба <aabuchba@mail.ru>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: ab\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: LibreOffice\n"
 "X-Accelerator-Marker: ~\n"
+"X-Generator: Pootle 2.8\n"
+"X-POOTLE-MTIME: 1502013506.000000\n"
 
 #: AutoControls.src
 msgctxt ""
@@ -60,7 +61,7 @@ msgctxt ""
 "STR_ORACLE_DATABASE_NAME\n"
 "string.text"
 msgid "Name of the Oracle database"
-msgstr ""
+msgstr "Адырқәа рбаза Oracle ахьӡ "
 
 #: AutoControls.src
 msgctxt ""
@@ -83,7 +84,7 @@ msgctxt ""
 "AutoControls.src\n"
 "STR_COMMONURL\n"
 "string.text"
-msgid "Datasource URL"
+msgid "Datasource URL (e.g. postgresql://host:port/database)"
 msgstr ""
 
 #: AutoControls.src
@@ -116,7 +117,7 @@ msgctxt ""
 "STR_ADD_TABLES\n"
 "string.text"
 msgid "Add Tables"
-msgstr ""
+msgstr "Иацҵатәуп атаблица"
 
 #: AutoControls.src
 msgctxt ""
@@ -140,7 +141,7 @@ msgctxt ""
 "STR_CONNECTION_SUCCESS\n"
 "string.text"
 msgid "The connection was established successfully."
-msgstr ""
+msgstr "Аимадара қәҿиарала ишьақәыргылоуп."
 
 #: ConnectionPage.src
 msgctxt ""
@@ -156,7 +157,7 @@ msgctxt ""
 "STR_JDBCDRIVER_SUCCESS\n"
 "string.text"
 msgid "The JDBC driver was loaded successfully."
-msgstr ""
+msgstr "JDBC адраивер қәҿиарала иҭагалоуп."
 
 #: ConnectionPage.src
 msgctxt ""
@@ -172,7 +173,7 @@ msgctxt ""
 "STR_MSACCESS_FILTERNAME\n"
 "string.text"
 msgid "MS Access file"
-msgstr ""
+msgstr "MS Access афаил"
 
 #: ConnectionPage.src
 msgctxt ""
@@ -180,7 +181,7 @@ msgctxt ""
 "STR_MSACCESS_2007_FILTERNAME\n"
 "string.text"
 msgid "MS Access 2007 file"
-msgstr ""
+msgstr "MS Access 2007 афаил"
 
 #: ConnectionPage.src
 msgctxt ""
@@ -188,7 +189,7 @@ msgctxt ""
 "STR_FIREBIRD_FILTERNAME\n"
 "string.text"
 msgid "Firebird Database"
-msgstr ""
+msgstr "Адырқәа рбаза Firebird"
 
 #: UserAdmin.src
 msgctxt ""
@@ -220,7 +221,7 @@ msgctxt ""
 "STR_DATABASE_TYPE_CHANGE\n"
 "string.text"
 msgid "Database properties"
-msgstr ""
+msgstr "Адырқәа рбаза архиарақәа"
 
 #: dbadmin.src
 msgctxt ""
@@ -340,7 +341,7 @@ msgctxt ""
 "STR_NEW_FOLDER\n"
 "string.text"
 msgid "Folder"
-msgstr ""
+msgstr "Аҭаӡ"
 
 #: dbadminsetup.src
 msgctxt ""
@@ -348,7 +349,7 @@ msgctxt ""
 "STR_DBWIZARDTITLE\n"
 "string.text"
 msgid "Database Wizard"
-msgstr ""
+msgstr "Адырқәа рбаза азҟаза"
 
 #: dbadminsetup.src
 msgctxt ""
@@ -356,7 +357,7 @@ msgctxt ""
 "STR_PAGETITLE_INTROPAGE\n"
 "string.text"
 msgid "Select database"
-msgstr ""
+msgstr "Адырқәа рбаза алхра"
 
 #: dbadminsetup.src
 msgctxt ""
@@ -460,7 +461,7 @@ msgctxt ""
 "STR_PAGETITLE_FINAL\n"
 "string.text"
 msgid "Save and proceed"
-msgstr ""
+msgstr "Иеиқәырхатәуп иагьынагӡатәуп"
 
 #: dbadminsetup.src
 msgctxt ""
@@ -468,7 +469,7 @@ msgctxt ""
 "STR_DATABASEDEFAULTNAME\n"
 "string.text"
 msgid "New Database"
-msgstr ""
+msgstr "Адырқәа рбаза ҿыц"
 
 #: dbadminsetup.src
 msgctxt ""
@@ -682,7 +683,7 @@ msgctxt ""
 "STR_COMMAND_EXECUTED_SUCCESSFULLY\n"
 "string.text"
 msgid "Command successfully executed."
-msgstr ""
+msgstr "Акоманда қәҿиарала инагӡоуп."
 
 #: directsql.src
 msgctxt ""
@@ -818,7 +819,7 @@ msgctxt ""
 "STR_EXCEPTION_INFO\n"
 "string.text"
 msgid "Information"
-msgstr ""
+msgstr "Аинформациа"
 
 #: sqlmessage.src
 msgctxt ""

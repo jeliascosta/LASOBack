@@ -352,7 +352,7 @@ void SwTableFormula::MakeFormula_( const SwTable& rTable, OUString& rNewStr,
             if ( pTableBox->getRowSpan() >= 1 )
             {
                 if( bDelim )
-                    rNewStr += OUStringLiteral1<cListDelim>();
+                    rNewStr += OUStringLiteral1(cListDelim);
                 bDelim = true;
                 rNewStr += pCalcPara->rCalc.GetStrResult(
                             pTableBox->GetValue( *pCalcPara ), false );
@@ -386,7 +386,7 @@ void SwTableFormula::RelNmsToBoxNms( const SwTable& rTable, OUString& rNewStr,
     const SwTableBox *pBox = rTable.GetTableBox(
                     pNd->FindTableBoxStartNode()->GetIndex() );
 
-    rNewStr += OUString(rFirstBox[0]); // get label for the box
+    rNewStr += OUStringLiteral1(rFirstBox[0]); // get label for the box
     rFirstBox = rFirstBox.copy(1);
     if( pLastBox )
     {
@@ -407,7 +407,7 @@ void SwTableFormula::RelNmsToBoxNms( const SwTable& rTable, OUString& rNewStr,
         rNewStr += "A1";
 
     // get label for the box
-    rNewStr += OUString(rFirstBox[ rFirstBox.getLength()-1 ]);
+    rNewStr += OUStringLiteral1(rFirstBox[ rFirstBox.getLength()-1 ]);
 }
 
 void SwTableFormula::RelBoxNmsToPtr( const SwTable& rTable, OUString& rNewStr,
@@ -419,7 +419,7 @@ void SwTableFormula::RelBoxNmsToPtr( const SwTable& rTable, OUString& rNewStr,
     const SwTableBox *pBox = rTable.GetTableBox(
                     pNd->FindTableBoxStartNode()->GetIndex() );
 
-    rNewStr += OUString(rFirstBox[0]); // get label for the box
+    rNewStr += OUStringLiteral1(rFirstBox[0]); // get label for the box
     rFirstBox = rFirstBox.copy(1);
     if( pLastBox )
     {
@@ -439,7 +439,7 @@ void SwTableFormula::RelBoxNmsToPtr( const SwTable& rTable, OUString& rNewStr,
         rNewStr += "0";
 
     // get label for the box
-    rNewStr += OUString(rFirstBox[ rFirstBox.getLength()-1 ]);
+    rNewStr += OUStringLiteral1(rFirstBox[ rFirstBox.getLength()-1 ]);
 }
 
 void SwTableFormula::BoxNmsToRelNm( const SwTable& rTable, OUString& rNewStr,
@@ -459,7 +459,7 @@ void SwTableFormula::BoxNmsToRelNm( const SwTable& rTable, OUString& rNewStr,
         sRefBoxNm = pBox->GetName();
     }
 
-    rNewStr += OUString(rFirstBox[0]); // get label for the box
+    rNewStr += OUStringLiteral1(rFirstBox[0]); // get label for the box
     rFirstBox = rFirstBox.copy(1);
     if( pLastBox )
     {
@@ -473,7 +473,7 @@ void SwTableFormula::BoxNmsToRelNm( const SwTable& rTable, OUString& rNewStr,
                             m_eNmType == EXTRNL_NAME );
 
     // get label for the box
-    rNewStr += OUString(rFirstBox[ rFirstBox.getLength()-1 ]);
+    rNewStr += OUStringLiteral1(rFirstBox[ rFirstBox.getLength()-1 ]);
 }
 
 void SwTableFormula::PtrToBoxNms( const SwTable& rTable, OUString& rNewStr,
@@ -482,7 +482,7 @@ void SwTableFormula::PtrToBoxNms( const SwTable& rTable, OUString& rNewStr,
     // area in these parentheses?
     SwTableBox* pBox;
 
-    rNewStr += OUString(rFirstBox[0]); // get label for the box
+    rNewStr += OUStringLiteral1(rFirstBox[0]); // get label for the box
     rFirstBox = rFirstBox.copy(1);
     if( pLastBox )
     {
@@ -505,7 +505,7 @@ void SwTableFormula::PtrToBoxNms( const SwTable& rTable, OUString& rNewStr,
         rNewStr += "?";
 
     // get label for the box
-    rNewStr += OUString(rFirstBox[ rFirstBox.getLength()-1 ]);
+    rNewStr += OUStringLiteral1(rFirstBox[ rFirstBox.getLength()-1 ]);
 }
 
 void SwTableFormula::BoxNmsToPtr( const SwTable& rTable, OUString& rNewStr,
@@ -514,7 +514,7 @@ void SwTableFormula::BoxNmsToPtr( const SwTable& rTable, OUString& rNewStr,
     // area in these parentheses?
     const SwTableBox* pBox;
 
-    rNewStr += OUString(rFirstBox[0]); // get label for the box
+    rNewStr += OUStringLiteral1(rFirstBox[0]); // get label for the box
     rFirstBox = rFirstBox.copy(1);
     if( pLastBox )
     {
@@ -526,7 +526,7 @@ void SwTableFormula::BoxNmsToPtr( const SwTable& rTable, OUString& rNewStr,
 
     pBox = rTable.GetTableBox( rFirstBox );
     rNewStr += OUString::number(reinterpret_cast<sal_PtrDiff>(pBox))
-            +  OUString(rFirstBox[ rFirstBox.getLength()-1 ]); // get label for the box
+            +  OUStringLiteral1(rFirstBox[ rFirstBox.getLength()-1 ]); // get label for the box
 }
 
 /// create external formula (for UI)
@@ -858,12 +858,12 @@ static OUString lcl_BoxNmToRel( const SwTable& rTable, const SwTableNode& rTable
 
         const OUString sCpy = sTmp;        //JP 01.11.95: add rest from box name
 
-        sTmp = OUStringLiteral1<cRelIdentifier>() + OUString::number( nBox )
-             + OUStringLiteral1<cRelSeparator>() + OUString::number( nLine );
+        sTmp = OUStringLiteral1(cRelIdentifier) + OUString::number( nBox )
+             + OUStringLiteral1(cRelSeparator) + OUString::number( nLine );
 
         if (!sCpy.isEmpty())
         {
-            sTmp += OUStringLiteral1<cRelSeparator>() + sCpy;
+            sTmp += OUStringLiteral1(cRelSeparator) + sCpy;
         }
     }
 
@@ -1048,7 +1048,7 @@ void SwTableFormula::SplitMergeBoxNm_( const SwTable& rTable, OUString& rNewStr,
 {
     SwTableFormulaUpdate& rTableUpd = *static_cast<SwTableFormulaUpdate*>(pPara);
 
-    rNewStr += OUString(rFirstBox[0]);     // get label for the box
+    rNewStr += OUStringLiteral1(rFirstBox[0]);     // get label for the box
     rFirstBox = rFirstBox.copy(1);
 
     OUString sTableNm;
@@ -1185,7 +1185,7 @@ void SwTableFormula::SplitMergeBoxNm_( const SwTable& rTable, OUString& rNewStr,
         rNewStr += OUString::number(reinterpret_cast<sal_PtrDiff>(pEndBox)) + ":";
 
     rNewStr += OUString::number(reinterpret_cast<sal_PtrDiff>(pSttBox))
-            +  OUString(rFirstBox[ rFirstBox.getLength()-1] );
+            +  OUStringLiteral1(rFirstBox[ rFirstBox.getLength()-1] );
 }
 
 /// Create external formula but remember that the formula is placed in a split/merged table

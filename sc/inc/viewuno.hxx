@@ -66,7 +66,7 @@ protected:
 
 public:
                             ScViewPaneBase(ScTabViewShell* pViewSh, sal_uInt16 nP);
-    virtual                 ~ScViewPaneBase();
+    virtual                 ~ScViewPaneBase() override;
 
     ScTabViewShell*         GetViewShell() const    { return pViewShell; }
 
@@ -128,7 +128,7 @@ class ScViewPaneObj : public ScViewPaneBase, public cppu::OWeakObject
 {
 public:
                             ScViewPaneObj(ScTabViewShell* pViewSh, sal_uInt16 nP);
-    virtual                 ~ScViewPaneObj();
+    virtual                 ~ScViewPaneObj() override;
 
     virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
                                     throw(css::uno::RuntimeException, std::exception) override;
@@ -187,7 +187,7 @@ private:
 public:
                             ScTabViewObj(ScTabViewShell* pViewSh);
                             ScTabViewObj() = delete;
-    virtual                 ~ScTabViewObj();
+    virtual                 ~ScTabViewObj() override;
 
     virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
                                     throw(css::uno::RuntimeException, std::exception) override;
@@ -197,7 +197,7 @@ public:
     void                    SelectionChanged();
     void                    VisAreaChanged();
     // bSameTabButMoved = true if the same sheet as before is activated, used after moving/copying/inserting/deleting a sheet
-    void                    SheetChanged( bool bSameTabButMoved = false );
+    void                    SheetChanged( bool bSameTabButMoved );
     bool                    IsMouseListening() const;
     bool                    MousePressed( const css::awt::MouseEvent& e ) throw (css::uno::RuntimeException);
     bool                    MouseReleased( const css::awt::MouseEvent& e ) throw (css::uno::RuntimeException);
@@ -381,7 +381,7 @@ class ScPreviewObj : public SfxBaseController,
     ScPreviewShell* mpViewShell;
 public:
     ScPreviewObj(ScPreviewShell* pViewSh);
-    virtual ~ScPreviewObj();
+    virtual ~ScPreviewObj() override;
 
     virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType)
             throw(css::uno::RuntimeException, std::exception) override;

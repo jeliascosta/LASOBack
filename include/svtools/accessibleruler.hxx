@@ -35,7 +35,7 @@
 #include <com/sun/star/lang/DisposedException.hpp>
 #include <cppuhelper/interfacecontainer.h>
 #include <cppuhelper/compbase5.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <cppuhelper/implbase5.hxx>
 #include <comphelper/servicehelper.hxx>
 #include <vcl/vclptr.hxx>
@@ -60,14 +60,14 @@ typedef ::cppu::WeakAggComponentImplHelper5<
             css::lang::XServiceInfo >
             SvtRulerAccessible_Base;
 
-class SvtRulerAccessible : public ::comphelper::OBaseMutex, public SvtRulerAccessible_Base
+class SvtRulerAccessible : public ::cppu::BaseMutex, public SvtRulerAccessible_Base
 {
 public:
     //=====  internal  ========================================================
     SvtRulerAccessible(
         const css::uno::Reference< css::accessibility::XAccessible>& rxParent, Ruler& rRepresentation, const ::rtl::OUString& rName );
 protected:
-    virtual ~SvtRulerAccessible();
+    virtual ~SvtRulerAccessible() override;
 public:
 
     bool SAL_CALL
@@ -178,9 +178,6 @@ protected:
     /// @returns true if it's disposed or in disposing
     inline bool IsAlive() const;
 
-    /// @returns true if it's not disposed and no in disposing
-    inline bool IsNotAlive() const;
-
     /// throws the exception DisposedException if it's not alive
     void ThrowExceptionIfNotAlive() throw( css::lang::DisposedException );
 
@@ -210,11 +207,6 @@ private:
 inline bool SvtRulerAccessible::IsAlive() const
 {
     return !rBHelper.bDisposed && !rBHelper.bInDispose;
-}
-
-inline bool SvtRulerAccessible::IsNotAlive() const
-{
-    return rBHelper.bDisposed || rBHelper.bInDispose;
 }
 
 #endif

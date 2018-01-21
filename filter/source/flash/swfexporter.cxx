@@ -42,7 +42,6 @@ using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::drawing;
 using namespace ::com::sun::star::presentation;
 using namespace ::com::sun::star::task;
-using namespace ::std;
 using namespace ::swf;
 
 using com::sun::star::io::XOutputStream;
@@ -63,8 +62,8 @@ PageInfo::PageInfo()
 
 PageInfo::~PageInfo()
 {
-    vector<ShapeInfo*>::iterator aIter( maShapesVector.begin() );
-    const vector<ShapeInfo*>::iterator aEnd( maShapesVector.end() );
+    std::vector<ShapeInfo*>::iterator aIter( maShapesVector.begin() );
+    const std::vector<ShapeInfo*>::iterator aEnd( maShapesVector.end() );
     while( aIter != aEnd )
     {
         delete (*aIter++);
@@ -330,7 +329,7 @@ sal_uInt16 FlashExporter::exportBackgrounds( const Reference< XDrawPage >& xDraw
     return nPage;
 }
 
-sal_uInt16 FlashExporter::exportBackgrounds( Reference< XDrawPage > xDrawPage, sal_uInt16 nPage, bool bExportObjects )
+sal_uInt16 FlashExporter::exportBackgrounds( Reference< XDrawPage > const & xDrawPage, sal_uInt16 nPage, bool bExportObjects )
 {
     Reference< XPropertySet > xPropSet( xDrawPage, UNO_QUERY );
     if( !xDrawPage.is() || !xPropSet.is() )
@@ -393,7 +392,7 @@ sal_Int32 nPlaceDepth;
 //  should be reused.  The return value indicates which slide's background to use.
 //  If the return value != nPage, then there is no background (if == -1) or the
 //  background has already been exported.
-sal_uInt16 FlashExporter::exportDrawPageBackground(sal_uInt16 nPage, Reference< XDrawPage >& xPage)
+sal_uInt16 FlashExporter::exportDrawPageBackground(sal_uInt16 nPage, Reference< XDrawPage > const & xPage)
 {
     sal_uInt16 rBackgroundID;
 
@@ -505,7 +504,7 @@ void FlashExporter::exportShapes( const Reference< XShapes >& xShapes, bool bStr
 {
     OSL_ENSURE( (xShapes->getCount() <= 0xffff), "overflow in FlashExporter::exportDrawPageContents()" );
 
-    sal_uInt16 nShapeCount = (sal_uInt16)min( xShapes->getCount(), (sal_Int32)0xffff );
+    sal_uInt16 nShapeCount = (sal_uInt16)std::min( xShapes->getCount(), (sal_Int32)0xffff );
     sal_uInt16 nShape;
 
     Reference< XShape > xShape;

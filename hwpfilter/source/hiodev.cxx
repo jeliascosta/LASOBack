@@ -116,7 +116,11 @@ HStreamIODev::HStreamIODev(HStream * stream):_stream(stream)
 
 HStreamIODev::~HStreamIODev()
 {
-    close();
+/* 플러시한 후 닫는다. */
+    this->flush();
+    if (_gzfp)
+        gz_close(_gzfp);
+    _gzfp = nullptr;
 }
 
 
@@ -139,16 +143,6 @@ void HStreamIODev::flush()
 {
     if (_gzfp)
         gz_flush(_gzfp, Z_FINISH);
-}
-
-
-void HStreamIODev::close()
-{
-/* 플러시한 후 닫는다. */
-    this->flush();
-    if (_gzfp)
-        gz_close(_gzfp);
-    _gzfp = nullptr;
 }
 
 
@@ -276,7 +270,6 @@ HMemIODev::HMemIODev(char *s, size_t len)
 
 HMemIODev::~HMemIODev()
 {
-    close();
 }
 
 
@@ -299,11 +292,6 @@ void HMemIODev::flush()
 }
 
 
-void HMemIODev::close()
-{
-}
-
-
 int HMemIODev::state() const
 {
     if (pos <= length)
@@ -320,9 +308,10 @@ bool HMemIODev::setCompressed(bool )
 
 bool HMemIODev::read1b(unsigned char &out)
 {
+    ++pos;
     if (pos <= length)
     {
-        out = ptr[pos++];
+        out = ptr[pos - 1];
         return true;
     }
     return false;

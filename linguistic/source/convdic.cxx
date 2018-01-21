@@ -85,7 +85,7 @@ void ReadThroughDic( const OUString &rMainURL, ConvDicXMLImport &rImport )
     }
     catch (const uno::Exception &)
     {
-        DBG_ASSERT( false, "failed to get input stream" );
+        SAL_WARN( "linguistic", "failed to get input stream" );
     }
     if (!xIn.is())
         return;
@@ -245,7 +245,7 @@ void ConvDic::Save()
     }
     catch (const uno::Exception &)
     {
-        DBG_ASSERT( false, "failed to get input stream" );
+        SAL_WARN( "linguistic", "failed to get input stream" );
     }
     if (!xStream.is())
         return;
@@ -644,7 +644,7 @@ void SAL_CALL ConvDic::removeFlushListener(
 OUString SAL_CALL ConvDic::getImplementationName(  )
     throw (RuntimeException, std::exception)
 {
-    return getImplementationName_Static();
+    return OUString( "com.sun.star.lingu2.ConvDic" );
 }
 
 sal_Bool SAL_CALL ConvDic::supportsService( const OUString& rServiceName )
@@ -656,15 +656,7 @@ sal_Bool SAL_CALL ConvDic::supportsService( const OUString& rServiceName )
 uno::Sequence< OUString > SAL_CALL ConvDic::getSupportedServiceNames(  )
     throw (RuntimeException, std::exception)
 {
-    return getSupportedServiceNames_Static();
-}
-
-
-uno::Sequence< OUString > ConvDic::getSupportedServiceNames_Static()
-    throw()
-{
-    uno::Sequence<OUString> aSNS { SN_CONV_DICTIONARY };
-    return aSNS;
+    return { SN_CONV_DICTIONARY };
 }
 
 

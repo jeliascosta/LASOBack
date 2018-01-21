@@ -79,12 +79,12 @@ private:
     /** helper to allow us listen to the configuration without a cyclic dependency */
     css::uno::Reference<css::container::XContainerListener> m_xConfigListener;
 
-    virtual void SAL_CALL disposing() override;
+    virtual void SAL_CALL disposing() final override;
 
 public:
 
     explicit JobExecutor(const css::uno::Reference< css::uno::XComponentContext >& xContext);
-    virtual ~JobExecutor();
+    virtual ~JobExecutor() override;
 
     virtual OUString SAL_CALL getImplementationName()
         throw (css::uno::RuntimeException, std::exception) override
@@ -101,8 +101,7 @@ public:
     virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
         throw (css::uno::RuntimeException, std::exception) override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.task.JobExecutor" };
-        return aSeq;
+        return {"com.sun.star.task.JobExecutor"};
     }
 
     // task.XJobExecutor
@@ -250,10 +249,6 @@ void SAL_CALL JobExecutor::trigger( const OUString& sEvent ) throw(css::uno::Run
 
 void SAL_CALL JobExecutor::notifyEvent( const css::document::EventObject& aEvent ) throw(css::uno::RuntimeException, std::exception)
 {
-    const char EVENT_ON_NEW[] = "OnNew";                            // Doc UI  event
-    const char EVENT_ON_LOAD[] = "OnLoad";                          // Doc UI  event
-    const char EVENT_ON_CREATE[] = "OnCreate";                      // Doc API event
-    const char EVENT_ON_LOAD_FINISHED[] = "OnLoadFinished";         // Doc API event
     OUString EVENT_ON_DOCUMENT_OPENED("onDocumentOpened");   // Job UI  event : OnNew    or OnLoad
     OUString EVENT_ON_DOCUMENT_ADDED("onDocumentAdded");     // Job API event : OnCreate or OnLoadFinished
 
@@ -278,8 +273,8 @@ void SAL_CALL JobExecutor::notifyEvent( const css::document::EventObject& aEvent
 
     // Special feature: If the events "OnNew" or "OnLoad" occurs - we generate our own event "onDocumentOpened".
     if (
-        (aEvent.EventName == EVENT_ON_NEW) ||
-        (aEvent.EventName == EVENT_ON_LOAD)
+        (aEvent.EventName == "OnNew") ||
+        (aEvent.EventName == "OnLoad")
        )
     {
         if (std::find(m_lEvents.begin(), m_lEvents.end(), EVENT_ON_DOCUMENT_OPENED) != m_lEvents.end())
@@ -288,8 +283,8 @@ void SAL_CALL JobExecutor::notifyEvent( const css::document::EventObject& aEvent
 
     // Special feature: If the events "OnCreate" or "OnLoadFinished" occurs - we generate our own event "onDocumentAdded".
     if (
-        (aEvent.EventName == EVENT_ON_CREATE) ||
-        (aEvent.EventName == EVENT_ON_LOAD_FINISHED)
+        (aEvent.EventName == "OnCreate") ||
+        (aEvent.EventName == "OnLoadFinished")
        )
     {
         if (std::find(m_lEvents.begin(), m_lEvents.end(), EVENT_ON_DOCUMENT_ADDED) != m_lEvents.end())
@@ -380,7 +375,7 @@ void SAL_CALL JobExecutor::elementReplaced( const css::container::ContainerEvent
                 css.document.XEventListener. So it can be, that this disposing call comes from
                 the global event broadcaster service. But we don't hold any reference to this service
                 which can or must be released. Because this broadcaster itself is an one instance service
-                too, we can ignore this request. On the other side we must relase our internal CFG
+                too, we can ignore this request. On the other side we must release our internal CFG
                 reference ... SOLUTION => check the given event source and react only, if it's our internal
                 hold configuration object!
  */

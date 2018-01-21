@@ -47,6 +47,7 @@
 #include <com/sun/star/drawing/EnhancedCustomShapeParameterPair.hpp>
 #include <com/sun/star/drawing/EnhancedCustomShapeSegment.hpp>
 #include <com/sun/star/drawing/EnhancedCustomShapeSegmentCommand.hpp>
+#include <com/sun/star/drawing/Hatch.hpp>
 #include <com/sun/star/drawing/LineDash.hpp>
 #include <com/sun/star/drawing/LineJoint.hpp>
 #include <com/sun/star/drawing/LineStyle.hpp>
@@ -68,6 +69,7 @@
 #include <com/sun/star/text/XTextField.hpp>
 #include <com/sun/star/text/XTextRange.hpp>
 #include <com/sun/star/style/CaseMap.hpp>
+#include <o3tl/any.hxx>
 #include <tools/stream.hxx>
 #include <unotools/fontdefs.hxx>
 #include <vcl/cvtgrf.hxx>
@@ -87,6 +89,7 @@
 #include <svx/svdoashp.hxx>
 #include <svx/unoapi.hxx>
 #include <svx/unoshape.hxx>
+#include <svx/EnhancedCustomShape2d.hxx>
 
 using namespace ::css;
 using namespace ::css::beans;
@@ -351,7 +354,7 @@ void DrawingML::WriteGradientFill( const Reference< XPropertySet >& rXPropSet )
     awt::Gradient aGradient;
     if( GETA( FillGradient ) )
     {
-        aGradient = *static_cast< const awt::Gradient* >( mAny.getValue() );
+        aGradient = *o3tl::doAccess<awt::Gradient>(mAny);
 
         // get InteropGrabBag and search the relevant attributes
         awt::Gradient aOriginalGradient;
@@ -445,7 +448,7 @@ void DrawingML::WriteGradientFill( awt::Gradient rGradient )
     switch( rGradient.Style )
     {
         default:
-        case GradientStyle_LINEAR:
+        case awt::GradientStyle_LINEAR:
             mpFS->startElementNS( XML_a, XML_gsLst, FSEND );
             WriteGradientStop( 0, ColorWithIntensity( rGradient.StartColor, rGradient.StartIntensity ) );
             WriteGradientStop( 100, ColorWithIntensity( rGradient.EndColor, rGradient.EndIntensity ) );
@@ -455,7 +458,7 @@ void DrawingML::WriteGradientFill( awt::Gradient rGradient )
                     FSEND );
             break;
 
-        case GradientStyle_AXIAL:
+        case awt::GradientStyle_AXIAL:
             mpFS->startElementNS( XML_a, XML_gsLst, FSEND );
             WriteGradientStop( 0, ColorWithIntensity( rGradient.EndColor, rGradient.EndIntensity ) );
             WriteGradientStop( 50, ColorWithIntensity( rGradient.StartColor, rGradient.StartIntensity ) );
@@ -469,10 +472,10 @@ void DrawingML::WriteGradientFill( awt::Gradient rGradient )
             /* I don't see how to apply transformation to gradients, so
              * elliptical will end as radial and square as
              * rectangular. also position offsets are not applied */
-        case GradientStyle_RADIAL:
-        case GradientStyle_ELLIPTICAL:
-        case GradientStyle_RECT:
-        case GradientStyle_SQUARE:
+        case awt::GradientStyle_RADIAL:
+        case awt::GradientStyle_ELLIPTICAL:
+        case awt::GradientStyle_RECT:
+        case awt::GradientStyle_SQUARE:
             mpFS->startElementNS( XML_a, XML_gsLst, FSEND );
             WriteGradientStop( 0, ColorWithIntensity( rGradient.EndColor, rGradient.EndIntensity ) );
             WriteGradientStop( 100, ColorWithIntensity( rGradient.StartColor, rGradient.StartIntensity ) );
@@ -838,56 +841,56 @@ OUString DrawingML::WriteImage( const Graphic& rGraphic , bool bRelPathToMedia )
 
     SvMemoryStream aStream;
     const void* aData = aLink.GetData();
-    sal_Size nDataSize = aLink.GetDataSize();
+    std::size_t nDataSize = aLink.GetDataSize();
 
     switch ( aLink.GetType() )
     {
-        case GFX_LINK_TYPE_NATIVE_GIF:
+        case GfxLinkType::NativeGif:
             sMediaType = "image/gif";
             pExtension = ".gif";
             break;
 
         // #i15508# added BMP type for better exports
         // export not yet active, so adding for reference (not checked)
-        case GFX_LINK_TYPE_NATIVE_BMP:
+        case GfxLinkType::NativeBmp:
             sMediaType = "image/bmp";
             pExtension = ".bmp";
             break;
 
-        case GFX_LINK_TYPE_NATIVE_JPG:
+        case GfxLinkType::NativeJpg:
             sMediaType = "image/jpeg";
             pExtension = ".jpeg";
             break;
-        case GFX_LINK_TYPE_NATIVE_PNG:
+        case GfxLinkType::NativePng:
             sMediaType = "image/png";
             pExtension = ".png";
             break;
-        case GFX_LINK_TYPE_NATIVE_TIF:
+        case GfxLinkType::NativeTif:
             sMediaType = "image/tiff";
             pExtension = ".tif";
             break;
-        case GFX_LINK_TYPE_NATIVE_WMF:
+        case GfxLinkType::NativeWmf:
             sMediaType = "image/x-wmf";
             pExtension = ".wmf";
             break;
-        case GFX_LINK_TYPE_NATIVE_MET:
+        case GfxLinkType::NativeMet:
             sMediaType = "image/x-met";
             pExtension = ".met";
             break;
-        case GFX_LINK_TYPE_NATIVE_PCT:
+        case GfxLinkType::NativePct:
             sMediaType = "image/x-pict";
             pExtension = ".pct";
             break;
-        case GFX_LINK_TYPE_NATIVE_MOV:
+        case GfxLinkType::NativeMov:
             sMediaType = "application/movie";
             pExtension = ".MOV";
             break;
         default:
         {
             GraphicType aType = rGraphic.GetType();
-            if ( aType == GRAPHIC_BITMAP || aType == GRAPHIC_GDIMETAFILE)
+            if ( aType == GraphicType::Bitmap || aType == GraphicType::GdiMetafile)
             {
-                if ( aType == GRAPHIC_BITMAP )
+                if ( aType == GraphicType::Bitmap )
                 {
                     (void)GraphicConverter::Export( aStream, rGraphic, ConvertDataFormat::PNG );
                     sMediaType = "image/png";
@@ -1089,8 +1092,8 @@ void DrawingML::WriteSrcRect( const Reference< XPropertySet >& rXPropSet, const 
     const MapMode& rMapMode = aGraphicObject.GetPrefMapMode();
 
     // GraphicCrop is in mm100, so in case the original size is in pixels, convert it over.
-    if (rMapMode.GetMapUnit() == MAP_PIXEL)
-        aOriginalSize = Application::GetDefaultDevice()->PixelToLogic(aOriginalSize, MapMode(MAP_100TH_MM));
+    if (rMapMode.GetMapUnit() == MapUnit::MapPixel)
+        aOriginalSize = Application::GetDefaultDevice()->PixelToLogic(aOriginalSize, MapMode(MapUnit::Map100thMM));
 
     if ( GetProperty( rXPropSet, "GraphicCrop" ) )
     {
@@ -1227,7 +1230,7 @@ void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool 
     }
     else if( GETA( CharHeight ) )
     {
-        nSize = (sal_Int32) (100*(*static_cast<float const *>(mAny.getValue())));
+        nSize = (sal_Int32) (100*(*o3tl::doAccess<float>(mAny)));
         if ( nElement == XML_rPr )
         {
             rbOverridingCharHeight = true;
@@ -1236,7 +1239,7 @@ void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool 
     }
 
      if( GETA( CharKerning ) )
-        nCharKerning = (sal_Int32)(*static_cast<short const *>(mAny.getValue()));
+        nCharKerning = (sal_Int32)(*o3tl::doAccess<sal_Int16>(mAny));
     /**  While setting values in propertymap,
     *    CharKerning converted using GetTextSpacingPoint
     *    i.e set @ http://opengrok.libreoffice.org/xref/core/oox/source/drawingml/textcharacterproperties.cxx#129
@@ -1247,12 +1250,12 @@ void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool 
 
     if ( ( bComplex && GETA( CharWeightComplex ) ) || GETA( CharWeight ) )
     {
-        if ( *static_cast<float const *>(mAny.getValue()) >= awt::FontWeight::SEMIBOLD )
+        if ( *o3tl::doAccess<float>(mAny) >= awt::FontWeight::SEMIBOLD )
             bold = "1";
     }
 
     if ( ( bComplex && GETA( CharPostureComplex ) ) || GETA( CharPosture ) )
-        switch ( *static_cast<awt::FontSlant const *>(mAny.getValue()) )
+        switch ( *o3tl::doAccess<awt::FontSlant>(mAny) )
         {
             case awt::FontSlant_OBLIQUE :
             case awt::FontSlant_ITALIC :
@@ -1264,7 +1267,7 @@ void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool 
 
     if ( CGETAD( CharUnderline ) )
     {
-        switch ( *static_cast<sal_Int16 const *>(mAny.getValue()) )
+        switch ( *o3tl::doAccess<sal_Int16>(mAny) )
         {
             case awt::FontUnderline::SINGLE :
                 underline = "sng";
@@ -1319,7 +1322,7 @@ void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool 
 
     if ( CGETAD( CharStrikeout ) )
     {
-        switch ( *static_cast<sal_Int16 const *>(mAny.getValue()) )
+        switch ( *o3tl::doAccess<sal_Int16>(mAny) )
         {
             case awt::FontStrikeout::NONE :
                strikeout = "noStrike";
@@ -1366,7 +1369,7 @@ void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool 
 
     if( GETA( CharCaseMap ) )
     {
-        switch ( *static_cast<sal_Int16 const *>(mAny.getValue()) )
+        switch ( *o3tl::doAccess<sal_Int16>(mAny) )
         {
             case CaseMap::UPPERCASE :
                 cap = "all";
@@ -1393,7 +1396,7 @@ void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool 
     // mso doesn't like text color to be placed after typeface
     if( CGETAD( CharColor ) )
     {
-        sal_uInt32 color = *static_cast<sal_uInt32 const *>(mAny.getValue());
+        sal_uInt32 color = *o3tl::doAccess<sal_uInt32>(mAny);
         SAL_INFO("oox.shape", "run color: " << color << " auto: " << COL_AUTO);
 
         if( color == COL_AUTO )  // nCharColor depends to the background color
@@ -1409,7 +1412,7 @@ void DrawingML::WriteRunProperties( const Reference< XPropertySet >& rRun, bool 
 
     if( CGETAD( CharUnderlineColor ) )
     {
-        sal_uInt32 color = *static_cast<sal_uInt32 const *>(mAny.getValue());
+        sal_uInt32 color = *o3tl::doAccess<sal_uInt32>(mAny);
 
         mpFS->startElementNS( XML_a, XML_uFill,FSEND);
         WriteSolidFill( color );
@@ -1483,7 +1486,7 @@ OUString DrawingML::GetFieldValue( const css::uno::Reference< css::text::XTextRa
 
     if( GETA( TextPortionType ) )
     {
-        aFieldType = OUString( *static_cast<OUString const *>(mAny.getValue()) );
+        aFieldType = *o3tl::doAccess<OUString>(mAny);
         SAL_INFO("oox.shape", "field type: " << aFieldType);
     }
 
@@ -1741,73 +1744,68 @@ void DrawingML::WriteParagraphNumbering( const Reference< XPropertySet >& rXProp
 
     for ( sal_Int32 i = 0; i < nPropertyCount; i++ )
     {
-        const void* pValue = pPropValue[ i ].Value.getValue();
-        if ( pValue )
+        OUString aPropName( pPropValue[ i ].Name );
+        SAL_INFO("oox.shape", "pro name: " << aPropName);
+        if ( aPropName == "NumberingType" )
         {
-            OUString aPropName( pPropValue[ i ].Name );
-            SAL_INFO("oox.shape", "pro name: " << aPropName);
-            if ( aPropName == "NumberingType" )
-            {
-                nNumberingType = *( static_cast<sal_Int16 const *>(pValue) );
-            }
-            else if ( aPropName == "Prefix" )
-            {
-                if( *static_cast<OUString const *>(pValue) == ")")
-                    bPBoth = true;
-            }
-            else if ( aPropName == "Suffix" )
-            {
-                if( *static_cast<OUString const *>(pValue) == ".")
-                    bSDot = true;
-                else if( *static_cast<OUString const *>(pValue) == ")")
-                    bPBehind = true;
-            }
-            else if(aPropName == "BulletColor")
-            {
-                nBulletColor = *static_cast<sal_uInt32 const *>(pValue);
-                bHasBulletColor = true;
-            }
-            else if ( aPropName == "BulletChar" )
-            {
-                aBulletChar = OUString ( *( static_cast<OUString const *>(pValue) ) )[ 0 ];
-            }
-            else if ( aPropName == "BulletFont" )
-            {
-                aFontDesc = *static_cast<awt::FontDescriptor const *>(pValue);
-                bHasFontDesc = true;
+            nNumberingType = *o3tl::doAccess<sal_Int16>(pPropValue[i].Value);
+        }
+        else if ( aPropName == "Prefix" )
+        {
+            if( *o3tl::doAccess<OUString>(pPropValue[i].Value) == ")")
+                bPBoth = true;
+        }
+        else if ( aPropName == "Suffix" )
+        {
+            auto s = o3tl::doAccess<OUString>(pPropValue[i].Value);
+            if( *s == ".")
+                bSDot = true;
+            else if( *s == ")")
+                bPBehind = true;
+        }
+        else if(aPropName == "BulletColor")
+        {
+            nBulletColor = *o3tl::doAccess<sal_uInt32>(pPropValue[i].Value);
+            bHasBulletColor = true;
+        }
+        else if ( aPropName == "BulletChar" )
+        {
+            aBulletChar = (*o3tl::doAccess<OUString>(pPropValue[i].Value))[ 0 ];
+        }
+        else if ( aPropName == "BulletFont" )
+        {
+            aFontDesc = *o3tl::doAccess<awt::FontDescriptor>(pPropValue[i].Value);
+            bHasFontDesc = true;
 
-                // Our numbullet dialog has set the wrong textencoding for our "StarSymbol" font,
-                // instead of a Unicode encoding the encoding RTL_TEXTENCODING_SYMBOL was used.
-                // Because there might exist a lot of damaged documemts I added this two lines
-                // which fixes the bullet problem for the export.
-                if ( aFontDesc.Name.equalsIgnoreAsciiCase("StarSymbol") )
-                    aFontDesc.CharSet = RTL_TEXTENCODING_MS_1252;
+            // Our numbullet dialog has set the wrong textencoding for our "StarSymbol" font,
+            // instead of a Unicode encoding the encoding RTL_TEXTENCODING_SYMBOL was used.
+            // Because there might exist a lot of damaged documemts I added this two lines
+            // which fixes the bullet problem for the export.
+            if ( aFontDesc.Name.equalsIgnoreAsciiCase("StarSymbol") )
+                aFontDesc.CharSet = RTL_TEXTENCODING_MS_1252;
 
-            }
-            else if ( aPropName == "BulletRelSize" )
+        }
+        else if ( aPropName == "BulletRelSize" )
+        {
+            nBulletRelSize = *o3tl::doAccess<sal_Int16>(pPropValue[i].Value);
+        }
+        else if ( aPropName == "StartWith" )
+        {
+            nStartWith = *o3tl::doAccess<sal_Int16>(pPropValue[i].Value);
+        }
+        else if ( aPropName == "GraphicURL" )
+        {
+            aGraphicURL = *o3tl::doAccess<OUString>(pPropValue[i].Value);
+            SAL_INFO("oox.shape", "graphic url: " << aGraphicURL);
+        }
+        else if ( aPropName == "GraphicSize" )
+        {
+            if (auto aSize = o3tl::tryAccess<awt::Size>(pPropValue[i].Value))
             {
-                nBulletRelSize = *static_cast<sal_Int16 const *>(pValue);
-            }
-            else if ( aPropName == "StartWith" )
-            {
-                nStartWith = *static_cast<sal_Int16 const *>(pValue);
-            }
-            else if ( aPropName == "GraphicURL" )
-            {
-                aGraphicURL = *static_cast<OUString const *>(pValue);
-                SAL_INFO("oox.shape", "graphic url: " << aGraphicURL);
-            }
-            else if ( aPropName == "GraphicSize" )
-            {
-                if ( pPropValue[ i ].Value.getValueType() == cppu::UnoType<awt::Size>::get())
-                {
-                    // don't cast awt::Size to Size as on 64-bits they are not the same.
-                    css::awt::Size aSize;
-                    pPropValue[ i ].Value >>= aSize;
-                    //aBuGraSize.nA = aSize.Width;
-                    //aBuGraSize.nB = aSize.Height;
-                    SAL_INFO("oox.shape", "graphic size: " << aSize.Width << "x" << aSize.Height);
-                }
+                // don't cast awt::Size to Size as on 64-bits they are not the same.
+                //aBuGraSize.nA = aSize.Width;
+                //aBuGraSize.nB = aSize.Height;
+                SAL_INFO("oox.shape", "graphic size: " << aSize->Width << "x" << aSize->Height);
             }
         }
     }
@@ -1889,14 +1887,10 @@ sal_Int32 DrawingML::getBulletMarginIndentation (const Reference< XPropertySet >
 
     for ( sal_Int32 i = 0; i < nPropertyCount; i++ )
     {
-        const void* pValue = pPropValue[ i ].Value.getValue();
-        if ( pValue )
-        {
-            OUString aPropName( pPropValue[ i ].Name );
-            SAL_INFO("oox.shape", "pro name: " << aPropName);
-            if ( aPropName == propName )
-                return *( static_cast<sal_Int32 const *>(pValue) );
-        }
+        OUString aPropName( pPropValue[ i ].Name );
+        SAL_INFO("oox.shape", "pro name: " << aPropName);
+        if ( aPropName == propName )
+            return *o3tl::doAccess<sal_Int32>(pPropValue[i].Value);
     }
 
     return 0;
@@ -1924,7 +1918,7 @@ const char* DrawingML::GetAlignment( sal_Int32 nAlignment )
     return sAlignment;
 }
 
-void DrawingML::WriteLinespacing( LineSpacing& rSpacing )
+void DrawingML::WriteLinespacing( const LineSpacing& rSpacing )
 {
     if( rSpacing.Mode == LineSpacingMode::PROP )
     {
@@ -1935,7 +1929,7 @@ void DrawingML::WriteLinespacing( LineSpacing& rSpacing )
     else
     {
         mpFS->singleElementNS( XML_a, XML_spcPts,
-                               XML_val, I32S( rSpacing.Height ),
+                               XML_val, I32S( std::lround(rSpacing.Height / 25.4 * 72) ),
                                FSEND );
     }
 }
@@ -2182,7 +2176,7 @@ void DrawingML::WriteText( const Reference< XInterface >& rXIface, const OUStrin
                                XML_anchorCtr, bHorizontalCenter ? "1" : nullptr,
                                XML_vert, sWritingMode,
                                FSEND );
-        if( presetWarp != nullptr  && !presetWarp.isEmpty())
+        if( !presetWarp.isEmpty())
         {
             mpFS->singleElementNS(XML_a, XML_prstTxWarp, XML_prst, presetWarp.toUtf8().getStr(),
                 FSEND );
@@ -2254,6 +2248,33 @@ void DrawingML::WriteText( const Reference< XInterface >& rXIface, const OUStrin
         if( any >>= paragraph)
             WriteParagraph( paragraph, bOverridingCharHeight, nCharHeight );
     }
+}
+
+void DrawingML::WritePresetShape( const char* pShape , std::vector< std::pair<sal_Int32,sal_Int32>> & rAvList )
+{
+    mpFS->startElementNS( XML_a, XML_prstGeom,
+                          XML_prst, pShape,
+                          FSEND );
+    if ( !rAvList.empty() )
+    {
+
+        mpFS->startElementNS( XML_a, XML_avLst, FSEND );
+        for(auto iter = rAvList.begin() ; iter != rAvList.end() ; ++iter)
+        {
+            OString sName = OString("adj") + ( ( iter->first > 0 ) ? OString::number(iter->first) : OString("") );
+            OString sFmla = OString("val ") + OString::number( iter->second );
+
+            mpFS->singleElementNS( XML_a, XML_gd,
+                    XML_name, sName.getStr(),
+                    XML_fmla, sFmla.getStr(),
+                    FSEND );
+        }
+        mpFS->endElementNS( XML_a, XML_avLst );
+    }
+    else
+        mpFS->singleElementNS( XML_a, XML_avLst, FSEND );
+
+    mpFS->endElementNS(  XML_a, XML_prstGeom );
 }
 
 void DrawingML::WritePresetShape( const char* pShape )
@@ -2338,7 +2359,7 @@ void DrawingML::WritePresetShape( const char* pShape, MSO_SPT eShapeType, bool b
     mpFS->endElementNS(  XML_a, XML_prstGeom );
 }
 
-bool DrawingML::WriteCustomGeometry( const Reference< XShape >& rXShape )
+bool DrawingML::WriteCustomGeometry( const Reference< XShape >& rXShape, const SdrObjCustomShape* pShape )
 {
     uno::Reference< beans::XPropertySet > aXPropSet;
     uno::Any aAny( rXShape->queryInterface(cppu::UnoType<beans::XPropertySet>::get()));
@@ -2358,8 +2379,7 @@ bool DrawingML::WriteCustomGeometry( const Reference< XShape >& rXShape )
     }
 
 
-    uno::Sequence< beans::PropertyValue > const * pGeometrySeq =
-        static_cast<uno::Sequence< beans::PropertyValue > const *>(aAny.getValue());
+    auto pGeometrySeq = o3tl::tryAccess<uno::Sequence<beans::PropertyValue>>(aAny);
 
     if ( pGeometrySeq )
     {
@@ -2439,15 +2459,16 @@ bool DrawingML::WriteCustomGeometry( const Reference< XShape >& rXShape )
 
                     for ( int j = 0; j < aPairs.getLength(); ++j )
                     {
-                        sal_Int32 nCandidate(0);
-                        if ((aPairs[j].First.Value >>= nCandidate) && nCandidate < nXMin)
-                            nXMin = nCandidate;
-                        if ((aPairs[j].Second.Value >>= nCandidate) && nCandidate < nYMin)
-                            nYMin = nCandidate;
-                        if ((aPairs[j].First.Value >>= nCandidate) && nCandidate > nXMax)
-                            nXMax = nCandidate;
-                        if ((aPairs[j].Second.Value >>= nCandidate) && nCandidate > nYMax)
-                            nYMax = nCandidate;
+                        sal_Int32 nX = GetCustomGeometryPointValue(aPairs[j].First, pShape);
+                        sal_Int32 nY = GetCustomGeometryPointValue(aPairs[j].Second, pShape);
+                        if (nX < nXMin)
+                            nXMin = nX;
+                        if (nY < nYMin)
+                            nYMin = nY;
+                        if (nX > nXMax)
+                            nXMax = nX;
+                        if (nY > nYMax)
+                            nYMax = nY;
                     }
                     mpFS->startElementNS( XML_a, XML_path,
                           XML_w, I64S( nXMax - nXMin ),
@@ -2470,16 +2491,7 @@ bool DrawingML::WriteCustomGeometry( const Reference< XShape >& rXShape )
                             case drawing::EnhancedCustomShapeSegmentCommand::MOVETO :
                             {
                                 mpFS->startElementNS( XML_a, XML_moveTo, FSEND );
-
-                                sal_Int32 nX(0), nY(0);
-                                aPairs[nPairIndex].First.Value >>= nX;
-                                aPairs[nPairIndex].Second.Value >>= nY;
-
-                                mpFS->singleElementNS( XML_a, XML_pt,
-                                   XML_x, I64S(nX),
-                                   XML_y, I64S(nY),
-                                   FSEND );
-
+                                WriteCustomGeometryPoint(aPairs[nPairIndex], pShape);
                                 mpFS->endElementNS( XML_a, XML_moveTo );
                                 nPairIndex++;
                                 break;
@@ -2487,15 +2499,7 @@ bool DrawingML::WriteCustomGeometry( const Reference< XShape >& rXShape )
                             case drawing::EnhancedCustomShapeSegmentCommand::LINETO :
                             {
                                 mpFS->startElementNS( XML_a, XML_lnTo, FSEND );
-
-                                sal_Int32 nX(0), nY(0);
-                                aPairs[nPairIndex].First.Value >>= nX;
-                                aPairs[nPairIndex].Second.Value >>= nY;
-
-                                mpFS->singleElementNS( XML_a, XML_pt,
-                                   XML_x, I64S(nX),
-                                   XML_y, I64S(nY),
-                                   FSEND );
+                                WriteCustomGeometryPoint(aPairs[nPairIndex], pShape);
                                 mpFS->endElementNS( XML_a, XML_lnTo );
                                 nPairIndex++;
                                 break;
@@ -2505,15 +2509,7 @@ bool DrawingML::WriteCustomGeometry( const Reference< XShape >& rXShape )
                                 mpFS->startElementNS( XML_a, XML_cubicBezTo, FSEND );
                                 for( sal_uInt8 l = 0; l <= 2; ++l )
                                 {
-                                    sal_Int32 nX(0), nY(0);
-                                    aPairs[nPairIndex+l].First.Value >>= nX;
-                                    aPairs[nPairIndex+l].Second.Value >>= nY;
-
-                                    mpFS->singleElementNS( XML_a, XML_pt,
-                                    XML_x, I64S( nX ),
-                                    XML_y, I64S( nY ),
-                                    FSEND );
-
+                                    WriteCustomGeometryPoint(aPairs[nPairIndex+l], pShape);
                                 }
                                 mpFS->endElementNS( XML_a, XML_cubicBezTo );
                                 nPairIndex += 3;
@@ -2544,15 +2540,7 @@ bool DrawingML::WriteCustomGeometry( const Reference< XShape >& rXShape )
                                 mpFS->startElementNS( XML_a, XML_quadBezTo, FSEND );
                                 for( sal_uInt8 l = 0; l < 2; ++l )
                                 {
-                                    sal_Int32 nX(0), nY(0);
-                                    aPairs[nPairIndex+l].First.Value >>= nX;
-                                    aPairs[nPairIndex+l].Second.Value >>= nY;
-
-                                    mpFS->singleElementNS( XML_a, XML_pt,
-                                        XML_x, I64S( nX ),
-                                        XML_y, I64S( nY ),
-                                        FSEND );
-
+                                    WriteCustomGeometryPoint(aPairs[nPairIndex+l], pShape);
                                 }
                                 mpFS->endElementNS( XML_a, XML_quadBezTo );
                                 nPairIndex += 2;
@@ -2579,9 +2567,37 @@ bool DrawingML::WriteCustomGeometry( const Reference< XShape >& rXShape )
     return false;
 }
 
+void DrawingML::WriteCustomGeometryPoint(const drawing::EnhancedCustomShapeParameterPair& rParamPair, const SdrObjCustomShape* pShape)
+{
+    sal_Int32 nX = GetCustomGeometryPointValue(rParamPair.First, pShape);
+    sal_Int32 nY = GetCustomGeometryPointValue(rParamPair.Second, pShape);
+
+    mpFS->singleElementNS( XML_a, XML_pt,
+        XML_x, OString::number(nX).getStr(),
+        XML_y, OString::number(nY).getStr(),
+        FSEND );
+}
+
+sal_Int32 DrawingML::GetCustomGeometryPointValue(const css::drawing::EnhancedCustomShapeParameter& rParam, const SdrObjCustomShape* pShape)
+{
+    sal_Int32 nValue = 0;
+    if(pShape)
+    {
+        const EnhancedCustomShape2d aCustoShape2d (const_cast<SdrObjCustomShape*>(pShape));
+        double fValue = 0.0;
+        aCustoShape2d.GetParameter(fValue, rParam, false, false);
+        nValue = std::lround(fValue);
+    }
+    else
+        rParam.Value >>= nValue;
+    return nValue;
+}
+
 void DrawingML::WritePolyPolygon( const tools::PolyPolygon& rPolyPolygon )
 {
-    if( rPolyPolygon.Count() < 1 )
+    // In case of Writer, the parent element is <wps:spPr>, and there the
+    // <a:custGeom> element is not optional.
+    if (rPolyPolygon.Count() < 1 && GetDocumentType() != DOCUMENT_DOCX)
         return;
 
     mpFS->startElementNS( XML_a, XML_custGeom, FSEND );
@@ -2597,16 +2613,19 @@ void DrawingML::WritePolyPolygon( const tools::PolyPolygon& rPolyPolygon )
 
     mpFS->startElementNS( XML_a, XML_pathLst, FSEND );
 
+    const Rectangle aRect( rPolyPolygon.GetBoundRect() );
+
+    // Put all polygons of rPolyPolygon in the same path elemnt
+    // to subtract the overlapped areas.
+    mpFS->startElementNS( XML_a, XML_path,
+            XML_w, I64S( aRect.GetWidth() ),
+            XML_h, I64S( aRect.GetHeight() ),
+            FSEND );
+
     for( sal_uInt16 i = 0; i < rPolyPolygon.Count(); i ++ )
     {
 
         const tools::Polygon& rPoly = rPolyPolygon[ i ];
-        Rectangle aRect( rPoly.GetBoundRect() );
-
-        mpFS->startElementNS( XML_a, XML_path,
-                              XML_w, I64S( aRect.GetWidth() ),
-                              XML_h, I64S( aRect.GetHeight() ),
-                              FSEND );
 
         if( rPoly.GetSize() > 0 )
         {
@@ -2652,9 +2671,8 @@ void DrawingML::WritePolyPolygon( const tools::PolyPolygon& rPolyPolygon )
                 mpFS->endElementNS( XML_a, XML_lnTo );
             }
         }
-
-        mpFS->endElementNS( XML_a, XML_path );
     }
+    mpFS->endElementNS( XML_a, XML_path );
 
     mpFS->endElementNS( XML_a, XML_pathLst );
 

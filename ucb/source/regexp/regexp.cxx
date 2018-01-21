@@ -67,13 +67,7 @@ bool matchStringIgnoreCase(sal_Unicode const ** pBegin,
 
     while (q != qEnd)
     {
-        sal_Unicode c1 = *p++;
-        sal_Unicode c2 = *q++;
-        if (c1 >= 'a' && c1 <= 'z')
-            c1 -= 'a' - 'A';
-        if (c2 >= 'a' && c2 <= 'z')
-            c2 -= 'a' - 'A';
-        if (c1 != c2)
+        if (rtl::compareIgnoreAsciiCase(*p++, *q++) != 0)
             return false;
     }
 
@@ -83,8 +77,7 @@ bool matchStringIgnoreCase(sal_Unicode const ** pBegin,
 
 }
 
-bool Regexp::matches(OUString const & rString,
-                     OUString * pTranslation, bool * pTranslated) const
+bool Regexp::matches(OUString const & rString) const
 {
     sal_Unicode const * pBegin = rString.getStr();
     sal_Unicode const * pEnd = pBegin + rString.getLength();
@@ -94,12 +87,6 @@ bool Regexp::matches(OUString const & rString,
     sal_Unicode const * p = pBegin;
     if (matchStringIgnoreCase(&p, pEnd, m_aPrefix))
     {
-        sal_Unicode const * pBlock1Begin = p;
-        sal_Unicode const * pBlock1End = pEnd;
-
-        sal_Unicode const * pBlock2Begin = nullptr;
-        sal_Unicode const * pBlock2End = nullptr;
-
         switch (m_eKind)
         {
             case KIND_PREFIX:
@@ -124,9 +111,6 @@ bool Regexp::matches(OUString const & rString,
                         && (q == pEnd || *q == '/' || *q == '?' || *q == '#'))
                     {
                         bMatches = true;
-                        pBlock1End = p;
-                        pBlock2Begin = q;
-                        pBlock2End = pEnd;
                         break;
                     }
 
@@ -138,30 +122,6 @@ bool Regexp::matches(OUString const & rString,
                         break;
                 }
                 break;
-        }
-
-        if (bMatches)
-        {
-            if (m_bTranslation)
-            {
-                if (pTranslation)
-                {
-                    OUStringBuffer aBuffer(m_aReversePrefix);
-                    aBuffer.append(pBlock1Begin, pBlock1End - pBlock1Begin);
-                    aBuffer.append(m_aInfix);
-                    aBuffer.append(pBlock2Begin, pBlock2End - pBlock2Begin);
-                    *pTranslation = aBuffer.makeStringAndClear();
-                }
-                if (pTranslated)
-                    *pTranslated = true;
-            }
-            else
-            {
-                if (pTranslation)
-                    *pTranslation = rString;
-                if (pTranslated)
-                    *pTranslated = false;
-            }
         }
     }
 
@@ -183,7 +143,7 @@ bool isScheme(OUString const & rString, bool bColon)
             if (p == pEnd)
                 return !bColon;
             sal_Unicode c = *p++;
-            if (!(rtl::isAsciiAlpha(c) || rtl::isAsciiDigit(c)
+            if (!(rtl::isAsciiAlphanumeric(c)
                   || c == '+' || c == '-' || c == '.'))
                 return bColon && c == ':' && p == pEnd;
         }

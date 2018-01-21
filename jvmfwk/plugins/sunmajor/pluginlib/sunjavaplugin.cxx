@@ -227,6 +227,10 @@ javaPluginError checkJavaVersionRequirements(
     rtl_uString * * arExcludeList,
     sal_Int32  nLenList)
 {
+    if (!aVendorInfo->isValidArch())
+    {
+        return javaPluginError::WrongArch;
+    }
     if (!sMinVersion.isEmpty())
     {
         try
@@ -334,7 +338,7 @@ javaPluginError jfw_plugin_getAllJavaInfos(
         javaPluginError err = checkJavaVersionRequirements(
             cur, sMinVersion, sMaxVersion, arExcludeList, nLenList);
 
-        if (err == javaPluginError::FailedVersion)
+        if (err == javaPluginError::FailedVersion || err == javaPluginError::WrongArch)
             continue;
         else if (err == javaPluginError::WrongVersionFormat)
             return err;
@@ -538,7 +542,7 @@ static void load_msvcr(LPCWSTR jvm_dll, wchar_t const* msvcr)
 // and just let the implicit loading try to take care of it.
 static void do_msvcr_magic(rtl_uString *jvm_dll)
 {
-    rtl_uString* Module(0);
+    rtl_uString* Module(nullptr);
     struct stat st;
 
     oslFileError nError = osl_getSystemPathFromFileURL(jvm_dll, &Module);
@@ -557,7 +561,7 @@ static void do_msvcr_magic(rtl_uString *jvm_dll)
         return;
     }
 
-    PIMAGE_DOS_HEADER dos_hdr = (PIMAGE_DOS_HEADER) malloc(st.st_size);
+    PIMAGE_DOS_HEADER dos_hdr = static_cast<PIMAGE_DOS_HEADER>(malloc(st.st_size));
 
     if (fread(dos_hdr, st.st_size, 1, f) != 1 ||
         memcmp(dos_hdr, "MZ", 2) != 0 ||
@@ -571,7 +575,7 @@ static void do_msvcr_magic(rtl_uString *jvm_dll)
 
     fclose(f);
 
-    IMAGE_NT_HEADERS *nt_hdr = (IMAGE_NT_HEADERS *) ((char *)dos_hdr + dos_hdr->e_lfanew);
+    IMAGE_NT_HEADERS *nt_hdr = reinterpret_cast<IMAGE_NT_HEADERS *>(reinterpret_cast<char *>(dos_hdr) + dos_hdr->e_lfanew);
 
     DWORD importsVA = nt_hdr->OptionalHeader
             .DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
@@ -595,9 +599,9 @@ static void do_msvcr_magic(rtl_uString *jvm_dll)
         return;
     }
     IMAGE_IMPORT_DESCRIPTOR *imports =
-        (IMAGE_IMPORT_DESCRIPTOR *) ((char *) dos_hdr + importsVA + VAtoPhys);
+        reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR *>(reinterpret_cast<char *>(dos_hdr) + importsVA + VAtoPhys);
 
-    while (imports <= (IMAGE_IMPORT_DESCRIPTOR *) ((char *) dos_hdr + st.st_size - sizeof (IMAGE_IMPORT_DESCRIPTOR)) &&
+    while (imports <= reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR *>(reinterpret_cast<char *>(dos_hdr) + st.st_size - sizeof (IMAGE_IMPORT_DESCRIPTOR)) &&
            imports->Name != 0 &&
            imports->Name + VAtoPhys < (DWORD) st.st_size)
     {
@@ -606,7 +610,7 @@ static void do_msvcr_magic(rtl_uString *jvm_dll)
             { "msvcr71.dll" , L"msvcr71.dll"  },
             { "msvcr100.dll", L"msvcr100.dll" },
         };
-        char const* importName = (char *) dos_hdr + imports->Name + VAtoPhys;
+        char const* importName = reinterpret_cast<char *>(dos_hdr) + imports->Name + VAtoPhys;
         for (size_t i = 0; i < SAL_N_ELEMENTS(msvcrts); ++i)
         {
             if (0 == strnicmp(importName,
@@ -670,6 +674,16 @@ javaPluginError jfw_plugin_startJavaVirtualMachine(
     osl::Module moduleRt;
 #if defined(LINUX)
     if (!moduleRt.load(sRuntimeLib, SAL_LOADMODULE_GLOBAL | SAL_LOADMODULE_NOW))
+#elif defined MACOSX
+    // Must be SAL_LOADMODULE_GLOBAL when e.g. specifying a
+    // -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8000 option to
+    // JDK 1.8.0_121 at least, as JNI_CreateJavaVM -> Threads::create_vm ->
+    // JvmtiExport::post_vm_initialized -> cbEarlyVMInit -> initialize ->
+    // util_initialize -> sun.misc.VMSupport.getAgentProperties ->
+    // Java_sun_misc_VMSupport_initAgentProperties ->
+    // JDK_FindJvmEntry("JVM_INitAgentProperties") ->
+    // dlsym(RTLD_DEFAULT, "JVM_INitAgentProperties"):
+    if (!moduleRt.load(sRuntimeLib, SAL_LOADMODULE_GLOBAL))
 #else
 #if defined(_WIN32)
     do_msvcr_magic(sRuntimeLib.pData);

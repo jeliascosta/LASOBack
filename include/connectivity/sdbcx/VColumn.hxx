@@ -25,7 +25,7 @@
 #include <cppuhelper/compbase.hxx>
 #include <cppuhelper/implbase1.hxx>
 #include <connectivity/CommonTools.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <connectivity/sdbcx/VDescriptor.hxx>
 #include <connectivity/dbtoolsdllapi.hxx>
 #include <com/sun/star/lang/XServiceInfo.hpp>
@@ -43,7 +43,7 @@ namespace connectivity
 
 
         class OOO_DLLPUBLIC_DBTOOLS OColumn :
-                                    public comphelper::OBaseMutex,
+                                    public cppu::BaseMutex,
                                     public OColumn_BASE,
                                     public OColumnDescriptor_BASE,
                                     public OColumn_PROP,
@@ -71,7 +71,7 @@ namespace connectivity
             virtual ::cppu::IPropertyArrayHelper* createArrayHelper( sal_Int32 _nId) const override;
             virtual ::cppu::IPropertyArrayHelper& SAL_CALL getInfoHelper() override;
 
-            virtual ~OColumn();
+            virtual ~OColumn() override;
         public:
             virtual void    SAL_CALL acquire() throw() override;
             virtual void    SAL_CALL release() throw() override;

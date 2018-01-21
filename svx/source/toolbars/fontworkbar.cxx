@@ -30,6 +30,10 @@
 #include <svx/dialogs.hrc>
 #include <svx/svdview.hxx>
 #include <svx/sdasitm.hxx>
+#include "svx/gallery.hxx"
+#include <svx/fmmodel.hxx>
+#include <svx/fmpage.hxx>
+#include <svl/itempool.hxx>
 #include <com/sun/star/drawing/EnhancedCustomShapeAdjustmentValue.hpp>
 #include <sfx2/bindings.hxx>
 #include <editeng/eeitem.hxx>
@@ -69,10 +73,16 @@ void SetAlignmentState( SdrView* pSdrView, SfxItemSet& rSet )
                 case SDRTEXTHORZADJUST_RIGHT  : nAlignment = 2; break;
                 case SDRTEXTHORZADJUST_BLOCK  :
                 {
-                    if ( rTextFitToSizeTypeItem.GetValue() == SDRTEXTFIT_NONE )
+                    auto const fit(rTextFitToSizeTypeItem.GetValue());
+                    if (fit == SdrFitToSizeType::NONE)
+                    {
                         nAlignment = 3;
-                    else if ( rTextFitToSizeTypeItem.GetValue() == SDRTEXTFIT_ALLLINES )
+                    }
+                    else if (fit == SdrFitToSizeType::AllLines ||
+                             fit == SdrFitToSizeType::Proportional)
+                    {
                         nAlignment = 4;
+                    }
                 }
             }
             if ( ( nOldAlignment != -1 ) && ( nOldAlignment != nAlignment ) )
@@ -245,15 +255,12 @@ bool checkForSelectedFontWork( SdrView* pSdrView, sal_uInt32& nCheckStatus )
 
 static void impl_execute( SdrView*, SfxRequest& rReq, SdrCustomShapeGeometryItem& rGeometryItem, SdrObject* pObj )
 {
-    static const char  sTextPath[] = "TextPath";
-    static const char  sSameLetterHeights[] = "SameLetterHeights";
-
     sal_uInt16 nSID = rReq.GetSlot();
     switch( nSID )
     {
         case SID_FONTWORK_SAME_LETTER_HEIGHTS:
         {
-            css::uno::Any* pAny = rGeometryItem.GetPropertyValueByName( sTextPath, sSameLetterHeights );
+            css::uno::Any* pAny = rGeometryItem.GetPropertyValueByName( "TextPath", "SameLetterHeights" );
             if( pAny )
             {
                 bool bOn = false;
@@ -271,11 +278,11 @@ static void impl_execute( SdrView*, SfxRequest& rReq, SdrCustomShapeGeometryItem
                 sal_Int32 nValue = static_cast<const SfxInt32Item*>(rReq.GetArgs()->GetItem(SID_FONTWORK_ALIGNMENT))->GetValue();
                 if ( ( nValue >= 0 ) && ( nValue < 5 ) )
                 {
-                    SdrFitToSizeType eFTS = SDRTEXTFIT_NONE;
+                    SdrFitToSizeType eFTS = SdrFitToSizeType::NONE;
                     SdrTextHorzAdjust eHorzAdjust;
                     switch ( nValue )
                     {
-                        case 4 : eFTS = SDRTEXTFIT_ALLLINES; SAL_FALLTHROUGH;
+                        case 4 : eFTS = SdrFitToSizeType::AllLines; SAL_FALLTHROUGH;
                         case 3 : eHorzAdjust = SDRTEXTHORZADJUST_BLOCK; break;
                         default: eHorzAdjust = SDRTEXTHORZADJUST_LEFT; break;
                         case 1 : eHorzAdjust = SDRTEXTHORZADJUST_CENTER; break;
@@ -312,11 +319,6 @@ static void impl_execute( SdrView*, SfxRequest& rReq, SdrCustomShapeGeometryItem
         break;
     }
 }
-
-#include "svx/gallery.hxx"
-#include <svx/fmmodel.hxx>
-#include <svx/fmpage.hxx>
-#include <svl/itempool.hxx>
 
 void GetGeometryForCustomShape( SdrCustomShapeGeometryItem& rGeometryItem, const OUString& rCustomShape )
 {

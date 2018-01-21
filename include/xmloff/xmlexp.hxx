@@ -238,12 +238,6 @@ protected:
         ::xmloff::token::XMLTokenEnum                     eGroupName;
         css::uno::Sequence< css::beans::PropertyValue >   aSettings;
 
-        SettingsGroup()
-            :eGroupName( ::xmloff::token::XML_TOKEN_INVALID )
-            ,aSettings()
-        {
-        }
-
         SettingsGroup(
                 const ::xmloff::token::XMLTokenEnum _eGroupName,
                 const css::uno::Sequence< css::beans::PropertyValue >& _rSettings )
@@ -276,8 +270,8 @@ public:
         sal_Int16 const eDefaultMeasureUnit /*css::util::MeasureUnit*/,
         const css::uno::Reference< css::uno::XComponentContext >& xContext,
         OUString const & implementationName,
-        const enum ::xmloff::token::XMLTokenEnum eClass = xmloff::token::XML_TOKEN_INVALID,
-        SvXMLExportFlags nExportFlag = SvXMLExportFlags::ALL );
+        const enum ::xmloff::token::XMLTokenEnum eClass,
+        SvXMLExportFlags nExportFlag );
 
     SvXMLExport(
         const css::uno::Reference< css::uno::XComponentContext >& xContext,
@@ -294,7 +288,7 @@ public:
         const css::uno::Reference< css::frame::XModel > &,
         FieldUnit const eDefaultFieldUnit );
 
-    virtual ~SvXMLExport();
+    virtual ~SvXMLExport() override;
 
     static const css::uno::Sequence< sal_Int8 > & getUnoTunnelId() throw();
     static SvXMLExport* getImplementation( const css::uno::Reference< css::uno::XInterface >& ) throw();
@@ -431,27 +425,27 @@ public:
     }
 
     // get export helper for text
-    inline rtl::Reference< XMLTextParagraphExport > GetTextParagraphExport();
+    inline rtl::Reference< XMLTextParagraphExport > const & GetTextParagraphExport();
 
     // get export helper for shapes
-    inline rtl::Reference< XMLShapeExport > GetShapeExport();
+    inline rtl::Reference< XMLShapeExport > const & GetShapeExport();
 
     // get auto style pool
-    inline rtl::Reference< SvXMLAutoStylePoolP > GetAutoStylePool();
+    inline rtl::Reference< SvXMLAutoStylePoolP > const & GetAutoStylePool();
 
     // get Page Export
-    inline rtl::Reference< XMLPageExport > GetPageExport();
+    inline rtl::Reference< XMLPageExport > const & GetPageExport();
 
     // get chart export helper
-    inline rtl::Reference< SchXMLExportHelper > GetChartExport();
+    inline rtl::Reference< SchXMLExportHelper > const & GetChartExport();
 
     // get font auto style pool
-    inline rtl::Reference< XMLFontAutoStylePool > GetFontAutoStylePool();
+    inline rtl::Reference< XMLFontAutoStylePool > const & GetFontAutoStylePool();
 
     ProgressBarHelper*  GetProgressBarHelper();
 
     // get Formlayer Export
-    inline rtl::Reference< xmloff::OFormLayerXMLExport > GetFormExport();
+    inline rtl::Reference< xmloff::OFormLayerXMLExport > const & GetFormExport();
     inline bool HasFormExport();
 
     // get XPropertySet with export information
@@ -523,9 +517,6 @@ public:
         sal_Int32 nId,
         const css::uno::Sequence< OUString> & rMsgParams);
 
-    /** return current error flags (logical 'or' of all error flags so far) */
-    SvXMLErrorFlags GetErrorFlags()  { return mnErrorFlags; }
-
     virtual void DisposingModel();
 
     ::comphelper::UnoInterfaceToUniqueIdentifierMapper& getInterfaceToIdentifierMapper();
@@ -549,9 +540,6 @@ public:
     /// returns the deterministic version for odf export
     SvtSaveOptions::ODFSaneDefaultVersion getSaneDefaultVersion() const;
 
-    /// name of stream in package, e.g., "content.xml"
-    OUString GetStreamName() const;
-
     // FIXME: this is only for legacy stuff that has not yet been adapted
     //        to implement XMetadatable; this can write duplicate IDs!
     /// add xml:id and legacy namespace id
@@ -570,7 +558,7 @@ public:
     bool SetNullDateOnUnitConverter();
 };
 
-inline rtl::Reference< XMLTextParagraphExport > SvXMLExport::GetTextParagraphExport()
+inline rtl::Reference< XMLTextParagraphExport > const & SvXMLExport::GetTextParagraphExport()
 {
     if( !mxTextParagraphExport.is() )
         mxTextParagraphExport = CreateTextParagraphExport();
@@ -578,7 +566,7 @@ inline rtl::Reference< XMLTextParagraphExport > SvXMLExport::GetTextParagraphExp
     return mxTextParagraphExport;
 }
 
-inline rtl::Reference< XMLShapeExport > SvXMLExport::GetShapeExport()
+inline rtl::Reference< XMLShapeExport > const & SvXMLExport::GetShapeExport()
 {
     if( !mxShapeExport.is() )
         mxShapeExport = CreateShapeExport();
@@ -586,7 +574,7 @@ inline rtl::Reference< XMLShapeExport > SvXMLExport::GetShapeExport()
     return mxShapeExport;
 }
 
-inline rtl::Reference< SvXMLAutoStylePoolP > SvXMLExport::GetAutoStylePool()
+inline rtl::Reference< SvXMLAutoStylePoolP > const & SvXMLExport::GetAutoStylePool()
 {
     if( !mxAutoStylePool.is() )
         mxAutoStylePool = CreateAutoStylePool();
@@ -594,7 +582,7 @@ inline rtl::Reference< SvXMLAutoStylePoolP > SvXMLExport::GetAutoStylePool()
     return mxAutoStylePool;
 }
 
-inline rtl::Reference< SchXMLExportHelper > SvXMLExport::GetChartExport()
+inline rtl::Reference< SchXMLExportHelper > const & SvXMLExport::GetChartExport()
 {
     if( !mxChartExport.is() )
         mxChartExport = CreateChartExport();
@@ -602,7 +590,7 @@ inline rtl::Reference< SchXMLExportHelper > SvXMLExport::GetChartExport()
     return mxChartExport;
 }
 
-inline rtl::Reference< XMLPageExport > SvXMLExport::GetPageExport()
+inline rtl::Reference< XMLPageExport > const & SvXMLExport::GetPageExport()
 {
     if( !mxPageExport.is() )
         mxPageExport = CreatePageExport();
@@ -610,7 +598,7 @@ inline rtl::Reference< XMLPageExport > SvXMLExport::GetPageExport()
     return mxPageExport;
 }
 
-inline rtl::Reference< XMLFontAutoStylePool > SvXMLExport::GetFontAutoStylePool()
+inline rtl::Reference< XMLFontAutoStylePool > const & SvXMLExport::GetFontAutoStylePool()
 {
     if( !mxFontAutoStylePool.is() )
         mxFontAutoStylePool = CreateFontAutoStylePool();
@@ -618,7 +606,7 @@ inline rtl::Reference< XMLFontAutoStylePool > SvXMLExport::GetFontAutoStylePool(
     return mxFontAutoStylePool;
 }
 
-inline rtl::Reference< xmloff::OFormLayerXMLExport > SvXMLExport::GetFormExport()
+inline rtl::Reference< xmloff::OFormLayerXMLExport > const & SvXMLExport::GetFormExport()
 {
     if( !mxFormExport.is() )
         mxFormExport = CreateFormExport();
@@ -673,7 +661,7 @@ public:
     SvXMLElementExport( SvXMLExport& rExp, const OUString& rQName,
                         bool bIgnWSOutside, bool bIgnWSInside );
 
-    // Thes constructors do nothing if bDoSomething is not set
+    // These constructors do nothing if bDoSomething is not set
     SvXMLElementExport( SvXMLExport& rExp, bool bDoSomething,
                         sal_uInt16 nPrefix,
                         enum ::xmloff::token::XMLTokenEnum eName,

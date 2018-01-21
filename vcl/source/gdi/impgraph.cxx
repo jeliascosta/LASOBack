@@ -39,6 +39,7 @@
 #include <com/sun/star/ucb/CommandAbortedException.hpp>
 #include <vcl/dibtools.hxx>
 #include <memory>
+#include <o3tl/make_unique.hxx>
 
 #define GRAPHIC_MTFTOBMP_MAXEXT     2048
 #define GRAPHIC_STREAMBUFSIZE       8192UL
@@ -51,10 +52,14 @@
 #define GRAPHIC_FORMAT_50           static_cast<sal_uInt32>(COMPAT_FORMAT( 'G', 'R', 'F', '5' ))
 #define NATIVE_FORMAT_50            static_cast<sal_uInt32>(COMPAT_FORMAT( 'N', 'A', 'T', '5' ))
 
+const sal_uInt32 nPdfMagic((sal_uInt32('p') << 24) | (sal_uInt32('d') << 16) | (sal_uInt32('f') << 8) | sal_uInt32('0'));
+
+using namespace com::sun::star;
+
 struct ImpSwapFile
 {
     INetURLObject   aSwapURL;
-    sal_uLong           nRefCount;
+    ~ImpSwapFile();
 };
 
 class ReaderData
@@ -90,13 +95,8 @@ Size GraphicReader::GetPreviewSize() const
 }
 
 ImpGraphic::ImpGraphic() :
-        mpAnimation     ( nullptr ),
-        mpContext       ( nullptr ),
-        mpSwapFile      ( nullptr ),
-        mpGfxLink       ( nullptr ),
-        meType          ( GRAPHIC_NONE ),
+        meType          ( GraphicType::NONE ),
         mnSizeBytes     ( 0UL ),
-        mnRefCount      ( 1UL ),
         mbSwapOut       ( false ),
         mbSwapUnderway  ( false ),
         mbDummyContext  ( false )
@@ -106,43 +106,30 @@ ImpGraphic::ImpGraphic() :
 ImpGraphic::ImpGraphic( const ImpGraphic& rImpGraphic ) :
         maMetaFile      ( rImpGraphic.maMetaFile ),
         maEx            ( rImpGraphic.maEx ),
-        mpContext       ( nullptr ),
         mpSwapFile      ( rImpGraphic.mpSwapFile ),
         meType          ( rImpGraphic.meType ),
         mnSizeBytes     ( rImpGraphic.mnSizeBytes ),
-        mnRefCount      ( 1UL ),
         mbSwapOut       ( rImpGraphic.mbSwapOut ),
         mbSwapUnderway  ( false ),
         mbDummyContext  ( rImpGraphic.mbDummyContext )
 {
-    if( mpSwapFile )
-        mpSwapFile->nRefCount++;
-
     if( rImpGraphic.mpGfxLink )
-        mpGfxLink = new GfxLink( *rImpGraphic.mpGfxLink );
-    else
-        mpGfxLink = nullptr;
+        mpGfxLink = o3tl::make_unique<GfxLink>( *rImpGraphic.mpGfxLink );
 
     if( rImpGraphic.mpAnimation )
     {
-        mpAnimation = new Animation( *rImpGraphic.mpAnimation );
+        mpAnimation = o3tl::make_unique<Animation>( *rImpGraphic.mpAnimation );
         maEx = mpAnimation->GetBitmapEx();
     }
-    else
-        mpAnimation = nullptr;
 
     maSvgData = rImpGraphic.maSvgData;
+    maPdfData = rImpGraphic.maPdfData;
 }
 
 ImpGraphic::ImpGraphic( const Bitmap& rBitmap ) :
         maEx            ( rBitmap ),
-        mpAnimation     ( nullptr ),
-        mpContext       ( nullptr ),
-        mpSwapFile      ( nullptr ),
-        mpGfxLink       ( nullptr ),
-        meType          ( !rBitmap.IsEmpty() ? GRAPHIC_BITMAP : GRAPHIC_NONE ),
+        meType          ( !rBitmap.IsEmpty() ? GraphicType::Bitmap : GraphicType::NONE ),
         mnSizeBytes     ( 0UL ),
-        mnRefCount      ( 1UL ),
         mbSwapOut       ( false ),
         mbSwapUnderway  ( false ),
         mbDummyContext  ( false )
@@ -151,13 +138,8 @@ ImpGraphic::ImpGraphic( const Bitmap& rBitmap ) :
 
 ImpGraphic::ImpGraphic( const BitmapEx& rBitmapEx ) :
         maEx            ( rBitmapEx ),
-        mpAnimation     ( nullptr ),
-        mpContext       ( nullptr ),
-        mpSwapFile      ( nullptr ),
-        mpGfxLink       ( nullptr ),
-        meType          ( !rBitmapEx.IsEmpty() ? GRAPHIC_BITMAP : GRAPHIC_NONE ),
+        meType          ( !rBitmapEx.IsEmpty() ? GraphicType::Bitmap : GraphicType::NONE ),
         mnSizeBytes     ( 0UL ),
-        mnRefCount      ( 1UL ),
         mbSwapOut       ( false ),
         mbSwapUnderway  ( false ),
         mbDummyContext  ( false )
@@ -165,13 +147,8 @@ ImpGraphic::ImpGraphic( const BitmapEx& rBitmapEx ) :
 }
 
 ImpGraphic::ImpGraphic(const SvgDataPtr& rSvgDataPtr)
-:   mpAnimation( nullptr ),
-    mpContext( nullptr ),
-    mpSwapFile( nullptr ),
-    mpGfxLink( nullptr ),
-    meType( rSvgDataPtr.get() ? GRAPHIC_BITMAP : GRAPHIC_NONE ),
+:   meType( rSvgDataPtr.get() ? GraphicType::Bitmap : GraphicType::NONE ),
     mnSizeBytes( 0UL ),
-    mnRefCount( 1UL ),
     mbSwapOut( false ),
     mbSwapUnderway( false ),
     mbDummyContext  ( false ),
@@ -181,13 +158,9 @@ ImpGraphic::ImpGraphic(const SvgDataPtr& rSvgDataPtr)
 
 ImpGraphic::ImpGraphic( const Animation& rAnimation ) :
         maEx            ( rAnimation.GetBitmapEx() ),
-        mpAnimation     ( new Animation( rAnimation ) ),
-        mpContext       ( nullptr ),
-        mpSwapFile      ( nullptr ),
-        mpGfxLink       ( nullptr ),
-        meType          ( GRAPHIC_BITMAP ),
+        mpAnimation     ( o3tl::make_unique<Animation>( rAnimation ) ),
+        meType          ( GraphicType::Bitmap ),
         mnSizeBytes     ( 0UL ),
-        mnRefCount      ( 1UL ),
         mbSwapOut       ( false ),
         mbSwapUnderway  ( false ),
         mbDummyContext  ( false )
@@ -196,13 +169,8 @@ ImpGraphic::ImpGraphic( const Animation& rAnimation ) :
 
 ImpGraphic::ImpGraphic( const GDIMetaFile& rMtf ) :
         maMetaFile      ( rMtf ),
-        mpAnimation     ( nullptr ),
-        mpContext       ( nullptr ),
-        mpSwapFile      ( nullptr ),
-        mpGfxLink       ( nullptr ),
-        meType          ( GRAPHIC_GDIMETAFILE ),
+        meType          ( GraphicType::GdiMetafile ),
         mnSizeBytes     ( 0UL ),
-        mnRefCount      ( 1UL ),
         mbSwapOut       ( false ),
         mbSwapUnderway  ( false ),
         mbDummyContext  ( false )
@@ -212,7 +180,6 @@ ImpGraphic::ImpGraphic( const GDIMetaFile& rMtf ) :
 ImpGraphic::~ImpGraphic()
 {
     ImplClear();
-    delete mpContext;
 }
 
 ImpGraphic& ImpGraphic::operator=( const ImpGraphic& rImpGraphic )
@@ -226,16 +193,15 @@ ImpGraphic& ImpGraphic::operator=( const ImpGraphic& rImpGraphic )
         meType = rImpGraphic.meType;
         mnSizeBytes = rImpGraphic.mnSizeBytes;
 
-        delete mpAnimation;
+        mpAnimation.reset();
 
         if ( rImpGraphic.mpAnimation )
         {
-            mpAnimation = new Animation( *rImpGraphic.mpAnimation );
+            mpAnimation = o3tl::make_unique<Animation>( *rImpGraphic.mpAnimation );
             maEx = mpAnimation->GetBitmapEx();
         }
         else
         {
-            mpAnimation = nullptr;
             maEx = rImpGraphic.maEx;
         }
 
@@ -243,19 +209,15 @@ ImpGraphic& ImpGraphic::operator=( const ImpGraphic& rImpGraphic )
         {
             mbSwapOut = rImpGraphic.mbSwapOut;
             mpSwapFile = rImpGraphic.mpSwapFile;
-
-            if( mpSwapFile )
-                mpSwapFile->nRefCount++;
         }
 
-        delete mpGfxLink;
+        mpGfxLink.reset();
 
         if( rImpGraphic.mpGfxLink )
-            mpGfxLink = new GfxLink( *rImpGraphic.mpGfxLink );
-        else
-            mpGfxLink = nullptr;
+            mpGfxLink = o3tl::make_unique<GfxLink>( *rImpGraphic.mpGfxLink );
 
         maSvgData = rImpGraphic.maSvgData;
+        maPdfData = rImpGraphic.maPdfData;
     }
 
     return *this;
@@ -271,18 +233,18 @@ bool ImpGraphic::operator==( const ImpGraphic& rImpGraphic ) const
     {
         switch( meType )
         {
-            case GRAPHIC_NONE:
+            case GraphicType::NONE:
                 bRet = true;
             break;
 
-            case GRAPHIC_GDIMETAFILE:
+            case GraphicType::GdiMetafile:
             {
                 if( rImpGraphic.maMetaFile == maMetaFile )
                     bRet = true;
             }
             break;
 
-            case GRAPHIC_BITMAP:
+            case GraphicType::Bitmap:
             {
                 if(maSvgData.get())
                 {
@@ -303,6 +265,10 @@ bool ImpGraphic::operator==( const ImpGraphic& rImpGraphic ) const
                             }
                         }
                     }
+                }
+                else if (maPdfData.hasElements())
+                {
+                    bRet = maPdfData == rImpGraphic.maPdfData;
                 }
                 else if( mpAnimation )
                 {
@@ -338,60 +304,46 @@ void ImpGraphic::ImplClearGraphics( bool bCreateSwapInfo )
     if( mpAnimation )
     {
         mpAnimation->Clear();
-        delete mpAnimation;
-        mpAnimation = nullptr;
+        mpAnimation.reset();
     }
 
-    if( mpGfxLink )
-    {
-        delete mpGfxLink;
-        mpGfxLink = nullptr;
-    }
-
+    mpGfxLink.reset();
     maSvgData.reset();
+    maPdfData = uno::Sequence<sal_Int8>();
+}
+
+ImpSwapFile::~ImpSwapFile()
+{
+    try
+    {
+        ::ucbhelper::Content aCnt( aSwapURL.GetMainURL( INetURLObject::NO_DECODE ),
+            css::uno::Reference< css::ucb::XCommandEnvironment >(),
+            comphelper::getProcessComponentContext() );
+
+        aCnt.executeCommand( "delete", css::uno::makeAny( true ) );
+    }
+    catch( const css::ucb::ContentCreationException& )
+    {
+    }
+    catch( const css::uno::RuntimeException& )
+    {
+    }
+    catch( const css::ucb::CommandAbortedException& )
+    {
+    }
+    catch( const css::uno::Exception& )
+    {
+    }
 }
 
 void ImpGraphic::ImplClear()
 {
-    if( mpSwapFile )
-    {
-        if( mpSwapFile->nRefCount > 1 )
-            mpSwapFile->nRefCount--;
-        else
-        {
-            try
-            {
-                ::ucbhelper::Content aCnt( mpSwapFile->aSwapURL.GetMainURL( INetURLObject::NO_DECODE ),
-                                     css::uno::Reference< css::ucb::XCommandEnvironment >(),
-                                     comphelper::getProcessComponentContext() );
-
-                aCnt.executeCommand( "delete",
-                                     css::uno::makeAny( true ) );
-            }
-            catch( const css::ucb::ContentCreationException& )
-            {
-            }
-            catch( const css::uno::RuntimeException& )
-            {
-            }
-            catch( const css::ucb::CommandAbortedException& )
-            {
-            }
-            catch( const css::uno::Exception& )
-            {
-            }
-
-            delete mpSwapFile;
-        }
-
-        mpSwapFile = nullptr;
-    }
-
+    mpSwapFile.reset();
     mbSwapOut = false;
 
     // cleanup
     ImplClearGraphics( false );
-    meType = GRAPHIC_NONE;
+    meType = GraphicType::NONE;
     mnSizeBytes = 0;
 }
 
@@ -399,19 +351,19 @@ void ImpGraphic::ImplClear()
 void ImpGraphic::ImplSetDefaultType()
 {
     ImplClear();
-    meType = GRAPHIC_DEFAULT;
+    meType = GraphicType::Default;
 }
 
 bool ImpGraphic::ImplIsSupportedGraphic() const
 {
-    return( meType != GRAPHIC_NONE );
+    return( meType != GraphicType::NONE );
 }
 
 bool ImpGraphic::ImplIsTransparent() const
 {
     bool bRet(true);
 
-    if( meType == GRAPHIC_BITMAP && !maSvgData.get())
+    if( meType == GraphicType::Bitmap && !maSvgData.get())
     {
         bRet = ( mpAnimation ? mpAnimation->IsTransparent() : maEx.IsTransparent() );
     }
@@ -427,7 +379,7 @@ bool ImpGraphic::ImplIsAlpha() const
     {
         bRet = true;
     }
-    else if( meType == GRAPHIC_BITMAP )
+    else if( meType == GraphicType::Bitmap )
     {
         bRet = ( nullptr == mpAnimation ) && maEx.IsAlpha();
     }
@@ -442,7 +394,7 @@ bool ImpGraphic::ImplIsAnimated() const
 
 bool ImpGraphic::ImplIsEPS() const
 {
-    return( ( meType == GRAPHIC_GDIMETAFILE ) &&
+    return( ( meType == GraphicType::GdiMetafile ) &&
             ( maMetaFile.GetActionSize() > 0 ) &&
             ( maMetaFile.GetAction( 0 )->GetType() == MetaActionType::EPS ) );
 }
@@ -451,7 +403,7 @@ Bitmap ImpGraphic::ImplGetBitmap(const GraphicConversionParameters& rParameters)
 {
     Bitmap aRetBmp;
 
-    if( meType == GRAPHIC_BITMAP )
+    if( meType == GraphicType::Bitmap )
     {
         if(maSvgData.get() && maEx.IsEmpty())
         {
@@ -467,7 +419,7 @@ Bitmap ImpGraphic::ImplGetBitmap(const GraphicConversionParameters& rParameters)
         if(rParameters.getSizePixel().Width() || rParameters.getSizePixel().Height())
             aRetBmp.Scale(rParameters.getSizePixel());
     }
-    else if( ( meType != GRAPHIC_DEFAULT ) && ImplIsSupportedGraphic() )
+    else if( ( meType != GraphicType::Default ) && ImplIsSupportedGraphic() )
     {
         if(maEx.IsEmpty())
         {
@@ -503,7 +455,7 @@ Bitmap ImpGraphic::ImplGetBitmap(const GraphicConversionParameters& rParameters)
             // need to be extended when hairlines are on the right or bottom edge
             Size aPixelSize(aDrawSize);
 
-            if(GRAPHIC_GDIMETAFILE == ImplGetType())
+            if(GraphicType::GdiMetafile == ImplGetType())
             {
                 // get hairline and full bound rect
                 Rectangle aHairlineRect;
@@ -559,7 +511,7 @@ BitmapEx ImpGraphic::ImplGetBitmapEx(const GraphicConversionParameters& rParamet
 {
     BitmapEx aRetBmpEx;
 
-    if( meType == GRAPHIC_BITMAP )
+    if( meType == GraphicType::Bitmap )
     {
         if(maSvgData.get() && maEx.IsEmpty())
         {
@@ -573,10 +525,10 @@ BitmapEx ImpGraphic::ImplGetBitmapEx(const GraphicConversionParameters& rParamet
         {
             aRetBmpEx.Scale(
                 rParameters.getSizePixel(),
-                rParameters.getScaleHighQuality() ? BmpScaleFlag::Interpolate : BmpScaleFlag::Fast);
+                BmpScaleFlag::Fast);
         }
     }
-    else if( ( meType != GRAPHIC_DEFAULT ) && ImplIsSupportedGraphic() )
+    else if( ( meType != GraphicType::Default ) && ImplIsSupportedGraphic() )
     {
         if(maEx.IsEmpty())
         {
@@ -604,13 +556,13 @@ Animation ImpGraphic::ImplGetAnimation() const
 
 const GDIMetaFile& ImpGraphic::ImplGetGDIMetaFile() const
 {
-    if (GRAPHIC_BITMAP == meType && !maMetaFile.GetActionSize())
+    if (GraphicType::Bitmap == meType && !maMetaFile.GetActionSize())
     {
         // #i119735#
         // Use the local maMetaFile as container for a metafile-representation
         // of the bitmap graphic. This will be done only once, thus be buffered.
         // I checked all usages of maMetaFile, it is only used when type is not
-        // GRAPHIC_BITMAP. In operator= it will get copied, thus buffering will
+        // GraphicType::Bitmap. In operator= it will get copied, thus buffering will
         // survive copying (change this if not wanted)
         ImpGraphic* pThat = const_cast< ImpGraphic* >(this);
 
@@ -650,11 +602,11 @@ Size ImpGraphic::ImplGetPrefSize() const
     {
         switch( meType )
         {
-            case GRAPHIC_NONE:
-            case GRAPHIC_DEFAULT:
+            case GraphicType::NONE:
+            case GraphicType::Default:
             break;
 
-            case GRAPHIC_BITMAP:
+            case GraphicType::Bitmap:
             {
                 if(maSvgData.get() && maEx.IsEmpty())
                 {
@@ -691,11 +643,11 @@ void ImpGraphic::ImplSetPrefSize( const Size& rPrefSize )
 {
     switch( meType )
     {
-        case GRAPHIC_NONE:
-        case GRAPHIC_DEFAULT:
+        case GraphicType::NONE:
+        case GraphicType::Default:
         break;
 
-        case GRAPHIC_BITMAP:
+        case GraphicType::Bitmap:
         {
             //UUUU used when importing a writer FlyFrame with SVG as graphic, added conversion
             // to allow setting the PrefSize at the BitmapEx to hold it
@@ -735,16 +687,16 @@ MapMode ImpGraphic::ImplGetPrefMapMode() const
     {
         switch( meType )
         {
-            case GRAPHIC_NONE:
-            case GRAPHIC_DEFAULT:
+            case GraphicType::NONE:
+            case GraphicType::Default:
             break;
 
-            case GRAPHIC_BITMAP:
+            case GraphicType::Bitmap:
             {
                 if(maSvgData.get() && maEx.IsEmpty())
                 {
                     // svg not yet buffered in maEx, return default PrefMapMode
-                    aMapMode = MapMode(MAP_100TH_MM);
+                    aMapMode = MapMode(MapUnit::Map100thMM);
                 }
                 else
                 {
@@ -772,11 +724,11 @@ void ImpGraphic::ImplSetPrefMapMode( const MapMode& rPrefMapMode )
 {
     switch( meType )
     {
-        case GRAPHIC_NONE:
-        case GRAPHIC_DEFAULT:
+        case GraphicType::NONE:
+        case GraphicType::Default:
         break;
 
-        case GRAPHIC_BITMAP:
+        case GraphicType::Bitmap:
         {
             if(maSvgData.get())
             {
@@ -810,18 +762,23 @@ sal_uLong ImpGraphic::ImplGetSizeBytes() const
 {
     if( 0 == mnSizeBytes )
     {
-        if( meType == GRAPHIC_BITMAP )
+        if( meType == GraphicType::Bitmap )
         {
             if(maSvgData.get())
             {
-                mnSizeBytes = maSvgData->getSvgDataArrayLength();
+                std::pair<SvgData::State, size_t> tmp(maSvgData->getSizeBytes());
+                if (SvgData::State::UNPARSED == tmp.first)
+                {
+                    return tmp.second; // don't cache it until SVG is parsed
+                }
+                mnSizeBytes = tmp.second;
             }
             else
             {
                 mnSizeBytes = mpAnimation ? mpAnimation->GetSizeBytes() : maEx.GetSizeBytes();
             }
         }
-        else if( meType == GRAPHIC_GDIMETAFILE )
+        else if( meType == GraphicType::GdiMetafile )
         {
             mnSizeBytes = maMetaFile.GetSizeBytes();
         }
@@ -836,10 +793,10 @@ void ImpGraphic::ImplDraw( OutputDevice* pOutDev, const Point& rDestPt ) const
     {
         switch( meType )
         {
-            case GRAPHIC_DEFAULT:
+            case GraphicType::Default:
             break;
 
-            case GRAPHIC_BITMAP:
+            case GraphicType::Bitmap:
             {
                 if(maSvgData.get() && !maEx)
                 {
@@ -872,10 +829,10 @@ void ImpGraphic::ImplDraw( OutputDevice* pOutDev,
     {
         switch( meType )
         {
-            case GRAPHIC_DEFAULT:
+            case GraphicType::Default:
             break;
 
-            case GRAPHIC_BITMAP:
+            case GraphicType::Bitmap:
             {
                 if(maSvgData.get() && maEx.IsEmpty())
                 {
@@ -941,9 +898,8 @@ sal_uLong ImpGraphic::ImplGetAnimationLoopCount() const
 }
 
 
-void ImpGraphic::ImplSetContext( GraphicReader* pReader )
+void ImpGraphic::ImplSetContext( const std::shared_ptr<GraphicReader>& pReader )
 {
-    assert(!mpContext);
     mpContext = pReader;
     mbDummyContext = false;
 }
@@ -981,7 +937,7 @@ bool ImpGraphic::ImplReadEmbedded( SvStream& rIStm )
         sal_Int32 nMapMode, nScaleNumX, nScaleDenomX;
         sal_Int32 nScaleNumY, nScaleDenomY, nOffsX, nOffsY;
 
-        rIStm.SeekRel( -4L );
+        rIStm.SeekRel( -4 );
 
         sal_Int32 nLen;
         rIStm.ReadInt32( nType ).ReadInt32( nLen ).ReadInt32( nWidth ).ReadInt32( nHeight );
@@ -989,7 +945,7 @@ bool ImpGraphic::ImplReadEmbedded( SvStream& rIStm )
         rIStm.ReadInt32( nScaleDenomY ).ReadInt32( nOffsX ).ReadInt32( nOffsY );
 
         // swapped
-        if( nType > 100L )
+        if( nType > 100 )
         {
             nType = OSL_SWAPDWORD( nType );
             nWidth = OSL_SWAPDWORD( nWidth );
@@ -1011,9 +967,9 @@ bool ImpGraphic::ImplReadEmbedded( SvStream& rIStm )
 
     meType = (GraphicType) nType;
 
-    if( meType )
+    if( meType != GraphicType::NONE )
     {
-        if( meType == GRAPHIC_BITMAP )
+        if( meType == GraphicType::Bitmap )
         {
             if(maSvgData.get() && maEx.IsEmpty())
             {
@@ -1035,7 +991,7 @@ bool ImpGraphic::ImplReadEmbedded( SvStream& rIStm )
             maMetaFile.SetPrefSize( aSize );
         }
 
-        if( meType == GRAPHIC_BITMAP || meType == GRAPHIC_GDIMETAFILE )
+        if( meType == GraphicType::Bitmap || meType == GraphicType::GdiMetafile )
         {
             ReadImpGraphic( rIStm, *this );
             bRet = ( rIStm.GetError() == 0UL );
@@ -1064,7 +1020,7 @@ bool ImpGraphic::ImplReadEmbedded( SvStream& rIStm )
                 bRet = ( rIStm.GetError() == 0UL );
             }
             else
-                meType = GRAPHIC_DEFAULT;
+                meType = GraphicType::Default;
         }
 
         if( bRet )
@@ -1085,7 +1041,7 @@ bool ImpGraphic::ImplWriteEmbedded( SvStream& rOStm )
 {
     bool bRet = false;
 
-    if( ( meType != GRAPHIC_NONE ) && ( meType != GRAPHIC_DEFAULT ) && !ImplIsSwapOut() )
+    if( ( meType != GraphicType::NONE ) && ( meType != GraphicType::Default ) && !ImplIsSwapOut() )
     {
         const MapMode   aMapMode( ImplGetPrefMapMode() );
         const Size      aSize( ImplGetPrefSize() );
@@ -1103,7 +1059,7 @@ bool ImpGraphic::ImplWriteEmbedded( SvStream& rOStm )
             // write new style header
             VersionCompat* pCompat = new VersionCompat( rOStm, StreamMode::WRITE, 1 );
 
-            rOStm.WriteInt32( meType );
+            rOStm.WriteInt32( (sal_Int32)meType );
 
             // data size is updated later
             nDataFieldPos = rOStm.Tell();
@@ -1117,14 +1073,14 @@ bool ImpGraphic::ImplWriteEmbedded( SvStream& rOStm )
         else
         {
             // write old style (<=4.0) header
-            rOStm.WriteInt32( meType );
+            rOStm.WriteInt32( (sal_Int32)meType );
 
             // data size is updated later
             nDataFieldPos = rOStm.Tell();
             rOStm.WriteInt32( 0 );
             rOStm.WriteInt32( aSize.Width() );
             rOStm.WriteInt32( aSize.Height() );
-            rOStm.WriteInt32( aMapMode.GetMapUnit() );
+            rOStm.WriteInt32( (sal_uInt16)aMapMode.GetMapUnit() );
             rOStm.WriteInt32( aMapMode.GetScaleX().GetNumerator() );
             rOStm.WriteInt32( aMapMode.GetScaleX().GetDenominator() );
             rOStm.WriteInt32( aMapMode.GetScaleY().GetNumerator() );
@@ -1171,7 +1127,7 @@ bool ImpGraphic::ImplSwapOut()
             std::unique_ptr<SvStream> xOStm;
             try
             {
-                xOStm.reset(::utl::UcbStreamHelper::CreateStream( aTmpURL.GetMainURL( INetURLObject::NO_DECODE ), STREAM_READWRITE | StreamMode::SHARE_DENYWRITE ));
+                xOStm.reset(::utl::UcbStreamHelper::CreateStream( aTmpURL.GetMainURL( INetURLObject::NO_DECODE ), StreamMode::READWRITE | StreamMode::SHARE_DENYWRITE ));
             }
             catch( const css::uno::Exception& )
             {
@@ -1183,8 +1139,7 @@ bool ImpGraphic::ImplSwapOut()
 
                 if( ( bRet = ImplSwapOut( xOStm.get() ) ) )
                 {
-                    mpSwapFile = new ImpSwapFile;
-                    mpSwapFile->nRefCount = 1;
+                    mpSwapFile = o3tl::make_unique<ImpSwapFile>();
                     mpSwapFile->aSwapURL = aTmpURL;
                 }
                 else
@@ -1268,7 +1223,7 @@ bool ImpGraphic::ImplSwapIn()
             std::unique_ptr<SvStream> xIStm;
             try
             {
-                xIStm.reset(::utl::UcbStreamHelper::CreateStream( aSwapURL, STREAM_READWRITE | StreamMode::SHARE_DENYWRITE ));
+                xIStm.reset(::utl::UcbStreamHelper::CreateStream( aSwapURL, StreamMode::READWRITE | StreamMode::SHARE_DENYWRITE ));
             }
             catch( const css::uno::Exception& )
             {
@@ -1282,38 +1237,7 @@ bool ImpGraphic::ImplSwapIn()
                 bRet = ImplSwapIn( xIStm.get() );
                 xIStm.reset();
 
-                if( mpSwapFile )
-                {
-                    if( mpSwapFile->nRefCount > 1 )
-                        mpSwapFile->nRefCount--;
-                    else
-                    {
-                        try
-                        {
-                            ::ucbhelper::Content aCnt( aSwapURL,
-                                                 css::uno::Reference< css::ucb::XCommandEnvironment >(),
-                                                 comphelper::getProcessComponentContext() );
-
-                            aCnt.executeCommand( "delete", css::uno::makeAny( true ) );
-                        }
-                        catch( const css::ucb::ContentCreationException& )
-                        {
-                        }
-                        catch( const css::uno::RuntimeException& )
-                        {
-                        }
-                        catch( const css::ucb::CommandAbortedException& )
-                        {
-                        }
-                        catch( const css::uno::Exception& )
-                        {
-                        }
-
-                        delete mpSwapFile;
-                    }
-
-                    mpSwapFile = nullptr;
-                }
+                mpSwapFile.reset();
             }
         }
     }
@@ -1348,8 +1272,7 @@ bool ImpGraphic::ImplSwapIn( SvStream* xIStm )
 
 void ImpGraphic::ImplSetLink( const GfxLink& rGfxLink )
 {
-    delete mpGfxLink;
-    mpGfxLink = new GfxLink( rGfxLink );
+    mpGfxLink = o3tl::make_unique<GfxLink>( rGfxLink );
 
     if( mpGfxLink->IsNative() )
         mpGfxLink->SwapOut();
@@ -1362,7 +1285,7 @@ GfxLink ImpGraphic::ImplGetLink()
 
 bool ImpGraphic::ImplIsLink() const
 {
-    return ( mpGfxLink != nullptr );
+    return ( bool(mpGfxLink) );
 }
 
 BitmapChecksum ImpGraphic::ImplGetChecksum() const
@@ -1373,10 +1296,10 @@ BitmapChecksum ImpGraphic::ImplGetChecksum() const
     {
         switch( meType )
         {
-            case GRAPHIC_DEFAULT:
+            case GraphicType::Default:
             break;
 
-            case GRAPHIC_BITMAP:
+            case GraphicType::Bitmap:
             {
                 if(maSvgData.get() && maEx.IsEmpty())
                 {
@@ -1397,6 +1320,10 @@ BitmapChecksum ImpGraphic::ImplGetChecksum() const
 
             default:
                 nRet = maMetaFile.GetChecksum();
+                if (maPdfData.hasElements())
+                    // Include the PDF data in the checksum, so a metafile with
+                    // and without PDF data is considered to be different.
+                    nRet = vcl_get_checksum(nRet, maPdfData.getConstArray(), maPdfData.getLength());
             break;
         }
     }
@@ -1465,7 +1392,7 @@ SvStream& ReadImpGraphic( SvStream& rIStm, ImpGraphic& rImpGraphic )
                 if( !rIStm.GetError() && aLink.LoadNative( aGraphic ) )
                 {
                     // set link only, if no other link was set
-                    const bool bSetLink = ( rImpGraphic.mpGfxLink == nullptr );
+                    const bool bSetLink = ( !rImpGraphic.mpGfxLink );
 
                     // assign graphic
                     rImpGraphic = *aGraphic.ImplGetImpGraphic();
@@ -1506,8 +1433,7 @@ SvStream& ReadImpGraphic( SvStream& rIStm, ImpGraphic& rImpGraphic )
 
                     if( !rIStm.GetError() && ( 0x5344414e == nMagic1 ) && ( 0x494d4931 == nMagic2 ) )
                     {
-                        delete rImpGraphic.mpAnimation;
-                        rImpGraphic.mpAnimation = new Animation;
+                        rImpGraphic.mpAnimation = o3tl::make_unique<Animation>();
                         ReadAnimation( rIStm, *rImpGraphic.mpAnimation );
 
                         // #108077# manually set loaded BmpEx to Animation
@@ -1540,11 +1466,7 @@ SvStream& ReadImpGraphic( SvStream& rIStm, ImpGraphic& rImpGraphic )
                         rIStm.ResetError();
                         rIStm.ReadUInt32( nMagic );
 
-                        if (nSvgMagic != nMagic)
-                        {
-                            rIStm.SetError(nOrigError);
-                        }
-                        else
+                        if (nSvgMagic == nMagic)
                         {
                             sal_uInt32 nSvgDataArrayLength(0);
                             rIStm.ReadUInt32(nSvgDataArrayLength);
@@ -1553,7 +1475,7 @@ SvStream& ReadImpGraphic( SvStream& rIStm, ImpGraphic& rImpGraphic )
                             {
                                 SvgDataArray aNewData(nSvgDataArrayLength);
 
-                                rIStm.Read(aNewData.getArray(), nSvgDataArrayLength);
+                                rIStm.ReadBytes(aNewData.getArray(), nSvgDataArrayLength);
                                 OUString aPath = rIStm.ReadUniOrByteString(rIStm.GetStreamCharSet());
 
                                 if (!rIStm.GetError())
@@ -1566,6 +1488,24 @@ SvStream& ReadImpGraphic( SvStream& rIStm, ImpGraphic& rImpGraphic )
                                     rImpGraphic = aSvgDataPtr;
                                 }
                             }
+                        }
+                        else if (nMagic == nPdfMagic)
+                        {
+                            // Stream in PDF data.
+                            sal_uInt32 nPdfDataLength = 0;
+                            rIStm.ReadUInt32(nPdfDataLength);
+
+                            if (nPdfDataLength)
+                            {
+                                uno::Sequence<sal_Int8> aPdfData(nPdfDataLength);
+                                rIStm.ReadBytes(aPdfData.getArray(), nPdfDataLength);
+                                if (!rIStm.GetError())
+                                    rImpGraphic.maPdfData = aPdfData;
+                            }
+                        }
+                        else
+                        {
+                            rIStm.SetError(nOrigError);
                         }
 
                         rIStm.Seek(nStmPos1);
@@ -1588,7 +1528,8 @@ SvStream& WriteImpGraphic( SvStream& rOStm, const ImpGraphic& rImpGraphic )
         {
             if( ( rOStm.GetVersion() >= SOFFICE_FILEFORMAT_50 ) &&
                 ( rOStm.GetCompressMode() & SvStreamCompressFlags::NATIVE ) &&
-                rImpGraphic.mpGfxLink && rImpGraphic.mpGfxLink->IsNative() )
+                rImpGraphic.mpGfxLink && rImpGraphic.mpGfxLink->IsNative() &&
+                !rImpGraphic.maPdfData.hasElements())
             {
                 // native format
                 rOStm.WriteUInt32( NATIVE_FORMAT_50 );
@@ -1609,11 +1550,11 @@ SvStream& WriteImpGraphic( SvStream& rOStm, const ImpGraphic& rImpGraphic )
 
                 switch( rImpGraphic.ImplGetType() )
                 {
-                    case GRAPHIC_NONE:
-                    case GRAPHIC_DEFAULT:
+                    case GraphicType::NONE:
+                    case GraphicType::Default:
                     break;
 
-                    case GRAPHIC_BITMAP:
+                    case GraphicType::Bitmap:
                     {
                         if(rImpGraphic.getSvgData().get())
                         {
@@ -1625,7 +1566,8 @@ SvStream& WriteImpGraphic( SvStream& rOStm, const ImpGraphic& rImpGraphic )
 
                             rOStm.WriteUInt32( nSvgMagic );
                             rOStm.WriteUInt32( rImpGraphic.getSvgData()->getSvgDataArrayLength() );
-                            rOStm.Write(rImpGraphic.getSvgData()->getSvgDataArray().getConstArray(), rImpGraphic.getSvgData()->getSvgDataArrayLength());
+                            rOStm.WriteBytes(rImpGraphic.getSvgData()->getSvgDataArray().getConstArray(),
+                                rImpGraphic.getSvgData()->getSvgDataArrayLength());
                             rOStm.WriteUniOrByteString(rImpGraphic.getSvgData()->getPath(),
                                                        rOStm.GetStreamCharSet());
                         }
@@ -1642,6 +1584,13 @@ SvStream& WriteImpGraphic( SvStream& rOStm, const ImpGraphic& rImpGraphic )
 
                     default:
                     {
+                        if (rImpGraphic.maPdfData.hasElements())
+                        {
+                            // Stream out PDF data.
+                            rOStm.WriteUInt32(nPdfMagic);
+                            rOStm.WriteUInt32(rImpGraphic.maPdfData.getLength());
+                            rOStm.WriteBytes(rImpGraphic.maPdfData.getConstArray(), rImpGraphic.maPdfData.getLength());
+                        }
                         if( rImpGraphic.ImplIsSupportedGraphic() )
                             WriteGDIMetaFile( rOStm, rImpGraphic.maMetaFile );
                     }

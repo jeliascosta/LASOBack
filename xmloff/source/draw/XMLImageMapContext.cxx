@@ -126,7 +126,7 @@ public:
         SvXMLImport& rImport,
         sal_uInt16 nPrefix,
         const OUString& rLocalName,
-        css::uno::Reference<css::container::XIndexContainer> xMap,
+        css::uno::Reference<css::container::XIndexContainer> const & xMap,
         const sal_Char* pServiceName);
 
     void StartElement(
@@ -154,7 +154,7 @@ XMLImageMapObjectContext::XMLImageMapObjectContext(
     SvXMLImport& rImport,
     sal_uInt16 nPrefix,
     const OUString& rLocalName,
-    Reference<XIndexContainer> xMap,
+    Reference<XIndexContainer> const & xMap,
     const sal_Char* pServiceName) :
         SvXMLImportContext(rImport, nPrefix, rLocalName),
         sBoundary("Boundary"),
@@ -309,9 +309,9 @@ public:
         SvXMLImport& rImport,
         sal_uInt16 nPrefix,
         const OUString& rLocalName,
-        css::uno::Reference<css::container::XIndexContainer> xMap);
+        css::uno::Reference<css::container::XIndexContainer> const & xMap);
 
-    virtual ~XMLImageMapRectangleContext();
+    virtual ~XMLImageMapRectangleContext() override;
 
 protected:
     virtual void ProcessAttribute(
@@ -327,7 +327,7 @@ XMLImageMapRectangleContext::XMLImageMapRectangleContext(
     SvXMLImport& rImport,
     sal_uInt16 nPrefix,
     const OUString& rLocalName,
-    Reference<XIndexContainer> xMap) :
+    Reference<XIndexContainer> const & xMap) :
         XMLImageMapObjectContext(rImport, nPrefix, rLocalName, xMap,
                                  "com.sun.star.image.ImageMapRectangleObject"),
         bXOK(false),
@@ -411,9 +411,9 @@ public:
         SvXMLImport& rImport,
         sal_uInt16 nPrefix,
         const OUString& rLocalName,
-        css::uno::Reference<css::container::XIndexContainer> xMap);
+        css::uno::Reference<css::container::XIndexContainer> const & xMap);
 
-    virtual ~XMLImageMapPolygonContext();
+    virtual ~XMLImageMapPolygonContext() override;
 
 protected:
     virtual void ProcessAttribute(
@@ -429,7 +429,7 @@ XMLImageMapPolygonContext::XMLImageMapPolygonContext(
     SvXMLImport& rImport,
     sal_uInt16 nPrefix,
     const OUString& rLocalName,
-    Reference<XIndexContainer> xMap) :
+    Reference<XIndexContainer> const & xMap) :
         XMLImageMapObjectContext(rImport, nPrefix, rLocalName, xMap,
                                  "com.sun.star.image.ImageMapPolygonObject"),
         bViewBoxOK(false),
@@ -500,9 +500,9 @@ public:
         SvXMLImport& rImport,
         sal_uInt16 nPrefix,
         const OUString& rLocalName,
-        css::uno::Reference<css::container::XIndexContainer> xMap);
+        css::uno::Reference<css::container::XIndexContainer> const & xMap);
 
-    virtual ~XMLImageMapCircleContext();
+    virtual ~XMLImageMapCircleContext() override;
 
 protected:
     virtual void ProcessAttribute(
@@ -518,7 +518,7 @@ XMLImageMapCircleContext::XMLImageMapCircleContext(
     SvXMLImport& rImport,
     sal_uInt16 nPrefix,
     const OUString& rLocalName,
-    Reference<XIndexContainer> xMap)
+    Reference<XIndexContainer> const & xMap)
     : XMLImageMapObjectContext(rImport, nPrefix, rLocalName, xMap,
           "com.sun.star.image.ImageMapCircleObject")
     , nRadius(0)

@@ -56,26 +56,19 @@ ToolbarMenuAcc::~ToolbarMenuAcc()
 }
 
 
-IMPL_LINK_TYPED( ToolbarMenuAcc, WindowEventListener, VclWindowEvent&, rEvent, void )
+IMPL_LINK( ToolbarMenuAcc, WindowEventListener, VclWindowEvent&, rEvent, void )
 {
     /* Ignore VCLEVENT_WINDOW_ENDPOPUPMODE, because the UNO accessibility wrapper
      * might have been destroyed by the previous VCLEventListener (if no AT tool
      * is running), e.g. sub-toolbars in impress.
      */
-    if ( mpParent && (rEvent.GetId() != VCLEVENT_WINDOW_ENDPOPUPMODE) )
-    {
-        DBG_ASSERT( rEvent.GetWindow(), "Window???" );
-        if( !rEvent.GetWindow()->IsAccessibilityEventsSuppressed() || ( rEvent.GetId() == VCLEVENT_OBJECT_DYING ) )
-        {
-            ProcessWindowEvent( rEvent );
-        }
-    }
-}
+    if ( !mpParent || (rEvent.GetId() == VCLEVENT_WINDOW_ENDPOPUPMODE) )
+        return;
+    DBG_ASSERT( rEvent.GetWindow(), "Window???" );
+    if( rEvent.GetWindow()->IsAccessibilityEventsSuppressed() && ( rEvent.GetId() != VCLEVENT_OBJECT_DYING ) )
+        return;
 
-
-void ToolbarMenuAcc::ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent )
-{
-    switch ( rVclWindowEvent.GetId() )
+    switch ( rEvent.GetId() )
     {
         case VCLEVENT_OBJECT_DYING:
         {

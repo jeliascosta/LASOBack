@@ -50,7 +50,6 @@ class VCLPLUG_GEN_PUBLIC X11SalData : public SalGenericData
     {
         bool            m_bIgnore;
         bool            m_bWas;
-        unsigned int    m_nLastErrorRequest;
         XErrorHandler   m_aHandler;
     };
     std::vector< XErrorStackEntry > m_aXErrorHandlerStack;
@@ -61,7 +60,7 @@ protected:
 
 public:
              X11SalData( SalGenericDataType t, SalInstance *pInstance );
-    virtual ~X11SalData();
+    virtual ~X11SalData() override;
 
     virtual void            Init();
     virtual void            Dispose() override;
@@ -77,7 +76,7 @@ public:
 
     // X errors
     virtual void            ErrorTrapPush() override;
-    virtual bool            ErrorTrapPop( bool bIgnoreError ) override;
+    virtual bool            ErrorTrapPop( bool bIgnoreError = true ) override;
     void                    XError( Display *pDisp, XErrorEvent *pEvent );
     bool                    HasXErrorOccurred() const
                                 { return m_aXErrorHandlerStack.back().m_bWas; }

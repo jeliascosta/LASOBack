@@ -101,17 +101,6 @@ bool FuConstCustomShape::MouseButtonDown(const MouseEvent& rMEvt)
 
 /*************************************************************************
 |*
-|* MouseMove-event
-|*
-\************************************************************************/
-
-bool FuConstCustomShape::MouseMove(const MouseEvent& rMEvt)
-{
-    return FuConstruct::MouseMove(rMEvt);
-}
-
-/*************************************************************************
-|*
 |* MouseButtonUp-event
 |*
 \************************************************************************/
@@ -125,24 +114,10 @@ bool FuConstCustomShape::MouseButtonUp(const MouseEvent& rMEvt)
 
     if ( pView->IsCreateObj() && rMEvt.IsLeft() )
     {
-        pView->EndCreateObj(SDRCREATE_FORCEEND);
+        pView->EndCreateObj(SdrCreateCmd::ForceEnd);
         bReturn = true;
     }
     return (FuConstruct::MouseButtonUp(rMEvt) || bReturn);
-}
-
-/*************************************************************************
-|*
-|* Tastaturereignisse bearbeiten
-|*
-|* Wird ein KeyEvent bearbeitet, so ist der Return-Wert sal_True, andernfalls
-|* FALSE.
-|*
-\************************************************************************/
-
-bool FuConstCustomShape::KeyInput(const KeyEvent& rKEvt)
-{
-    return FuConstruct::KeyInput(rKEvt);
 }
 
 /*************************************************************************

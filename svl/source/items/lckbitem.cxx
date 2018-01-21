@@ -39,7 +39,7 @@ SfxLockBytesItem::SfxLockBytesItem( sal_uInt16 nW, SvStream &rStream )
     rStream.Seek( 0L );
     _xVal = new SvLockBytes( new SvMemoryStream(), true );
 
-    SvStream aLockBytesStream( _xVal );
+    SvStream aLockBytesStream( _xVal.get() );
     rStream.ReadStream( aLockBytesStream );
 }
 
@@ -84,8 +84,8 @@ SfxPoolItem* SfxLockBytesItem::Create( SvStream &rStream, sal_uInt16 ) const
             nToRead = MAX_BUF;
         else
             nToRead = nSize - nActRead;
-        nActRead += rStream.Read( cTmpBuf, nToRead );
-        aNewStream.Write( cTmpBuf, nToRead );
+        nActRead += rStream.ReadBytes( cTmpBuf, nToRead );
+        aNewStream.WriteBytes( cTmpBuf, nToRead );
     } while( nSize > nActRead );
 
     return new SfxLockBytesItem( Which(), aNewStream );
@@ -94,7 +94,7 @@ SfxPoolItem* SfxLockBytesItem::Create( SvStream &rStream, sal_uInt16 ) const
 
 SvStream& SfxLockBytesItem::Store(SvStream &rStream, sal_uInt16 ) const
 {
-    SvStream aLockBytesStream( _xVal );
+    SvStream aLockBytesStream( _xVal.get() );
     sal_uInt32 nSize = aLockBytesStream.Seek( STREAM_SEEK_TO_END );
     aLockBytesStream.Seek( 0L );
 
@@ -113,7 +113,7 @@ bool SfxLockBytesItem::PutValue( const css::uno::Any& rVal, sal_uInt8 )
         if ( aSeq.getLength() )
         {
             SvMemoryStream* pStream = new SvMemoryStream();
-            pStream->Write( aSeq.getConstArray(), aSeq.getLength() );
+            pStream->WriteBytes( aSeq.getConstArray(), aSeq.getLength() );
             pStream->Seek(0);
 
             _xVal = new SvLockBytes( pStream, true );
@@ -141,7 +141,7 @@ bool SfxLockBytesItem::QueryValue( css::uno::Any& rVal, sal_uInt8 ) const
         else
             return false;
 
-        sal_uLong nRead = 0;
+        std::size_t nRead = 0;
         css::uno::Sequence< sal_Int8 > aSeq( nLen );
 
         _xVal->ReadAt( 0, aSeq.getArray(), nLen, &nRead );

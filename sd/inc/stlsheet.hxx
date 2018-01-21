@@ -62,7 +62,6 @@ public:
     virtual bool        HasFollowSupport() const override;
     virtual bool        HasParentSupport() const override;
     virtual bool        HasClearParentSupport() const override;
-    virtual bool        SetName(const OUString& rNewName, bool bReindexNow = true) override;
     virtual void        SetHelpId( const OUString& r, sal_uLong nId ) override;
 
     void        AdjustToFontHeight(SfxItemSet& rSet, bool bOnlyMissingItems = true);
@@ -131,10 +130,9 @@ protected:
     static const SfxItemPropertySimpleEntry* getPropertyMapEntry( const OUString& rPropertyName ) throw (css::uno::RuntimeException);
 
     virtual void Load (SvStream& rIn, sal_uInt16 nVersion) override;
-    virtual void Store(SvStream& rOut) override;
 
     virtual void Notify(SfxBroadcaster& rBC, const SfxHint& rHint) override;
-    virtual             ~SdStyleSheet();
+    virtual             ~SdStyleSheet() override;
 
     void throwIfDisposed() throw (css::uno::RuntimeException);
 

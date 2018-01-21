@@ -112,15 +112,15 @@ OUString SwHistorySetFormat::GetDescription() const
     case RES_BREAK:
         switch ((static_cast<SvxFormatBreakItem &>(*m_pAttr)).GetBreak())
         {
-        case SVX_BREAK_PAGE_BEFORE:
-        case SVX_BREAK_PAGE_AFTER:
-        case SVX_BREAK_PAGE_BOTH:
+        case SvxBreak::PageBefore:
+        case SvxBreak::PageAfter:
+        case SvxBreak::PageBoth:
             aResult = SW_RESSTR(STR_UNDO_PAGEBREAKS);
 
             break;
-        case SVX_BREAK_COLUMN_BEFORE:
-        case SVX_BREAK_COLUMN_AFTER:
-        case SVX_BREAK_COLUMN_BOTH:
+        case SvxBreak::ColumnBefore:
+        case SvxBreak::ColumnAfter:
+        case SvxBreak::ColumnBoth:
             aResult = SW_RESSTR(STR_UNDO_COLBRKS);
 
             break;
@@ -648,7 +648,8 @@ void SwHistoryBookmark::SetInDoc( SwDoc* pDoc, bool )
             pMarkAccess->deleteMark( pMark );
         }
         ::sw::mark::IBookmark* const pBookmark =
-            dynamic_cast< ::sw::mark::IBookmark* >( pMarkAccess->makeMark(*pPam, m_aName, m_eBkmkType) );
+            dynamic_cast<::sw::mark::IBookmark*>(
+                pMarkAccess->makeMark(*pPam, m_aName, m_eBkmkType, sw::mark::InsertMode::New));
         if ( pBookmark != nullptr )
         {
             pBookmark->SetKeyCode(m_aKeycode);
@@ -685,7 +686,8 @@ SwHistorySetAttrSet::SwHistorySetAttrSet( const SfxItemSet& rSet,
     SfxItemIter aIter( m_OldSet ), aOrigIter( rSet );
     const SfxPoolItem* pItem = aIter.FirstItem(),
                      * pOrigItem = aOrigIter.FirstItem();
-    do {
+    while (pItem && pOrigItem)
+    {
         if( !rSetArr.count( pOrigItem->Which() ))
         {
             m_ResetArray.push_back( pOrigItem->Which() );
@@ -741,11 +743,9 @@ SwHistorySetAttrSet::SwHistorySetAttrSet( const SfxItemSet& rSet,
             }
         }
 
-        if( aIter.IsAtEnd() )
-            break;
         pItem = aIter.NextItem();
         pOrigItem = aOrigIter.NextItem();
-    } while( true );
+    }
 }
 
 void SwHistorySetAttrSet::SetInDoc( SwDoc* pDoc, bool )
@@ -955,8 +955,7 @@ void SwHistory::Add( SwTextAttr* pHint, sal_uLong nNodeIdx, bool bNewAttr )
                         static_txtattr_cast<SwTextRefMark*>(pHint), nNodeIdx);
                 break;
             default:
-                pHt = new SwHistorySetText(
-                            static_cast<SwTextAttr*>(pHint), nNodeIdx );
+                pHt = new SwHistorySetText( pHint, nNodeIdx );
         }
     }
     else
@@ -1319,8 +1318,10 @@ bool SwRegHistory::InsertItems( const SfxItemSet& rSet,
                 (isCHRATR(nWhich) || RES_TXTATR_UNKNOWN_CONTAINER == nWhich)
                     ? RES_TXTATR_AUTOFMT
                     : static_cast<RES_TXTATR>(nWhich));
-            if (RES_TXTATR_AUTOFMT == nExpected && 0 == nStart && pTextNode->Len() == nEnd)
+            if (RES_TXTATR_AUTOFMT == nExpected)
                 continue; // special case, may get set on text node itself
+                          // tdf#105077 even worse, node's set could cause
+                          // nothing at all to be inserted
             assert(std::find_if(
                 m_pHistory->m_SwpHstry.begin(), m_pHistory->m_SwpHstry.end(),
                 [nExpected](SwHistoryHint *const pHint) -> bool {

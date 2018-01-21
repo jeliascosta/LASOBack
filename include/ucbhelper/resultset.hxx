@@ -99,7 +99,7 @@ public:
             const css::uno::Sequence< css::beans::Property >& rProperties,
             const rtl::Reference< ResultSetDataSupplier >& rDataSupplier,
             const css::uno::Reference< css::ucb::XCommandEnvironment >& rxEnv );
-    virtual ~ResultSet();
+    virtual ~ResultSet() override;
 
     // XInterface
     virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
@@ -124,9 +124,6 @@ public:
         throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
         throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // XComponent
     virtual void SAL_CALL

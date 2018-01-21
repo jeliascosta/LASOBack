@@ -1,16 +1,16 @@
 #. extracted from helpcontent2/source/text/shared/guide
 msgid ""
 msgstr ""
-"Project-Id-Version: LibreOffice 5.4\n"
+"Project-Id-Version: LibreOffice 5.3\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2017-04-10 17:20+0200\n"
-"PO-Revision-Date: 2017-03-31 23:52+0200\n"
+"POT-Creation-Date: 2017-01-17 09:44+0100\n"
+"PO-Revision-Date: 2017-01-17 23:41+0200\n"
 "Last-Translator: Martin Srebotnjak <miles@filmsi.net>\n"
 "Language-Team: sl.libreoffice.org\n"
+"Language: sl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: sl\n"
 "Plural-Forms: nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);\n"
 "X-Generator: Virtaal 0.7.1\n"
 "X-Accelerator-Marker: ~\n"
@@ -2047,8 +2047,8 @@ msgctxt ""
 "cmis-remote-files-setup.xhp\n"
 "par_id150820161816033788\n"
 "help.text"
-msgid "To access remote servers, you must use %PRODUCTNAME’s own Open and Save dialogs. If you currently use your operating system dialogs for saving and opening files, go to <item type=\"menuitem\">Tools - Options - %PRODUCTNAME - General</item> and check the option <item type=\"menuitem\">Use %PRODUCTNAME dialogs</item>."
-msgstr "Za dostop do oddaljenih strežnikov morate uporabiti lastna pogovorna okna %PRODUCTNAME Odpri in Shrani. Če za shranjevanje in odpiranje datotek trenutno uporabljate pogovorna okna svojega operacijskega sistema, izberite <item type=\"menuitem\">Orodja – Možnosti – %PRODUCTNAME – Splošno</item> in potrdite možnost <item type=\"menuitem\">Uporabi pogovorna okna %PRODUCTNAME</item>."
+msgid "To access remote servers, you must use LibreOffice own Open and Save dialogs. If you currently use your operating system dialogs for saving and opening files, go to <item type=\"menuitem\">Tools > Options > LibreOffice > General</item> and check the option <item type=\"menuitem\">Use %PRODUCTNAME dialogs</item>."
+msgstr "Za dostop do oddaljenih strežnikov morate uporabiti lastna pogovorna okna LibreOffice Odpri in Shrani. Če za shranjevanje in odpiranje datotek trenutno uporabljate pogovorna okna svojega operacijskega sistema, izberite <item type=\"menuitem\">Orodja > Možnosti > LibreOffice > Splošno</item> in potrdite možnost <item type=\"menuitem\">Uporabi pogovorna okna %PRODUCTNAME</item>."
 
 #: cmis-remote-files-setup.xhp
 msgctxt ""
@@ -2071,7 +2071,7 @@ msgctxt ""
 "cmis-remote-files-setup.xhp\n"
 "par_id150820161816031470\n"
 "help.text"
-msgid "Select <item type=\"menuitem\">File - Open Remote Files</item>"
+msgid "Select <item type=\"menuitem\">File > Open Remote Files...</item>"
 msgstr "Izberite <item type=\"menuitem\">Datoteka – Odpri oddaljene datoteke</item>."
 
 #: cmis-remote-files-setup.xhp
@@ -2079,7 +2079,7 @@ msgctxt ""
 "cmis-remote-files-setup.xhp\n"
 "par_id150820161816037870\n"
 "help.text"
-msgid "Select <item type=\"menuitem\">File - Save to Remote Server</item>"
+msgid "Select <item type=\"menuitem\">File > Save to Remote Server...</item>"
 msgstr "Izberite <item type=\"menuitem\">Datoteka – Shrani na oddaljeni strežnik</item>."
 
 #: cmis-remote-files-setup.xhp
@@ -2197,6 +2197,14 @@ msgstr "Povezovanje s strežniki <link href=\"text/shared/00/00000002.xhp#ftp\">
 #: cmis-remote-files-setup.xhp
 msgctxt ""
 "cmis-remote-files-setup.xhp\n"
+"par_id150820161816034969\n"
+"help.text"
+msgid "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#introservice\" markup=\"keep\"/>"
+msgstr "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#introservice\" markup=\"keep\"/>"
+
+#: cmis-remote-files-setup.xhp
+msgctxt ""
+"cmis-remote-files-setup.xhp\n"
 "par_id150820161816039418\n"
 "help.text"
 msgid "<emph>Type</emph>: FTP or SSH"
@@ -2231,8 +2239,32 @@ msgctxt ""
 "cmis-remote-files-setup.xhp\n"
 "par_id150820161816047387\n"
 "help.text"
-msgid "<variable id=\"rememberpw\"><emph>Remember password</emph>: Check to store the password in %PRODUCTNAME’s user profile. The password will be secured by the master password in <item type=\"menuitem\">Tools - Options - %PRODUCTNAME - Security - Internet passwords</item>.</variable>"
-msgstr "<variable id=\"rememberpw\"><emph>Zapomni si geslo</emph>: potrdite, da shranite geslo v uporabniškem profilu %PRODUCTNAME. Geslo bo zavarovano z glavnim geslom v <item type=\"menuitem\">Orodja – Možnosti – %PRODUCTNAME – Varnost – Gesla za spletne povezave</item>.</variable>"
+msgid "<variable id=\"rememberpw\"><emph>Remember password</emph>: Check to store the password in %PRODUCTNAME user profile. The password will be secured by the master password in <item type=\"menuitem\">Tools - Options - LibreOffice - Security - Internet passwords</item>.</variable>"
+msgstr "<variable id=\"rememberpw\"><emph>Zapomni si geslo</emph>: potrdite, da shranite geslo v uporabniškem profilu %PRODUCTNAME. Geslo bo zavarovano z glavnim geslom v <item type=\"menuitem\">Orodja – Možnosti – LibreOffice – Varnost – Gesla za spletne povezave</item>.</variable>"
+
+#: cmis-remote-files-setup.xhp
+msgctxt ""
+"cmis-remote-files-setup.xhp\n"
+"par_id150820161816045167\n"
+"help.text"
+msgid "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#labelpar\" markup=\"keep\"/>"
+msgstr "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#labelpar\" markup=\"keep\"/>"
+
+#: cmis-remote-files-setup.xhp
+msgctxt ""
+"cmis-remote-files-setup.xhp\n"
+"par_id150820161816045015\n"
+"help.text"
+msgid "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#rootpar\" markup=\"keep\"/>"
+msgstr "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#rootpar\" markup=\"keep\"/>"
+
+#: cmis-remote-files-setup.xhp
+msgctxt ""
+"cmis-remote-files-setup.xhp\n"
+"par_id150820161816045804\n"
+"help.text"
+msgid "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#okbutton\"/>."
+msgstr "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#okbutton\"/>."
 
 #: cmis-remote-files-setup.xhp
 msgctxt ""
@@ -2249,6 +2281,14 @@ msgctxt ""
 "help.text"
 msgid "<bookmark_value>remote file service;Windows share</bookmark_value>  <bookmark_value>Windows share;remote file service</bookmark_value>  <bookmark_value>Windows share;remote file service setup</bookmark_value>  <bookmark_value>remote file service setup;Windows share</bookmark_value>"
 msgstr "<bookmark_value>oddaljene datoteke;storitev Windows Share</bookmark_value><bookmark_value>Windows Share;storitev oddaljenih datotek</bookmark_value><bookmark_value>Windows Share;nastavitev storitve oddaljenih datotek</bookmark_value><bookmark_value>oddaljene datoteke;nastavitev storitve Windows Share</bookmark_value>"
+
+#: cmis-remote-files-setup.xhp
+msgctxt ""
+"cmis-remote-files-setup.xhp\n"
+"par_id150820161816046729\n"
+"help.text"
+msgid "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#introservice\" markup=\"keep\"/>"
+msgstr "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#introservice\" markup=\"keep\"/>"
 
 #: cmis-remote-files-setup.xhp
 msgctxt ""
@@ -2277,6 +2317,38 @@ msgstr "<emph>Mapa skupne rabe</emph>: mapa skupne rabe Windows Share."
 #: cmis-remote-files-setup.xhp
 msgctxt ""
 "cmis-remote-files-setup.xhp\n"
+"par_id150820161816049\n"
+"help.text"
+msgid "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#rememberpw\" markup=\"keep\"/>"
+msgstr "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#rememberpw\" markup=\"keep\"/>"
+
+#: cmis-remote-files-setup.xhp
+msgctxt ""
+"cmis-remote-files-setup.xhp\n"
+"par_id150820161816048365\n"
+"help.text"
+msgid "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#labelpar\" markup=\"keep\"/>"
+msgstr "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#labelpar\" markup=\"keep\"/>"
+
+#: cmis-remote-files-setup.xhp
+msgctxt ""
+"cmis-remote-files-setup.xhp\n"
+"par_id150820161816048181\n"
+"help.text"
+msgid "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#rootpar\" markup=\"keep\"/>"
+msgstr "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#rootpar\" markup=\"keep\"/>"
+
+#: cmis-remote-files-setup.xhp
+msgctxt ""
+"cmis-remote-files-setup.xhp\n"
+"par_id150820161816047868\n"
+"help.text"
+msgid "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#okbutton\"/>"
+msgstr "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#okbutton\"/>"
+
+#: cmis-remote-files-setup.xhp
+msgctxt ""
+"cmis-remote-files-setup.xhp\n"
 "hd_id160820161759157773\n"
 "help.text"
 msgid "Connecting to Google Drive"
@@ -2289,6 +2361,14 @@ msgctxt ""
 "help.text"
 msgid "<bookmark_value>remote file service;Google Drive</bookmark_value>  <bookmark_value>Google Drive;remote file service</bookmark_value>  <bookmark_value>Google Drive;remote file service setup</bookmark_value>  <bookmark_value>remote file service setup;Google Drive</bookmark_value>"
 msgstr "<bookmark_value>oddaljene datoteke;storitev Google Drive</bookmark_value><bookmark_value>Google Drive;storitev oddaljenih datotek</bookmark_value><bookmark_value>Google Drive;nastavitev storitve oddaljenih datotek</bookmark_value><bookmark_value>oddaljene datoteke;nastavitev storitve Google Drive</bookmark_value>"
+
+#: cmis-remote-files-setup.xhp
+msgctxt ""
+"cmis-remote-files-setup.xhp\n"
+"par_id160820161759169124\n"
+"help.text"
+msgid "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#introservice\" markup=\"keep\"/>"
+msgstr "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#introservice\" markup=\"keep\"/>"
 
 #: cmis-remote-files-setup.xhp
 msgctxt ""
@@ -2309,6 +2389,30 @@ msgstr "<emph>Uporabnik, Geslo</emph>: uporabniško ime in geslo računa Google.
 #: cmis-remote-files-setup.xhp
 msgctxt ""
 "cmis-remote-files-setup.xhp\n"
+"par_id160820161759162239\n"
+"help.text"
+msgid "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#rememberpw\" markup=\"keep\"/>"
+msgstr "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#rememberpw\" markup=\"keep\"/>"
+
+#: cmis-remote-files-setup.xhp
+msgctxt ""
+"cmis-remote-files-setup.xhp\n"
+"par_id160820161759166391\n"
+"help.text"
+msgid "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#labelpar\" markup=\"keep\"/>"
+msgstr "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#labelpar\" markup=\"keep\"/>"
+
+#: cmis-remote-files-setup.xhp
+msgctxt ""
+"cmis-remote-files-setup.xhp\n"
+"par_id160820161759163527\n"
+"help.text"
+msgid "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#okbutton\"/>"
+msgstr "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#okbutton\"/>"
+
+#: cmis-remote-files-setup.xhp
+msgctxt ""
+"cmis-remote-files-setup.xhp\n"
 "hd_id150820161816044879\n"
 "help.text"
 msgid "Connecting to a <link href=\"text/shared/00/00000002.xhp#cmis\">CMIS</link> server"
@@ -2321,6 +2425,14 @@ msgctxt ""
 "help.text"
 msgid "<bookmark_value>remote file service setup;other file services</bookmark_value>  <bookmark_value>remote file service setup;Lotus</bookmark_value>  <bookmark_value>remote file service setup;SharePoint</bookmark_value>  <bookmark_value>remote file service setup;IBM</bookmark_value>  <bookmark_value>remote file service setup;Nuxeo</bookmark_value>  <bookmark_value>remote file service setup;Alfresco</bookmark_value>  <bookmark_value>remote file service setup;CMIS server</bookmark_value>"
 msgstr "<bookmark_value>oddaljene datoteke;druge datotečne storitve</bookmark_value><bookmark_value>oddaljene datoteke;storitev Lotus</bookmark_value><bookmark_value>oddaljene datoteke;storitev SharePoint</bookmark_value><bookmark_value>oddaljene datoteke;storitev IBM</bookmark_value><bookmark_value>oddaljene datoteke;storitev Nuxeo</bookmark_value><bookmark_value>oddaljene datoteke;storitev Alfresco</bookmark_value><bookmark_value>oddaljene datoteke;strežnik CMIS</bookmark_value>"
+
+#: cmis-remote-files-setup.xhp
+msgctxt ""
+"cmis-remote-files-setup.xhp\n"
+"par_id150820161816048323\n"
+"help.text"
+msgid "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#introservice\" markup=\"keep\"/>"
+msgstr "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#introservice\" markup=\"keep\"/>"
 
 #: cmis-remote-files-setup.xhp
 msgctxt ""
@@ -2349,6 +2461,14 @@ msgstr "<emph>Uporabnik, Geslo</emph>: uporabniško ime in geslo za storitev CMI
 #: cmis-remote-files-setup.xhp
 msgctxt ""
 "cmis-remote-files-setup.xhp\n"
+"par_id150820161816054077\n"
+"help.text"
+msgid "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#rememberpw\" markup=\"keep\"/>"
+msgstr "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#rememberpw\" markup=\"keep\"/>"
+
+#: cmis-remote-files-setup.xhp
+msgctxt ""
+"cmis-remote-files-setup.xhp\n"
 "par_id150820161816053608\n"
 "help.text"
 msgid "<emph>Repository</emph>: select the files repository in the drop-down list."
@@ -2361,6 +2481,22 @@ msgctxt ""
 "help.text"
 msgid "<emph>Refresh button</emph>: click to refresh the contents of the repository list."
 msgstr "<emph>Gumb Osveži</emph>: kliknite, da osvežite vsebino seznama skladišča."
+
+#: cmis-remote-files-setup.xhp
+msgctxt ""
+"cmis-remote-files-setup.xhp\n"
+"par_id150820161816054039\n"
+"help.text"
+msgid "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#labelpar\" markup=\"keep\"/>"
+msgstr "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#labelpar\" markup=\"keep\"/>"
+
+#: cmis-remote-files-setup.xhp
+msgctxt ""
+"cmis-remote-files-setup.xhp\n"
+"par_id150820161816052286\n"
+"help.text"
+msgid "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#rootpar\" markup=\"keep\"/>"
+msgstr "<embedvar href=\"text/shared/guide/cmis-remote-files-setup.xhp#rootpar\" markup=\"keep\"/>"
 
 #: cmis-remote-files-setup.xhp
 msgctxt ""
@@ -2663,7 +2799,7 @@ msgctxt ""
 "cmis-remote-files.xhp\n"
 "par_id19082016170716519\n"
 "help.text"
-msgid "Files stored in CMIS server have properties and metadata not available in a local storage. These metadata are important for controls and debugging of the CMIS connection and server implementation. All parameters displayed are read-only."
+msgid "Files stored in CMIS server have properties and metadata not available in a local storage. These metadata are important for controls and debugging of the CMIS connection and server implementation. All parameters dispalyed are read-only."
 msgstr "Datoteke, shranjene na strežniku CMIS, imajo lastnosti in metapodatke, ki niso na voljo v krajevni shrambi. Ti metapodatki so pomembni za kontrolnike in razhroščevanje povezave CMIS in implementacije strežnikov. Vsi prikazani parametri so namenjeni samo branju."
 
 #: cmis-remote-files.xhp
@@ -6384,8 +6520,8 @@ msgctxt ""
 "digitalsign_send.xhp\n"
 "par_idN10688\n"
 "help.text"
-msgid "Choose <emph>File - Digital Signatures - Digital Signatures</emph>."
-msgstr "Izberite <emph>Datoteka – Digitalni podpisi – Digitalni podpisi</emph>."
+msgid "Choose <emph>File - Digital Signatures</emph>."
+msgstr "Izberite <emph>Datoteka – Digitalni podpisi</emph>."
 
 #: digitalsign_send.xhp
 msgctxt ""
@@ -7229,8 +7365,8 @@ msgctxt ""
 "dragdrop.xhp\n"
 "par_id3148672\n"
 "help.text"
-msgid "<image id=\"img_id3158407\" src=\"sw/res/sc20238.png\" width=\"5.64mm\" height=\"5.64mm\"><alt id=\"alt_id3158407\">Icon</alt></image>"
-msgstr "<image id=\"img_id3158407\" src=\"sw/res/sc20238.png\" width=\"5.64mm\" height=\"5.64mm\"><alt id=\"alt_id3158407\">Ikona</alt></image>"
+msgid "<image id=\"img_id3158407\" src=\"sw/imglst/sc20238.png\" width=\"5.64mm\" height=\"5.64mm\"><alt id=\"alt_id3158407\">Icon</alt></image>"
+msgstr "<image id=\"img_id3158407\" src=\"sw/imglst/sc20238.png\" width=\"5.64mm\" height=\"5.64mm\"><alt id=\"alt_id3158407\">Ikona</alt></image>"
 
 #: dragdrop.xhp
 msgctxt ""
@@ -9860,9 +9996,10 @@ msgstr "Pomembno je, da na svojem trdem disku ustvarite enako strukturo map, kot
 msgctxt ""
 "hyperlink_rel_abs.xhp\n"
 "par_id3159158\n"
+"49\n"
 "help.text"
-msgid "An absolute path such as \"C:\\homepage\\graphics\\picture.gif\" would no longer function on the provider server. Neither a server nor the computer of a reader needs to have a C hard drive: operating systems such as Unix or macOS do not recognize drive letters, and even if the folder homepage\\graphics existed, your picture would not be available. It is better to use relative addressing for file links."
-msgstr "Absolutna pot, npr. »C:\\domačastran\\grafika\\slika.gif«, potem ne bo več veljala za strežnik. Ni potrebno, da imata strežnik in računalnik pogon C: (operacijski sistemi, kot sta Unix ali macOS, ne prepoznajo črk, ki označujejo pogone), pa tudi če bi mapa domačastran\\grafika obstajala, slika ne bi bila na voljo. Zato je boje, da za povezave na datoteke uporabljate relativne naslove."
+msgid "An absolute path such as \"C:\\homepage\\graphics\\picture.gif\" would no longer function on the provider server. Neither a server nor the computer of a reader needs to have a C hard drive: operating systems such as Unix or MacOS do not recognize drive letters, and even if the folder homepage\\graphics existed, your picture would not be available. It is better to use relative addressing for file links."
+msgstr "Absolutna pot, npr. »C:\\domačastran\\grafika\\slika.gif«, potem ne bo več veljala za strežnik. Ni potrebno, da imata strežnik in računalnik pogon C: (operacijski sistemi, kot sta Unix ali MacOS, ne prepoznajo črk, ki označujejo pogone), pa tudi če bi mapa domačastran\\grafika obstajala, slika ne bi bila na voljo. Zato je boje, da za povezave na datoteke uporabljate relativne naslove."
 
 #: hyperlink_rel_abs.xhp
 msgctxt ""
@@ -16754,8 +16891,8 @@ msgctxt ""
 "par_id3153087\n"
 "35\n"
 "help.text"
-msgid "Open the reviewer's document and then choose <emph>Edit - Track Changes - Compare Document</emph>."
-msgstr "Odprite urednikov dokument in izberite <emph>Uredi – Sledi spremembam – Primerjaj dokument</emph>."
+msgid "Open the reviewer's document and then choose <emph>Edit - Compare Document</emph>."
+msgstr "Odprite urednikov dokument in izberite <emph>Uredi – Primerjaj dokument</emph>."
 
 #: redlining_doccompare.xhp
 msgctxt ""
@@ -17893,8 +18030,8 @@ msgctxt ""
 "spadmin.xhp\n"
 "bm_id3154422\n"
 "help.text"
-msgid "<bookmark_value>printers; adding, UNIX</bookmark_value><bookmark_value>default printer; UNIX</bookmark_value><bookmark_value>standard printer under UNIX</bookmark_value><bookmark_value>faxes; fax programs/fax printers under UNIX</bookmark_value><bookmark_value>printers; faxes under UNIX</bookmark_value>"
-msgstr "<bookmark_value>tiskalniki; dodajanje, UNIX</bookmark_value><bookmark_value>privzeti tiskalnik; UNIX</bookmark_value><bookmark_value>standardni tiskalnik v okolju UNIX</bookmark_value><bookmark_value>faksi; programi za faksiranje/tiskalniški faksi v okolju UNIX</bookmark_value><bookmark_value>tiskalniki; faksi v okolju UNIX</bookmark_value>"
+msgid "<bookmark_value>spadmin</bookmark_value><bookmark_value>printers; adding, UNIX</bookmark_value><bookmark_value>default printer; UNIX</bookmark_value><bookmark_value>standard printer under UNIX</bookmark_value><bookmark_value>faxes; fax programs/fax printers under UNIX</bookmark_value><bookmark_value>printers; faxes under UNIX</bookmark_value>"
+msgstr "<bookmark_value>spadmin</bookmark_value><bookmark_value>tiskalniki; dodajanje, UNIX</bookmark_value><bookmark_value>privzeti tiskalnik; UNIX</bookmark_value><bookmark_value>standardni tiskalnik v okolju UNIX</bookmark_value><bookmark_value>faksi; programi za faksiranje/tiskalniški faksi v okolju UNIX</bookmark_value><bookmark_value>tiskalniki; faksi v okolju UNIX</bookmark_value>"
 
 #: spadmin.xhp
 msgctxt ""
@@ -18079,7 +18216,7 @@ msgctxt ""
 "par_id3145748\n"
 "8\n"
 "help.text"
-msgid "Save the document by choosing <emph>File - Templates - Save As Template</emph> and saving the document in the <emph>My Templates</emph> category."
+msgid "Save the document by choosing <emph>File - Templates - Save As Template</emph>and saving the document in the <emph>My Templates</emph> category."
 msgstr "Shranite dokument, tako da izberete <emph>Datoteka – Predloge – Shrani kot predlogo</emph> in shranite dokument v kategorijo <emph>Moje predloge</emph>."
 
 #: standard_template.xhp
@@ -18216,8 +18353,8 @@ msgctxt ""
 "start_parameters.xhp\n"
 "par_id3156152\n"
 "help.text"
-msgid "Under Windows, select <emph>Run</emph> from the Windows Start menu, or open a shell under Linux, *BSD, or macOS platforms."
-msgstr "V sistemu Windows izberite <emph>Zaženi</emph> (oz. Run) iz začetnega menija sistema Windows, na platformah Linux, *BSD in macOS pa odprite lupino."
+msgid "Under Windows, select <emph>Run</emph> from the Windows Start menu, or open a shell under Linux, *BSD, or Mac OS X platforms."
+msgstr "V sistemu Windows izberite <emph>Zaženi</emph> (oz. Run) iz začetnega menija sistema Windows, na platformah Linux, *BSD in Mac OS pa odprite lupino."
 
 #: start_parameters.xhp
 msgctxt ""
@@ -18408,8 +18545,8 @@ msgctxt ""
 "start_parameters.xhp\n"
 "par_id2016120409236546\n"
 "help.text"
-msgid "(macOS sandbox only) Returns path of the temporary directory for the current user and exits. Overrides all other arguments."
-msgstr "(samo peskovnik macOS) Vrne pot začasne mape za trenutnega uporabnika in zapre program. Preglasi vse druge argumente."
+msgid "(MacOS X sandbox only) Returns path of the temporary directory for the current user and exits. Overrides all other arguments."
+msgstr "(samo peskovnik MacOS X) Vrne pot začasne mape za trenutnega uporabnika in zapre program. Preglasi vse druge argumente."
 
 #: start_parameters.xhp
 msgctxt ""
@@ -18424,7 +18561,7 @@ msgctxt ""
 "start_parameters.xhp\n"
 "par_id3153919\n"
 "help.text"
-msgid "Activates[Deactivates] the Quickstarter service. It can take only one parameter <emph>no</emph> which deactivates the Quickstarter service. Without parameters this service is activated."
+msgid "Activates[Deactivates] the Quickstarter service. It can take only one parameter <emph>no</emph> which deativates the Quickstarter service. Without parameters this service is activated."
 msgstr "Aktivira/deaktivira storitev hitrega zaganjalnika. Vzame le en parameter, <emph>no</emph>, ki deaktivira storitev Hitri zaganjalnik. Brez podanih parametrov se storitev aktivira."
 
 #: start_parameters.xhp
@@ -18857,8 +18994,8 @@ msgctxt ""
 "start_parameters.xhp\n"
 "par_id2016120401435616\n"
 "help.text"
-msgid "Ignored (macOS only)"
-msgstr "Prezrto (le v okolju macOS)"
+msgid "Ignored (MacOS X only)"
+msgstr "Prezrto (le v okolju MacOS X)"
 
 #: start_parameters.xhp
 msgctxt ""

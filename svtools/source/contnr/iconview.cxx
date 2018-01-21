@@ -30,10 +30,7 @@ IconView::IconView( vcl::Window* pParent, WinBits nBits )
     SetEntryHeight( 100 );
     SetEntryWidth( 100 );
 
-    if(pImp)
-        delete pImp;
-
-    pImp = new IconViewImpl( this, GetModel(), GetStyle() );
+    pImpl.reset( new IconViewImpl( this, GetModel(), GetStyle() ) );
 }
 
 void IconView::Resize()
@@ -92,7 +89,7 @@ void IconView::PaintEntry(SvTreeListEntry& rEntry, long nX, long nY,
 
     PreparePaint(rRenderContext, rEntry);
 
-    pImp->UpdateContextBmpWidthMax(&rEntry);
+    pImpl->UpdateContextBmpWidthMax(&rEntry);
 
     short nTempEntryHeight = GetEntryHeight();
     short nTempEntryWidth = GetEntryWidth();
@@ -124,9 +121,9 @@ void IconView::PaintEntry(SvTreeListEntry& rEntry, long nX, long nY,
     while (nCurItem < nItemCount)
     {
         SvLBoxItem* pItem = nCurItem < nItemCount ? &rEntry.GetItem(nCurItem) : nullptr;
-        sal_uInt16 nItemType = pItem->GetType();
+        SvLBoxItemType nItemType = pItem->GetType();
 
-        if(nItemType == SV_ITEM_ID_LBOXCONTEXTBMP)
+        if (nItemType == SvLBoxItemType::ContextBmp)
         {
             nIconItem = nCurItem;
             nCurItem++;
@@ -142,7 +139,7 @@ void IconView::PaintEntry(SvTreeListEntry& rEntry, long nX, long nY,
 
         Wallpaper aWallpaper = rRenderContext.GetBackground();
 
-        if (pViewDataEntry->IsHighlighted() && !pViewDataEntry->IsCursored())
+        if (pViewDataEntry->IsHighlighted())
         {
             Color aNewWallColor = rSettings.GetHighlightColor();
             if (!bInUse)

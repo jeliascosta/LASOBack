@@ -17,6 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <o3tl/any.hxx>
 #include <tools/debug.hxx>
 #include <osl/diagnose.h>
 #include <rtl/ustrbuf.hxx>
@@ -134,22 +137,6 @@ static SvXMLEnumMapEntry const pXML_HoriMirror_Enum[] =
     { XML_TOKEN_INVALID, 0 }
 };
 
-static SvXMLEnumMapEntry const pXML_VertPos_Enum[] =
-{
-    { XML_FROM_TOP,         VertOrientation::NONE       },
-    { XML_TOP,              VertOrientation::TOP        },
-    { XML_TOP,              VertOrientation::CHAR_TOP   },  // export only
-    { XML_TOP,              VertOrientation::LINE_TOP   },  // export only
-    { XML_MIDDLE,           VertOrientation::CENTER     },
-    { XML_MIDDLE,           VertOrientation::CHAR_CENTER    },  // export only
-    { XML_MIDDLE,           VertOrientation::LINE_CENTER    },  // export only
-    { XML_BOTTOM,           VertOrientation::BOTTOM     },
-    { XML_BOTTOM,           VertOrientation::CHAR_BOTTOM    },  // export only
-    { XML_BOTTOM,           VertOrientation::LINE_BOTTOM    },  // export only
-    { XML_BELOW,            VertOrientation::CHAR_BOTTOM    },  // import only
-    { XML_TOKEN_INVALID, 0 }
-};
-
 static SvXMLEnumMapEntry const pXML_VertPosAtChar_Enum[] =
 {
     { XML_FROM_TOP,         VertOrientation::NONE       },
@@ -260,7 +247,7 @@ static SvXMLEnumMapEntry const pXML_VerticalAlign_Enum[] =
 class XMLDropCapPropHdl_Impl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLDropCapPropHdl_Impl ();
+    virtual ~XMLDropCapPropHdl_Impl () override;
 
     virtual bool equals(
             const css::uno::Any& r1,
@@ -300,7 +287,7 @@ bool XMLDropCapPropHdl_Impl::importXML(
            Any&,
         const SvXMLUnitConverter& ) const
 {
-    DBG_ASSERT( false, "drop caps are an element import property" );
+    SAL_WARN( "xmloff", "drop caps are an element import property" );
     return false;
 }
 
@@ -309,14 +296,14 @@ bool XMLDropCapPropHdl_Impl::exportXML(
         const Any&,
         const SvXMLUnitConverter& ) const
 {
-    DBG_ASSERT( false, "drop caps are an element export property" );
+    SAL_WARN( "xmloff", "drop caps are an element export property" );
     return false;
 }
 
 class XMLOpaquePropHdl_Impl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLOpaquePropHdl_Impl ();
+    virtual ~XMLOpaquePropHdl_Impl () override;
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -351,7 +338,7 @@ bool XMLOpaquePropHdl_Impl::exportXML(
         const Any& rValue,
         const SvXMLUnitConverter& ) const
 {
-    if( *static_cast<sal_Bool const *>(rValue.getValue()) )
+    if( *o3tl::doAccess<bool>(rValue) )
            rStrExpValue = GetXMLToken( XML_FOREGROUND );
     else
            rStrExpValue = GetXMLToken( XML_BACKGROUND );
@@ -366,7 +353,7 @@ XMLOpaquePropHdl_Impl::~XMLOpaquePropHdl_Impl ()
 class XMLContourModePropHdl_Impl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLContourModePropHdl_Impl ();
+    virtual ~XMLContourModePropHdl_Impl () override;
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -401,7 +388,7 @@ bool XMLContourModePropHdl_Impl::exportXML(
         const Any& rValue,
         const SvXMLUnitConverter& ) const
 {
-    if( *static_cast<sal_Bool const *>(rValue.getValue()) )
+    if( *o3tl::doAccess<bool>(rValue) )
            rStrExpValue = GetXMLToken( XML_OUTSIDE );
     else
            rStrExpValue = GetXMLToken( XML_FULL );
@@ -416,7 +403,7 @@ XMLContourModePropHdl_Impl::~XMLContourModePropHdl_Impl()
 class XMLParagraphOnlyPropHdl_Impl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLParagraphOnlyPropHdl_Impl ();
+    virtual ~XMLParagraphOnlyPropHdl_Impl () override;
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -454,7 +441,7 @@ bool XMLParagraphOnlyPropHdl_Impl::exportXML(
         const Any& rValue,
         const SvXMLUnitConverter& ) const
 {
-    if( *static_cast<sal_Bool const *>(rValue.getValue()) )
+    if( *o3tl::doAccess<bool>(rValue) )
            rStrExpValue = GetXMLToken( XML_1 );
     else
            rStrExpValue = GetXMLToken( XML_NO_LIMIT );
@@ -480,7 +467,7 @@ SvXMLEnumMapEntry const pXML_Wrap_Enum[] =
 class XMLWrapPropHdl_Impl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLWrapPropHdl_Impl ();
+    virtual ~XMLWrapPropHdl_Impl () override;
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -534,7 +521,7 @@ class XMLFrameProtectPropHdl_Impl : public XMLPropertyHandler
 public:
     explicit XMLFrameProtectPropHdl_Impl( enum XMLTokenEnum eVal ) :
            sVal( GetXMLToken(eVal) ) {}
-    virtual ~XMLFrameProtectPropHdl_Impl ();
+    virtual ~XMLFrameProtectPropHdl_Impl () override;
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -580,7 +567,7 @@ bool XMLFrameProtectPropHdl_Impl::exportXML(
         const Any& rValue,
         const SvXMLUnitConverter& ) const
 {
-    if( *static_cast<sal_Bool const *>(rValue.getValue()) )
+    if( *o3tl::doAccess<bool>(rValue) )
     {
         if( rStrExpValue.isEmpty() ||
             IsXMLToken( rStrExpValue, XML_NONE ) )
@@ -707,7 +694,7 @@ bool XMLTextColumnsPropertyHandler::importXML(
            Any&,
         const SvXMLUnitConverter& ) const
 {
-    DBG_ASSERT( false, "columns are an element import property" );
+    SAL_WARN( "xmloff", "columns are an element import property" );
     return false;
 }
 
@@ -716,14 +703,14 @@ bool XMLTextColumnsPropertyHandler::exportXML(
         const Any&,
         const SvXMLUnitConverter& ) const
 {
-    DBG_ASSERT( false, "columns are an element export property" );
+    SAL_WARN( "xmloff", "columns are an element export property" );
     return false;
 }
 
 class XMLHoriMirrorPropHdl_Impl : public XMLPropertyHandler
 {
 public:
-    virtual ~XMLHoriMirrorPropHdl_Impl ();
+    virtual ~XMLHoriMirrorPropHdl_Impl () override;
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -757,7 +744,7 @@ bool XMLHoriMirrorPropHdl_Impl::exportXML(
         const Any&,
         const SvXMLUnitConverter& ) const
 {
-    DBG_ASSERT( false, "HorMirror properyt shouldn't be exported" );
+    SAL_WARN( "xmloff", "HorMirror property shouldn't be exported" );
 
     return false;
 }
@@ -775,7 +762,7 @@ public:
     XMLGrfMirrorPropHdl_Impl( enum XMLTokenEnum eVal, bool bH ) :
            sVal( GetXMLToken( eVal ) ),
         bHori( bH ) {}
-    virtual ~XMLGrfMirrorPropHdl_Impl ();
+    virtual ~XMLGrfMirrorPropHdl_Impl () override;
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -822,7 +809,7 @@ bool XMLGrfMirrorPropHdl_Impl::exportXML(
         const Any& rValue,
         const SvXMLUnitConverter& ) const
 {
-    if( *static_cast<sal_Bool const *>(rValue.getValue()) )
+    if( *o3tl::doAccess<bool>(rValue) )
     {
         if( rStrExpValue.isEmpty() ||
             IsXMLToken( rStrExpValue, XML_NONE ) )
@@ -869,7 +856,7 @@ class XMLTextEmphasizePropHdl_Impl : public XMLPropertyHandler
 {
 public:
     XMLTextEmphasizePropHdl_Impl() {}
-    virtual ~XMLTextEmphasizePropHdl_Impl();
+    virtual ~XMLTextEmphasizePropHdl_Impl() override;
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -970,7 +957,7 @@ class XMLTextCombineCharPropHdl_Impl : public XMLPropertyHandler
 {
 public:
     XMLTextCombineCharPropHdl_Impl() {}
-    virtual ~XMLTextCombineCharPropHdl_Impl();
+    virtual ~XMLTextCombineCharPropHdl_Impl() override;
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -1014,7 +1001,7 @@ class XMLTextRelWidthHeightPropHdl_Impl : public XMLPropertyHandler
 {
 public:
     XMLTextRelWidthHeightPropHdl_Impl() {}
-    virtual ~XMLTextRelWidthHeightPropHdl_Impl();
+    virtual ~XMLTextRelWidthHeightPropHdl_Impl() override;
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -1069,7 +1056,7 @@ class XMLTextSyncWidthHeightPropHdl_Impl : public XMLPropertyHandler
 public:
     explicit XMLTextSyncWidthHeightPropHdl_Impl( enum XMLTokenEnum eValue ) :
            sValue( GetXMLToken(eValue) )    {}
-    virtual ~XMLTextSyncWidthHeightPropHdl_Impl();
+    virtual ~XMLTextSyncWidthHeightPropHdl_Impl() override;
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -1097,7 +1084,7 @@ bool XMLTextSyncWidthHeightPropHdl_Impl::exportXML(
         const SvXMLUnitConverter& ) const
 {
     bool bRet = false;
-    if( *static_cast<sal_Bool const *>(rValue.getValue()) )
+    if( *o3tl::doAccess<bool>(rValue) )
     {
         rStrExpValue = sValue;
         bRet = true;
@@ -1115,7 +1102,7 @@ class XMLTextRotationAnglePropHdl_Impl : public XMLPropertyHandler
 
 public:
     XMLTextRotationAnglePropHdl_Impl()  {}
-    virtual ~XMLTextRotationAnglePropHdl_Impl();
+    virtual ~XMLTextRotationAnglePropHdl_Impl() override;
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -1178,7 +1165,7 @@ class XMLNumber8OneBasedHdl : public XMLPropertyHandler
 
 public:
     XMLNumber8OneBasedHdl() {}
-    virtual ~XMLNumber8OneBasedHdl() {};
+    virtual ~XMLNumber8OneBasedHdl() override {};
 
     virtual bool importXML(
             const OUString& rStrImpValue,
@@ -1268,9 +1255,6 @@ static const XMLPropertyHandler *GetPropertyHandler
         break;
     case XML_TYPE_TEXT_HORIZONTAL_MIRROR:
         pHdl = new XMLHoriMirrorPropHdl_Impl;
-        break;
-    case XML_TYPE_TEXT_VERTICAL_POS:
-        pHdl = new XMLConstantsPropertyHandler( pXML_VertPos_Enum, XML_TOKEN_INVALID );
         break;
     case XML_TYPE_TEXT_VERTICAL_POS_AT_CHAR:
         pHdl = new XMLConstantsPropertyHandler( pXML_VertPosAtChar_Enum, XML_TOKEN_INVALID );

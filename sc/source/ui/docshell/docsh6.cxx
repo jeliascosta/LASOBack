@@ -111,7 +111,7 @@ void ScDocShell::SetVisAreaOrSize( const Rectangle& rVisArea )
     if (pEnv)
     {
         vcl::Window* pWin = pEnv->GetEditWin();
-        pEnv->MakeScale( aArea.GetSize(), MAP_100TH_MM,
+        pEnv->MakeScale( aArea.GetSize(), MapUnit::Map100thMM,
                             pWin->LogicToPixel( aArea.GetSize() ) );
     } */
 
@@ -136,7 +136,7 @@ void ScDocShell::SetVisAreaOrSize( const Rectangle& rVisArea )
         ScRange aNew;
         aDocument.GetEmbedded( aNew);
         if (aOld != aNew)
-            PostPaint(0,0,0,MAXCOL,MAXROW,MAXTAB,PAINT_GRID);
+            PostPaint(0,0,0,MAXCOL,MAXROW,MAXTAB,PaintPartFlags::Grid);
 
         //TODO/LATER: currently not implemented
         //ViewChanged( ASPECT_CONTENT );          // auch im Container anzeigen
@@ -193,7 +193,7 @@ SfxStyleSheetBasePool* ScDocShell::GetStyleSheetPool()
     return static_cast<SfxStyleSheetBasePool*>(aDocument.GetStyleSheetPool());
 }
 
-//  nach dem Laden von Vorlagen aus einem anderen Dokment (LoadStyles, Insert)
+//  nach dem Laden von Vorlagen aus einem anderen Dokument (LoadStyles, Insert)
 //  muessen die SetItems (ATTR_PAGE_HEADERSET, ATTR_PAGE_FOOTERSET) auf den richtigen
 //  Pool umgesetzt werden, bevor der Quell-Pool geloescht wird.
 
@@ -238,7 +238,7 @@ void ScDocShell::LoadStyles( SfxObjectShell &rSource )
 
         //  Paint
 
-    PostPaint( 0,0,0, MAXCOL,MAXROW,MAXTAB, PAINT_GRID | PAINT_LEFT );
+    PostPaint( 0,0,0, MAXCOL,MAXROW,MAXTAB, PaintPartFlags::Grid | PaintPartFlags::Left );
 }
 
 void ScDocShell::LoadStylesArgs( ScDocShell& rSource, bool bReplace, bool bCellStyles, bool bPageStyles )
@@ -302,7 +302,7 @@ void ScDocShell::LoadStylesArgs( ScDocShell& rSource, bool bReplace, bool bCellS
 
     lcl_AdjustPool( GetStyleSheetPool() );      // adjust SetItems
     UpdateAllRowHeights();
-    PostPaint( 0,0,0, MAXCOL,MAXROW,MAXTAB, PAINT_GRID | PAINT_LEFT );      // Paint
+    PostPaint( 0,0,0, MAXCOL,MAXROW,MAXTAB, PaintPartFlags::Grid | PaintPartFlags::Left );      // Paint
 }
 
 void ScDocShell::ReconnectDdeLink(SfxObjectShell& rServer)
@@ -409,7 +409,7 @@ void ScDocShell::ReloadTabLinks()
     {
         //  Paint nur einmal
         PostPaint( ScRange(0,0,0,MAXCOL,MAXROW,MAXTAB),
-                                    PAINT_GRID | PAINT_TOP | PAINT_LEFT );
+                                    PaintPartFlags::Grid | PaintPartFlags::Top | PaintPartFlags::Left );
 
         SetDocumentModified();
     }
@@ -465,12 +465,7 @@ void ScDocShell::SetFormulaOptions( const ScFormulaOptions& rOpt, bool bForLoadi
     }
 
     // Per document interpreter settings.
-    SetCalcConfig( rOpt.GetCalcConfig());
-}
-
-void ScDocShell::SetCalcConfig( const ScCalcConfig& rConfig )
-{
-    aDocument.SetCalcConfig( rConfig);
+    aDocument.SetCalcConfig( rOpt.GetCalcConfig() );
 }
 
 void ScDocShell::CheckConfigOptions()

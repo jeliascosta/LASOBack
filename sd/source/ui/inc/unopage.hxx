@@ -35,6 +35,7 @@
 #include <svx/svdpool.hxx>
 
 #include <comphelper/servicehelper.hxx>
+#include <cppuhelper/implbase.hxx>
 
 #include "unosrch.hxx"
 
@@ -60,7 +61,10 @@ class SdGenericDrawPage : public SvxFmDrawPage,
 private:
     SdXImpressDocument* mpModel;
     SdrModel* mpSdrModel;
+    bool      mbIsImpressDocument;
     sal_Int16 mnTempPageNumber; // for printing handouts
+
+    void UpdateModel();
 
 protected:
     friend class SdXImpressDocument;
@@ -81,7 +85,7 @@ protected:
     void SetWidth( sal_Int32 nWidth );
     void SetHeight( sal_Int32 nHeight );
 
-    bool     mbIsImpressDocument;
+    bool IsImpressDocument() const;
 
     virtual void disposing() throw() override;
 
@@ -92,7 +96,7 @@ protected:
 
 public:
     SdGenericDrawPage( SdXImpressDocument* pModel, SdPage* pInPage, const SvxItemPropertySet* pSet ) throw();
-    virtual ~SdGenericDrawPage() throw();
+    virtual ~SdGenericDrawPage() throw() override;
 
     // intern
     bool isValid() { return (SvxDrawPage::mpPage != nullptr) && (mpModel != nullptr); }
@@ -176,7 +180,7 @@ protected:
     virtual void getBackground( css::uno::Any& rValue ) throw() override;
 public:
     SdDrawPage( SdXImpressDocument* pModel, SdPage* pInPage ) throw();
-    virtual ~SdDrawPage() throw();
+    virtual ~SdDrawPage() throw() override;
 
     UNO3_GETIMPLEMENTATION_DECL( SdDrawPage )
 
@@ -239,7 +243,7 @@ protected:
 
 public:
     SdMasterPage( SdXImpressDocument* pModel, SdPage* pInPage ) throw();
-    virtual ~SdMasterPage() throw();
+    virtual ~SdMasterPage() throw() override;
 
     UNO3_GETIMPLEMENTATION_DECL(SdMasterPage)
 
@@ -282,7 +286,6 @@ public:
 /***********************************************************************
 *                                                                      *
 ***********************************************************************/
-#include <cppuhelper/implbase.hxx>
 
 class SdPageLinkTargets : public ::cppu::WeakImplHelper< css::container::XNameAccess,
                                                   css::lang::XServiceInfo >
@@ -293,7 +296,7 @@ private:
 
 public:
     SdPageLinkTargets( SdGenericDrawPage* pUnoPage ) throw();
-    virtual ~SdPageLinkTargets() throw();
+    virtual ~SdPageLinkTargets() throw() override;
 
     // intern
     SdrObject* FindObject( const OUString& rName ) const throw();

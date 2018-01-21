@@ -54,7 +54,7 @@ namespace
     {
         ::connectivity::SharedResources aResources;
         const OUString sError( aResources.getResourceString(_nErrorId) );
-        ::dbtools::throwGenericSQLException(sError,NULL);
+        ::dbtools::throwGenericSQLException(sError,nullptr);
     }
 }
 
@@ -64,8 +64,8 @@ KabCommonStatement::KabCommonStatement(KabConnection* _pConnection )
     : KabCommonStatement_BASE(m_aMutex),
     OPropertySetHelper(KabCommonStatement_BASE::rBHelper),
     m_aParser(_pConnection->getComponentContext()),
-    m_aSQLIterator(_pConnection, _pConnection->createCatalog()->getTables(), m_aParser, NULL ),
-    m_pParseTree(NULL),
+    m_aSQLIterator(_pConnection, _pConnection->createCatalog()->getTables(), m_aParser),
+    m_pParseTree(nullptr),
     m_pConnection(_pConnection),
     rBHelper(KabCommonStatement_BASE::rBHelper)
 {
@@ -76,17 +76,12 @@ KabCommonStatement::~KabCommonStatement()
 {
 }
 
-void KabCommonStatement::disposing()
-{
-    KabCommonStatement_BASE::disposing();
-}
-
-void KabCommonStatement::resetParameters() const throw(::com::sun::star::sdbc::SQLException)
+void KabCommonStatement::resetParameters() const throw(css::sdbc::SQLException)
 {
     lcl_throwError(STR_PARA_ONLY_PREPARED);
 }
 
-void KabCommonStatement::getNextParameter(OUString &) const throw(::com::sun::star::sdbc::SQLException)
+void KabCommonStatement::getNextParameter(OUString &) const throw(css::sdbc::SQLException)
 {
     lcl_throwError(STR_PARA_ONLY_PREPARED);
 }
@@ -197,12 +192,12 @@ KabCondition *KabCommonStatement::analyseWhereClause(const OSQLParseNode *pParse
 
                 if (SQL_ISTOKEN(pMiddleRight, NOT))
                 {
-                    // WHERE "Mobile Phone" IS NOT NULL
+                    // WHERE "Mobile Phone" IS NOT nullptr
                     return new KabConditionNotNull(sColumnName);
                 }
                 else
                 {
-                    // WHERE "Mobile Phone" IS NULL
+                    // WHERE "Mobile Phone" IS nullptr
                     return new KabConditionNull(sColumnName);
                 }
             }
@@ -235,7 +230,7 @@ KabCondition *KabCommonStatement::analyseWhereClause(const OSQLParseNode *pParse
 
     // Unreachable:
     OSL_ASSERT(false);
-    return 0;
+    return nullptr;
 }
 
 KabOrder *KabCommonStatement::analyseOrderByClause(const OSQLParseNode *pParseNode) const throw(SQLException)
@@ -281,7 +276,7 @@ KabOrder *KabCommonStatement::analyseOrderByClause(const OSQLParseNode *pParseNo
     lcl_throwError(STR_QUERY_TOO_COMPLEX);
     // Unreachable:
     OSL_ASSERT(false);
-    return 0;
+    return nullptr;
 }
 
 bool KabCommonStatement::isTableKnown(KabResultSet *pResult) const
@@ -314,7 +309,7 @@ void KabCommonStatement::selectAddressees(KabResultSet *pResult) const throw(SQL
     const OSQLParseNode *pParseNode;
 
     pParseNode = m_aSQLIterator.getWhereTree();
-    if (pParseNode != NULL)
+    if (pParseNode != nullptr)
     {
         if (SQL_ISRULE(pParseNode, where_clause))
         {
@@ -339,7 +334,7 @@ void KabCommonStatement::sortAddressees(KabResultSet *pResult) const throw(SQLEx
     const OSQLParseNode *pParseNode;
 
     pParseNode = m_aSQLIterator.getOrderTree();
-    if (pParseNode != NULL)
+    if (pParseNode != nullptr)
     {
         if (SQL_ISRULE(pParseNode, opt_order_by_clause))
         {
@@ -410,7 +405,7 @@ OSL_TRACE("KDE Address book - SQL Request: %s", OUtoCStr(sql));
     OUString aErr;
 
     m_pParseTree = m_aParser.parseTree(aErr, sql);
-    if (m_pParseTree == NULL)
+    if (m_pParseTree == nullptr)
         throw SQLException(aErr, *this, aErr, 0, Any());
 
     m_aSQLIterator.setParseTree(m_pParseTree);
@@ -479,25 +474,25 @@ void SAL_CALL KabCommonStatement::clearWarnings(  ) throw(SQLException, RuntimeE
     Sequence< Property > aProps(10);
     Property* pProperties = aProps.getArray();
     sal_Int32 nPos = 0;
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_CURSORNAME),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_CURSORNAME),
         PROPERTY_ID_CURSORNAME, cppu::UnoType<OUString>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_ESCAPEPROCESSING),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_ESCAPEPROCESSING),
         PROPERTY_ID_ESCAPEPROCESSING, cppu::UnoType<bool>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHDIRECTION),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHDIRECTION),
         PROPERTY_ID_FETCHDIRECTION, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHSIZE),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FETCHSIZE),
         PROPERTY_ID_FETCHSIZE, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_MAXFIELDSIZE),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_MAXFIELDSIZE),
         PROPERTY_ID_MAXFIELDSIZE, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_MAXROWS),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_MAXROWS),
         PROPERTY_ID_MAXROWS, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_QUERYTIMEOUT),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_QUERYTIMEOUT),
         PROPERTY_ID_QUERYTIMEOUT, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETCONCURRENCY),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETCONCURRENCY),
         PROPERTY_ID_RESULTSETCONCURRENCY, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETTYPE),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_RESULTSETTYPE),
         PROPERTY_ID_RESULTSETTYPE, cppu::UnoType<sal_Int32>::get(), 0);
-    pProperties[nPos++] = ::com::sun::star::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_USEBOOKMARKS),
+    pProperties[nPos++] = css::beans::Property(::connectivity::OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_USEBOOKMARKS),
         PROPERTY_ID_USEBOOKMARKS, cppu::UnoType<bool>::get(), 0);
 
     return new ::cppu::OPropertyArrayHelper(aProps);
@@ -512,7 +507,7 @@ sal_Bool KabCommonStatement::convertFastPropertyValue(
         Any &,
         Any &,
         sal_Int32,
-        const Any&) throw (::com::sun::star::lang::IllegalArgumentException)
+        const Any&) throw (css::lang::IllegalArgumentException)
 {
     bool bConverted = false;
     // here we have to try to convert
@@ -568,7 +563,7 @@ void SAL_CALL KabCommonStatement::release() throw()
     KabCommonStatement_BASE::release();
 }
 
-Reference< ::com::sun::star::beans::XPropertySetInfo > SAL_CALL KabCommonStatement::getPropertySetInfo(  ) throw(RuntimeException, std::exception)
+Reference< css::beans::XPropertySetInfo > SAL_CALL KabCommonStatement::getPropertySetInfo(  ) throw(RuntimeException, std::exception)
 {
     return ::cppu::OPropertySetHelper::createPropertySetInfo(getInfoHelper());
 }

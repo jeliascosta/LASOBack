@@ -1174,10 +1174,10 @@ void SwHTMLWriter::PrepareFontList( const SvxFontItem& rFontItem,
             if( !rNames.isEmpty() )
                 rNames += ", ";
             if( cQuote && !bIsKeyword )
-                rNames += OUString( cQuote );
+                rNames += OUStringLiteral1( cQuote );
             rNames += aName;
             if( cQuote && !bIsKeyword )
-                rNames += OUString( cQuote );
+                rNames += OUStringLiteral1( cQuote );
         }
     }
 
@@ -1991,7 +1991,7 @@ void SwHTMLWriter::OutCSS1_FrameFormatOptions( const SwFrameFormat& rFrameFormat
                 }
                 break;
             }
-            SAL_FALLTHROUGH; //TODO ???
+            SAL_FALLTHROUGH;
 
         case FLY_AT_PAGE:
         case FLY_AT_FLY:
@@ -2216,7 +2216,7 @@ static bool OutCSS1_FrameFormatBrush( SwHTMLWriter& rWrt,
     /// output brush of frame format, if its background color is not "no fill"/"auto fill"
     /// or it has a background graphic.
     if( rBrushItem.GetColor() != COL_TRANSPARENT ||
-        nullptr != rBrushItem.GetGraphicLink() ||
+        !rBrushItem.GetGraphicLink().isEmpty() ||
         0 != rBrushItem.GetGraphicPos() )
     {
         OutCSS1_SvxBrush( rWrt, rBrushItem, CSS1_BACKGROUND_FLY, nullptr );
@@ -2759,19 +2759,19 @@ static Writer& OutCSS1_SvxLineSpacing( Writer& rWrt, const SfxPoolItem& rHt )
 
     sal_uInt16 nHeight = 0;
     sal_uInt16 nPrcHeight = 0;
-    SvxLineSpace eLineSpace = rLSItem.GetLineSpaceRule();
+    SvxLineSpaceRule eLineSpace = rLSItem.GetLineSpaceRule();
     switch( rLSItem.GetInterLineSpaceRule() )
     {
-    case SVX_INTER_LINE_SPACE_OFF:
-    case SVX_INTER_LINE_SPACE_FIX:
+    case SvxInterLineSpaceRule::Off:
+    case SvxInterLineSpaceRule::Fix:
         {
             switch( eLineSpace )
             {
-            case SVX_LINE_SPACE_MIN:
-            case SVX_LINE_SPACE_FIX:
+            case SvxLineSpaceRule::Min:
+            case SvxLineSpaceRule::Fix:
                 nHeight = rLSItem.GetLineHeight();
                 break;
-            case SVX_LINE_SPACE_AUTO:
+            case SvxLineSpaceRule::Auto:
                 nPrcHeight = 100;
                 break;
             default:
@@ -2779,7 +2779,7 @@ static Writer& OutCSS1_SvxLineSpacing( Writer& rWrt, const SfxPoolItem& rHt )
             }
         }
         break;
-    case SVX_INTER_LINE_SPACE_PROP:
+    case SvxInterLineSpaceRule::Prop:
         nPrcHeight = rLSItem.GetPropLineSpace();
         break;
 
@@ -3119,17 +3119,17 @@ static Writer& OutCSS1_SvxFormatBreak_SwFormatPDesc_SvxFormatKeep( Writer& rWrt,
     {
         switch( pBreakItem->GetBreak() )
         {
-        case SVX_BREAK_NONE:
+        case SvxBreak::NONE:
             pBreakBefore = sCSS1_PV_auto;
             if( !pBreakAfter )
                 pBreakAfter = sCSS1_PV_auto;
             break;
 
-        case SVX_BREAK_PAGE_BEFORE:
+        case SvxBreak::PageBefore:
             pBreakBefore = sCSS1_PV_always;
             break;
 
-        case SVX_BREAK_PAGE_AFTER:
+        case SvxBreak::PageAfter:
             pBreakAfter= sCSS1_PV_always;
             break;
 
@@ -3400,7 +3400,7 @@ static void OutCSS1_SvxBorderLine( SwHTMLWriter& rHTMLWrt,
     OStringBuffer sOut;
     if( Application::GetDefaultDevice() &&
         nWidth <= Application::GetDefaultDevice()->PixelToLogic(
-                    Size( 1, 1 ), MapMode( MAP_TWIP) ).Width() )
+                    Size( 1, 1 ), MapMode( MapUnit::MapTwip) ).Width() )
     {
         // If the width is smaller than one pixel, then export as 1px
         // so that Netscape and IE show the line.

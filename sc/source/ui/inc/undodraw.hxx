@@ -28,17 +28,16 @@ class ScUndoDraw: public SfxUndoAction
 {
     SfxUndoAction*  pDrawUndo;
     ScDocShell*     pDocShell;
+    sal_Int32       mnViewShellId;
 
     void            UpdateSubShell();
 
 public:
                             ScUndoDraw( SfxUndoAction* pUndo, ScDocShell* pDocSh );
-    virtual                 ~ScUndoDraw();
+    virtual                 ~ScUndoDraw() override;
 
     SfxUndoAction*          GetDrawUndo()       { return pDrawUndo; }
     void                    ForgetDrawUndo();
-
-    virtual void SetLinkToSfxLinkUndoAction(SfxLinkUndoAction* pSfxLinkUndoAction) override;
 
     virtual void            Undo() override;
     virtual void            Redo() override;
@@ -48,6 +47,8 @@ public:
     virtual OUString        GetComment() const override;
     virtual OUString        GetRepeatComment(SfxRepeatTarget&) const override;
     virtual sal_uInt16      GetId() const override;
+    /// See SfxUndoAction::GetViewShellId().
+    sal_Int32 GetViewShellId() const override;
 };
 
 #endif

@@ -540,7 +540,7 @@ namespace basegfx
                             const sal_uInt32 nCandCount(aCandidate.count());
 
                             // If it's not a bezier curve, at least three points would be needed to have a
-                            // topological relevant (not empty) polygon. Since its not known here if trivial
+                            // topological relevant (not empty) polygon. Since it's not known here if trivial
                             // edges (dead ends) will be kept or sorted out, add non-bezier polygons with
                             // more than one point.
                             // For bezier curves, the minimum for defining an area is also one.
@@ -815,7 +815,7 @@ namespace basegfx
 
             if(nCount)
             {
-                if(nCount == 1L)
+                if(nCount == 1)
                 {
                     if(!bKeepAboveZero && B2VectorOrientation::Positive == tools::getOrientation(rCandidate.getB2DPolygon(0)))
                     {
@@ -834,15 +834,15 @@ namespace basegfx
                         StripHelper* pNewHelper = &(aHelpers[a]);
                         pNewHelper->maRange = tools::getRange(aCandidate);
                         pNewHelper->meOrinetation = tools::getOrientation(aCandidate);
-                        pNewHelper->mnDepth = (B2VectorOrientation::Negative == pNewHelper->meOrinetation ? -1L : 0);
+                        pNewHelper->mnDepth = (B2VectorOrientation::Negative == pNewHelper->meOrinetation ? -1 : 0);
                     }
 
-                    for(a = 0; a < nCount - 1L; a++)
+                    for(a = 0; a < nCount - 1; a++)
                     {
                         const B2DPolygon aCandA(rCandidate.getB2DPolygon(a));
                         StripHelper& rHelperA = aHelpers[a];
 
-                        for(b = a + 1L; b < nCount; b++)
+                        for(b = a + 1; b < nCount; b++)
                         {
                             const B2DPolygon aCandB(rCandidate.getB2DPolygon(b));
                             StripHelper& rHelperB = aHelpers[b];
@@ -897,7 +897,7 @@ namespace basegfx
                     for(a = 0; a < nCount; a++)
                     {
                         const StripHelper& rHelper = aHelpers[a];
-                        bool bAcceptEntry(bKeepAboveZero ? 1L <= rHelper.mnDepth : 0 == rHelper.mnDepth);
+                        bool bAcceptEntry(bKeepAboveZero ? 1 <= rHelper.mnDepth : 0 == rHelper.mnDepth);
 
                         if(bAcceptEntry)
                         {

@@ -73,7 +73,7 @@ class SwXRedline :
     SwRangeRedline*  pRedline;
 public:
     SwXRedline(SwRangeRedline& rRedline, SwDoc& rDoc);
-    virtual ~SwXRedline();
+    virtual ~SwXRedline() override;
 
 
     virtual     css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw(css::uno::RuntimeException, std::exception) override;
@@ -106,7 +106,7 @@ public:
     const SwRangeRedline*    GetRedline() const {return pRedline;}
 protected:
     //SwClient
-   virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew) override;
+    virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew) override;
 };
 #endif
 

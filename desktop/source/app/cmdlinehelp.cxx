@@ -55,6 +55,7 @@ namespace desktop
         "--invisible    \n"\
         "--norestore    \n"\
         "--quickstart   \n"\
+        "--safe-mode    \n"\
         "--nologo       \n"\
         "--nolockcheck  \n"\
         "--nodefault    \n"\
@@ -76,6 +77,7 @@ namespace desktop
         "no startup screen, no default document and no UI.\n"\
         "suppress restart/restore after fatal errors.\n"\
         "starts the quickstart service\n"\
+        "starts the safe mode\n"\
         "don't show startup screen.\n"\
         "don't check for remote instances using the installation\n"\
         "don't start with an empty document\n"\
@@ -103,6 +105,9 @@ namespace desktop
         "      open the specified documents in viewer-(readonly-)mode.\n"\
         "--show <presentation>\n"\
         "      open the specified presentation and start it immediately\n"\
+        "--language=<language_tag>\n"\
+        "      Override the UI language with the given locale\n"\
+        "      Eg. --language=fr\n"\
         "--accept=<accept-string>\n"\
         "      Specify an UNO connect-string to create an UNO acceptor through which\n"\
         "      other programs can connect to access the API\n"\
@@ -148,7 +153,7 @@ namespace desktop
         aHelpMessage_head = aHelpMessage_head.replaceFirst( "%CMDNAME", "soffice" );
         if (!unknown.isEmpty())
         {
-            aHelpMessage_head = "Unknown option: " + unknown + "\n\n"
+            aHelpMessage_head = "Error in option: " + unknown + "\n\n"
                 + aHelpMessage_head;
         }
 #ifdef UNX
@@ -171,12 +176,12 @@ namespace desktop
                     RTL_TEXTENCODING_ASCII_US).getStr());
 #else
         // rest gets a dialog box
-        CmdlineHelpDialog aDlg;
-        aDlg.m_pftHead->SetText(aHelpMessage_version + aHelpMessage_head);
-        aDlg.m_pftLeft->SetText(aHelpMessage_left);
-        aDlg.m_pftRight->SetText(aHelpMessage_right);
-        aDlg.m_pftBottom->SetText(aHelpMessage_bottom);
-        aDlg.Execute();
+        ScopedVclPtrInstance<CmdlineHelpDialog> aDlg;
+        aDlg->m_pftHead->SetText(aHelpMessage_version + aHelpMessage_head);
+        aDlg->m_pftLeft->SetText(aHelpMessage_left);
+        aDlg->m_pftRight->SetText(aHelpMessage_right);
+        aDlg->m_pftBottom->SetText(aHelpMessage_bottom);
+        aDlg->Execute();
 #endif
     }
 
@@ -188,23 +193,37 @@ namespace desktop
         fprintf(stdout, "%s", OUStringToOString(aVersionMsg, RTL_TEXTENCODING_ASCII_US).getStr());
 #else
         // Just re-use the help dialog for now.
-        CmdlineHelpDialog aDlg;
-        aDlg.m_pftHead->SetText(aVersionMsg);
-        aDlg.m_pftLeft->SetText("");
-        aDlg.m_pftRight->SetText("");
-        aDlg.m_pftBottom->SetText("");
-        aDlg.Execute();
+        ScopedVclPtrInstance<CmdlineHelpDialog> aDlg;
+        aDlg->m_pftHead->SetText(aVersionMsg);
+        aDlg->m_pftLeft->SetText("");
+        aDlg->m_pftRight->SetText("");
+        aDlg->m_pftBottom->SetText("");
+        aDlg->Execute();
 #endif
     }
 
 #ifndef UNX
     CmdlineHelpDialog::CmdlineHelpDialog()
-    : ModalDialog( NULL, "CmdLineHelp", "desktop/ui/cmdlinehelp.ui" )
+    : ModalDialog( nullptr, "CmdLineHelp", "desktop/ui/cmdlinehelp.ui" )
     {
         get(m_pftHead, "header");
         get(m_pftLeft, "left");
         get(m_pftRight, "right");
         get(m_pftBottom, "bottom");
+    }
+
+    CmdlineHelpDialog::~CmdlineHelpDialog()
+    {
+        disposeOnce();
+    }
+
+    void CmdlineHelpDialog::dispose()
+    {
+        m_pftHead.disposeAndClear();
+        m_pftLeft.disposeAndClear();
+        m_pftRight.disposeAndClear();
+        m_pftBottom.disposeAndClear();
+        ModalDialog::dispose();
     }
 #endif
 }

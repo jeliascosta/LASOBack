@@ -311,13 +311,13 @@ void SAL_CALL SfxEvents_Impl::disposing( const lang::EventObject& /*Source*/ ) t
 
 
 SfxEvents_Impl::SfxEvents_Impl( SfxObjectShell* pShell,
-                                uno::Reference< document::XEventBroadcaster > xBroadcaster )
+                                uno::Reference< document::XEventBroadcaster > const & xBroadcaster )
 {
     // get the list of supported events and store it
     if ( pShell )
         maEventNames = pShell->GetEventNames();
     else
-        maEventNames = GlobalEventConfig().getElementNames();
+        maEventNames = rtl::Reference<GlobalEventConfig>(new GlobalEventConfig)->getElementNames();
 
     maEventData = uno::Sequence < uno::Any > ( maEventNames.getLength() );
 
@@ -368,7 +368,7 @@ SvxMacro* SfxEvents_Impl::ConvertToMacro( const uno::Any& rElement, SfxObjectShe
             else if ( aProperties[ nIndex ].Name == PROP_MACRO_NAME )
                 aProperties[ nIndex ].Value >>= aMacroName;
             else {
-                OSL_FAIL("Unknown propery value!");
+                OSL_FAIL("Unknown property value!");
             }
             nIndex += 1;
         }

@@ -77,7 +77,15 @@
 #define SID_ELEMENTSDOCKINGWINDOW   (SID_SMA_START + 126)
 #define SID_AUTO_CLOSE_BRACKETS     (SID_SMA_START + 127)
 
-#define RID_PRINTUIOPTIONS          (RID_APP_START + 11)
+#define RID_PRINTUIOPT_PRODNAME     (RID_APP_START + 11)
+#define RID_PRINTUIOPT_CONTENTS     (RID_APP_START + 12)
+#define RID_PRINTUIOPT_TITLE        (RID_APP_START + 13)
+#define RID_PRINTUIOPT_FRMLTXT      (RID_APP_START + 14)
+#define RID_PRINTUIOPT_BORDERS      (RID_APP_START + 15)
+#define RID_PRINTUIOPT_SIZE         (RID_APP_START + 16)
+#define RID_PRINTUIOPT_ORIGSIZE     (RID_APP_START + 17)
+#define RID_PRINTUIOPT_FITTOPAGE    (RID_APP_START + 18)
+#define RID_PRINTUIOPT_SCALING      (RID_APP_START + 19)
 
 #define RID_MATH_TOOLBOX            (RID_APP_START + 50)
 
@@ -126,24 +134,12 @@
 #define RID_ERR_RBRACEEXPECTED      (RID_APP_START + 926)
 #define RID_ERR_FUNCEXPECTED        (RID_APP_START + 927)
 #define RID_ERR_UNOPEREXPECTED      (RID_APP_START + 928)
-#define RID_ERR_BINOPEREXPECTED     (RID_APP_START + 929)
-#define RID_ERR_SYMBOLEXPECTED      (RID_APP_START + 930)
-#define RID_ERR_IDENTEXPECTED       (RID_APP_START + 931)
+// blank: 929 - 931
 #define RID_ERR_POUNDEXPECTED       (RID_APP_START + 932)
 #define RID_ERR_COLOREXPECTED       (RID_APP_START + 933)
 #define RID_ERR_LPARENTEXPECTED     (RID_APP_START + 934)
 #define RID_ERR_RPARENTEXPECTED     (RID_APP_START + 935)
 #define RID_ERR_RIGHTEXPECTED       (RID_APP_START + 936)
-
-// toolbox image lists for 'Selection' window
-#define RID_IL_RELATIONS                (RID_APP_START + 954)
-#define RID_IL_SETOPERATIONS            (RID_APP_START + 956)
-#define RID_IL_FUNCTIONS                (RID_APP_START + 958)
-#define RID_IL_OPERATORS                (RID_APP_START + 960)
-#define RID_IL_ATTRIBUTES               (RID_APP_START + 962)
-#define RID_IL_BRACKETS                 (RID_APP_START + 964)
-#define RID_IL_FORMAT                   (RID_APP_START + 966)
-#define RID_IL_MISC                     (RID_APP_START + 968)
 
 // new resource ID's
 #define RID_PLUSX                   (RID_APP_START + 1201)
@@ -223,10 +219,6 @@
 #define RID_NEGX_HELP               (RID_APP_START + 1347)
 #define RID_XANDY_HELP              (RID_APP_START + 1358)
 #define RID_XORY_HELP               (RID_APP_START + 1350)
-#define RID_XODIVIDEY_HELP          (RID_APP_START + 1360)
-#define RID_XODOTY_HELP             (RID_APP_START + 1361)
-#define RID_XOMINUSY_HELP           (RID_APP_START + 1362)
-#define RID_XOPLUSY_HELP            (RID_APP_START + 1363)
 #define RID_XOTIMESY_HELP           (RID_APP_START + 1364)
 #define RID_XCIRCY_HELP             (RID_APP_START + 1365)
 #define RID_XWIDESLASHY_HELP        (RID_APP_START + 1366)
@@ -424,6 +416,7 @@
 #define RID_SLRDBRACKETX            (RID_APP_START + 1824)
 #define RID_XOVERBRACEY             (RID_APP_START + 1825)
 #define RID_XUNDERBRACEY            (RID_APP_START + 1826)
+#define RID_XEVALUATEDATY           (RID_APP_START + 1827)
 
 #define RID_NEWLINE                 (RID_APP_START + 1901)
 #define RID_SBLANK                  (RID_APP_START + 1902)
@@ -477,7 +470,6 @@
 #define RID_MISC_MENU               (RID_APP_START + 2172)
 #define RID_FUNCTIONSOTHER1_MENU    (RID_APP_START + 2173)
 
-#define RID_LOCALIZED_NAMES             (RID_APP_START + 3101)
 #define RID_UI_SYMBOL_NAMES             (RID_APP_START + 3102)
 #define RID_EXPORT_SYMBOL_NAMES         (RID_APP_START + 3103)
 #define RID_UI_SYMBOLSET_NAMES          (RID_APP_START + 3105)
@@ -513,9 +505,6 @@
 #define RID_XTOWARDY_HELP           (RID_APP_START + 4026)
 #define RID_XLLY_HELP               (RID_APP_START + 4027)
 #define RID_XGGY_HELP               (RID_APP_START + 4028)
-#define RID_XDEFY_HELP              (RID_APP_START + 4029)
-#define RID_XTRANSLY_HELP           (RID_APP_START + 4030)
-#define RID_XTRANSRY_HELP           (RID_APP_START + 4031)
 #define RID_XDIVIDESY_HELP          (RID_APP_START + 4032)
 #define RID_XNDIVIDESY_HELP         (RID_APP_START + 4033)
 #define RID_DLARROW_HELP            (RID_APP_START + 4034)
@@ -594,7 +583,6 @@
 #define RID_ITALX_HELP              (RID_APP_START + 4108)
 #define RID_SIZEXY_HELP             (RID_APP_START + 4109)
 #define RID_FONTXY_HELP             (RID_APP_START + 4110)
-#define RID_COLORX_HELP             (RID_APP_START + 4111)
 #define RID_WIDEHATX_HELP           (RID_APP_START + 4112)
 #define RID_WIDETILDEX_HELP         (RID_APP_START + 4113)
 #define RID_WIDEVECX_HELP           (RID_APP_START + 4114)
@@ -639,11 +627,6 @@
 #define RID_LINTX_HELP              (RID_APP_START + 4153)
 #define RID_LLINTX_HELP             (RID_APP_START + 4154)
 #define RID_LLLINTX_HELP            (RID_APP_START + 4155)
-#define RID_FROMXTOY_HELP           (RID_APP_START + 4156)
-#define RID_FROMX_HELP              (RID_APP_START + 4157)
-#define RID_TOX_HELP                (RID_APP_START + 4158)
-#define RID_LIMINFX_HELP            (RID_APP_START + 4159)
-#define RID_LIMSUPX_HELP            (RID_APP_START + 4160)
 #define RID_LIM_FROMX_HELP          (RID_APP_START + 4161)
 #define RID_SUM_FROMX_HELP          (RID_APP_START + 4162)
 #define RID_PROD_FROMX_HELP         (RID_APP_START + 4163)
@@ -686,19 +669,11 @@
 #define RID_COLORX_SILVER_HELP      (RID_APP_START + 4199)
 #define RID_COLORX_TEAL_HELP        (RID_APP_START + 4200)
 
+#define RID_XEVALUATEDATY_HELP      (RID_APP_START + 4201)
+
 #define RID_ALIGNLX_HELP                  (RID_APP_START + 4275)
 #define RID_ALIGNCX_HELP                  (RID_APP_START + 4276)
 #define RID_ALIGNRX_HELP                  (RID_APP_START + 4277)
-
-#define TOOLBOX_CAT_A               (RID_APP_START + 4278)
-#define TOOLBOX_CAT_B               (RID_APP_START + 4279)
-#define TOOLBOX_CAT_C               (RID_APP_START + 4280)
-#define TOOLBOX_CAT_D               (RID_APP_START + 4281)
-#define TOOLBOX_CAT_E               (RID_APP_START + 4282)
-#define TOOLBOX_CAT_F               (RID_APP_START + 4283)
-#define TOOLBOX_CAT_G               (RID_APP_START + 4284)
-#define TOOLBOX_CAT_H               (RID_APP_START + 4285)
-#define TOOLBOX_CAT_I               (RID_APP_START + 4286)
 
 // 342 == SCH_IF_SMAVIEWSHELL, because SFX_INTERFACE_LIB is no
 // Define but latterly an Enum

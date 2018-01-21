@@ -27,6 +27,7 @@
 #include <comphelper/processfactory.hxx>
 #include <rtl/uri.hxx>
 #include <rtl/ustrbuf.hxx>
+#include <rtl/character.hxx>
 #include <libxslt/xslt.h>
 #include <libxslt/transform.h>
 #include <libxslt/xsltutils.h>
@@ -45,26 +46,6 @@
 
 #include "urlparameter.hxx"
 #include "databases.hxx"
-
-namespace chelp {
-
-    inline bool ascii_isDigit( sal_Unicode ch )
-    {
-        return ((ch >= 0x0030) && (ch <= 0x0039));
-    }
-
-    inline bool ascii_isLetter( sal_Unicode ch )
-    {
-        return ( ( (ch >= 0x0041) && (ch <= 0x005A) ) ||
-                 ( (ch >= 0x0061) && (ch <= 0x007A) ) );
-    }
-
-    inline bool isLetterOrDigit( sal_Unicode ch )
-    {
-        return ascii_isLetter( ch ) || ascii_isDigit( ch );
-    }
-
-}
 
 using namespace cppu;
 using namespace com::sun::star::io;
@@ -121,13 +102,13 @@ OString URLParameter::getByName( const char* par )
     else if( strcmp( par,"System" ) == 0 )
         val = get_system();
     else if( strcmp( par,"HelpPrefix" ) == 0 )
-        val = get_prefix();
+        val = m_aPrefix;
 
     return OString( val.getStr(),val.getLength(),RTL_TEXTENCODING_UTF8 );
 }
 
 
-OUString URLParameter::get_id()
+OUString const & URLParameter::get_id()
 {
     if( m_aId == "start" )
     {   // module is set
@@ -171,7 +152,7 @@ OUString URLParameter::get_title()
 }
 
 
-OUString URLParameter::get_language()
+OUString const & URLParameter::get_language()
 {
     if( m_aLanguage.isEmpty() )
         return m_aDefaultLanguage;
@@ -180,7 +161,7 @@ OUString URLParameter::get_language()
 }
 
 
-OUString URLParameter::get_program()
+OUString const & URLParameter::get_program()
 {
     if( m_aProgram.isEmpty() )
     {
@@ -218,7 +199,7 @@ OUString URLParameter::get_the_tag()
 }
 
 
-OUString URLParameter::get_the_path()
+OUString URLParameter::get_path()
 {
     if(m_bUseDB) {
         if( ! m_bHelpDataFileRead )
@@ -246,7 +227,7 @@ OUString URLParameter::get_the_title()
 }
 
 
-OUString URLParameter::get_the_jar()
+OUString URLParameter::get_jar()
 {
     if(m_bUseDB) {
         if( ! m_bHelpDataFileRead )
@@ -320,9 +301,9 @@ public:
 
     InputStreamTransformer( URLParameter* urlParam,
                             Databases*    pDatatabases,
-                            bool isRoot = false );
+                            bool isRoot );
 
-    virtual ~InputStreamTransformer();
+    virtual ~InputStreamTransformer() override;
 
     virtual Any SAL_CALL queryInterface( const Type& rType ) throw( RuntimeException, std::exception ) override;
     virtual void SAL_CALL acquire() throw() override;
@@ -469,7 +450,7 @@ bool URLParameter::module()
 {
     sal_Int32 idx = 0,length = m_aExpr.getLength();
 
-    while( idx < length && isLetterOrDigit( (m_aExpr.getStr())[idx] ) )
+    while( idx < length && rtl::isAsciiAlphanumeric( (m_aExpr.getStr())[idx] ) )
         ++idx;
 
     if( idx != 0 )

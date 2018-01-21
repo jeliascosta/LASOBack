@@ -64,6 +64,7 @@
 #include <com/sun/star/text/BibliographyDataType.hpp>
 #include <com/sun/star/sdb/CommandType.hpp>
 #include <com/sun/star/rdf/XMetadatable.hpp>
+#include <o3tl/any.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <tools/debug.hxx>
 #include <rtl/math.hxx>
@@ -1899,7 +1900,7 @@ void XMLTextFieldExport::ExportFieldDeclarations(
         // export only used masters
         DBG_ASSERT(nullptr != pUsedMasters,
                    "field masters must be recorded in order to be "
-                   "written out separatly" );
+                   "written out separately" );
         if (nullptr != pUsedMasters)
         {
             map<Reference<XText>, set<OUString> > ::iterator aMapIter =
@@ -2229,23 +2230,10 @@ void XMLTextFieldExport::ExportElement(enum XMLTokenEnum eElementName,
     if (eElementName != XML_TOKEN_INVALID)
     {
         // Element
-        if (eElementName == XML_SENDER_INITIALS)
-        {
-            if (SvtSaveOptions().GetODFDefaultVersion() > SvtSaveOptions::ODFVER_012)
-            {
-                SvXMLElementExport aElem( GetExport(), XML_NAMESPACE_LO_EXT,
-                        eElementName, false, false );
-                // export content
-                GetExport().Characters(sContent);
-            }
-        }
-        else
-        {
-            SvXMLElementExport aElem( GetExport(), XML_NAMESPACE_TEXT,
-                                      eElementName, false, false );
-            // export content
-            GetExport().Characters(sContent);
-        }
+        SvXMLElementExport aElem( GetExport(), XML_NAMESPACE_TEXT,
+                eElementName, false, false );
+        // export content
+        GetExport().Characters(sContent);
     } else {
         // always export content
         GetExport().Characters(sContent);
@@ -2446,7 +2434,7 @@ void XMLTextFieldExport::ProcessDisplay(bool bIsVisible,
 void XMLTextFieldExport::ProcessBoolean(enum XMLTokenEnum eName,
                                         bool bBool, bool bDefault)
 {
-    DBG_ASSERT( eName != XML_TOKEN_INVALID, "invalid element token");
+    SAL_WARN_IF( eName == XML_TOKEN_INVALID, "xmloff", "invalid element token");
     if ( XML_TOKEN_INVALID == eName )
         return;
 
@@ -2465,7 +2453,7 @@ void XMLTextFieldExport::ProcessString(enum XMLTokenEnum eName,
                                        bool bOmitEmpty,
                                        sal_uInt16 nPrefix)
 {
-    DBG_ASSERT( eName != XML_TOKEN_INVALID, "invalid element token");
+    SAL_WARN_IF( eName == XML_TOKEN_INVALID, "xmloff", "invalid element token");
     if ( XML_TOKEN_INVALID == eName )
         return;
 
@@ -2516,8 +2504,8 @@ void XMLTextFieldExport::ProcessString(
     enum XMLTokenEnum eValue,
     sal_uInt16 nPrefix)
 {
-    DBG_ASSERT( eName != XML_TOKEN_INVALID, "invalid element token" );
-    DBG_ASSERT( eValue != XML_TOKEN_INVALID, "invalid value token" );
+    SAL_WARN_IF( eName == XML_TOKEN_INVALID, "xmloff", "invalid element token" );
+    SAL_WARN_IF( eValue == XML_TOKEN_INVALID, "xmloff", "invalid value token" );
     if ( XML_TOKEN_INVALID == eName )
         return;
 
@@ -2555,7 +2543,7 @@ void XMLTextFieldExport::ProcessParagraphSequence(
 void XMLTextFieldExport::ProcessInteger(enum XMLTokenEnum eName,
                                         sal_Int32 nNum)
 {
-    DBG_ASSERT( eName != XML_TOKEN_INVALID, "invalid element token");
+    SAL_WARN_IF( eName == XML_TOKEN_INVALID, "xmloff", "invalid element token");
     if ( XML_TOKEN_INVALID == eName )
         return;
 
@@ -2615,7 +2603,7 @@ void XMLTextFieldExport::ProcessDateTime(enum XMLTokenEnum eName,
     if (bIsDuration)
     {
         // date/time duration handle bOmitDurationIfZero
-        if (!bOmitDurationIfZero || !::rtl::math::approxEqual(dValue, 0.0))
+        if (!bOmitDurationIfZero || dValue != 0.0)
         {
             ::sax::Converter::convertDuration(aBuffer, dValue);
         }
@@ -2801,9 +2789,9 @@ void XMLTextFieldExport::ExportDataBaseElement(
     const Reference<XPropertySet>& rPropertySet,
     const Reference<XPropertySetInfo>& rPropertySetInfo )
 {
-    DBG_ASSERT( eElementName != XML_TOKEN_INVALID, "need token" );
-    DBG_ASSERT( rPropertySet.is(), "need property set" );
-    DBG_ASSERT( rPropertySetInfo.is(), "need property set info" );
+    SAL_WARN_IF( eElementName == XML_TOKEN_INVALID, "xmloff", "need token" );
+    SAL_WARN_IF( !rPropertySet.is(), "xmloff", "need property set" );
+    SAL_WARN_IF( !rPropertySetInfo.is(), "xmloff", "need property set info" );
 
     // get database properties
     OUString sDataBaseName;
@@ -2950,7 +2938,7 @@ enum XMLTokenEnum XMLTextFieldExport::MapPageNumberName(
     enum XMLTokenEnum eName = XML_TOKEN_INVALID;
     PageNumberType ePage;
     Any aAny = xPropSet->getPropertyValue(sPropertySubType);
-    ePage = *static_cast<PageNumberType const *>(aAny.getValue());
+    ePage = *o3tl::doAccess<PageNumberType>(aAny);
 
     switch (ePage)
     {
@@ -3492,7 +3480,7 @@ inline bool GetBoolProperty(
     const Reference<XPropertySet> & xPropSet)
 {
     Any aAny = xPropSet->getPropertyValue(sPropName);
-    bool bBool = *static_cast<sal_Bool const *>(aAny.getValue());
+    bool bBool = *o3tl::doAccess<bool>(aAny);
     return bBool;
 }
 

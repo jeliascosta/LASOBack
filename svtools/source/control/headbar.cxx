@@ -251,7 +251,7 @@ void HeaderBar::ImplInvertDrag( sal_uInt16 nStartPos, sal_uInt16 nEndPos )
         aEndPos.X() = aRect2.Left()+6;
     }
 
-    SetRasterOp( ROP_INVERT );
+    SetRasterOp( RasterOp::Invert );
     DrawRect( aStartRect );
     DrawLine( aStartPos, aEndPos );
     if ( nEndPos > nStartPos )
@@ -274,7 +274,7 @@ void HeaderBar::ImplInvertDrag( sal_uInt16 nStartPos, sal_uInt16 nEndPos )
                   Point( aEndPos.X()-3, aEndPos.Y()+1 ) );
         DrawPixel( Point( aEndPos.X()-4, aEndPos.Y() ) );
     }
-    SetRasterOp( ROP_OVERPAINT );
+    SetRasterOp( RasterOp::OverPaint );
 }
 
 void HeaderBar::ImplDrawItem(vcl::RenderContext& rRenderContext, sal_uInt16 nPos, bool bHigh,
@@ -684,7 +684,7 @@ void HeaderBar::ImplStartDrag( const Point& rMousePos, bool bCommand )
             StartTracking();
             mnStartPos = rMousePos.X()-mnMouseOff;
             mnDragPos = mnStartPos;
-            StartDrag();
+            maStartDragHdl.Call( this );
             if (mbItemMode)
                 Invalidate();
             else
@@ -801,7 +801,7 @@ void HeaderBar::ImplDrag( const Point& rMousePos )
         }
     }
 
-    Drag();
+    maDragHdl.Call( this );
 }
 
 void HeaderBar::ImplEndDrag( bool bCancel )
@@ -1102,16 +1102,6 @@ void HeaderBar::DataChanged( const DataChangedEvent& rDCEvt )
         ImplInitSettings( true, true, true );
         Invalidate();
     }
-}
-
-void HeaderBar::StartDrag()
-{
-    maStartDragHdl.Call( this );
-}
-
-void HeaderBar::Drag()
-{
-    maDragHdl.Call( this );
 }
 
 void HeaderBar::EndDrag()

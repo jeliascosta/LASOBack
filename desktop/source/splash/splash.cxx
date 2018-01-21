@@ -55,7 +55,7 @@ public:
     SplashScreen *pSpl;
     ScopedVclPtr<VirtualDevice> _vdev;
     explicit SplashScreenWindow(SplashScreen *);
-    virtual ~SplashScreenWindow() { disposeOnce(); }
+    virtual ~SplashScreenWindow() override { disposeOnce(); }
     virtual void dispose() override;
     // workwindow
     virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle&) override;
@@ -72,8 +72,8 @@ private:
 
     VclPtr<SplashScreenWindow> pWindow;
 
-    DECL_LINK_TYPED( AppEventListenerHdl, VclSimpleEvent&, void );
-    virtual ~SplashScreen();
+    DECL_LINK( AppEventListenerHdl, VclSimpleEvent&, void );
+    virtual ~SplashScreen() override;
     void loadConfig();
     void updateStatus();
     void SetScreenBitmap(BitmapEx &rBitmap);
@@ -92,7 +92,6 @@ private:
     sal_Int32   _iMax;
     sal_Int32   _iProgress;
     BitmapMode  _eBitmapMode;
-    bool        _bPaintBitmap;
     bool        _bPaintProgress;
     bool        _bVisible;
     bool        _bShowLogo;
@@ -163,7 +162,6 @@ SplashScreen::SplashScreen()
     , _iMax(100)
     , _iProgress(0)
     , _eBitmapMode(BM_DEFAULTMODE)
-    , _bPaintBitmap(true)
     , _bPaintProgress(false)
     , _bVisible(true)
     , _bShowLogo(true)
@@ -366,7 +364,7 @@ void SplashScreen::updateStatus()
 }
 
 // internal private methods
-IMPL_LINK_TYPED( SplashScreen, AppEventListenerHdl, VclSimpleEvent&, inEvent, void )
+IMPL_LINK( SplashScreen, AppEventListenerHdl, VclSimpleEvent&, inEvent, void )
 {
     if (static_cast<VclWindowEvent&>(inEvent).GetWindow() == pWindow)
     {
@@ -646,8 +644,7 @@ void SplashScreenWindow::Paint(vcl::RenderContext& rRenderContext, const Rectang
 
     // non native drawing
     // draw bitmap
-    if (pSpl->_bPaintBitmap)
-        _vdev->DrawBitmapEx(Point(), pSpl->_aIntroBmp);
+    _vdev->DrawBitmapEx(Point(), pSpl->_aIntroBmp);
 
     if (pSpl->_bPaintProgress) {
         // draw progress...

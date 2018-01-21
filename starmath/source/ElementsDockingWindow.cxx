@@ -23,6 +23,9 @@
 #include <smmod.hxx>
 #include <view.hxx>
 #include <visitors.hxx>
+#include "document.hxx"
+#include "node.hxx"
+#include "uiobject.hxx"
 
 #include <o3tl/make_unique.hxx>
 #include <svl/stritem.hxx>
@@ -31,8 +34,8 @@
 #include <vcl/help.hxx>
 #include <vcl/settings.hxx>
 
-SmElement::SmElement(SmNodePointer pNode, const OUString& aText, const OUString& aHelpText) :
-    mpNode(pNode),
+SmElement::SmElement(std::unique_ptr<SmNode>&& pNode, const OUString& aText, const OUString& aHelpText) :
+    mpNode(std::move(pNode)),
     maText(aText),
     maHelpText(aHelpText)
 {}
@@ -40,13 +43,13 @@ SmElement::SmElement(SmNodePointer pNode, const OUString& aText, const OUString&
 SmElement::~SmElement()
 {}
 
-const SmNodePointer& SmElement::getNode()
+const std::unique_ptr<SmNode>& SmElement::getNode()
 {
     return mpNode;
 }
 
 SmElementSeparator::SmElementSeparator() :
-    SmElement(SmNodePointer(), OUString(), OUString())
+    SmElement(std::unique_ptr<SmNode>(), OUString(), OUString())
 {}
 
 const sal_uInt16 SmElementsControl::aUnaryBinaryOperatorsList[][2] =
@@ -186,6 +189,7 @@ const sal_uInt16 SmElementsControl::aBrackets[][2] =
     {RID_SLRANGLEX, RID_SLRANGLEX_HELP}, {RID_SLMRANGLEXY, RID_SLMRANGLEXY_HELP},
     {RID_SLRCEILX, RID_SLRCEILX_HELP}, {RID_SLRFLOORX, RID_SLRFLOORX_HELP},
     {RID_SLRLINEX, RID_SLRLINEX_HELP}, {RID_SLRDLINEX, RID_SLRDLINEX_HELP},
+    {RID_XEVALUATEDATY, RID_XEVALUATEDATY_HELP},
     {0XFFFF, 0},
     {RID_XOVERBRACEY, RID_XOVERBRACEY_HELP}, {RID_XUNDERBRACEY, RID_XUNDERBRACEY_HELP},
 };
@@ -225,9 +229,10 @@ SmElementsControl::SmElementsControl(vcl::Window *pParent)
     , mbVerticalMode(true)
     , mxScroll(VclPtr<ScrollBar>::Create(this, WB_VERT))
 {
-    SetMapMode( MapMode(MAP_100TH_MM) );
+    set_id("element_selector");
+    SetMapMode( MapMode(MapUnit::Map100thMM) );
     SetDrawMode( DrawModeFlags::Default );
-    SetLayoutMode( TEXT_LAYOUT_DEFAULT );
+    SetLayoutMode( ComplexTextLayoutFlags::Default );
     SetDigitLanguage( LANGUAGE_ENGLISH );
 
     maFormat.SetBaseSize(PixelToLogic(Size(0, SmPtsTo100th_mm(12))));
@@ -436,7 +441,14 @@ void SmElementsControl::RequestHelp(const HelpEvent& rHEvt)
 
 void SmElementsControl::MouseMove( const MouseEvent& rMouseEvent )
 {
+    SmElement* pPrevElement = mpCurrentElement;
     mpCurrentElement = nullptr;
+    if (rMouseEvent.IsLeaveWindow())
+    {
+        LayoutOrPaintContents();
+        Invalidate();
+        return;
+    }
     if (Rectangle(Point(0, 0), GetOutputSizePixel()).IsInside(rMouseEvent.GetPosPixel()))
     {
         for (std::unique_ptr<SmElement> & i : maElementList)
@@ -445,11 +457,12 @@ void SmElementsControl::MouseMove( const MouseEvent& rMouseEvent )
             Rectangle rect(element->mBoxLocation, element->mBoxSize);
             if (rect.IsInside(rMouseEvent.GetPosPixel()))
             {
-                if (mpCurrentElement != element)
+                if (pPrevElement != element)
                 {
                     mpCurrentElement = element;
                     LayoutOrPaintContents();
                     Invalidate();
+                    return;
                 }
             }
         }
@@ -482,7 +495,7 @@ void SmElementsControl::MouseButtonDown(const MouseEvent& rMouseEvent)
     }
 }
 
-IMPL_LINK_NOARG_TYPED( SmElementsControl, ScrollHdl, ScrollBar*, void )
+IMPL_LINK_NOARG( SmElementsControl, ScrollHdl, ScrollBar*, void )
 {
     DoScroll(mxScroll->GetDelta());
 }
@@ -498,20 +511,15 @@ void SmElementsControl::DoScroll(long nDelta)
     Invalidate();
 }
 
-void SmElementsControl::addSeparator()
-{
-    maElementList.push_back(o3tl::make_unique<SmElementSeparator>());
-}
-
 void SmElementsControl::addElement(const OUString& aElementVisual, const OUString& aElementSource, const OUString& aHelpText)
 {
-    SmNodePointer pNode(SmParser().ParseExpression(aElementVisual));
+    std::unique_ptr<SmNode> pNode(SmParser().ParseExpression(aElementVisual));
 
     pNode->Prepare(maFormat, *mpDocShell);
     pNode->SetSize(Fraction(10,8));
     pNode->Arrange(*this, maFormat);
 
-    Size aSizePixel = LogicToPixel(Size(pNode->GetWidth(), pNode->GetHeight()), MAP_100TH_MM);
+    Size aSizePixel = LogicToPixel(Size(pNode->GetWidth(), pNode->GetHeight()), MapUnit::Map100thMM);
     if (aSizePixel.Width() > maMaxElementDimensions.Width()) {
         maMaxElementDimensions.Width() = aSizePixel.Width();
     }
@@ -520,7 +528,7 @@ void SmElementsControl::addElement(const OUString& aElementVisual, const OUStrin
         maMaxElementDimensions.Height() = aSizePixel.Height();
     }
 
-    maElementList.push_back(o3tl::make_unique<SmElement>(pNode, aElementSource, aHelpText));
+    maElementList.push_back(o3tl::make_unique<SmElement>(std::move(pNode), aElementSource, aHelpText));
 }
 
 void SmElementsControl::setElementSetId(sal_uInt16 aSetId)
@@ -537,7 +545,7 @@ void SmElementsControl::addElements(const sal_uInt16 aElementsArray[][2], sal_uI
         sal_uInt16 aElementId = aElementsArray[i][0];
         sal_uInt16 aElementIdHelp = aElementsArray[i][1];
         if (aElementId == 0xFFFF) {
-            addSeparator();
+            maElementList.push_back(o3tl::make_unique<SmElementSeparator>());
         } else {
             if (aElementId == RID_NEWLINE)
                 addElement(OUString( "\xe2\x86\xb5", 3, RTL_TEXTENCODING_UTF8 ), SM_RESSTR(aElementId), SM_RESSTR(aElementIdHelp));
@@ -630,7 +638,6 @@ void SmElementsControl::build()
 
     switch(maCurrentSetId)
     {
-        // we need to divide by 2 because of the matrix of two dimensions
         case RID_CATEGORY_UNARY_BINARY_OPERATORS:
             addElements(aUnaryBinaryOperatorsList, SAL_N_ELEMENTS(aUnaryBinaryOperatorsList));
         break;
@@ -679,7 +686,12 @@ void SmElementsControl::build()
 
 Size SmElementsControl::GetOptimalSize() const
 {
-    return LogicToPixel(Size(100, 100), MapMode(MAP_APPFONT));
+    return LogicToPixel(Size(100, 100), MapMode(MapUnit::MapAppFont));
+}
+
+FactoryFunction SmElementsControl::GetUITestFactory() const
+{
+    return ElementSelectorUIObject::create;
 }
 
 const sal_uInt16 SmElementsDockingWindow::aCategories[] = {
@@ -752,7 +764,7 @@ void SmElementsDockingWindow::EndDocking( const Rectangle& rReactangle, bool bFl
     mpElementsControl->setVerticalMode(bVertical);
 }
 
-IMPL_LINK_TYPED(SmElementsDockingWindow, SelectClickHandler, SmElement&, rElement, void)
+IMPL_LINK(SmElementsDockingWindow, SelectClickHandler, SmElement&, rElement, void)
 {
     SmViewShell* pViewSh = GetView();
 
@@ -764,7 +776,7 @@ IMPL_LINK_TYPED(SmElementsDockingWindow, SelectClickHandler, SmElement&, rElemen
     }
 }
 
-IMPL_LINK_TYPED( SmElementsDockingWindow, ElementSelectedHandle, ListBox&, rList, void)
+IMPL_LINK( SmElementsDockingWindow, ElementSelectedHandle, ListBox&, rList, void)
 {
     for (sal_uInt16 aCurrentCategory : aCategories)
     {

@@ -28,7 +28,6 @@
 #include "dbustrings.hrc"
 #include "adminpages.hxx"
 #include "generalpage.hxx"
-#include "localresaccess.hxx"
 #include "stringlistitem.hxx"
 #include "propertysetitem.hxx"
 #include <unotools/confignode.hxx>
@@ -78,7 +77,7 @@ ODbTypeWizDialog::ODbTypeWizDialog(vcl::Window* _pParent
     m_pImpl->translateProperties(xDatasource, *m_pOutSet);
     m_eType = dbaui::ODbDataSourceAdministrationHelper::getDatasourceType(*m_pOutSet);
 
-    SetPageSizePixel(LogicToPixel(::Size(PAGE_X, PAGE_Y), MAP_APPFONT));
+    SetPageSizePixel(LogicToPixel(::Size(PAGE_X, PAGE_Y), MapUnit::MapAppFont));
     defaultButton(WizardButtonFlags::NEXT);
     enableButtons(WizardButtonFlags::FINISH, false);
     enableAutomaticNextButtonState();
@@ -89,8 +88,8 @@ ODbTypeWizDialog::ODbTypeWizDialog(vcl::Window* _pParent
     m_pFinish->SetHelpId(HID_DBWIZ_FINISH);
     // no local resources needed anymore
 
-    const DbuTypeCollectionItem* pCollectionItem = dynamic_cast<const DbuTypeCollectionItem*>( _pItems->GetItem(DSID_TYPECOLLECTION) );
-    m_pCollection = pCollectionItem->getCollection();
+    const DbuTypeCollectionItem& rCollectionItem = dynamic_cast<const DbuTypeCollectionItem&>(*_pItems->GetItem(DSID_TYPECOLLECTION));
+    m_pCollection = rCollectionItem.getCollection();
 
     ActivatePage();
     setTitleBase(ModuleRes(STR_DATABASE_TYPE_CHANGE));
@@ -107,7 +106,7 @@ void ODbTypeWizDialog::dispose()
     svt::OWizardMachine::dispose();
 }
 
-IMPL_LINK_TYPED(ODbTypeWizDialog, OnTypeSelected, OGeneralPage&, _rTabPage, void)
+IMPL_LINK(ODbTypeWizDialog, OnTypeSelected, OGeneralPage&, _rTabPage, void)
 {
     m_eType = _rTabPage.GetSelectedType();
     const bool bURLRequired = m_pCollection->isConnectionUrlRequired(m_eType);

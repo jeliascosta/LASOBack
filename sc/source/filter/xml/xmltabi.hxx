@@ -21,6 +21,7 @@
 
 #include "externalrefmgr.hxx"
 #include "xmlimprt.hxx"
+#include "importcontext.hxx"
 
 #include <xmloff/xmlictxt.hxx>
 #include <memory>
@@ -37,7 +38,7 @@ struct ScXMLExternalTabData
     ScXMLExternalTabData();
 };
 
-class ScXMLTableContext : public SvXMLImportContext
+class ScXMLTableContext : public ScXMLImportContext
 {
     OUString   sPrintRanges;
     ::std::unique_ptr<ScXMLExternalTabData> pExternalRefInfo;
@@ -45,16 +46,13 @@ class ScXMLTableContext : public SvXMLImportContext
     bool            bStartFormPage;
     bool            bPrintEntireSheet;
 
-    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
-    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
-
 public:
 
     ScXMLTableContext( ScXMLImport& rImport, sal_uInt16 nPrfx,
                         const OUString& rLName,
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList );
 
-    virtual ~ScXMLTableContext();
+    virtual ~ScXMLTableContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -63,16 +61,14 @@ public:
     virtual void EndElement() override;
 };
 
-class ScXMLTableProtectionContext : public SvXMLImportContext
+class ScXMLTableProtectionContext : public ScXMLImportContext
 {
-    ScXMLImport& GetScImport();
-
 public:
     ScXMLTableProtectionContext( ScXMLImport& rImport, sal_uInt16 nPrefix,
                         const OUString& rLName,
                         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList );
 
-    virtual ~ScXMLTableProtectionContext();
+    virtual ~ScXMLTableProtectionContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,

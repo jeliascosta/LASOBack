@@ -28,7 +28,6 @@
 #include <vector>
 
 class FixedImage;
-class FixedInfo;
 class Control;
 class LocaleDataWrapper;
 
@@ -47,7 +46,7 @@ namespace XmlSec
         const OUString & rRawString);
     OUString        GetContentPart( const OUString& _rRawString );
 
-    OUString        GetHexString( const css::uno::Sequence< sal_Int8 >& _rSeq, const char* _pSep = ":", sal_uInt16 _nLineBreak = 0xFFFF );
+    OUString        GetHexString( const css::uno::Sequence< sal_Int8 >& _rSeq, const char* _pSep, sal_uInt16 _nLineBreak = 0xFFFF );
 }
 
 #define XMLSEC_RES(id)      ResId(id,*XmlSec::GetResMgr())

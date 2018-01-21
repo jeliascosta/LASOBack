@@ -61,7 +61,7 @@ public:
                                 const OString& rParType );
             RscTop* GetRefClass() const { return pRefClass; }
     virtual RSCCLASS_TYPE GetClassType() const = 0;
-            RSCINST GetDefault();
+            RSCINST const & GetDefault();
 
                     // preparation fro the destructor call
                     // given that classes can have mutual dependencies,
@@ -72,7 +72,7 @@ public:
     virtual RscTop* GetTypeClass() const;
 
                     // returns the class size in bytes
-    virtual sal_uInt32  Size();
+    virtual sal_uInt32  Size() const;
 
                     // returns the reference
     virtual ERRTYPE GetRef( const RSCINST & rInst, RscId * );
@@ -81,16 +81,6 @@ public:
     virtual ERRTYPE SetRef( const RSCINST & rInst, const RscId & rRefId );
 
                     // sets the variable
-    virtual ERRTYPE SetVariable( Atom nVarName, RscTop * pClass,
-                                 RSCINST * pDflt,
-                                 RSCVAR nVarType, SfxStyleItem nMask,
-                                 Atom nDataBaseName = InvalidAtom );
-
-    virtual ERRTYPE SetVariable( Atom nVarName, RscTop * pClass,
-                                 RSCINST * pDflt,
-                                 RSCVAR nVarType, SfxSlotInfo nMask,
-                                 Atom nDataBaseName = InvalidAtom );
-
     virtual ERRTYPE SetVariable( Atom nVarName, RscTop * pClass,
                                  RSCINST * pDflt = nullptr,
                                  RSCVAR nVarType = 0, sal_uInt32 nMask = 0,

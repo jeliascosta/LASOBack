@@ -20,7 +20,6 @@
 #ifndef INCLUDED_SW_SOURCE_CORE_INC_FRAME_HXX
 #define INCLUDED_SW_SOURCE_CORE_INC_FRAME_HXX
 
-#include <vector>
 #include <drawinglayer/primitive2d/baseprimitive2d.hxx>
 #include <drawinglayer/processor2d/baseprocessor2d.hxx>
 #include <editeng/borderline.hxx>
@@ -46,13 +45,10 @@ class SwFlowFrame;
 class SwContentFrame;
 class SfxPoolItem;
 class SwAttrSet;
-class SwViewShell;
 class Color;
 class SwBorderAttrs;
 class SwCache;
 class SvxBrushItem;
-class XFillStyleItem;
-class XFillGradientItem;
 class SwSelectionList;
 struct SwPosition;
 struct SwCursorMoveState;
@@ -136,7 +132,7 @@ class SW_DLLPUBLIC SwFrame: public SwClient, public SfxBroadcaster
 
     // voids lower during creation of a column
     friend SwFrame *SaveContent( SwLayoutFrame *, SwFrame* pStart );
-    friend void   RestoreContent( SwFrame *, SwLayoutFrame *, SwFrame *pSibling, bool bGrow );
+    friend void   RestoreContent( SwFrame *, SwLayoutFrame *, SwFrame *pSibling );
 
     // for validating a mistakenly invalidated one in SwContentFrame::MakeAll
     friend void ValidateSz( SwFrame *pFrame );
@@ -191,7 +187,7 @@ class SW_DLLPUBLIC SwFrame: public SwClient, public SfxBroadcaster
         @return SwContentFrame*
         pointer to the found next content frame. It's NULL, if none exists.
     */
-    SwContentFrame* FindNextCnt_( const bool _bInSameFootnote = false );
+    SwContentFrame* FindNextCnt_( const bool _bInSameFootnote );
 
     /** method to determine previous content frame in the same environment
         for a flow frame (content frame, table frame, section frame)
@@ -273,7 +269,7 @@ protected:
     void ColUnlock()    { mbColLocked = false; }
 
     virtual void DestroyImpl();
-    virtual ~SwFrame();
+    virtual ~SwFrame() override;
 
     // Only used by SwRootFrame Ctor to get 'this' into mpRoot...
     void setRootFrame( SwRootFrame* pRoot ) { mpRoot = pRoot; }
@@ -365,10 +361,10 @@ public:
     SwLayoutFrame *GetNextFootnoteLeaf( MakePageType eMakePage );
     SwLayoutFrame *GetNextSctLeaf( MakePageType eMakePage );
     SwLayoutFrame *GetNextCellLeaf( MakePageType eMakePage );
-    SwLayoutFrame *GetPrevLeaf   ( MakePageType eMakeFootnote = MAKEPAGE_FTN );
-    SwLayoutFrame *GetPrevFootnoteLeaf( MakePageType eMakeFootnote = MAKEPAGE_FTN );
-    SwLayoutFrame *GetPrevSctLeaf( MakePageType eMakeFootnote = MAKEPAGE_FTN );
-    SwLayoutFrame *GetPrevCellLeaf( MakePageType eMakeFootnote = MAKEPAGE_FTN );
+    SwLayoutFrame *GetPrevLeaf   ( MakePageType eMakeFootnote );
+    SwLayoutFrame *GetPrevFootnoteLeaf( MakePageType eMakeFootnote );
+    SwLayoutFrame *GetPrevSctLeaf( MakePageType eMakeFootnote );
+    SwLayoutFrame *GetPrevCellLeaf( MakePageType eMakeFootnote );
     const SwLayoutFrame *GetLeaf ( MakePageType eMakePage, bool bFwd,
                                  const SwFrame *pAnch ) const;
 
@@ -388,7 +384,7 @@ public:
 
     virtual void PaintBorder( const SwRect&, const SwPageFrame *pPage,
                               const SwBorderAttrs & ) const;
-    void PaintBaBo( const SwRect&, const SwPageFrame *pPage = nullptr,
+    void PaintBaBo( const SwRect&, const SwPageFrame *pPage,
                     const bool bOnlyTextBackground = false) const;
     void PaintBackground( const SwRect&, const SwPageFrame *pPage,
                           const SwBorderAttrs &,
@@ -442,14 +438,11 @@ public:
     inline bool IsVertical() const;
 
     inline bool IsVertLR() const;
-    inline bool GetVerticalFlag() const { return mbVertical; }
 
     inline void SetDerivedVert( bool bNew ){ mbDerivedVert = bNew; }
     inline void SetInvalidVert( bool bNew) { mbInvalidVert = bNew; }
     inline bool IsRightToLeft() const;
-    inline bool GetRightToLeftFlag() const { return mbRightToLeft; }
     inline void SetDerivedR2L( bool bNew ) { mbDerivedR2L  = bNew; }
-    inline void SetInvalidR2L( bool bNew ) { mbInvalidR2L  = bNew; }
 
     void CheckDirChange();
     // returns upper left frame position for LTR and
@@ -650,7 +643,7 @@ public:
     void ImplInvalidateLineNum();
 
     inline void InvalidateNextPos( bool bNoFootnote = false );
-    void ImplInvalidateNextPos( bool bNoFootnote = false );
+    void ImplInvalidateNextPos( bool bNoFootnote );
 
     /** method to invalidate printing area of next frame
         #i11859#
@@ -1152,30 +1145,41 @@ struct SwRectFnCollection
 typedef SwRectFnCollection* SwRectFn;
 
 extern SwRectFn fnRectHori, fnRectVert, fnRectB2T, fnRectVL2R, fnRectVertL2R;
-#define SWRECTFN( pFrame )    bool bVert = pFrame->IsVertical(); \
-                            bool bRev = pFrame->IsReverse(); \
-                            bool bVertL2R = pFrame->IsVertLR(); \
-                            SwRectFn fnRect = bVert ? \
-                                ( bRev ? fnRectVL2R : ( bVertL2R ? fnRectVertL2R : fnRectVert ) ): \
-                                ( bRev ? fnRectB2T : fnRectHori );
-#define SWRECTFNX( pFrame )   bool bVertX = pFrame->IsVertical(); \
-                            bool bRevX = pFrame->IsReverse(); \
-                            bool bVertL2RX = pFrame->IsVertLR(); \
-                            SwRectFn fnRectX = bVertX ? \
-                                ( bRevX ? fnRectVL2R : ( bVertL2RX ? fnRectVertL2R : fnRectVert ) ): \
-                                ( bRevX ? fnRectB2T : fnRectHori );
-#define SWREFRESHFN( pFrame ) { if( bVert != pFrame->IsVertical() || \
-                                  bRev  != pFrame->IsReverse() ) \
-                                bVert = pFrame->IsVertical(); \
-                                bRev = pFrame->IsReverse(); \
-                                bVertL2R = pFrame->IsVertLR(); \
-                                fnRect = bVert ? \
-                                    ( bRev ? fnRectVL2R : ( bVertL2R ? fnRectVertL2R : fnRectVert ) ): \
-                                    ( bRev ? fnRectB2T : fnRectHori ); }
+struct SwRectFnSet {
+    bool bVert;
+    bool bRev;
+    bool bVertL2R;
+    SwRectFn fnRect;
 
-#define POS_DIFF( aFrame1, aFrame2 ) \
-            ( (aFrame1.*fnRect->fnGetTop)() != (aFrame2.*fnRect->fnGetTop)() || \
-            (aFrame1.*fnRect->fnGetLeft)() != (aFrame2.*fnRect->fnGetLeft)() )
+    explicit SwRectFnSet(const SwFrame *pFrame)
+        : bVert(pFrame->IsVertical())
+        , bRev(pFrame->IsReverse())
+        , bVertL2R(pFrame->IsVertLR())
+    {
+        fnRect = bVert ?
+            (bRev ? fnRectVL2R : (bVertL2R ? fnRectVertL2R : fnRectVert)) :
+            (bRev ? fnRectB2T : fnRectHori);
+    }
+
+    // Convenience operator to simplify pointer-to-member syntax
+    SwRectFn operator ->() const { return fnRect; }
+
+    void Refresh(const SwFrame *pFrame)
+    {
+        bVert = pFrame->IsVertical();
+        bRev = pFrame->IsReverse();
+        bVertL2R = pFrame->IsVertLR();
+        fnRect = bVert ?
+            (bRev ? fnRectVL2R : (bVertL2R ? fnRectVertL2R : fnRectVert)) :
+            (bRev ? fnRectB2T : fnRectHori);
+    }
+
+    bool PosDiff(const SwRect &rRect1, const SwRect &rRect2)
+    {
+        return ((rRect1.*fnRect->fnGetTop)() != (rRect2.*fnRect->fnGetTop)()
+            || (rRect1.*fnRect->fnGetLeft)() != (rRect2.*fnRect->fnGetLeft)());
+    }
+};
 
 #endif
 

@@ -29,7 +29,7 @@
 using namespace ::com::sun::star;
 
 OInputCompStream::OInputCompStream( OWriteStream_Impl& aImpl,
-                                    uno::Reference < io::XInputStream > xStream,
+                                    uno::Reference < io::XInputStream > const & xStream,
                                     const uno::Sequence< beans::PropertyValue >& aProps,
                                     sal_Int32 nStorageType )
 : m_pImpl( &aImpl )
@@ -47,7 +47,7 @@ OInputCompStream::OInputCompStream( OWriteStream_Impl& aImpl,
     assert(m_xStream.is());
 }
 
-OInputCompStream::OInputCompStream( uno::Reference < io::XInputStream > xStream,
+OInputCompStream::OInputCompStream( uno::Reference < io::XInputStream > const & xStream,
                                     const uno::Sequence< beans::PropertyValue >& aProps,
                                     sal_Int32 nStorageType )
 : m_pImpl( nullptr )
@@ -80,7 +80,7 @@ uno::Any SAL_CALL OInputCompStream::queryInterface( const uno::Type& rType )
     uno::Any aReturn;
 
     // common interfaces
-    aReturn <<= ::cppu::queryInterface
+    aReturn = ::cppu::queryInterface
                 (   rType
                     ,   static_cast<io::XInputStream*> ( this )
                     ,   static_cast<io::XStream*> ( this )
@@ -93,7 +93,7 @@ uno::Any SAL_CALL OInputCompStream::queryInterface( const uno::Type& rType )
 
     if ( m_nStorageType == embed::StorageFormats::OFOPXML )
     {
-        aReturn <<= ::cppu::queryInterface
+        aReturn = ::cppu::queryInterface
                     (   rType
                         ,   static_cast<embed::XRelationshipAccess*> ( this ) );
 

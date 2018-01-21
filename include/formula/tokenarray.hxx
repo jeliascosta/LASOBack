@@ -20,14 +20,25 @@
 #ifndef INCLUDED_FORMULA_TOKENARRAY_HXX
 #define INCLUDED_FORMULA_TOKENARRAY_HXX
 
-#include <com/sun/star/sheet/FormulaToken.hpp>
-#include <formula/token.hxx>
-#include <formula/ExternalReferenceHelper.hxx>
-#include <o3tl/typed_flags_set.hxx>
-
-#include <limits.h>
+#include <climits>
+#include <memory>
 #include <type_traits>
 #include <unordered_set>
+#include <unordered_map>
+#include <vector>
+
+#include <com/sun/star/uno/Sequence.hxx>
+#include <formula/ExternalReferenceHelper.hxx>
+#include <formula/formuladllapi.h>
+#include <formula/opcode.hxx>
+#include <formula/token.hxx>
+#include <o3tl/typed_flags_set.hxx>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+
+namespace com { namespace sun { namespace star {
+    namespace sheet { struct FormulaToken; }
+} } }
 
 namespace svl {
 
@@ -48,18 +59,16 @@ enum class ScRecalcMode : sal_uInt8
     ONLOAD_ONCE  = 0x08,    // exclusive, once after load
     FORCED       = 0x10,    // combined, also if cell isn't visible
     ONREFMOVE    = 0x20,    // combined, if reference was moved
+    EMask        = NORMAL | ALWAYS | ONLOAD | ONLOAD_ONCE  // mask of exclusive bits
 };
 // If new bits are to be defined, AddRecalcMode has to be adjusted!
 namespace o3tl
 {
     template<> struct typed_flags<ScRecalcMode> : is_typed_flags<ScRecalcMode, 0x3f> {};
 }
-#define RECALCMODE_EMASK (ScRecalcMode(ScRecalcMode::NORMAL | ScRecalcMode::ALWAYS | ScRecalcMode::ONLOAD | ScRecalcMode::ONLOAD_ONCE))  // mask of exclusive bits
 
 namespace formula
 {
-
-class FormulaMissingContext;
 
 class FORMULA_DLLPUBLIC MissingConvention
 {
@@ -114,7 +123,7 @@ protected:
     sal_uInt16      nLen;                   // Length of token array
     sal_uInt16      nRPN;                   // Length of RPN array
     sal_uInt16      nIndex;                 // Current step index
-    sal_uInt16      nError;                 // Error code
+    FormulaError    nError;                 // Error code
     ScRecalcMode    nMode;                  // Flags to indicate when to recalc this code
     bool            bHyperLink;             // If HYPERLINK() occurs in the formula.
     bool            mbFromRangeName;        // If this array originates from a named expression
@@ -147,10 +156,26 @@ protected:
      */
     FormulaToken*           ReplaceToken( sal_uInt16 nOffset, FormulaToken*, ReplaceMode eMode );
 
+    /** Remove a sequence of tokens from pCode array, and pRPN array if the
+        tokens are referenced there.
+
+        This' nLen and nRPN are adapted, as is nIndex if it points behind
+        nOffset. If nIndex points into the to be removed range
+        (nOffset < nIndex < nOffset+nCount) it is set to nOffset+1.
+
+        @param  nOffset
+                Start offset into pCode.
+        @param  nCount
+                Count of tokens to remove.
+
+        @return Count of tokens removed.
+     */
+    sal_uInt16              RemoveToken( sal_uInt16 nOffset, sal_uInt16 nCount );
+
     inline  void            SetCombinedBitsRecalcMode( ScRecalcMode nBits )
-                                { nMode |= (nBits & ~RECALCMODE_EMASK); }
+                                { nMode |= (nBits & ~ScRecalcMode::EMask); }
     inline  ScRecalcMode    GetCombinedBitsRecalcMode() const
-                                { return nMode & ~RECALCMODE_EMASK; }
+                                { return nMode & ~ScRecalcMode::EMask; }
                             /** Exclusive bits already set in nMode are
                                 zero'ed, nBits may contain combined bits, but
                                 only one exclusive bit may be set! */
@@ -162,7 +187,6 @@ public:
     /// Assignment with references to FormulaToken entries (not copied!)
     FormulaTokenArray( const FormulaTokenArray& );
     virtual ~FormulaTokenArray();
-    FormulaTokenArray* Clone() const;    /// True copy!
 
     void SetFromRangeName( bool b ) { mbFromRangeName = b; }
     bool IsFromRangeName() const { return mbFromRangeName; }
@@ -217,11 +241,11 @@ public:
 
     FormulaToken** GetArray() const  { return pCode; }
     FormulaToken** GetCode()  const  { return pRPN; }
-    sal_uInt16    GetLen() const     { return nLen; }
-    sal_uInt16    GetCodeLen() const { return nRPN; }
-    void      Reset()            { nIndex = 0; }
-    sal_uInt16    GetCodeError() const      { return nError; }
-    void      SetCodeError( sal_uInt16 n )  { nError = n; }
+    sal_uInt16     GetLen() const     { return nLen; }
+    sal_uInt16     GetCodeLen() const { return nRPN; }
+    void           Reset()            { nIndex = 0; }
+    FormulaError   GetCodeError() const      { return nError; }
+    void      SetCodeError( FormulaError n )  { nError = n; }
     void      SetHyperLink( bool bVal ) { bHyperLink = bVal; }
     bool      IsHyperLink() const       { return bHyperLink; }
 

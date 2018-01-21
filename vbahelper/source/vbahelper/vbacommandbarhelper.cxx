@@ -17,6 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 #include "vbacommandbarhelper.hxx"
+#include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/ui/theModuleUIConfigurationManagerSupplier.hpp>
 #include <com/sun/star/ui/XUIConfigurationManagerSupplier.hpp>
 #include <com/sun/star/ui/XUIConfigurationStorage.hpp>
@@ -37,7 +38,7 @@ using namespace ooo::vba;
 
 typedef std::map< OUString, OUString > MSO2OOCommandbarMap;
 
-class MSO2OOCommandbarHelper
+class MSO2OOCommandbarHelper final
 {
 private:
     static MSO2OOCommandbarHelper* pMSO2OOCommandbarHelper;
@@ -60,7 +61,6 @@ private:
     }
 
 public:
-    virtual ~MSO2OOCommandbarHelper() {};
     static MSO2OOCommandbarHelper* getMSO2OOCommandbarHelper()
     {
         if( pMSO2OOCommandbarHelper == nullptr )
@@ -156,15 +156,6 @@ void VbaCommandBarHelper::ApplyTempChange( const OUString& sResourceUrl, const c
     }
 }
 
-void VbaCommandBarHelper::persistChanges() throw (css::uno::RuntimeException)
-{
-    uno::Reference< css::ui::XUIConfigurationPersistence > xConfigPersistence( m_xDocCfgMgr, uno::UNO_QUERY_THROW );
-    if( xConfigPersistence->isModified() )
-    {
-        xConfigPersistence->store();
-    }
-}
-
 uno::Reference< frame::XLayoutManager > VbaCommandBarHelper::getLayoutManager() throw (uno::RuntimeException)
 {
     uno::Reference< frame::XFrame > xFrame( getModel()->getCurrentController()->getFrame(), uno::UNO_QUERY_THROW );
@@ -208,8 +199,7 @@ OUString VbaCommandBarHelper::findToolbarByName( const css::uno::Reference< css:
     }
 
     // the customize toolbars creating during importing, should found there.
-    static const char sToolbarPrefix[] = "private:resource/toolbar/custom_";
-    sResourceUrl = sToolbarPrefix + sName;
+    sResourceUrl = "private:resource/toolbar/custom_" + sName;
     if( hasToolbar( sResourceUrl, sName ) )
         return sResourceUrl;
 

@@ -384,7 +384,7 @@ static bool lcl_isFontsizeItem( const SfxPoolItem& rItem )
 
 void SwWW8AttrIter::OutAttr( sal_Int32 nSwPos, bool bRuby )
 {
-    m_rExport.AttrOutput().RTLAndCJKState( IsCharRTL(), GetScript() );
+    m_rExport.AttrOutput().RTLAndCJKState( mbCharIsRTL, GetScript() );
 
     /*
      Depending on whether text is in CTL/CJK or Western, get the id of that
@@ -1022,13 +1022,13 @@ bool WW8AttributeOutput::StartURL( const OUString &rUrl, const OUString &rTarget
         0x8C,0x82,0x00,0xAA,0x00,0x4B,0xA9,0x0B
     };
 
-    m_rWW8Export.pDataStrm->Write( aURLData1, sizeof( aURLData1 ) );
+    m_rWW8Export.pDataStrm->WriteBytes(aURLData1, sizeof(aURLData1));
     /* Write HFD Structure */
     sal_uInt8 nAnchor = 0x00;
     if ( !sMark.isEmpty() )
         nAnchor = 0x08;
-    m_rWW8Export.pDataStrm->Write( &nAnchor, 1 ); // HFDBits
-    m_rWW8Export.pDataStrm->Write( MAGIC_A, sizeof(MAGIC_A) ); //clsid
+    m_rWW8Export.pDataStrm->WriteUChar(nAnchor); // HFDBits
+    m_rWW8Export.pDataStrm->WriteBytes(MAGIC_A, sizeof(MAGIC_A)); //clsid
 
     /* Write Hyperlink Object see [MS-OSHARED] spec*/
     SwWW8Writer::WriteLong( *m_rWW8Export.pDataStrm, 0x00000002);
@@ -1080,11 +1080,11 @@ bool WW8AttributeOutput::StartURL( const OUString &rUrl, const OUString &rTarget
             sURL = sURL.copy( sizeof(pSmb)-3 ).replaceAll( "/", "\\" );
         }
 
-        m_rWW8Export.pDataStrm->Write( MAGIC_C, sizeof(MAGIC_C) );
+        m_rWW8Export.pDataStrm->WriteBytes(MAGIC_C, sizeof(MAGIC_C));
         SwWW8Writer::WriteLong( *m_rWW8Export.pDataStrm, sURL.getLength()+1 );
         SwWW8Writer::WriteString8( *m_rWW8Export.pDataStrm, sURL, true,
                                     RTL_TEXTENCODING_MS_1252 );
-        m_rWW8Export.pDataStrm->Write( MAGIC_D, sizeof( MAGIC_D ) );
+        m_rWW8Export.pDataStrm->WriteBytes(MAGIC_D, sizeof(MAGIC_D));
 
         SwWW8Writer::WriteLong( *m_rWW8Export.pDataStrm, 2*sURL.getLength() + 6 );
         SwWW8Writer::WriteLong( *m_rWW8Export.pDataStrm, 2*sURL.getLength() );
@@ -1102,7 +1102,7 @@ bool WW8AttributeOutput::StartURL( const OUString &rUrl, const OUString &rTarget
             0x8C,0x82,0x00,0xAA,0x00,0x4B,0xA9,0x0B
         };
 
-        m_rWW8Export.pDataStrm->Write( MAGIC_B, sizeof(MAGIC_B) );
+        m_rWW8Export.pDataStrm->WriteBytes(MAGIC_B, sizeof(MAGIC_B));
         SwWW8Writer::WriteLong( *m_rWW8Export.pDataStrm, 2 * ( sURL.getLength() + 1 ) );
         SwWW8Writer::WriteString16( *m_rWW8Export.pDataStrm, sURL, true );
     }
@@ -1684,7 +1684,7 @@ OUString SwWW8AttrIter::GetSnippet(const OUString &rStr, sal_Int32 nAktPos,
             rStr, nAktPos, g_pBreakIt->GetLocale(nLanguage),
             i18n::WordType::ANYWORD_IGNOREWHITESPACES ) )
         {
-            aSnippet = OUString(rStr[nAktPos]) + aSnippet.copy(1);
+            aSnippet = OUStringLiteral1(rStr[nAktPos]) + aSnippet.copy(1);
         }
     }
     m_rExport.m_aCurrentCharPropStarts.pop();
@@ -2133,7 +2133,8 @@ void MSWordExportBase::OutputTextNode( const SwTextNode& rNode )
     if ( aAttrIter.RequiresImplicitBookmark() )
     {
         OUString sBkmkName =  "_toc" + OUString::number( rNode.GetIndex() );
-        AppendWordBookmark( sBkmkName );
+        // Add a bookmark converted to a Word name.
+        AppendBookmark( BookmarkToWord( sBkmkName ) );
     }
 
     const OUString& aStr( rNode.GetText() );
@@ -2173,9 +2174,14 @@ void MSWordExportBase::OutputTextNode( const SwTextNode& rNode )
             2) Ensure that it is a text node and not in a fly.
             3) If the anchor is associated with a text node with empty text then we ignore.
         */
-        if ( rNode.IsTextNode() && aStr != aStringForImage && !aStr.isEmpty() &&
-            !rNode.GetFlyFormat() && aAttrIter.IsAnchorLinkedToThisNode(rNode.GetIndex()))
+        if( rNode.IsTextNode()
+            && aStr != aStringForImage && !aStr.isEmpty()
+            && !rNode.GetFlyFormat()
+            && !(IsInTable() && !AllowPostponedTextInTable())
+            && aAttrIter.IsAnchorLinkedToThisNode(rNode.GetIndex()) )
+        {
             bPostponeWritingText = true ;
+        }
 
         nStateOfFlyFrame = aAttrIter.OutFlys( nAktPos );
         AttrOutput().SetStateOfFlyFrame( nStateOfFlyFrame );
@@ -2480,7 +2486,7 @@ void MSWordExportBase::OutputTextNode( const SwTextNode& rNode )
             const SwTableFormat* pTabFormat = pTable->GetFrameFormat();
             if (pTabFormat != nullptr)
             {
-                if (pTabFormat->GetBreak().GetBreak() == SVX_BREAK_PAGE_BEFORE)
+                if (pTabFormat->GetBreak().GetBreak() == SvxBreak::PageBefore)
                     AttrOutput().PageBreakBefore(true);
             }
         }
@@ -2686,7 +2692,7 @@ void MSWordExportBase::OutputTextNode( const SwTextNode& rNode )
             const SvxFormatBreakItem* pBreakAtParaStyle =
                 &(ItemGet<SvxFormatBreakItem>(rNode.GetSwAttrSet(), RES_BREAK));
             if ( pBreakAtParaStyle &&
-                 pBreakAtParaStyle->GetBreak() == SVX_BREAK_PAGE_AFTER )
+                 pBreakAtParaStyle->GetBreak() == SvxBreak::PageAfter )
             {
                 if ( !pTmpSet )
                 {
@@ -2852,8 +2858,8 @@ bool MSWordExportBase::NoPageBreakSection( const SfxItemSet* pSet )
                 SvxBreak eBreak = static_cast<const SvxFormatBreakItem*>(pI)->GetBreak();
                 switch (eBreak)
                 {
-                    case SVX_BREAK_PAGE_BEFORE:
-                    case SVX_BREAK_PAGE_AFTER:
+                    case SvxBreak::PageBefore:
+                    case SvxBreak::PageAfter:
                         bNoPageBreak = false;
                         break;
                     default:

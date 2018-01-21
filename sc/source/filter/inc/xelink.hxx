@@ -26,6 +26,7 @@
 #include "xehelper.hxx"
 #include "xeformula.hxx"
 #include "externalrefmgr.hxx"
+#include <o3tl/typed_flags_set.hxx>
 #include <memory>
 
 struct ScSingleRefData;
@@ -43,6 +44,19 @@ Classes for export of different kinds of internal/external references.
 ============================================================================ */
 
 // Excel sheet indexes ========================================================
+
+enum class ExcTabBufFlags : sal_uInt8 {
+    NONE     = 0x00,
+    Ignore   = 0x01,     /// Sheet will be ignored completely.
+    Extern   = 0x02,     /// Sheet is linked externally.
+    SkipMask = 0x03,     /// Sheet will be skipped, if any flag is set.
+    Visible  = 0x10,     /// Sheet is visible.
+    Selected = 0x20,     /// Sheet is selected.
+    Mirrored = 0x40      /// Sheet is mirrored (right-to-left).
+};
+namespace o3tl {
+    template<> struct typed_flags<ExcTabBufFlags> : is_typed_flags<ExcTabBufFlags, 0x73> {};
+}
 
 /** Stores the correct Excel sheet index for each Calc sheet.
     @descr  The class knows all sheets which will not exported
@@ -91,9 +105,9 @@ public:
 
 private:
     /** Returns true, if any of the passed flags is set for the specified Calc sheet. */
-    bool                GetFlag( SCTAB nScTab, sal_uInt8 nFlags ) const;
+    bool                GetFlag( SCTAB nScTab, ExcTabBufFlags nFlags ) const;
     /** Sets or clears (depending on bSet) all passed flags for the specified Calc sheet. */
-    void                SetFlag( SCTAB nScTab, sal_uInt8 nFlags, bool bSet = true );
+    void                SetFlag( SCTAB nScTab, ExcTabBufFlags nFlags, bool bSet = true );
 
     /** Searches for sheets not to be exported. */
     void                CalcXclIndexes();
@@ -104,10 +118,10 @@ private:
     /** Data structure with information about one Calc sheet. */
     struct XclExpTabInfoEntry
     {
-        OUString       maScName;
+        OUString            maScName;
         sal_uInt16          mnXclTab;
-        sal_uInt8           mnFlags;
-        inline explicit     XclExpTabInfoEntry() : mnXclTab( 0 ), mnFlags( 0 ) {}
+        ExcTabBufFlags      mnFlags;
+        inline explicit     XclExpTabInfoEntry() : mnXclTab( 0 ), mnFlags( ExcTabBufFlags::NONE ) {}
     };
 
     typedef ::std::vector< XclExpTabInfoEntry > XclExpTabInfoVec;
@@ -135,7 +149,7 @@ class XclExpLinkManager : public XclExpRecordBase, protected XclExpRoot
 {
 public:
     explicit            XclExpLinkManager( const XclExpRoot& rRoot );
-    virtual             ~XclExpLinkManager();
+    virtual             ~XclExpLinkManager() override;
 
     /** Searches for an EXTERNSHEET index for the given Calc sheet.
         @descr  See above for the meaning of EXTERNSHEET indexes.
@@ -157,13 +171,13 @@ public:
     void                FindExtSheet( sal_uInt16& rnExtSheet,
                             sal_uInt16& rnFirstXclTab, sal_uInt16& rnLastXclTab,
                             SCTAB nFirstScTab, SCTAB nLastScTab,
-                            XclExpRefLogEntry* pRefLogEntry = nullptr );
+                            XclExpRefLogEntry* pRefLogEntry );
     /** Searches for a special EXTERNSHEET index for the own document. */
     sal_uInt16          FindExtSheet( sal_Unicode cCode );
 
     void                FindExtSheet( sal_uInt16 nFileId, const OUString& rTabName, sal_uInt16 nXclTabSpan,
                                       sal_uInt16& rnExtSheet, sal_uInt16& rnFirstSBTab, sal_uInt16& rnLastSBTab,
-                                      XclExpRefLogEntry* pRefLogEntry = nullptr );
+                                      XclExpRefLogEntry* pRefLogEntry );
 
     /** Stores the cell with the given address in a CRN record list. */
     void StoreCell( const ScSingleRefData& rRef, const ScAddress& rPos );

@@ -160,11 +160,12 @@ void Window::ImplCallMouseMove( sal_uInt16 nMouseCode, bool bModChanged )
 
 void Window::ImplGenerateMouseMove()
 {
-    if ( !mpWindowImpl->mpFrameData->mnMouseMoveId )
+    if ( mpWindowImpl && mpWindowImpl->mpFrameData &&
+         !mpWindowImpl->mpFrameData->mnMouseMoveId )
         mpWindowImpl->mpFrameData->mnMouseMoveId = Application::PostUserEvent( LINK( mpWindowImpl->mpFrameWindow, Window, ImplGenerateMouseMoveHdl ), nullptr, true );
 }
 
-IMPL_LINK_NOARG_TYPED(Window, ImplGenerateMouseMoveHdl, void*, void)
+IMPL_LINK_NOARG(Window, ImplGenerateMouseMoveHdl, void*, void)
 {
     mpWindowImpl->mpFrameData->mnMouseMoveId = nullptr;
     vcl::Window* pCaptureWin = ImplGetSVData()->maWinData.mpCaptureWin;
@@ -748,9 +749,9 @@ Reference< css::datatransfer::dnd::XDragSource > Window::GetDragSource()
                     aDropTargetSN = "com.sun.star.datatransfer.dnd.X11DropTarget";
 
                     aDragSourceAL[ 0 ] = makeAny( Application::GetDisplayConnection() );
-                    aDragSourceAL[ 1 ] = makeAny( (sal_Size)(pEnvData->aShellWindow) );
+                    aDragSourceAL[ 1 ] = makeAny(static_cast<sal_IntPtr>(pEnvData->aShellWindow));
                     aDropTargetAL[ 0 ] = makeAny( Application::GetDisplayConnection() );
-                    aDropTargetAL[ 1 ] = makeAny( (sal_Size)(pEnvData->aShellWindow) );
+                    aDropTargetAL[ 1 ] = makeAny(static_cast<sal_IntPtr>(pEnvData->aShellWindow));
 #endif
                     if( !aDragSourceSN.isEmpty() )
                         mpWindowImpl->mpFrameData->mxDragSource.set(

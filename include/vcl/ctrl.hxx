@@ -72,7 +72,7 @@ protected:
             if the Control instance has been destroyed in any of the call
     */
     bool        ImplCallEventListenersAndHandler(
-                    sal_uLong nEvent, std::function<void()> callHandler
+                    sal_uLong nEvent, std::function<void()> const & callHandler
                 );
 
     /** draws the given text onto the given device
@@ -126,14 +126,11 @@ public:
 
 public:
     explicit        Control( vcl::Window* pParent, WinBits nWinStyle = 0 );
-    explicit        Control( vcl::Window* pParent, const ResId& );
-    virtual         ~Control();
+    virtual         ~Control() override;
     virtual void    dispose() override;
 
     virtual void    EnableRTL ( bool bEnable = true ) override;
 
-    virtual void    GetFocus() override;
-    virtual void    LoseFocus() override;
     virtual bool    Notify( NotifyEvent& rNEvt ) override;
     virtual void    StateChanged( StateChangedType nStateChange ) override;
     virtual void    Resize() override;

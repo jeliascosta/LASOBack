@@ -39,11 +39,9 @@ class SbModule;
 class SbiFactory : public SbxFactory
 {
 public:
-    virtual SbxBase* Create( sal_uInt16 nSbxId, sal_uInt32 = SBXCR_SBX ) override;
+    virtual SbxBase* Create( sal_uInt16 nSbxId, sal_uInt32 ) override;
     virtual SbxObject* CreateObject( const OUString& ) override;
 };
-
-typedef ::std::vector< OUString > StringVector;
 
 struct SbClassData
 {
@@ -51,7 +49,7 @@ struct SbClassData
 
     // types this module depends on because of use in Dim As New <type>
     // needed for initialization order of class modules
-    StringVector    maRequiredTypes;
+    std::vector< OUString >    maRequiredTypes;
 
     SbClassData();
     ~SbClassData()
@@ -67,12 +65,12 @@ class BASIC_DLLPUBLIC SbClassFactory : public SbxFactory
 
 public:
     SbClassFactory();
-    virtual ~SbClassFactory();
+    virtual ~SbClassFactory() override;
 
     void AddClassModule( SbModule* pClassModule );
     void RemoveClassModule( SbModule* pClassModule );
 
-    virtual SbxBase* Create( sal_uInt16 nSbxId, sal_uInt32 = SBXCR_SBX ) override;
+    virtual SbxBase* Create( sal_uInt16 nSbxId, sal_uInt32 ) override;
     virtual SbxObject* CreateObject( const OUString& ) override;
 
     SbModule* FindClass( const OUString& rClassName );
@@ -96,7 +94,7 @@ struct SbiGlobals
     SbError         nCode;
     sal_Int32       nLine;
     sal_Int32       nCol1,nCol2;    // from... to...
-    bool            bCompiler;      // flag for compiler error
+    bool            bCompilerError; // flag for compiler error
     bool            bGlobalInitErr;
     bool            bRunInit;       // true, if RunInit active from the Basic
     OUString        aErrMsg;        // buffer for GetErrorText()

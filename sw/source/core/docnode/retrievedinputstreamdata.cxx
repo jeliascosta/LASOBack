@@ -39,7 +39,7 @@ SwRetrievedInputStreamDataManager& SwRetrievedInputStreamDataManager::GetManager
 }
 
 SwRetrievedInputStreamDataManager::tDataKey SwRetrievedInputStreamDataManager::ReserveData(
-                        std::weak_ptr< SwAsyncRetrieveInputStreamThreadConsumer > pThreadConsumer )
+                        std::weak_ptr< SwAsyncRetrieveInputStreamThreadConsumer > const & pThreadConsumer )
 {
     osl::MutexGuard aGuard(maMutex);
 
@@ -63,7 +63,7 @@ SwRetrievedInputStreamDataManager::tDataKey SwRetrievedInputStreamDataManager::R
 
 void SwRetrievedInputStreamDataManager::PushData(
         const tDataKey nDataKey,
-        css::uno::Reference<css::io::XInputStream> xInputStream,
+        css::uno::Reference<css::io::XInputStream> const & xInputStream,
         const bool bIsStreamReadOnly )
 {
     osl::MutexGuard aGuard(maMutex);
@@ -122,7 +122,7 @@ bool SwRetrievedInputStreamDataManager::PopData( const tDataKey nDataKey,
     #i73788#
     Note: This method has to be run in the main thread.
 */
-IMPL_LINK_TYPED( SwRetrievedInputStreamDataManager,
+IMPL_LINK( SwRetrievedInputStreamDataManager,
            LinkedInputStreamReady,
            void*, p, void )
 {

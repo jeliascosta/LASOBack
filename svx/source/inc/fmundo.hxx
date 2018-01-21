@@ -89,8 +89,8 @@ public:
                           Action _eAction,
                           const css::uno::Reference< css::container::XIndexContainer >& xCont,
                           const css::uno::Reference< css::uno::XInterface >& xElem,
-                          sal_Int32 nIdx = -1);
-    virtual ~FmUndoContainerAction();
+                          sal_Int32 nIdx);
+    virtual ~FmUndoContainerAction() override;
 
     virtual void Undo() override;
     virtual void Redo() override;
@@ -109,7 +109,7 @@ class FmUndoModelReplaceAction : public SdrUndoAction
 
 public:
     FmUndoModelReplaceAction(FmFormModel& rMod, SdrUnoObj* pObject, const css::uno::Reference< css::awt::XControlModel>& xReplaced);
-    virtual ~FmUndoModelReplaceAction();
+    virtual ~FmUndoModelReplaceAction() override;
 
     virtual void Undo() override;
     virtual void Redo() override { Undo(); }
@@ -120,7 +120,7 @@ public:
 };
 
 
-class SVX_DLLPRIVATE FmXUndoEnvironment
+class FmXUndoEnvironment
     : public ::cppu::WeakImplHelper<   css::beans::XPropertyChangeListener
                                     ,   css::container::XContainerListener
                                     ,   css::util::XModifyListener
@@ -139,7 +139,7 @@ class SVX_DLLPRIVATE FmXUndoEnvironment
 
 public:
     FmXUndoEnvironment(FmFormModel& _rModel);
-    virtual ~FmXUndoEnvironment();
+    virtual ~FmXUndoEnvironment() override;
 
     // UNO Anbindung
     //  SMART_UNO_DECLARATION(FmXUndoEnvironment, ::cppu::OWeakObject);

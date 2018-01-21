@@ -61,8 +61,8 @@ namespace dxcanvas
     }
 
     SpriteCanvasHelper::SpriteCanvasHelper() :
-        mpSpriteSurface( NULL ),
-        mpRedrawManager( NULL ),
+        mpSpriteSurface( nullptr ),
+        mpRedrawManager( nullptr ),
         mpRenderModule(),
         mpSurfaceProxy(),
         mpBackBuffer(),
@@ -79,7 +79,7 @@ namespace dxcanvas
     void SpriteCanvasHelper::init( SpriteCanvas&                                    rParent,
                                    ::canvas::SpriteRedrawManager&                   rManager,
                                    const IDXRenderModuleSharedPtr&                  rRenderModule,
-                                   const ::canvas::ISurfaceProxyManagerSharedPtr&   rSurfaceProxy,
+                                   const ::std::shared_ptr<canvas::ISurfaceProxyManager>&   rSurfaceProxy,
                                    const DXSurfaceBitmapSharedPtr&                  rBackBuffer,
                                    const ::basegfx::B2ISize&                        rOutputOffset )
     {
@@ -101,8 +101,8 @@ namespace dxcanvas
 
         mpBackBuffer.reset();
         mpRenderModule.reset();
-        mpRedrawManager = NULL;
-        mpSpriteSurface = NULL;
+        mpRedrawManager = nullptr;
+        mpSpriteSurface = nullptr;
 
         // forward to base
         CanvasHelper::disposing();

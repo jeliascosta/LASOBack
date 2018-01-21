@@ -79,7 +79,7 @@
 using namespace ::com::sun::star;
 
 
-sal_uInt16 SwDoc::GetTOIKeys( SwTOIKeyType eTyp, std::vector<OUString>& rArr ) const
+void SwDoc::GetTOIKeys( SwTOIKeyType eTyp, std::vector<OUString>& rArr ) const
 {
     rArr.clear();
 
@@ -105,8 +105,6 @@ sal_uInt16 SwDoc::GetTOIKeys( SwTOIKeyType eTyp, std::vector<OUString>& rArr ) c
                 rArr.push_back( sStr );
         }
     }
-
-    return rArr.size();
 }
 
 /// Get current table of contents Mark.
@@ -156,26 +154,38 @@ void SwDoc::DeleteTOXMark( const SwTOXMark* pTOXMark )
     SwTextNode& rTextNd = const_cast<SwTextNode&>(pTextTOXMark->GetTextNode());
     OSL_ENSURE( rTextNd.GetpSwpHints(), "cannot be deleted" );
 
-    std::unique_ptr<SwRegHistory> aRHst;
-    if (GetIDocumentUndoRedo().DoesUndo())
+    if (pTextTOXMark->HasDummyChar())
     {
-        // save attributes for Undo
-        SwUndoResetAttr* pUndo = new SwUndoResetAttr(
-            SwPosition( rTextNd, SwIndex( &rTextNd, pTextTOXMark->GetStart() ) ),
-            RES_TXTATR_TOXMARK );
-        GetIDocumentUndoRedo().AppendUndo( pUndo );
+        // tdf#106377 don't use SwUndoResetAttr, it uses NOTXTATRCHR
+        SwPaM tmp(rTextNd, pTextTOXMark->GetStart(),
+                  rTextNd, pTextTOXMark->GetStart()+1);
+        assert(rTextNd.GetText()[pTextTOXMark->GetStart()] == CH_TXTATR_INWORD);
+        getIDocumentContentOperations().DeleteRange(tmp);
+    }
+    else
+    {
+        std::unique_ptr<SwRegHistory> aRHst;
+        if (GetIDocumentUndoRedo().DoesUndo())
+        {
+            // save attributes for Undo
+            SwUndoResetAttr* pUndo = new SwUndoResetAttr(
+                SwPosition( rTextNd, SwIndex( &rTextNd, pTextTOXMark->GetStart() ) ),
+                RES_TXTATR_TOXMARK );
+            GetIDocumentUndoRedo().AppendUndo( pUndo );
 
-        aRHst.reset(new SwRegHistory(rTextNd, &pUndo->GetHistory()));
-        rTextNd.GetpSwpHints()->Register(aRHst.get());
+            aRHst.reset(new SwRegHistory(rTextNd, &pUndo->GetHistory()));
+            rTextNd.GetpSwpHints()->Register(aRHst.get());
+        }
+
+        rTextNd.DeleteAttribute( const_cast<SwTextTOXMark*>(pTextTOXMark) );
+
+        if (GetIDocumentUndoRedo().DoesUndo())
+        {
+            if( rTextNd.GetpSwpHints() )
+                rTextNd.GetpSwpHints()->DeRegister();
+        }
     }
 
-    rTextNd.DeleteAttribute( const_cast<SwTextTOXMark*>(pTextTOXMark) );
-
-    if (GetIDocumentUndoRedo().DoesUndo())
-    {
-        if( rTextNd.GetpSwpHints() )
-            rTextNd.GetpSwpHints()->DeRegister();
-    }
     getIDocumentState().SetModified();
 }
 
@@ -691,7 +701,7 @@ static const SwTextNode* lcl_FindChapterNode( const SwNode& rNd, sal_uInt8 nLvl 
         // then find the "Anchor" (Body) position
         Point aPt;
         SwNode2Layout aNode2Layout( *pNd, pNd->GetIndex() );
-        const SwFrame* pFrame = aNode2Layout.GetFrame( &aPt, nullptr );
+        const SwFrame* pFrame = aNode2Layout.GetFrame( &aPt );
 
         if( pFrame )
         {
@@ -785,8 +795,8 @@ void SwTOXBaseSection::Update(const SfxItemSet* pAttr,
             const SwContentNode* pNdAfterTOX = pSectNd->GetNodes().GoNext( &aIdx );
             const SwAttrSet& aNdAttrSet = pNdAfterTOX->GetSwAttrSet();
             const SvxBreak eBreak = aNdAttrSet.GetBreak().GetBreak();
-            if ( !( eBreak == SVX_BREAK_PAGE_BEFORE ||
-                    eBreak == SVX_BREAK_PAGE_BOTH )
+            if ( !( eBreak == SvxBreak::PageBefore ||
+                    eBreak == SvxBreak::PageBoth )
                )
             {
                 pDefaultPageDesc = pNdAfterTOX->FindPageDesc();
@@ -1273,7 +1283,7 @@ void SwTOXBaseSection::UpdateSequence( const SwTextNode* pOwnChapterNode )
         {
             const SwSetExpField& rSeqField = dynamic_cast<const SwSetExpField&>(*(pFormatField->GetField()));
             const OUString sName = GetSequenceName()
-                + OUStringLiteral1<cSequenceMarkSeparator>()
+                + OUStringLiteral1(cSequenceMarkSeparator)
                 + OUString::number( rSeqField.GetSeqNumber() );
             SwTOXPara * pNew = new SwTOXPara( rTextNode, nsSwTOXElement::TOX_SEQUENCE, 1, sName );
             // set indexes if the number or the reference text are to be displayed
@@ -1788,7 +1798,7 @@ void SwTOXBaseSection::UpdatePageNum_( SwTextNode* pNd,
 
         // search by name
         SwDoc* pDoc = pNd->GetDoc();
-        sal_uInt16 nPoolId = SwStyleNameMapper::GetPoolIdFromUIName( GetMainEntryCharStyle(), nsSwGetPoolIdFromName::GET_POOLID_CHRFMT );
+        sal_uInt16 nPoolId = SwStyleNameMapper::GetPoolIdFromUIName( GetMainEntryCharStyle(), SwGetPoolIdFromName::ChrFmt );
         SwCharFormat* pCharFormat = nullptr;
         if(USHRT_MAX != nPoolId)
             pCharFormat = pDoc->getIDocumentStylePoolAccess().GetCharFormatFromPool(nPoolId);

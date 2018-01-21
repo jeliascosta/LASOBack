@@ -49,7 +49,6 @@ OGenericUnoDialog::OGenericUnoDialog(const Reference< XComponentContext >& _rxCo
         :OPropertyContainer(GetBroadcastHelper())
         ,m_pDialog(nullptr)
         ,m_bExecuting(false)
-        ,m_bCanceled(false)
         ,m_bTitleAmbiguous(true)
         ,m_bInitialized( false )
         ,m_bNeedInitialization( false )
@@ -212,7 +211,6 @@ sal_Int16 SAL_CALL OGenericUnoDialog::execute(  ) throw(RuntimeException, std::e
                     *this
                   );
 
-        m_bCanceled = false;
         m_bExecuting = true;
 
         if ( !impl_ensureDialog_lck() )
@@ -225,12 +223,6 @@ sal_Int16 SAL_CALL OGenericUnoDialog::execute(  ) throw(RuntimeException, std::e
     sal_Int16 nReturn(0);
     if ( pDialogToExecute )
         nReturn = pDialogToExecute->Execute();
-
-    {
-        ::osl::MutexGuard aExecutionGuard(m_aExecutionMutex);
-        if (m_bCanceled)
-            nReturn = RET_CANCEL;
-    }
 
     {
         ::osl::MutexGuard aGuard(m_aMutex);
@@ -317,7 +309,7 @@ void OGenericUnoDialog::destroyDialog()
 }
 
 
-IMPL_LINK_TYPED( OGenericUnoDialog, OnDialogDying, VclWindowEvent&, _rEvent, void )
+IMPL_LINK( OGenericUnoDialog, OnDialogDying, VclWindowEvent&, _rEvent, void )
 {
     OSL_ENSURE( _rEvent.GetWindow() == m_pDialog, "OGenericUnoDialog::OnDialogDying: where does this come from?" );
     if ( _rEvent.GetId() == VCLEVENT_OBJECT_DYING )

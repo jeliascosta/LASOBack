@@ -38,14 +38,13 @@
 #include <com/sun/star/ui/XSidebar.hpp>
 
 #include <boost/optional.hpp>
-#include <cppuhelper/compbase4.hxx>
-#include <cppuhelper/compbase5.hxx>
+#include <cppuhelper/compbase.hxx>
 #include <cppuhelper/basemutex.hxx>
 
 
 namespace
 {
-    typedef ::cppu::WeakComponentImplHelper5 <
+    typedef cppu::WeakComponentImplHelper <
         css::ui::XContextChangeEventListener,
         css::beans::XPropertyChangeListener,
         css::ui::XSidebar,
@@ -74,7 +73,7 @@ public:
     SidebarController(
         SidebarDockingWindow* pParentWindow,
         const css::uno::Reference<css::frame::XFrame>& rxFrame);
-    virtual ~SidebarController();
+    virtual ~SidebarController() override;
     SidebarController(const SidebarController&) = delete;
     SidebarController& operator=( const SidebarController& ) = delete;
 
@@ -169,6 +168,9 @@ public:
 
     void disposeDecks();
 
+    void FadeIn();
+    void FadeOut();
+
 private:
 
     VclPtr<Deck> mpCurrentDeck;
@@ -195,7 +197,6 @@ private:
     */
     ::boost::optional<bool> mbIsDeckRequestedOpen;
     ::boost::optional<bool> mbIsDeckOpen;
-    bool mbCanDeckBeOpened;
 
     /** Before the deck is closed the sidebar width is saved into this variable,
         so that it can be restored when the deck is reopened.
@@ -215,7 +216,7 @@ private:
     */
     VclPtr<vcl::Window> mpCloseIndicator;
 
-    DECL_LINK_TYPED(WindowEventHandler, VclWindowEvent&, void);
+    DECL_LINK(WindowEventHandler, VclWindowEvent&, void);
     /** Make maRequestedContext the current context.
     */
     void UpdateConfigurations();
@@ -243,9 +244,9 @@ private:
     void ShowPopupMenu (
         const Rectangle& rButtonBox,
         const ::std::vector<TabBar::DeckMenuData>& rMenuData) const;
-    std::shared_ptr<PopupMenu> CreatePopupMenu (
+    VclPtr<PopupMenu> CreatePopupMenu (
         const ::std::vector<TabBar::DeckMenuData>& rMenuData) const;
-    DECL_LINK_TYPED(OnMenuItemSelected, Menu*, bool);
+    DECL_LINK(OnMenuItemSelected, Menu*, bool);
     void BroadcastPropertyChange();
 
     /** The close of the deck changes the width of the child window.

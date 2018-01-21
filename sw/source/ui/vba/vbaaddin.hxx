@@ -28,12 +28,11 @@ class SwVbaAddin : public SwVbaAddin_BASE
 {
 private:
     OUString msFileURL;
-    bool mbAutoload;
     bool mbInstalled;
 
 public:
     SwVbaAddin( const css::uno::Reference< ooo::vba::XHelperInterface >& rParent, const css::uno::Reference< css::uno::XComponentContext >& rContext, const OUString& rFileURL ) throw ( css::uno::RuntimeException );
-    virtual ~SwVbaAddin();
+    virtual ~SwVbaAddin() override;
 
     // Attributes
     virtual OUString SAL_CALL getName() throw (css::uno::RuntimeException, std::exception) override;

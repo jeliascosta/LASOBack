@@ -33,7 +33,7 @@ using namespace com::sun::star::io;
 using namespace com::sun::star::lang;
 using namespace com::sun::star::container;
 
-namespace // private
+namespace
 {
     bool isValidFlavor( const DataFlavor& aFlavor )
     {
@@ -42,8 +42,8 @@ namespace // private
       return ((len > 0) && ((dtype == cppu::UnoType<Sequence<sal_Int8>>::get()) || (dtype == cppu::UnoType<OUString>::get())));
     }
 
-bool cmpAllContentTypeParameter(const Reference<XMimeContentType> xLhs,
-                                               const Reference<XMimeContentType> xRhs)
+bool cmpAllContentTypeParameter(const Reference<XMimeContentType> & xLhs,
+                                               const Reference<XMimeContentType> & xRhs)
 {
   Sequence<OUString> xLhsFlavors = xLhs->getParameters();
   Sequence<OUString> xRhsFlavors = xRhs->getParameters();
@@ -76,9 +76,9 @@ bool cmpAllContentTypeParameter(const Reference<XMimeContentType> xLhs,
   return true;
 }
 
-} // namespace private
+} // unnamed namespace
 
-OSXTransferable::OSXTransferable(const Reference<XMimeContentTypeFactory> rXMimeCntFactory,
+OSXTransferable::OSXTransferable(const Reference<XMimeContentTypeFactory> & rXMimeCntFactory,
                                  DataFlavorMapperPtr_t pDataFlavorMapper,
                                  NSPasteboard* pasteboard) :
   mrXMimeCntFactory(rXMimeCntFactory),
@@ -105,7 +105,7 @@ Any SAL_CALL OSXTransferable::getTransferData( const DataFlavor& aFlavor )
     }
 
   bool bInternal(false);
-  NSString* sysFormat =
+  NSString const * sysFormat =
       (aFlavor.MimeType.startsWith("image/png"))
       ? DataFlavorMapper::openOfficeImageToSystemFlavor( mPasteboard )
       : mDataFlavorMapper->openOfficeToSystemFlavor(aFlavor, bInternal);
@@ -113,12 +113,12 @@ Any SAL_CALL OSXTransferable::getTransferData( const DataFlavor& aFlavor )
 
   if ([sysFormat caseInsensitiveCompare: NSFilenamesPboardType] == NSOrderedSame)
     {
-      NSArray* sysData = [mPasteboard propertyListForType: sysFormat];
+      NSArray* sysData = [mPasteboard propertyListForType: const_cast<NSString *>(sysFormat)];
       dp = DataFlavorMapper::getDataProvider(sysFormat, sysData);
     }
   else
     {
-      NSData* sysData = [mPasteboard dataForType: sysFormat];
+      NSData* sysData = [mPasteboard dataForType: const_cast<NSString *>(sysFormat)];
       dp = DataFlavorMapper::getDataProvider(sysFormat, sysData);
     }
 

@@ -52,7 +52,7 @@ class PosSizePropertyPanel
     public ::sfx2::sidebar::ControllerItem::ItemUpdateReceiverInterface
 {
 public:
-    virtual ~PosSizePropertyPanel();
+    virtual ~PosSizePropertyPanel() override;
     virtual void dispose() override;
 
     static VclPtr<vcl::Window> Create(
@@ -65,7 +65,7 @@ public:
         const DataChangedEvent& rEvent) override;
 
     virtual void HandleContextChange(
-        const ::sfx2::sidebar::EnumContext& rContext) override;
+        const vcl::EnumContext& rContext) override;
 
     virtual void NotifyItemUpdate(
         const sal_uInt16 nSId,
@@ -113,12 +113,11 @@ private:
     const SdrView*                          mpView;
     sal_uInt32                              mlOldWidth;
     sal_uInt32                              mlOldHeight;
-    RECT_POINT                              meRP;
     Point                                   maAnchorPos;    //anchor position
     long                                    mlRotX;
     long                                    mlRotY;
     Fraction                                maUIScale;
-    SfxMapUnit                              mePoolUnit;
+    MapUnit                                 mePoolUnit;
     FieldUnit                               meDlgUnit;
 
     // Controller Items
@@ -136,11 +135,9 @@ private:
     ::sfx2::sidebar::ControllerItem         maAutoHeightControl;
     ::sfx2::sidebar::ControllerItem         m_aMetricCtl;
 
-    ::sfx2::sidebar::EnumContext            maContext;
+    vcl::EnumContext                        maContext;
     SfxBindings*                            mpBindings;
 
-    /// bitfield
-    bool                                    mbMtrPosXMirror : 1;
     bool                                    mbSizeProtected : 1;
     bool                                    mbPositionProtected : 1;
     bool                                    mbAutoWidth : 1;
@@ -150,18 +147,16 @@ private:
 
     css::uno::Reference<css::ui::XSidebar> mxSidebar;
 
-    DECL_LINK_TYPED( ChangePosXHdl, Edit&, void );
-    DECL_LINK_TYPED( ChangePosYHdl, Edit&, void );
-    DECL_LINK_TYPED( ChangeWidthHdl, Edit&, void );
-    DECL_LINK_TYPED( ChangeHeightHdl, Edit&, void );
-    DECL_LINK_TYPED( ClickAutoHdl, Button*, void );
-    DECL_LINK_TYPED( AngleModifiedHdl, Edit&, void );
-    DECL_LINK_TYPED( RotationHdl, svx::DialControl*, void );
-    DECL_LINK_TYPED( FlipHdl, ToolBox *, void );
+    DECL_LINK( ChangePosXHdl, Edit&, void );
+    DECL_LINK( ChangePosYHdl, Edit&, void );
+    DECL_LINK( ChangeWidthHdl, Edit&, void );
+    DECL_LINK( ChangeHeightHdl, Edit&, void );
+    DECL_LINK( ClickAutoHdl, Button*, void );
+    DECL_LINK( AngleModifiedHdl, Edit&, void );
+    DECL_LINK( RotationHdl, svx::DialControl*, void );
+    DECL_LINK( FlipHdl, ToolBox *, void );
 
     void Initialize();
-    void executePosX();
-    void executePosY();
     void executeSize();
 
     void MetricState( SfxItemState eState, const SfxPoolItem* pState );

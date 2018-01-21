@@ -28,7 +28,6 @@
 #include <vcl/group.hxx>
 #include <vcl/lstbox.hxx>
 #include <vcl/timer.hxx>
-#include <svtools/stdctrl.hxx>
 
 class Printer;
 class QueueInfo;
@@ -50,13 +49,13 @@ private:
 
     SVT_DLLPRIVATE void         ImplSetInfo();
 
-                    DECL_DLLPRIVATE_LINK_TYPED( ImplPropertiesHdl, Button*, void );
-                    DECL_DLLPRIVATE_LINK_TYPED( ImplChangePrinterHdl, ListBox&, void );
-                    DECL_DLLPRIVATE_LINK_TYPED( ImplStatusHdl, Timer*, void );
+                    DECL_DLLPRIVATE_LINK( ImplPropertiesHdl, Button*, void );
+                    DECL_DLLPRIVATE_LINK( ImplChangePrinterHdl, ListBox&, void );
+                    DECL_DLLPRIVATE_LINK( ImplStatusHdl, Timer*, void );
 
 public:
                     PrinterSetupDialog( vcl::Window* pWindow );
-    virtual         ~PrinterSetupDialog();
+    virtual         ~PrinterSetupDialog() override;
     virtual void    dispose() override;
 
     void            SetPrinter( Printer* pNewPrinter ) { mpPrinter = pNewPrinter; }

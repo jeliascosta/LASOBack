@@ -57,7 +57,7 @@ OSectionWindow::OSectionWindow( OViewsWindow* _pParent,const uno::Reference< rep
     SetMapMode( rMapMode );
     ImplInitSettings();
     // TRY
-    m_aSplitter->SetMapMode( MapMode( MAP_100TH_MM ) );
+    m_aSplitter->SetMapMode( MapMode( MapUnit::Map100thMM ) );
     m_aSplitter->SetStartSplitHdl(LINK(this, OSectionWindow,StartSplitHdl));
     m_aSplitter->SetSplitHdl(LINK(this, OSectionWindow,SplitHdl));
     m_aSplitter->SetEndSplitHdl(LINK(this, OSectionWindow,EndSplitHdl));
@@ -295,7 +295,7 @@ void OSectionWindow::setMarked(bool _bMark)
     m_aEndMarker->setMarked(_bMark);
 }
 
-IMPL_LINK_TYPED( OSectionWindow, Collapsed, OColorListener&, _rMarker, void )
+IMPL_LINK( OSectionWindow, Collapsed, OColorListener&, _rMarker, void )
 {
     bool bShow = !_rMarker.isCollapsed();
     m_aReportSection->Show(bShow);
@@ -316,18 +316,18 @@ void OSectionWindow::zoom(const Fraction& _aZoom)
     Invalidate();
 }
 
-IMPL_LINK_NOARG_TYPED( OSectionWindow, StartSplitHdl, Splitter*, void)
+IMPL_LINK_NOARG( OSectionWindow, StartSplitHdl, Splitter*, void)
 {
     const OUString sUndoAction( ModuleRes( RID_STR_UNDO_CHANGE_SIZE ) );
-    getViewsWindow()->getView()->getReportView()->getController().getUndoManager().EnterListAction( sUndoAction, OUString() );
+    getViewsWindow()->getView()->getReportView()->getController().getUndoManager().EnterListAction( sUndoAction, OUString(), 0, -1 );
 }
 
-IMPL_LINK_NOARG_TYPED( OSectionWindow, EndSplitHdl, Splitter*, void )
+IMPL_LINK_NOARG( OSectionWindow, EndSplitHdl, Splitter*, void )
 {
     getViewsWindow()->getView()->getReportView()->getController().getUndoManager().LeaveListAction();
 }
 
-IMPL_LINK_TYPED( OSectionWindow, SplitHdl, Splitter*, _pSplitter, void )
+IMPL_LINK( OSectionWindow, SplitHdl, Splitter*, _pSplitter, void )
 {
     if ( !getViewsWindow()->getView()->getReportView()->getController().isEditable() )
     {

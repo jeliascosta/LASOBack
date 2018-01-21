@@ -43,8 +43,6 @@ class SD_DLLPUBLIC SdDocPreviewWin : public Control, public SfxListener
 protected:
     GDIMetaFile*    pMetaFile;
     Link<SdDocPreviewWin&,void> aClickHdl;
-    SfxObjectShell* mpObj;
-    sal_uInt16      mnShowPage;
     Color           maDocumentColor;
     rtl::Reference< sd::SlideShow > mxSlideShow;
 
@@ -61,15 +59,11 @@ protected:
 
 public:
                     SdDocPreviewWin( vcl::Window* pParent, const WinBits nStyle );
-                    virtual ~SdDocPreviewWin();
+                    virtual ~SdDocPreviewWin() override;
     virtual void    dispose() override;
-    void            SetObjectShell( SfxObjectShell* pObj, sal_uInt16 nShowPage = 0 );
     virtual void    Resize() override;
-    void            startPreview();
 
     virtual bool    Notify( NotifyEvent& rNEvt ) override;
-
-    void            SetClickHdl( const Link<SdDocPreviewWin&,void>& rLink ) { aClickHdl = rLink; }
 
     virtual void DataChanged( const DataChangedEvent& rDCEvt ) override;
 

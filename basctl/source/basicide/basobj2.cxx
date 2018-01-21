@@ -42,11 +42,12 @@ using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::container;
 
 extern "C" {
-    SAL_DLLPUBLIC_EXPORT rtl_uString* basicide_choose_macro( void* pOnlyInDocument_AsXModel, sal_Bool bChooseOnly, rtl_uString* pMacroDesc )
+    SAL_DLLPUBLIC_EXPORT rtl_uString* basicide_choose_macro( void* pOnlyInDocument_AsXModel, void* pDocFrame_AsXFrame, sal_Bool bChooseOnly, rtl_uString* pMacroDesc )
     {
         OUString aMacroDesc( pMacroDesc );
         Reference< frame::XModel > aDocument( static_cast< frame::XModel* >( pOnlyInDocument_AsXModel ) );
-        OUString aScriptURL = basctl::ChooseMacro( aDocument, bChooseOnly, aMacroDesc );
+        Reference< frame::XFrame > aDocFrame( static_cast< frame::XFrame* >( pDocFrame_AsXFrame ) );
+        OUString aScriptURL = basctl::ChooseMacro( aDocument, aDocFrame, bChooseOnly, aMacroDesc );
         rtl_uString* pScriptURL = aScriptURL.pData;
         rtl_uString_acquire( pScriptURL );
 
@@ -169,7 +170,7 @@ bool RenameModule (
 
     if (Shell* pShell = GetShell())
     {
-        if (ModulWindow* pWin = pShell->FindBasWin(rDocument, rLibName, rNewName, false, true))
+        if (VclPtr<ModulWindow> pWin = pShell->FindBasWin(rDocument, rLibName, rNewName, false, true))
         {
             // set new name in window
             pWin->SetName( rNewName );
@@ -209,10 +210,10 @@ namespace
     class MacroExecution
     {
     public:
-        DECL_STATIC_LINK_TYPED( MacroExecution, ExecuteMacroEvent, void*, void );
+        DECL_STATIC_LINK( MacroExecution, ExecuteMacroEvent, void*, void );
     };
 
-    IMPL_STATIC_LINK_TYPED( MacroExecution, ExecuteMacroEvent, void*, p, void )
+    IMPL_STATIC_LINK( MacroExecution, ExecuteMacroEvent, void*, p, void )
     {
         MacroExecutionData* i_pData = static_cast<MacroExecutionData*>(p);
         ENSURE_OR_RETURN_VOID( i_pData, "wrong MacroExecutionData" );
@@ -227,11 +228,13 @@ namespace
         if ( pData->aDocument.isDocument() )
             pUndoGuard.reset( new ::framework::DocumentUndoGuard( pData->aDocument.getDocument() ) );
 
-        RunMethod(pData->xMethod);
+        RunMethod( pData->xMethod.get() );
     }
 }
 
-OUString ChooseMacro( const uno::Reference< frame::XModel >& rxLimitToDocument, bool bChooseOnly, const OUString& rMacroDesc )
+OUString ChooseMacro( const uno::Reference< frame::XModel >& rxLimitToDocument,
+                      const uno::Reference< frame::XFrame >& xDocFrame,
+                      bool bChooseOnly, const OUString& rMacroDesc )
 {
     (void)rMacroDesc;
 
@@ -242,7 +245,7 @@ OUString ChooseMacro( const uno::Reference< frame::XModel >& rxLimitToDocument, 
     OUString aScriptURL;
     SbMethod* pMethod = nullptr;
 
-    ScopedVclPtrInstance< MacroChooser > pChooser( nullptr, true );
+    ScopedVclPtrInstance< MacroChooser > pChooser( nullptr, xDocFrame, true );
     if ( bChooseOnly || !SvtModuleOptions::IsBasicIDE() )
         pChooser->SetMode(MacroChooser::ChooseOnly);
 
@@ -289,12 +292,7 @@ OUString ChooseMacro( const uno::Reference< frame::XModel >& rxLimitToDocument, 
             }
 
             // name
-            OUString aName;
-            aName += pBasic->GetName();
-            aName += ".";
-            aName += pModule->GetName();
-            aName += ".";
-            aName += pMethod->GetName();
+            OUString aName = pBasic->GetName() + "." + pModule->GetName() + "." + pMethod->GetName();
 
             // location
             OUString aLocation;
@@ -342,12 +340,7 @@ OUString ChooseMacro( const uno::Reference< frame::XModel >& rxLimitToDocument, 
             // script URL
             if ( !bError )
             {
-                aScriptURL = "vnd.sun.star.script:" ;
-                aScriptURL += aName;
-                aScriptURL += "?language=" ;
-                aScriptURL += "Basic";
-                aScriptURL += "&location=" ;
-                aScriptURL += aLocation;
+                aScriptURL = "vnd.sun.star.script:" + aName + "?language=Basic&location=" + aLocation;
             }
 
             if ( !rxLimitToDocument.is() )
@@ -384,7 +377,7 @@ Sequence< OUString > GetMethodNames( const ScriptDocument& rDocument, const OUSt
         {
             xModule = new SbModule( rModName );
             xModule->SetSource32( aOUSource );
-            pMod = xModule;
+            pMod = xModule.get();
         }
 
         sal_uInt16 nCount = pMod->GetMethods()->Count();
@@ -434,9 +427,9 @@ bool HasMethod (
         {
             xModule = new SbModule( rModName );
             xModule->SetSource32( aOUSource );
-            pMod = xModule;
+            pMod = xModule.get();
         }
-        SbxArray* pMethods = pMod->GetMethods();
+        SbxArray* pMethods = pMod->GetMethods().get();
         if ( pMethods )
         {
             SbMethod* pMethod = static_cast<SbMethod*>(pMethods->Find( rMethName, SbxClassType::Method ));

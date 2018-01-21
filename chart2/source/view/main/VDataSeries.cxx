@@ -23,7 +23,6 @@
 #include "CommonConverters.hxx"
 #include "LabelPositionHelper.hxx"
 #include "ChartTypeHelper.hxx"
-#include "ContainerHelper.hxx"
 #include "DataSeriesHelper.hxx"
 #include "RegressionCurveHelper.hxx"
 #include <unonames.hxx>
@@ -726,7 +725,7 @@ double VDataSeries::getMaximumofAllDifferentYValues( sal_Int32 index ) const
     return fMax;
 }
 
-uno::Sequence< double > VDataSeries::getAllX() const
+uno::Sequence< double > const & VDataSeries::getAllX() const
 {
     if(!m_aValues_X.is() && !m_aValues_X.getLength() && m_nPointCount)
     {
@@ -739,7 +738,7 @@ uno::Sequence< double > VDataSeries::getAllX() const
     return m_aValues_X.Doubles;
 }
 
-uno::Sequence< double > VDataSeries::getAllY() const
+uno::Sequence< double > const & VDataSeries::getAllY() const
 {
     if(!m_aValues_Y.is() && !m_aValues_Y.getLength() && m_nPointCount)
     {

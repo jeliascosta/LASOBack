@@ -63,13 +63,17 @@ private:
 
     void Initialize();
 
-    DECL_LINK_TYPED( NewWidthModifiedHdl, Edit&, void );
-    DECL_LINK_TYPED( NewHeightModifiedHdl, Edit&, void );
-    DECL_LINK_TYPED( ResolutionModifiedHdl, Edit&, void );
-    DECL_LINK_TYPED( ToggleCompressionRB, RadioButton&, void );
-    DECL_LINK_TYPED( ToggleReduceResolutionRB, CheckBox&, void );
+    DECL_LINK( EndSlideHdl, Slider*, void );
+    DECL_LINK( NewInterpolationModifiedHdl, ListBox&, void );
+    DECL_LINK( NewQualityModifiedHdl, Edit&, void );
+    DECL_LINK( NewCompressionModifiedHdl, Edit&, void );
+    DECL_LINK( NewWidthModifiedHdl, Edit&, void );
+    DECL_LINK( NewHeightModifiedHdl, Edit&, void );
+    DECL_LINK( ResolutionModifiedHdl, Edit&, void );
+    DECL_LINK( ToggleCompressionRB, RadioButton&, void );
+    DECL_LINK( ToggleReduceResolutionRB, CheckBox&, void );
 
-    DECL_LINK_TYPED( CalculateClickHdl, Button*, void );
+    DECL_LINK( CalculateClickHdl, Button*, void );
 
     void Update();
     void UpdateNewWidthMF();
@@ -86,7 +90,7 @@ private:
 public:
     CompressGraphicsDialog( vcl::Window* pParent, SdrGrafObj* pGraphicObj, SfxBindings& rBindings );
     CompressGraphicsDialog( vcl::Window* pParent, Graphic& rGraphic, Size rViewSize100mm, Rectangle& rCropRectangle, SfxBindings& rBindings );
-    virtual ~CompressGraphicsDialog();
+    virtual ~CompressGraphicsDialog() override;
     virtual void dispose() override;
 
     SdrGrafObj* GetCompressedSdrGrafObj();

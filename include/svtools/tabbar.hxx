@@ -302,8 +302,6 @@ private:
     std::unique_ptr<TabBar_Impl> mpImpl;
 
     OUString        maEditText;
-    Color           maSelColor;
-    Color           maSelTextColor;
     Size            maWinSize;
     long            mnMaxPageWidth;
     long            mnCurMaxWidth;
@@ -322,14 +320,11 @@ private:
     bool            mbFormat : 1;
     bool            mbFirstFormat : 1;
     bool            mbSizeFormat : 1;
-    bool            mbAutoMaxWidth : 1;
     bool            mbInSwitching : 1;
     bool            mbAutoEditMode : 1;
     bool            mbEditCanceled : 1;
     bool            mbDropPos : 1;
     bool            mbInSelect : 1;
-    bool            mbSelColor : 1;
-    bool            mbSelTextColor : 1;
     bool            mbMirrored : 1;
     bool            mbScrollAlwaysEnabled : 1;
 
@@ -356,9 +351,9 @@ private:
     SVT_DLLPRIVATE void            ImplPrePaint(vcl::RenderContext& rRenderContext);
     SVT_DLLPRIVATE ImplTabBarItem* ImplGetLastTabBarItem( sal_uInt16 nItemCount );
 
-    DECL_DLLPRIVATE_LINK_TYPED(ImplClickHdl, Button*, void);
+    DECL_DLLPRIVATE_LINK(ImplClickHdl, Button*, void);
 
-    DECL_DLLPRIVATE_LINK_TYPED(ImplAddClickHandler, Button*, void);
+    DECL_DLLPRIVATE_LINK(ImplAddClickHandler, Button*, void);
 
     ImplTabBarItem* seek( size_t i );
     ImplTabBarItem* prev();
@@ -371,8 +366,8 @@ public:
     static const sal_uInt16 APPEND;
     static const sal_uInt16 PAGE_NOT_FOUND;
 
-                    TabBar( vcl::Window* pParent, WinBits nWinStyle = WB_STDTABBAR );
-    virtual         ~TabBar();
+                    TabBar( vcl::Window* pParent, WinBits nWinStyle );
+    virtual         ~TabBar() override;
     virtual void    dispose() override;
 
     virtual void    MouseMove( const MouseEvent& rMEvt ) override;
@@ -408,7 +403,7 @@ public:
 
     bool            IsPageEnabled( sal_uInt16 nPageId ) const;
 
-    void            SetPageBits( sal_uInt16 nPageId, TabBarPageBits nBits = 0 );
+    void            SetPageBits( sal_uInt16 nPageId, TabBarPageBits nBits );
     TabBarPageBits  GetPageBits( sal_uInt16 nPageId ) const;
 
     sal_uInt16      GetPageCount() const;
@@ -425,7 +420,7 @@ public:
     void            SetFirstPageId( sal_uInt16 nPageId );
     void            MakeVisible( sal_uInt16 nPageId );
 
-    void            SelectPage( sal_uInt16 nPageId, bool bSelect = true );
+    void            SelectPage( sal_uInt16 nPageId, bool bSelect );
     sal_uInt16      GetSelectPageCount() const;
     bool            IsPageSelected( sal_uInt16 nPageId ) const;
 
@@ -445,7 +440,7 @@ public:
         @param bMirrored  sal_True = the control will draw itself RTL in LTR GUI,
             and vice versa; sal_False = the control behaves according to the
             current direction of the GUI. */
-    void            SetMirrored(bool bMirrored = true);
+    void            SetMirrored(bool bMirrored);
     /** Returns true, if the control is set to mirrored mode (see SetMirrored()). */
     bool            IsMirrored() const { return mbMirrored; }
 

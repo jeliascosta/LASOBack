@@ -45,7 +45,7 @@
 #include <svx/fmshell.hxx>
 #include <osl/mutex.hxx>
 #include <vcl/svapp.hxx>
-#include <sfx2/sidebar/EnumContext.hxx>
+#include <vcl/EnumContext.hxx>
 #include <svx/sidebar/ContextChangeEventMultiplexer.hxx>
 
 #include <memory>
@@ -55,7 +55,7 @@ using namespace ::cppu;
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::drawing::framework;
-using ::sfx2::sidebar::EnumContext;
+using vcl::EnumContext;
 
 namespace sd {
 
@@ -658,12 +658,12 @@ void DrawController::FillPropertyTable (
             beans::PropertyAttribute::BOUND|beans::PropertyAttribute::READONLY|beans::PropertyAttribute::MAYBEVOID ));
     // add new property to update current page's acc information
     rProperties.push_back(
-        beans::Property( OUString( RTL_CONSTASCII_USTRINGPARAM("UpdateAcc") ),
+        beans::Property( "UpdateAcc",
             PROPERTY_UPDATEACC,
             ::cppu::UnoType<sal_Int16>::get(),
             beans::PropertyAttribute::BOUND ));
     rProperties.push_back(
-        beans::Property( OUString( RTL_CONSTASCII_USTRINGPARAM("PageChange") ),
+        beans::Property( "PageChange",
             PROPERTY_PAGE_CHANGE,
             ::cppu::UnoType<sal_Int16>::get(),
             beans::PropertyAttribute::BOUND ));

@@ -42,7 +42,7 @@ using namespace ::com::sun::star::uno;
 
 SwUndoOverwrite::SwUndoOverwrite( SwDoc* pDoc, SwPosition& rPos,
                                     sal_Unicode cIns )
-    : SwUndo(UNDO_OVERWRITE),
+    : SwUndo(UNDO_OVERWRITE, pDoc),
       pRedlSaveData( nullptr ), bGroup( false )
 {
     if( !pDoc->getIDocumentRedlineAccess().IsIgnoreRedline() && !pDoc->getIDocumentRedlineAccess().GetRedlineTable().empty() )
@@ -67,7 +67,7 @@ SwUndoOverwrite::SwUndoOverwrite( SwDoc* pDoc, SwPosition& rPos,
     sal_Int32 nTextNdLen = pTextNd->GetText().getLength();
     if( nSttContent < nTextNdLen )     // no pure insert?
     {
-        aDelStr += OUString( pTextNd->GetText()[nSttContent] );
+        aDelStr += OUStringLiteral1( pTextNd->GetText()[nSttContent] );
         if( !pHistory )
             pHistory = new SwHistory;
         SwRegHistory aRHst( *pTextNd, pHistory );
@@ -82,7 +82,7 @@ SwUndoOverwrite::SwUndoOverwrite( SwDoc* pDoc, SwPosition& rPos,
 
     pTextNd->InsertText( OUString(cIns), rPos.nContent,
             SwInsertFlags::EMPTYEXPAND );
-    aInsStr += OUString( cIns );
+    aInsStr += OUStringLiteral1( cIns );
 
     if( !bInsChar )
     {
@@ -147,7 +147,7 @@ bool SwUndoOverwrite::CanGrouping( SwDoc* pDoc, SwPosition& rPos,
     {
         if (rPos.nContent.GetIndex() < pDelTextNd->GetText().getLength())
         {
-            aDelStr += OUString( pDelTextNd->GetText()[rPos.nContent.GetIndex()] );
+            aDelStr += OUStringLiteral1( pDelTextNd->GetText()[rPos.nContent.GetIndex()] );
             ++rPos.nContent;
         }
         else
@@ -161,7 +161,7 @@ bool SwUndoOverwrite::CanGrouping( SwDoc* pDoc, SwPosition& rPos,
             SwInsertFlags::EMPTYEXPAND) );
     assert(ins.getLength() == 1); // check in SwDoc::Overwrite => cannot fail
     (void) ins;
-    aInsStr += OUString( cIns );
+    aInsStr += OUStringLiteral1( cIns );
 
     if( !bInsChar )
     {
@@ -343,7 +343,7 @@ struct UndoTransliterate_Data
 SwUndoTransliterate::SwUndoTransliterate(
     const SwPaM& rPam,
     const utl::TransliterationWrapper& rTrans )
-    : SwUndo( UNDO_TRANSLITERATE ), SwUndRng( rPam ), nType( rTrans.getType() )
+    : SwUndo( UNDO_TRANSLITERATE, rPam.GetDoc() ), SwUndRng( rPam ), nType( rTrans.getType() )
 {
 }
 

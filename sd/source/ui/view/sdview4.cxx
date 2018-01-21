@@ -95,7 +95,7 @@ SdrGrafObj* View::InsertGraphic( const Graphic& rGraphic, sal_Int8& rAction,
     if( !pPickObj && pPV )
     {
         SdrPageView* pPageView = pPV;
-        PickObj(rPos, getHitTolLog(), pPickObj, pPageView);
+        pPickObj = PickObj(rPos, getHitTolLog(), pPageView);
     }
 
     const bool bIsGraphic(dynamic_cast< const SdrGrafObj* >(pPickObj) !=  nullptr);
@@ -173,7 +173,7 @@ SdrGrafObj* View::InsertGraphic( const Graphic& rGraphic, sal_Int8& rAction,
         // create  new object
         Size aSize;
 
-        if ( rGraphic.GetPrefMapMode().GetMapUnit() == MAP_PIXEL )
+        if ( rGraphic.GetPrefMapMode().GetMapUnit() == MapUnit::MapPixel )
         {
             ::OutputDevice* pOutDev = nullptr;
             if( mpViewSh )
@@ -183,13 +183,13 @@ SdrGrafObj* View::InsertGraphic( const Graphic& rGraphic, sal_Int8& rAction,
                 pOutDev = Application::GetDefaultDevice();
 
             if( pOutDev )
-                aSize = pOutDev->PixelToLogic( rGraphic.GetPrefSize(), MAP_100TH_MM );
+                aSize = pOutDev->PixelToLogic( rGraphic.GetPrefSize(), MapUnit::Map100thMM );
         }
         else
         {
             aSize = OutputDevice::LogicToLogic( rGraphic.GetPrefSize(),
                                                 rGraphic.GetPrefMapMode(),
-                                                MapMode( MAP_100TH_MM ) );
+                                                MapMode( MapUnit::Map100thMM ) );
         }
 
         pNewGrafObj = new SdrGrafObj( rGraphic, Rectangle( rPos, aSize ) );
@@ -329,12 +329,6 @@ SdrMediaObj* View::InsertMediaObj( const OUString& rMediaURL, const OUString& rM
             pPV = nullptr;
     }
 
-    if( !pPickObj && pPV )
-    {
-        SdrPageView* pPageView = pPV;
-        PickObj(rPos, getHitTolLog(), pPickObj, pPageView);
-    }
-
     if( mnAction == DND_ACTION_LINK && pPickObj && pPV && dynamic_cast< SdrMediaObj *>( pPickObj ) !=  nullptr )
     {
         pNewMediaObj = static_cast< SdrMediaObj* >( pPickObj->Clone() );
@@ -347,8 +341,12 @@ SdrMediaObj* View::InsertMediaObj( const OUString& rMediaURL, const OUString& rM
     else if( pPV )
     {
         Rectangle aRect( rPos, rSize );
+        SdrObjUserCall* pUserCall = nullptr;
         if( pPickObj )
+        {
             aRect = pPickObj->GetLogicRect();
+            pUserCall = pPickObj->GetUserCall(); // ReplaceObjectAtView can free pPickObj
+        }
 
         pNewMediaObj = new SdrMediaObj( aRect );
 
@@ -377,9 +375,9 @@ SdrMediaObj* View::InsertMediaObj( const OUString& rMediaURL, const OUString& rM
 
         if( pPickObj )
         {
-            pNewMediaObj->AdjustToMaxRect( pPickObj->GetLogicRect() );
+            pNewMediaObj->AdjustToMaxRect( aRect );
             if( bIsPres )
-                pNewMediaObj->SetUserCall(pPickObj->GetUserCall());
+                pNewMediaObj->SetUserCall( pUserCall );
         }
     }
 
@@ -391,7 +389,7 @@ SdrMediaObj* View::InsertMediaObj( const OUString& rMediaURL, const OUString& rM
 /**
  * Timer handler for InsertFile at Drop()
  */
-IMPL_LINK_NOARG_TYPED(View, DropInsertFileHdl, Idle *, void)
+IMPL_LINK_NOARG(View, DropInsertFileHdl, Idle *, void)
 {
     DBG_ASSERT( mpViewSh, "sd::View::DropInsertFileHdl(), I need a view shell to work!" );
     if( !mpViewSh )
@@ -489,9 +487,9 @@ IMPL_LINK_NOARG_TYPED(View, DropInsertFileHdl, Idle *, void)
                     ::sd::Window* pWin = mpViewSh->GetActiveWindow();
 
                     if( pWin )
-                        aPrefSize = pWin->PixelToLogic( aPrefSize, MAP_100TH_MM );
+                        aPrefSize = pWin->PixelToLogic( aPrefSize, MapUnit::Map100thMM );
                     else
-                        aPrefSize = Application::GetDefaultDevice()->PixelToLogic( aPrefSize, MAP_100TH_MM );
+                        aPrefSize = Application::GetDefaultDevice()->PixelToLogic( aPrefSize, MapUnit::Map100thMM );
                 }
                 else
                     aPrefSize  = Size( 5000, 5000 );
@@ -582,7 +580,7 @@ IMPL_LINK_NOARG_TYPED(View, DropInsertFileHdl, Idle *, void)
 /**
  * Timer handler for Errorhandling at Drop()
  */
-IMPL_LINK_NOARG_TYPED(View, DropErrorHdl, Idle *, void)
+IMPL_LINK_NOARG(View, DropErrorHdl, Idle *, void)
 {
     ScopedVclPtrInstance<InfoBox>( mpViewSh ? mpViewSh->GetActiveWindow() : nullptr, SD_RESSTR(STR_ACTION_NOTPOSSIBLE) )->Execute();
 }

@@ -317,10 +317,6 @@ protected:
         , _nRecordType(0)
     {
     }
-    void                Construct_Impl( SvStream *pStream )
-                        {
-                            SfxMiniRecordReader::Construct_Impl( pStream );
-                        }
     bool                FindHeader_Impl( sal_uInt16 nTypes, sal_uInt16 nTag );
 };
 
@@ -374,13 +370,11 @@ protected:
     sal_uInt32          _nContentStartPos;  /*  start position of respective
                                             content - only with DBG_UTIL
                                             and for subclasses */
-    sal_uInt32          _nContentSize;      //  size of each content
     sal_uInt16          _nContentCount;     //  number of contents
 
                     SfxMultiFixRecordWriter( sal_uInt8 nRecordType,
                                              SvStream *pStream,
-                                             sal_uInt16 nTag,
-                                             sal_uInt8 nCurVer );
+                                             sal_uInt16 nTag );
 
 public:
     inline          ~SfxMultiFixRecordWriter();

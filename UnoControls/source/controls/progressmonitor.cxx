@@ -46,7 +46,7 @@ namespace unocontrols{
 ProgressMonitor::ProgressMonitor( const css::uno::Reference< XComponentContext >& rxContext )
     : BaseContainerControl  ( rxContext  )
 {
-    // Its not allowed to work with member in this method (refcounter !!!)
+    // It's not allowed to work with member in this method (refcounter !!!)
     // But with a HACK (++refcount) its "OK" :-(
     ++m_refCount;
 
@@ -743,8 +743,7 @@ void ProgressMonitor::impl_rebuildFixedText ()
         // "\n" MUST BE at the end of line!!! => Else ... topic and his text are not in the same line!!!
         for (IMPL_TextlistItem* pSearchItem : maTextlist_Top)
         {
-            aCollectString  +=  pSearchItem->sTopic;
-            aCollectString  +=  "\n";
+            aCollectString  +=  pSearchItem->sTopic + "\n";
         }
 
         m_xTopic_Top->setText ( aCollectString );
@@ -759,8 +758,7 @@ void ProgressMonitor::impl_rebuildFixedText ()
         // "\n" MUST BE at the end of line!!! => Else ... topic and his text are not in the same line!!!
         for (IMPL_TextlistItem* pSearchItem : maTextlist_Top)
         {
-            aCollectString  +=  pSearchItem->sText;
-            aCollectString  +=  "\n";
+            aCollectString  +=  pSearchItem->sText + "\n";
         }
 
         m_xText_Top->setText ( aCollectString );
@@ -777,8 +775,7 @@ void ProgressMonitor::impl_rebuildFixedText ()
         // "\n" MUST BE at the end of line!!! => Else ... topic and his text are not in the same line!!!
         for (IMPL_TextlistItem* pSearchItem : maTextlist_Bottom)
         {
-            aCollectString  +=  pSearchItem->sTopic;
-            aCollectString  +=  "\n";
+            aCollectString  +=  pSearchItem->sTopic + "\n";
         }
 
         m_xTopic_Bottom->setText ( aCollectString );
@@ -793,8 +790,7 @@ void ProgressMonitor::impl_rebuildFixedText ()
         // "\n" MUST BE at the end of line!!! => Else ... topic and his text are not in the same line!!!
         for (IMPL_TextlistItem* pSearchItem : maTextlist_Bottom)
         {
-            aCollectString  +=  pSearchItem->sText;
-            aCollectString  +=  "\n";
+            aCollectString  +=  pSearchItem->sText + "\n";
         }
 
         m_xText_Bottom->setText ( aCollectString );

@@ -53,19 +53,6 @@ Control::Control( vcl::Window* pParent, WinBits nStyle ) :
     ImplInit( pParent, nStyle, nullptr );
 }
 
-Control::Control( vcl::Window* pParent, const ResId& rResId ) :
-    Window( WINDOW_CONTROL )
-{
-    ImplInitControlData();
-    rResId.SetRT( RSC_CONTROL );
-    WinBits nStyle = ImplInitRes( rResId );
-    ImplInit( pParent, nStyle, nullptr );
-    ImplLoadRes( rResId );
-
-    if ( !(nStyle & WB_HIDE) )
-        Show();
-}
-
 Control::~Control()
 {
     disposeOnce();
@@ -81,20 +68,10 @@ void Control::dispose()
 void Control::EnableRTL( bool bEnable )
 {
     // convenience: for controls also switch layout mode
-    SetLayoutMode( bEnable ? TEXT_LAYOUT_BIDI_RTL | TEXT_LAYOUT_TEXTORIGIN_LEFT :
-                                TEXT_LAYOUT_TEXTORIGIN_LEFT );
+    SetLayoutMode( bEnable ? ComplexTextLayoutFlags::BiDiRtl | ComplexTextLayoutFlags::TextOriginLeft :
+                                ComplexTextLayoutFlags::TextOriginLeft );
     CompatStateChanged( StateChangedType::Mirroring );
     OutputDevice::EnableRTL(bEnable);
-}
-
-void Control::GetFocus()
-{
-    Window::GetFocus();
-}
-
-void Control::LoseFocus()
-{
-    Window::LoseFocus();
 }
 
 void Control::Resize()
@@ -109,7 +86,7 @@ void Control::FillLayoutData() const
 
 void Control::CreateLayoutData() const
 {
-    DBG_ASSERT( !mpControlData->mpLayoutData, "Control::CreateLayoutData: should be called with non-existent layout data only!" );
+    SAL_WARN_IF( mpControlData->mpLayoutData, "vcl", "Control::CreateLayoutData: should be called with non-existent layout data only!" );
     mpControlData->mpLayoutData = new vcl::ControlLayoutData();
 }
 
@@ -223,7 +200,7 @@ long ControlLayoutData::ToRelativeLineIndex( long nIndex ) const
             }
             if( nLine < 0 )
             {
-                DBG_ASSERT( nLine >= 0, "ToRelativeLineIndex failed" );
+                SAL_WARN_IF( nLine < 0, "vcl", "ToRelativeLineIndex failed" );
                 nIndex = -1;
             }
         }
@@ -321,7 +298,7 @@ void Control::AppendLayoutData( const Control& rSubControl ) const
     }
 }
 
-bool Control::ImplCallEventListenersAndHandler( sal_uLong nEvent, std::function<void()> callHandler )
+bool Control::ImplCallEventListenersAndHandler( sal_uLong nEvent, std::function<void()> const & callHandler )
 {
     VclPtr<Control> xThis(this);
 

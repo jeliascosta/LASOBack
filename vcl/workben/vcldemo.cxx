@@ -17,6 +17,9 @@
 #include <com/sun/star/lang/XInitialization.hpp>
 #include <com/sun/star/registry/XSimpleRegistry.hpp>
 #include <com/sun/star/ucb/UniversalContentBroker.hpp>
+#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/uno/Sequence.hxx>
+#include <com/sun/star/container/XNameAccess.hpp>
 
 #include <osl/time.h>
 #include <vcl/vclmain.hxx>
@@ -38,10 +41,10 @@
 #include <vcl/bitmapaccess.hxx>
 #include <vcl/help.hxx>
 #include <vcl/menu.hxx>
+#include <vcl/ImageTree.hxx>
 
 #include <basegfx/numeric/ftools.hxx>
 #include <basegfx/matrix/b2dhommatrix.hxx>
-#include <vcldemo-debug.hxx>
 #include <opengl/zone.hxx>
 
 // internal headers for OpenGLTests class.
@@ -168,7 +171,7 @@ public:
     FloatingWindow *mpButtonWin;
     AutoTimer       maBounce;
     int             mnBounceX, mnBounceY;
-    DECL_LINK_TYPED(BounceTimerCb, Timer*, void);
+    DECL_LINK(BounceTimerCb, Timer*, void);
 #endif
 
     bool MouseButtonDown(const MouseEvent& rMEvt);
@@ -234,7 +237,7 @@ public:
         Gradient aGradient;
         aGradient.SetStartColor(COL_BLUE);
         aGradient.SetEndColor(COL_GREEN);
-        aGradient.SetStyle(GradientStyle_LINEAR);
+        aGradient.SetStyle(GradientStyle::Linear);
         rDev.DrawGradient(r, aGradient);
     }
 
@@ -625,9 +628,9 @@ public:
                         aTextRect.Left()+1, aTextRect.Top()+1,
                         aTextRect.Right()-1, aTextRect.Bottom()-1);
                     rDev.SetLineColor(COL_WHITE);
-                    rDev.SetRasterOp(ROP_XOR);
+                    rDev.SetRasterOp(RasterOp::Xor);
                     rDev.DrawRect(aInnerRect);
-                    rDev.SetRasterOp(ROP_OVERPAINT);
+                    rDev.SetRasterOp(RasterOp::OverPaint);
                 }
 
                 // DX array rendering
@@ -640,9 +643,9 @@ public:
                     aTop.Move(pItems[j], 0);
                     aBottom.Move(pItems[j], aTextRect.GetHeight());
                     rDev.SetLineColor(COL_RED);
-                    rDev.SetRasterOp(ROP_XOR);
+                    rDev.SetRasterOp(RasterOp::Xor);
                     rDev.DrawLine(aTop,aBottom);
-                    rDev.SetRasterOp(ROP_OVERPAINT);
+                    rDev.SetRasterOp(RasterOp::OverPaint);
                 }
                 delete[] pItems;
 
@@ -791,10 +794,10 @@ public:
                     COL_BLUE, COL_BLUE, COL_BLUE, COL_CYAN, COL_CYAN
                 };
                 GradientStyle eStyles[] = {
-                    GradientStyle_LINEAR, GradientStyle_AXIAL, GradientStyle_RADIAL, GradientStyle_ELLIPTICAL, GradientStyle_SQUARE,
-                    GradientStyle_RECT, GradientStyle_FORCE_EQUAL_SIZE, GradientStyle_LINEAR, GradientStyle_RADIAL, GradientStyle_LINEAR,
-                    GradientStyle_LINEAR, GradientStyle_AXIAL, GradientStyle_RADIAL, GradientStyle_ELLIPTICAL, GradientStyle_SQUARE,
-                    GradientStyle_RECT, GradientStyle_FORCE_EQUAL_SIZE, GradientStyle_LINEAR, GradientStyle_RADIAL, GradientStyle_LINEAR
+                    GradientStyle::Linear, GradientStyle::Axial, GradientStyle::Radial, GradientStyle::Elliptical, GradientStyle::Square,
+                    GradientStyle::Rect, GradientStyle::FORCE_EQUAL_SIZE, GradientStyle::Linear, GradientStyle::Radial, GradientStyle::Linear,
+                    GradientStyle::Linear, GradientStyle::Axial, GradientStyle::Radial, GradientStyle::Elliptical, GradientStyle::Square,
+                    GradientStyle::Rect, GradientStyle::FORCE_EQUAL_SIZE, GradientStyle::Linear, GradientStyle::Radial, GradientStyle::Linear
                 };
                 sal_uInt16 nAngles[] = {
                     0, 0, 0, 0, 0,
@@ -832,7 +835,7 @@ public:
                 Gradient aGradient;
                 aGradient.SetStartColor(COL_YELLOW);
                 aGradient.SetEndColor(COL_RED);
-                aGradient.SetStyle(GradientStyle_RECT);
+                aGradient.SetStyle(GradientStyle::Rect);
                 aGradient.SetBorder(r.GetSize().Width()/20);
                 rDev.DrawGradient(r, aGradient);
             }
@@ -1154,7 +1157,7 @@ public:
 
             AntialiasingFlags nFlags = rDev.GetAntialiasing();
             rDev.SetAntialiasing(nFlags & ~AntialiasingFlags::EnableB2dDraw);
-            rDev.SetRasterOp( ROP_XOR );
+            rDev.SetRasterOp( RasterOp::Xor );
 
             rCtx.mpDemoRenderer->drawThumbs(rDev, r, true);
 
@@ -1211,7 +1214,9 @@ public:
                 return;
             bHasLoadedAll = true;
 
-            css::uno::Sequence< OUString > aAllIcons = ImageTree_getAllImageNames();
+            css::uno::Reference<css::container::XNameAccess> xRef(ImageTree::get().getNameAccess());
+            css::uno::Sequence< OUString > aAllIcons = xRef->getElementNames();
+
             for (sal_Int32 i = 0; i < aAllIcons.getLength(); i++)
             {
                 if (aAllIcons[i].endsWithIgnoreAsciiCase("svg"))
@@ -1511,7 +1516,7 @@ public:
 };
 
 #if FIXME_BOUNCE_BUTTON
-IMPL_LINK_NOARG_TYPED(DemoRenderer,BounceTimerCb,Timer*,void)
+IMPL_LINK_NOARG(DemoRenderer,BounceTimerCb,Timer*,void)
 {
     mpButton->Check(mnBounceX>0);
     mpButton->SetPressed(mnBounceY>0);
@@ -1716,7 +1721,7 @@ class DemoWin : public WorkWindow
             maDelay.Nanosec = 0;
             launch();
         }
-        virtual ~RenderThread()
+        virtual ~RenderThread() override
         {
             join();
         }
@@ -1740,7 +1745,7 @@ public:
         mrRenderer.addInvalidate(this);
         underTesting = false;
     }
-    virtual ~DemoWin()
+    virtual ~DemoWin() override
     {
         disposeOnce();
     }
@@ -1812,9 +1817,7 @@ public:
 
 class DemoWidgets : public WorkWindow
 {
-    MenuBar *mpBar;
-    PopupMenu *mpPopup;
-
+    VclPtr<MenuBar> mpBar;
     VclPtr<VclBox> mpBox;
     VclPtr<ToolBox> mpToolbox;
     VclPtr<PushButton> mpButton;
@@ -1823,7 +1826,7 @@ class DemoWidgets : public WorkWindow
     VclPtr<ComboBox> mpGLCombo;
     VclPtr<PushButton> mpGLButton;
 
-    DECL_LINK_TYPED(GLTestClick, Button*, void);
+    DECL_LINK(GLTestClick, Button*, void);
 
 public:
     DemoWidgets() :
@@ -1867,16 +1870,16 @@ public:
         mpGLButton->Show();
         mpHBox->Show();
 
-        mpBar = new MenuBar();
+        mpBar = VclPtr<MenuBar>::Create();
         mpBar->InsertItem(0,"File");
-        mpPopup = new PopupMenu();
-        mpPopup->InsertItem(0,"Item");
-        mpBar->SetPopupMenu(0, mpPopup);
+        VclPtrInstance<PopupMenu> pPopup;
+        pPopup->InsertItem(0,"Item");
+        mpBar->SetPopupMenu(0, pPopup);
         SetMenuBar(mpBar);
 
         Show();
     }
-    virtual ~DemoWidgets() { disposeOnce(); }
+    virtual ~DemoWidgets() override { disposeOnce(); }
     virtual void dispose() override
     {
         mpGLButton.disposeAndClear();
@@ -1886,8 +1889,7 @@ public:
         mpToolbox.disposeAndClear();
         mpButton.disposeAndClear();
         mpBox.disposeAndClear();
-        delete mpPopup;
-        delete mpBar;
+        mpBar.disposeAndClear();
         WorkWindow::dispose();
     }
     virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle&) override
@@ -1923,7 +1925,7 @@ public:
     static void leave() { OpenGLZone::leave(); }
 };
 
-IMPL_LINK_NOARG_TYPED(DemoWidgets, GLTestClick, Button*, void)
+IMPL_LINK_NOARG(DemoWidgets, GLTestClick, Button*, void)
 {
     sal_Int32 nSelected = mpGLCombo->GetSelectEntryPos();
 
@@ -2121,7 +2123,7 @@ namespace {
 
             FontMetric aMetric = xDevice->GetFontMetric(aFont);
 
-            FontCharMapPtr xMap;
+            FontCharMapRef xMap;
             if (xDevice->GetFontCharMap(xMap))
             {
                 ... iterate through glyphs ...

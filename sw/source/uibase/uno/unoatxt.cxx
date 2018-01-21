@@ -48,7 +48,7 @@
 #include <docsh.hxx>
 #include <swmodule.hxx>
 #include <swdll.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <svl/macitem.hxx>
 #include <editeng/acorrcfg.hxx>
 #include <comphelper/servicehelper.hxx>
@@ -174,7 +174,7 @@ uno::Reference< text::XAutoTextGroup >  SwXAutoTextContainer::insertNewByName(
     OUString sGroup(aGroupName);
     if (sGroup.indexOf(GLOS_DELIM)<0)
     {
-        sGroup += OUStringLiteral1<GLOS_DELIM>() + "0";
+        sGroup += OUStringLiteral1(GLOS_DELIM) + "0";
     }
     pGlossaries->NewGroupDoc(sGroup, sGroup.getToken(0, GLOS_DELIM));
 
@@ -393,9 +393,9 @@ uno::Reference< text::XAutoTextEntry >  SwXAutoTextGroup::insertNewByName(const 
             pGlosGroup->ClearDoc();
             if( pGlosGroup->BeginPutDoc( sShortName, sLongName ) )
             {
-                pGDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( nsRedlineMode_t::REDLINE_DELETE_REDLINES );
+                pGDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( RedlineFlags::DeleteRedlines );
                 lcl_CopySelToDoc( pGDoc, pxCursor, pxRange );
-                pGDoc->getIDocumentRedlineAccess().SetRedlineMode_intern((RedlineMode_t)( 0 ));
+                pGDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern(RedlineFlags::NONE);
                 nRet = pGlosGroup->PutDoc();
             }
         }
@@ -484,7 +484,7 @@ void SwXAutoTextGroup::setName(const OUString& rName) throw( uno::RuntimeExcepti
     OUString sNewGroup(rName);
     if (sNewGroup.indexOf(GLOS_DELIM)<0)
     {
-        sNewGroup += OUStringLiteral1<GLOS_DELIM>() + "0";
+        sNewGroup += OUStringLiteral1(GLOS_DELIM) + "0";
     }
 
     //the name must be saved, the group may be invalidated while in RenameGroupDoc()
@@ -751,7 +751,7 @@ void SwXAutoTextEntry::implFlushDocument( bool _bCloseDoc )
         if ( _bCloseDoc )
         {
             // stop listening at the document
-            EndListening( *&xDocSh );
+            EndListening( *xDocSh );
 
             xDocSh->DoClose();
             xDocSh.Clear();
@@ -761,28 +761,27 @@ void SwXAutoTextEntry::implFlushDocument( bool _bCloseDoc )
 
 void SwXAutoTextEntry::Notify( SfxBroadcaster& _rBC, const SfxHint& _rHint )
 {
-    if ( &_rBC == &xDocSh )
+    if ( &_rBC == xDocSh.get() )
     {   // it's our document
-        const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>( &_rHint );
-        if ( pSimpleHint )
+        if (const SfxEventHint* pEventHint = dynamic_cast<const SfxEventHint*>(&_rHint))
         {
-            if ( SFX_HINT_DEINITIALIZING == pSimpleHint->GetId() )
+            if (SFX_EVENT_PREPARECLOSEDOC == pEventHint->GetEventId())
+            {
+                implFlushDocument();
+                xBodyText = nullptr;
+                EndListening( *xDocSh );
+                xDocSh.Clear();
+            }
+        }
+        else
+        {
+            if ( SFX_HINT_DEINITIALIZING == _rHint.GetId() )
             {
                 // our document is dying (possibly because we're shuting down, and the document was notified
                 // earlier than we are?)
                 // stop listening at the docu
-                EndListening( *&xDocSh );
+                EndListening( *xDocSh );
                 // and release our reference
-                xDocSh.Clear();
-            }
-        }
-        else if(dynamic_cast<const SfxEventHint*>(&_rHint))
-        {
-            if(SFX_EVENT_PREPARECLOSEDOC == static_cast< const SfxEventHint& >( _rHint ).GetEventId())
-            {
-                implFlushDocument();
-                xBodyText = nullptr;
-                EndListening( *&xDocSh );
                 xDocSh.Clear();
             }
         }
@@ -797,7 +796,7 @@ void SwXAutoTextEntry::GetBodyText ()
     OSL_ENSURE( xDocSh.Is(), "SwXAutoTextEntry::GetBodyText: unexpected: no doc returned by EditGroupDoc!" );
 
     // start listening at the document
-    StartListening( *&xDocSh );
+    StartListening( *xDocSh );
 
     pBodyText = new SwXBodyText ( xDocSh->GetDoc() );
     xBodyText.set( *pBodyText, uno::UNO_QUERY);

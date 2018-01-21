@@ -277,7 +277,7 @@ String RID_ABSX_HELP
 {
     Text [ en-US ] = "Absolute Value" ;
 };
-String RID_FACTX            { Text = "fact {<?>} " ; };
+String RID_FACTX            { Text = "fact{<?>} " ; };
 String RID_FACTX_HELP
 {
     Text [ en-US ] = "Factorial" ;
@@ -903,6 +903,11 @@ String RID_SLMRANGLEXY_HELP
 {
     Text [ en-US ] = "Operator Brackets (Scalable)" ;
 };
+String RID_XEVALUATEDATY     { Text = "left none {<?>} right rline_{<?>} " ; };
+String RID_XEVALUATEDATY_HELP
+{
+    Text [ en-US ] = "Evaluated At" ;
+};
 String RID_XOVERBRACEY      { Text = "{<?>} overbrace {<?>} " ; };
 String RID_XOVERBRACEY_HELP
 {
@@ -1063,7 +1068,7 @@ String RID_XWIDESLASHY_HELP
 {
     Text [ en-US ] = "Division (wideslash)" ;
 };
-String RID_XWIDEBSLASHY     { Text = "<?> widebslash <?> " ; };
+String RID_XWIDEBSLASHY     { Text = "{<?>} widebslash {<?>} " ; };
 String RID_XWIDEBSLASHY_HELP
 {
     Text [ en-US ] = "Division (counter wideslash)" ;
@@ -2313,6 +2318,12 @@ Menu RID_COMMANDMENU
                         Identifier = RID_SLRDLINEX;
                         HelpId = HID_SMA_SLRDLINEX;
                         Text = "left ldline x right rdline";
+                    };
+                    MenuItem
+                    {
+                        Identifier = RID_XEVALUATEDATY;
+                        HelpId = HID_SMA_XEVALUATEDATY;
+                        Text = "left none x right rline_y";
                     };
                     MenuItem
                     {

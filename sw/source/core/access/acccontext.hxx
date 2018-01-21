@@ -29,6 +29,8 @@
 #include <cppuhelper/implbase.hxx>
 #include <cppuhelper/interfacecontainer.hxx>
 
+#include <memory>
+
 namespace vcl { class Window; }
 class SwAccessibleMap;
 class SwCursorShell;
@@ -70,6 +72,10 @@ private:
         css::accessibility::XAccessible > m_xWeakParent;
 
     SwAccessibleMap *m_pMap; // must be protected by solar mutex
+    /// note: the m_pMap is guaranteed to be valid until we hit the
+    /// dtor ~SwAccessibleContext, then m_wMap must be checked if it's still
+    /// alive, after locking SolarMutex (alternatively, Dispose clears m_pMap)
+    std::weak_ptr<SwAccessibleMap> m_wMap;
 
     sal_uInt32 m_nClientId;  // client id in the AccessibleEventNotifier queue
     sal_Int16 m_nRole;        // immutable outside constructor
@@ -147,8 +153,8 @@ protected:
 
     // Dispose children of the specified SwFrame. The SwFrame might belong to
     // the current object or to any other child or grandchild.
-    void DisposeChildren( const SwFrame *pFrame,
-                          bool bRecursive );
+    void DisposeChildren(const SwFrame *pFrame,
+                         bool bRecursive, bool bCanSkipInvisible);
 
     void DisposeShape( const SdrObject *pObj,
                                 ::accessibility::AccessibleShape *pAccImpl );
@@ -161,7 +167,7 @@ protected:
     virtual void InvalidateFocus_();
 
 public:
-    void SetMap(SwAccessibleMap *const pMap) { m_pMap = pMap; }
+    void ClearMapPointer();
     void FireAccessibleEvent( css::accessibility::AccessibleEventObject& rEvent );
 
 protected:
@@ -189,11 +195,11 @@ protected:
     }
     void RemoveFrameFromAccessibleMap();
 
-    virtual ~SwAccessibleContext();
+    virtual ~SwAccessibleContext() override;
 
 public:
-    SwAccessibleContext( SwAccessibleMap *m_pMap, sal_Int16 nRole,
-                         const SwFrame *pFrame );
+    SwAccessibleContext( std::shared_ptr<SwAccessibleMap> const& pMap,
+                         sal_Int16 nRole, const SwFrame *pFrame );
 
     // XAccessible
 
@@ -315,10 +321,10 @@ public:
     // thread safe C++ interface
 
     // The object is not visible an longer and should be destroyed
-    virtual void Dispose( bool bRecursive = false );
+    virtual void Dispose(bool bRecursive, bool bCanSkipInvisible = true);
 
     // The child object is not visible an longer and should be destroyed
-    virtual void DisposeChild( const sw::access::SwAccessibleChild& rFrameOrObj, bool bRecursive );
+    virtual void DisposeChild(const sw::access::SwAccessibleChild& rFrameOrObj, bool bRecursive, bool bCanSkipInvisible);
 
     // The object has been moved by the layout
     virtual void InvalidatePosOrSize( const SwRect& rFrame );

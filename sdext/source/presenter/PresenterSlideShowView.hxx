@@ -67,7 +67,7 @@ public:
         const css::uno::Reference<css::drawing::framework::XResourceId>& rxViewId,
         const css::uno::Reference<css::frame::XController>& rxController,
         const ::rtl::Reference<PresenterController>& rpPresenterController);
-    virtual ~PresenterSlideShowView();
+    virtual ~PresenterSlideShowView() override;
     PresenterSlideShowView(const PresenterSlideShowView&) = delete;
     PresenterSlideShowView& operator=(const PresenterSlideShowView&) = delete;
 
@@ -235,7 +235,6 @@ private:
 
     SharedBitmapDescriptor mpBackground;
 
-    bool mbIsInModifyNotification;
     bool mbIsForcedPaintPending;
     bool mbIsPaintPending;
     OUString msClickToExitPresentationText;
@@ -258,14 +257,6 @@ private:
     void PaintOuterWindow (const css::awt::Rectangle& rRepaintBox);
     void PaintInnerWindow (const css::awt::PaintEvent& rEvent);
     void PaintEndSlide (const css::awt::Rectangle& rRepaintBox);
-
-    /** The slide show relies on the back buffer of the canvas not being
-        modified.  With a shared canvas there are times when that can not be
-        guaranteed.
-        Call this method when the back buffer may have changed its content,
-        like when the window has been moved but not resized.
-    */
-    void ForceRepaint();
 
     void CreateBackgroundPolygons();
 

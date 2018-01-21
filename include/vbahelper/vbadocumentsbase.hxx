@@ -19,10 +19,30 @@
 #ifndef INCLUDED_VBAHELPER_VBADOCUMENTSBASE_HXX
 #define INCLUDED_VBAHELPER_VBADOCUMENTSBASE_HXX
 
+#include <exception>
 
-#include <vbahelper/vbacollectionimpl.hxx>
+#include <com/sun/star/uno/Any.hxx>
+#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/uno/RuntimeException.hpp>
+#include <com/sun/star/uno/Sequence.hxx>
+#include <com/sun/star/uno/Type.hxx>
 #include <ooo/vba/XDocumentsBase.hpp>
-#include <com/sun/star/container/XEnumerationAccess.hpp>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+#include <vbahelper/vbacollectionimpl.hxx>
+#include <vbahelper/vbadllapi.h>
+#include <vbahelper/vbahelper.hxx>
+
+namespace com { namespace sun { namespace star {
+    namespace beans { struct PropertyValue; }
+    namespace container { class XEnumeration; }
+    namespace uno { class XComponentContext; }
+} } }
+
+namespace ooo { namespace vba {
+    class XDocumentsBase;
+    class XHelperInterface;
+} }
 
 typedef CollTestImplHelper< ooo::vba::XDocumentsBase > VbaDocumentsBase_BASE;
 
@@ -40,7 +60,7 @@ private:
 
 public:
     VbaDocumentsBase( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext >& xContext, DOCUMENT_TYPE eDocType ) throw (css::uno::RuntimeException);
-    virtual ~VbaDocumentsBase() {}
+    virtual ~VbaDocumentsBase() override {}
 
     // XEnumerationAccess
     virtual css::uno::Type SAL_CALL getElementType() throw (css::uno::RuntimeException) override = 0;

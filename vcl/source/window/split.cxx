@@ -49,19 +49,6 @@ namespace
     };
 }
 
-void Splitter::ImplInitSplitterData()
-{
-    ImplGetWindowImpl()->mbSplitter        = true;
-    mpRefWin          = nullptr;
-    mnSplitPos        = 0;
-    mnLastSplitPos    = 0;
-    mnStartSplitPos   = 0;
-    mbDragFull        = false;
-    mbKbdSplitting    = false;
-    mbInKeyEvent      = 0;
-    mnKeyboardStepSize = SPLITTER_DEFAULTSTEPSIZE;
-}
-
 // Should only be called from a ImplInit method for initialization or
 // after checking bNew is different from the current mbHorzSplit value.
 // The public method that does that check is Splitter::SetHorizontal().
@@ -140,9 +127,18 @@ void Splitter::ImplDrawSplitter()
 }
 
 Splitter::Splitter( vcl::Window* pParent, WinBits nStyle ) :
-    Window( WINDOW_SPLITTER )
+    Window( WINDOW_SPLITTER ),
+    mpRefWin( nullptr ),
+    mnSplitPos( 0 ),
+    mnLastSplitPos( 0 ),
+    mnStartSplitPos( 0 ),
+    mbDragFull( false ),
+    mbKbdSplitting( false ),
+    mbInKeyEvent( 0 ),
+    mnKeyboardStepSize( SPLITTER_DEFAULTSTEPSIZE )
 {
-    ImplInitSplitterData();
+    ImplGetWindowImpl()->mbSplitter        = true;
+
     ImplInit( pParent, nStyle );
 
     SetLineColor();
@@ -652,11 +648,6 @@ void Splitter::KeyInput( const KeyEvent& rKEvt )
     mbInKeyEvent = 0;
 }
 
-bool Splitter::Notify( NotifyEvent& rNEvt )
-{
-    return Window::Notify( rNEvt );
-}
-
 void Splitter::DataChanged( const DataChangedEvent& rDCEvt )
 {
     Window::DataChanged( rDCEvt );
@@ -688,7 +679,7 @@ void Splitter::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rPaint
 
     if (mbKbdSplitting)
     {
-        LineInfo aInfo( LINE_DASH );
+        LineInfo aInfo( LineStyle::Dash );
         //aInfo.SetDashLen( 2 );
         //aInfo.SetDashCount( 1 );
         aInfo.SetDistance( 1 );
@@ -701,6 +692,11 @@ void Splitter::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rPaint
     {
         rRenderContext.DrawRect(rPaintRect);
     }
+}
+
+Size Splitter::GetOptimalSize() const
+{
+    return LogicToPixel(Size(3, 3), MapUnit::MapAppFont);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -58,7 +58,7 @@ ScDrawShell::ScDrawShell( ScViewData* pData ) :
     mpSelectionChangeHandler(new svx::sidebar::SelectionChangeHandler(
             [this] () { return this->GetSidebarContextName(); },
             GetFrame()->GetFrame().GetController(),
-            sfx2::sidebar::EnumContext::Context_Cell))
+            vcl::EnumContext::Context_Cell))
 {
     SetPool( &pViewData->GetScDrawView()->GetModel()->GetItemPool() );
     ::svl::IUndoManager* pMgr = pViewData->GetSfxDocShell()->GetUndoManager();
@@ -83,8 +83,8 @@ void ScDrawShell::GetState( SfxItemSet& rSet )          // Zustaende / Toggles
     ScDrawView* pView    = pViewData->GetScDrawView();
     SdrDragMode eMode    = pView->GetDragMode();
 
-    rSet.Put( SfxBoolItem( SID_OBJECT_ROTATE, eMode == SDRDRAG_ROTATE ) );
-    rSet.Put( SfxBoolItem( SID_OBJECT_MIRROR, eMode == SDRDRAG_MIRROR ) );
+    rSet.Put( SfxBoolItem( SID_OBJECT_ROTATE, eMode == SdrDragMode::Rotate ) );
+    rSet.Put( SfxBoolItem( SID_OBJECT_MIRROR, eMode == SdrDragMode::Mirror ) );
     rSet.Put( SfxBoolItem( SID_BEZIER_EDIT, !pView->IsFrameDragSingles() ) );
 
     sal_uInt16 nFWId = ScGetFontWorkId();
@@ -395,13 +395,13 @@ void ScDrawShell::Activate (const bool bMDI)
 
     ContextChangeEventMultiplexer::NotifyContextChange(
         GetFrame()->GetFrame().GetController(),
-        ::sfx2::sidebar::EnumContext::GetContextEnum(
+        vcl::EnumContext::GetContextEnum(
             GetSidebarContextName()));
 }
 
 ::rtl::OUString ScDrawShell::GetSidebarContextName()
 {
-    return sfx2::sidebar::EnumContext::GetContextName(
+    return vcl::EnumContext::GetContextName(
         svx::sidebar::SelectionAnalyzer::GetContextForSelection_SC(
             GetDrawView()->GetMarkedObjectList()));
 }

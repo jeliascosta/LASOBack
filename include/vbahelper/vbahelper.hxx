@@ -19,25 +19,38 @@
 #ifndef INCLUDED_VBAHELPER_VBAHELPER_HXX
 #define INCLUDED_VBAHELPER_VBAHELPER_HXX
 
-#include <com/sun/star/drawing/XShape.hpp>
-#include <com/sun/star/beans/XIntrospectionAccess.hpp>
-#include <com/sun/star/beans/XPropertySet.hpp>
-#include <com/sun/star/script/BasicErrorException.hpp>
-#include <com/sun/star/script/XTypeConverter.hpp>
-#include <com/sun/star/lang/IllegalArgumentException.hpp>
-#include <com/sun/star/awt/XControl.hpp>
-#include <com/sun/star/awt/XDevice.hpp>
-#include <com/sun/star/awt/XUnitConversion.hpp>
-#include <basic/basmgr.hxx>
-#include <basic/sberrors.hxx>
-#include <com/sun/star/frame/XModel.hpp>
-#include <sfx2/dispatch.hxx>
-#include <sfx2/objsh.hxx>
-#include <sfx2/docfilt.hxx>
-#include <sfx2/docfile.hxx>
-#include <vcl/pointr.hxx>
 #include <memory>
-#include <vbahelper/vbaaccesshelper.hxx>
+
+#include <com/sun/star/lang/IllegalArgumentException.hpp>
+#include <com/sun/star/script/BasicErrorException.hpp>
+#include <com/sun/star/uno/Any.hxx>
+#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/uno/RuntimeException.hpp>
+#include <com/sun/star/uno/Sequence.hxx>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+#include <vbahelper/vbadllapi.h>
+#include <vcl/pointr.hxx>
+#include <vcl/ptrstyle.hxx>
+
+namespace com { namespace sun { namespace star {
+    namespace awt { class XControl; }
+    namespace awt { class XDevice; }
+    namespace awt { class XUnitConversion; }
+    namespace awt { class XWindow; }
+    namespace beans { class XIntrospectionAccess; }
+    namespace beans { class XPropertySet; }
+    namespace beans { struct PropertyValue; }
+    namespace drawing { class XShape; }
+    namespace frame { class XModel; }
+    namespace script { class XTypeConverter; }
+    namespace uno { class Exception; }
+    namespace uno { class XComponentContext; }
+} } }
+
+class SfxObjectShell;
+class SfxViewFrame;
+class SfxViewShell;
 
 namespace ooo
 {
@@ -68,7 +81,7 @@ namespace ooo
         VBAHELPER_DLLPUBLIC css::uno::Reference< css::frame::XModel > getCurrentWordDoc( const css::uno::Reference< css::uno::XComponentContext >& xContext ) throw (css::uno::RuntimeException);
 
         VBAHELPER_DLLPUBLIC css::uno::Reference< css::beans::XIntrospectionAccess > getIntrospectionAccess( const css::uno::Any& aObject ) throw (css::uno::RuntimeException);
-        VBAHELPER_DLLPUBLIC css::uno::Reference< css::script::XTypeConverter > getTypeConverter( const css::uno::Reference< css::uno::XComponentContext >& xContext ) throw (css::uno::RuntimeException);
+        VBAHELPER_DLLPUBLIC css::uno::Reference< css::script::XTypeConverter > const & getTypeConverter( const css::uno::Reference< css::uno::XComponentContext >& xContext ) throw (css::uno::RuntimeException);
 
         VBAHELPER_DLLPUBLIC void dispatchRequests( const css::uno::Reference< css::frame::XModel>& xModel, const OUString& aUrl );
         VBAHELPER_DLLPUBLIC void dispatchRequests (const css::uno::Reference< css::frame::XModel>& xModel, const OUString & aUrl, const css::uno::Sequence< css::beans::PropertyValue >& sProps );
@@ -94,7 +107,7 @@ namespace ooo
         VBAHELPER_DLLPUBLIC OUString extractStringFromAny( const css::uno::Any& rAny, bool bUppercaseBool = false ) throw (css::uno::RuntimeException);
         /** Extracts a string from the passed Any, which may contain a Boolean, a value, or a string.
             Returns rDefault, if rAny is empty. Throws, if the Any contains an incompatible type. */
-        VBAHELPER_DLLPUBLIC OUString extractStringFromAny( const css::uno::Any& rAny, const OUString& rDefault, bool bUppercaseBool = false ) throw (css::uno::RuntimeException);
+        VBAHELPER_DLLPUBLIC OUString extractStringFromAny( const css::uno::Any& rAny, const OUString& rDefault, bool bUppercaseBool ) throw (css::uno::RuntimeException);
 
         VBAHELPER_DLLPUBLIC OUString getAnyAsString( const css::uno::Any& pvargItem ) throw ( css::uno::RuntimeException );
         VBAHELPER_DLLPUBLIC OUString VBAToRegexp(const OUString &rIn); // needs to be in an uno service ( already this code is duplicated in basic )
@@ -148,10 +161,6 @@ public:
     virtual double getOffsetY() const { return 0.0; }
 };
 
-namespace msforms {
-    class XShape;
-}
-
 class VBAHELPER_DLLPUBLIC ShapeHelper
 {
 protected:
@@ -183,7 +192,7 @@ public:
     virtual void setHeight( double nHeight ) override;
     virtual double getWidth() const override;
     virtual void setWidth( double nWidth) override;
-    virtual ~ConcreteXShapeGeometryAttributes();
+    virtual ~ConcreteXShapeGeometryAttributes() override;
 };
 
 #define VBA_LEFT "PositionX"
@@ -244,8 +253,6 @@ public:
     static void basicexception( int err,  const OUString& additionalArgument ) throw( css::script::BasicErrorException );
 
     static void basicexception( const css::uno::Exception& ex ) throw( css::script::BasicErrorException );
-
-    static void runtimeexception( const OUString&  DetailedMessage, const css::uno::Exception& ex,  int err, const OUString& /*additionalArgument*/ ) throw( css::uno::RuntimeException );
 
     static void runtimeexception( int err,  const OUString& additionalArgument ) throw( css::uno::RuntimeException );
 };

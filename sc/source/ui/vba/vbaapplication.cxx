@@ -33,6 +33,7 @@
 #include <ooo/vba/XExecutableDialog.hpp>
 #include <ooo/vba/excel/XlCalculation.hpp>
 #include <ooo/vba/excel/XlMousePointer.hpp>
+#include <ooo/vba/office/MsoShapeType.hpp>
 
 #include "vbaapplication.hxx"
 #include "vbaworkbooks.hxx"
@@ -58,6 +59,7 @@
 #include <osl/file.hxx>
 #include <rtl/instance.hxx>
 
+#include <sfx2/bindings.hxx>
 #include <sfx2/request.hxx>
 #include <sfx2/objsh.hxx>
 #include <sfx2/viewfrm.hxx>
@@ -458,12 +460,12 @@ ScVbaApplication::wait( double time ) throw (uno::RuntimeException, std::excepti
     SbxArrayRef aArgs = new SbxArray;
     SbxVariableRef aRef = new SbxVariable;
     aRef->PutDouble( time );
-    aArgs->Put(  aRef, 1 );
+    aArgs->Put(  aRef.get(), 1 );
     SbMethod* pMeth = static_cast<SbMethod*>(pBasic->GetRtl()->Find( "WaitUntil", SbxClassType::Method ));
 
     if ( pMeth )
     {
-        pMeth->SetParameters( aArgs );
+        pMeth->SetParameters( aArgs.get() );
         SbxVariableRef refTemp = pMeth;
         // forces a broadcast
         SbxVariableRef pNew = new  SbxMethod( *static_cast<SbxMethod*>(pMeth));
@@ -685,7 +687,7 @@ ScVbaApplication::setCursor( sal_Int32 _cursor ) throw (uno::RuntimeException, s
 }
 
 // #TODO perhaps we should switch the return type depending of the filter
-// type, e.g. return Calc for Calc and Excel if its an imported doc
+// type, e.g. return Calc for Calc and Excel if it's an imported doc
 OUString SAL_CALL
 ScVbaApplication::getName() throw (uno::RuntimeException, std::exception)
 {
@@ -848,7 +850,7 @@ ScVbaApplication::Calculate() throw(  script::BasicErrorException , uno::Runtime
     xCalculatable->calculateAll();
 }
 
-static uno::Reference< util::XPathSettings > lcl_getPathSettingsService( const uno::Reference< uno::XComponentContext >& xContext ) throw ( uno::RuntimeException )
+static uno::Reference< util::XPathSettings > const & lcl_getPathSettingsService( const uno::Reference< uno::XComponentContext >& xContext ) throw ( uno::RuntimeException )
 {
     static uno::Reference< util::XPathSettings >  xPathSettings;
     if ( !xPathSettings.is() )
@@ -1266,7 +1268,7 @@ ScVbaApplication::Caller( const uno::Any& /*aIndex*/ ) throw ( uno::RuntimeExcep
         // forces a broadcast
         SbxVariableRef pNew = new  SbxMethod( *static_cast<SbxMethod*>(pMeth));
                 OSL_TRACE("pNew has type %d and string value %s", pNew->GetType(), OUStringToOString( pNew->GetOUString(), RTL_TEXTENCODING_UTF8 ).getStr() );
-        aRet = sbxToUnoValue( pNew );
+        aRet = sbxToUnoValue( pNew.get() );
     }
     return aRet;
 }

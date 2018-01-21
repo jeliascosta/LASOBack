@@ -86,12 +86,6 @@ namespace frm
     IMPLEMENT_DEFAULT_CLONING( OSpinButtonModel )
 
 
-    void SAL_CALL OSpinButtonModel::disposing()
-    {
-        OBoundControlModel::disposing();
-    }
-
-
     void OSpinButtonModel::describeFixedProperties( Sequence< Property >& _rProps ) const
     {
         BEGIN_DESCRIBE_PROPERTIES( 3, OControlModel )
@@ -133,7 +127,7 @@ namespace frm
 
     sal_Bool OSpinButtonModel::convertFastPropertyValue(
                 Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue )
-                throw ( IllegalArgumentException )
+                throw ( IllegalArgumentException, RuntimeException, std::exception )
     {
         bool bModified( false );
         switch ( _nHandle )

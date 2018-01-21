@@ -129,8 +129,7 @@ void BibPosListener::cursorMoved(const lang::EventObject& /*aEvent*/) throw( uno
             if(xValueAcc.is() && xValueAcc->hasByName(uTypeMapping))
             {
                 uno::Any aVal = xValueAcc->getByName(uTypeMapping);
-                uno::Reference< uno::XInterface >  xInt = *static_cast<uno::Reference< uno::XInterface > const *>(aVal.getValue());
-                uno::Reference< sdb::XColumn >  xCol(xInt, UNO_QUERY);
+                uno::Reference< sdb::XColumn >  xCol(aVal, UNO_QUERY);
                 DBG_ASSERT(xCol.is(), "BibPosListener::cursorMoved : invalid column (no sdb::XColumn) !");
                 if (xCol.is())
                 {
@@ -150,7 +149,7 @@ void BibPosListener::cursorMoved(const lang::EventObject& /*aEvent*/) throw( uno
                 uno::Sequence<sal_Int16> aSelSeq(1);
                 sal_Int16* pArr = aSelSeq.getArray();
                 pArr[0] = TYPE_COUNT;
-                aSel.setValue(&aSelSeq, cppu::UnoType<Sequence<sal_Int16>>::get());
+                aSel <<= aSelSeq;
                 xPropSet->setPropertyValue("SelectedItems", aSel);
             }
         }
@@ -166,7 +165,8 @@ void BibPosListener::disposing(const lang::EventObject& /*Source*/) throw( uno::
 }
 
 BibGeneralPage::BibGeneralPage(vcl::Window* pParent, BibDataManager* pMan):
-    BibTabPage(pParent, "GeneralPage", "modules/sbibliography/ui/generalpage.ui"),
+    TabPage(pParent, "GeneralPage", "modules/sbibliography/ui/generalpage.ui"),
+    BibShortCutHandler( this ),
     sErrorPrefix(BIB_RESSTR(ST_ERROR_PREFIX)),
     mxBibGeneralPageFocusListener(new BibGeneralPageFocusListener(this)),
     pDatMan(pMan)
@@ -336,7 +336,7 @@ BibGeneralPage::BibGeneralPage(vcl::Window* pParent, BibDataManager* pMan):
 
     SetText(BIB_RESSTR(ST_TYPE_TITLE));
 
-    Size aSize(LogicToPixel(Size(0, 209), MapMode(MAP_APPFONT)));
+    Size aSize(LogicToPixel(Size(0, 209), MapMode(MapUnit::MapAppFont)));
     set_height_request(aSize.Height());
 }
 
@@ -388,7 +388,7 @@ void BibGeneralPage::dispose()
     pCustom5FT.clear();
     for (auto & a: aFixedTexts) a.clear();
     mxBibGeneralPageFocusListener.clear();
-    BibTabPage::dispose();
+    TabPage::dispose();
 }
 
 void BibGeneralPage::RemoveListeners()
@@ -502,10 +502,10 @@ uno::Reference< awt::XControlModel >  BibGeneralPage::AddXControl(
                     xCtrWin->setVisible( true );
                     xControl->setDesignMode( true );
 
-                    vcl::Window* pWindow = VCLUnoHelper::GetWindow(xControl->getPeer());
+                    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(xControl->getPeer());
                     pWindow->set_grid_top_attach(rLabel.get_grid_top_attach());
                     pWindow->set_grid_left_attach(rLabel.get_grid_left_attach()+1);
-                    pWindow->set_valign(VCL_ALIGN_CENTER);
+                    pWindow->set_valign(VclAlign::Center);
                     rLabel.set_mnemonic_widget(pWindow);
                     if (&rLabel == pTitleFT)
                         pWindow->set_grid_width(3);
@@ -658,7 +658,7 @@ bool BibGeneralPage::HandleShortCutKey( const KeyEvent& rKeyEvent )
                 uno::Reference< awt::XControl >  xControl( aControls[ nCtrlIndex ], UNO_QUERY );
                 DBG_ASSERT( xControl.is(), "-BibGeneralPage::HandleShortCutKey(): a control which is not a control!" );
 
-                vcl::Window*         pWindow = VCLUnoHelper::GetWindow( xControl->getPeer() );
+                VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xControl->getPeer() );
 
                 if( pWindow )
                 {

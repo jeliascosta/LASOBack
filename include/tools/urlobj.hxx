@@ -176,9 +176,7 @@ public:
         const;
 
     OUString
-    getAbbreviated(css::uno::Reference<
-                           css::util::XStringWidth > const &
-                       rStringWidth,
+    getAbbreviated(css::uno::Reference< css::util::XStringWidth > const & rStringWidth,
                    sal_Int32 nWidth,
                    DecodeMechanism eMechanism = DECODE_TO_IURI,
                    rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8)
@@ -790,10 +788,6 @@ public:
     // Data URLs:
     std::unique_ptr<SvMemoryStream> getData();
 
-    // POP3 and URLs:
-
-    static OUString GetMsgId(rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8);
-
     // Coding:
 
     enum Part
@@ -910,10 +904,9 @@ public:
      */
     OUString GetFileExtension() const;
 
-    inline bool Append(OUString const & rTheSegment,
+    bool Append(OUString const & rTheSegment,
                        EncodeMechanism eMechanism = WAS_ENCODED,
-                       rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8)
-    { return appendSegment(rTheSegment, eMechanism, eCharset); }
+                       rtl_TextEncoding eCharset = RTL_TEXTENCODING_UTF8);
 
     void CutLastName();
 
@@ -1098,10 +1091,6 @@ private:
     // Hierarchical Path:
 
     TOOLS_DLLPRIVATE bool checkHierarchical() const;
-
-    bool appendSegment(
-        OUString const & rTheSegment,
-        EncodeMechanism eMechanism, rtl_TextEncoding eCharset);
 
     TOOLS_DLLPRIVATE SubString getSegment(
         sal_Int32 nIndex, bool bIgnoreFinalSlash) const;

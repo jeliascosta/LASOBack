@@ -606,7 +606,7 @@ void ControlModelContainerBase::insertByName( const OUString& aName, const Any& 
 
     ContainerEvent aEvent;
     aEvent.Source = *this;
-    aEvent.Element <<= aElement;
+    aEvent.Element = aElement;
     aEvent.Accessor <<= aName;
     maContainerListeners.elementInserted( aEvent );
 
@@ -705,7 +705,7 @@ void SAL_CALL ControlModelContainerBase::setControlModels( const Sequence< Refer
 }
 
 
-typedef ::std::multimap< sal_Int32, Reference< XControlModel >, ::std::less< sal_Int32 > > MapIndexToModel;
+typedef ::std::multimap< sal_Int32, Reference< XControlModel > > MapIndexToModel;
 
 
 Sequence< Reference< XControlModel > > SAL_CALL ControlModelContainerBase::getControlModels(  ) throw (RuntimeException, std::exception)
@@ -1382,7 +1382,7 @@ void ControlContainerBase::ImplSetPosSize( Reference< XControl >& rxCtrl )
     xP->getPropertyValue("PositionY") >>= nY;
     xP->getPropertyValue("Width") >>= nWidth;
     xP->getPropertyValue("Height") >>= nHeight;
-    MapMode aMode( MAP_APPFONT );
+    MapMode aMode( MapUnit::MapAppFont );
     OutputDevice*pOutDev = Application::GetDefaultDevice();
     if ( pOutDev )
     {

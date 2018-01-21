@@ -30,15 +30,15 @@ namespace vcl { class Window; }
 
 typedef ::cppu::ImplInheritanceHelper < ::svt::OGenericUnoDialog, XPropertyAccess, XExporter >  PDFDialog_Base;
 
-class PDFDialog : public PDFDialog_Base,
-                  public ::comphelper::OPropertyArrayUsageHelper< PDFDialog >
+class PDFDialog final:
+    public PDFDialog_Base,
+    public ::comphelper::OPropertyArrayUsageHelper< PDFDialog >
 {
 private:
     Sequence< PropertyValue >   maMediaDescriptor;
     Sequence< PropertyValue >   maFilterData;
     Reference< XComponent >     mxSrcDoc;
 
-protected:
     // OGenericUnoDialog
     virtual Sequence< sal_Int8 > SAL_CALL getImplementationId() throw(RuntimeException, std::exception) override;
     virtual OUString SAL_CALL getImplementationName() throw (RuntimeException, std::exception) override;
@@ -62,7 +62,7 @@ protected:
 public:
 
     explicit    PDFDialog( const Reference< XComponentContext >& rxContext );
-    virtual     ~PDFDialog();
+    virtual     ~PDFDialog() override;
 };
 
 

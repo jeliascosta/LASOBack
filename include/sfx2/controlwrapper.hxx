@@ -115,11 +115,7 @@ private:
      |   +- DummyWindowWrapper   [1]
      |   +- CheckBoxWrapper   [1]
      |   +- EditWrapper   [1]
-     |   +- ColorListBoxWrapper   [1]
-     |   |
-     |   +- NumericFieldWrapper< ValueT >   [1]
-     |   |   |
-     |   |   +- [ValueType]NumericFieldWrapper   [1] [2]
+     |   +- SvxColorListBoxWrapper   [1]
      |   |
      |   +- MetricFieldWrapper< ValueT >   [1]
      |   |   |
@@ -152,7 +148,7 @@ public:
 
     /** Derived classes enable, disable, show, or hide control(s).
         @descr  Will do nothing, if the corresponding parameter is TRISTATE_INDET. */
-    virtual void        ModifyControl( TriState eEnable, TriState eShow ) = 0;
+    virtual void        ModifyControl( TriState eShow ) = 0;
 
     /** Derived classes return true if the control is in "don't know" state. */
     virtual bool        IsControlDontKnow() const = 0;
@@ -198,7 +194,7 @@ public:
 
     /** Enables, disables, shows, or hides the control.
         @descr  Does nothing, if the corresponding parameter is TRISTATE_INDET. */
-    virtual void        ModifyControl( TriState eEnable, TriState eShow ) override;
+    virtual void        ModifyControl( TriState eShow ) override;
 
     /** Derived classes return the value the control contains. */
     virtual ValueT      GetControlValue() const = 0;
@@ -242,42 +238,6 @@ public:
 
     virtual bool        GetControlValue() const override;
     virtual void        SetControlValue( bool bValue ) override;
-};
-
-
-/** A wrapper for the SVTOOLS ColorListBox. */
-class SFX2_DLLPUBLIC ColorListBoxWrapper:
-    public SingleControlWrapper< ColorListBox, Color >
-{
-    /*  Note: cannot use 'const Color&' as template argument, because the
-        SVTOOLS ColorListBox returns the color by value and not by reference,
-        therefore GetControlValue() must return a temporary object too. */
-public:
-    explicit ColorListBoxWrapper(ColorListBox & rListBox);
-
-    virtual ~ColorListBoxWrapper();
-
-    virtual bool        IsControlDontKnow() const override;
-    virtual void        SetControlDontKnow( bool bSet ) override;
-
-    virtual Color       GetControlValue() const override;
-    virtual void        SetControlValue( Color aColor ) override;
-};
-
-
-/** A wrapper for the VCL NumericField. */
-template< typename ValueT >
-class NumericFieldWrapper : public SingleControlWrapper< NumericField, ValueT >
-{
-public:
-    inline explicit     NumericFieldWrapper( NumericField& rField ) :
-                            SingleControlWrapper< NumericField, ValueT >( rField ) {}
-
-    virtual bool        IsControlDontKnow() const SAL_OVERRIDE;
-    virtual void        SetControlDontKnow( bool bSet ) SAL_OVERRIDE;
-
-    virtual ValueT      GetControlValue() const SAL_OVERRIDE;
-    virtual void        SetControlValue( ValueT nValue ) SAL_OVERRIDE;
 };
 
 
@@ -388,13 +348,13 @@ class SFX2_DLLPUBLIC MultiControlWrapperHelper : public ControlWrapperBase
 {
 public:
     explicit            MultiControlWrapperHelper();
-    virtual             ~MultiControlWrapperHelper();
+    virtual             ~MultiControlWrapperHelper() override;
 
     /** Registers a control wrapper (should be a member of a derived class). */
     void                RegisterControlWrapper( ControlWrapperBase& rWrapper );
 
     /** Enables, disables, shows, or hides the registered controls. */
-    virtual void        ModifyControl( TriState eEnable, TriState eShow ) override;
+    virtual void        ModifyControl( TriState eShow ) override;
 
     /** Returns true if all registered controls are in "don't know" state. */
     virtual bool        IsControlDontKnow() const override;
@@ -489,38 +449,10 @@ PosT PosValueMapper< PosT, ValueT >::GetPosFromValue( ValueT nValue ) const
 
 
 template< typename ControlT, typename ValueT >
-inline void SingleControlWrapper< ControlT, ValueT >::ModifyControl( TriState eEnable, TriState eShow )
+inline void SingleControlWrapper< ControlT, ValueT >::ModifyControl( TriState eShow )
 {
-    if( eEnable != TRISTATE_INDET )
-        mrControl.Enable( eEnable == TRISTATE_TRUE );
     if( eShow != TRISTATE_INDET )
         mrControl.Show( eShow == TRISTATE_TRUE );
-}
-
-
-template< typename ValueT >
-bool NumericFieldWrapper< ValueT >::IsControlDontKnow() const
-{
-    return this->GetControl().GetText().Len() == 0;
-}
-
-template< typename ValueT >
-void NumericFieldWrapper< ValueT >::SetControlDontKnow( bool bSet )
-{
-    if( bSet )
-        this->GetControl().SetText( OUString() );
-}
-
-template< typename ValueT >
-ValueT NumericFieldWrapper< ValueT >::GetControlValue() const
-{
-    return static_cast< ValueT >( this->GetControl().Denormalize( this->GetControl().GetValue() ) );
-}
-
-template< typename ValueT >
-void NumericFieldWrapper< ValueT >::SetControlValue( ValueT nValue )
-{
-    this->GetControl().SetValue( this->GetControl().Normalize( static_cast< sal_Int64 >( nValue ) ) );
 }
 
 

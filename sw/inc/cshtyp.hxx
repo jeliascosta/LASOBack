@@ -21,6 +21,7 @@
 
 #include <tools/solar.h>
 #include "swdllapi.h"
+#include <o3tl/typed_flags_set.hxx>
 
 class SwPaM;
 class SwContentFrame;
@@ -28,79 +29,86 @@ class SwLayoutFrame;
 
 // Structure for SwPaM. Contains the method-pointers for cursor movement.
 struct SwMoveFnCollection;
-typedef SwMoveFnCollection* SwMoveFn;
 
 // Type definition for CursorShell.
-// Direction-parameter for MovePage (initialized in SwContentFrame).
+// Direction-parameter for MovePage.
 typedef SwLayoutFrame * (*SwWhichPage)( const SwLayoutFrame * );
+SwLayoutFrame *GetPrevFrame( const SwLayoutFrame *pFrame );
+SwLayoutFrame *GetThisFrame( const SwLayoutFrame *pFrame );
+SwLayoutFrame *GetNextFrame( const SwLayoutFrame *pFrame );
 typedef SwContentFrame  * (*SwPosPage)( const SwLayoutFrame * );
-extern SwWhichPage fnPagePrev, fnPageCurr, fnPageNext;
-extern SwPosPage fnPageStart, fnPageEnd;
+SwContentFrame *GetFirstSub( const SwLayoutFrame *pLayout );
+SwContentFrame *GetLastSub( const SwLayoutFrame *pLayout );
 
-// Direction-parameter for MovePara (initialized in SwContentFrame).
-typedef SwMoveFnCollection* SwPosPara;
-typedef bool (*SwWhichPara)( SwPaM&, SwPosPara );
-extern SwWhichPara fnParaPrev, fnParaCurr, fnParaNext;
-extern SwPosPara fnParaStart, fnParaEnd;
+// Direction-parameter for MovePara.
+typedef bool (*SwWhichPara)( SwPaM&, SwMoveFnCollection const & );
+bool GoPrevPara( SwPaM&, SwMoveFnCollection const &);
+SW_DLLPUBLIC bool GoCurrPara( SwPaM&, SwMoveFnCollection const &);
+bool GoNextPara( SwPaM&, SwMoveFnCollection const &);
+extern SW_DLLPUBLIC SwMoveFnCollection const & fnParaStart;
+extern SW_DLLPUBLIC SwMoveFnCollection const & fnParaEnd;
 
 // Direction-parameter for MoveSection.
-typedef SwMoveFnCollection* SwPosSection;
-typedef bool (*SwWhichSection)( SwPaM&, SwPosSection );
-extern SwWhichSection fnSectionPrev, fnSectionCurr, fnSectionNext;
-extern SwPosSection fnSectionStart, fnSectionEnd;
+typedef bool (*SwWhichSection)( SwPaM&, SwMoveFnCollection const & );
+extern SwMoveFnCollection const & fnSectionStart;
+extern SwMoveFnCollection const & fnSectionEnd;
+
+bool GoCurrSection( SwPaM&, SwMoveFnCollection const &);
 
 // Direction-parameter for MoveTable
-typedef SwMoveFnCollection* SwPosTable;
-typedef bool (*SwWhichTable)( SwPaM&, SwPosTable, bool bInReadOnly );
-extern SwWhichTable fnTablePrev, fnTableCurr, fnTableNext;
-extern SwPosTable fnTableStart, fnTableEnd;
+typedef bool (*SwWhichTable)( SwPaM&, SwMoveFnCollection const &, bool bInReadOnly );
+SW_DLLPUBLIC bool GotoPrevTable( SwPaM&, SwMoveFnCollection const &, bool bInReadOnly );
+SW_DLLPUBLIC bool GotoCurrTable( SwPaM&, SwMoveFnCollection const &, bool bInReadOnly );
+bool GotoNextTable( SwPaM&, SwMoveFnCollection const &, bool bInReadOnly );
+extern SW_DLLPUBLIC SwMoveFnCollection const & fnTableStart;
+extern SW_DLLPUBLIC SwMoveFnCollection const & fnTableEnd;
 
 // Direction-parameter for MoveColumn
 typedef SwLayoutFrame * (*SwWhichColumn)( const SwLayoutFrame * );
 typedef SwContentFrame  * (*SwPosColumn)( const SwLayoutFrame * );
-extern SwWhichColumn fnColumnPrev, fnColumnCurr, fnColumnNext;
-extern SwPosColumn fnColumnStart, fnColumnEnd;
+SwLayoutFrame* GetPrevColumn( const SwLayoutFrame* pLayFrame );
+SwLayoutFrame* GetCurrColumn( const SwLayoutFrame* pLayFrame );
+SwLayoutFrame* GetNextColumn( const SwLayoutFrame* pLayFrame );
+SwContentFrame* GetColumnStt( const SwLayoutFrame* pColFrame );
+SwContentFrame* GetColumnEnd( const SwLayoutFrame* pColFrame );
 
 // Direction-parameter for MoveRegion (ranges!)
-typedef SwMoveFnCollection* SwPosRegion;
-typedef bool (*SwWhichRegion)( SwPaM&, SwPosRegion, bool bInReadOnly );
-extern SwWhichRegion fnRegionPrev, fnRegionCurr, fnRegionNext, fnRegionCurrAndSkip;
-extern SwPosRegion fnRegionStart, fnRegionEnd;
+typedef bool (*SwWhichRegion)( SwPaM&, SwMoveFnCollection const &, bool bInReadOnly );
+bool GotoPrevRegion( SwPaM&, SwMoveFnCollection const &, bool bInReadOnly );
+bool GotoNextRegion( SwPaM&, SwMoveFnCollection const &, bool bInReadOnly );
+bool GotoCurrRegionAndSkip( SwPaM&, SwMoveFnCollection const &, bool bInReadOnly );
+extern SwMoveFnCollection const & fnRegionStart;
+extern SwMoveFnCollection const & fnRegionEnd;
 
 /*
  * The following combinations are allowed:
- *  - find one in body                      -> FND_IN_BODY
- *  - find all in body:                     -> FND_IN_BODYONLY | FND_IN_SELALL
- *  - find in selections: one/all           -> FND_IN_SEL  [ | FND_IN_SELALL ]
- *  - find not in body: one/all             -> FND_IN_OTHER [ | FND_IN_SELALL ]
- *  - find all everywhere                   -> FND_IN_SELALL
+ *  - find one in body                      -> FindRanges::InBody
+ *  - find all in body:                     -> FindRanges::InBodyOnly | FindRanges::InSelAll
+ *  - find in selections: one/all           -> FindRanges::InSel  [ | FindRanges::InSelAll ]
+ *  - find not in body: one/all             -> FindRanges::InOther [ | FindRanges::InSelAll ]
+ *  - find all everywhere                   -> FindRanges::InSelAll
  */
-enum FindRanges
+enum class FindRanges
 {
-    FND_IN_BODY     = 0x00,     ///< Find "one" only in body text.
-    FND_IN_OTHER    = 0x02,     ///< Find "all" in Footer/Header/Fly...
-    FND_IN_SEL      = 0x04,     ///< Find in selections.
-    FND_IN_BODYONLY = 0x08,     ///< Find only in body - only in combination with FND_IN_SELALL !!!
-    FND_IN_SELALL   = 0x01      ///< All (only in non-body and selections).
+    InBody     = 0x00,     ///< Find "one" only in body text.
+    InSelAll   = 0x01,     ///< All (only in non-body and selections).
+    InOther    = 0x02,     ///< Find "all" in Footer/Header/Fly...
+    InSel      = 0x04,     ///< Find in selections.
+    InBodyOnly = 0x08,     ///< Find only in body - only in combination with FindRanges::InSelAll !!!
 };
-
-enum SwDocPositions
+namespace o3tl
 {
-    DOCPOS_START,
-    DOCPOS_CURR,
-    DOCPOS_END,
-    DOCPOS_OTHERSTART,
-    DOCPOS_OTHEREND
+    template<> struct typed_flags<FindRanges> : is_typed_flags<FindRanges, 0x0f> {};
+}
+
+enum class SwDocPositions
+{
+    Start,
+    Curr,
+    End,
+    OtherStart,
+    OtherEnd
 };
-
-SW_DLLPUBLIC SwWhichPara GetfnParaCurr();
-SW_DLLPUBLIC SwPosPara GetfnParaStart();
-SW_DLLPUBLIC SwPosPara GetfnParaEnd();
-
-SW_DLLPUBLIC SwWhichTable GetfnTablePrev();
-SW_DLLPUBLIC SwWhichTable GetfnTableCurr();
-SW_DLLPUBLIC SwPosTable GetfnTableStart();
-SW_DLLPUBLIC SwPosTable GetfnTableEnd();
 
 #endif // INCLUDED_SW_INC_CSHTYP_HXX
 

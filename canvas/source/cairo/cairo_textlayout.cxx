@@ -51,19 +51,19 @@ namespace cairocanvas
                               sal_Int8      nTextDirection )
         {
             // TODO(P3): avoid if already correctly set
-            ComplexTextLayoutMode nLayoutMode = TEXT_LAYOUT_DEFAULT;
+            ComplexTextLayoutFlags nLayoutMode = ComplexTextLayoutFlags::Default;
             switch( nTextDirection )
             {
                 case rendering::TextDirection::WEAK_LEFT_TO_RIGHT:
                     break;
                 case rendering::TextDirection::STRONG_LEFT_TO_RIGHT:
-                    nLayoutMode = TEXT_LAYOUT_BIDI_STRONG;
+                    nLayoutMode = ComplexTextLayoutFlags::BiDiStrong;
                     break;
                 case rendering::TextDirection::WEAK_RIGHT_TO_LEFT:
-                    nLayoutMode = TEXT_LAYOUT_BIDI_RTL;
+                    nLayoutMode = ComplexTextLayoutFlags::BiDiRtl;
                     break;
                 case rendering::TextDirection::STRONG_RIGHT_TO_LEFT:
-                    nLayoutMode = TEXT_LAYOUT_BIDI_RTL | TEXT_LAYOUT_BIDI_STRONG;
+                    nLayoutMode = ComplexTextLayoutFlags::BiDiRtl | ComplexTextLayoutFlags::BiDiStrong;
                     break;
                 default:
                     break;
@@ -71,7 +71,7 @@ namespace cairocanvas
 
             // set calculated layout mode. Origin is always the left edge,
             // as required at the API spec
-            rOutDev.SetLayoutMode( nLayoutMode | TEXT_LAYOUT_TEXTORIGIN_LEFT );
+            rOutDev.SetLayoutMode( nLayoutMode | ComplexTextLayoutFlags::TextOriginLeft );
         }
 
         bool compareFallbacks(const SystemGlyphData&rA, const SystemGlyphData &rB)
@@ -168,7 +168,7 @@ namespace cairocanvas
 
         setupLayoutMode( *pVDev.get(), mnTextDirection );
 
-        const sal_Int32 nAboveBaseline( -aMetric.GetInternalLeading() - aMetric.GetAscent() );
+        const sal_Int32 nAboveBaseline( -aMetric.GetAscent() );
         const sal_Int32 nBelowBaseline( aMetric.GetDescent() );
 
         if( maLogicalAdvancements.getLength() )
@@ -480,7 +480,7 @@ namespace cairocanvas
 
             //faux italics
             if (rSysFontData.bFakeItalic)
-                m.xy = -m.xx * 0x6000L / 0x10000L;
+                m.xy = -m.xx * 0x6000 / 0x10000;
 
             cairo_set_font_matrix(pSCairo.get(), &m);
 
@@ -593,9 +593,7 @@ namespace cairocanvas
 
     uno::Sequence< OUString > SAL_CALL TextLayout::getSupportedServiceNames()  throw( uno::RuntimeException, std::exception )
     {
-        uno::Sequence< OUString > aRet { "com.sun.star.rendering.TextLayout" };
-
-        return aRet;
+        return { "com.sun.star.rendering.TextLayout" };
     }
 }
 

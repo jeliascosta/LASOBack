@@ -74,7 +74,7 @@ private:
 public:
     DlgEdHint (Kind);
     DlgEdHint (Kind, DlgEdObj* pObj);
-    virtual ~DlgEdHint();
+    virtual ~DlgEdHint() override;
 
     Kind       GetKind() const { return eKind; }
     DlgEdObj*  GetObject() const { return pDlgEdObj; }
@@ -102,7 +102,7 @@ public:
     };
 
 private:
-    DECL_LINK_TYPED(MarkTimeout, Idle *, void);
+    DECL_LINK(MarkTimeout, Idle *, void);
 
     static void Print( Printer* pPrinter, const OUString& rTitle );
 
@@ -126,8 +126,6 @@ private:
     sal_uInt16          eActObj;
     bool                bFirstDraw;
     Size                aGridSize;
-    bool                bGridVisible;
-    bool                bGridSnap;
     bool                bCreateOK;
     Rectangle           aPaintRect;
     bool                bDialogModelChanged;
@@ -139,9 +137,9 @@ public:
     DlgEditor (
         vcl::Window&, DialogWindowLayout&,
         css::uno::Reference<css::frame::XModel> const& xModel,
-        css::uno::Reference<css::container::XNameContainer> xDialogModel
+        css::uno::Reference<css::container::XNameContainer> const & xDialogModel
     );
-    virtual ~DlgEditor();
+    virtual ~DlgEditor() override;
 
     vcl::Window& GetWindow() const { return rWindow; }
 
@@ -149,7 +147,7 @@ public:
         @see GetWindow
         @see SetWindow
     */
-    css::uno::Reference< css::awt::XControlContainer >
+    css::uno::Reference< css::awt::XControlContainer > const &
                     GetWindowControlContainer();
 
     void            SetScrollBars( ScrollBar* pHScroll, ScrollBar* pVScroll );

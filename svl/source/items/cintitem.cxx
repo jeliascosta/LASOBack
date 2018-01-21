@@ -26,16 +26,14 @@
 // virtual
 bool CntByteItem::operator ==(const SfxPoolItem & rItem) const
 {
-    DBG_ASSERT(dynamic_cast<const CntByteItem*>( &rItem ) !=  nullptr,
-               "CntByteItem::operator ==(): Bad type");
+    assert(dynamic_cast<const CntByteItem*>(&rItem) != nullptr);
     return m_nValue == (static_cast< const CntByteItem * >(&rItem))->m_nValue;
 }
 
 // virtual
-bool CntByteItem::GetPresentation(SfxItemPresentation,
-                                                 SfxMapUnit, SfxMapUnit,
-                                                 OUString & rText,
-                                                 const IntlWrapper *) const
+bool CntByteItem::GetPresentation(SfxItemPresentation, MapUnit, MapUnit,
+                                  OUString & rText,
+                                  const IntlWrapper *) const
 {
     rText = OUString::number( m_nValue );
     return true;
@@ -96,17 +94,15 @@ CntUInt16Item::CntUInt16Item(sal_uInt16 which, SvStream & rStream) :
 // virtual
 bool CntUInt16Item::operator ==(const SfxPoolItem & rItem) const
 {
-    DBG_ASSERT(dynamic_cast< const CntUInt16Item* >(&rItem) !=  nullptr,
-               "CntUInt16Item::operator ==(): Bad type");
-    return m_nValue == (static_cast< const CntUInt16Item * >(&rItem))->
-                        m_nValue;
+    assert(dynamic_cast<const CntUInt16Item*>(&rItem) != nullptr);
+    return m_nValue == static_cast<const CntUInt16Item *>(&rItem)->m_nValue;
 }
 
 // virtual
 bool CntUInt16Item::GetPresentation(SfxItemPresentation,
-                                                   SfxMapUnit, SfxMapUnit,
-                                                   OUString & rText,
-                                                   const IntlWrapper *)
+                                    MapUnit, MapUnit,
+                                    OUString & rText,
+                                    const IntlWrapper *)
     const
 {
     rText = OUString::number( m_nValue );
@@ -166,17 +162,15 @@ CntInt32Item::CntInt32Item(sal_uInt16 which, SvStream & rStream)
 // virtual
 bool CntInt32Item::operator ==(const SfxPoolItem & rItem) const
 {
-    DBG_ASSERT(dynamic_cast< const CntInt32Item*>(&rItem) !=  nullptr,
-               "CntInt32Item::operator ==(): Bad type");
-    return m_nValue == (static_cast< const CntInt32Item * >(&rItem))->
-                        m_nValue;
+    assert(dynamic_cast<const CntInt32Item*>(&rItem) != nullptr);
+    return m_nValue == static_cast<const CntInt32Item *>(&rItem)->m_nValue;
 }
 
 // virtual
 bool CntInt32Item::GetPresentation(SfxItemPresentation,
-                                                  SfxMapUnit, SfxMapUnit,
-                                                  OUString & rText,
-                                                  const IntlWrapper *) const
+                                   MapUnit, MapUnit,
+                                   OUString & rText,
+                                   const IntlWrapper *) const
 {
     rText = OUString::number( m_nValue );
     return true;
@@ -235,17 +229,15 @@ CntUInt32Item::CntUInt32Item(sal_uInt16 which, SvStream & rStream) :
 // virtual
 bool CntUInt32Item::operator ==(const SfxPoolItem & rItem) const
 {
-    DBG_ASSERT(dynamic_cast< const CntUInt32Item* >(&rItem) !=  nullptr,
-               "CntUInt32Item::operator ==(): Bad type");
-    return m_nValue == (static_cast< const CntUInt32Item * >(&rItem))->
-                        m_nValue;
+    assert(dynamic_cast<const CntUInt32Item*>(&rItem) != nullptr);
+    return m_nValue == static_cast<const CntUInt32Item *>(&rItem)->m_nValue;
 }
 
 // virtual
 bool CntUInt32Item::GetPresentation(SfxItemPresentation,
-                                                   SfxMapUnit, SfxMapUnit,
-                                                   OUString & rText,
-                                                   const IntlWrapper *)
+                                    MapUnit, MapUnit,
+                                    OUString & rText,
+                                    const IntlWrapper *)
     const
 {
     rText = OUString::number(m_nValue);

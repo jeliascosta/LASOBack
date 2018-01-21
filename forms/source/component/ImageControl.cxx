@@ -301,7 +301,7 @@ void OImageControlModel::setFastPropertyValue_NoBroadcast(sal_Int32 nHandle, con
 
 
 sal_Bool OImageControlModel::convertFastPropertyValue(Any& rConvertedValue, Any& rOldValue, sal_Int32 nHandle, const Any& rValue)
-                                throw( IllegalArgumentException )
+                                throw( IllegalArgumentException, RuntimeException, std::exception )
 {
     switch (nHandle)
     {
@@ -626,14 +626,6 @@ void OImageControlModel::doSetControlValue( const Any& _rValue )
     }
 }
 
-// OComponentHelper
-
-void SAL_CALL OImageControlModel::disposing()
-{
-    OBoundControlModel::disposing();
-}
-
-
 void OImageControlModel::resetNoBroadcast()
 {
     if ( hasField() )          // only reset when we are connected to a column
@@ -665,7 +657,7 @@ void SAL_CALL OImageControlModel::startProduction(  ) throw (RuntimeException, s
 }
 
 
-IMPL_LINK_TYPED( OImageControlModel, OnImageImportDone, ::Graphic*, i_pGraphic, void )
+IMPL_LINK( OImageControlModel, OnImageImportDone, ::Graphic*, i_pGraphic, void )
 {
     const Reference< XGraphic > xGraphic( i_pGraphic != nullptr ? Image( i_pGraphic->GetBitmapEx() ).GetXGraphic() : nullptr );
     m_bExternalGraphic = false;

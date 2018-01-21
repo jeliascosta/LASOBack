@@ -235,12 +235,8 @@ sal_Bool SAL_CALL SVGFilter::filter( const Sequence< PropertyValue >& rDescripto
 
             if (xSelection.is())
             {
-                uno::Any aSelection;
-
-                if (xSelection->getSelection() >>= aSelection)
-                {
-                    bGotSelection = ( aSelection >>= maShapeSelection );
-                }
+                bGotSelection
+                    = ( xSelection->getSelection() >>= maShapeSelection );
             }
         }
 

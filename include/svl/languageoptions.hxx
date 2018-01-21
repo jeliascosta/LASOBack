@@ -75,7 +75,7 @@ public:
 
     // bDontLoad is for referencing purposes only
     SvtLanguageOptions( bool _bDontLoad = false );
-    virtual ~SvtLanguageOptions();
+    virtual ~SvtLanguageOptions() override;
 
     // CJK options
     bool    IsCJKFontEnabled() const;
@@ -122,7 +122,7 @@ private:
 
 public:
     SvtSystemLanguageOptions();
-    virtual ~SvtSystemLanguageOptions();
+    virtual ~SvtSystemLanguageOptions() override;
 
     virtual void    Notify( const css::uno::Sequence< OUString >& rPropertyNames ) override;
 
@@ -131,6 +131,9 @@ public:
     bool            isCTLKeyboardLayoutInstalled() const;
     bool            isCJKKeyboardLayoutInstalled() const;
 };
+
+OUString SVL_DLLPUBLIC getInstalledLocaleForLanguage(css::uno::Sequence<OUString> const & installed, OUString const & locale);
+OUString SVL_DLLPUBLIC getInstalledLocaleForSystemUILanguage(css::uno::Sequence<OUString> const & installed);
 
 #endif // INCLUDED_SVL_LANGUAGEOPTIONS_HXX
 

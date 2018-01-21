@@ -79,11 +79,6 @@ SvxOle2Shape::~SvxOle2Shape() throw()
 {
 }
 
-css::uno::Any SAL_CALL SvxOle2Shape::queryAggregation( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception)
-{
-    return SvxShapeText::queryAggregation( rType );
-}
-
 //XPropertySet
 bool SvxOle2Shape::setPropertyValueImpl( const OUString& rName, const SfxItemPropertySimpleEntry* pProperty, const css::uno::Any& rValue ) throw(css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception)
 {
@@ -102,7 +97,7 @@ bool SvxOle2Shape::setPropertyValueImpl( const OUString& rName, const SfxItemPro
             {
                 try
                 {
-                    MapUnit aMapUnit( MAP_100TH_MM ); // the API handles with MAP_100TH_MM map mode
+                    MapUnit aMapUnit( MapUnit::Map100thMM ); // the API handles with MapUnit::Map100thMM map mode
                     MapUnit aObjUnit = VCLUnoHelper::UnoEmbed2VCLMapUnit( xObj->getMapUnit( embed::Aspects::MSOLE_CONTENT ) );
                     aTmp = OutputDevice::LogicToLogic( aTmp, aMapUnit, aObjUnit );
                     xObj->setVisualAreaSize( embed::Aspects::MSOLE_CONTENT, awt::Size( aTmp.Width(), aTmp.Height() ) );
@@ -234,7 +229,7 @@ bool SvxOle2Shape::getPropertyValueImpl( const OUString& rName, const SfxItemPro
                 if ( pGraphic->IsLink() )
                 {
                     GfxLink aLnk = pGraphic->GetLink();
-                    if ( aLnk.GetType() == GFX_LINK_TYPE_NATIVE_WMF )
+                    if ( aLnk.GetType() == GfxLinkType::NativeWmf )
                     {
                         bIsWMF = true;
                         uno::Sequence<sal_Int8> aSeq(reinterpret_cast<sal_Int8 const *>(aLnk.GetData()), (sal_Int32) aLnk.GetDataSize());
@@ -266,7 +261,7 @@ bool SvxOle2Shape::getPropertyValueImpl( const OUString& rName, const SfxItemPro
         awt::Rectangle aVisArea;
         if( dynamic_cast<const SdrOle2Obj* >(mpObj.get()) != nullptr)
         {
-            MapMode aMapMode( MAP_100TH_MM ); // the API uses this map mode
+            MapMode aMapMode( MapUnit::Map100thMM ); // the API uses this map mode
             Size aTmp = static_cast<SdrOle2Obj*>(mpObj.get())->GetOrigObjSize( &aMapMode ); // get the size in the requested map mode
             aVisArea = awt::Rectangle( 0, 0, aTmp.Width(), aTmp.Height() );
         }
@@ -334,17 +329,11 @@ bool SvxOle2Shape::getPropertyValueImpl( const OUString& rName, const SfxItemPro
         {
             const Graphic* pGraphic = pOle->GetGraphic();
 
-            // if there isn't already a preview graphic set, check if we need to generate
-            // one if model says so
-            if( pGraphic == nullptr && !pOle->IsEmptyPresObj() && mpModel->IsSaveOLEPreview() )
-                pGraphic = pOle->GetGraphic();
-
             if( pGraphic )
             {
                 GraphicObject aObj( *pGraphic );
                 aURL = UNO_NAME_GRAPHOBJ_URLPREFIX;
-                aURL += OStringToOUString(aObj.GetUniqueID(),
-                    RTL_TEXTENCODING_ASCII_US);
+                aURL += OStringToOUString(aObj.GetUniqueID(), RTL_TEXTENCODING_ASCII_US);
             }
         }
         rValue <<= aURL;
@@ -702,7 +691,7 @@ bool SvxPluginShape::getPropertyValueImpl( const OUString& rName, const SfxItemP
             uno::Reference < beans::XPropertySet > xSet( static_cast<SdrOle2Obj*>(mpObj.get())->GetObjRef()->getComponent(), uno::UNO_QUERY );
             if( xSet.is() )
             {
-                rValue <<= xSet->getPropertyValue( rName );
+                rValue = xSet->getPropertyValue( rName );
             }
         }
         return true;
@@ -779,7 +768,7 @@ bool SvxFrameShape::getPropertyValueImpl(const OUString& rName, const SfxItemPro
             uno::Reference < beans::XPropertySet > xSet( static_cast<SdrOle2Obj*>(mpObj.get())->GetObjRef()->getComponent(), uno::UNO_QUERY );
             if( xSet.is() )
             {
-                rValue <<= xSet->getPropertyValue( rName );
+                rValue = xSet->getPropertyValue( rName );
             }
         }
         return true;
@@ -1007,7 +996,7 @@ bool SvxMediaShape::getPropertyValueImpl( const OUString& rName, const SfxItemPr
     }
 }
 
-SvxDummyShapeContainer::SvxDummyShapeContainer(uno::Reference< drawing::XShapes > xObject):
+SvxDummyShapeContainer::SvxDummyShapeContainer(uno::Reference< drawing::XShapes > const & xObject):
     m_xDummyObject(xObject)
 {
 }

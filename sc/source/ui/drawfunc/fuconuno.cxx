@@ -31,13 +31,13 @@
 FuConstUnoControl::FuConstUnoControl(ScTabViewShell* pViewSh, vcl::Window* pWin, ScDrawView* pViewP,
                    SdrModel* pDoc, SfxRequest& rReq)
     : FuConstruct(pViewSh, pWin, pViewP, pDoc, rReq)
-    , nInventor(0)
+    , nInventor(SdrInventor::Unknown)
     , nIdentifier(0)
 {
     const SfxUInt32Item* pInventorItem = rReq.GetArg<SfxUInt32Item>(SID_FM_CONTROL_INVENTOR);
     const SfxUInt16Item* pIdentifierItem = rReq.GetArg<SfxUInt16Item>(SID_FM_CONTROL_IDENTIFIER);
     if( pInventorItem )
-        nInventor = pInventorItem->GetValue();
+        nInventor = (SdrInventor)pInventorItem->GetValue();
     if( pIdentifierItem )
         nIdentifier = pIdentifierItem->GetValue();
 }
@@ -84,17 +84,6 @@ bool FuConstUnoControl::MouseButtonDown(const MouseEvent& rMEvt)
 
 /*************************************************************************
 |*
-|* MouseMove-event
-|*
-\************************************************************************/
-
-bool FuConstUnoControl::MouseMove(const MouseEvent& rMEvt)
-{
-    return FuConstruct::MouseMove(rMEvt);
-}
-
-/*************************************************************************
-|*
 |* MouseButtonUp-event
 |*
 \************************************************************************/
@@ -108,24 +97,10 @@ bool FuConstUnoControl::MouseButtonUp(const MouseEvent& rMEvt)
 
     if ( pView->IsCreateObj() && rMEvt.IsLeft() )
     {
-        pView->EndCreateObj(SDRCREATE_FORCEEND);
+        pView->EndCreateObj(SdrCreateCmd::ForceEnd);
         bReturn = true;
     }
     return (FuConstruct::MouseButtonUp(rMEvt) || bReturn);
-}
-
-/*************************************************************************
-|*
-|* Tastaturereignisse bearbeiten
-|*
-|* Wird ein KeyEvent bearbeitet, so ist der Return-Wert sal_True, andernfalls
-|* FALSE.
-|*
-\************************************************************************/
-
-bool FuConstUnoControl::KeyInput(const KeyEvent& rKEvt)
-{
-    return FuConstruct::KeyInput(rKEvt);
 }
 
 /*************************************************************************

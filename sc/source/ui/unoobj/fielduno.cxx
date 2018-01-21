@@ -28,7 +28,7 @@
 #include "unonames.hxx"
 #include "editutil.hxx"
 
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <vcl/svapp.hxx>
 
 #include <editeng/eeitem.hxx>
@@ -174,7 +174,7 @@ class ScUnoEditEngine : public ScEditEngineDefaulter
 
 public:
     explicit ScUnoEditEngine(ScEditEngineDefaulter* pSource);
-    virtual ~ScUnoEditEngine();
+    virtual ~ScUnoEditEngine() override;
 
     virtual OUString  CalcFieldValue( const SvxFieldItem& rField, sal_Int32 nPara, sal_Int32 nPos,
                                     Color*& rTxtColor, Color*& rFldColor ) override;
@@ -317,8 +317,7 @@ void ScCellFieldsObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
     {
         //! Ref-Update
     }
-    else if ( dynamic_cast<const SfxSimpleHint*>(&rHint) &&
-            static_cast<const SfxSimpleHint&>(rHint).GetId() == SFX_HINT_DYING )
+    else if ( rHint.GetId() == SFX_HINT_DYING )
     {
         pDocShell = nullptr;       // ungueltig geworden
     }
@@ -1392,11 +1391,8 @@ sal_Bool SAL_CALL ScEditFieldObj::supportsService( const OUString& rServiceName 
 uno::Sequence<OUString> SAL_CALL ScEditFieldObj::getSupportedServiceNames()
                                                     throw(uno::RuntimeException, std::exception)
 {
-    uno::Sequence<OUString> aRet(2);
-    OUString* pArray = aRet.getArray();
-    pArray[0] = "com.sun.star.text.TextField";
-    pArray[1] = "com.sun.star.text.TextContent";
-    return aRet;
+    return {"com.sun.star.text.TextField",
+            "com.sun.star.text.TextContent"};
 }
 
 uno::Sequence<uno::Type> SAL_CALL ScEditFieldObj::getTypes() throw(uno::RuntimeException, std::exception)

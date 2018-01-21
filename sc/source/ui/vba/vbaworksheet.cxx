@@ -59,6 +59,7 @@
 #include <ooo/vba/excel/XWorkbook.hpp>
 #include <ooo/vba/XControlProvider.hpp>
 
+#include <basic/sberrors.hxx>
 #include <comphelper/processfactory.hxx>
 #include <comphelper/servicehelper.hxx>
 #include <vbahelper/vbashapes.hxx>
@@ -239,7 +240,7 @@ ScVbaWorksheet::createSheetCopyInNewDoc(const OUString& aCurrSheetName)
 }
 
 css::uno::Reference< ov::excel::XWorksheet >
-ScVbaWorksheet::createSheetCopy(uno::Reference<excel::XWorksheet> xSheet, bool bAfter)
+ScVbaWorksheet::createSheetCopy(uno::Reference<excel::XWorksheet> const & xSheet, bool bAfter)
 {
     OUString aCurrSheetName = getName();
     ScVbaWorksheet* pDestSheet = excel::getImplFromDocModuleWrapper<ScVbaWorksheet>( xSheet );
@@ -434,7 +435,7 @@ void SAL_CALL ScVbaWorksheet::setAutoFilterMode( sal_Bool bAutoFilterMode ) thro
                                     aRange.aStart.Tab(), ScMF::Auto );
         ScRange aPaintRange(aRange.aStart, aRange.aEnd);
         aPaintRange.aEnd.SetRow(aPaintRange.aStart.Row());
-        pDocShell->PostPaint(aPaintRange, PAINT_GRID);
+        pDocShell->PostPaint(aPaintRange, PaintPartFlags::Grid);
     }
 }
 
@@ -899,8 +900,8 @@ ScVbaWorksheet::ShowDataForm( ) throw (uno::RuntimeException, std::exception)
     ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
     OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-    AbstractScDataFormDlg* pDlg = pFact->CreateScDataFormDlg(pTabViewShell->GetDialogParent(),
-        pTabViewShell);
+    ScopedVclPtr<AbstractScDataFormDlg> pDlg(pFact->CreateScDataFormDlg(pTabViewShell->GetDialogParent(),
+                                                                        pTabViewShell));
     OSL_ENSURE(pDlg, "Dialog create fail!");
 
     pDlg->Execute();

@@ -36,7 +36,7 @@
 #include <vector>
 #include <memory>
 
-class PaletteManager
+class SVX_DLLPUBLIC PaletteManager
 {
     const sal_uInt16        mnMaxRecentColors;
 
@@ -46,35 +46,41 @@ class PaletteManager
     long                    mnColorCount;
     svx::ToolboxButtonColorUpdater* mpBtnUpdater;
 
+    XColorListRef           pColorList;
     Color                   mLastColor;
-    std::deque<Color>       maRecentColors;
+    std::deque<NamedColor>  maRecentColors;
     std::vector<std::unique_ptr<Palette>> m_Palettes;
 
-    std::function<void(const OUString&, const Color&)> maColorSelectFunction;
-
+    std::function<void(const OUString&, const NamedColor&)> maColorSelectFunction;
+    css::uno::Reference < css::uno::XComponentContext > m_context;
 public:
     PaletteManager();
     ~PaletteManager();
+    PaletteManager(const PaletteManager&) = delete;
+    PaletteManager& operator=(const PaletteManager&) = delete;
     void        LoadPalettes();
     void        ReloadColorSet(SvxColorValueSet& rColorSet);
     void        ReloadRecentColorSet(SvxColorValueSet& rColorSet);
     std::vector<OUString> GetPaletteList();
     void        SetPalette( sal_Int32 nPos );
     sal_Int32   GetPalette();
+    sal_Int32   GetPaletteCount() { return mnNumOfPalettes; }
+    OUString    GetPaletteName();
+    OUString    GetSelectedPalettePath();
 
     long        GetColorCount();
     long        GetRecentColorCount();
 
     const Color& GetLastColor();
     void        SetLastColor(const Color& rLastColor);
-    void        AddRecentColor(const Color& rRecentColor);
+    void        AddRecentColor(const Color& rRecentColor, const OUString& rColorName, bool bFront = true);
 
     void        SetBtnUpdater(svx::ToolboxButtonColorUpdater* pBtnUpdater);
     void        PopupColorPicker(const OUString& aCommand);
 
-    void        SetColorSelectFunction(const std::function<void(const OUString&, const Color&)>& aColorSelectFunction);
+    void        SetColorSelectFunction(const std::function<void(const OUString&, const NamedColor&)>& aColorSelectFunction);
 
-    static void DispatchColorCommand(const OUString& aCommand, const Color& rColor);
+    static void DispatchColorCommand(const OUString& aCommand, const NamedColor& rColor);
 };
 
 #endif // INCLUDED_SVX_PALETTEMANAGER_HXX

@@ -17,20 +17,13 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <sfx2/app.hxx>
-#include <vcl/virdev.hxx>
 #include <vcl/builderfactory.hxx>
-#include <tools/tenccvt.hxx>
-#include <osl/thread.h>
-
-#include <tools/stream.hxx>
 
 #include "starmath.hrc"
 
 #include "utility.hxx"
 #include "dialog.hxx"
 #include "view.hxx"
-#include "smdll.hxx"
 
 
 // return pointer to active SmViewShell, if this is not possible
@@ -95,7 +88,13 @@ OUString SmFontPickList::GetStringItem(const vcl::Font &rFont)
 
 void SmFontPickList::Insert(const vcl::Font &rFont)
 {
-    Remove(rFont);
+    for (size_t nPos = 0; nPos < aFontVec.size(); nPos++)
+        if (CompareItem( aFontVec[nPos], rFont))
+        {
+            aFontVec.erase( aFontVec.begin() + nPos );
+            break;
+        }
+
     aFontVec.push_front( rFont );
 
     if (aFontVec.size() > nMaxItems)
@@ -103,17 +102,6 @@ void SmFontPickList::Insert(const vcl::Font &rFont)
         aFontVec.pop_back();
     }
 }
-
-void SmFontPickList::Remove(const vcl::Font &rFont)
-{
-    for (size_t nPos = 0; nPos < aFontVec.size(); nPos++)
-        if (CompareItem( aFontVec[nPos], rFont))
-        {
-            aFontVec.erase( aFontVec.begin() + nPos );
-            break;
-        }
-}
-
 
 void SmFontPickList::ReadFrom(const SmFontDialog& rDialog)
 {
@@ -137,7 +125,7 @@ SmFontPickListBox::SmFontPickListBox (vcl::Window* pParent, WinBits nBits) :
     SetSelectHdl(LINK(this, SmFontPickListBox, SelectHdl));
 }
 
-IMPL_LINK_NOARG_TYPED( SmFontPickListBox, SelectHdl, ListBox&, void )
+IMPL_LINK_NOARG( SmFontPickListBox, SelectHdl, ListBox&, void )
 {
     OUString aString;
 

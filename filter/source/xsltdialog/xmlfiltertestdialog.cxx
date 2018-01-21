@@ -114,7 +114,7 @@ static bool checkComponent( Reference< XComponent >& rxComponent, const OUString
                 // special case for impress documents which supports same service as draw documents
                 if ( rServiceName == "com.sun.star.drawing.DrawingDocument" )
                 {
-                    // so if we want a draw we need to check if its not an impress
+                    // so if we want a draw we need to check if it's not an impress
                     if( !xInfo->supportsService("com.sun.star.presentation.PresentationDocument") )
                         return true;
                 }
@@ -587,11 +587,6 @@ void XMLFilterTestDialog::onImportBrowse()
     initDialog();
 }
 
-void XMLFilterTestDialog::onImportRecentDocument()
-{
-    import( m_sImportRecentFile );
-}
-
 void XMLFilterTestDialog::import( const OUString& rURL )
 {
     try
@@ -655,7 +650,7 @@ void XMLFilterTestDialog::import( const OUString& rURL )
     }
 }
 
-IMPL_LINK_TYPED(XMLFilterTestDialog, ClickHdl_Impl, Button *, pButton, void )
+IMPL_LINK(XMLFilterTestDialog, ClickHdl_Impl, Button *, pButton, void )
 {
     if (m_pPBExportBrowse == pButton)
     {
@@ -671,7 +666,7 @@ IMPL_LINK_TYPED(XMLFilterTestDialog, ClickHdl_Impl, Button *, pButton, void )
     }
     else if (m_pPBRecentFile == pButton)
     {
-        onImportRecentDocument();
+        import( m_sImportRecentFile );
     }
     else if (m_pPBClose == pButton)
     {

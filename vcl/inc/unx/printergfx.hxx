@@ -27,6 +27,7 @@
 #include "vclpluginapi.h"
 
 #include <list>
+#include <vector>
 
 namespace psp {
 
@@ -70,8 +71,6 @@ public:
             mnBlue  ((nRGB & 0x000000ff)      ),
             meColorspace (eRGB)
     {}
-    ~PrinterColor ()
-    {}
 
     bool        Is () const
     { return meColorspace != eInvalid; }
@@ -91,15 +90,6 @@ public:
     }
     bool        operator!= (const PrinterColor& aColor) const
     { return ! (aColor==*this); }
-    PrinterColor&   operator= (const PrinterColor& aColor)
-    {
-        meColorspace = aColor.meColorspace;
-        mnRed   = aColor.mnRed;
-        mnGreen = aColor.mnGreen;
-        mnBlue  = aColor.mnBlue;
-
-        return *this;
-    }
 
     PrinterColor&   operator= (sal_uInt32 nRGB)
     {
@@ -192,18 +182,15 @@ private:
        glyph in one of the subfonts, the mapping from unicode to the
        glyph has to be remembered */
 
-    std::list< sal_Int32 > maPS1Font;
+    std::vector< sal_Int32 > maPS1Font;
     std::list< GlyphSet > maPS3Font;
 
     sal_Int32       mnFontID;
-    sal_Int32       mnFallbackID;
     sal_Int32       mnTextAngle;
-    bool           mbTextVertical;
+    bool            mbTextVertical;
     PrintFontManager& mrFontMgr;
 
     /* bitmap drawing implementation */
-
-    bool    mbCompressBmp;
 
     void    DrawPS1GrayImage      (const PrinterBmp& rBitmap, const Rectangle& rArea);
     void    writePS2ImageHeader   (const Rectangle& rArea, psp::ImageType nType);
@@ -235,7 +222,6 @@ private:
                                   CharacterMetric *p_bbox);
     fontID          getCharMetric (const Font2 &rFont, sal_Unicode n_char,
                                    CharacterMetric *p_bbox);
-    fontID          getFallbackID () const { return mnFallbackID; }
 
 public:
     /* graphics status update */
@@ -249,7 +235,7 @@ public:
 
     void            PSUploadPS1Font (sal_Int32 nFontID);
     void            PSSetFont (const OString& rName,
-                               rtl_TextEncoding nEncoding = RTL_TEXTENCODING_DONTKNOW)
+                               rtl_TextEncoding nEncoding)
     { maVirtualStatus.maFont = rName; maVirtualStatus.maEncoding = nEncoding; }
 
     /* graphics status stack */
@@ -353,7 +339,7 @@ public:
                                 const PrinterBmp& rBitmap);
 
     // font and text handling
-    sal_uInt16      SetFont (
+    void            SetFont (
                              sal_Int32 nFontID,
                              sal_Int32 nPointHeight,
                              sal_Int32 nPointWidth,
@@ -378,7 +364,7 @@ public:
     { return maVirtualStatus.mbArtBold; }
     void            DrawText (const Point& rPoint,
                               const sal_Unicode* pStr, sal_Int16 nLen,
-                              const sal_Int32* pDeltaArray = nullptr);
+                              const sal_Int32* pDeltaArray);
     void            SetTextColor (PrinterColor& rTextColor)
     { maTextColor = rTextColor; }
     sal_Int32       GetCharWidth (sal_uInt16 nFrom, sal_uInt16 nTo,

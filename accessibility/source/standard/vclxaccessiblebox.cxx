@@ -17,11 +17,11 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/standard/vclxaccessiblebox.hxx>
-#include <accessibility/standard/vclxaccessibletextfield.hxx>
-#include <accessibility/standard/vclxaccessibleedit.hxx>
-#include <accessibility/standard/vclxaccessiblelist.hxx>
-#include <accessibility/helper/listboxhelper.hxx>
+#include <standard/vclxaccessiblebox.hxx>
+#include <standard/vclxaccessibletextfield.hxx>
+#include <standard/vclxaccessibleedit.hxx>
+#include <standard/vclxaccessiblelist.hxx>
+#include <helper/listboxhelper.hxx>
 
 #include <unotools/accessiblestatesethelper.hxx>
 #include <com/sun/star/accessibility/AccessibleStateType.hpp>
@@ -30,8 +30,8 @@
 #include <vcl/svapp.hxx>
 #include <vcl/combobox.hxx>
 #include <vcl/lstbox.hxx>
-#include <accessibility/helper/accresmgr.hxx>
-#include <accessibility/helper/accessiblestrings.hrc>
+#include <helper/accresmgr.hxx>
+#include <helper/accessiblestrings.hrc>
 
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
@@ -160,7 +160,7 @@ void VCLXAccessibleBox::ProcessWindowEvent (const VclWindowEvent& rVclWindowEven
             {
                 pList->ProcessWindowEvent (rVclWindowEvent);
             }
-            vcl::Window* pWindow = GetWindow();
+            VclPtr<vcl::Window> pWindow = GetWindow();
             if( pWindow && (pWindow->HasFocus() || pWindow->HasChildPathFocus()) )
             {
                 Any aOldValue, aNewValue;
@@ -353,7 +353,7 @@ sal_Int16 SAL_CALL VCLXAccessibleBox::getAccessibleRole() throw (RuntimeExceptio
     // VCL list boxes in DropDown-Mode else <const>PANEL</const>.
     // This way the Java bridge has not to handle both independently.
     //return m_bIsDropDownBox ? AccessibleRole::COMBO_BOX : AccessibleRole::PANEL;
-    if (m_bIsDropDownBox || (!m_bIsDropDownBox && m_aBoxType == COMBOBOX ))
+    if (m_bIsDropDownBox || (m_aBoxType == COMBOBOX))
         return AccessibleRole::COMBO_BOX;
     else
         return AccessibleRole::PANEL;
@@ -447,13 +447,6 @@ Reference< XAccessibleKeyBinding > VCLXAccessibleBox::getAccessibleActionKeyBind
 
     // ... which key?
     return xRet;
-}
-
-//=====  XComponent  ==========================================================
-
-void SAL_CALL VCLXAccessibleBox::disposing()
-{
-    VCLXAccessibleComponent::disposing();
 }
 
 // =====  XAccessibleValue  ===============================================

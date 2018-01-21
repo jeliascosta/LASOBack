@@ -34,6 +34,7 @@
 #include <com/sun/star/frame/XDispatchProviderInterceptor.hpp>
 #include <com/sun/star/frame/XDispatch.hpp>
 #include <com/sun/star/frame/XDispatchProvider.hpp>
+#include <com/sun/star/frame/DispatchResultState.hpp>
 #include <com/sun/star/frame/XStatusListener.hpp>
 #include <com/sun/star/frame/FrameSearchFlag.hpp>
 #include <com/sun/star/frame/XDispatchProviderInterception.hpp>
@@ -647,7 +648,7 @@ void SfxBindings::Invalidate
         // Next SID
         if ( !*++pIds )
             break;
-        DBG_ASSERT( *pIds > *(pIds-1), "pIds unsorted" );
+        assert( *pIds > *(pIds-1) );
     }
 
     // if not enticed to start update timer
@@ -950,26 +951,24 @@ void SfxBindings::Release( SfxControllerItem& rItem )
 }
 
 
-const SfxPoolItem* SfxBindings::ExecuteSynchron( sal_uInt16 nId, const SfxPoolItem** ppItems,
-            const SfxPoolItem **ppInternalArgs )
+const SfxPoolItem* SfxBindings::ExecuteSynchron( sal_uInt16 nId, const SfxPoolItem** ppItems )
 {
     DBG_ASSERT( pImpl->pCaches != nullptr, "SfxBindings not initialized" );
 
     if( !nId || !pDispatcher )
         return nullptr;
 
-    return Execute_Impl( nId, ppItems, 0, SfxCallMode::SYNCHRON, ppInternalArgs );
+    return Execute_Impl( nId, ppItems, 0, SfxCallMode::SYNCHRON, nullptr );
 }
 
-bool SfxBindings::Execute( sal_uInt16 nId, const SfxPoolItem** ppItems, SfxCallMode nCallMode,
-                        const SfxPoolItem **ppInternalArgs )
+bool SfxBindings::Execute( sal_uInt16 nId, const SfxPoolItem** ppItems, SfxCallMode nCallMode )
 {
     DBG_ASSERT( pImpl->pCaches != nullptr, "SfxBindings not initialized" );
 
     if( !nId || !pDispatcher )
         return false;
 
-    const SfxPoolItem* pRet = Execute_Impl( nId, ppItems, 0, nCallMode, ppInternalArgs );
+    const SfxPoolItem* pRet = Execute_Impl( nId, ppItems, 0, nCallMode, nullptr );
     return ( pRet != nullptr );
 }
 
@@ -1014,10 +1013,15 @@ const SfxPoolItem* SfxBindings::Execute_Impl( sal_uInt16 nId, const SfxPoolItem*
                 aReq.AppendItem( **ppItems++ );
 
         // cache binds to an external dispatch provider
-        pCache->Dispatch( aReq.GetArgs(), nCallMode == SfxCallMode::SYNCHRON );
-        SfxPoolItem *pVoid = new SfxVoidItem( nId );
-        DeleteItemOnIdle( pVoid );
-        return pVoid;
+        sal_Int16 eRet = pCache->Dispatch( aReq.GetArgs(), nCallMode == SfxCallMode::SYNCHRON );
+        SfxPoolItem *pPool;
+        if ( eRet == css::frame::DispatchResultState::DONTKNOW )
+            pPool = new SfxVoidItem( nId );
+        else
+            pPool = new SfxBoolItem( nId, eRet == css::frame::DispatchResultState::SUCCESS);
+
+        DeleteItemOnIdle( pPool );
+        return pPool;
     }
 
     // slot is handled internally by SfxDispatcher
@@ -1194,7 +1198,7 @@ void SfxBindings::UpdateSlotServer_Impl()
     }
     pImpl->bMsgDirty = pImpl->bAllMsgDirty = false;
 
-    Broadcast( SfxSimpleHint(SFX_HINT_DOCCHANGED) );
+    Broadcast( SfxHint(SFX_HINT_DOCCHANGED) );
 }
 
 
@@ -1355,7 +1359,7 @@ void SfxBindings::UpdateControllers_Impl
             pCache->SetState( SfxItemState::DONTCARE, reinterpret_cast<SfxPoolItem *>(-1) );
         }
         else if ( SfxItemState::DEFAULT == eState &&
-                    rFound.nWhichId > SFX_WHICH_MAX )
+                  SfxItemPool::IsSlot(rFound.nWhichId) )
         {
             // no Status or Default but without Pool
             SfxVoidItem aVoid(0);
@@ -1432,19 +1436,13 @@ void SfxBindings::UpdateControllers_Impl
     }
 }
 
-IMPL_LINK_TYPED( SfxBindings, NextJob, Timer *, pTimer, void )
+IMPL_LINK( SfxBindings, NextJob, Timer *, pTimer, void )
 {
     NextJob_Impl(pTimer);
 }
 
 bool SfxBindings::NextJob_Impl(Timer * pTimer)
 {
-#ifdef DBG_UTIL
-    // on Windows very often C++ Exceptions (GPF etc.) are caught by MSVCRT
-    // or another MS library try to get them here
-    try
-    {
-#endif
     const unsigned MAX_INPUT_DELAY = 200;
 
     DBG_ASSERT( pImpl->pCaches != nullptr, "SfxBindings not initialized" );
@@ -1472,9 +1470,7 @@ bool SfxBindings::NextJob_Impl(Timer * pTimer)
     }
 
     // if possible Update all server / happens in its own time slice
-    // but process all events at once when unit testing, for reliability reasons
-    static bool bTest = getenv("LO_TESTNAME");
-    if ( pImpl->bMsgDirty && !bTest )
+    if ( pImpl->bMsgDirty )
     {
         UpdateSlotServer_Impl();
         return false;
@@ -1533,18 +1529,8 @@ bool SfxBindings::NextJob_Impl(Timer * pTimer)
 
     // Update round is finished
     pImpl->bInNextJob = false;
-    Broadcast(SfxSimpleHint(SFX_HINT_UPDATEDONE));
+    Broadcast(SfxHint(SFX_HINT_UPDATEDONE));
     return true;
-#ifdef DBG_UTIL
-    }
-    catch (...)
-    {
-        OSL_FAIL("C++ exception caught!");
-        pImpl->bInNextJob = false;
-    }
-
-    return false;
-#endif
 }
 
 
@@ -1589,11 +1575,9 @@ sal_uInt16 SfxBindings::EnterRegistrations(const char *pFile, int nLine)
 }
 
 
-void SfxBindings::LeaveRegistrations( sal_uInt16 nLevel, const char *pFile, int nLine )
+void SfxBindings::LeaveRegistrations( const char *pFile, int nLine )
 {
-    (void)nLevel; // unused variable
     DBG_ASSERT( nRegLevel, "Leave without Enter" );
-    DBG_ASSERT( nLevel == USHRT_MAX || nLevel == nRegLevel, "wrong Leave" );
 
     // Only when the SubBindings are still locked by the Superbindings,
     // remove this lock (i.e. if there are more locks than "real" ones)
@@ -1702,7 +1686,7 @@ void SfxBindings::SetDispatcher( SfxDispatcher *pDisp )
             }
         }
 
-        Broadcast( SfxSimpleHint( SFX_HINT_DATACHANGED ) );
+        Broadcast( SfxHint( SFX_HINT_DATACHANGED ) );
 
         if ( pDisp )
         {

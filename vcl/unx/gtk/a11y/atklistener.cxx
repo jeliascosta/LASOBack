@@ -196,6 +196,15 @@ void AtkListener::handleChildRemoved(
     // for now.
     if( nIndex >= 0 )
     {
+        uno::Reference<accessibility::XAccessibleEventBroadcaster> xBroadcaster(
+            rxChild->getAccessibleContext(), uno::UNO_QUERY);
+
+        if (xBroadcaster.is())
+        {
+            uno::Reference<accessibility::XAccessibleEventListener> xListener(this);
+            xBroadcaster->removeAccessibleEventListener(xListener);
+        }
+
         updateChildList(rxParent);
 
         AtkObject * pChild = atk_object_wrapper_ref( rxChild, false );
@@ -377,6 +386,12 @@ void AtkListener::notifyEvent( const accessibility::AccessibleEventObject& aEven
             }
             break;
         }
+
+        //ACTIVE_DESCENDANT_CHANGED_NOFOCUS (sic) appears to have been added
+        //as a workaround or an aid for the ia2 winaccessibility implementation
+        //so ignore it silently without warning here
+        case accessibility::AccessibleEventId::ACTIVE_DESCENDANT_CHANGED_NOFOCUS:
+            break;
 
         // #i92103#
         case accessibility::AccessibleEventId::LISTBOX_ENTRY_EXPANDED:

@@ -54,7 +54,7 @@ namespace chelp {
         explicit ContentProvider(
             const css::uno::Reference< css::uno::XComponentContext >& rxContext );
 
-        virtual ~ContentProvider();
+        virtual ~ContentProvider() override;
 
         // XInterface
         virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
@@ -144,8 +144,6 @@ namespace chelp {
         // Non-interface methods.
 
     private:
-
-        osl::Mutex     m_aMutex;
         bool           isInitialized;
         OUString  m_aScheme;
         Databases*     m_pDatabases;

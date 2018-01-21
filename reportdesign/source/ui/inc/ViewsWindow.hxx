@@ -91,7 +91,7 @@ namespace rptui
         */
         TSectionsMap::iterator getIteratorAtPos(sal_uInt16 _nPos);
         void collectRectangles(TRectangleMap& _rMap);
-        static void collectBoundResizeRect(const TRectangleMap& _rSortRectangles,sal_Int32 _nControlModification,bool _bAlignAtSection,bool _bBoundRects,Rectangle& _rBound,Rectangle& _rResize);
+        static void collectBoundResizeRect(const TRectangleMap& _rSortRectangles,sal_Int32 _nControlModification,bool _bAlignAtSection,Rectangle& _rBound,Rectangle& _rResize);
         void impl_resizeSectionWindow(OSectionWindow& _rSectionWindow,Point& _rStartPoint,bool _bSet);
 
         OViewsWindow(OViewsWindow&) = delete;
@@ -107,7 +107,7 @@ namespace rptui
     public:
         OViewsWindow(
             OReportWindow* _pReportWindow);
-        virtual ~OViewsWindow();
+        virtual ~OViewsWindow() override;
         virtual void dispose() override;
 
         // Window overrides
@@ -129,7 +129,7 @@ namespace rptui
         */
         void            addSection(const css::uno::Reference< css::report::XSection >& _xSection
                                     ,const OUString& _sColorEntry
-                                    ,sal_uInt16 _nPosition = USHRT_MAX);
+                                    ,sal_uInt16 _nPosition);
 
         sal_uInt16          getSectionCount() const;
         /** return the section at the given position
@@ -153,7 +153,7 @@ namespace rptui
 
         inline bool     empty() const { return m_aSections.empty(); }
         void            SetMode( DlgEdMode m_eMode );
-        void            SetInsertObj( sal_uInt16 eObj,const OUString& _sShapeType = OUString());
+        void            SetInsertObj( sal_uInt16 eObj,const OUString& _sShapeType);
         const OUString& GetInsertObjString() const { return m_sShapeType;}
         /** copies the current selection in this section
         */
@@ -232,7 +232,7 @@ namespace rptui
 
         /** returns the current position in the list
         */
-        sal_uInt16 getPosition(const OSectionWindow* _pSectionWindow = nullptr) const;
+        sal_uInt16 getPosition(const OSectionWindow* _pSectionWindow) const;
 
         /** calls on every section BrkAction
         *
@@ -245,7 +245,6 @@ namespace rptui
         void EndDragObj_removeInvisibleObjects();
         Point m_aDragDelta;
         ::std::vector<SdrObject*> m_aBegDragTempList;
-        bool isObjectInMyTempList(SdrObject *);
     public:
         void BegDragObj(const Point& _aPnt, SdrHdl* _pHdl,const OSectionView* _pSection);
         void EndDragObj(bool _bDragIntoNewSection,const OSectionView* _pSection,const Point& _aPnt);

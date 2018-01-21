@@ -21,13 +21,10 @@
 
 #include <xmloff/xmlictxt.hxx>
 #include "xmlimprt.hxx"
+#include "importcontext.hxx"
 
-class ScXMLLabelRangesContext : public SvXMLImportContext
+class ScXMLLabelRangesContext : public ScXMLImportContext
 {
-private:
-    const ScXMLImport&          GetScImport() const     { return static_cast<const ScXMLImport&>(GetImport()); }
-    ScXMLImport&                GetScImport()           { return static_cast<ScXMLImport&>(GetImport()); }
-
 public:
                                 ScXMLLabelRangesContext(
                                     ScXMLImport& rImport,
@@ -35,7 +32,7 @@ public:
                                     const OUString& rLName,
                                     const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList
                                     );
-    virtual                     ~ScXMLLabelRangesContext();
+    virtual                     ~ScXMLLabelRangesContext() override;
 
     virtual SvXMLImportContext* CreateChildContext(
                                     sal_uInt16 nPrefix,
@@ -45,15 +42,12 @@ public:
     virtual void                EndElement() override;
 };
 
-class ScXMLLabelRangeContext : public SvXMLImportContext
+class ScXMLLabelRangeContext : public ScXMLImportContext
 {
 private:
-    OUString             sLabelRangeStr;
-    OUString             sDataRangeStr;
+    OUString                    sLabelRangeStr;
+    OUString                    sDataRangeStr;
     bool                        bColumnOrientation;
-
-    const ScXMLImport&          GetScImport() const     { return static_cast<const ScXMLImport&>(GetImport()); }
-    ScXMLImport&                GetScImport()           { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
                                 ScXMLLabelRangeContext(
@@ -62,7 +56,7 @@ public:
                                     const OUString& rLName,
                                     const css::uno::Reference< css::xml::sax::XAttributeList>& xAttrList
                                     );
-    virtual                     ~ScXMLLabelRangeContext();
+    virtual                     ~ScXMLLabelRangeContext() override;
 
     virtual SvXMLImportContext* CreateChildContext(
                                     sal_uInt16 nPrefix,

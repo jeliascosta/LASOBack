@@ -84,7 +84,7 @@ void IMapWindow::dispose()
 
 Size IMapWindow::GetOptimalSize() const
 {
-    return LogicToPixel(Size(270, 170), MAP_APPFONT);
+    return LogicToPixel(Size(270, 170), MapUnit::MapAppFont);
 }
 
 void IMapWindow::SetImageMap( const ImageMap& rImageMap )
@@ -471,23 +471,23 @@ void IMapWindow::Command(const CommandEvent& rCEvt)
 
     if ( rCEvt.GetCommand() == CommandEventId::ContextMenu )
     {
-        PopupMenu           aMenu( SVX_RES( RID_SVXMN_IMAP ) );
+        ScopedVclPtrInstance<PopupMenu> aMenu( SVX_RES( RID_SVXMN_IMAP ) );
         const SdrMarkList&  rMarkList = pView->GetMarkedObjectList();
         const size_t nMarked = rMarkList.GetMarkCount();
 
-        aMenu.EnableItem( MN_URL, false );
-        aMenu.EnableItem( MN_ACTIVATE, false );
-        aMenu.EnableItem( MN_MACRO, false );
-        aMenu.EnableItem( MN_MARK_ALL, pModel->GetPage( 0 )->GetObjCount() != pView->GetMarkedObjectCount() );
+        aMenu->EnableItem( MN_URL, false );
+        aMenu->EnableItem( MN_ACTIVATE, false );
+        aMenu->EnableItem( MN_MACRO, false );
+        aMenu->EnableItem( MN_MARK_ALL, pModel->GetPage( 0 )->GetObjCount() != pView->GetMarkedObjectCount() );
 
         if ( !nMarked )
         {
-            aMenu.EnableItem( MN_POSITION, false );
-            aMenu.EnableItem( MN_FRAME_TO_TOP, false );
-            aMenu.EnableItem( MN_MOREFRONT, false );
-            aMenu.EnableItem( MN_MOREBACK, false );
-            aMenu.EnableItem( MN_FRAME_TO_BOTTOM, false );
-            aMenu.EnableItem( MN_DELETE1, false );
+            aMenu->EnableItem( MN_POSITION, false );
+            aMenu->EnableItem( MN_FRAME_TO_TOP, false );
+            aMenu->EnableItem( MN_MOREFRONT, false );
+            aMenu->EnableItem( MN_MOREBACK, false );
+            aMenu->EnableItem( MN_FRAME_TO_BOTTOM, false );
+            aMenu->EnableItem( MN_DELETE1, false );
         }
         else
         {
@@ -495,22 +495,22 @@ void IMapWindow::Command(const CommandEvent& rCEvt)
             {
                 SdrObject*  pSdrObj = GetSelectedSdrObject();
 
-                aMenu.EnableItem( MN_URL );
-                aMenu.EnableItem( MN_ACTIVATE );
-                aMenu.EnableItem( MN_MACRO );
-                aMenu.CheckItem( MN_ACTIVATE, GetIMapObj( pSdrObj )->IsActive() );
+                aMenu->EnableItem( MN_URL );
+                aMenu->EnableItem( MN_ACTIVATE );
+                aMenu->EnableItem( MN_MACRO );
+                aMenu->CheckItem( MN_ACTIVATE, GetIMapObj( pSdrObj )->IsActive() );
             }
 
-            aMenu.EnableItem( MN_POSITION );
-            aMenu.EnableItem( MN_FRAME_TO_TOP );
-            aMenu.EnableItem( MN_MOREFRONT );
-            aMenu.EnableItem( MN_MOREBACK );
-            aMenu.EnableItem( MN_FRAME_TO_BOTTOM );
-            aMenu.EnableItem( MN_DELETE1 );
+            aMenu->EnableItem( MN_POSITION );
+            aMenu->EnableItem( MN_FRAME_TO_TOP );
+            aMenu->EnableItem( MN_MOREFRONT );
+            aMenu->EnableItem( MN_MOREBACK );
+            aMenu->EnableItem( MN_FRAME_TO_BOTTOM );
+            aMenu->EnableItem( MN_DELETE1 );
         }
 
-        aMenu.SetSelectHdl( LINK( this, IMapWindow, MenuSelectHdl ) );
-        aMenu.Execute( this, rCEvt.GetMousePosPixel() );
+        aMenu->SetSelectHdl( LINK( this, IMapWindow, MenuSelectHdl ) );
+        aMenu->Execute( this, rCEvt.GetMousePosPixel() );
     }
     else
         Window::Command(rCEvt);
@@ -554,9 +554,9 @@ void IMapWindow::RequestHelp( const HelpEvent& rHEvt )
 
     if ( Help::IsBalloonHelpEnabled() || Help::IsQuickHelpEnabled() )
     {
-        SdrObject*          pSdrObj = nullptr;
-        SdrPageView*        pPageView = nullptr;
-        if ( pView->PickObj( aPos, pView->getHitTolLog(), pSdrObj, pPageView ) )
+        SdrPageView* pPageView = nullptr;
+        SdrObject* pSdrObj = pView->PickObj(aPos, pView->getHitTolLog(), pPageView);
+        if (pSdrObj)
         {
             const IMapObject*   pIMapObj = GetIMapObj( pSdrObj );
             OUString            aStr;
@@ -652,10 +652,10 @@ void IMapWindow::DoMacroAssign()
         SvxMacroItem    aMacroItem(SID_ATTR_MACROITEM);
         IMapObject*     pIMapObj = GetIMapObj( pSdrObj );
         aMacroItem.SetMacroTable( pIMapObj->GetMacroTable() );
-        aSet.Put( aMacroItem, SID_ATTR_MACROITEM );
+        aSet.Put( aMacroItem );
 
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-        std::unique_ptr<SfxAbstractDialog> pMacroDlg(pFact->CreateSfxDialog( this, aSet, mxDocumentFrame, SID_EVENTCONFIG ));
+        ScopedVclPtr<SfxAbstractDialog> pMacroDlg(pFact->CreateSfxDialog( this, aSet, mxDocumentFrame, SID_EVENTCONFIG ));
 
         if ( pMacroDlg && pMacroDlg->Execute() == RET_OK )
         {
@@ -677,7 +677,7 @@ void IMapWindow::DoPropertyDialog()
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
         if(pFact)
         {
-            std::unique_ptr<AbstractURLDlg> aDlg(pFact->CreateURLDialog( this, pIMapObj->GetURL(), pIMapObj->GetAltText(), pIMapObj->GetDesc(),
+            ScopedVclPtr<AbstractURLDlg> aDlg(pFact->CreateURLDialog( this, pIMapObj->GetURL(), pIMapObj->GetAltText(), pIMapObj->GetDesc(),
                                             pIMapObj->GetTarget(), pIMapObj->GetName(), aTargetList ));
             DBG_ASSERT(aDlg, "Dialog creation failed!");
             if ( aDlg->Execute() == RET_OK )
@@ -704,7 +704,7 @@ void IMapWindow::DoPropertyDialog()
     }
 }
 
-IMPL_LINK_TYPED( IMapWindow, MenuSelectHdl, Menu*, pMenu, bool )
+IMPL_LINK( IMapWindow, MenuSelectHdl, Menu*, pMenu, bool )
 {
     if (!pMenu)
         return false;
@@ -813,11 +813,6 @@ void IMapWindow::CreateDefaultObject()
         SetCurrentObjState( true );
         pView->MarkObj( pObj, pPageView );
     }
-}
-
-void IMapWindow::KeyInput( const KeyEvent& rKEvt )
-{
-    GraphCtrl::KeyInput( rKEvt );
 }
 
 void IMapWindow::SelectFirstObject()

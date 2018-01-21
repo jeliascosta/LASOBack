@@ -46,7 +46,7 @@ namespace pcr
     public:
         explicit OPropertyBrowserView( vcl::Window* pParent);
 
-        virtual ~OPropertyBrowserView();
+        virtual ~OPropertyBrowserView() override;
         virtual void dispose() override;
 
         OPropertyEditor&    getPropertyBox() { return *m_pPropBox; }
@@ -60,7 +60,7 @@ namespace pcr
         css::awt::Size getMinimumSize();
 
     protected:
-        DECL_LINK_TYPED(OnPageActivation, LinkParamNone*, void);
+        DECL_LINK(OnPageActivation, LinkParamNone*, void);
     };
 
 

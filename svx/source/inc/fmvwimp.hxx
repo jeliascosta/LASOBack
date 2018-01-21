@@ -57,6 +57,7 @@ namespace vcl { class Window; }
 class OutputDevice;
 class SdrUnoObj;
 struct ImplSVEvent;
+enum class SdrInventor : sal_uInt32;
 
 namespace com { namespace sun { namespace star {
     namespace awt {
@@ -96,7 +97,7 @@ class FormViewPageWindowAdapter : public FormViewPageWindowAdapter_Base
     VclPtr<vcl::Window>         m_pWindow;
 
 protected:
-    virtual ~FormViewPageWindowAdapter();
+    virtual ~FormViewPageWindowAdapter() override;
 
 public:
     FormViewPageWindowAdapter(  const css::uno::Reference<css::uno::XComponentContext>& _rContext,
@@ -177,11 +178,9 @@ class FmXFormView : public ::cppu::WeakImplHelper<
 
     FmFormShell* GetFormShell() const;
 
-    void removeGridWindowListening();
-
 protected:
     FmXFormView( FmFormView* _pView );
-    virtual ~FmXFormView();
+    virtual ~FmXFormView() override;
 
     void    saveMarkList();
     void    restoreMarkList( SdrMarkList& _rRestoredMarkList );
@@ -258,7 +257,7 @@ private:
         const css::uno::Reference< css::util::XNumberFormats >& _rxNumberFormats,
         sal_uInt16 _nControlObjectID,
         const OUString& _rFieldPostfix,
-        sal_uInt32 _nInventor,
+        SdrInventor _nInventor,
         sal_uInt16 _nLabelObjectID,
         SdrPage* _pLabelPage,
         SdrPage* _pControlPage,
@@ -277,10 +276,10 @@ private:
         const OUString& _rFieldPostfix,
         SdrUnoObj*& _rpLabel,
         SdrUnoObj*& _rpControl,
-        const css::uno::Reference< css::sdbc::XDataSource >& _rxDataSource = nullptr,
-        const OUString& _rDataSourceName = OUString(),
-        const OUString& _rCommand = OUString(),
-        const sal_Int32 _nCommandType = -1
+        const css::uno::Reference< css::sdbc::XDataSource >& _rxDataSource,
+        const OUString& _rDataSourceName,
+        const OUString& _rCommand,
+        const sal_Int32 _nCommandType
     );
 
     void ObjectRemovedInAliveMode(const SdrObject* pObject);
@@ -293,10 +292,10 @@ private:
 
     /// the auto focus to the first (in terms of the tab order) control
     void AutoFocus();
-    DECL_LINK_TYPED( OnActivate, void*, void );
-    DECL_LINK_TYPED( OnAutoFocus, void*, void );
-    DECL_LINK_TYPED( OnDelayedErrorMessage, void*, void );
-    DECL_LINK_TYPED( OnStartControlWizard, void*, void );
+    DECL_LINK( OnActivate, void*, void );
+    DECL_LINK( OnAutoFocus, void*, void );
+    DECL_LINK( OnDelayedErrorMessage, void*, void );
+    DECL_LINK( OnStartControlWizard, void*, void );
 
 private:
     ::svxform::DocumentType impl_getDocumentType() const;

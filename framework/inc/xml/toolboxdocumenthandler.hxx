@@ -62,7 +62,7 @@ class FWE_DLLPUBLIC OReadToolBoxDocumentHandler :
         };
 
         OReadToolBoxDocumentHandler( const css::uno::Reference< css::container::XIndexContainer >& rItemContainer );
-        virtual ~OReadToolBoxDocumentHandler();
+        virtual ~OReadToolBoxDocumentHandler() override;
 
         // XDocumentHandler
         virtual void SAL_CALL startDocument()
@@ -111,7 +111,6 @@ class FWE_DLLPUBLIC OReadToolBoxDocumentHandler :
         };
 
         bool                                                      m_bToolBarStartFound : 1;
-        bool                                                      m_bToolBarEndFound : 1;
         bool                                                      m_bToolBarItemStartFound : 1;
         bool                                                      m_bToolBarSpaceStartFound : 1;
         bool                                                      m_bToolBarBreakStartFound : 1;
@@ -137,19 +136,19 @@ class FWE_DLLPUBLIC OReadToolBoxDocumentHandler :
         OUString                                                  m_aCommandURL;
 };
 
-class FWE_DLLPUBLIC OWriteToolBoxDocumentHandler
+class FWE_DLLPUBLIC OWriteToolBoxDocumentHandler final
 {
     public:
             OWriteToolBoxDocumentHandler(
-            const css::uno::Reference< css::container::XIndexAccess >& rItemAccess,
-            css::uno::Reference< css::xml::sax::XDocumentHandler >& rDocumentHandler );
-        virtual ~OWriteToolBoxDocumentHandler();
+                const css::uno::Reference< css::container::XIndexAccess >& rItemAccess,
+                css::uno::Reference< css::xml::sax::XDocumentHandler >& rDocumentHandler );
+            ~OWriteToolBoxDocumentHandler();
 
         void WriteToolBoxDocument() throw
             ( css::xml::sax::SAXException,
               css::uno::RuntimeException );
 
-    protected:
+    private:
         void WriteToolBoxItem( const OUString& aCommandURL, const OUString& aLabel, const OUString& aHelpURL,
                                sal_Int16 nStyle, bool bVisible ) throw
             ( css::xml::sax::SAXException,

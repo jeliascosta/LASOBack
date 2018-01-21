@@ -253,7 +253,7 @@ namespace sdr { namespace contact {
         Reference< XWindowPeer > xPeer( m_xControl->getPeer() );
         if ( xPeer.is() )
         {
-            vcl::Window* pWindow = VCLUnoHelper::GetWindow( xPeer );
+            VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xPeer );
             OSL_ENSURE( pWindow, "ControlHolder::invalidate: no implementation access!" );
             if ( pWindow )
                 pWindow->Invalidate();
@@ -266,7 +266,7 @@ namespace sdr { namespace contact {
         // no check whether we're valid, this is the responsibility of the caller
 
         // Argh. Why does XView have a setZoom only, but not a getZoom?
-        vcl::Window* pWindow = VCLUnoHelper::GetWindow( m_xControl->getPeer() );
+        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( m_xControl->getPeer() );
         OSL_ENSURE( pWindow, "ControlHolder::getZoom: no implementation access!" );
 
         ::basegfx::B2DVector aZoom( 1, 1 );
@@ -493,7 +493,7 @@ namespace sdr { namespace contact {
                                         ,   XModeChangeListener
                                         >   ViewObjectContactOfUnoControl_Impl_Base;
 
-    class SVX_DLLPRIVATE ViewObjectContactOfUnoControl_Impl:
+    class ViewObjectContactOfUnoControl_Impl:
         public ViewObjectContactOfUnoControl_Impl_Base
     {
     private:
@@ -597,7 +597,7 @@ namespace sdr { namespace contact {
         /** determines whether our control is currently visible
             @nofail
         */
-        bool    isControlVisible() const { return impl_isControlVisible_nofail(); }
+        bool    isControlVisible() const { return m_bControlIsVisible; }
 
         /// creates an XControl for the given device and SdrUnoObj
         static bool
@@ -618,7 +618,7 @@ namespace sdr { namespace contact {
         }
 
     protected:
-        virtual ~ViewObjectContactOfUnoControl_Impl();
+        virtual ~ViewObjectContactOfUnoControl_Impl() override;
 
         // XEventListener
         virtual void SAL_CALL disposing( const EventObject& Source ) throw(RuntimeException, std::exception) override;
@@ -749,16 +749,6 @@ namespace sdr { namespace contact {
         */
         bool    impl_isDisposed_nofail() const { return m_pAntiImpl == nullptr; }
 
-        /** determines whether our control is currently visible
-            @nofail
-        */
-        bool    impl_isControlVisible_nofail() const { return m_bControlIsVisible; }
-
-        /** determines whether we are currently a listener at the control for design-mode relevant facets
-            @nofail
-        */
-        bool    impl_isDesignModeListening_nofail() const { return m_bIsDesignModeListening; }
-
         /** determines whether the control currently is in design mode
 
             @precond
@@ -789,13 +779,14 @@ namespace sdr { namespace contact {
         typedef ::drawinglayer::primitive2d::BufferedDecompositionPrimitive2D  BufferedDecompositionPrimitive2D;
 
     protected:
-        virtual ::drawinglayer::primitive2d::Primitive2DContainer
+        virtual void
             get2DDecomposition(
+                ::drawinglayer::primitive2d::Primitive2DContainer& rContainer,
                 const ::drawinglayer::geometry::ViewInformation2D& rViewInformation
             ) const override;
 
-        virtual ::drawinglayer::primitive2d::Primitive2DContainer
-            create2DDecomposition(
+        virtual void create2DDecomposition(
+                ::drawinglayer::primitive2d::Primitive2DContainer& rContainer,
                 const ::drawinglayer::geometry::ViewInformation2D& rViewInformation
             ) const override;
 
@@ -1181,7 +1172,7 @@ namespace sdr { namespace contact {
             return;
 
         SdrPageViewAccess aPVAccess( *pPageView );
-        impl_adjustControlVisibilityToLayerVisibility_throw( m_aControl, *pUnoObject, aPVAccess, impl_isControlVisible_nofail(), false/*_bForce*/ );
+        impl_adjustControlVisibilityToLayerVisibility_throw( m_aControl, *pUnoObject, aPVAccess, m_bControlIsVisible, false/*_bForce*/ );
     }
 
 
@@ -1259,7 +1250,7 @@ namespace sdr { namespace contact {
 
     void ViewObjectContactOfUnoControl_Impl::impl_switchDesignModeListening_nothrow( bool _bStart )
     {
-        if ( impl_isDesignModeListening_nofail() != _bStart )
+        if ( m_bIsDesignModeListening != _bStart )
         {
             m_bIsDesignModeListening = _bStart;
             impl_switchPropertyListening_nothrow( _bStart );
@@ -1538,7 +1529,7 @@ namespace sdr { namespace contact {
     }
 
 
-    ::drawinglayer::primitive2d::Primitive2DContainer LazyControlCreationPrimitive2D::get2DDecomposition( const ::drawinglayer::geometry::ViewInformation2D& _rViewInformation ) const
+    void LazyControlCreationPrimitive2D::get2DDecomposition( ::drawinglayer::primitive2d::Primitive2DContainer& rContainer, const ::drawinglayer::geometry::ViewInformation2D& _rViewInformation ) const
     {
     #if OSL_DEBUG_LEVEL > 0
         ::basegfx::B2DVector aScale, aTranslate;
@@ -1547,11 +1538,11 @@ namespace sdr { namespace contact {
     #endif
         if ( m_pVOCImpl->hasControl() )
             impl_positionAndZoomControl( _rViewInformation );
-        return BufferedDecompositionPrimitive2D::get2DDecomposition( _rViewInformation );
+        BufferedDecompositionPrimitive2D::get2DDecomposition( rContainer, _rViewInformation );
     }
 
 
-    ::drawinglayer::primitive2d::Primitive2DContainer LazyControlCreationPrimitive2D::create2DDecomposition( const ::drawinglayer::geometry::ViewInformation2D& _rViewInformation ) const
+    void LazyControlCreationPrimitive2D::create2DDecomposition( ::drawinglayer::primitive2d::Primitive2DContainer& rContainer, const ::drawinglayer::geometry::ViewInformation2D& _rViewInformation ) const
     {
     #if OSL_DEBUG_LEVEL > 0
         ::basegfx::B2DVector aScale, aTranslate;
@@ -1578,17 +1569,19 @@ namespace sdr { namespace contact {
 
         // check if we already have an XControl.
         if ( !xControlModel.is() || !rControl.is() )
+        {
             // use the default mechanism. This will create a ControlPrimitive2D without
             // handing over a XControl. If not even a XControlModel exists, it will
             // create the SdrObject fallback visualisation
-            return rViewContactOfUnoControl.getViewIndependentPrimitive2DSequence();
+            drawinglayer::primitive2d::Primitive2DContainer aTmp = rViewContactOfUnoControl.getViewIndependentPrimitive2DSequence();
+            rContainer.insert(rContainer.end(), aTmp.begin(), aTmp.end());
+            return;
+        }
 
         // create a primitive and hand over the existing xControl. This will
         // allow the primitive to not need to create another one on demand.
-        const drawinglayer::primitive2d::Primitive2DReference xRetval( new ::drawinglayer::primitive2d::ControlPrimitive2D(
+        rContainer.push_back( new ::drawinglayer::primitive2d::ControlPrimitive2D(
             m_aTransformation, xControlModel, rControl.getControl() ) );
-
-        return drawinglayer::primitive2d::Primitive2DContainer { xRetval };
     }
 
 

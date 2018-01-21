@@ -19,7 +19,6 @@
 
 #include "TitleWrapper.hxx"
 #include "macros.hxx"
-#include "ContainerHelper.hxx"
 #include "ControllerLockGuard.hxx"
 
 #include <cppuhelper/supportsservice.hxx>
@@ -51,7 +50,7 @@ class WrappedTitleStringProperty : public WrappedProperty
 {
 public:
     explicit WrappedTitleStringProperty( const Reference< uno::XComponentContext >& xContext );
-    virtual ~WrappedTitleStringProperty();
+    virtual ~WrappedTitleStringProperty() override;
 
     virtual void setPropertyValue( const Any& rOuterValue, const Reference< beans::XPropertySet >& xInnerPropertySet ) const
                                     throw (beans::UnknownPropertyException, beans::PropertyVetoException, lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException) override;
@@ -112,7 +111,7 @@ class WrappedStackedTextProperty : public WrappedProperty
 {
 public:
     WrappedStackedTextProperty();
-    virtual ~WrappedStackedTextProperty();
+    virtual ~WrappedStackedTextProperty() override;
 };
 
 WrappedStackedTextProperty::WrappedStackedTextProperty()
@@ -127,7 +126,6 @@ WrappedStackedTextProperty::~WrappedStackedTextProperty()
 
 namespace
 {
-static const char lcl_aServiceName[] = "com.sun.star.comp.chart.Title";
 
 enum
 {
@@ -199,7 +197,7 @@ namespace wrapper
 {
 
 TitleWrapper::TitleWrapper( ::chart::TitleHelper::eTitleType eTitleType,
-    std::shared_ptr< Chart2ModelContact > spChart2ModelContact ) :
+    const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact ) :
         m_spChart2ModelContact( spChart2ModelContact ),
         m_aEventListenerContainer( m_aMutex ),
         m_eTitleType(eTitleType)
@@ -511,27 +509,10 @@ const std::vector< WrappedProperty* > TitleWrapper::createWrappedProperties()
     return aWrappedProperties;
 }
 
-Sequence< OUString > TitleWrapper::getSupportedServiceNames_Static()
-{
-    Sequence< OUString > aServices( 4 );
-    aServices[ 0 ] = "com.sun.star.chart.ChartTitle";
-    aServices[ 1 ] = "com.sun.star.drawing.Shape";
-    aServices[ 2 ] = "com.sun.star.xml.UserDefinedAttributesSupplier";
-    aServices[ 3 ] = "com.sun.star.style.CharacterProperties";
-
-    return aServices;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL TitleWrapper::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString TitleWrapper::getImplementationName_Static()
-{
-    return OUString(lcl_aServiceName);
+    return OUString("com.sun.star.comp.chart.Title");
 }
 
 sal_Bool SAL_CALL TitleWrapper::supportsService( const OUString& rServiceName )
@@ -543,7 +524,12 @@ sal_Bool SAL_CALL TitleWrapper::supportsService( const OUString& rServiceName )
 css::uno::Sequence< OUString > SAL_CALL TitleWrapper::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        "com.sun.star.chart.ChartTitle",
+        "com.sun.star.drawing.Shape",
+        "com.sun.star.xml.UserDefinedAttributesSupplier",
+         "com.sun.star.style.CharacterProperties"
+    };
 }
 
 } //  namespace wrapper

@@ -65,7 +65,7 @@ class SVT_DLLPUBLIC ToolboxController :
                            const css::uno::Reference< css::frame::XFrame >& xFrame,
                            const OUString& aCommandURL );
         ToolboxController();
-        virtual ~ToolboxController();
+        virtual ~ToolboxController() override;
 
         css::uno::Reference< css::frame::XFrame > getFrameInterface() const;
         const css::uno::Reference< css::uno::XComponentContext >& getContext() const;
@@ -124,7 +124,6 @@ class SVT_DLLPUBLIC ToolboxController :
 
     protected:
         bool getToolboxId( sal_uInt16& rItemId, ToolBox** ppToolBox );
-        void setSupportVisibleProperty(bool bValue);
         struct Listener
         {
             Listener( const css::util::URL& rURL, const css::uno::Reference< css::frame::XDispatch >& rDispatch ) :
@@ -149,7 +148,7 @@ class SVT_DLLPUBLIC ToolboxController :
                 {}
         };
 
-        DECL_STATIC_LINK_TYPED( ToolboxController, ExecuteHdl_Impl, void*, void );
+        DECL_STATIC_LINK( ToolboxController, ExecuteHdl_Impl, void*, void );
 
         typedef std::unordered_map< OUString,
                                     css::uno::Reference< css::frame::XDispatch >,

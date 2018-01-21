@@ -30,7 +30,6 @@
 #include <vcl/tabpage.hxx>
 #include <vcl/layout.hxx>
 #include <vcl/builderfactory.hxx>
-#include <svtools/localresaccess.hxx>
 #include <connectivity/dbtools.hxx>
 #include <connectivity/dbexception.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
@@ -73,7 +72,7 @@ namespace pcr
 
     public:
         explicit FieldLinkRow( vcl::Window* _pParent );
-        virtual ~FieldLinkRow();
+        virtual ~FieldLinkRow() override;
         virtual void dispose() override;
 
         inline void         SetLinkChangeHandler( const Link<FieldLinkRow&,void>& _rHdl ) { m_aLinkChangeHandler = _rHdl; }
@@ -92,7 +91,7 @@ namespace pcr
         void    fillList( LinkParticipant _eWhich, const Sequence< OUString >& _rFieldNames );
 
     private:
-        DECL_LINK_TYPED( OnFieldNameChanged, Edit&, void );
+        DECL_LINK( OnFieldNameChanged, Edit&, void );
     };
 
 
@@ -147,7 +146,7 @@ namespace pcr
     }
 
 
-    IMPL_LINK_NOARG_TYPED( FieldLinkRow, OnFieldNameChanged, Edit&, void )
+    IMPL_LINK_NOARG( FieldLinkRow, OnFieldNameChanged, Edit&, void )
     {
         m_aLinkChangeHandler.Call( *this );
     }
@@ -658,19 +657,19 @@ namespace pcr
     }
 
 
-    IMPL_LINK_NOARG_TYPED( FormLinkDialog, OnSuggest, Button*, void )
+    IMPL_LINK_NOARG( FormLinkDialog, OnSuggest, Button*, void )
     {
         initializeFieldRowsFrom( m_aRelationDetailColumns, m_aRelationMasterColumns );
     }
 
 
-    IMPL_LINK_NOARG_TYPED( FormLinkDialog, OnFieldChanged, FieldLinkRow&, void )
+    IMPL_LINK_NOARG( FormLinkDialog, OnFieldChanged, FieldLinkRow&, void )
     {
         updateOkButton();
     }
 
 
-    IMPL_LINK_NOARG_TYPED( FormLinkDialog, OnInitialize, void*, void )
+    IMPL_LINK_NOARG( FormLinkDialog, OnInitialize, void*, void )
     {
         initializeColumnLabels();
         initializeFieldLists();

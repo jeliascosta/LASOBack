@@ -55,8 +55,8 @@ public:
         Z_MINOR_GRID
     };
 
-    GridWrapper( tGridType eType, std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
-    virtual ~GridWrapper();
+    GridWrapper(tGridType eType, const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
+    virtual ~GridWrapper() override;
 
     static void getDimensionAndSubGridBool( tGridType eType, sal_Int32& rnDimensionIndex, bool& rbSubGrid );
 
@@ -67,9 +67,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // ____ XComponent ____
     virtual void SAL_CALL dispose()

@@ -98,7 +98,7 @@ class VCL_DLLPUBLIC PDFExtOutDevData : public ExtOutDevData
 public:
 
     PDFExtOutDevData( const OutputDevice& rOutDev );
-    virtual ~PDFExtOutDevData();
+    virtual ~PDFExtOutDevData() override;
 
     bool PlaySyncPageAct( PDFWriter& rWriter, sal_uInt32& rCurGDIMtfAction );
     void ResetSyncData();
@@ -211,7 +211,7 @@ public:
     */
     sal_Int32 CreateNamedDest( const OUString& sDestName,  const Rectangle& rRect, sal_Int32 nPageNr = -1 );
 
-    /** registers a destination for which a destinatin ID needs to be known immediately, instead of later on setting it via
+    /** registers a destination for which a destination ID needs to be known immediately, instead of later on setting it via
         SetLinkDest.
 
         This is used in contexts where a destination is referenced by means other than a link.
@@ -226,7 +226,7 @@ public:
 
     /** provides detailed information about a destination range which previously has been registered using RegisterDest.
     */
-    void        DescribeRegisteredDest( sal_Int32 nDestId, const Rectangle& rRect, sal_Int32 nPageNr = -1, PDFWriter::DestAreaType eType = PDFWriter::XYZ );
+    void        DescribeRegisteredDest( sal_Int32 nDestId, const Rectangle& rRect, sal_Int32 nPageNr, PDFWriter::DestAreaType eType = PDFWriter::XYZ );
 
 //<---i56629
 
@@ -309,7 +309,7 @@ public:
         @returns
         the outline item id of the new item
     */
-    sal_Int32 CreateOutlineItem( sal_Int32 nParent = 0, const OUString& rText = OUString(), sal_Int32 nDestID = -1 );
+    sal_Int32 CreateOutlineItem( sal_Int32 nParent, const OUString& rText, sal_Int32 nDestID );
 
     /** Create a new note on a page
 

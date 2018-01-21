@@ -17,11 +17,11 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/standard/vclxaccessiblemenuitem.hxx>
-#include <accessibility/helper/accresmgr.hxx>
-#include <accessibility/helper/accessiblestrings.hrc>
+#include <standard/vclxaccessiblemenuitem.hxx>
+#include <helper/accresmgr.hxx>
+#include <helper/accessiblestrings.hrc>
 #include <toolkit/helper/convert.hxx>
-#include <accessibility/helper/characterattributeshelper.hxx>
+#include <helper/characterattributeshelper.hxx>
 #include <comphelper/accessiblekeybindinghelper.hxx>
 #include <com/sun/star/awt/KeyModifier.hpp>
 
@@ -161,8 +161,7 @@ OUString VCLXAccessibleMenuItem::getImplementationName() throw (RuntimeException
 
 Sequence< OUString > VCLXAccessibleMenuItem::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    Sequence< OUString > aNames { "com.sun.star.awt.AccessibleMenuItem" };
-    return aNames;
+    return { "com.sun.star.awt.AccessibleMenuItem" };
 }
 
 
@@ -441,7 +440,7 @@ Reference< XAccessibleKeyBinding > VCLXAccessibleMenuItem::getAccessibleActionKe
     if ( m_pParent )
     {
         // create auto mnemonics
-        if ( Application::GetSettings().GetStyleSettings().GetAutoMnemonic() && !( m_pParent->GetMenuFlags() & MenuFlags::NoAutoMnemonics ) )
+        if (!(m_pParent->GetMenuFlags() & MenuFlags::NoAutoMnemonics))
             m_pParent->CreateAutoMnemonics();
 
         // activation key

@@ -53,11 +53,9 @@
 #include <vector>
 #include <window.h>
 #include <boost/functional/hash.hpp>
-#include <boost/intrusive_ptr.hpp>
 #include <boost/math/special_functions/sinc.hpp>
 #include <boost/multi_array.hpp>
 #include <boost/optional.hpp>
-#include <boost/shared_array.hpp>
 #include <osl/conditn.hxx>
 #include <osl/diagnose.h>
 #include <osl/diagnose.hxx>
@@ -153,7 +151,7 @@
 #include <vcl/help.hxx>
 #include <vcl/i18nhelp.hxx>
 #include <vcl/image.hxx>
-#include <vcl/implimagetree.hxx>
+#include <vcl/ImageTree.hxx>
 #include <vcl/keycod.hxx>
 #include <vcl/keycodes.hxx>
 #include <vcl/layout.hxx>

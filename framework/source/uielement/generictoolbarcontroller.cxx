@@ -263,7 +263,7 @@ throw ( RuntimeException, std::exception )
     }
 }
 
-IMPL_STATIC_LINK_TYPED( GenericToolbarController, ExecuteHdl_Impl, void*, p, void )
+IMPL_STATIC_LINK( GenericToolbarController, ExecuteHdl_Impl, void*, p, void )
 {
    ExecuteInfo* pExecuteInfo = static_cast<ExecuteInfo*>(p);
    SolarMutexReleaser aReleaser;
@@ -305,17 +305,16 @@ MenuToolbarController::~MenuToolbarController()
     catch( const Exception& ) {}
     if ( pMenu )
     {
-        delete pMenu;
-        pMenu = nullptr;
+        pMenu.disposeAndClear();
     }
-
 }
 
 class Toolbarmenu : public ::PopupMenu
 {
     public:
     Toolbarmenu();
-    virtual ~Toolbarmenu();
+    virtual ~Toolbarmenu() override;
+    virtual void dispose() override;
 };
 
 Toolbarmenu::Toolbarmenu()
@@ -325,7 +324,13 @@ Toolbarmenu::Toolbarmenu()
 
 Toolbarmenu::~Toolbarmenu()
 {
+    disposeOnce();
+}
+
+void Toolbarmenu::dispose()
+{
     SAL_INFO("fwk.uielement", "destructing Toolbarmenu " << this);
+    ::PopupMenu::dispose();
 }
 
 void SAL_CALL MenuToolbarController::click() throw (RuntimeException, std::exception)
@@ -340,8 +345,8 @@ MenuToolbarController::createPopupWindow() throw (css::uno::RuntimeException, st
     {
         Reference< XDispatchProvider > xDispatch;
         Reference< XURLTransformer > xURLTransformer = URLTransformer::create( m_xContext );
-        pMenu = new Toolbarmenu();
-        m_xMenuManager.set( new MenuBarManager( m_xContext, m_xFrame, xURLTransformer, xDispatch, m_aModuleIdentifier, pMenu, true, true, false ) );
+        pMenu = VclPtr<Toolbarmenu>::Create();
+        m_xMenuManager.set( new MenuBarManager( m_xContext, m_xFrame, xURLTransformer, xDispatch, m_aModuleIdentifier, pMenu, false, false ) );
         if (m_xMenuManager.is())
         {
             MenuBarManager& rMgr = dynamic_cast<MenuBarManager&>(*m_xMenuManager.get());

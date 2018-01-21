@@ -35,9 +35,9 @@
 #include <com/sun/star/util/Time.hpp>
 #include <comphelper/sequence.hxx>
 #include <connectivity/dbconversion.hxx>
+#include <tools/resary.hxx>
 #include "formresid.hrc"
 #include "pcrservices.hxx"
-#include <tools/StringListResource.hxx>
 #include <comphelper/types.hxx>
 #include "modulepcr.hxx"
 
@@ -86,7 +86,7 @@ public:
     virtual void SAL_CALL initialize(const uno::Sequence< uno::Any > & aArguments) throw (uno::RuntimeException, uno::Exception, std::exception) override;
 
 private:
-    virtual ~StringRepresentation() {}
+    virtual ~StringRepresentation() override {}
 
     /** converts a generic value into a string representation
 
@@ -378,11 +378,11 @@ bool StringRepresentation::convertGenericValueToString( const uno::Any& _rValue,
 
     case uno::TypeClass_BOOLEAN:
     {
-        ::std::vector< OUString > aListEntries;
-        tools::StringListResource aRes(PcrRes(RID_RSC_ENUM_YESNO),aListEntries);
+        ResStringArray aListEntries(PcrRes(RID_RSC_ENUM_YESNO));
         bool bValue = false;
         _rValue >>= bValue;
-        _rStringRep = bValue ? aListEntries[1] : aListEntries[0];
+        _rStringRep = bValue ? aListEntries.GetString(1)
+                             : aListEntries.GetString(0);
     }
     break;
 
@@ -490,7 +490,7 @@ uno::Any StringRepresentation::convertStringToSimple( const OUString& _rValue,co
                     if ( *pIter == _rValue )
                     {
                         OSL_ENSURE(i < m_aConstants.getLength() ,"StringRepresentation::convertSimpleToString: Index is not in range of m_aValues");
-                        aReturn <<= m_aConstants[i]->getConstantValue();
+                        aReturn = m_aConstants[i]->getConstantValue();
                         break;
                     }
                 }
@@ -517,9 +517,8 @@ bool StringRepresentation::convertStringToGenericValue( const OUString& _rString
 
     case uno::TypeClass_BOOLEAN:
     {
-        ::std::vector< OUString > aListEntries;
-        tools::StringListResource aRes(PcrRes(RID_RSC_ENUM_YESNO),aListEntries);
-        _rValue <<= aListEntries[0] != _rStringRep;
+        ResStringArray aListEntries(PcrRes(RID_RSC_ENUM_YESNO));
+        _rValue <<= aListEntries.GetString(0) != _rStringRep;
     }
     break;
 

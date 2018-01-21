@@ -49,6 +49,7 @@
 #include <undobj.hxx>
 #include <swundo.hxx>
 #include <swtable.hxx>
+#include <tblafmt.hxx>
 #include <tblsel.hxx>
 #include <pagedesc.hxx>
 #include <poolfmt.hxx>
@@ -133,11 +134,11 @@ sal_uLong SwReader::Read( const Reader& rOptions )
 
     SwNodeIndex aSplitIdx( pDoc->GetNodes() );
 
-    RedlineMode_t eOld = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
-    RedlineMode_t ePostReadRedlineMode( nsRedlineMode_t::REDLINE_IGNORE );
+    RedlineFlags eOld = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
+    RedlineFlags ePostReadRedlineFlags( RedlineFlags::Ignore );
 
     // Array of FlyFormats
-    SwFrameFormats aFlyFrameArr;
+    SwFrameFormatsV aFlyFrameArr;
     // only read templates? then ignore multi selection!
     bool bFormatsOnly = po->aOpt.IsFormatsOnly();
 
@@ -146,7 +147,7 @@ sal_uLong SwReader::Read( const Reader& rOptions )
         if( bSaveUndo )
             pUndo = new SwUndoInsDoc( *pPam );
 
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( nsRedlineMode_t::REDLINE_IGNORE );
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( RedlineFlags::Ignore );
 
         SwPaM* pUndoPam = nullptr;
         if( bDocUndo || pCursor )
@@ -170,14 +171,14 @@ sal_uLong SwReader::Read( const Reader& rOptions )
         sal_Int32 nEndContent = pCNd ? pCNd->Len() - nSttContent : 0;
         SwNodeIndex aEndPos( pPam->GetPoint()->nNode, 1 );
 
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
 
-        nError = po->Read( *pDoc, GetBaseURL(), *pPam, aFileName );
+        nError = po->Read( *pDoc, sBaseURL, *pPam, aFileName );
 
         // an ODF document may contain redline mode in settings.xml; save it!
-        ePostReadRedlineMode = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
+        ePostReadRedlineFlags = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
 
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( nsRedlineMode_t::REDLINE_IGNORE );
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( RedlineFlags::Ignore );
 
         if( !IsError( nError ))     // set the End position already
         {
@@ -242,8 +243,7 @@ sal_uLong SwReader::Read( const Reader& rOptions )
                                     &&  !IsDestroyFrameAnchoredAtChar(
                                               *pFrameAnchor,
                                               *pUndoPam->GetPoint(),
-                                              *pUndoPam->GetMark(),
-                                              pDoc)
+                                              *pUndoPam->GetMark())
                                     )
                                 )
                             )
@@ -262,13 +262,13 @@ sal_uLong SwReader::Read( const Reader& rOptions )
                         {
                             if( bSaveUndo )
                             {
-                                pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+                                pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
                                 // UGLY: temp. enable undo
                                 pDoc->GetIDocumentUndoRedo().DoUndo(true);
                                 pDoc->GetIDocumentUndoRedo().AppendUndo(
                                     new SwUndoInsLayFormat( pFrameFormat,0,0 ) );
                                 pDoc->GetIDocumentUndoRedo().DoUndo(false);
-                                pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( nsRedlineMode_t::REDLINE_IGNORE );
+                                pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( RedlineFlags::Ignore );
                             }
                             if( pFrameFormat->HasWriterListeners() )
                             {
@@ -296,22 +296,22 @@ sal_uLong SwReader::Read( const Reader& rOptions )
             if( !aFlyFrameArr.empty() )
                 aFlyFrameArr.clear();
 
-            pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+            pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
             if( pDoc->getIDocumentRedlineAccess().IsRedlineOn() )
                 pDoc->getIDocumentRedlineAccess().AppendRedline( new SwRangeRedline( nsRedlineType_t::REDLINE_INSERT, *pUndoPam ), true);
             else
                 pDoc->getIDocumentRedlineAccess().SplitRedline( *pUndoPam );
-            pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( nsRedlineMode_t::REDLINE_IGNORE );
+            pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( RedlineFlags::Ignore );
         }
         if( bSaveUndo )
         {
-            pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+            pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
             pUndo->SetInsertRange( *pUndoPam, false );
             // UGLY: temp. enable undo
             pDoc->GetIDocumentUndoRedo().DoUndo(true);
             pDoc->GetIDocumentUndoRedo().AppendUndo( pUndo );
             pDoc->GetIDocumentUndoRedo().DoUndo(false);
-            pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( nsRedlineMode_t::REDLINE_IGNORE );
+            pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( RedlineFlags::Ignore );
         }
 
         delete pUndoPam;
@@ -344,15 +344,17 @@ sal_uLong SwReader::Read( const Reader& rOptions )
     pDoc->ChkCondColls();
     pDoc->SetAllUniqueFlyNames();
     pDoc->getIDocumentState().SetLoaded();
+    // Clear unassigned cell styles, because they aren't needed anymore.
+    pDoc->GetCellStyles().clear();
 
     pDoc->GetIDocumentUndoRedo().DoUndo(bDocUndo);
     if (!bReadPageDescs)
     {
         if( bSaveUndo )
         {
-            pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+            pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
             pDoc->GetIDocumentUndoRedo().EndUndo( UNDO_INSDOKUMENT, nullptr );
-            pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( nsRedlineMode_t::REDLINE_IGNORE );
+            pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( RedlineFlags::Ignore );
         }
     }
 
@@ -367,13 +369,12 @@ sal_uLong SwReader::Read( const Reader& rOptions )
         pDoc->getIDocumentLinksAdministration().UpdateLinks();
 
         // not insert: set the redline mode read from settings.xml
-        eOld = static_cast<RedlineMode_t>(
-                ePostReadRedlineMode & ~nsRedlineMode_t::REDLINE_IGNORE);
+        eOld = ePostReadRedlineFlags & ~RedlineFlags::Ignore;
 
         pDoc->getIDocumentFieldsAccess().SetFieldsDirty(false, nullptr, 0);
     }
 
-    pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+    pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
     pDoc->SetOle2Link( aOLELink );
 
     if( pCursor )                 // das Doc ist jetzt modifiziert
@@ -796,9 +797,9 @@ sal_uLong SwWriter::Write( WriterRef& rxWriter, const OUString* pRealFileName )
             else
             {
                 pPam = new SwPaM( *pPam, pPam );
-                pPam->Move( fnMoveBackward, fnGoDoc );
+                pPam->Move( fnMoveBackward, GoInDoc );
                 pPam->SetMark();
-                pPam->Move( fnMoveForward, fnGoDoc );
+                pPam->Move( fnMoveForward, GoInDoc );
             }
         }
         // pPam is still the current Cursor !!
@@ -810,14 +811,14 @@ sal_uLong SwWriter::Write( WriterRef& rxWriter, const OUString* pRealFileName )
         pPam = new SwPaM( pOutDoc->GetNodes().GetEndOfContent() );
         if( pOutDoc->IsClipBoard() )
         {
-            pPam->Move( fnMoveBackward, fnGoDoc );
+            pPam->Move( fnMoveBackward, GoInDoc );
             pPam->SetMark();
-            pPam->Move( fnMoveForward, fnGoDoc );
+            pPam->Move( fnMoveForward, GoInDoc );
         }
         else
         {
             pPam->SetMark();
-            pPam->Move( fnMoveBackward, fnGoDoc );
+            pPam->Move( fnMoveBackward, GoInDoc );
         }
     }
 
@@ -862,7 +863,7 @@ sal_uLong SwWriter::Write( WriterRef& rxWriter, const OUString* pRealFileName )
     sal_uLong nError = 0;
     if( pMedium )
         nError = rxWriter->Write( *pPam, *pMedium, pRealFileName );
-    else if( pStg )
+    else if( pStg.Is() )
         nError = rxWriter->Write( *pPam, *pStg, pRealFileName );
     else if( pStrm )
         nError = rxWriter->Write( *pPam, *pStrm, pRealFileName );

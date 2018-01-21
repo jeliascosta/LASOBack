@@ -122,7 +122,7 @@ public:
 
     static void SetToDocument(
         ScDocumentImport& rDoc, const ScAddress& rPos, const XclImpRoot& rRoot,
-        const XclImpString& rString, sal_uInt16 nXFIndex = 0 );
+        const XclImpString& rString, sal_uInt16 nXFIndex );
 };
 
 // Header/footer conversion ===================================================
@@ -171,7 +171,7 @@ public:
     const XclImpHFConverter& operator=(const XclImpHFConverter&) = delete;
 
     explicit            XclImpHFConverter( const XclImpRoot& rRoot );
-                        virtual ~XclImpHFConverter();
+                        virtual ~XclImpHFConverter() override;
 
     /** Parses the passed string and creates three new edit engine text objects. */
     void                ParseString( const OUString& rHFString );
@@ -209,8 +209,6 @@ private:
 
     /** Returns the maximum line height of the specified portion. */
     sal_uInt16          GetMaxLineHeight( XclImpHFPortion ePortion ) const;
-    /** Returns the current maximum line height. */
-    sal_uInt16          GetCurrMaxLineHeight() const;
 
     /** Updates the maximum line height of the specified portion, using the current font size. */
     void                UpdateMaxLineHeight( XclImpHFPortion ePortion );
@@ -321,7 +319,7 @@ public:
     /** Returns the cached Calc error code, if this value has Error type, else 0. */
     inline sal_uInt8    GetXclError() const { return (mnType == EXC_CACHEDVAL_ERROR) ? mnBoolErr : EXC_ERR_NA; }
     /** Returns the cached Calc error code, if this value has Error type, else 0. */
-    sal_uInt16              GetScError() const;
+    FormulaError        GetScError() const;
 
 protected:
     typedef ::std::unique_ptr< const ScTokenArray >   ScTokenArrayPtr;

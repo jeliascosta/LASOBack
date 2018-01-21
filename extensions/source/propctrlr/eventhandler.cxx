@@ -337,7 +337,7 @@ namespace pcr
         virtual sal_Bool SAL_CALL hasElements(  ) throw (RuntimeException, std::exception) override;
 
     protected:
-        virtual ~EventHolder( );
+        virtual ~EventHolder( ) override;
 
     private:
         ScriptEventDescriptor impl_getDescriptor_throw( const OUString& _rEventName ) const;
@@ -832,7 +832,7 @@ namespace pcr
         if ( !pFactory )
             return InteractiveSelectionResult_Cancelled;
 
-        ::std::unique_ptr< VclAbstractDialog > pDialog( pFactory->CreateSvxMacroAssignDlg(
+        ScopedVclPtr<VclAbstractDialog> pDialog( pFactory->CreateSvxMacroAssignDlg(
             PropertyHandlerHelper::getDialogParentWindow( m_xContext ),
             impl_getContextFrame_nothrow(),
             m_bIsDialogElement,

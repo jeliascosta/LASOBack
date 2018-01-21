@@ -41,7 +41,7 @@ class SwXRedlines : public SwRedlinesBaseClass,
     public SwUnoCollection
 {
 protected:
-    virtual ~SwXRedlines();
+    virtual ~SwXRedlines() override;
 public:
     SwXRedlines(SwDoc* pDoc);
 
@@ -71,7 +71,7 @@ class SwXRedlineEnumeration
     SwDoc* pDoc;
     sal_uInt16 nCurrentIndex;
 protected:
-    virtual ~SwXRedlineEnumeration();
+    virtual ~SwXRedlineEnumeration() override;
 public:
     SwXRedlineEnumeration(SwDoc& rDoc);
 
@@ -85,7 +85,7 @@ public:
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
 protected:
     //SwClient
-   virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew) override;
+    virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew) override;
 };
 
 #endif

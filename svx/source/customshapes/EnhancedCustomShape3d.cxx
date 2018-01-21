@@ -269,9 +269,9 @@ SdrObject* EnhancedCustomShape3d::Create3DObject( const SdrObject* pShape2d, con
             fMap /= aFraction.GetDenominator();
             pMap = &fMap;
         }
-        if ( pModel->GetScaleUnit() != MAP_100TH_MM )
+        if ( pModel->GetScaleUnit() != MapUnit::Map100thMM )
         {
-            DBG_ASSERT( pModel->GetScaleUnit() == MAP_TWIP, "EnhancedCustomShape3d::Current MapMode is Unsupported" );
+            DBG_ASSERT( pModel->GetScaleUnit() == MapUnit::MapTwip, "EnhancedCustomShape3d::Current MapMode is Unsupported" );
             fMap *= 1440.0 / 2540.0;
             pMap = &fMap;
         }
@@ -320,7 +320,7 @@ SdrObject* EnhancedCustomShape3d::Create3DObject( const SdrObject* pShape2d, con
         const Any* pAny = rGeometryItem.GetPropertyValueByName( "Extrusion", "ProjectionMode" );
         if ( pAny )
             *pAny >>= eProjectionMode;
-        ProjectionType eProjectionType( eProjectionMode == drawing::ProjectionMode_PARALLEL ? PR_PARALLEL : PR_PERSPECTIVE );
+        ProjectionType eProjectionType( eProjectionMode == drawing::ProjectionMode_PARALLEL ? ProjectionType::Parallel : ProjectionType::Perspective );
         // pShape2d Convert in scenes which include 3D Objects
         E3dDefaultAttributes a3DDefaultAttr;
         a3DDefaultAttr.SetDefaultLatheCharacterMode( true );
@@ -368,7 +368,7 @@ SdrObject* EnhancedCustomShape3d::Create3DObject( const SdrObject* pShape2d, con
         }
 
         Rectangle aBoundRect2d;
-        SdrObjListIter aIter( *pShape2d, IM_DEEPNOGROUPS );
+        SdrObjListIter aIter( *pShape2d, SdrIterMode::DeepNoGroups );
         const bool bMultipleSubObjects(aIter.Count() > 1);
 
         while( aIter.IsMore() )
@@ -500,14 +500,14 @@ SdrObject* EnhancedCustomShape3d::Create3DObject( const SdrObject* pShape2d, con
                         // from regular 3D objects for some time, also needs to be removed from CustomShapes
 
                         //Size aLogicalSize = aFillBmp.GetPrefSize();
-                        //if ( aFillBmp.GetPrefMapMode() == MAP_PIXEL )
-                        //  aLogicalSize = Application::GetDefaultDevice()->PixelToLogic( aLogicalSize, MAP_100TH_MM );
+                        //if ( aFillBmp.GetPrefMapMode() == MapUnit::MapPixel )
+                        //  aLogicalSize = Application::GetDefaultDevice()->PixelToLogic( aLogicalSize, MapUnit::Map100thMM );
                         //else
-                        //  aLogicalSize = OutputDevice::LogicToLogic( aLogicalSize, aFillBmp.GetPrefMapMode(), MAP_100TH_MM );
+                        //  aLogicalSize = OutputDevice::LogicToLogic( aLogicalSize, aFillBmp.GetPrefMapMode(), MapUnit::Map100thMM );
                         //aLogicalSize.Width()  *= 5;           ;//             :-(     nice scaling, look at engine3d/obj3d.cxx
                         //aLogicalSize.Height() *= 5;
                         //aFillBmp.SetPrefSize( aLogicalSize );
-                        //aFillBmp.SetPrefMapMode( MAP_100TH_MM );
+                        //aFillBmp.SetPrefMapMode( MapUnit::Map100thMM );
                         //p3DObj->SetMergedItem(XFillBitmapItem(String(), Graphic(aFillBmp)));
                     }
                     else
@@ -614,7 +614,7 @@ SdrObject* EnhancedCustomShape3d::Create3DObject( const SdrObject* pShape2d, con
                 aNewTransform.rotate( 0.0, -fYRotate, 0.0 );
             if( fXRotate != 0.0 )
                 aNewTransform.rotate( -fXRotate, 0.0, 0.0 );
-            if ( eProjectionType == PR_PARALLEL )
+            if ( eProjectionType == ProjectionType::Parallel )
             {
                 double fSkew, fAlpha;
                 GetSkew( rGeometryItem, fSkew, fAlpha );

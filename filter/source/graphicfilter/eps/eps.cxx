@@ -96,7 +96,6 @@ class PSWriter
 private:
     bool                mbStatus;
     sal_uLong           mnLevelWarning;     // number of embedded eps files which was not exported
-    sal_uLong           mnLastPercent;      // the number with which pCallback was called the last time
     sal_uInt32          mnLatestPush;       // offset to streamposition, where last push was done
 
     long                mnLevel;            // dialog options
@@ -110,9 +109,7 @@ private:
     GDIMetaFile*        pAMTF;              // only created if Graphics is not a Metafile
     ScopedVclPtrInstance<VirtualDevice> pVDev;
 
-    double              nBoundingX1;        // this represents the bounding box
-    double              nBoundingY1;
-    double              nBoundingX2;
+    double              nBoundingX2;        // this represents the bounding box
     double              nBoundingY2;
 
     StackMember*        pGDIStack;
@@ -126,7 +123,6 @@ private:
     bool                bTextFillColor;
     Color               aTextFillColor;
     Color               aBackgroundColor;
-    bool                bRegionChanged;
     TextAlign           eTextAlign;
 
     double                      fLineWidth;
@@ -137,7 +133,6 @@ private:
 
     vcl::Font           maFont;
     vcl::Font           maLastFont;
-    sal_uInt8           nChrSet;
     sal_uInt8           nNextChrSetId;      // first unused ChrSet-Id
 
     PSLZWCTreeNode*     pTable;             // LZW compression data
@@ -152,7 +147,7 @@ private:
 
     css::uno::Reference< css::task::XStatusIndicator > xStatusIndicator;
 
-    void                ImplWriteProlog( const Graphic* pPreviewEPSI = nullptr );
+    void                ImplWriteProlog( const Graphic* pPreviewEPSI );
     void                ImplWriteEpilog();
     void                ImplWriteActions( const GDIMetaFile& rMtf, VirtualDevice& rVDev );
 
@@ -184,7 +179,7 @@ private:
     inline void         ImplWritePoint( const Point& );
     void                ImplMoveTo( const Point& );
     void                ImplLineTo( const Point&, sal_uInt32 nMode = PS_SPACE );
-    void                ImplCurveTo( const Point& rP1, const Point& rP2, const Point& rP3, sal_uInt32 nMode = PS_SPACE );
+    void                ImplCurveTo( const Point& rP1, const Point& rP2, const Point& rP3, sal_uInt32 nMode );
     void                ImplTranslate( const double& fX, const double& fY );
     void                ImplScale( const double& fX, const double& fY );
 
@@ -204,15 +199,15 @@ private:
     void                ImplText( const OUString& rUniString, const Point& rPos, const long* pDXArry, sal_Int32 nWidth, VirtualDevice& rVDev );
     void                ImplSetAttrForText( const Point & rPoint );
     void                ImplWriteCharacter( sal_Char );
-    void                ImplWriteString( const OString&, VirtualDevice& rVDev, const long* pDXArry = nullptr, bool bStretch = false );
+    void                ImplWriteString( const OString&, VirtualDevice& rVDev, const long* pDXArry, bool bStretch );
     void                ImplDefineFont( const char*, const char* );
 
     void                ImplClosePathDraw();
     void                ImplPathDraw();
 
-    inline void         ImplWriteLineColor( sal_uLong nMode = PS_RET );
-    inline void         ImplWriteFillColor( sal_uLong nMode = PS_RET );
-    inline void         ImplWriteTextColor( sal_uLong nMode = PS_RET );
+    inline void         ImplWriteLineColor( sal_uLong nMode );
+    inline void         ImplWriteFillColor( sal_uLong nMode );
+    inline void         ImplWriteTextColor( sal_uLong nMode );
     void                ImplWriteColor( sal_uLong nMode );
 
     void                ImplGetMapMode( const MapMode& );
@@ -236,7 +231,6 @@ public:
 PSWriter::PSWriter()
     : mbStatus(false)
     , mnLevelWarning(0)
-    , mnLastPercent(0)
     , mnLatestPush(0)
     , mnLevel(0)
     , mbGrayScale(false)
@@ -247,8 +241,6 @@ PSWriter::PSWriter()
     , pMTF(nullptr)
     , pAMTF(nullptr)
     , pVDev()
-    , nBoundingX1(0)
-    , nBoundingY1(0)
     , nBoundingX2(0)
     , nBoundingY2(0)
     , pGDIStack(nullptr)
@@ -262,7 +254,6 @@ PSWriter::PSWriter()
     , bTextFillColor(false)
     , aTextFillColor()
     , aBackgroundColor()
-    , bRegionChanged(false)
     , eTextAlign()
     , fLineWidth(0)
     , fMiterLimit(0)
@@ -271,7 +262,6 @@ PSWriter::PSWriter()
     , aDashArray()
     , maFont()
     , maLastFont()
-    , nChrSet(0)
     , nNextChrSetId(0)
     , pTable(nullptr)
     , pPrefix(nullptr)
@@ -299,7 +289,6 @@ bool PSWriter::WritePS( const Graphic& rGraphic, SvStream& rTargetStream, Filter
     mbStatus = true;
     mnPreview = 0;
     mnLevelWarning = 0;
-    mnLastPercent = 0;
     mnLatestPush = 0xEFFFFFFE;
 
     if ( pFilterConfigItem )
@@ -321,7 +310,7 @@ bool PSWriter::WritePS( const Graphic& rGraphic, SvStream& rTargetStream, Filter
 #ifdef UNX // don't compress by default on unix as ghostscript is unable to read LZW compressed eps
     mbCompression = false;
 #else
-    mbCompression = sal_True;
+    mbCompression = true;
 #endif
     mnTextMode = 0;         // default0 : export glyph outlines
 
@@ -394,7 +383,7 @@ bool PSWriter::WritePS( const Graphic& rGraphic, SvStream& rTargetStream, Filter
     // global default value setting
     StackMember*    pGS;
 
-    if (rGraphic.GetType() == GRAPHIC_GDIMETAFILE)
+    if (rGraphic.GetType() == GraphicType::GdiMetafile)
         pMTF = &rGraphic.GetGDIMetaFile();
     else if (rGraphic.GetGDIMetaFile().GetActionSize())
         pMTF = pAMTF = new GDIMetaFile( rGraphic.GetGDIMetaFile() );
@@ -410,7 +399,6 @@ bool PSWriter::WritePS( const Graphic& rGraphic, SvStream& rTargetStream, Filter
         pMTF = pAMTF;
     }
     pVDev->SetMapMode( pMTF->GetPrefMapMode() );
-    nBoundingX1 = nBoundingY1 = 0;
     nBoundingX2 = pMTF->GetPrefSize().Width();
     nBoundingY2 = pMTF->GetPrefSize().Height();
 
@@ -428,9 +416,7 @@ bool PSWriter::WritePS( const Graphic& rGraphic, SvStream& rTargetStream, Filter
     eJoinType = SvtGraphicStroke::joinMiter;
     aBackgroundColor = Color( COL_WHITE );
     eTextAlign = ALIGN_BASELINE;
-    bRegionChanged = false;
 
-    nChrSet = 0x00;
     nNextChrSetId = 1;
 
     if( pMTF->GetActionSize() )
@@ -482,7 +468,7 @@ void PSWriter::ImplWriteProlog( const Graphic* pPreview )
     ImplWriteLong( 0 );
     ImplWriteLong( 0 );
     Size aSizePoint = OutputDevice::LogicToLogic( pMTF->GetPrefSize(),
-                        pMTF->GetPrefMapMode(), MAP_POINT );
+                        pMTF->GetPrefMapMode(), MapUnit::MapPoint );
     ImplWriteLong( aSizePoint.Width() );
     ImplWriteLong( aSizePoint.Height() ,PS_RET );
     ImplWriteLine( "%%Pages: 0" );
@@ -1073,7 +1059,6 @@ void PSWriter::ImplWriteActions( const GDIMetaFile& rMtf, VirtualDevice& rVDev )
                 pGS->bTextFillCol = bTextFillColor;
                 pGS->aTextFillCol = aTextFillColor;
                 pGS->aBackgroundCol = aBackgroundColor;
-                bRegionChanged = false;
                 pGS->aFont = maFont;
                 mnLatestPush = mpPS->Tell();
                 ImplWriteLine( "gs" );
@@ -1173,7 +1158,7 @@ void PSWriter::ImplWriteActions( const GDIMetaFile& rMtf, VirtualDevice& rVDev )
                         ImplWriteLine( "gs" );
                         ImplGetMapMode( aMapMode );
                         ImplWriteLine( "%%BeginDocument:" );
-                        mpPS->Write( pSource, aGfxLink.GetDataSize() );
+                        mpPS->WriteBytes(pSource, aGfxLink.GetDataSize());
                         ImplWriteLine( "%%EndDocument\ngr" );
                     }
                 }
@@ -2079,7 +2064,7 @@ void PSWriter::ImplSetAttrForText( const Point& rPoint )
     Point aPoint( rPoint );
 
     long nRotation = maFont.GetOrientation();
-    ImplWriteTextColor();
+    ImplWriteTextColor(PS_RET);
 
     Size aSize = maFont.GetFontSize();
 
@@ -2289,7 +2274,7 @@ void PSWriter::ImplWriteLineInfo( double fLWidth, double fMLimit,
 void PSWriter::ImplWriteLineInfo( const LineInfo& rLineInfo )
 {
     SvtGraphicStroke::DashArray l_aDashArray;
-    if ( rLineInfo.GetStyle() == LINE_DASH )
+    if ( rLineInfo.GetStyle() == LineStyle::Dash )
         l_aDashArray.push_back( 2 );
     const double fLWidth(( ( rLineInfo.GetWidth() + 1 ) + ( rLineInfo.GetWidth() + 1 ) ) * 0.5);
     SvtGraphicStroke::JoinType aJoinType(SvtGraphicStroke::joinMiter);

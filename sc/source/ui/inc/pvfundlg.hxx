@@ -30,7 +30,6 @@
 #include <vcl/button.hxx>
 #include <vcl/morebtn.hxx>
 #include <vcl/field.hxx>
-#include <svtools/stdctrl.hxx>
 #include <svx/checklbx.hxx>
 #include <sfx2/itemconnect.hxx>
 #include "pivot.hxx"
@@ -60,7 +59,7 @@ class ScDPFunctionDlg : public ModalDialog
 public:
     explicit            ScDPFunctionDlg( vcl::Window* pParent, const ScDPLabelDataVector& rLabelVec,
                             const ScDPLabelData& rLabelData, const ScPivotFuncData& rFuncData );
-    virtual ~ScDPFunctionDlg();
+    virtual ~ScDPFunctionDlg() override;
     virtual void            dispose() override;
     PivotFunc               GetFuncMask() const;
     css::sheet::DataPilotFieldReference GetFieldRef() const;
@@ -74,8 +73,8 @@ private:
     /** Searches for a listbox entry, starts search at specified position. */
     sal_Int32 FindBaseItemPos( const OUString& rEntry, sal_Int32 nStartPos ) const;
 
-    DECL_LINK_TYPED( SelectHdl, ListBox&, void );
-    DECL_LINK_TYPED( DblClickHdl, ListBox&, void );
+    DECL_LINK( SelectHdl, ListBox&, void );
+    DECL_LINK( DblClickHdl, ListBox&, void );
 
 private:
     VclPtr<ScDPFunctionListBox> mpLbFunc;
@@ -102,7 +101,7 @@ public:
     explicit            ScDPSubtotalDlg( vcl::Window* pParent, ScDPObject& rDPObj,
                             const ScDPLabelData& rLabelData, const ScPivotFuncData& rFuncData,
                             const ScDPNameVec& rDataFields, bool bEnableLayout );
-    virtual             ~ScDPSubtotalDlg();
+    virtual             ~ScDPSubtotalDlg() override;
     virtual void        dispose() override;
     PivotFunc           GetFuncMask() const;
 
@@ -111,9 +110,9 @@ public:
 private:
     void                Init( const ScDPLabelData& rLabelData, const ScPivotFuncData& rFuncData );
 
-    DECL_LINK_TYPED( DblClickHdl, ListBox&, void );
-    DECL_LINK_TYPED( RadioClickHdl, Button*, void );
-    DECL_LINK_TYPED( ClickHdl, Button*, void );
+    DECL_LINK( DblClickHdl, ListBox&, void );
+    DECL_LINK( RadioClickHdl, Button*, void );
+    DECL_LINK( ClickHdl, Button*, void );
 
 private:
     VclPtr<RadioButton>         mpRbNone;
@@ -138,7 +137,7 @@ public:
     explicit            ScDPSubtotalOptDlg( vcl::Window* pParent, ScDPObject& rDPObj,
                             const ScDPLabelData& rLabelData, const ScDPNameVec& rDataFields,
                             bool bEnableLayout );
-    virtual              ~ScDPSubtotalOptDlg();
+    virtual              ~ScDPSubtotalOptDlg() override;
     virtual void        dispose() override;
     void                FillLabelData( ScDPLabelData& rLabelData ) const;
 
@@ -151,9 +150,9 @@ private:
     /** Searches for a listbox entry, starts search at specified position. */
     sal_Int32 FindListBoxEntry( const ListBox& rLBox, const OUString& rEntry, sal_Int32 nStartPos ) const;
 
-    DECL_LINK_TYPED( RadioClickHdl, Button*, void );
-    DECL_LINK_TYPED( CheckHdl, Button*, void );
-    DECL_LINK_TYPED( SelectHdl, ListBox&, void );
+    DECL_LINK( RadioClickHdl, Button*, void );
+    DECL_LINK( CheckHdl, Button*, void );
+    DECL_LINK( SelectHdl, ListBox&, void );
 
 private:
     VclPtr<ListBox>            m_pLbSortBy;
@@ -190,7 +189,7 @@ class ScDPShowDetailDlg : public ModalDialog
 {
 public:
     explicit            ScDPShowDetailDlg( vcl::Window* pParent, ScDPObject& rDPObj, sal_uInt16 nOrient );
-    virtual             ~ScDPShowDetailDlg();
+    virtual             ~ScDPShowDetailDlg() override;
     virtual void        dispose() override;
     virtual short       Execute() override;
 
@@ -202,7 +201,7 @@ public:
     OUString GetDimensionName() const;
 
 private:
-    DECL_LINK_TYPED( DblClickHdl, ListBox&, void );
+    DECL_LINK( DblClickHdl, ListBox&, void );
 
 private:
     VclPtr<ListBox>            mpLbDims;

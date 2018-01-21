@@ -213,9 +213,12 @@ debug_callback(GLenum source, GLenum type, GLuint id,
 #endif
         )
 {
-    // ignore Nvidia's : "Program/shader state performance warning: Fragment Shader is going to be recompiled because the shader key based on GL state mismatches."
+    // ignore Nvidia's 131218: "Program/shader state performance warning: Fragment Shader is going to be recompiled because the shader key based on GL state mismatches."
     // the GLSL compiler is a bit too aggressive in optimizing the state based on the current OpenGL state
-    if (id == 131218)
+
+    // ignore 131185: "Buffer detailed info: Buffer object x (bound to GL_ARRAY_BUFFER_ARB,
+    // usage hint is GL_STATIC_DRAW) will use VIDEO memory as the source for buffer object operations."
+    if (id == 131218 || id == 131185)
         return;
 
     SAL_WARN("vcl.opengl", "OpenGL debug message: source: " << getSourceString(source) << ", type: "
@@ -237,7 +240,8 @@ bool OpenGLContext::init( vcl::Window* pParent )
     mpWindow = pParent ? pParent : m_xWindow.get();
     if(m_xWindow)
         m_xWindow->setPosSizePixel(0,0,0,0);
-    m_pChildWindow = nullptr;
+    //tdf#108069 we may be initted twice, so dispose earlier effort
+    m_pChildWindow.disposeAndClear();
     initWindow();
     return ImplInit();
 }
@@ -264,6 +268,19 @@ bool OpenGLContext::ImplInit()
     return false;
 }
 
+OUString getGLString(GLenum eGlEnum)
+{
+    OUString sString;
+    const GLubyte* pString = glGetString(eGlEnum);
+    if (pString)
+    {
+        sString = OUString::createFromAscii(reinterpret_cast<const sal_Char*>(pString));
+    }
+
+    CHECK_GL_ERROR();
+    return sString;
+}
+
 bool OpenGLContext::InitGLEW()
 {
     static bool bGlewInit = false;
@@ -282,7 +299,8 @@ bool OpenGLContext::InitGLEW()
             bGlewInit = true;
     }
 
-    VCL_GL_INFO("OpenGLContext::ImplInit----end, GL version: " << OpenGLHelper::getGLVersion());
+    VCL_GL_INFO("OpenGLContext::ImplInit----end");
+    VCL_GL_INFO("Vendor: " << getGLString(GL_VENDOR) << " Renderer: " << getGLString(GL_RENDERER) << " GL version: " << OpenGLHelper::getGLVersion());
     mbInitialized = true;
 
     // I think we need at least GL 3.0
@@ -331,7 +349,7 @@ void OpenGLContext::InitGLEWDebugging()
     }
 
     // Test hooks for inserting tracing messages into the stream
-    VCL_GL_INFO("LibreOffice GLContext initialized: " << this);
+    VCL_GL_INFO("LibreOffice GLContext initialized");
 #endif
 }
 
@@ -427,6 +445,7 @@ void OpenGLContext::reset()
 SystemWindowData OpenGLContext::generateWinData(vcl::Window* /*pParent*/, bool /*bRequestLegacyContext*/)
 {
     SystemWindowData aWinData;
+    memset(&aWinData, 0, sizeof(aWinData));
     aWinData.nSize = sizeof(aWinData);
     return aWinData;
 }
@@ -550,6 +569,9 @@ void OpenGLContext::registerAsCurrent()
         pSVData->maGDIData.mpLastContext->mpNextContext = this;
         pSVData->maGDIData.mpLastContext = this;
     }
+
+    // sync the render state with the current context
+    mpRenderState->sync();
 }
 
 void OpenGLContext::resetCurrent()

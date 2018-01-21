@@ -20,7 +20,6 @@
 #include "sal/config.h"
 
 #include <comphelper/processfactory.hxx>
-#include <comphelper/string.hxx>
 #include <tools/debug.hxx>
 #include <tools/rc.h>
 
@@ -49,8 +48,8 @@ using namespace vcl;
 ImplToolBoxPrivateData::ImplToolBoxPrivateData() :
         m_pLayoutData( nullptr )
 {
-    meButtonSize = TOOLBOX_BUTTONSIZE_DONTCARE;
-    mpMenu = new PopupMenu();
+    meButtonSize = ToolBoxButtonSize::DontCare;
+    mpMenu = VclPtr<PopupMenu>::Create();
     mnEventId = nullptr;
 
     maMenuType = ToolBoxMenuType::NONE;
@@ -74,7 +73,7 @@ ImplToolBoxPrivateData::ImplToolBoxPrivateData() :
 ImplToolBoxPrivateData::~ImplToolBoxPrivateData()
 {
     delete m_pLayoutData;
-    delete mpMenu;
+    mpMenu.disposeAndClear();
 }
 
 void ImplToolItem::init(sal_uInt16 nItemId, ToolBoxItemBits nItemBits,
@@ -106,8 +105,7 @@ ImplToolItem::ImplToolItem()
 
 ImplToolItem::ImplToolItem( sal_uInt16 nItemId, const Image& rImage,
                             ToolBoxItemBits nItemBits ) :
-    maImage( rImage ),
-    maImageOriginal( rImage )
+    maImage( rImage )
 {
     init(nItemId, nItemBits, false);
 }
@@ -122,82 +120,9 @@ ImplToolItem::ImplToolItem( sal_uInt16 nItemId, const OUString& rText,
 ImplToolItem::ImplToolItem( sal_uInt16 nItemId, const Image& rImage,
                             const OUString& rText, ToolBoxItemBits nItemBits ) :
     maImage( rImage ),
-    maImageOriginal( rImage ),
     maText( rText )
 {
     init(nItemId, nItemBits, false);
-}
-
-ImplToolItem::ImplToolItem( const ImplToolItem& rItem ) :
-        mpWindow                ( rItem.mpWindow ),
-        mpUserData              ( rItem.mpUserData ),
-        maImage                 ( rItem.maImage ),
-        maImageOriginal         ( rItem.maImageOriginal ),
-        mnImageAngle            ( rItem.mnImageAngle ),
-        mbMirrorMode            ( rItem.mbMirrorMode ),
-        maText                  ( rItem.maText ),
-        maQuickHelpText         ( rItem.maQuickHelpText ),
-        maHelpText              ( rItem.maHelpText ),
-        maCommandStr            ( rItem.maCommandStr ),
-        maHelpId                ( rItem.maHelpId ),
-        maRect                  ( rItem.maRect ),
-        maCalcRect              ( rItem.maCalcRect ),
-        maMinimalItemSize       ( rItem.maMinimalItemSize ),
-        maItemSize              ( rItem.maItemSize ),
-        mnSepSize               ( rItem.mnSepSize ),
-        mnDropDownArrowWidth    ( rItem.mnDropDownArrowWidth ),
-        maContentSize           ( rItem.maContentSize ),
-        meType                  ( rItem.meType ),
-        mnBits                  ( rItem.mnBits ),
-        meState                 ( rItem.meState ),
-        mnId                    ( rItem.mnId ),
-        mbEnabled               ( rItem.mbEnabled ),
-        mbVisible               ( rItem.mbVisible ),
-        mbEmptyBtn              ( rItem.mbEmptyBtn ),
-        mbShowWindow            ( rItem.mbShowWindow ),
-        mbBreak                 ( rItem.mbBreak ),
-        mbVisibleText           ( rItem.mbVisibleText ),
-        mbExpand                ( rItem.mbExpand )
-{
-}
-
-ImplToolItem::~ImplToolItem()
-{
-    // don't dispose mpWindow - we get copied around.
-}
-
-ImplToolItem& ImplToolItem::operator=( const ImplToolItem& rItem )
-{
-    mpWindow                = rItem.mpWindow;
-    mpUserData              = rItem.mpUserData;
-    maImage                 = rItem.maImage;
-    maImageOriginal         = rItem.maImageOriginal;
-    mnImageAngle            = rItem.mnImageAngle;
-    mbMirrorMode            = rItem.mbMirrorMode;
-    maText                  = rItem.maText;
-    maQuickHelpText         = rItem.maQuickHelpText;
-    maHelpText              = rItem.maHelpText;
-    maCommandStr            = rItem.maCommandStr;
-    maHelpId                = rItem.maHelpId;
-    maRect                  = rItem.maRect;
-    maCalcRect              = rItem.maCalcRect;
-    mnSepSize               = rItem.mnSepSize;
-    mnDropDownArrowWidth    = rItem.mnDropDownArrowWidth;
-    maContentSize           = rItem.maContentSize;
-    maMinimalItemSize       = rItem.maMinimalItemSize;
-    maItemSize              = rItem.maItemSize;
-    mbVisibleText           = rItem.mbVisibleText;
-    mbExpand                = rItem.mbExpand;
-    meType                  = rItem.meType;
-    mnBits                  = rItem.mnBits;
-    meState                 = rItem.meState;
-    mnId                    = rItem.mnId;
-    mbEnabled               = rItem.mbEnabled;
-    mbVisible               = rItem.mbVisible;
-    mbEmptyBtn              = rItem.mbEmptyBtn;
-    mbShowWindow            = rItem.mbShowWindow;
-    mbBreak                 = rItem.mbBreak;
-    return *this;
 }
 
 Size ImplToolItem::GetSize( bool bHorz, bool bCheckMaxWidth, long maxWidth, const Size& rDefaultSize )
@@ -342,15 +267,6 @@ bool ImplToolItem::IsItemHidden() const
     return ( meType == ToolBoxItemType::BUTTON && !mbVisible );
 }
 
-const OUString ToolBox::ImplConvertMenuString( const OUString& rStr )
-{
-    OUString aCvtStr( rStr );
-    if ( mbMenuStrings )
-        aCvtStr = comphelper::string::stripEnd(aCvtStr, '.');
-    aCvtStr = MnemonicGenerator::EraseAllMnemonicChars( aCvtStr );
-    return aCvtStr;
-}
-
 void ToolBox::ImplInvalidate( bool bNewCalc, bool bFullPaint )
 {
     ImplUpdateInputEnable();
@@ -456,103 +372,10 @@ void ToolBox::Select()
         pWrapper->GetFloatingWindow()->EndPopupMode();
 }
 
-void ToolBox::InsertItem( const ResId& rResId )
-{
-    sal_uLong nObjMask;
-    bool      bImage = false;     // has image
-
-    // create item
-    ImplToolItem aItem;
-
-    GetRes( rResId.SetRT( RSC_TOOLBOXITEM ) );
-    nObjMask            = ReadLongRes();
-
-    if ( nObjMask & RSC_TOOLBOXITEM_ID )
-        aItem.mnId = sal::static_int_cast<sal_uInt16>(ReadLongRes());
-    else
-        aItem.mnId = 1;
-
-    if ( nObjMask & RSC_TOOLBOXITEM_TYPE )
-        aItem.meType = (ToolBoxItemType)ReadLongRes();
-
-    if ( nObjMask & RSC_TOOLBOXITEM_STATUS )
-        aItem.mnBits = (ToolBoxItemBits)ReadLongRes();
-
-    if( nObjMask & RSC_TOOLBOXITEM_HELPID )
-        aItem.maHelpId = ReadByteStringRes();
-
-    if ( nObjMask & RSC_TOOLBOXITEM_TEXT )
-    {
-        aItem.maText = ReadStringRes();
-        aItem.maText = ImplConvertMenuString( aItem.maText );
-    }
-    if ( nObjMask & RSC_TOOLBOXITEM_HELPTEXT )
-        aItem.maHelpText = ReadStringRes();
-
-    if ( nObjMask & RSC_TOOLBOXITEM_BITMAP )
-    {
-        Bitmap aBmp = Bitmap( ResId( static_cast<RSHEADER_TYPE*>(GetClassRes()), *rResId.GetResMgr() ) );
-        IncrementRes( GetObjSizeRes( static_cast<RSHEADER_TYPE*>(GetClassRes()) ) );
-        aItem.maImage = Image( aBmp, IMAGE_STDBTN_COLOR );
-        aItem.maImageOriginal = aItem.maImage;
-        bImage = true;
-    }
-    if ( nObjMask & RSC_TOOLBOXITEM_IMAGE )
-    {
-        aItem.maImage = Image( ResId( static_cast<RSHEADER_TYPE*>(GetClassRes()), *rResId.GetResMgr() ) );
-        IncrementRes( GetObjSizeRes( static_cast<RSHEADER_TYPE*>(GetClassRes()) ) );
-        bImage = true;
-    }
-    if ( nObjMask & RSC_TOOLBOXITEM_DISABLE )
-        aItem.mbEnabled = ReadShortRes() == 0;
-
-    if ( nObjMask & RSC_TOOLBOXITEM_STATE )
-        aItem.meState   = (TriState)ReadLongRes();
-
-    if ( nObjMask & RSC_TOOLBOXITEM_HIDE )
-        aItem.mbVisible = ReadShortRes() == 0;
-
-    if ( nObjMask & RSC_TOOLBOXITEM_COMMAND )
-        aItem.maCommandStr = ReadStringRes();
-
-    // if no image is loaded, try to load one from the image list
-    if ( !bImage && aItem.mnId )
-    {
-        aItem.maImage = maImageList.GetImage( aItem.mnId );
-        aItem.maImageOriginal = aItem.maImage;
-    }
-
-    // if this is a ButtonItem, check ID
-    bool bNewCalc;
-    if ( aItem.meType != ToolBoxItemType::BUTTON )
-    {
-        bNewCalc = false;
-        aItem.mnId = 0;
-    }
-    else
-    {
-        bNewCalc = true;
-
-        DBG_ASSERT( aItem.mnId, "ToolBox::InsertItem(): ItemId == 0" );
-        DBG_ASSERT( GetItemPos( aItem.mnId ) == TOOLBOX_ITEM_NOTFOUND, "ToolBox::InsertItem(): ItemId already exists" );
-    }
-
-    // create item and add to list
-    mpData->m_aItems.push_back( aItem );
-    mpData->ImplClearLayoutData();
-
-    // recalculate ToolBox and redraw
-    ImplInvalidate( bNewCalc );
-
-    // Notify
-    sal_uInt16 nNewPos = sal::static_int_cast<sal_uInt16>(mpData->m_aItems.size() - 1);
-    CallEventListeners( VCLEVENT_TOOLBOX_ITEMADDED, reinterpret_cast< void* >( nNewPos ) );
-}
-
 void ToolBox::InsertItem( sal_uInt16 nItemId, const Image& rImage, ToolBoxItemBits nBits, sal_uInt16 nPos )
 {
-    DBG_ASSERT( nItemId, "ToolBox::InsertItem(): ItemId == 0" );
-    DBG_ASSERT( GetItemPos( nItemId ) == TOOLBOX_ITEM_NOTFOUND,
+    SAL_WARN_IF( !nItemId, "vcl", "ToolBox::InsertItem(): ItemId == 0" );
+    SAL_WARN_IF( GetItemPos( nItemId ) != TOOLBOX_ITEM_NOTFOUND, "vcl",
                 "ToolBox::InsertItem(): ItemId already exists" );
 
     // create item and add to list
@@ -571,13 +394,13 @@ void ToolBox::InsertItem( sal_uInt16 nItemId, const Image& rImage, ToolBoxItemBi
 void ToolBox::InsertItem( sal_uInt16 nItemId, const Image& rImage, const OUString& rText, ToolBoxItemBits nBits,
                           sal_uInt16 nPos )
 {
-    DBG_ASSERT( nItemId, "ToolBox::InsertItem(): ItemId == 0" );
-    DBG_ASSERT( GetItemPos( nItemId ) == TOOLBOX_ITEM_NOTFOUND,
+    SAL_WARN_IF( !nItemId, "vcl", "ToolBox::InsertItem(): ItemId == 0" );
+    SAL_WARN_IF( GetItemPos( nItemId ) != TOOLBOX_ITEM_NOTFOUND, "vcl",
                 "ToolBox::InsertItem(): ItemId already exists" );
 
     // create item and add to list
     mpData->m_aItems.insert( (nPos < mpData->m_aItems.size()) ? mpData->m_aItems.begin()+nPos : mpData->m_aItems.end(),
-                             ImplToolItem( nItemId, rImage, ImplConvertMenuString( rText ), nBits ) );
+                             ImplToolItem( nItemId, rImage, MnemonicGenerator::EraseAllMnemonicChars(rText), nBits ) );
     SetItemImage(nItemId, rImage);
     mpData->ImplClearLayoutData();
 
@@ -590,13 +413,13 @@ void ToolBox::InsertItem( sal_uInt16 nItemId, const Image& rImage, const OUStrin
 
 void ToolBox::InsertItem( sal_uInt16 nItemId, const OUString& rText, ToolBoxItemBits nBits, sal_uInt16 nPos )
 {
-    DBG_ASSERT( nItemId, "ToolBox::InsertItem(): ItemId == 0" );
-    DBG_ASSERT( GetItemPos( nItemId ) == TOOLBOX_ITEM_NOTFOUND,
+    SAL_WARN_IF( !nItemId, "vcl", "ToolBox::InsertItem(): ItemId == 0" );
+    SAL_WARN_IF( GetItemPos( nItemId ) != TOOLBOX_ITEM_NOTFOUND, "vcl",
                 "ToolBox::InsertItem(): ItemId already exists" );
 
     // create item and add to list
     mpData->m_aItems.insert( (nPos < mpData->m_aItems.size()) ? mpData->m_aItems.begin()+nPos : mpData->m_aItems.end(),
-                             ImplToolItem( nItemId, ImplConvertMenuString( rText ), nBits ) );
+                             ImplToolItem( nItemId, MnemonicGenerator::EraseAllMnemonicChars(rText), nBits ) );
     mpData->ImplClearLayoutData();
 
     ImplInvalidate( true );
@@ -611,8 +434,16 @@ void ToolBox::InsertItem(const OUString& rCommand, const css::uno::Reference<css
 {
     OUString aLabel(vcl::CommandInfoProvider::Instance().GetLabelForCommand(rCommand, rFrame));
     OUString aTooltip(vcl::CommandInfoProvider::Instance().GetTooltipForCommand(rCommand, rFrame));
-    Image aImage(vcl::CommandInfoProvider::Instance().GetImageForCommand(
-        rCommand, (GetToolboxButtonSize() == TOOLBOX_BUTTONSIZE_LARGE), rFrame));
+
+    vcl::ImageType eImageType = vcl::ImageType::Size16;
+
+    if (GetToolboxButtonSize() == ToolBoxButtonSize::Large)
+        eImageType = vcl::ImageType::Size26;
+    else if (GetToolboxButtonSize() == ToolBoxButtonSize::Size32)
+        eImageType = vcl::ImageType::Size32;
+
+    CommandInfoProvider& rInfoProvider = vcl::CommandInfoProvider::Instance();
+    Image aImage(rInfoProvider.GetImageForCommand(rCommand, rFrame, eImageType));
 
     sal_uInt16 nItemId = GetItemCount() + 1;
     InsertItem(nItemId, aImage, aLabel, nBits, nPos);
@@ -628,8 +459,8 @@ void ToolBox::InsertItem(const OUString& rCommand, const css::uno::Reference<css
 void ToolBox::InsertWindow( sal_uInt16 nItemId, vcl::Window* pWindow,
                             ToolBoxItemBits nBits, sal_uInt16 nPos )
 {
-    DBG_ASSERT( nItemId, "ToolBox::InsertWindow(): ItemId == 0" );
-    DBG_ASSERT( GetItemPos( nItemId ) == TOOLBOX_ITEM_NOTFOUND,
+    SAL_WARN_IF( !nItemId, "vcl", "ToolBox::InsertWindow(): ItemId == 0" );
+    SAL_WARN_IF( GetItemPos( nItemId ) != TOOLBOX_ITEM_NOTFOUND, "vcl",
                 "ToolBox::InsertWindow(): ItemId already exists" );
 
     // create item and add to list
@@ -735,7 +566,7 @@ void ToolBox::RemoveItem( sal_uInt16 nPos )
 
 void ToolBox::CopyItem( const ToolBox& rToolBox, sal_uInt16 nItemId )
 {
-    DBG_ASSERT( GetItemPos( nItemId ) == TOOLBOX_ITEM_NOTFOUND,
+    SAL_WARN_IF( GetItemPos( nItemId ) != TOOLBOX_ITEM_NOTFOUND, "vcl",
                 "ToolBox::CopyItem(): ItemId already exists" );
 
     sal_uInt16 nPos = rToolBox.GetItemPos( nItemId );
@@ -802,20 +633,29 @@ ToolBoxButtonSize ToolBox::GetToolboxButtonSize() const
     return mpData->meButtonSize;
 }
 
-/*static*/ Size ToolBox::GetDefaultImageSize(bool bLarge)
+/*static*/ Size ToolBox::GetDefaultImageSize(ToolBoxButtonSize eToolBoxButtonSize)
 {
-    const long TB_SMALLIMAGESIZE = 16;
-    if (!bLarge) {
-        return Size(TB_SMALLIMAGESIZE, TB_SMALLIMAGESIZE);
-    }
+    OutputDevice *pDefault = Application::GetDefaultDevice();
+    float fScaleFactor = pDefault ? pDefault->GetDPIScaleFactor() : 1.0;
 
-    OUString iconTheme = Application::GetSettings().GetStyleSettings().DetermineIconTheme();
-    return vcl::IconThemeInfo::SizeByThemeName(iconTheme);
+    Size aUnscaledSize = Size(16, 16);
+
+    if (eToolBoxButtonSize == ToolBoxButtonSize::Large)
+    {
+        OUString iconTheme = Application::GetSettings().GetStyleSettings().DetermineIconTheme();
+        aUnscaledSize = vcl::IconThemeInfo::SizeByThemeName(iconTheme);
+    }
+    else if (eToolBoxButtonSize == ToolBoxButtonSize::Size32)
+    {
+        aUnscaledSize = Size(32, 32);
+    }
+    return Size(aUnscaledSize.Width()  * fScaleFactor,
+                aUnscaledSize.Height() * fScaleFactor);
 }
 
 Size ToolBox::GetDefaultImageSize() const
 {
-    return GetDefaultImageSize( GetToolboxButtonSize() == TOOLBOX_BUTTONSIZE_LARGE );
+    return GetDefaultImageSize(GetToolboxButtonSize());
 }
 
 void ToolBox::SetAlign( WindowAlign eNewAlign )
@@ -1014,11 +854,6 @@ Point ToolBox::ImplGetPopupPosition( const Rectangle& rRect, const Size& rSize )
     return aPos;
 }
 
-Point ToolBox::GetItemPopupPosition( sal_uInt16 nItemId, const Size& rSize ) const
-{
-    return ImplGetPopupPosition( GetItemRect( nItemId ), rSize );
-}
-
 Rectangle ToolBox::GetItemRect( sal_uInt16 nItemId ) const
 {
     if ( mbCalc || mbFormat )
@@ -1120,27 +955,10 @@ void ToolBox::SetItemImage( sal_uInt16 nItemId, const Image& rImage )
 
     if ( nPos != TOOLBOX_ITEM_NOTFOUND )
     {
-        Image aImage(rImage);
-
         ImplToolItem* pItem = &mpData->m_aItems[nPos];
         Size aOldSize = pItem->maImage.GetSizePixel();
 
-        pItem->maImageOriginal = aImage;
-
-        if (GetDPIScaleFactor() > 1)
-        {
-            BitmapEx aBitmap(aImage.GetBitmapEx());
-
-            // Some code calls this twice, so add a sanity check
-            // FIXME find out what that code is & fix accordingly
-            if (aBitmap.GetSizePixel().Width() < 32)
-            {
-                aBitmap.Scale(GetDPIScaleFactor(), GetDPIScaleFactor(), BmpScaleFlag::Fast);
-                aImage = Image(aBitmap);
-            }
-        }
-
-        pItem->maImage = aImage;
+        pItem->maImage = rImage;
 
         // only once all is calculated, do extra work
         if (!mbCalc)
@@ -1195,7 +1013,6 @@ void ToolBox::SetItemImageAngle( sal_uInt16 nItemId, long nAngle10 )
         if( nDeltaAngle && !!pItem->maImage )
         {
             pItem->maImage = ImplRotImage( pItem->maImage, nDeltaAngle );
-            pItem->maImageOriginal = ImplRotImage( pItem->maImageOriginal, nDeltaAngle );
         }
 
         if (!mbCalc)
@@ -1233,7 +1050,6 @@ void ToolBox::SetItemImageMirrorMode( sal_uInt16 nItemId, bool bMirror )
             if (!!pItem->maImage)
             {
                 pItem->maImage = ImplMirrorImage(pItem->maImage);
-                pItem->maImageOriginal = ImplMirrorImage(pItem->maImageOriginal);
             }
 
             if (!mbCalc)
@@ -1242,27 +1058,10 @@ void ToolBox::SetItemImageMirrorMode( sal_uInt16 nItemId, bool bMirror )
     }
 }
 
-void ToolBox::UpdateImageOrientation()
-{
-    for (std::vector<ImplToolItem>::const_iterator it = mpData->m_aItems.begin(); it != mpData->m_aItems.end(); ++it)
-    {
-        if (vcl::CommandInfoProvider::Instance().IsMirrored(it->maCommandStr))
-            SetItemImageMirrorMode(it->mnId, mbImagesMirrored);
-        if (vcl::CommandInfoProvider::Instance().IsRotated(it->maCommandStr))
-            SetItemImageAngle(it->mnId, mnImagesRotationAngle);
-    }
-}
-
 Image ToolBox::GetItemImage(sal_uInt16 nItemId) const
 {
     ImplToolItem* pItem = ImplGetItem(nItemId);
     return pItem ? pItem->maImage : Image();
-}
-
-Image ToolBox::GetItemImageOriginal(sal_uInt16 nItemId) const
-{
-    ImplToolItem* pItem = ImplGetItem(nItemId);
-    return pItem ? pItem->maImageOriginal : Image();
 }
 
 void ToolBox::SetItemText( sal_uInt16 nItemId, const OUString& rText )
@@ -1277,7 +1076,7 @@ void ToolBox::SetItemText( sal_uInt16 nItemId, const OUString& rText )
              ((meButtonType != ButtonType::SYMBOLONLY) || !pItem->maImage) )
         {
             long nOldWidth = GetCtrlTextWidth( pItem->maText );
-            pItem->maText = ImplConvertMenuString( rText );
+            pItem->maText = MnemonicGenerator::EraseAllMnemonicChars(rText);
             mpData->ImplClearLayoutData();
             if ( nOldWidth != GetCtrlTextWidth( pItem->maText ) )
                 ImplInvalidate( true );
@@ -1285,7 +1084,7 @@ void ToolBox::SetItemText( sal_uInt16 nItemId, const OUString& rText )
                 ImplUpdateItem( nPos );
         }
         else
-            pItem->maText = ImplConvertMenuString( rText );
+            pItem->maText = MnemonicGenerator::EraseAllMnemonicChars(rText);
 
         // Notify button changed event to prepare accessibility bridge
         CallEventListeners( VCLEVENT_TOOLBOX_BUTTONSTATECHANGED, reinterpret_cast< void* >( nPos ) );
@@ -1852,7 +1651,7 @@ void ToolBox::UpdateCustomMenu()
             {
                 sal_uInt16 id = it->mnId + TOOLBOX_MENUITEM_START;
                 MenuItemBits nMenuItemBits = ConvertBitsFromToolBoxToMenu(it->mnBits);
-                pMenu->InsertItem( id, it->maText, it->maImageOriginal, nMenuItemBits);
+                pMenu->InsertItem( id, it->maText, it->maImage, nMenuItemBits);
                 pMenu->SetItemCommand( id, it->maCommandStr );
                 pMenu->EnableItem( id, it->mbEnabled );
                 pMenu->CheckItem ( id, it->meState == TRISTATE_TRUE );
@@ -1870,7 +1669,7 @@ void ToolBox::UpdateCustomMenu()
             {
                 sal_uInt16 id = it->mnId + TOOLBOX_MENUITEM_START;
                 MenuItemBits nMenuItemBits = ConvertBitsFromToolBoxToMenu(it->mnBits);
-                pMenu->InsertItem( id, it->maText, it->maImageOriginal, nMenuItemBits );
+                pMenu->InsertItem( id, it->maText, it->maImage, nMenuItemBits );
                 pMenu->SetItemCommand( id, it->maCommandStr );
                 pMenu->EnableItem( id, it->mbEnabled );
                 pMenu->CheckItem( id, it->meState == TRISTATE_TRUE );
@@ -1880,7 +1679,7 @@ void ToolBox::UpdateCustomMenu()
     }
 }
 
-IMPL_LINK_TYPED( ToolBox, ImplCustomMenuListener, VclMenuEvent&, rEvent, void )
+IMPL_LINK( ToolBox, ImplCustomMenuListener, VclMenuEvent&, rEvent, void )
 {
     if( rEvent.GetMenu() == GetMenu() && rEvent.GetId() == VCLEVENT_MENU_SELECT )
     {
@@ -1890,14 +1689,9 @@ IMPL_LINK_TYPED( ToolBox, ImplCustomMenuListener, VclMenuEvent&, rEvent, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ToolBox, ImplCallExecuteCustomMenu, void*, void)
+IMPL_LINK_NOARG(ToolBox, ImplCallExecuteCustomMenu, void*, void)
 {
     mpData->mnEventId = nullptr;
-    ImplExecuteCustomMenu();
-}
-
-void ToolBox::ImplExecuteCustomMenu()
-{
     if( IsMenuEnabled() )
     {
         if( GetMenuType() & ToolBoxMenuType::Customize )
@@ -1970,8 +1764,8 @@ void ToolBox::ExecuteCustomMenu()
 // checks override first, useful during calculation of sizes
 bool ToolBox::ImplIsFloatingMode() const
 {
-    DBG_ASSERT( !(mpData->mbAssumeDocked && mpData->mbAssumeFloating),
-        "ToolBox::ImplIsFloatingMode(): cannot assume docked and floating" );
+    SAL_WARN_IF( mpData->mbAssumeDocked && mpData->mbAssumeFloating, "vcl",
+        "cannot assume docked and floating" );
 
     if( mpData->mbAssumeDocked )
         return false;

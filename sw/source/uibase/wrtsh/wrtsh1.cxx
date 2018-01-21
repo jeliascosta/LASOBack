@@ -377,7 +377,7 @@ void SwWrtShell::InsertObject( const svt::EmbeddedObjectRef& xRef, SvGlobalName 
                     OString aCmd(".uno:");
                     aCmd += pSlot->GetUnoName();
                     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-                    std::unique_ptr<SfxAbstractInsertObjectDialog> pDlg( pFact->CreateInsertObjectDialog( GetWin(), OUString::fromUtf8( aCmd ), xStor, &aServerList ));
+                    ScopedVclPtr<SfxAbstractInsertObjectDialog> pDlg( pFact->CreateInsertObjectDialog( GetWin(), OUString::fromUtf8( aCmd ), xStor, &aServerList ));
                     if ( pDlg )
                     {
                         pDlg->Execute();
@@ -413,7 +413,7 @@ void SwWrtShell::InsertObject( const svt::EmbeddedObjectRef& xRef, SvGlobalName 
                 {
                     SwRect aArea = GetAnyCurRect( RECT_FLY_PRT_EMBEDDED, nullptr, xObj.GetObject() );
                     aArea.Pos() += GetAnyCurRect( RECT_FLY_EMBEDDED, nullptr, xObj.GetObject() ).Pos();
-                    MapMode aMapMode( MAP_TWIP );
+                    MapMode aMapMode( MapUnit::MapTwip );
                     Size aSize = xObj.GetSize( &aMapMode );
                     aArea.Width( aSize.Width() );
                     aArea.Height( aSize.Height() );
@@ -504,7 +504,7 @@ bool SwWrtShell::InsertOleObject( const svt::EmbeddedObjectRef& xRef, SwFlyFrame
     CalcBoundRect( aBound, aFrameMgr.GetAnchor() );
 
     //The Size should be suggested by the OLE server
-    MapMode aMapMode( MAP_TWIP );
+    MapMode aMapMode( MapUnit::MapTwip );
     Size aSz = xRef.GetSize( &aMapMode );
 
     //Object size can be limited
@@ -650,7 +650,7 @@ void SwWrtShell::CalcAndSetScale( svt::EmbeddedObjectRef& xObj,
                 MapUnit aUnit = VCLUnoHelper::UnoEmbed2VCLMapUnit( xObj->getMapUnit( nAspect ) );
 
                 // TODO/LATER: needs complete VisArea?!
-                Size aSize( OutputDevice::LogicToLogic( aRect.SVRect(), MAP_TWIP, aUnit ).GetSize() );
+                Size aSize( OutputDevice::LogicToLogic( aRect.SVRect(), MapUnit::MapTwip, aUnit ).GetSize() );
                 awt::Size aSz;
                 aSz.Width = aSize.Width();
                 aSz.Height = aSize.Height();
@@ -755,7 +755,7 @@ void SwWrtShell::CalcAndSetScale( svt::EmbeddedObjectRef& xObj,
     // nothing can be scaled.
     if( _aVisArea.Width() && _aVisArea.Height() )
     {
-        const MapMode aTmp( MAP_TWIP );
+        const MapMode aTmp( MapUnit::MapTwip );
         MapUnit aUnit = VCLUnoHelper::UnoEmbed2VCLMapUnit( xObj->getMapUnit( nAspect ) );
         _aVisArea = OutputDevice::LogicToLogic( _aVisArea, aUnit, aTmp);
         Size aObjArea;
@@ -862,7 +862,7 @@ void SwWrtShell::InsertPageBreak(const OUString *pPageDesc, const ::boost::optio
             SetAttrItem( aDesc );
         }
         else
-            SetAttrItem( SvxFormatBreakItem(SVX_BREAK_PAGE_BEFORE, RES_BREAK) );
+            SetAttrItem( SvxFormatBreakItem(SvxBreak::PageBefore, RES_BREAK) );
         EndUndo(UNDO_UI_INSERT_PAGE_BREAK);
     }
 }
@@ -904,7 +904,7 @@ void SwWrtShell::InsertColumnBreak()
                 DelRight();
             SwFEShell::SplitNode( false, false );
         }
-        SetAttrItem(SvxFormatBreakItem(SVX_BREAK_COLUMN_BEFORE, RES_BREAK));
+        SetAttrItem(SvxFormatBreakItem(SvxBreak::ColumnBefore, RES_BREAK));
 
         EndUndo(UNDO_UI_INSERT_COLUMN_BREAK);
     }
@@ -1381,7 +1381,7 @@ SelectionType SwWrtShell::GetSelectionType() const
 
             if (_rView.IsBezierEditMode())
                 nCnt |= nsSelectionType::SEL_BEZ;
-            else if( GetDrawView()->GetContext() == SDRCONTEXT_MEDIA )
+            else if( GetDrawView()->GetContext() == SdrViewContext::Media )
                 nCnt |= nsSelectionType::SEL_MEDIA;
 
             if (svx::checkForSelectedCustomShapes(
@@ -1453,7 +1453,7 @@ SwTextFormatColl *SwWrtShell::GetParaStyle(const OUString &rCollName, GetStyle e
     SwTextFormatColl* pColl = FindTextFormatCollByName( rCollName );
     if( !pColl && GETSTYLE_NOCREATE != eCreate )
     {
-        sal_uInt16 nId = SwStyleNameMapper::GetPoolIdFromUIName( rCollName, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL );
+        sal_uInt16 nId = SwStyleNameMapper::GetPoolIdFromUIName( rCollName, SwGetPoolIdFromName::TxtColl );
         if( USHRT_MAX != nId || GETSTYLE_CREATEANY == eCreate )
             pColl = GetTextCollFromPool( nId );
     }
@@ -1470,7 +1470,7 @@ SwCharFormat *SwWrtShell::GetCharStyle(const OUString &rFormatName, GetStyle eCr
     SwCharFormat* pFormat = FindCharFormatByName( rFormatName );
     if( !pFormat && GETSTYLE_NOCREATE != eCreate )
     {
-        sal_uInt16 nId = SwStyleNameMapper::GetPoolIdFromUIName( rFormatName, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT );
+        sal_uInt16 nId = SwStyleNameMapper::GetPoolIdFromUIName( rFormatName, SwGetPoolIdFromName::ChrFmt );
         if( USHRT_MAX != nId || GETSTYLE_CREATEANY == eCreate )
             pFormat = static_cast<SwCharFormat*>(GetFormatFromPool( nId ));
     }
@@ -1605,7 +1605,7 @@ void SwWrtShell::AutoCorrect( SvxAutoCorrect& rACorr, sal_Unicode cChar )
             aTmpStr1 += SW_RES(STR_END_QUOTE);
             OUString aTmpStr3;
             aTmpStr3 += SW_RES(STR_START_QUOTE);
-            aTmpStr3 += OUString(cChar);
+            aTmpStr3 += OUStringLiteral1(cChar);
             aTmpStr3 += SW_RES(STR_END_QUOTE);
             aRewriter.AddRule( UndoArg1, aTmpStr1 );
             aRewriter.AddRule( UndoArg2, SW_RES(STR_YIELDS) );
@@ -1765,6 +1765,11 @@ void SwWrtShell::SetReadonlyOption(bool bSet)
 void SwWrtShell::ChangeHeaderOrFooter(
     const OUString& rStyleName, bool bHeader, bool bOn, bool bShowWarning)
 {
+    SdrView *const pSdrView = GetDrawView();
+    if (pSdrView && pSdrView->IsTextEdit())
+    {   // tdf#107474 deleting header may delete active drawing object
+        pSdrView->SdrEndTextEdit(true);
+    }
     addCurrentPosition();
     StartAllAction();
     StartUndo( UNDO_HEADER_FOOTER ); // #i7983#

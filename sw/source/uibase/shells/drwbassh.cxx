@@ -148,7 +148,7 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
                         SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
                         OSL_ENSURE(pFact, "SwAbstractDialogFactory fail!");
 
-                        std::unique_ptr<SfxAbstractDialog> pDlg(pFact->CreateSwWrapDlg( GetView().GetWindow(), aSet, pSh, RC_DLG_SWWRAPDLG ));
+                        ScopedVclPtr<SfxAbstractDialog> pDlg(pFact->CreateSwWrapDlg( GetView().GetWindow(), aSet, pSh ));
                         OSL_ENSURE(pDlg, "Dialog creation failed!");
 
                         if (pDlg->Execute() == RET_OK)
@@ -182,16 +182,16 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
                     if( rMarkList.GetMark(0) != nullptr )
                     {
                         SdrObject* pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
-                        std::unique_ptr<SfxAbstractTabDialog> pDlg;
+                        ScopedVclPtr<SfxAbstractTabDialog> pDlg;
                         bool bCaption = false;
 
                         // Allowed anchorages:
                         short nAnchor = pSh->GetAnchorId();
-                        sal_uInt16 nAllowedAnchors = SVX_OBJ_AT_CNTNT | SVX_OBJ_IN_CNTNT | SVX_OBJ_PAGE;
+                        SvxAnchorIds nAllowedAnchors = SvxAnchorIds::Paragraph | SvxAnchorIds::Character | SvxAnchorIds::Page;
                         sal_uInt16 nHtmlMode = ::GetHtmlMode(pSh->GetView().GetDocShell());
 
                         if ( pSh->IsFlyInFly() )
-                            nAllowedAnchors |= SVX_OBJ_AT_FLY;
+                            nAllowedAnchors |= SvxAnchorIds::Fly;
 
                         if (pObj->GetObjIdentifier() == OBJ_CAPTION )
                             bCaption = true;
@@ -199,18 +199,18 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
                         if (bCaption)
                         {
                             SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-                            AbstractSvxCaptionDialog* pCaptionDlg =
+                            VclPtr<AbstractSvxCaptionDialog> pCaptionDlg =
                                     pFact->CreateCaptionDialog( nullptr, pSdrView, nAllowedAnchors );
+                            pDlg.disposeAndReset(pCaptionDlg);
                             pCaptionDlg->SetValidateFramePosLink( LINK(this, SwDrawBaseShell, ValidatePosition) );
-                            pDlg.reset(pCaptionDlg);
                         }
                         else
                         {
                             SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-                            AbstractSvxTransformTabDialog* pTransform =
+                            VclPtr<AbstractSvxTransformTabDialog> pTransform =
                                         pFact->CreateSvxTransformTabDialog( nullptr, nullptr, pSdrView, nAllowedAnchors );
+                            pDlg.disposeAndReset(pTransform);
                             pTransform->SetValidateFramePosLink( LINK(this, SwDrawBaseShell, ValidatePosition) );
-                            pDlg.reset(pTransform);
                         }
                         SfxItemSet aNewAttr(pSdrView->GetGeoAttrFromMarked());
 
@@ -360,7 +360,7 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
 
                 if( GetView().IsDrawRotate() )
                 {
-                    pSh->SetDragMode( SDRDRAG_MOVE );
+                    pSh->SetDragMode( SdrDragMode::Move );
                     GetView().FlipDrawRotate();
                 }
 
@@ -472,22 +472,22 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
                 switch (nSlotId)
                 {
                     case SID_OBJECT_ALIGN_LEFT:
-                        pSdrView->AlignMarkedObjects(SDRHALIGN_LEFT, SDRVALIGN_NONE);
+                        pSdrView->AlignMarkedObjects(SdrHorAlign::Left, SdrVertAlign::NONE);
                         break;
                     case SID_OBJECT_ALIGN_CENTER:
-                        pSdrView->AlignMarkedObjects(SDRHALIGN_CENTER, SDRVALIGN_NONE);
+                        pSdrView->AlignMarkedObjects(SdrHorAlign::Center, SdrVertAlign::NONE);
                         break;
                     case SID_OBJECT_ALIGN_RIGHT:
-                        pSdrView->AlignMarkedObjects(SDRHALIGN_RIGHT, SDRVALIGN_NONE);
+                        pSdrView->AlignMarkedObjects(SdrHorAlign::Right, SdrVertAlign::NONE);
                         break;
                     case SID_OBJECT_ALIGN_UP:
-                        pSdrView->AlignMarkedObjects(SDRHALIGN_NONE, SDRVALIGN_TOP);
+                        pSdrView->AlignMarkedObjects(SdrHorAlign::NONE, SdrVertAlign::Top);
                         break;
                     case SID_OBJECT_ALIGN_MIDDLE:
-                        pSdrView->AlignMarkedObjects(SDRHALIGN_NONE, SDRVALIGN_CENTER);
+                        pSdrView->AlignMarkedObjects(SdrHorAlign::NONE, SdrVertAlign::Center);
                         break;
                     case SID_OBJECT_ALIGN_DOWN:
-                        pSdrView->AlignMarkedObjects(SDRHALIGN_NONE, SDRVALIGN_BOTTOM);
+                        pSdrView->AlignMarkedObjects(SdrHorAlign::NONE, SdrVertAlign::Bottom);
                         break;
                 }
                 pSh->EndAction();
@@ -522,7 +522,7 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
 
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 OSL_ENSURE(pFact, "Dialog creation failed!");
-                std::unique_ptr<AbstractSvxObjectNameDialog> pDlg(pFact->CreateSvxObjectNameDialog(aName));
+                ScopedVclPtr<AbstractSvxObjectNameDialog> pDlg(pFact->CreateSvxObjectNameDialog(aName));
                 OSL_ENSURE(pDlg, "Dialog creation failed!");
 
                 pDlg->SetCheckNameHdl(LINK(this, SwDrawBaseShell, CheckGroupShapeNameHdl));
@@ -552,7 +552,7 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
 
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 OSL_ENSURE(pFact, "Dialog creation failed!");
-                std::unique_ptr<AbstractSvxObjectTitleDescDialog> pDlg(pFact->CreateSvxObjectTitleDescDialog(aTitle, aDescription));
+                ScopedVclPtr<AbstractSvxObjectTitleDescDialog> pDlg(pFact->CreateSvxObjectTitleDescDialog(aTitle, aDescription));
                 OSL_ENSURE(pDlg, "Dialog creation failed!");
 
                 if(RET_OK == pDlg->Execute())
@@ -587,7 +587,7 @@ void SwDrawBaseShell::Execute(SfxRequest &rReq)
 
 // Checks whether a given name is allowed for a group shape
 
-IMPL_LINK_TYPED( SwDrawBaseShell, CheckGroupShapeNameHdl, AbstractSvxObjectNameDialog&, rNameDialog, bool )
+IMPL_LINK( SwDrawBaseShell, CheckGroupShapeNameHdl, AbstractSvxObjectNameDialog&, rNameDialog, bool )
 {
     SwWrtShell          &rSh = GetShell();
     SdrView *pSdrView = rSh.GetDrawView();
@@ -604,7 +604,7 @@ IMPL_LINK_TYPED( SwDrawBaseShell, CheckGroupShapeNameHdl, AbstractSvxObjectNameD
     {
         bRet = true;
         SwDrawModel* pModel = rSh.getIDocumentDrawModelAccess().GetDrawModel();
-        SdrObjListIter aIter( *(pModel->GetPage(0)), IM_DEEPWITHGROUPS );
+        SdrObjListIter aIter( *(pModel->GetPage(0)), SdrIterMode::DeepWithGroups );
         while( aIter.IsMore() )
         {
             SdrObject* pTempObj = aIter.Next();
@@ -747,7 +747,7 @@ bool SwDrawBaseShell::Disable(SfxItemSet& rSet, sal_uInt16 nWhich)
 
 // Validate of drawing positions
 
-IMPL_LINK_TYPED(SwDrawBaseShell, ValidatePosition, SvxSwFrameValidation&, rValidation, void )
+IMPL_LINK(SwDrawBaseShell, ValidatePosition, SvxSwFrameValidation&, rValidation, void )
 {
     SwWrtShell *pSh = &GetShell();
     rValidation.nMinHeight = MINFLY;

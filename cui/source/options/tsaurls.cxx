@@ -52,11 +52,11 @@ TSAURLsDialog::TSAURLsDialog(vcl::Window* pParent)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(TSAURLsDialog, OKHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(TSAURLsDialog, OKHdl_Impl, Button*, void)
 {
     std::shared_ptr<comphelper::ConfigurationChanges> batch(comphelper::ConfigurationChanges::create());
 
-    officecfg::Office::Common::Security::Scripting::TSAURLs::set(comphelper::containerToSequence<OUString>(m_aURLs), batch);
+    officecfg::Office::Common::Security::Scripting::TSAURLs::set(comphelper::containerToSequence(m_aURLs), batch);
     batch->commit();
 
     EndDialog(RET_OK);
@@ -92,13 +92,13 @@ void TSAURLsDialog::AddTSAURL(const OUString& rURL)
     m_pURLListBox->SetUpdateMode(true);
 }
 
-IMPL_LINK_NOARG_TYPED(TSAURLsDialog, AddHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(TSAURLsDialog, AddHdl_Impl, Button*, void)
 {
     OUString aURL;
     OUString aDesc( get<FixedText>("enteraurl")->GetText() );
 
     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-    std::unique_ptr<AbstractSvxNameDialog> pDlg(pFact->CreateSvxNameDialog( m_pAddBtn, aURL, aDesc));
+    ScopedVclPtr<AbstractSvxNameDialog> pDlg(pFact->CreateSvxNameDialog( m_pAddBtn, aURL, aDesc));
 
     if ( pDlg->Execute() == RET_OK )
     {
@@ -109,7 +109,7 @@ IMPL_LINK_NOARG_TYPED(TSAURLsDialog, AddHdl_Impl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(TSAURLsDialog, DeleteHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(TSAURLsDialog, DeleteHdl_Impl, Button*, void)
 {
     sal_Int32 nSel = m_pURLListBox->GetSelectEntryPos();
 

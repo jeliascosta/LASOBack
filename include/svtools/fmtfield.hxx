@@ -50,7 +50,7 @@ private:
         ~StaticFormatter();
 
         operator SvNumberFormatter* () { return GetFormatter(); }
-        SVT_DLLPUBLIC SvNumberFormatter* GetFormatter();
+        SVT_DLLPUBLIC static SvNumberFormatter* GetFormatter();
     };
 
 protected:
@@ -95,7 +95,7 @@ protected:
     bool                m_bUseInputStringForFormatting;
 
 public:
-    FormattedField(vcl::Window* pParent, WinBits nStyle = 0, SvNumberFormatter* pInitialFormatter = nullptr);
+    FormattedField(vcl::Window* pParent, WinBits nStyle);
 
     // Min-/Max-management
     bool    HasMinValue() const         { return m_bHasMin; }
@@ -181,7 +181,7 @@ public:
     //If someone does not care about all the double handling and just wants to print the text formatted.
     //(((The text will be formatted, using the Formatter, and then set)
     void SetTextFormatted(const OUString& rText);
-    OUString  GetTextValue() const;
+    OUString const & GetTextValue() const;
 
     void      SetDefaultText(const OUString& rDefault) { m_sDefaultText = rDefault; }
     const OUString& GetDefaultText() const { return m_sDefaultText; }
@@ -258,14 +258,14 @@ protected:
     validation::NumberValidator*    m_pNumberValidator;
 
 public:
-    DoubleNumericField(vcl::Window* pParent, WinBits nStyle = 0)
+    DoubleNumericField(vcl::Window* pParent, WinBits nStyle)
         :FormattedField(pParent, nStyle)
         ,m_pNumberValidator( nullptr )
     {
         ResetConformanceTester();
     }
 
-    virtual ~DoubleNumericField();
+    virtual ~DoubleNumericField() override;
     virtual void dispose() override;
 
 protected:
@@ -283,7 +283,7 @@ class DoubleCurrencyField : public FormattedField
     bool       m_bChangingFormat;
 
 public:
-    DoubleCurrencyField(vcl::Window* pParent, WinBits nStyle = 0);
+    DoubleCurrencyField(vcl::Window* pParent, WinBits nStyle);
 
     const OUString& getCurrencySymbol() const { return m_sCurrencySymbol; }
     void        setCurrencySymbol(const OUString& rSymbol);

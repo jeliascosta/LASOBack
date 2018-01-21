@@ -30,6 +30,9 @@
 #include "htags.h"
 #include "drawdef.h"
 #include "hcode.h"
+#include "datecode.h"
+
+#include <rtl/character.hxx>
 
 int HBox::boxCount = 0;
 
@@ -132,8 +135,6 @@ DateCode::DateCode()
     , key(0)
 {
 }
-
-#include "datecode.h"
 
 static const hchar kor_week[] =
 {
@@ -331,8 +332,6 @@ FBox::FBox(hchar hch)
     , pgy(0)
     , pgno(0)
     , showpg(0)
-    , prev(nullptr)
-    , next(nullptr)
 {
 }
 
@@ -581,7 +580,7 @@ static void getOutlineNumStr(int style, int level, int num, hchar * hstr)
             ptr = buf;
             while (*ptr)
             {
-                *ptr = sal::static_int_cast<char>(toupper(*ptr));
+                *ptr = sal::static_int_cast<char>(rtl::toAsciiUpperCase(*ptr));
                 ptr++;
             }
         }
@@ -683,7 +682,7 @@ hchar_string Outline::GetUnicode() const
                                 char *ptr = dest;
                                 while( *ptr )
                                 {
-                                    *ptr = sal::static_int_cast<char>(toupper(*ptr));
+                                    *ptr = sal::static_int_cast<char>(rtl::toAsciiUpperCase(*ptr));
                                     ptr++;
                                 }
                             }

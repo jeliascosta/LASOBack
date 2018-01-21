@@ -26,12 +26,12 @@ public:
         : StyleManager(rShell)
     {}
 
-    virtual ~CommonStyleManager()
+    virtual ~CommonStyleManager() override
     {}
 
     virtual sfx2::StylePreviewRenderer* CreateStylePreviewRenderer(
                                             OutputDevice& rOutputDev, SfxStyleSheetBase* pStyle,
-                                            long nMaxHeight = 32) override;
+                                            long nMaxHeight) override;
 };
 
 } // end namespace svx

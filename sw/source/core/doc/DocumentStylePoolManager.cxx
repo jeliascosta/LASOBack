@@ -230,9 +230,9 @@ namespace
         if( bTab )
         {
             long nRightMargin = lcl_GetRightMargin( *pDoc );
-            SvxTabStopItem aTStops( 0, 0, SVX_TAB_ADJUST_DEFAULT, RES_PARATR_TABSTOP );
+            SvxTabStopItem aTStops( 0, 0, SvxTabAdjust::Default, RES_PARATR_TABSTOP );
             aTStops.Insert( SvxTabStop( nRightMargin - nLeft,
-                                        SVX_TAB_ADJUST_RIGHT,
+                                        SvxTabAdjust::Right,
                                         cDfltDecimalChar, '.' ));
             rSet.Put( aTStops );
         }
@@ -495,70 +495,70 @@ SwTextFormatColl* DocumentStylePoolManager::GetTextCollFromPool( sal_uInt16 nId,
             }
             break;
 
-        case RES_POOLCOLL_HEADLINE1:        // Headinline 1
+        case RES_POOLCOLL_HEADLINE1:        // Heading 1
             {
                 SvxULSpaceItem aUL( PT_12, PT_6, RES_UL_SPACE );
                 aSet.Put( aUL );
                 lcl_SetHeadline( &m_rDoc, pNewColl, aSet, nOutLvlBits, 0, false );
             }
             break;
-        case RES_POOLCOLL_HEADLINE2:        // Headinline 2
+        case RES_POOLCOLL_HEADLINE2:        // Heading 2
             {
                 SvxULSpaceItem aUL( PT_10, PT_6, RES_UL_SPACE );
                 aSet.Put( aUL );
                 lcl_SetHeadline( &m_rDoc, pNewColl, aSet, nOutLvlBits, 1, false );
             }
             break;
-        case RES_POOLCOLL_HEADLINE3:        // Headinline 3
+        case RES_POOLCOLL_HEADLINE3:        // Heading 3
             {
                 SvxULSpaceItem aUL( PT_7, PT_6, RES_UL_SPACE );
                 aSet.Put( aUL );
                 lcl_SetHeadline( &m_rDoc, pNewColl, aSet, nOutLvlBits, 2, false );
             }
             break;
-        case RES_POOLCOLL_HEADLINE4:        // Headinline 4
+        case RES_POOLCOLL_HEADLINE4:        // Heading 4
             {
                 SvxULSpaceItem aUL( PT_6, PT_6, RES_UL_SPACE );
                 aSet.Put( aUL );
                 lcl_SetHeadline( &m_rDoc, pNewColl, aSet, nOutLvlBits, 3, true );
             }
             break;
-        case RES_POOLCOLL_HEADLINE5:        // Headinline 5
+        case RES_POOLCOLL_HEADLINE5:        // Heading 5
             {
                 SvxULSpaceItem aUL( PT_6, PT_3, RES_UL_SPACE );
                 aSet.Put( aUL );
                 lcl_SetHeadline( &m_rDoc, pNewColl, aSet, nOutLvlBits, 4, false );
             }
             break;
-        case RES_POOLCOLL_HEADLINE6:        // Headinline 6
+        case RES_POOLCOLL_HEADLINE6:        // Heading 6
             {
                 SvxULSpaceItem aUL( PT_3, PT_3, RES_UL_SPACE );
                 aSet.Put( aUL );
                 lcl_SetHeadline( &m_rDoc, pNewColl, aSet, nOutLvlBits, 5, true );
             }
             break;
-        case RES_POOLCOLL_HEADLINE7:        // Headinline 7
+        case RES_POOLCOLL_HEADLINE7:        // Heading 7
             {
                 SvxULSpaceItem aUL( PT_3, PT_3, RES_UL_SPACE );
                 aSet.Put( aUL );
                 lcl_SetHeadline( &m_rDoc, pNewColl, aSet, nOutLvlBits, 6, false );
             }
             break;
-        case RES_POOLCOLL_HEADLINE8:        // Headinline 8
+        case RES_POOLCOLL_HEADLINE8:        // Heading 8
             {
                 SvxULSpaceItem aUL( PT_3, PT_3, RES_UL_SPACE );
                 aSet.Put( aUL );
                 lcl_SetHeadline( &m_rDoc, pNewColl, aSet, nOutLvlBits, 7, true );
             }
             break;
-        case RES_POOLCOLL_HEADLINE9:        // Headinline 9
+        case RES_POOLCOLL_HEADLINE9:        // Heading 9
             {
                 SvxULSpaceItem aUL( PT_3, PT_3, RES_UL_SPACE );
                 aSet.Put( aUL );
                 lcl_SetHeadline( &m_rDoc, pNewColl, aSet, nOutLvlBits, 8, false );
             }
             break;
-        case RES_POOLCOLL_HEADLINE10:       // Headinline 10
+        case RES_POOLCOLL_HEADLINE10:       // Heading 10
             {
                 SvxULSpaceItem aUL( PT_3, PT_3, RES_UL_SPACE );
                 aSet.Put( aUL );
@@ -582,9 +582,9 @@ SwTextFormatColl* DocumentStylePoolManager::GetTextCollFromPool( sal_uInt16 nId,
 
                 long nRightMargin = lcl_GetRightMargin( m_rDoc );
 
-                SvxTabStopItem aTStops( 0, 0, SVX_TAB_ADJUST_DEFAULT, RES_PARATR_TABSTOP );
-                aTStops.Insert( SvxTabStop( nRightMargin / 2, SVX_TAB_ADJUST_CENTER ) );
-                aTStops.Insert( SvxTabStop( nRightMargin, SVX_TAB_ADJUST_RIGHT ) );
+                SvxTabStopItem aTStops( 0, 0, SvxTabAdjust::Default, RES_PARATR_TABSTOP );
+                aTStops.Insert( SvxTabStop( nRightMargin / 2, SvxTabAdjust::Center ) );
+                aTStops.Insert( SvxTabStop( nRightMargin, SvxTabAdjust::Right ) );
 
                 aSet.Put( aTStops );
             }
@@ -1289,7 +1289,7 @@ SwFormat* DocumentStylePoolManager::GetFormatFromPool( sal_uInt16 nId )
                 aBox.SetLine( &aLine, SvxBoxItemLine::BOTTOM );
                 aBox.SetLine( &aLine, SvxBoxItemLine::LEFT );
                 aBox.SetLine( &aLine, SvxBoxItemLine::RIGHT );
-                aBox.SetDistance( 85 );
+                aBox.SetAllDistances( 85 );
                 aSet.Put( aBox );
                 aSet.Put( SvxLRSpaceItem( 114, 114, 0, 0, RES_LR_SPACE ) );
                 aSet.Put( SvxULSpaceItem( 114, 114, RES_UL_SPACE ) );
@@ -1428,7 +1428,7 @@ SwPageDesc* DocumentStylePoolManager::GetPageDescFromPool( sal_uInt16 nId, bool 
         {
             aSet.Put( aLR );
             aSet.Put( aUL );
-            pNewPgDsc->SetUseOn( nsUseOnPage::PD_ALL | nsUseOnPage::PD_FIRSTSHARE );
+            pNewPgDsc->SetUseOn( UseOnPage::All | UseOnPage::FirstShare );
         }
         break;
 
@@ -1438,7 +1438,7 @@ SwPageDesc* DocumentStylePoolManager::GetPageDescFromPool( sal_uInt16 nId, bool 
             lcl_PutStdPageSizeIntoItemSet( &m_rDoc, aSet );
             aSet.Put( aLR );
             aSet.Put( aUL );
-            pNewPgDsc->SetUseOn( nsUseOnPage::PD_ALL );
+            pNewPgDsc->SetUseOn( UseOnPage::All );
             if( RES_POOLPAGE_FIRST == nId )
                 pNewPgDsc->SetFollow( GetPageDescFromPool( RES_POOLPAGE_STANDARD ));
         }
@@ -1450,7 +1450,7 @@ SwPageDesc* DocumentStylePoolManager::GetPageDescFromPool( sal_uInt16 nId, bool 
             aSet.Put( aLR );
             aSet.Put( aUL );
             bSetLeft = false;
-            pNewPgDsc->SetUseOn( nsUseOnPage::PD_LEFT );
+            pNewPgDsc->SetUseOn( UseOnPage::Left );
             // this relies on GetPageDescFromPool() not going into infinite recursion
             // (by this point RES_POOLPAGE_LEFT will not reach this place again)
             pNewPgDsc->SetFollow( GetPageDescFromPool( RES_POOLPAGE_RIGHT ));
@@ -1462,7 +1462,7 @@ SwPageDesc* DocumentStylePoolManager::GetPageDescFromPool( sal_uInt16 nId, bool 
             aSet.Put( aLR );
             aSet.Put( aUL );
             bSetLeft = false;
-            pNewPgDsc->SetUseOn( nsUseOnPage::PD_RIGHT );
+            pNewPgDsc->SetUseOn( UseOnPage::Right );
             pNewPgDsc->SetFollow( GetPageDescFromPool( RES_POOLPAGE_LEFT ));
         }
         break;
@@ -1477,7 +1477,7 @@ SwPageDesc* DocumentStylePoolManager::GetPageDescFromPool( sal_uInt16 nId, bool 
             aSet.Put( aLR );
             aSet.Put( aUL );
 
-            pNewPgDsc->SetUseOn( nsUseOnPage::PD_ALL );
+            pNewPgDsc->SetUseOn( UseOnPage::All );
             pNewPgDsc->SetLandscape( true );
         }
         break;
@@ -1491,7 +1491,7 @@ SwPageDesc* DocumentStylePoolManager::GetPageDescFromPool( sal_uInt16 nId, bool 
             aSet.Put( aLR );
             aSet.Put( aUL );
 
-            pNewPgDsc->SetUseOn( nsUseOnPage::PD_ALL );
+            pNewPgDsc->SetUseOn( UseOnPage::All );
         }
         break;
 
@@ -1501,7 +1501,7 @@ SwPageDesc* DocumentStylePoolManager::GetPageDescFromPool( sal_uInt16 nId, bool 
             lcl_PutStdPageSizeIntoItemSet( &m_rDoc, aSet );
             aSet.Put( aLR );
             aSet.Put( aUL );
-            pNewPgDsc->SetUseOn( nsUseOnPage::PD_ALL );
+            pNewPgDsc->SetUseOn( UseOnPage::All );
             SwPageFootnoteInfo aInf( pNewPgDsc->GetFootnoteInfo() );
             aInf.SetLineWidth( 0 );
             aInf.SetTopDist( 0 );
@@ -1523,7 +1523,7 @@ SwPageDesc* DocumentStylePoolManager::GetPageDescFromPool( sal_uInt16 nId, bool 
             aSet.Put( aFrameSz );
             aSet.Put( aLR );
             aSet.Put( aUL );
-            pNewPgDsc->SetUseOn( nsUseOnPage::PD_ALL );
+            pNewPgDsc->SetUseOn( UseOnPage::All );
             pNewPgDsc->SetLandscape( true );
         }
         break;
@@ -1992,7 +1992,7 @@ SwNumRule* DocumentStylePoolManager::GetNumRuleFromPool( sal_uInt16 nId )
 
             for (sal_uInt16 n = 0; n < MAXLEVEL; ++n)
             {
-                aFormat.SetBulletChar( ( n & 1 ? 0x25a1 : 0x2611 ) );
+                aFormat.SetBulletChar( ( (n & 1) ? 0x25a1 : 0x2611 ) );
 
                 if ( eNumberFormatPositionAndSpaceMode == SvxNumberFormat::LABEL_WIDTH_AND_POSITION )
                 {

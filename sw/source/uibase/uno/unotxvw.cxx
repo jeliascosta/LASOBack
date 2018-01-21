@@ -18,6 +18,7 @@
  */
 
 #include "viscrs.hxx"
+#include <o3tl/any.hxx>
 #include <sfx2/frame.hxx>
 #include <sfx2/printer.hxx>
 #include <cmdid.h>
@@ -172,47 +173,47 @@ uno::Any SAL_CALL SwXTextView::queryInterface( const uno::Type& aType )
     if(aType == cppu::UnoType<view::XSelectionSupplier>::get())
     {
         uno::Reference<view::XSelectionSupplier> xRet = this;
-        aRet.setValue(&xRet, aType);
+        aRet <<= xRet;
     }
     else if(aType == cppu::UnoType<lang::XServiceInfo>::get())
     {
         uno::Reference<lang::XServiceInfo> xRet = this;
-        aRet.setValue(&xRet, aType);
+        aRet <<= xRet;
     }
     else if(aType == cppu::UnoType<view::XControlAccess>::get())
     {
         uno::Reference<view::XControlAccess> xRet = this;
-        aRet.setValue(&xRet, aType);
+        aRet <<= xRet;
     }
     else if(aType == cppu::UnoType<view::XFormLayerAccess>::get())
     {
         uno::Reference<view::XFormLayerAccess> xRet = this;
-        aRet.setValue(&xRet, aType);
+        aRet <<= xRet;
     }
     else if(aType == cppu::UnoType<text::XTextViewCursorSupplier>::get())
     {
         uno::Reference<text::XTextViewCursorSupplier> xRet = this;
-        aRet.setValue(&xRet, aType);
+        aRet <<= xRet;
     }
     else if(aType == cppu::UnoType<view::XViewSettingsSupplier>::get())
     {
         uno::Reference<view::XViewSettingsSupplier> xRet = this;
-        aRet.setValue(&xRet, aType);
+        aRet <<= xRet;
     }
     else if(aType == cppu::UnoType<XRubySelection>::get())
     {
         uno::Reference<XRubySelection> xRet = this;
-        aRet.setValue(&xRet, aType);
+        aRet <<= xRet;
     }
     else if(aType == cppu::UnoType<XPropertySet>::get())
     {
         uno::Reference<XPropertySet> xRet = this;
-        aRet.setValue(&xRet, aType);
+        aRet <<= xRet;
     }
     else if(aType == cppu::UnoType<datatransfer::XTransferableSupplier>::get())
     {
         uno::Reference<datatransfer::XTransferableSupplier> xRet = this;
-        aRet.setValue(&xRet, aType);
+        aRet <<= xRet;
     }
     else
         aRet = SfxBaseController::queryInterface(aType);
@@ -554,7 +555,7 @@ Sequence< Sequence< PropertyValue > > SwXTextView::getRubyList( sal_Bool /*bAuto
         pValues[1].Name = UNO_NAME_RUBY_TEXT;
         pValues[1].Value <<= rAttr.GetText();
         pValues[2].Name = UNO_NAME_RUBY_CHAR_STYLE_NAME;
-        SwStyleNameMapper::FillProgName(rAttr.GetCharFormatName(), aString, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT, true );
+        SwStyleNameMapper::FillProgName(rAttr.GetCharFormatName(), aString, SwGetPoolIdFromName::ChrFmt, true );
         pValues[2].Value <<= aString;
         pValues[3].Name = UNO_NAME_RUBY_ADJUST;
         pValues[3].Value <<= (sal_Int16)rAttr.GetAdjustment();
@@ -605,10 +606,10 @@ void SAL_CALL SwXTextView::setRubyList(
                 if((pProperties[nProp].Value >>= sTmp))
                 {
                     OUString sName;
-                    SwStyleNameMapper::FillUIName(sTmp, sName, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT, true );
+                    SwStyleNameMapper::FillUIName(sTmp, sName, SwGetPoolIdFromName::ChrFmt, true );
                     const sal_uInt16 nPoolId = sName.isEmpty() ? 0
                         : SwStyleNameMapper::GetPoolIdFromUIName(sName,
-                                nsSwGetPoolIdFromName::GET_POOLID_CHRFMT );
+                                SwGetPoolIdFromName::ChrFmt );
 
                     pEntry->GetRubyAttr().SetCharFormatName( sName );
                     pEntry->GetRubyAttr().SetCharFormatId( nPoolId );
@@ -623,7 +624,7 @@ void SAL_CALL SwXTextView::setRubyList(
             else if(pProperties[nProp].Name == UNO_NAME_RUBY_IS_ABOVE)
             {
                 bool bValue = !pProperties[nProp].Value.hasValue() ||
-                    *static_cast<sal_Bool const *>(pProperties[nProp].Value.getValue());
+                    *o3tl::doAccess<bool>(pProperties[nProp].Value);
                 pEntry->GetRubyAttr().SetPosition(bValue ? 0 : 1);
             }
         }

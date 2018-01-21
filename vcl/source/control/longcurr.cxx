@@ -36,8 +36,6 @@ using namespace ::comphelper;
 namespace
 {
 
-#define FORMAT_LONGCURRENCY      4
-
 BigInt ImplPower10( sal_uInt16 n )
 {
     sal_uInt16 i;
@@ -51,7 +49,7 @@ BigInt ImplPower10( sal_uInt16 n )
 
 OUString ImplGetCurr( const LocaleDataWrapper& rLocaleDataWrapper, const BigInt &rNumber, sal_uInt16 nDigits, const OUString& rCurrSymbol, bool bShowThousandSep )
 {
-    DBG_ASSERT( nDigits < 10, "LongCurrency may only have 9 decimal places" );
+    SAL_WARN_IF( nDigits >= 10, "vcl", "LongCurrency may only have 9 decimal places" );
 
     if ( rNumber.IsZero() || (long)rNumber )
         return rLocaleDataWrapper.getCurr( (long)rNumber, nDigits, rCurrSymbol, bShowThousandSep );
@@ -122,7 +120,7 @@ bool ImplNumericProcessKeyInput( Edit*, const KeyEvent& rKEvt,
 
 bool ImplNumericGetValue( const OUString& rStr, BigInt& rValue,
                                  sal_uInt16 nDecDigits, const LocaleDataWrapper& rLocaleDataWrapper,
-                                 bool bCurrency = false )
+                                 bool bCurrency )
 {
     OUString aStr = rStr;
     OUStringBuffer aStr1;
@@ -259,7 +257,7 @@ inline bool ImplLongCurrencyGetValue( const OUString& rStr, BigInt& rValue,
     return ImplNumericGetValue( rStr, rValue, nDecDigits, rLocaleDataWrapper, true );
 }
 
-bool ImplLongCurrencyReformat( const OUString& rStr, BigInt nMin, BigInt nMax,
+bool ImplLongCurrencyReformat( const OUString& rStr, BigInt const & nMin, BigInt const & nMax,
                                sal_uInt16 nDecDigits,
                                const LocaleDataWrapper& rLocaleDataWrapper, OUString& rOutStr,
                                LongCurrencyFormatter& rFormatter )
@@ -289,7 +287,6 @@ void LongCurrencyFormatter::ImpInit()
     mnMax              *= 0x7FFFFFFF;
     mnCorrectedValue    = 0;
     mnDecimalDigits     = 0;
-    mnType              = FORMAT_LONGCURRENCY;
     mbThousandSep       = true;
     SetDecimalDigits( 0 );
 }
@@ -309,7 +306,7 @@ void LongCurrencyFormatter::SetCurrencySymbol( const OUString& rStr )
     ReformatAll();
 }
 
-OUString LongCurrencyFormatter::GetCurrencySymbol() const
+OUString const & LongCurrencyFormatter::GetCurrencySymbol() const
 {
     return !maCurrencySymbol.isEmpty() ? maCurrencySymbol : GetLocaleDataWrapper().getCurrSymbol();
 }

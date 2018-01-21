@@ -20,7 +20,6 @@
 #ifndef INCLUDED_SC_SOURCE_FILTER_INC_PIVOTCACHEBUFFER_HXX
 #define INCLUDED_SC_SOURCE_FILTER_INC_PIVOTCACHEBUFFER_HXX
 
-#include <com/sun/star/table/CellAddress.hpp>
 #include <com/sun/star/table/CellRangeAddress.hpp>
 #include <com/sun/star/util/DateTime.hpp>
 #include <oox/helper/containerhelper.hxx>
@@ -72,19 +71,6 @@ public:
     /** Reads the index of a shared item. */
     void                readIndex( SequenceInputStream& rStrm );
 
-    /** Reads the string value from a pivot cache item. */
-    void                readString( BiffInputStream& rStrm, const WorkbookHelper& rHelper );
-    /** Reads the double value from a pivot cache item. */
-    void                readDouble( BiffInputStream& rStrm );
-    /** Reads the integer value from a pivot cache item. */
-    void                readInteger( BiffInputStream& rStrm );
-    /** Reads the date/time value from a pivot cache item. */
-    void                readDate( BiffInputStream& rStrm );
-    /** Reads the boolean value from a pivot cache item. */
-    void                readBool( BiffInputStream& rStrm );
-    /** Reads the error code value from a pivot cache item. */
-    void                readError( BiffInputStream& rStrm );
-
     /** Returns the type of the item. */
     inline sal_Int32    getType() const { return mnType; }
     /** Returns the value of the item. */
@@ -112,8 +98,6 @@ public:
     void                importItem( sal_Int32 nElement, const AttributeList& rAttribs );
     /** Imports the item from the passed stream and record. */
     void                importItem( sal_Int32 nRecId, SequenceInputStream& rStrm );
-    /** Imports a complete item list from the passed stream. */
-    void                importItemList( BiffInputStream& rStrm, sal_uInt16 nCount );
 
     /** Returns true, if this item list is empty. */
     inline bool         empty() const { return maItems.empty(); }
@@ -167,7 +151,6 @@ struct PCSharedItemsModel
     bool                mbIsNumeric;        /// True = has numeric item(s), maybe other types except date.
     bool                mbIsInteger;        /// True = has numeric item(s) with only integers, maybe other types except date.
     bool                mbHasLongText;      /// True = contains strings with >255 characters.
-    bool                mbHasLongIndexes;   /// True = indexes to shared items are 16-bit (BIFF only).
 
     explicit            PCSharedItemsModel();
 };
@@ -242,12 +225,6 @@ public:
     /** Imports one or more group items from the passed record. */
     void                importPCDFGroupItem( sal_Int32 nRecId, SequenceInputStream& rStrm );
 
-    /** Imports pivot cache field settings from the PCDFIELD record. */
-    void                importPCDField( BiffInputStream& rStrm );
-    /** Imports numeric grouping settings from the PCDFRANGEPR record. */
-    void                importPCDFRangePr( BiffInputStream& rStrm );
-    /** Imports the mapping between group items and base items from the PCDFDISCRETEPR record. */
-    void                importPCDFDiscretePr( BiffInputStream& rStrm );
     /** Apply user Captions to imported group data */
     void                applyItemCaptions( const IdCaptionPairList& vCaptions );
 
@@ -306,9 +283,6 @@ public:
     /** Reads an item from the PCRECORD record and writes it to the passed sheet. */
     void                importPCRecordItem( SequenceInputStream& rStrm,
                             WorksheetHelper& rSheetHelper, sal_Int32 nCol, sal_Int32 nRow ) const;
-    /** Reads an item index from the PCITEM_INDEXLIST record and writes the item to the passed sheet. */
-    void                importPCItemIndex( BiffInputStream& rStrm,
-                            WorksheetHelper& rSheetHelper, sal_Int32 nCol, sal_Int32 nRow ) const;
 
 private:
     /** Tries to write the passed value to the passed sheet position. */
@@ -336,7 +310,6 @@ struct PCDefinitionModel
     double              mfRefreshedDate;    /// Date/time of last refresh.
     sal_Int32           mnRecords;          /// Number of data records in the cache.
     sal_Int32           mnMissItemsLimit;   /// Limit for discarding unused items.
-    sal_uInt16          mnDatabaseFields;   /// Number of database (source data) fields (BIFF only).
     bool                mbInvalid;          /// True = cache needs refresh.
     bool                mbSaveData;         /// True = cached item values are present.
     bool                mbRefreshOnLoad;    /// True = try to refresh cache on load.
@@ -389,9 +362,6 @@ public:
     /** Reads sheet source settings from the PCDSHEETSOURCE record. */
     void                importPCDSheetSource( SequenceInputStream& rStrm, const ::oox::core::Relations& rRelations );
 
-    /** Reads pivot cache global settings from the PCDEFINITION record. */
-    void                importPCDefinition( BiffInputStream& rStrm );
-
     /** Creates and returns a new pivot cache field. */
     PivotCacheField&    createCacheField( bool bInitDatabaseField = false );
     /** Checks validity of source data and creates a dummy data sheet for external sheet sources. */
@@ -425,9 +395,6 @@ public:
 
     /** Reads a PCRECORD record and writes all item values to the passed sheet. */
     void                importPCRecord( SequenceInputStream& rStrm,
-                            WorksheetHelper& rSheetHelper, sal_Int32 nRowIdx ) const;
-    /** Reads a PCITEM_INDEXLIST record and writes all item values to the passed sheet. */
-    void                importPCItemIndexList( BiffInputStream& rStrm,
                             WorksheetHelper& rSheetHelper, sal_Int32 nRowIdx ) const;
 
 private:

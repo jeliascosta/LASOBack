@@ -329,7 +329,7 @@ void SingleColumnSpanSet::scan(const ScMarkData& rMark, SCTAB nTab, SCCOL nCol)
         // This table is not selected. Nothing to scan.
         return;
 
-    ScRangeList aRanges = rMark.GetMarkedRanges();
+    ScRangeList aRanges = rMark.GetMarkedRangesForTab(nTab);
     scan(aRanges, nTab, nCol);
 }
 
@@ -379,6 +379,13 @@ void SingleColumnSpanSet::getSpans(SpansType& rSpans) const
 void SingleColumnSpanSet::swap( SingleColumnSpanSet& r )
 {
     maSpans.swap(r.maSpans);
+}
+
+bool SingleColumnSpanSet::empty() const
+{
+    // Empty if there's only the 0..MAXROW span with false.
+    ColumnSpansType::const_iterator it = maSpans.begin();
+    return (it->first == 0) && !(it->second) && (++it != maSpans.end()) && (it->first == MAXROWCOUNT);
 }
 
 }

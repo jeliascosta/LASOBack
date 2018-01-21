@@ -33,7 +33,7 @@
 // Module global
 
 long g_DllRefCnt = 0;
-HINSTANCE g_hModule = NULL;
+HINSTANCE g_hModule = nullptr;
 
 namespace /* private */
 {
@@ -300,12 +300,12 @@ namespace /* private */
 
 STDAPI DllRegisterServer()
 {
-    TCHAR ModuleFileName[MAX_PATH];
+    WCHAR ModuleFileName[MAX_PATH];
 
-    GetModuleFileName(
-        GetModuleHandle(MODULE_NAME),
+    GetModuleFileNameW(
+        GetModuleHandleW(MODULE_NAME),
         ModuleFileName,
-        sizeof(ModuleFileName));
+        sizeof(ModuleFileName)/sizeof(ModuleFileName[0]));
 
     std::string module_path = WStringToString(ModuleFileName);
     HRESULT hr = S_OK;
@@ -331,7 +331,7 @@ STDAPI DllRegisterServer()
         hr = E_FAIL;
 
     // notify the Shell that something has changed
-    SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, 0, 0);
+    SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
 
     return hr;
 }
@@ -361,14 +361,14 @@ STDAPI DllUnregisterServer()
     UnapproveShellExtension(CLSID_THUMBVIEWER_HANDLER);
 
     // notify the Shell that something has changed
-    SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, 0, 0);
+    SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
 
     return hr;
 }
 
 STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, void** ppv)
 {
-    *ppv = 0;
+    *ppv = nullptr;
 
     if ((rclsid != CLSID_INFOTIP_HANDLER) &&
         (rclsid != CLSID_COLUMN_HANDLER) &&
@@ -380,13 +380,13 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, void** ppv)
         return E_NOINTERFACE;
 
     if ( rclsid == CLSID_INFOTIP_HANDLER )
-        OutputDebugStringFormat( "DllGetClassObject: Create CLSID_INFOTIP_HANDLER\n" );
+        OutputDebugStringFormatA( "DllGetClassObject: Create CLSID_INFOTIP_HANDLER\n" );
     else if ( rclsid == CLSID_COLUMN_HANDLER )
-        OutputDebugStringFormat( "DllGetClassObject: Create CLSID_COLUMN_HANDLER\n" );
+        OutputDebugStringFormatA( "DllGetClassObject: Create CLSID_COLUMN_HANDLER\n" );
     else if ( rclsid == CLSID_PROPERTYSHEET_HANDLER )
-        OutputDebugStringFormat( "DllGetClassObject: Create CLSID_PROPERTYSHEET_HANDLER\n" );
+        OutputDebugStringFormatA( "DllGetClassObject: Create CLSID_PROPERTYSHEET_HANDLER\n" );
     else if ( rclsid == CLSID_THUMBVIEWER_HANDLER )
-        OutputDebugStringFormat( "DllGetClassObject: Create CLSID_THUMBVIEWER_HANDLER\n" );
+        OutputDebugStringFormatA( "DllGetClassObject: Create CLSID_THUMBVIEWER_HANDLER\n" );
 
     IUnknown* pUnk = new CClassFactory(rclsid);
     *ppv = pUnk;

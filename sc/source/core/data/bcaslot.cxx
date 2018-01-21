@@ -709,7 +709,7 @@ void ScBroadcastAreaSlotMachine::ComputeAreaPoints( const ScRange& rRange,
 }
 
 inline void ComputeNextSlot( SCSIZE & nOff, SCSIZE & nBreak, ScBroadcastAreaSlot** & pp,
-        SCSIZE & nStart, ScBroadcastAreaSlot** const & ppSlots, SCSIZE const & nRowBreak )
+        SCSIZE & nStart, ScBroadcastAreaSlot** const & ppSlots, SCSIZE nRowBreak )
 {
     if ( nOff < nBreak )
     {
@@ -1102,7 +1102,12 @@ void ScBroadcastAreaSlotMachine::LeaveBulkBroadcast( sal_uInt32 nHintId )
         if (--nInBulkBroadcast == 0)
         {
             ScBroadcastAreasBulk().swap( aBulkBroadcastAreas);
-            BulkBroadcastGroupAreas( nHintId );
+            bool bBroadcasted = BulkBroadcastGroupAreas( nHintId );
+            // Trigger the "final" tracking.
+            if (pDoc->IsTrackFormulasPending())
+                pDoc->FinalTrackFormulas( nHintId );
+            else if (bBroadcasted)
+                pDoc->TrackFormulas( nHintId );
         }
     }
 }
@@ -1126,12 +1131,12 @@ void ScBroadcastAreaSlotMachine::InsertBulkGroupArea( ScBroadcastArea* pArea, co
     pSet->set(rRange, true);
 }
 
-void ScBroadcastAreaSlotMachine::BulkBroadcastGroupAreas( sal_uInt32 nHintId )
+bool ScBroadcastAreaSlotMachine::BulkBroadcastGroupAreas( sal_uInt32 nHintId )
 {
     if (m_BulkGroupAreas.empty())
-        return;
+        return false;
 
-    sc::BulkDataHint aHint(*pDoc, nullptr, nHintId);
+    sc::BulkDataHint aHint( *pDoc, nHintId);
 
     bool bBroadcasted = false;
     BulkGroupAreasType::iterator it = m_BulkGroupAreas.begin(), itEnd = m_BulkGroupAreas.end();
@@ -1157,8 +1162,8 @@ void ScBroadcastAreaSlotMachine::BulkBroadcastGroupAreas( sal_uInt32 nHintId )
     }
 
     m_BulkGroupAreas.clear();
-    if (bBroadcasted)
-        pDoc->TrackFormulas( nHintId );
+
+    return bBroadcasted;
 }
 
 size_t ScBroadcastAreaSlotMachine::RemoveBulkArea( const ScBroadcastArea* pArea )

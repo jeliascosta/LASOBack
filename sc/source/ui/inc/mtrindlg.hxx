@@ -28,17 +28,17 @@
 class ScMetricInputDlg : public ModalDialog
 {
 public:
-    ScMetricInputDlg( vcl::Window*        pParent,
+    ScMetricInputDlg( vcl::Window*   pParent,
                       const OString& sDialogName,
                       long           nCurrent,
                       long           nDefault,
-                      FieldUnit      eFUnit    = FUNIT_MM,
-                      sal_uInt16     nDecimals = 2,
-                      long           nMaximum  = 1000,
-                      long           nMinimum  = 0,
-                      long           nFirst    = 1,
-                      long           nLast     = 100 );
-    virtual ~ScMetricInputDlg();
+                      FieldUnit      eFUnit,
+                      sal_uInt16     nDecimals,
+                      long           nMaximum,
+                      long           nMinimum,
+                      long           nFirst,
+                      long           nLast );
+    virtual ~ScMetricInputDlg() override;
     virtual void dispose() override;
 
     long GetInputValue() const;
@@ -49,8 +49,8 @@ private:
     long            nDefaultValue;
     long            nCurrentValue;
 
-    DECL_LINK_TYPED(SetDefValHdl, Button*, void);
-    DECL_LINK_TYPED(ModifyHdl, Edit&, void);
+    DECL_LINK(SetDefValHdl, Button*, void);
+    DECL_LINK(ModifyHdl, Edit&, void);
 };
 
 #endif // INCLUDED_SC_SOURCE_UI_INC_MTRINDLG_HXX

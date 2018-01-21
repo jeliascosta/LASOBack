@@ -228,15 +228,31 @@ inline char const * unwrapStream(SAL_UNUSED_PARAMETER StreamIgnore const &) {
     with
 
     @verbatim
-      <switch> ::= <sense><level>("."<area>)?
+      <switch> ::= <sense><item>
       <sense> ::= "+"|"-"
+      <item> ::= <flag>|<level>("."<area>)?
+      <flag> ::= "TIMESTAMP"|"RELATIVETIMER"
       <level> ::= "INFO"|"WARN"
     @endverbatim
 
-    If the environment variable is unset, "+WARN" is used instead (which results
-    in all warnings being output but no infos).  If the given value does not
-    match the regular expression, "+INFO+WARN" is used instead (which in turn
-    results in everything being output).
+    If the environment variable is unset, the setting "+WARN" is
+    assumed instead (which results in all warnings being output but no
+    infos).  If the given value does not match the regular expression,
+    "+INFO+WARN" is used instead (which in turn results in everything
+    being output).
+
+    The "+TIMESTAMP" flag causes each output line (as selected by the level
+    switch(es)) to be prefixed by a timestamp like 2016-08-18:14:04:43.
+
+    The "+RELATIVETIMER" flag causes each output line (as selected by
+    the level switch(es)) to be prefixed by a relative timestamp in
+    seconds since the first output line like 1.312.
+
+    If both +TIMESTAMP and +RELATIVETIMER are specified, they are
+    output in that order.
+
+    Specifying a flag with a negative sense has no effect. Specifying
+    the same flag multiple times has no extra effect.
 
     A given macro call's level (INFO or WARN) and area is matched against the
     given switches as follows:  Only those switches for which the level matches
@@ -246,17 +262,20 @@ inline char const * unwrapStream(SAL_UNUSED_PARAMETER StreamIgnore const &) {
     that has a sense of "+".  (That is, if both +INFO.foo and -INFO.foo are
     present, +INFO.foo wins.)
 
+    If no WARN selection is specified, but an INFO selection is, the
+    INFO selection is used for WARN messages, too.
+
     For example, if SAL_LOG is "+INFO-INFO.foo+INFO.foo.bar", then calls like
     SAL_INFO("foo.bar", ...), SAL_INFO("foo.bar.baz", ...), or
     SAL_INFO("other", ...) generate output, while calls like
     SAL_INFO("foo", ...) or SAL_INFO("foo.barzzz", ...) do not.
 
-    The generated log output consists of the given level ("info" or "warn"), the
-    given area, the process ID, the thread ID, the source file, and the source
-    line number, each followed by a colon, followed by a space, the given
-    message, and a newline.  The precise format of the log output is subject to
-    change.  The log output is printed to stderr without further text encoding
-    conversion.
+    The generated log output consists of the optinal timestamp, the given level
+    ("info" or "warn"), the given area, the process ID, the thread ID, the
+    source file, and the source line number, each followed by a colon, followed
+    by a space, the given message, and a newline.  The precise format of the log
+    output is subject to change.  The log output is printed to stderr without
+    further text encoding conversion.
 
     @see @ref sal_log_areas
 

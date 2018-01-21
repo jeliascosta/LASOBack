@@ -60,7 +60,7 @@ ScStyleSheetPool::ScStyleSheetPool( SfxItemPool&    rPoolP,
     :   SfxStyleSheetPool( rPoolP ),
         pActualStyleSheet( nullptr ),
         pDoc( pDocument ),
-        pForceStdName( nullptr )
+        bHasStandardStyles( false )
 {
 }
 
@@ -189,10 +189,6 @@ void ScStyleSheetPool::CopyStdStylesFrom( ScStyleSheetPool* pSrcPool )
     //  Copy Default styles
 
     CopyStyleFrom( pSrcPool, SCSTR(STR_STYLENAME_STANDARD),     SfxStyleFamily::Para );
-    CopyStyleFrom( pSrcPool, SCSTR(STR_STYLENAME_RESULT),       SfxStyleFamily::Para );
-    CopyStyleFrom( pSrcPool, SCSTR(STR_STYLENAME_RESULT1),      SfxStyleFamily::Para );
-    CopyStyleFrom( pSrcPool, SCSTR(STR_STYLENAME_HEADLINE),     SfxStyleFamily::Para );
-    CopyStyleFrom( pSrcPool, SCSTR(STR_STYLENAME_HEADLINE1),    SfxStyleFamily::Para );
     CopyStyleFrom( pSrcPool, SCSTR(STR_STYLENAME_STANDARD),     SfxStyleFamily::Page );
     CopyStyleFrom( pSrcPool, SCSTR(STR_STYLENAME_REPORT),       SfxStyleFamily::Page );
 }
@@ -270,51 +266,6 @@ void ScStyleSheetPool::CreateStandardStyles()
 //    if ( eCtl == LANGUAGE_THAI )
 //        pSet->Put( SvxFontHeightItem( 300, 100, ATTR_CTL_FONT_HEIGHT ) );   // 15 pt
 
-    // 2. Result
-
-    pSheet = static_cast<ScStyleSheet*>( &Make( SCSTR( STR_STYLENAME_RESULT ),
-                                    SfxStyleFamily::Para,
-                                    SCSTYLEBIT_STANDARD ) );
-    pSheet->SetParent( aStrStandard );
-    pSheet->SetHelpId( aHelpFile, HID_SC_SHEET_CELL_ERG );
-    pSet = &pSheet->GetItemSet();
-    pSet->Put( SvxWeightItem( WEIGHT_BOLD, ATTR_FONT_WEIGHT ) );
-    pSet->Put( SvxPostureItem( ITALIC_NORMAL, ATTR_FONT_POSTURE ) );
-    pSet->Put( SvxUnderlineItem( LINESTYLE_SINGLE, ATTR_FONT_UNDERLINE ) );
-
-    // 3. Result1
-
-    pSheet = static_cast<ScStyleSheet*>( &Make( SCSTR( STR_STYLENAME_RESULT1 ),
-                                    SfxStyleFamily::Para,
-                                    SCSTYLEBIT_STANDARD ) );
-
-    pSheet->SetParent( SCSTR( STR_STYLENAME_RESULT ) );
-    pSheet->SetHelpId( aHelpFile, HID_SC_SHEET_CELL_ERG1 );
-
-    // 4. headline
-
-    pSheet = static_cast<ScStyleSheet*>( &Make( SCSTR( STR_STYLENAME_HEADLINE ),
-                                    SfxStyleFamily::Para,
-                                    SCSTYLEBIT_STANDARD ) );
-
-    pSheet->SetParent( aStrStandard );
-    pSheet->SetHelpId( aHelpFile, HID_SC_SHEET_CELL_UEB );
-    pSet = &pSheet->GetItemSet();
-    pSet->Put( SvxFontHeightItem( 320, 100, ATTR_FONT_HEIGHT ) ); // 16pt
-    pSet->Put( SvxWeightItem( WEIGHT_BOLD, ATTR_FONT_WEIGHT ) );
-    pSet->Put( SvxPostureItem( ITALIC_NORMAL, ATTR_FONT_POSTURE ) );
-    pSet->Put( SvxHorJustifyItem( SVX_HOR_JUSTIFY_CENTER, ATTR_HOR_JUSTIFY ) );
-
-    // 5. Ueberschrift1
-
-    pSheet = static_cast<ScStyleSheet*>( &Make( SCSTR( STR_STYLENAME_HEADLINE1 ),
-                                    SfxStyleFamily::Para,
-                                    SCSTYLEBIT_STANDARD ) );
-
-    pSheet->SetParent( SCSTR( STR_STYLENAME_HEADLINE ) );
-    pSheet->SetHelpId( aHelpFile, HID_SC_SHEET_CELL_UEB1 );
-    pSet = &pSheet->GetItemSet();
-    pSet->Put( SfxInt32Item( ATTR_ROTATE_VALUE, 9000 ) );
 
     // Page format template:
 
@@ -329,8 +280,10 @@ void ScStyleSheetPool::CreateStandardStyles()
 
     // distance to header/footer for the sheet
     pHFSetItem = new SvxSetItem( static_cast<const SvxSetItem&>(pSet->Get( ATTR_PAGE_HEADERSET ) ) );
-    pSet->Put( *pHFSetItem, ATTR_PAGE_HEADERSET );
-    pSet->Put( *pHFSetItem, ATTR_PAGE_FOOTERSET );
+    pHFSetItem->SetWhich(ATTR_PAGE_HEADERSET);
+    pSet->Put( *pHFSetItem );
+    pHFSetItem->SetWhich(ATTR_PAGE_FOOTERSET);
+    pSet->Put( *pHFSetItem );
     delete pHFSetItem;
 
     // Header:
@@ -372,7 +325,7 @@ void ScStyleSheetPool::CreateStandardStyles()
     aBoxItem.SetLine( &aBorderLine, SvxBoxItemLine::BOTTOM );
     aBoxItem.SetLine( &aBorderLine, SvxBoxItemLine::LEFT );
     aBoxItem.SetLine( &aBorderLine, SvxBoxItemLine::RIGHT );
-    aBoxItem.SetDistance( 10 ); // 0.2mm
+    aBoxItem.SetAllDistances( 10 ); // 0.2mm
     aBoxInfoItem.SetValid( SvxBoxInfoItemValidFlags::TOP );
     aBoxInfoItem.SetValid( SvxBoxInfoItemValidFlags::BOTTOM );
     aBoxInfoItem.SetValid( SvxBoxInfoItemValidFlags::LEFT );
@@ -387,8 +340,10 @@ void ScStyleSheetPool::CreateStandardStyles()
     pHFSet->Put( SvxBrushItem( aColGrey, ATTR_BACKGROUND ) );
     pHFSet->Put( aBoxItem );
     pHFSet->Put( aBoxInfoItem );
-    pSet->Put( *pHFSetItem, ATTR_PAGE_HEADERSET );
-    pSet->Put( *pHFSetItem, ATTR_PAGE_FOOTERSET );
+    pHFSetItem->SetWhich(ATTR_PAGE_HEADERSET);
+    pSet->Put( *pHFSetItem );
+    pHFSetItem->SetWhich(ATTR_PAGE_FOOTERSET);
+    pSet->Put( *pHFSetItem );
     delete pHFSetItem;
 
     // Footer:
@@ -430,6 +385,8 @@ void ScStyleSheetPool::CreateStandardStyles()
     delete pTxtObj;
 
     delete pEmptyTxtObj;
+
+    bHasStandardStyles = true;
 }
 
 namespace {
@@ -481,6 +438,16 @@ ScStyleSheet* ScStyleSheetPool::FindCaseIns( const OUString& rName, SfxStyleFami
         }
     }
     return nullptr;
+}
+
+void ScStyleSheetPool::setAllStandard()
+{
+    SfxStyleSheetBase* pSheet = First();
+    while (pSheet)
+    {
+        pSheet->SetMask(SCSTYLEBIT_STANDARD);
+        pSheet = Next();
+    }
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

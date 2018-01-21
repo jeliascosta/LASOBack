@@ -204,14 +204,13 @@ namespace o3tl
 enum class SelectionOptions
 {
     NONE       = 0x0000,
-    Word       = 0x0001,
-    Focus      = 0x0002,
-    Invert     = 0x0004,
-    ShowFirst  = 0x0008,
+    Focus      = 0x0001,
+    Invert     = 0x0002,
+    ShowFirst  = 0x0004,
 };
 namespace o3tl
 {
-    template<> struct typed_flags<SelectionOptions> : is_typed_flags<SelectionOptions, 0x000f> {};
+    template<> struct typed_flags<SelectionOptions> : is_typed_flags<SelectionOptions, 0x0007> {};
 }
 
 enum class DisplayOptions
@@ -229,6 +228,7 @@ enum class ToolbarIconSize
     Unknown      = 0,
     Small        = 1,
     Large        = 2,
+    Size32       = 3,
 };
 
 #define STYLE_CURSOR_NOBLINKTIME    SAL_MAX_UINT64
@@ -283,9 +283,6 @@ public:
 
     void                            SetLabelTextColor( const Color& rColor );
     const Color&                    GetLabelTextColor() const;
-
-    void                            SetInfoTextColor( const Color& rColor );
-    const Color&                    GetInfoTextColor() const;
 
     void                            SetWindowColor( const Color& rColor );
     const Color&                    GetWindowColor() const;
@@ -429,8 +426,10 @@ public:
     void                            SetHideDisabledMenuItems( bool bHideDisabledMenuItems );
     bool                            GetHideDisabledMenuItems() const;
 
-    void                            SetAcceleratorsInContextMenus( bool bAcceleratorsInContextMenus );
-    bool                            GetAcceleratorsInContextMenus() const;
+    void                            SetContextMenuShortcuts( TriState eContextMenuShortcuts );
+    bool                            GetContextMenuShortcuts() const;
+
+    void                            SetPreferredContextMenuShortcuts( bool bContextMenuShortcuts );
 
     void                            SetPrimaryButtonWarpsSlider( bool bPrimaryButtonWarpsSlider );
     bool                            GetPrimaryButtonWarpsSlider() const;
@@ -458,9 +457,6 @@ public:
 
     void                            SetLabelFont( const vcl::Font& rFont );
     const vcl::Font&                GetLabelFont() const;
-
-    void                            SetInfoFont( const vcl::Font& rFont );
-    const vcl::Font&                GetInfoFont() const;
 
     void                            SetRadioCheckFont( const vcl::Font& rFont );
     const vcl::Font&                GetRadioCheckFont() const;
@@ -504,12 +500,6 @@ public:
     void                            SetCursorBlinkTime( sal_uInt64 nBlinkTime );
     sal_uInt64                      GetCursorBlinkTime() const;
 
-    void                            SetScreenZoom( sal_uInt16 nPercent );
-    sal_uInt16                      GetScreenZoom() const;
-
-    void                            SetScreenFontZoom( sal_uInt16 nPercent );
-    sal_uInt16                      GetScreenFontZoom() const;
-
     void                            SetDragFullOptions( DragFullOptions nOptions );
     DragFullOptions                 GetDragFullOptions() const;
 
@@ -527,6 +517,8 @@ public:
 
     void                            SetAutoMnemonic( bool bAutoMnemonic );
     bool                            GetAutoMnemonic() const;
+
+    static bool                     GetDockingFloatsSupported();
 
     void                            SetFontColor( const Color& rColor );
     const Color&                    GetFontColor() const;
@@ -559,7 +551,7 @@ public:
     /** Set a preferred icon theme.
      * This theme will be preferred in GetAutomaticallyChosenIconTheme()
      */
-    void                            SetPreferredIconTheme(const OUString&);
+    void                            SetPreferredIconTheme(const OUString&, bool bDarkIconTheme = false);
 
     const DialogStyle&              GetDialogStyle() const;
     void                            SetDialogStyle( const DialogStyle& rStyle );
@@ -618,9 +610,6 @@ public:
 
 class VCL_DLLPUBLIC MiscSettings
 {
-    void                            CopyData();
-
-private:
     std::shared_ptr<ImplMiscData>   mxData;
 
 public:
@@ -643,7 +632,6 @@ public:
 
 class VCL_DLLPUBLIC HelpSettings
 {
-    void                            CopyData();
     std::shared_ptr<ImplHelpData>   mxData;
 
 public:

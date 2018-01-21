@@ -25,6 +25,12 @@
 #include <com/sun/star/uno/Reference.h>
 #include <com/sun/star/uno/Any.hxx>
 #include <vcl/vclptr.hxx>
+#include <comphelper/namedvaluecollection.hxx>
+#include <rtl/ustring.hxx>
+#include <svl/poolitem.hxx>
+#include <tools/ref.hxx>
+#include <vector>
+
 
 namespace com
 {
@@ -50,12 +56,6 @@ namespace com
         }
     }
 }
-
-#include <comphelper/namedvaluecollection.hxx>
-#include <rtl/ustring.hxx>
-#include <svl/poolitem.hxx>
-#include <tools/ref.hxx>
-#include <vector>
 
 class SvBorder;
 class SfxWorkWindow;
@@ -95,7 +95,6 @@ class SFX2_DLLPUBLIC SfxFrame : public SvCompatWeakBase<SfxFrame>
     friend class SfxFrameWindow_Impl;
 
 private:
-    SfxFrame*           pParentFrame;
     SfxFrameArr_Impl*   pChildArr;
     std::unique_ptr< SfxFrame_Impl >     pImpl;
     VclPtr<vcl::Window> pWindow;
@@ -103,8 +102,6 @@ private:
 protected:
     bool                Close();
     virtual             ~SfxFrame();
-
-    SAL_DLLPRIVATE void RemoveChildFrame_Impl( SfxFrame* );
 
     SAL_DLLPRIVATE      SfxFrame( vcl::Window& i_rContainerWindow );
 
@@ -119,8 +116,6 @@ public:
     bool                DoClose();
     sal_uInt16          GetChildFrameCount() const;
     SfxFrame*           GetChildFrame( sal_uInt16 nPos ) const;
-    SfxFrame*           GetParentFrame() const
-                        { return pParentFrame; }
 
     void                SetPresentationMode( bool bSet );
     SystemWindow*       GetSystemWindow() const;
@@ -128,13 +123,8 @@ public:
     static SfxFrame*    GetFirst();
     static SfxFrame*    GetNext( SfxFrame& );
 
-    static const SfxPoolItem*
-                        OpenDocumentSynchron( SfxItemSet& aSet, const css::uno::Reference< css::frame::XFrame >& i_rTargetFrame );
-
     SfxObjectShell*     GetCurrentDocument() const;
     SfxViewFrame*       GetCurrentViewFrame() const;
-    SfxFrame&           GetTopFrame() const;
-    bool                IsParent( SfxFrame* ) const;
 
     sal_uInt32          GetFrameType() const;
     static void         GetDefaultTargetList( TargetList& );
@@ -164,7 +154,6 @@ public:
     // Methods for accessing the current set
     SAL_DLLPRIVATE SfxFrameDescriptor* GetDescriptor() const;
 
-    SAL_DLLPRIVATE SfxDispatcher* GetDispatcher_Impl() const;
     SAL_DLLPRIVATE bool IsAutoLoadLocked_Impl() const;
 
     SAL_DLLPRIVATE static void InsertTopFrame_Impl( SfxFrame* pFrame );
@@ -176,7 +165,6 @@ public:
     SAL_DLLPRIVATE Rectangle GetTopOuterRectPixel_Impl() const;
     SAL_DLLPRIVATE void CreateWorkWindow_Impl();
     SAL_DLLPRIVATE void GrabFocusOnComponent_Impl();
-    SAL_DLLPRIVATE void SetInPlace_Impl( bool );
 
     SAL_DLLPRIVATE void PrepareForDoc_Impl( SfxObjectShell& i_rDoc );
     SAL_DLLPRIVATE void LockResize_Impl( bool bLock );
@@ -190,30 +178,15 @@ private:
 
 typedef SvCompatWeakRef<SfxFrame> SfxFrameWeakRef;
 
-class SfxFrameIterator
-{
-    const SfxFrame*         pFrame;
-    bool                    bRecursive;
-
-    SfxFrame*               NextSibling_Impl( SfxFrame& rPrev );
-
-public:
-                            SfxFrameIterator( const SfxFrame& rFrame, bool bRecursive=true );
-    SfxFrame*               FirstFrame();
-    SfxFrame*               NextFrame( SfxFrame& rPrev );
-};
-
-
 class SFX2_DLLPUBLIC SfxFrameItem: public SfxPoolItem
 {
     SfxFrame*               pFrame;
     SfxFrameWeakRef         wFrame;
-    SAL_DLLPRIVATE void SetFramePtr_Impl( SfxFrame* /*pFrameP*/ ) { pFrame = wFrame; }
 
 public:
 
                             SfxFrameItem( sal_uInt16 nWhich, SfxViewFrame *p );
-                            SfxFrameItem( SfxFrame *p=nullptr );
+                            SfxFrameItem( SfxFrame *p );
                             SfxFrameItem( sal_uInt16 nWhich, SfxFrame *p );
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
@@ -222,8 +195,7 @@ public:
     virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
 
-    SfxFrame*               GetFrame() const
-                            { return wFrame; }
+    SfxFrame*               GetFrame() const { return wFrame; }
 };
 
 class SFX2_DLLPUBLIC SfxUsrAnyItem : public SfxPoolItem

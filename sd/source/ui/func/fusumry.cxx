@@ -62,19 +62,19 @@ rtl::Reference<FuPoor> FuSummaryPage::Create( ViewShell* pViewSh, ::sd::Window* 
 
 void FuSummaryPage::DoExecute( SfxRequest& )
 {
-    ::sd::Outliner* pOutl = nullptr;
+    SdOutliner* pOutl = nullptr;
     SdPage* pSummaryPage = nullptr;
     sal_uInt16 i = 0;
     sal_uInt16 nFirstPage = SDRPAGE_NOTFOUND;
     sal_uInt16 nSelectedPages = 0;
-    sal_uInt16 nCount = mpDoc->GetSdPageCount(PK_STANDARD);
+    sal_uInt16 nCount = mpDoc->GetSdPageCount(PageKind::Standard);
 
     while (i < nCount && nSelectedPages <= 1)
     {
         /* How many pages are selected?
              exactly one: pool everything from this page
              otherwise:   only pool the selected pages  */
-        SdPage* pActualPage = mpDoc->GetSdPage(i, PK_STANDARD);
+        SdPage* pActualPage = mpDoc->GetSdPage(i, PageKind::Standard);
 
         if (pActualPage->IsSelected())
         {
@@ -95,11 +95,11 @@ void FuSummaryPage::DoExecute( SfxRequest& )
 
     for (i = nFirstPage; i < nCount; i++)
     {
-        SdPage* pActualPage = mpDoc->GetSdPage(i, PK_STANDARD);
+        SdPage* pActualPage = mpDoc->GetSdPage(i, PageKind::Standard);
 
         if (nSelectedPages <= 1 || pActualPage->IsSelected())
         {
-            SdPage* pActualNotesPage = mpDoc->GetSdPage(i, PK_NOTES);
+            SdPage* pActualNotesPage = mpDoc->GetSdPage(i, PageKind::Notes);
             SdrTextObj* pTextObj = static_cast<SdrTextObj*>( pActualPage->GetPresObj(PRESOBJ_TITLE) );
 
             if (pTextObj && !pTextObj->IsEmptyPresObj())
@@ -144,7 +144,7 @@ void FuSummaryPage::DoExecute( SfxRequest& )
                                           pActualNotesPage->GetUppBorder(),
                                           pActualNotesPage->GetRgtBorder(),
                                           pActualNotesPage->GetLwrBorder() );
-                    pNotesPage->SetPageKind(PK_NOTES);
+                    pNotesPage->SetPageKind(PageKind::Notes);
 
                     // insert page at the back
                     mpDoc->InsertPage(pNotesPage, nCount * 2 + 2);
@@ -159,7 +159,7 @@ void FuSummaryPage::DoExecute( SfxRequest& )
                     pNotesPage->TRG_SetMasterPageVisibleLayers(aVisibleLayers);
                     pNotesPage->setHeaderFooterSettings(pActualNotesPage->getHeaderFooterSettings());
 
-                    pOutl = new ::sd::Outliner( mpDoc, OutlinerMode::OutlineObject );
+                    pOutl = new SdOutliner( mpDoc, OutlinerMode::OutlineObject );
                     pOutl->SetUpdateMode(false);
                     pOutl->EnableUndo(false);
 

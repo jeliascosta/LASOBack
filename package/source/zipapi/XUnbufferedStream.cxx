@@ -42,7 +42,7 @@ XUnbufferedStream::XUnbufferedStream(
                       const uno::Reference< uno::XComponentContext >& xContext,
                       const rtl::Reference<SotMutexHolder>& aMutexHolder,
                       ZipEntry & rEntry,
-                      Reference < XInputStream > xNewZipStream,
+                      Reference < XInputStream > const & xNewZipStream,
                       const ::rtl::Reference< EncryptionData >& rData,
                       sal_Int8 nStreamMode,
                       bool bIsEncrypted,
@@ -56,7 +56,6 @@ XUnbufferedStream::XUnbufferedStream(
 , maInflater ( true )
 , mbRawStream ( nStreamMode == UNBUFF_STREAM_RAW || nStreamMode == UNBUFF_STREAM_WRAPPEDRAW )
 , mbWrappedRaw ( nStreamMode == UNBUFF_STREAM_WRAPPEDRAW )
-, mbFinished ( false )
 , mnHeaderToRead ( 0 )
 , mnZipCurrent ( 0 )
 , mnZipEnd ( 0 )
@@ -118,7 +117,6 @@ XUnbufferedStream::XUnbufferedStream(
 , maInflater ( true )
 , mbRawStream ( false )
 , mbWrappedRaw ( false )
-, mbFinished ( false )
 , mnHeaderToRead ( 0 )
 , mnZipCurrent ( 0 )
 , mnZipEnd ( 0 )

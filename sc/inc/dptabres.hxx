@@ -160,6 +160,7 @@ private:
     double          fAux;
     long            nCount;
     ScDPAggData*    pChild;
+    std::vector<double> mSortedValues;
 
 public:
             ScDPAggData() : fVal(0.0), fAux(0.0), nCount(SC_DPAGG_EMPTY), pChild(nullptr) {}
@@ -185,7 +186,7 @@ public:
     const ScDPAggData*  GetExistingChild() const    { return pChild; }
     ScDPAggData*        GetChild();
 
-#if DEBUG_PIVOT_TABLE
+#if DUMP_PIVOT_TABLE
     void Dump(int nIndent) const;
 #endif
 };
@@ -220,7 +221,7 @@ class ScDPDataMember;
 
 struct MemberHashIndexFunc : public std::unary_function< const SCROW &, size_t >
 {
-    size_t operator() (const SCROW &rDataIndex) const { return rDataIndex; }
+    size_t operator() (SCROW rDataIndex) const { return rDataIndex; }
 };
 
 struct ScDPParentDimData
@@ -236,7 +237,7 @@ struct ScDPParentDimData
 
 typedef std::unordered_map < SCROW, ScDPParentDimData *, MemberHashIndexFunc>  DimMemberHash;
 
-class ResultMembers
+class ResultMembers final
 {
     DimMemberHash      maMemberHash;
     bool mbHasHideDetailsMember;
@@ -246,7 +247,7 @@ public:
     bool IsHasHideDetailsMembers() const { return mbHasHideDetailsMember; }
     void SetHasHideDetailsMembers( bool b ) { mbHasHideDetailsMember = b; }
     ResultMembers();
-    virtual ~ResultMembers();
+    ~ResultMembers();
 };
 
 class LateInitParams
@@ -366,9 +367,9 @@ public:
                                         ScDPInitState& rInitState);
     void CheckShowEmpty( bool bShow = false );
     OUString GetName() const;
-    OUString GetDisplayName() const;
+    OUString GetDisplayName( bool bLocaleIndependent ) const;
 
-    void                FillItemData( ScDPItemData& rData ) const;
+    ScDPItemData FillItemData() const;
     bool IsValid() const;
     bool IsVisible() const;
     long                GetSize(long nMeasure) const;
@@ -408,7 +409,7 @@ public:
 
     void ResetResults();
 
-#if DEBUG_PIVOT_TABLE
+#if DUMP_PIVOT_TABLE
     void DumpState( const ScDPResultMember* pRefMember, ScDocument* pDoc, ScAddress& rPos ) const;
 
     void Dump(int nIndent) const;
@@ -479,7 +480,7 @@ public:
 
     void                ResetResults();
 
-#if DEBUG_PIVOT_TABLE
+#if DUMP_PIVOT_TABLE
     void DumpState( const ScDPResultMember* pRefMember, ScDocument* pDoc, ScAddress& rPos ) const;
     void Dump(int nIndent) const;
 #endif
@@ -577,7 +578,7 @@ public:
         const ScDPRelativePos* pMemberPos, const OUString* pName,
         long nRefDimPos, const ScDPRunningTotalState& rRunning );
 
-#if DEBUG_PIVOT_TABLE
+#if DUMP_PIVOT_TABLE
     void DumpState( const ScDPResultMember* pRefMember, ScDocument* pDoc, ScAddress& rPos ) const;
     void Dump(int nIndent) const;
 #endif
@@ -641,7 +642,7 @@ public:
 
     void                ResetResults();
 
-#if DEBUG_PIVOT_TABLE
+#if DUMP_PIVOT_TABLE
     void DumpState( const ScDPResultDimension* pRefDim, ScDocument* pDoc, ScAddress& rPos ) const;
     void Dump(int nIndent) const;
 #endif

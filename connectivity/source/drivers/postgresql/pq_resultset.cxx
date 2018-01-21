@@ -61,7 +61,7 @@ namespace pq_sdbc_driver
 {
 
 void ResultSet::checkClosed()
-    throw ( com::sun::star::sdbc::SQLException, com::sun::star::uno::RuntimeException )
+    throw ( css::sdbc::SQLException, css::uno::RuntimeException )
 {
     if( ! m_result )
     {
@@ -96,15 +96,15 @@ ResultSet::ResultSet( const ::rtl::Reference< RefCountedMutex > & refMutex,
     // Fetch direction and size are cursor-specific things, so not used now.
     // Fetch size not set
     m_props[ BASERESULTSET_FETCH_DIRECTION ] = makeAny(
-        com::sun::star::sdbc::FetchDirection::UNKNOWN);
+        css::sdbc::FetchDirection::UNKNOWN);
     // No escape processing for now
     m_props[ BASERESULTSET_ESCAPE_PROCESSING ] <<= false;
     // Bookmarks not implemented for now
     m_props[ BASERESULTSET_IS_BOOKMARKABLE ] <<= false;
     m_props[ BASERESULTSET_RESULT_SET_CONCURRENCY ] = makeAny(
-        com::sun::star::sdbc::ResultSetConcurrency::READ_ONLY );
+        css::sdbc::ResultSetConcurrency::READ_ONLY );
     m_props[ BASERESULTSET_RESULT_SET_TYPE ] = makeAny(
-        com::sun::star::sdbc::ResultSetType::SCROLL_INSENSITIVE );
+        css::sdbc::ResultSetType::SCROLL_INSENSITIVE );
 }
 
 
@@ -121,7 +121,7 @@ Any ResultSet::getValue( sal_Int32 columnIndex )
         ret <<= OUString(
             PQgetvalue( m_result, m_row , columnIndex -1 ) ,
             PQgetlength( m_result, m_row , columnIndex -1 ) ,
-            (*m_ppSettings)->encoding );
+            ConnectionSettings::encoding );
 
     }
     return ret;
@@ -160,7 +160,7 @@ sal_Int32 ResultSet::findColumn( const OUString& columnName )
     MutexGuard guard( m_refMutex->mutex );
     checkClosed();
     sal_Int32 res = PQfnumber( m_result,
-                               OUStringToOString( columnName, (*m_ppSettings)->encoding ).getStr());
+                               OUStringToOString( columnName, ConnectionSettings::encoding ).getStr());
     /* PQfnumber return -1 for not found, which is what we want
      * other than that we use col number as 1-based not 0-based */
     if(res >= 0)
@@ -260,7 +260,7 @@ static bool isTimestamp( const char * data, sal_Int32 len )
 sal_Int32 ResultSet::guessDataType( sal_Int32 column )
 {
     // we don't look into more than 100 rows ...
-    sal_Int32 ret = com::sun::star::sdbc::DataType::INTEGER;
+    sal_Int32 ret = css::sdbc::DataType::INTEGER;
 
     int maxRows = ( m_rowCount > 100 ? 100 : m_rowCount );
     for( int i = 0 ; i < maxRows ; i ++ )
@@ -270,37 +270,37 @@ sal_Int32 ResultSet::guessDataType( sal_Int32 column )
             const char * p = PQgetvalue( m_result, i , column -1 );
             int len = PQgetlength( m_result, i , column -1 );
 
-            if( com::sun::star::sdbc::DataType::INTEGER == ret )
+            if( css::sdbc::DataType::INTEGER == ret )
             {
                 if( ! isInteger( p,len ) )
-                    ret = com::sun::star::sdbc::DataType::NUMERIC;
+                    ret = css::sdbc::DataType::NUMERIC;
             }
-            if( com::sun::star::sdbc::DataType::NUMERIC == ret )
+            if( css::sdbc::DataType::NUMERIC == ret )
             {
                 if( ! isNumber( p,len ) )
                 {
-                    ret = com::sun::star::sdbc::DataType::DATE;
+                    ret = css::sdbc::DataType::DATE;
                 }
             }
-            if( com::sun::star::sdbc::DataType::DATE == ret )
+            if( css::sdbc::DataType::DATE == ret )
             {
                 if( ! isDate( p,len ) )
                 {
-                    ret = com::sun::star::sdbc::DataType::TIME;
+                    ret = css::sdbc::DataType::TIME;
                 }
             }
-            if( com::sun::star::sdbc::DataType::TIME == ret )
+            if( css::sdbc::DataType::TIME == ret )
             {
                 if( ! isTime( p,len ) )
                 {
-                    ret = com::sun::star::sdbc::DataType::TIMESTAMP;
+                    ret = css::sdbc::DataType::TIMESTAMP;
                 }
             }
-            if( com::sun::star::sdbc::DataType::TIMESTAMP == ret )
+            if( css::sdbc::DataType::TIMESTAMP == ret )
             {
                 if( ! isTimestamp( p,len ) )
                 {
-                    ret = com::sun::star::sdbc::DataType::LONGVARCHAR;
+                    ret = css::sdbc::DataType::LONGVARCHAR;
                     break;
                 }
             }

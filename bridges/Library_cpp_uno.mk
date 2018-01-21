@@ -159,6 +159,13 @@ bridge_noopt_objects := cpp2uno uno2cpp
 bridge_exception_objects := except
 endif
 
+else ifeq ($(OS)-$(CPUNAME),LINUX-SPARC64)
+
+bridges_SELECTED_BRIDGE := gcc3_linux_sparc64
+bridge_asm_objects := call
+bridge_noopt_objects := cpp2uno uno2cpp
+bridge_exception_objects := except
+
 else ifeq ($(CPUNAME),X86_64)
 
 ifneq ($(filter DRAGONFLY FREEBSD LINUX NETBSD OPENBSD,$(OS)),)
@@ -236,7 +243,7 @@ bridges_NON_CALL_EXCEPTIONS_FLAGS := -fnon-call-exceptions
 endif
 endif
 
-bridges_DEBUGINFO_FLAGS := $(if $(filter-out 0,$(gb_DEBUGLEVEL))$(filter $(true),$(gb_SYMBOL)),$(gb_DEBUGINFO_FLAGS))
+bridges_DEBUGINFO_FLAGS := $(if $(filter $(true),$(gb_SYMBOL)),$(gb_DEBUGINFO_FLAGS))
 
 $(eval $(call gb_Library_use_libraries,$(gb_CPPU_ENV)_uno,\
 	cppu \

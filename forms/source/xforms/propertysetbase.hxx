@@ -45,7 +45,7 @@ class PropertyAccessorBase : public salhelper::SimpleReferenceObject
 {
 protected:
     PropertyAccessorBase() { }
-    virtual ~PropertyAccessorBase();
+    virtual ~PropertyAccessorBase() override;
 
 public:
 
@@ -124,7 +124,7 @@ public:
 
 /** helper class for implementing non-UNO accessors to a boolean property
 */
-template< typename CLASS, typename DUMMY >
+template< typename CLASS >
 class BooleanPropertyAccessor
     :public GenericPropertyAccessor < CLASS
                                 , bool
@@ -188,7 +188,7 @@ private:
 
 protected:
     PropertySetBase();
-    virtual ~PropertySetBase();
+    virtual ~PropertySetBase() override;
 
     /** registers a new property to be supported by this instance
         @param rProperty

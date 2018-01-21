@@ -18,18 +18,17 @@
  */
 #ifndef INCLUDED_SW_INC_SWMODULE_HXX
 #define INCLUDED_SW_INC_SWMODULE_HXX
+
 #include <tools/fldunit.hxx>
 #include <svl/lstner.hxx>
 #include <unotools/options.hxx>
 #include <sfx2/module.hxx>
 
-#include <tools/shl.hxx>
 #include "swdllapi.h"
 #include "shellid.hxx"
 #include <fldupde.hxx>
 #include <com/sun/star/linguistic2/XLinguServiceEventListener.hpp>
 #include <com/sun/star/linguistic2/XLanguageGuessing.hpp>
-#include <editeng/svxenum.hxx>
 
 class Color;
 class SfxItemSet;
@@ -52,7 +51,7 @@ namespace svtools{ class ColorConfig;}
 class SvtAccessibilityOptions;
 class SvtCTLOptions;
 class SvtUserOptions;
-
+enum class SwCompareMode;
 struct SwDBData;
 
 enum class SvViewOpt {
@@ -133,7 +132,7 @@ public:
                 SfxObjectFactory* pWebFact,
                     SfxObjectFactory* pGlobalFact );
 
-    virtual ~SwModule();
+    virtual ~SwModule() override;
 
     // Set view for internal use only. It is public only for technical reasons.
     inline  void        SetView(SwView* pVw) { m_pView = pVw; }
@@ -190,6 +189,8 @@ public:
     // Redlining.
     sal_uInt16          GetRedlineAuthor();
     OUString            GetRedlineAuthor(sal_uInt16 nPos);
+    /// See SwXTextDocument::getTrackedChangeAuthors().
+    OUString GetRedlineAuthorInfo();
     sal_uInt16          InsertRedlineAuthor(const OUString& rAuthor);
     void                SetRedlineAuthor(const OUString& rAuthor); // for unit tests
 
@@ -200,7 +201,7 @@ public:
     sal_uInt16              GetRedlineMarkPos();
     const Color&            GetRedlineMarkColor();
 
-    SvxCompareMode      GetCompareMode() const;
+    SwCompareMode      GetCompareMode() const;
     bool            IsUseRsid() const;
     bool            IsIgnorePieces() const;
     sal_uInt16          GetPieceLen() const;
@@ -219,6 +220,7 @@ public:
     virtual SfxItemSet*  CreateItemSet( sal_uInt16 nId ) override;
     virtual void         ApplyItemSet( sal_uInt16 nId, const SfxItemSet& rSet ) override;
     virtual VclPtr<SfxTabPage> CreateTabPage( sal_uInt16 nId, vcl::Window* pParent, const SfxItemSet& rSet ) override;
+    virtual SfxStyleFamilies* CreateStyleFamilies() override;
 
     // Pool is created here and set at SfxShell.
     void    InitAttrPool();
@@ -233,10 +235,10 @@ public:
             GetLngSvcEvtListener();
     void    CreateLngSvcEvtListener();
 
-    css::uno::Reference< css::scanner::XScannerManager2 >
+    css::uno::Reference< css::scanner::XScannerManager2 > const &
             GetScannerManager();
 
-    css::uno::Reference< css::linguistic2::XLanguageGuessing >
+    css::uno::Reference< css::linguistic2::XLanguageGuessing > const &
             GetLanguageGuesser();
 };
 
@@ -248,7 +250,7 @@ inline const css::uno::Reference< css::linguistic2::XLinguServiceEventListener >
 
 //    Access to SwModule, the View and the shell.
 
-#define SW_MOD() ( *reinterpret_cast<SwModule**>(GetAppData(SHL_WRITER)))
+#define SW_MOD() ( static_cast<SwModule*>(SfxApplication::GetModule(SfxToolsModule::Writer)))
 
 SW_DLLPUBLIC SwView*    GetActiveView();
 SW_DLLPUBLIC SwWrtShell* GetActiveWrtShell();

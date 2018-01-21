@@ -25,11 +25,13 @@
 #include <vcl/vclenum.hxx>
 #include <vcl/wrkwin.hxx>
 #include "fontinstance.hxx"
+#include "sallayout.hxx"
 #include <i18nlangtag/languagetag.hxx>
 #include <i18nutil/unicode.hxx>
 #include <rtl/strbuf.hxx>
 #include <unicode/uchar.h>
 #include <unicode/uscript.h>
+#include <officecfg/Office/Common.hxx>
 
 using namespace psp;
 
@@ -119,6 +121,17 @@ void FontCfgWrapper::addFontSet( FcSetName eSetName )
         FcResult eOutRes = FcPatternGetBool( pPattern, FC_OUTLINE, 0, &bOutline );
         if( (eOutRes != FcResultMatch) || (bOutline == FcFalse) )
             continue;
+        if (SalLayout::UseCommonLayout())
+        {
+            // Ignore Type 1 fonts; CommonSalLayout does not support them.
+            FcChar8* pFormat = nullptr;
+            FcResult eFormatRes = FcPatternGetString(pPattern, FC_FONTFORMAT, 0, &pFormat);
+            if ((eFormatRes == FcResultMatch) &&
+                (strcmp(reinterpret_cast<char*>(pFormat), "Type 1") == 0))
+            {
+                continue;
+            }
+        }
         FcPatternReference( pPattern );
         FcFontSetAdd( m_pOutlineSet, pPattern );
     }
@@ -866,15 +879,14 @@ namespace
         return bIsImpossible;
     }
 
-    LanguageTag getExemplarLangTagForCodePoint(sal_uInt32 currentChar)
+    OUString getExemplarLangTagForCodePoint(sal_uInt32 currentChar)
     {
         int32_t script = u_getIntPropertyValue(currentChar, UCHAR_SCRIPT);
         UScriptCode eScript = static_cast<UScriptCode>(script);
         OStringBuffer aBuf(unicode::getExemplarLanguageForUScriptCode(eScript));
-        const char* pScriptCode = uscript_getShortName(eScript);
-        if (pScriptCode)
+        if (const char* pScriptCode = uscript_getShortName(eScript))
             aBuf.append('-').append(pScriptCode);
-        return LanguageTag(OStringToOUString(aBuf.makeStringAndClear(), RTL_TEXTENCODING_UTF8));
+        return OStringToOUString(aBuf.makeStringAndClear(), RTL_TEXTENCODING_UTF8);
     }
 
 #if ENABLE_DBUS
@@ -888,8 +900,11 @@ namespace
 }
 
 #if ENABLE_DBUS
-IMPL_LINK_NOARG_TYPED(PrintFontManager, autoInstallFontLangSupport, Timer *, void)
+IMPL_LINK_NOARG(PrintFontManager, autoInstallFontLangSupport, Timer *, void)
 {
+    if (!officecfg::Office::Common::PackageKit::EnableFontInstallation::get())
+        return;
+
     guint xid = get_xid_for_dbus();
 
     if (!xid)
@@ -934,6 +949,11 @@ IMPL_LINK_NOARG_TYPED(PrintFontManager, autoInstallFontLangSupport, Timer *, voi
     /* check the error value */
     if (error != nullptr)
     {
+        // Disable this method from now on. It's simply not available on some systems
+        // and leads to an error dialog being shown each tim theis is called tdf#104883
+        std::shared_ptr<comphelper::ConfigurationChanges> batch( comphelper::ConfigurationChanges::create() );
+        officecfg::Office::Common::PackageKit::EnableFontInstallation::set(false, batch);
+        batch->commit();
         g_debug("InstallFontconfigResources problem : %s", error->message);
         g_error_free(error);
     }
@@ -946,8 +966,6 @@ IMPL_LINK_NOARG_TYPED(PrintFontManager, autoInstallFontLangSupport, Timer *, voi
 
 void PrintFontManager::Substitute( FontSelectPattern &rPattern, OUString& rMissingCodes )
 {
-    bool bRet = false;
-
     FontCfgWrapper& rWrapper = FontCfgWrapper::get();
 
     // build pattern argument for fontconfig query
@@ -979,7 +997,7 @@ void PrintFontManager::Substitute( FontSelectPattern &rPattern, OUString& rMissi
             //#i105784#/rhbz#527719  improve selection of fallback font
             if (aLangAttrib.isEmpty())
             {
-                aLangTag = getExemplarLangTagForCodePoint(nCode);
+                aLangTag.reset(getExemplarLangTagForCodePoint(nCode));
                 aLangAttrib = mapToFontConfigLangTag(aLangTag);
             }
         }
@@ -1016,6 +1034,8 @@ void PrintFontManager::Substitute( FontSelectPattern &rPattern, OUString& rMissi
     {
         if( pSet->nfont > 0 )
         {
+            bool bRet = false;
+
             //extract the closest match
             FcChar8* file = nullptr;
             FcResult eFileRes = FcPatternGetString(pSet->fonts[0], FC_FILE, 0, &file);
@@ -1109,7 +1129,7 @@ void PrintFontManager::Substitute( FontSelectPattern &rPattern, OUString& rMissi
                         //scripts to default to a given language.
                         for (sal_Int32 i = 0; i < nRemainingLen; ++i)
                         {
-                            LanguageTag aOurTag = getExemplarLangTagForCodePoint(pRemainingCodes[i]);
+                            LanguageTag aOurTag(getExemplarLangTagForCodePoint(pRemainingCodes[i]));
                             OString sTag = OUStringToOString(aOurTag.getBcp47(), RTL_TEXTENCODING_UTF8);
                             if (m_aPreviousLangSupportRequests.find(sTag) != m_aPreviousLangSupportRequests.end())
                                 continue;
@@ -1158,8 +1178,7 @@ void FontConfigFontOptions::SyncPattern(const OString& rFileName, int nIndex, bo
     FcPatternAddBool(mpPattern, FC_EMBOLDEN, bEmbolden ? FcTrue : FcFalse);
 }
 
-FontConfigFontOptions* PrintFontManager::getFontOptions(
-    const FastPrintFontInfo& rInfo, int nSize, void (*subcallback)(void*))
+FontConfigFontOptions* PrintFontManager::getFontOptions(const FastPrintFontInfo& rInfo, int nSize)
 {
     FontCfgWrapper& rWrapper = FontCfgWrapper::get();
 
@@ -1182,8 +1201,7 @@ FontConfigFontOptions* PrintFontManager::getFontOptions(
     int hintstyle = FC_HINT_FULL;
 
     FcConfigSubstitute(pConfig, pPattern, FcMatchPattern);
-    if (subcallback)
-        subcallback(pPattern);
+    FontConfigFontOptions::cairo_font_options_substitute(pPattern);
     FcDefaultSubstitute(pPattern);
 
     FcResult eResult = FcResultNoMatch;
@@ -1209,9 +1227,9 @@ FontConfigFontOptions* PrintFontManager::getFontOptions(
         if( eAntialias == FcResultMatch )
             pOptions->meAntiAlias = antialias ? ANTIALIAS_TRUE : ANTIALIAS_FALSE;
         if( eAutoHint == FcResultMatch )
-            pOptions->meAutoHint = autohint ? AUTOHINT_TRUE : AUTOHINT_FALSE;
+            pOptions->meAutoHint = autohint ? FontAutoHint::Yes : FontAutoHint::No;
         if( eHinting == FcResultMatch )
-            pOptions->meHinting = hinting ? HINTING_TRUE : HINTING_FALSE;
+            pOptions->meHinting = hinting ? FontHinting::Yes : FontHinting::No;
         switch (hintstyle)
         {
             case FC_HINT_NONE:   pOptions->meHintStyle = FontHintStyle::NONE; break;

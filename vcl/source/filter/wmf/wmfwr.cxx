@@ -142,12 +142,12 @@ WMFWriter::WMFWriter()
     , nMetafileHeaderPos(0)
     , nMaxRecordSize(0)
     , nActRecordPos(0)
-    , eSrcRasterOp(ROP_OVERPAINT)
+    , eSrcRasterOp(RasterOp::OverPaint)
     , eSrcTextAlign(ALIGN_BASELINE)
     , bSrcIsClipping(false)
     , pAttrStack(nullptr)
     , eSrcHorTextAlign(W_TA_LEFT)
-    , eDstROP2(ROP_OVERPAINT)
+    , eDstROP2(RasterOp::OverPaint)
     , eDstTextAlign(ALIGN_BASELINE)
     , eDstHorTextAlign(W_TA_LEFT)
     , bDstIsClipping(false)
@@ -375,7 +375,7 @@ void WMFWriter::WMFRecord_CreatePenIndirect(const Color& rColor, const LineInfo&
     sal_uInt16 nStyle = rColor == Color( COL_TRANSPARENT ) ? W_PS_NULL : W_PS_SOLID;
     switch( rLineInfo.GetStyle() )
     {
-        case LINE_DASH :
+        case LineStyle::Dash :
         {
             if ( rLineInfo.GetDotCount() )
             {
@@ -393,7 +393,7 @@ void WMFWriter::WMFRecord_CreatePenIndirect(const Color& rColor, const LineInfo&
                 nStyle = W_PS_DASH;
         }
         break;
-        case LINE_NONE :
+        case LineStyle::NONE :
             nStyle = W_PS_NULL;
         break;
         default:
@@ -435,7 +435,7 @@ void WMFWriter::WMFRecord_Escape( sal_uInt32 nEsc, sal_uInt32 nLen, const sal_In
          .WriteUInt32( 0xa2c2a )        // evil magic number
          .WriteUInt32( nCheckSum )      // crc32 checksum about nEsc & pData
          .WriteUInt32( nEsc );          // escape number
-    pWMF->Write( pData, nLen );
+    pWMF->WriteBytes( pData, nLen );
     if ( nLen & 1 )
         pWMF->WriteUChar( 0 );          // pad byte
 }
@@ -723,9 +723,9 @@ void WMFWriter::WMFRecord_SetROP2(RasterOp eROP)
     sal_uInt16 nROP2;
 
     switch (eROP) {
-        case ROP_INVERT: nROP2=W_R2_NOT;        break;
-        case ROP_XOR:    nROP2=W_R2_XORPEN;     break;
-        default:         nROP2=W_R2_COPYPEN;
+        case RasterOp::Invert: nROP2=W_R2_NOT;        break;
+        case RasterOp::Xor:    nROP2=W_R2_XORPEN;     break;
+        default:               nROP2=W_R2_COPYPEN;
     }
     WriteRecordHeader(0x00000004,W_META_SETROP2);
     pWMF->WriteUInt16( nROP2 );
@@ -797,9 +797,9 @@ void WMFWriter::WMFRecord_StretchDIB( const Point & rPoint, const Size & rSize,
     {
         switch( eSrcRasterOp )
         {
-            case ROP_INVERT: nROP = W_DSTINVERT; break;
-            case ROP_XOR:    nROP = W_SRCINVERT; break;
-            default:         nROP = W_SRCCOPY;
+            case RasterOp::Invert: nROP = W_DSTINVERT; break;
+            case RasterOp::Xor:    nROP = W_SRCINVERT; break;
+            default:               nROP = W_SRCCOPY;
         }
     }
 
@@ -836,11 +836,6 @@ void WMFWriter::TrueTextOut(const Point & rPoint, const OString& rString)
     if ((nLen&1)!=0) pWMF->WriteUChar( 0 );
     WritePointYX(rPoint);
     UpdateRecordHeader();
-}
-
-void WMFWriter::WMFRecord_EndOfFile()
-{
-    WriteRecordHeader(0x00000003,0x0000);
 }
 
 void WMFWriter::WMFRecord_IntersectClipRect( const Rectangle& rRect )
@@ -954,7 +949,7 @@ void WMFWriter::SetAllAttr()
         pVirDev->SetFont(aSrcFont);
         if ( aDstFont.GetFamilyName() != aSrcFont.GetFamilyName() )
         {
-            FontCharMapPtr xFontCharMap;
+            FontCharMapRef xFontCharMap;
             if ( pVirDev->GetFontCharMap( xFontCharMap ) )
             {
                 if ( ( xFontCharMap->GetFirstChar() & 0xff00 ) == 0xf000 )
@@ -1400,7 +1395,7 @@ void WMFWriter::WriteRecords( const GDIMetaFile & rMTF )
 
                     if (aSrcMapMode!=pA->GetMapMode())
                     {
-                        if( pA->GetMapMode().GetMapUnit() == MAP_RELATIVE )
+                        if( pA->GetMapMode().GetMapUnit() == MapUnit::MapRelative )
                         {
                             MapMode aMM = pA->GetMapMode();
                             Fraction aScaleX = aMM.GetScaleX();
@@ -1596,49 +1591,27 @@ void WMFWriter::WriteRecords( const GDIMetaFile & rMTF )
 
                 case( MetaActionType::LAYOUTMODE ):
                 {
-                    ComplexTextLayoutMode nLayoutMode = static_cast<const MetaLayoutModeAction*>(pMA)->GetLayoutMode();
+                    ComplexTextLayoutFlags nLayoutMode = static_cast<const MetaLayoutModeAction*>(pMA)->GetLayoutMode();
                     eSrcHorTextAlign = 0; // TA_LEFT
-                    if ((nLayoutMode & TEXT_LAYOUT_BIDI_RTL) != TEXT_LAYOUT_DEFAULT)
+                    if ((nLayoutMode & ComplexTextLayoutFlags::BiDiRtl) != ComplexTextLayoutFlags::Default)
                     {
                         eSrcHorTextAlign = W_TA_RIGHT | W_TA_RTLREADING;
                     }
-                    if ((nLayoutMode & TEXT_LAYOUT_TEXTORIGIN_RIGHT) != TEXT_LAYOUT_DEFAULT)
+                    if ((nLayoutMode & ComplexTextLayoutFlags::TextOriginRight) != ComplexTextLayoutFlags::Default)
                         eSrcHorTextAlign |= W_TA_RIGHT;
-                    else if ((nLayoutMode & TEXT_LAYOUT_TEXTORIGIN_LEFT) != TEXT_LAYOUT_DEFAULT)
+                    else if ((nLayoutMode & ComplexTextLayoutFlags::TextOriginLeft) != ComplexTextLayoutFlags::Default)
                         eSrcHorTextAlign &= ~W_TA_RIGHT;
                     break;
                 }
 
-                // Unsupported Actions
-                case MetaActionType::MASK:
-                case MetaActionType::MASKSCALE:
-                case MetaActionType::MASKSCALEPART:
-                {
-                    OSL_FAIL( "Unsupported action: MetaMask...Action!" );
-                }
-                break;
-
                 case MetaActionType::CLIPREGION:
-                break;
-
-                case MetaActionType::ISECTREGIONCLIPREGION:
-                {
-                    OSL_FAIL( "Unsupported action: MetaISectRegionClipRegionAction!" );
-                }
-                break;
-
-                case MetaActionType::MOVECLIPREGION:
-                {
-                    OSL_FAIL( "Unsupported action: MetaMoveClipRegionAction!" );
-                }
+                case MetaActionType::TEXTLANGUAGE:
+                case MetaActionType::COMMENT:
+                    // Explicitly ignored cases
                 break;
 
                 default:
-                {
-                    OSL_FAIL(OStringBuffer(
-                        "WMFWriter::WriteRecords: unsupported MetaAction #" ).
-                         append(static_cast<sal_Int32>(pMA->GetType())).getStr());
-                }
+                    // TODO: Implement more cases as necessary. Let's not bother with a warning.
                 break;
           }
 
@@ -1659,7 +1632,7 @@ void WMFWriter::WriteHeader( const GDIMetaFile &, bool bPlaceable )
     if( bPlaceable )
     {
         sal_uInt16  nCheckSum, nValue;
-        Size    aSize( OutputDevice::LogicToLogic(Size(1,1),MapMode(MAP_INCH), aTargetMapMode) );
+        Size    aSize( OutputDevice::LogicToLogic(Size(1,1),MapMode(MapUnit::MapInch), aTargetMapMode) );
         sal_uInt16  nUnitsPerInch = (sal_uInt16) ( ( aSize.Width() + aSize.Height() ) >> 1 );
 
         nCheckSum=0;
@@ -1743,7 +1716,7 @@ bool WMFWriter::WriteWMF( const GDIMetaFile& rMTF, SvStream& rTargetStream,
     }
     else
     {
-        aTargetMapMode = MapMode( MAP_INCH );
+        aTargetMapMode = MapMode( MapUnit::MapInch );
 
         const long      nUnit = pVirDev->LogicToPixel( Size( 1, 1 ), aTargetMapMode ).Width();
         const Fraction  aFrac( 1, nUnit );
@@ -1779,7 +1752,7 @@ bool WMFWriter::WriteWMF( const GDIMetaFile& rMTF, SvStream& rTargetStream,
     WMFRecord_SetWindowExt(rMTF.GetPrefSize());
     WMFRecord_SetBkMode( true );
 
-    eDstROP2 = eSrcRasterOp = ROP_OVERPAINT;
+    eDstROP2 = eSrcRasterOp = RasterOp::OverPaint;
     WMFRecord_SetROP2(eDstROP2);
 
     aDstLineInfo = LineInfo();
@@ -1809,7 +1782,7 @@ bool WMFWriter::WriteWMF( const GDIMetaFile& rMTF, SvStream& rTargetStream,
     // Write records
     WriteRecords(rMTF);
 
-    WMFRecord_EndOfFile();
+    WriteRecordHeader(0x00000003,0x0000); // end of file
     UpdateHeader();
 
     while(pAttrStack)
@@ -1858,7 +1831,7 @@ void WMFWriter::WriteEmbeddedEMF( const GDIMetaFile& rMTF )
 
     if( aEMFWriter.WriteEMF( rMTF ) )
     {
-        sal_Size nTotalSize = aStream.Tell();
+        sal_uInt64 const nTotalSize = aStream.Tell();
         if( nTotalSize > SAL_MAX_UINT32 )
             return;
         aStream.Seek( 0 );
@@ -1919,7 +1892,7 @@ void WMFWriter::WriteEMFRecord( SvMemoryStream& rStream, sal_uInt32 nCurSize, sa
          .WriteUInt32( nRemainingSize )                 // remaining size of data in following records, missing in MSDN documentation
          .WriteUInt32( nTotalSize );                    // total size of EMF stream
 
-   pWMF->Write( static_cast< const sal_Char* >( rStream.GetData() ) + rStream.Tell(), nCurSize );
+   pWMF->WriteBytes(static_cast<const sal_Char*>(rStream.GetData()) + rStream.Tell(), nCurSize);
    rStream.SeekRel( nCurSize );
    UpdateRecordHeader();
 }

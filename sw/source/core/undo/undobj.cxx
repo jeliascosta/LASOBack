@@ -40,6 +40,7 @@
 #include <undo.hrc>
 #include <comcore.hrc>
 #include <docsh.hxx>
+#include <view.hxx>
 #include <o3tl/make_unique.hxx>
 
 // This class saves the Pam as integers and can recompose those into a PaM
@@ -83,7 +84,7 @@ void SwUndRng::SetPaM( SwPaM & rPam, bool bCorrToContent ) const
     if( rNd.IsContentNode() )
         rPam.GetPoint()->nContent.Assign( rNd.GetContentNode(), nSttContent );
     else if( bCorrToContent )
-        rPam.Move( fnMoveForward, fnGoContent );
+        rPam.Move( fnMoveForward, GoInContent );
     else
         rPam.GetPoint()->nContent.Assign( nullptr, 0 );
 
@@ -98,7 +99,7 @@ void SwUndRng::SetPaM( SwPaM & rPam, bool bCorrToContent ) const
     if( rPam.GetNode().IsContentNode() )
         rPam.GetPoint()->nContent.Assign( rPam.GetNode().GetContentNode(), nEndContent );
     else if( bCorrToContent )
-        rPam.Move( fnMoveBackward, fnGoContent );
+        rPam.Move( fnMoveBackward, GoInContent );
     else
         rPam.GetPoint()->nContent.Assign( nullptr, 0 );
 }
@@ -156,10 +157,24 @@ void SwUndo::RemoveIdxRel( sal_uLong nIdx, const SwPosition& rPos )
     ::PaMCorrRel( aIdx, rPos );
 }
 
-SwUndo::SwUndo(SwUndoId const nId)
-    : m_nId(nId), nOrigRedlineMode(nsRedlineMode_t::REDLINE_NONE),
+SwUndo::SwUndo(SwUndoId const nId, const SwDoc* pDoc)
+    : m_nId(nId), nOrigRedlineFlags(RedlineFlags::NONE),
+      m_nViewShellId(CreateViewShellId(pDoc)),
       bCacheComment(true), pComment(nullptr)
 {
+}
+
+sal_Int32 SwUndo::CreateViewShellId(const SwDoc* pDoc)
+{
+    sal_Int32 nRet = -1;
+
+    if (const SwDocShell* pDocShell = pDoc->GetDocShell())
+    {
+        if (const SwView* pView = pDocShell->GetView())
+            nRet = pView->GetViewShellId();
+    }
+
+    return nRet;
 }
 
 bool SwUndo::IsDelBox() const
@@ -178,25 +193,22 @@ class UndoRedoRedlineGuard
 public:
     UndoRedoRedlineGuard(::sw::UndoRedoContext & rContext, SwUndo & rUndo)
         : m_rRedlineAccess(rContext.GetDoc().getIDocumentRedlineAccess())
-        , m_eMode(m_rRedlineAccess.GetRedlineMode())
+        , m_eMode(m_rRedlineAccess.GetRedlineFlags())
     {
-        RedlineMode_t const eTmpMode =
-            static_cast<RedlineMode_t>(rUndo.GetRedlineMode());
-        if ((nsRedlineMode_t::REDLINE_SHOW_MASK & eTmpMode) !=
-            (nsRedlineMode_t::REDLINE_SHOW_MASK & m_eMode))
+        RedlineFlags const eTmpMode = rUndo.GetRedlineFlags();
+        if ((RedlineFlags::ShowMask & eTmpMode) != (RedlineFlags::ShowMask & m_eMode))
         {
-            m_rRedlineAccess.SetRedlineMode( eTmpMode );
+            m_rRedlineAccess.SetRedlineFlags( eTmpMode );
         }
-        m_rRedlineAccess.SetRedlineMode_intern( static_cast<RedlineMode_t>(
-                eTmpMode | nsRedlineMode_t::REDLINE_IGNORE) );
+        m_rRedlineAccess.SetRedlineFlags_intern( eTmpMode | RedlineFlags::Ignore );
     }
     ~UndoRedoRedlineGuard()
     {
-        m_rRedlineAccess.SetRedlineMode(m_eMode);
+        m_rRedlineAccess.SetRedlineFlags(m_eMode);
     }
 private:
     IDocumentRedlineAccess & m_rRedlineAccess;
-    RedlineMode_t const m_eMode;
+    RedlineFlags const m_eMode;
 };
 
 void SwUndo::Undo()
@@ -237,19 +249,13 @@ void SwUndo::Repeat(SfxRepeatTarget & rContext)
 
 bool SwUndo::CanRepeat(SfxRepeatTarget & rContext) const
 {
-    ::sw::RepeatContext *const pRepeatContext(
-            dynamic_cast< ::sw::RepeatContext * >(& rContext));
-    assert(pRepeatContext);
-    return CanRepeatImpl(*pRepeatContext);
+    assert(dynamic_cast< ::sw::RepeatContext * >(& rContext));
+    (void)rContext;
+    return (REPEAT_START <= GetId()) && (GetId() < REPEAT_END);
 }
 
 void SwUndo::RepeatImpl( ::sw::RepeatContext & )
 {
-}
-
-bool SwUndo::CanRepeatImpl( ::sw::RepeatContext & ) const
-{
-    return ((REPEAT_START <= GetId()) && (GetId() < REPEAT_END));
 }
 
 OUString SwUndo::GetComment() const
@@ -279,6 +285,11 @@ OUString SwUndo::GetComment() const
     }
 
     return aResult;
+}
+
+sal_Int32 SwUndo::GetViewShellId() const
+{
+    return m_nViewShellId;
 }
 
 SwRewriter SwUndo::GetRewriter() const
@@ -622,7 +633,7 @@ void SwUndoSaveContent::DelContentIndex( const SwPosition& rMark,
                         if( !pHistory )
                             pHistory = new SwHistory;
                         if (IsDestroyFrameAnchoredAtChar(
-                                *pAPos, *pStt, *pEnd, pDoc, nDelContentType))
+                                *pAPos, *pStt, *pEnd, nDelContentType))
                         {
                             pHistory->Add( *static_cast<SwFlyFrameFormat *>(pFormat), nChainInsPos );
                             n = n >= rSpzArr.size() ? rSpzArr.size() : n+1;
@@ -967,8 +978,8 @@ void SwRedlineSaveData::RedlineToDoc( SwPaM& rPam )
     // content will be deleted and not the one you originally wanted.
     rDoc.getIDocumentRedlineAccess().DeleteRedline( *pRedl, false, USHRT_MAX );
 
-    RedlineMode_t eOld = rDoc.getIDocumentRedlineAccess().GetRedlineMode();
-    rDoc.getIDocumentRedlineAccess().SetRedlineMode_intern((RedlineMode_t)(eOld | nsRedlineMode_t::REDLINE_DONTCOMBINE_REDLINES));
+    RedlineFlags eOld = rDoc.getIDocumentRedlineAccess().GetRedlineFlags();
+    rDoc.getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld | RedlineFlags::DontCombineRedlines );
     //#i92154# let UI know about a new redline with comment
     if (rDoc.GetDocShell() && (!pRedl->GetComment().isEmpty()) )
         rDoc.GetDocShell()->Broadcast(SwRedlineHint());
@@ -976,7 +987,7 @@ void SwRedlineSaveData::RedlineToDoc( SwPaM& rPam )
     bool const bSuccess = rDoc.getIDocumentRedlineAccess().AppendRedline( pRedl, true );
     assert(bSuccess); // SwRedlineSaveData::RedlineToDoc: insert redline failed
     (void) bSuccess; // unused in non-debug
-    rDoc.getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+    rDoc.getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
 }
 
 bool SwUndo::FillSaveData(
@@ -1046,8 +1057,8 @@ bool SwUndo::FillSaveDataForFormat(
 
 void SwUndo::SetSaveData( SwDoc& rDoc, SwRedlineSaveDatas& rSData )
 {
-    RedlineMode_t eOld = rDoc.getIDocumentRedlineAccess().GetRedlineMode();
-    rDoc.getIDocumentRedlineAccess().SetRedlineMode_intern( (RedlineMode_t)(( eOld & ~nsRedlineMode_t::REDLINE_IGNORE) | nsRedlineMode_t::REDLINE_ON ));
+    RedlineFlags eOld = rDoc.getIDocumentRedlineAccess().GetRedlineFlags();
+    rDoc.getIDocumentRedlineAccess().SetRedlineFlags_intern( ( eOld & ~RedlineFlags::Ignore) | RedlineFlags::On );
     SwPaM aPam( rDoc.GetNodes().GetEndOfContent() );
 
     for( size_t n = rSData.size(); n; )
@@ -1060,7 +1071,7 @@ void SwUndo::SetSaveData( SwDoc& rDoc, SwRedlineSaveDatas& rSData )
             // "redline count not restored properly"
 #endif
 
-    rDoc.getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+    rDoc.getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
 }
 
 bool SwUndo::HasHiddenRedlines( const SwRedlineSaveDatas& rSData )
@@ -1123,27 +1134,14 @@ OUString ShortenString(const OUString & rStr, sal_Int32 nLength, const OUString 
 }
 
 bool IsDestroyFrameAnchoredAtChar(SwPosition const & rAnchorPos,
-        SwPosition const & rStart, SwPosition const & rEnd, const SwDoc* doc,
+        SwPosition const & rStart, SwPosition const & rEnd,
         DelContentType const nDelContentType)
 {
-    bool inSelection = rAnchorPos < rEnd;
-    if( rAnchorPos == rEnd )
-    {
-        const SwNodes& nodes = doc->GetNodes();
-        if( rEnd == SwPosition( nodes.GetEndOfContent()))
-            inSelection = true;
-        else
-        {
-            SwNodeIndex idx( nodes.GetEndOfContent());
-         if( SwContentNode* last = SwNodes::GoPrevious( &idx ))
-            inSelection = rEnd == SwPosition( *last, last->Len());
-        }
-    }
     // Here we identified the objects to destroy:
     // - anchored between start and end of the selection
     // - anchored in start of the selection with "CheckNoContent"
     // - anchored in start of sel. and the selection start at pos 0
-    return  inSelection
+    return  (rAnchorPos.nNode < rEnd.nNode)
          && (   (nsDelContentType::DELCNT_CHKNOCNTNT & nDelContentType)
             ||  (rStart.nNode < rAnchorPos.nNode)
             ||  !rStart.nContent.GetIndex()

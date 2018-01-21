@@ -36,6 +36,7 @@
 #include "SlideSorterViewShell.hxx"
 #include "FrameView.hxx"
 #include "facreg.hxx"
+#include "Window.hxx"
 
 #include <sfx2/viewfrm.hxx>
 #include <vcl/wrkwin.hxx>
@@ -110,7 +111,7 @@ void SAL_CALL BasicViewFactory::disposing()
         mpFrameView = nullptr;
     }
 
-    // Relase the view cache.
+    // Release the view cache.
     ViewShellContainer::const_iterator iView;
     for (iView=mpViewCache->begin(); iView!=mpViewCache->end(); ++iView)
     {
@@ -226,7 +227,7 @@ void SAL_CALL BasicViewFactory::releaseResource (const Reference<XResource>& rxV
                     pSfxViewShell->DisconnectAllClients();
             }
 
-            ReleaseView(*iViewShell);
+            ReleaseView(*iViewShell, false);
 
             mpViewShellContainer->erase(iViewShell);
         }
@@ -339,8 +340,9 @@ std::shared_ptr<ViewShell> BasicViewFactory::CreateViewShell (
                 &rFrame,
                 *mpBase,
                 &rWindow,
-                PK_STANDARD,
+                PageKind::Standard,
                 pFrameView));
+        pViewShell->GetContentWindow()->set_id("impress_win");
     }
     else if (rsViewURL.equals(FrameworkHelper::msDrawViewURL))
     {
@@ -350,6 +352,7 @@ std::shared_ptr<ViewShell> BasicViewFactory::CreateViewShell (
                 *mpBase,
                 &rWindow,
                 pFrameView));
+        pViewShell->GetContentWindow()->set_id("draw_win");
     }
     else if (rsViewURL.equals(FrameworkHelper::msOutlineViewURL))
     {
@@ -359,6 +362,7 @@ std::shared_ptr<ViewShell> BasicViewFactory::CreateViewShell (
                 *mpBase,
                 &rWindow,
                 pFrameView));
+        pViewShell->GetContentWindow()->set_id("outline_win");
     }
     else if (rsViewURL.equals(FrameworkHelper::msNotesViewURL))
     {
@@ -367,8 +371,9 @@ std::shared_ptr<ViewShell> BasicViewFactory::CreateViewShell (
                 &rFrame,
                 *mpBase,
                 &rWindow,
-                PK_NOTES,
+                PageKind::Notes,
                 pFrameView));
+        pViewShell->GetContentWindow()->set_id("notes_win");
     }
     else if (rsViewURL.equals(FrameworkHelper::msHandoutViewURL))
     {
@@ -377,8 +382,9 @@ std::shared_ptr<ViewShell> BasicViewFactory::CreateViewShell (
                 &rFrame,
                 *mpBase,
                 &rWindow,
-                PK_HANDOUT,
+                PageKind::Handout,
                 pFrameView));
+        pViewShell->GetContentWindow()->set_id("handout_win");
     }
     else if (rsViewURL.equals(FrameworkHelper::msPresentationViewURL))
     {
@@ -388,6 +394,7 @@ std::shared_ptr<ViewShell> BasicViewFactory::CreateViewShell (
                 *mpBase,
                 &rWindow,
                 pFrameView));
+        pViewShell->GetContentWindow()->set_id("presentation_win");
     }
     else if (rsViewURL.equals(FrameworkHelper::msSlideSorterURL))
     {
@@ -397,6 +404,7 @@ std::shared_ptr<ViewShell> BasicViewFactory::CreateViewShell (
             &rWindow,
             pFrameView,
             bIsCenterPane);
+        pViewShell->GetContentWindow()->set_id("slidesorter");
     }
 
     return pViewShell;

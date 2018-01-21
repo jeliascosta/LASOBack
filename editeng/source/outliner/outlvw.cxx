@@ -468,19 +468,18 @@ void OutlinerView::Indent( short nDiff )
             {
                             // Notify App
                 pOwner->nDepthChangedHdlPrevDepth = nOldDepth;
-                pOwner->mnDepthChangeHdlPrevFlags = pPara->nFlags;
-                pOwner->pHdlParagraph = pPara;
+                ParaFlag nPrevFlags = pPara->nFlags;
 
                 if( bPage )
                     pPara->RemoveFlag( ParaFlag::ISPAGE );
                 else
                     pPara->SetFlag( ParaFlag::ISPAGE );
 
-                pOwner->DepthChangedHdl();
+                pOwner->DepthChangedHdl(pPara, nPrevFlags);
                 pOwner->pEditEngine->QuickMarkInvalid( ESelection( nPara, 0, nPara, 0 ) );
 
                 if( bUndo )
-                    pOwner->InsertUndo( new OutlinerUndoChangeParaFlags( pOwner, nPara, pOwner->mnDepthChangeHdlPrevFlags, pPara->nFlags ) );
+                    pOwner->InsertUndo( new OutlinerUndoChangeParaFlags( pOwner, nPara, nPrevFlags, pPara->nFlags ) );
 
                 continue;
             }
@@ -532,8 +531,7 @@ void OutlinerView::Indent( short nDiff )
             }
 
             pOwner->nDepthChangedHdlPrevDepth = nOldDepth;
-            pOwner->mnDepthChangeHdlPrevFlags = pPara->nFlags;
-            pOwner->pHdlParagraph = pPara;
+            ParaFlag nPrevFlags = pPara->nFlags;
 
             pOwner->ImplInitDepth( nPara, nNewDepth, true );
             pOwner->ImplCalcBulletText( nPara, false, false );
@@ -542,7 +540,7 @@ void OutlinerView::Indent( short nDiff )
                 pOwner->ImplSetLevelDependendStyleSheet( nPara );
 
             // Notify App
-            pOwner->DepthChangedHdl();
+            pOwner->DepthChangedHdl(pPara, nPrevFlags);
         }
         else
         {
@@ -816,7 +814,6 @@ sal_Int32 OutlinerView::ImpCalcSelectedPages( bool bIncludeFirstSelected )
     if( nPages )
     {
         pOwner->nDepthChangedHdlPrevDepth = nPages;
-        pOwner->pHdlParagraph = nullptr;
         pOwner->mnFirstSelPage = nFirstPage;
     }
 
@@ -881,7 +878,7 @@ void OutlinerView::ToggleBullets()
                     {
                         SfxItemSet aAttrs( pOwner->GetParaAttribs( nPara ) );
                         SvxNumRule aNewNumRule( *pDefaultBulletNumRule );
-                        aAttrs.Put( SvxNumBulletItem( aNewNumRule ), EE_PARA_NUMBULLET );
+                        aAttrs.Put( SvxNumBulletItem( aNewNumRule, EE_PARA_NUMBULLET ) );
                         pOwner->SetParaAttribs( nPara, aAttrs );
                     }
                 }
@@ -1089,7 +1086,7 @@ void OutlinerView::ApplyBulletsNumbering(
                         }
                     }
 
-                    aAttrs.Put(SvxNumBulletItem(aNewRule), EE_PARA_NUMBULLET);
+                    aAttrs.Put(SvxNumBulletItem(aNewRule, EE_PARA_NUMBULLET));
                 }
             }
             pOwner->SetParaAttribs(nPara, aAttrs);
@@ -1229,14 +1226,14 @@ bool OutlinerView::HasSelection() const
     return pEditView->HasSelection();
 }
 
-void OutlinerView::ShowCursor( bool bGotoCursor )
+void OutlinerView::ShowCursor( bool bGotoCursor, bool bActivate )
 {
-    pEditView->ShowCursor( bGotoCursor );
+    pEditView->ShowCursor( bGotoCursor, /*bForceVisCursor=*/true, bActivate );
 }
 
-void OutlinerView::HideCursor()
+void OutlinerView::HideCursor(bool bDeactivate)
 {
-    pEditView->HideCursor();
+    pEditView->HideCursor(bDeactivate);
 }
 
 void OutlinerView::SetWindow( vcl::Window* pWin )
@@ -1421,9 +1418,9 @@ void OutlinerView::SetBackgroundColor( const Color& rColor )
     pEditView->SetBackgroundColor( rColor );
 }
 
-void OutlinerView::registerLibreOfficeKitCallback(OutlinerSearchable* pSearchable)
+void OutlinerView::RegisterViewShell(OutlinerViewShell* pViewShell)
 {
-    pEditView->registerLibreOfficeKitCallback(pSearchable);
+    pEditView->RegisterViewShell(pViewShell);
 }
 
 Color OutlinerView::GetBackgroundColor()
@@ -1449,10 +1446,6 @@ OUString OutlinerView::GetSurroundingText() const
 Selection OutlinerView::GetSurroundingTextSelection() const
 {
     return pEditView->GetSurroundingTextSelection();
-}
-
-OutlinerSearchable::~OutlinerSearchable()
-{
 }
 
 // ===== some code for thesaurus sub menu within context menu

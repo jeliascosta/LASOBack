@@ -68,7 +68,7 @@ typedef cppu::ImplHelper13  <   css::container::XChild
 
 class ODatabaseSource;
 // OConnection
-class OConnection           :public ::comphelper::OBaseMutex
+class OConnection           :public ::cppu::BaseMutex
                             ,public OSubComponent
                             ,public ::connectivity::OConnectionWrapper
                             ,public OConnection_Base
@@ -104,7 +104,7 @@ protected:
     bool                            m_bSupportsGroups;
 
 protected:
-    virtual ~OConnection();
+    virtual ~OConnection() override;
 public:
     OConnection(ODatabaseSource& _rDB
                 ,css::uno::Reference< css::sdbc::XConnection >& _rxMaster
@@ -203,7 +203,7 @@ protected:
             throw css::lang::DisposedException();
     }
 
-    css::uno::Reference< css::sdbcx::XTablesSupplier > getMasterTables();
+    css::uno::Reference< css::sdbcx::XTablesSupplier > const & getMasterTables();
 
 private:
     /** checks whether or not there are naming conflicts between tables and queries

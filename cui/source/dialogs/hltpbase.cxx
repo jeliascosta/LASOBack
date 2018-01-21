@@ -97,23 +97,6 @@ sal_Int8 SvxHyperURLBox::ExecuteDrop( const ExecuteDropEvent& rEvt )
     return nRet;
 }
 
-void SvxHyperURLBox::Select()
-{
-    SvtURLBox::Select();
-}
-void SvxHyperURLBox::Modify()
-{
-    SvtURLBox::Modify();
-}
-bool SvxHyperURLBox::Notify( NotifyEvent& rNEvt )
-{
-    return SvtURLBox::Notify( rNEvt );
-}
-bool SvxHyperURLBox::PreNotify( NotifyEvent& rNEvt )
-{
-    return SvtURLBox::PreNotify( rNEvt );
-}
-
 //# Hyperlink-Dialog: Tabpages-Baseclass                                 #
 
 SvxHyperlinkTabPageBase::SvxHyperlinkTabPageBase ( vcl::Window *pParent,
@@ -156,16 +139,6 @@ void SvxHyperlinkTabPageBase::dispose()
     IconChoicePage::dispose();
 }
 
-void SvxHyperlinkTabPageBase::ActivatePage()
-{
-    TabPage::ActivatePage();
-}
-
-void SvxHyperlinkTabPageBase::DeactivatePage()
-{
-    TabPage::DeactivatePage();
-}
-
 bool SvxHyperlinkTabPageBase::QueryClose()
 {
     return !mbIsCloseDisabled;
@@ -179,7 +152,7 @@ void SvxHyperlinkTabPageBase::InitStdControls ()
 
         SfxDispatcher* pDispatch = GetDispatcher();
         SfxViewFrame* pViewFrame = pDispatch ? pDispatch->GetFrame() : nullptr;
-        SfxFrame* pFrame = pViewFrame ? &pViewFrame->GetTopFrame() : nullptr;
+        SfxFrame* pFrame = pViewFrame ? &pViewFrame->GetFrame() : nullptr;
         if ( pFrame )
         {
             std::unique_ptr<TargetList> pList(new TargetList);
@@ -326,12 +299,6 @@ void SvxHyperlinkTabPageBase::SetInitFocus()
     GrabFocus();
 }
 
-// Ask dialog whether the current doc is a HTML-doc
-bool SvxHyperlinkTabPageBase::IsHTMLDoc() const
-{
-    return static_cast<SvxHpLinkDlg*>(mpDialog.get())->IsHTMLDoc();
-}
-
 // retrieve dispatcher
 SfxDispatcher* SvxHyperlinkTabPageBase::GetDispatcher() const
 {
@@ -339,7 +306,7 @@ SfxDispatcher* SvxHyperlinkTabPageBase::GetDispatcher() const
 }
 
 // Click on imagebutton : Script
-IMPL_LINK_NOARG_TYPED(SvxHyperlinkTabPageBase, ClickScriptHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxHyperlinkTabPageBase, ClickScriptHdl_Impl, Button*, void)
 {
     SvxHyperlinkItem *pHyperlinkItem = const_cast<SvxHyperlinkItem*>(static_cast<const SvxHyperlinkItem *>(
                                        GetItemSet().GetItem (SID_HYPERLINK_GETLINK)));
@@ -348,7 +315,7 @@ IMPL_LINK_NOARG_TYPED(SvxHyperlinkTabPageBase, ClickScriptHdl_Impl, Button*, voi
     {
         // get macros from itemset
         const SvxMacroTableDtor* pMacroTbl = pHyperlinkItem->GetMacroTable();
-        SvxMacroItem aItem ( GetWhich(SID_ATTR_MACROITEM) );
+        SvxMacroItem aItem ( SID_ATTR_MACROITEM );
         if( pMacroTbl )
             aItem.SetMacroTable( *pMacroTbl );
 
@@ -356,7 +323,7 @@ IMPL_LINK_NOARG_TYPED(SvxHyperlinkTabPageBase, ClickScriptHdl_Impl, Button*, voi
         SfxItemSet* pItemSet = new SfxItemSet(SfxGetpApp()->GetPool(),
                                               SID_ATTR_MACROITEM,
                                               SID_ATTR_MACROITEM );
-        pItemSet->Put ( aItem, SID_ATTR_MACROITEM );
+        pItemSet->Put ( aItem );
 
         /*  disable HyperLinkDlg for input while the MacroAssignDlg is working
             because if no JAVA is installed an error box occurs and then it is possible
@@ -459,7 +426,8 @@ void SvxHyperlinkTabPageBase::GetDataFromCommonFields( OUString& aStrName,
     aStrName    = mpEdIndication->GetText();
     aStrFrame   = mpCbbFrame->GetText();
     eMode       = (SvxLinkInsertMode) (mpLbForm->GetSelectEntryPos()+1);
-    if( IsHTMLDoc() )
+    // Ask dialog whether the current doc is a HTML-doc
+    if (static_cast<SvxHpLinkDlg*>(mpDialog.get())->IsHTMLDoc())
         eMode = (SvxLinkInsertMode) ( sal_uInt16(eMode) | HLINK_HTMLMODE );
 }
 
@@ -525,7 +493,7 @@ void SvxHyperlinkTabPageBase::ActivatePage( const SfxItemSet& rItemSet )
         ShowMarkWnd ();
 }
 
-int SvxHyperlinkTabPageBase::DeactivatePage( SfxItemSet* _pSet)
+DeactivateRC SvxHyperlinkTabPageBase::DeactivatePage( SfxItemSet* _pSet)
 {
     // hide mark-wnd
     SetMarkWndShouldOpen( IsMarkWndVisible () );
@@ -547,7 +515,7 @@ int SvxHyperlinkTabPageBase::DeactivatePage( SfxItemSet* _pSet)
         _pSet->Put( aItem );
     }
 
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 bool SvxHyperlinkTabPageBase::ShouldOpenMarkWnd()

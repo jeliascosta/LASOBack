@@ -42,6 +42,8 @@
 #include "svx/dlgutil.hxx"
 #include <svx/dialmgr.hxx>
 #include <svx/dialogs.hrc>
+#include <o3tl/make_unique.hxx>
+#include "cuitabarea.hxx"
 
 #define XOUT_WIDTH    150
 
@@ -191,7 +193,7 @@ void SvxLineDefTabPage::ActivatePage( const SfxItemSet& )
         // ActivatePage() is called before the dialog receives PageCreated() !!!
         if( pDashList.is() )
         {
-            if( *pPageType == 1 &&
+            if( *pPageType == PageType::Gradient &&
                 *pPosDashLb != LISTBOX_ENTRY_NOTFOUND )
             {
                 m_pLbLineStyles->SelectEntryPos( *pPosDashLb );
@@ -208,21 +210,21 @@ void SvxLineDefTabPage::ActivatePage( const SfxItemSet& )
             aURL.Append( pDashList->GetName() );
             DBG_ASSERT( aURL.GetProtocol() != INetProtocol::NotValid, "invalid URL" );
 
-            *pPageType = 0; // 2
+            *pPageType = PageType::Area; // 2
             *pPosDashLb = LISTBOX_ENTRY_NOTFOUND;
         }
     }
 }
 
 
-SfxTabPage::sfxpg SvxLineDefTabPage::DeactivatePage( SfxItemSet* _pSet )
+DeactivateRC SvxLineDefTabPage::DeactivatePage( SfxItemSet* _pSet )
 {
     CheckChanges_Impl();
 
     if( _pSet )
         FillItemSet( _pSet );
 
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 
@@ -283,7 +285,7 @@ bool SvxLineDefTabPage::FillItemSet( SfxItemSet* rAttrs )
 {
     if( nDlgType == 0 ) // line dialog
     {
-        if( *pPageType == 2 )
+        if( *pPageType == PageType::Hatch )
         {
             FillDash_Impl();
 
@@ -347,7 +349,7 @@ VclPtr<SfxTabPage> SvxLineDefTabPage::Create( vcl::Window* pWindow, const SfxIte
 }
 
 
-IMPL_LINK_TYPED( SvxLineDefTabPage, SelectLinestyleListBoxHdl_Impl, ListBox&, rListBox, void )
+IMPL_LINK( SvxLineDefTabPage, SelectLinestyleListBoxHdl_Impl, ListBox&, rListBox, void )
 {
     SelectLinestyleHdl_Impl(&rListBox);
 }
@@ -379,18 +381,18 @@ void SvxLineDefTabPage::SelectLinestyleHdl_Impl(ListBox* p)
         // only if there was an entry selected in the ListBox.
         // If it was called via Reset(), then p is == NULL
         if( p )
-            *pPageType = 2;
+            *pPageType = PageType::Hatch;
     }
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ChangePreviewHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG(SvxLineDefTabPage, ChangePreviewHdl_Impl, Edit&, void)
 {
     FillDash_Impl();
     m_pCtlPreview->Invalidate();
 }
 
-IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ChangeNumber1Hdl_Impl, Edit&, void)
+IMPL_LINK_NOARG(SvxLineDefTabPage, ChangeNumber1Hdl_Impl, Edit&, void)
 {
     if( m_pNumFldNumber1->GetValue() == 0L )
     {
@@ -407,7 +409,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ChangeNumber1Hdl_Impl, Edit&, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ChangeNumber2Hdl_Impl, Edit&, void)
+IMPL_LINK_NOARG(SvxLineDefTabPage, ChangeNumber2Hdl_Impl, Edit&, void)
 {
     if( m_pNumFldNumber2->GetValue() == 0L )
     {
@@ -424,7 +426,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ChangeNumber2Hdl_Impl, Edit&, void)
 }
 
 
-IMPL_LINK_TYPED( SvxLineDefTabPage, ChangeMetricHdl_Impl, Button*, p, void )
+IMPL_LINK( SvxLineDefTabPage, ChangeMetricHdl_Impl, Button*, p, void )
 {
     if( !m_pCbxSynchronize->IsChecked() && m_pMtrLength1->GetUnit() != eFUnit )
     {
@@ -491,7 +493,7 @@ IMPL_LINK_TYPED( SvxLineDefTabPage, ChangeMetricHdl_Impl, Button*, p, void )
 }
 
 
-IMPL_LINK_TYPED( SvxLineDefTabPage, SelectTypeListBoxHdl_Impl, ListBox&, rListBox, void )
+IMPL_LINK( SvxLineDefTabPage, SelectTypeListBoxHdl_Impl, ListBox&, rListBox, void )
 {
     SelectTypeHdl_Impl(&rListBox);
 }
@@ -529,13 +531,12 @@ void  SvxLineDefTabPage::SelectTypeHdl_Impl(ListBox* p)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ClickAddHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxLineDefTabPage, ClickAddHdl_Impl, Button*, void)
 {
     ResMgr& rMgr = CUI_MGR();
     OUString aNewName( SVX_RES( RID_SVXSTR_LINESTYLE ) );
     OUString aDesc( ResId( RID_SVXSTR_DESC_LINESTYLE, rMgr ) );
     OUString aName;
-    XDashEntry* pEntry;
 
     long nCount = pDashList->Count();
     long j = 1;
@@ -543,9 +544,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ClickAddHdl_Impl, Button*, void)
 
     while ( !bDifferent )
     {
-        aName = aNewName;
-        aName += " ";
-        aName += OUString::number( j++ );
+        aName = aNewName + " " + OUString::number( j++ );
         bDifferent = true;
 
         for ( long i = 0; i < nCount && bDifferent; i++ )
@@ -555,7 +554,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ClickAddHdl_Impl, Button*, void)
 
     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
     DBG_ASSERT(pFact, "Dialog creation failed!");
-    std::unique_ptr<AbstractSvxNameDialog> pDlg(pFact->CreateSvxNameDialog( GetParentDialog(), aName, aDesc ));
+    ScopedVclPtr<AbstractSvxNameDialog> pDlg(pFact->CreateSvxNameDialog( GetParentDialog(), aName, aDesc ));
     DBG_ASSERT(pDlg, "Dialog creation failed!");
     bool bLoop = true;
 
@@ -575,18 +574,15 @@ IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ClickAddHdl_Impl, Button*, void)
             bLoop = false;
             FillDash_Impl();
 
-            pEntry = new XDashEntry( aDash, aName );
-
             long nDashCount = pDashList->Count();
-            pDashList->Insert( pEntry, nDashCount );
-            const Bitmap aBitmap = pDashList->GetUiBitmap( nDashCount );
-            m_pLbLineStyles->Append( *pEntry, pDashList->GetUiBitmap( nDashCount ) );
+            pDashList->Insert( o3tl::make_unique<XDashEntry>(aDash, aName), nDashCount );
+            m_pLbLineStyles->Append( *pDashList->GetDash(nDashCount), pDashList->GetUiBitmap(nDashCount) );
 
             m_pLbLineStyles->SelectEntryPos( m_pLbLineStyles->GetEntryCount() - 1 );
 
             *pnDashListState |= ChangeType::MODIFIED;
 
-            *pPageType = 2;
+            *pPageType = PageType::Hatch;
 
             // save values for changes recognition (-> method)
             m_pNumFldNumber1->SaveValue();
@@ -605,7 +601,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ClickAddHdl_Impl, Button*, void)
             aBox->Execute();
         }
     }
-    pDlg.reset();
+    pDlg.disposeAndClear();
 
     // determine button state
     if ( pDashList->Count() )
@@ -617,7 +613,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ClickAddHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ClickModifyHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxLineDefTabPage, ClickModifyHdl_Impl, Button*, void)
 {
     sal_Int32 nPos = m_pLbLineStyles->GetSelectEntryPos();
 
@@ -630,7 +626,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ClickModifyHdl_Impl, Button*, void)
 
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
         DBG_ASSERT(pFact, "Dialog creation failed!");
-        std::unique_ptr<AbstractSvxNameDialog> pDlg(pFact->CreateSvxNameDialog( GetParentDialog(), aName, aDesc ));
+        ScopedVclPtr<AbstractSvxNameDialog> pDlg(pFact->CreateSvxNameDialog( GetParentDialog(), aName, aDesc ));
         DBG_ASSERT(pDlg, "Dialog creation failed!");
 
         long nCount = pDashList->Count();
@@ -653,16 +649,14 @@ IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ClickModifyHdl_Impl, Button*, void)
                 bLoop = false;
                 FillDash_Impl();
 
-                XDashEntry* pEntry = new XDashEntry( aDash, aName );
-
-                delete pDashList->Replace( pEntry, nPos );
-                m_pLbLineStyles->Modify( *pEntry, nPos, pDashList->GetUiBitmap( nPos ) );
+                pDashList->Replace(o3tl::make_unique<XDashEntry>(aDash, aName), nPos);
+                m_pLbLineStyles->Modify(*pDashList->GetDash(nPos), nPos, pDashList->GetUiBitmap(nPos));
 
                 m_pLbLineStyles->SelectEntryPos( nPos );
 
                 *pnDashListState |= ChangeType::MODIFIED;
 
-                *pPageType = 2;
+                *pPageType = PageType::Hatch;
 
                 // save values for changes recognition (-> method)
                 m_pNumFldNumber1->SaveValue();
@@ -685,7 +679,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ClickModifyHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ClickDeleteHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxLineDefTabPage, ClickDeleteHdl_Impl, Button*, void)
 {
     sal_Int32 nPos = m_pLbLineStyles->GetSelectEntryPos();
 
@@ -697,12 +691,12 @@ IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ClickDeleteHdl_Impl, Button*, void)
 
         if ( aQueryBox->Execute() == RET_YES )
         {
-            delete pDashList->Remove( nPos );
+            pDashList->Remove(nPos);
             m_pLbLineStyles->RemoveEntry( nPos );
             m_pLbLineStyles->SelectEntryPos( 0 );
 
             SelectLinestyleHdl_Impl( nullptr );
-            *pPageType = 0; // style should not be taken
+            *pPageType = PageType::Area; // style should not be taken
 
             *pnDashListState |= ChangeType::MODIFIED;
 
@@ -720,7 +714,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ClickDeleteHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ClickLoadHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxLineDefTabPage, ClickLoadHdl_Impl, Button*, void)
 {
     sal_uInt16 nReturn = RET_YES;
 
@@ -759,7 +753,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ClickLoadHdl_Impl, Button*, void)
             aPathURL.removeSegment();
             aPathURL.removeFinalSlash();
 
-            XDashListRef pDshLst = XPropertyList::AsDashList(XPropertyList::CreatePropertyList( XDASH_LIST, aPathURL.GetMainURL( INetURLObject::NO_DECODE ), "" ));
+            XDashListRef pDshLst = XPropertyList::AsDashList(XPropertyList::CreatePropertyList( XPropertyListType::Dash, aPathURL.GetMainURL( INetURLObject::NO_DECODE ), "" ));
             pDshLst->SetName( aURL.getName() );
 
             if( pDshLst->Load() )
@@ -800,7 +794,7 @@ IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ClickLoadHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxLineDefTabPage, ClickSaveHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxLineDefTabPage, ClickSaveHdl_Impl, Button*, void)
 {
     ::sfx2::FileDialogHelper aDlg( css::ui::dialogs::TemplateDescription::FILESAVE_SIMPLE );
     OUString aStrFilterType( "*.sod" );

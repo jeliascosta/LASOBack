@@ -20,7 +20,6 @@
 #ifndef INCLUDED_FORMULA_SOURCE_UI_DLG_FUNCPAGE_HXX
 #define INCLUDED_FORMULA_SOURCE_UI_DLG_FUNCPAGE_HXX
 
-#include <svtools/stdctrl.hxx>
 #include <vcl/lstbox.hxx>
 #include <vcl/group.hxx>
 #include <svtools/svmedit.hxx>
@@ -64,6 +63,7 @@ private:
     Link<FuncPage&,void>     aSelectionLink;
     VclPtr<ListBox>          m_pLbCategory;
     VclPtr<FormulaListBox>   m_pLbFunction;
+    VclPtr<Edit>             m_plbFunctionSearchString;
     const IFunctionManager*  m_pFunctionManager;
 
     ::std::vector< TFunctionDesc >  aLRUList;
@@ -71,19 +71,19 @@ private:
 
 
     void impl_addFunctions(const IFunctionCategory* _pCategory);
-                    DECL_LINK_TYPED( SelHdl, ListBox&, void );
-                    DECL_LINK_TYPED(DblClkHdl, ListBox&, void);
+                    DECL_LINK( SelHdl, ListBox&, void );
+                    DECL_LINK(DblClkHdl, ListBox&, void);
+                    DECL_LINK(ModifyHdl, Edit&, void);
 
 protected:
 
-    void            UpdateFunctionList();
-    void            InitLRUList();
+    void            UpdateFunctionList(const OUString&);
 
 
 public:
 
                     FuncPage( vcl::Window* pParent,const IFunctionManager* _pFunctionManager);
-    virtual         ~FuncPage();
+    virtual         ~FuncPage() override;
     virtual void    dispose() override;
 
     void            SetCategory(sal_Int32  nCat);

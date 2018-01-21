@@ -78,10 +78,21 @@ DragSourceHelper::DragSourceHelper( vcl::Window* pWindow ) :
 }
 
 
+void DragSourceHelper::dispose()
+{
+    Reference<XDragGestureRecognizer> xTmp;
+    {
+        osl::MutexGuard aGuard( maMutex );
+        xTmp = mxDragGestureRecognizer;
+        mxDragGestureRecognizer.clear();
+    }
+    if( xTmp.is()  )
+        xTmp->removeDragGestureListener( mxDragGestureListener );
+}
+
 DragSourceHelper::~DragSourceHelper()
 {
-    if( mxDragGestureRecognizer.is()  )
-        mxDragGestureRecognizer->removeDragGestureListener( mxDragGestureListener );
+    dispose();
 }
 
 
@@ -240,11 +251,21 @@ DropTargetHelper::DropTargetHelper( const Reference< XDropTarget >& rxDropTarget
 }
 
 
+void DropTargetHelper::dispose()
+{
+    Reference< XDropTarget >  xTmp;
+    {
+        osl::MutexGuard aGuard( maMutex );
+        xTmp = mxDropTarget;
+        mxDropTarget.clear();
+    }
+    if( xTmp.is() )
+        xTmp->removeDropTargetListener( mxDropTargetListener );
+}
+
 DropTargetHelper::~DropTargetHelper()
 {
-    if( mxDropTarget.is() )
-        mxDropTarget->removeDropTargetListener( mxDropTargetListener );
-
+    dispose();
     delete mpFormats;
 }
 
@@ -344,7 +365,6 @@ TransferDataContainer::TransferDataContainer()
 
 TransferDataContainer::~TransferDataContainer()
 {
-    delete pImpl;
 }
 
 
@@ -463,7 +483,7 @@ void TransferDataContainer::CopyImageMap( const ImageMap& rImgMap )
 void TransferDataContainer::CopyGraphic( const Graphic& rGrf )
 {
     GraphicType nType = rGrf.GetType();
-    if( GRAPHIC_NONE != nType )
+    if( GraphicType::NONE != nType )
     {
         if( !pImpl->pGrf )
             pImpl->pGrf = new Graphic( rGrf );
@@ -472,12 +492,12 @@ void TransferDataContainer::CopyGraphic( const Graphic& rGrf )
 
         AddFormat( SotClipboardFormatId::SVXB );
 
-        if( GRAPHIC_BITMAP == nType )
+        if( GraphicType::Bitmap == nType )
         {
             AddFormat( SotClipboardFormatId::PNG );
             AddFormat( SotClipboardFormatId::BITMAP );
         }
-        else if( GRAPHIC_GDIMETAFILE == nType )
+        else if( GraphicType::GdiMetafile == nType )
         {
             AddFormat( SotClipboardFormatId::GDIMETAFILE );
         }

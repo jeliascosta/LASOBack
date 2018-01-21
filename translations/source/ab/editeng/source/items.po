@@ -3,16 +3,17 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2014-11-18 11:23+0100\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"POT-Creation-Date: 2015-04-22 23:41+0200\n"
+"PO-Revision-Date: 2017-08-09 07:35+0000\n"
+"Last-Translator: Андрей Абухба <aabuchba@mail.ru>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: ab\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: LibreOffice\n"
 "X-Accelerator-Marker: ~\n"
+"X-Generator: Pootle 2.8\n"
+"X-POOTLE-MTIME: 1502264159.000000\n"
 
 #: page.src
 msgctxt ""
@@ -36,7 +37,7 @@ msgctxt ""
 "RID_SVXITEMS_TRUE\n"
 "string.text"
 msgid "True"
-msgstr ""
+msgstr "Аиаша"
 
 #: svxitems.src
 msgctxt ""
@@ -44,7 +45,7 @@ msgctxt ""
 "RID_SVXITEMS_FALSE\n"
 "string.text"
 msgid "False"
-msgstr ""
+msgstr "Амц"
 
 #: svxitems.src
 msgctxt ""
@@ -148,7 +149,7 @@ msgctxt ""
 "RID_SVXITEMS_COLOR\n"
 "string.text"
 msgid "Color "
-msgstr ""
+msgstr "Аҧштәы"
 
 #: svxitems.src
 msgctxt ""
@@ -156,7 +157,7 @@ msgctxt ""
 "RID_SVXITEMS_COLOR_BLACK\n"
 "string.text"
 msgid "Black"
-msgstr ""
+msgstr "Аиқәаҵәа"
 
 #: svxitems.src
 msgctxt ""
@@ -172,7 +173,7 @@ msgctxt ""
 "RID_SVXITEMS_COLOR_GREEN\n"
 "string.text"
 msgid "Green"
-msgstr ""
+msgstr "Аиаҵәа"
 
 #: svxitems.src
 msgctxt ""
@@ -188,7 +189,7 @@ msgctxt ""
 "RID_SVXITEMS_COLOR_RED\n"
 "string.text"
 msgid "Red"
-msgstr ""
+msgstr "Аҟаҧшь"
 
 #: svxitems.src
 msgctxt ""
@@ -268,7 +269,7 @@ msgctxt ""
 "RID_SVXITEMS_COLOR_YELLOW\n"
 "string.text"
 msgid "Yellow"
-msgstr ""
+msgstr "Аҩежь"
 
 #: svxitems.src
 msgctxt ""
@@ -276,7 +277,7 @@ msgctxt ""
 "RID_SVXITEMS_COLOR_WHITE\n"
 "string.text"
 msgid "White"
-msgstr ""
+msgstr "Ашкәакәа"
 
 #: svxitems.src
 msgctxt ""
@@ -284,7 +285,7 @@ msgctxt ""
 "RID_SVXITEMS_ITALIC_NONE\n"
 "string.text"
 msgid "Not Italic"
-msgstr ""
+msgstr "Курсивда"
 
 #: svxitems.src
 msgctxt ""
@@ -292,7 +293,7 @@ msgctxt ""
 "RID_SVXITEMS_ITALIC_OBLIQUE\n"
 "string.text"
 msgid "Oblique italic"
-msgstr ""
+msgstr "Ихынаау акурсив"
 
 #: svxitems.src
 msgctxt ""
@@ -300,7 +301,7 @@ msgctxt ""
 "RID_SVXITEMS_ITALIC_NORMAL\n"
 "string.text"
 msgid "Italic"
-msgstr ""
+msgstr "Акурсив"
 
 #: svxitems.src
 msgctxt ""
@@ -324,7 +325,7 @@ msgctxt ""
 "RID_SVXITEMS_WEIGHT_LIGHT\n"
 "string.text"
 msgid "light"
-msgstr ""
+msgstr "Ипоу"
 
 #: svxitems.src
 msgctxt ""
@@ -348,7 +349,7 @@ msgctxt ""
 "RID_SVXITEMS_WEIGHT_MEDIUM\n"
 "string.text"
 msgid "medium"
-msgstr ""
+msgstr "ибжьаратәу"
 
 #: svxitems.src
 msgctxt ""
@@ -388,7 +389,7 @@ msgctxt ""
 "RID_SVXITEMS_UL_NONE\n"
 "string.text"
 msgid "No underline"
-msgstr ""
+msgstr "Аҵшьрада"
 
 #: svxitems.src
 msgctxt ""
@@ -396,7 +397,7 @@ msgctxt ""
 "RID_SVXITEMS_UL_SINGLE\n"
 "string.text"
 msgid "Single underline"
-msgstr ""
+msgstr "Зныктәи аҵшьра"
 
 #: svxitems.src
 msgctxt ""
@@ -404,7 +405,7 @@ msgctxt ""
 "RID_SVXITEMS_UL_DOUBLE\n"
 "string.text"
 msgid "Double underline"
-msgstr ""
+msgstr "Ҩынтәны аҵшьра "
 
 #: svxitems.src
 msgctxt ""
@@ -412,7 +413,7 @@ msgctxt ""
 "RID_SVXITEMS_UL_DOTTED\n"
 "string.text"
 msgid "Dotted underline"
-msgstr ""
+msgstr "Акәаҧлатәи аҵшьра"
 
 #: svxitems.src
 msgctxt ""
@@ -420,7 +421,7 @@ msgctxt ""
 "RID_SVXITEMS_UL_DONTKNOW\n"
 "string.text"
 msgid "Underline"
-msgstr ""
+msgstr "Аҵшьра"
 
 #: svxitems.src
 msgctxt ""
@@ -460,7 +461,7 @@ msgctxt ""
 "RID_SVXITEMS_UL_SMALLWAVE\n"
 "string.text"
 msgid "Underline (small wave)"
-msgstr ""
+msgstr "Аҵшьра (имаҷу ацәқәырҧа)"
 
 #: svxitems.src
 msgctxt ""
@@ -468,7 +469,7 @@ msgctxt ""
 "RID_SVXITEMS_UL_WAVE\n"
 "string.text"
 msgid "Underline (Wave)"
-msgstr ""
+msgstr "Аҵшьра (ацәқәырҧа)"
 
 #: svxitems.src
 msgctxt ""
@@ -476,7 +477,7 @@ msgctxt ""
 "RID_SVXITEMS_UL_DOUBLEWAVE\n"
 "string.text"
 msgid "Underline (Double wave)"
-msgstr ""
+msgstr "Аҵшьра (иҩынтәу ацәқәырҧа)"
 
 #: svxitems.src
 msgctxt ""
@@ -484,7 +485,7 @@ msgctxt ""
 "RID_SVXITEMS_UL_BOLD\n"
 "string.text"
 msgid "Underlined (Bold)"
-msgstr ""
+msgstr "Аҵшьра ижәпаны"
 
 #: svxitems.src
 msgctxt ""
@@ -492,7 +493,7 @@ msgctxt ""
 "RID_SVXITEMS_UL_BOLDDOTTED\n"
 "string.text"
 msgid "Dotted underline (Bold)"
-msgstr ""
+msgstr "Аҵшьра ижәпаны кәуаҧла"
 
 #: svxitems.src
 msgctxt ""
@@ -540,7 +541,7 @@ msgctxt ""
 "RID_SVXITEMS_OL_NONE\n"
 "string.text"
 msgid "No overline"
-msgstr ""
+msgstr "Ақәшьрада"
 
 #: svxitems.src
 msgctxt ""
@@ -564,7 +565,7 @@ msgctxt ""
 "RID_SVXITEMS_OL_DOTTED\n"
 "string.text"
 msgid "Dotted overline"
-msgstr ""
+msgstr "Акәаҧлатәи ақәшьра"
 
 #: svxitems.src
 msgctxt ""
@@ -572,7 +573,7 @@ msgctxt ""
 "RID_SVXITEMS_OL_DONTKNOW\n"
 "string.text"
 msgid "Overline"
-msgstr ""
+msgstr "Ақәшьра"
 
 #: svxitems.src
 msgctxt ""
@@ -620,7 +621,7 @@ msgctxt ""
 "RID_SVXITEMS_OL_WAVE\n"
 "string.text"
 msgid "Overline (Wave)"
-msgstr ""
+msgstr "Ақәшьра (ацәқәырҧа)"
 
 #: svxitems.src
 msgctxt ""
@@ -628,7 +629,7 @@ msgctxt ""
 "RID_SVXITEMS_OL_DOUBLEWAVE\n"
 "string.text"
 msgid "Overline (Double wave)"
-msgstr ""
+msgstr "Ақәшьра (иҩынтәу ацәқәырҧа)"
 
 #: svxitems.src
 msgctxt ""
@@ -636,7 +637,7 @@ msgctxt ""
 "RID_SVXITEMS_OL_BOLD\n"
 "string.text"
 msgid "Overlined (Bold)"
-msgstr ""
+msgstr "Ақәшьра ижәпаны"
 
 #: svxitems.src
 msgctxt ""
@@ -644,7 +645,7 @@ msgctxt ""
 "RID_SVXITEMS_OL_BOLDDOTTED\n"
 "string.text"
 msgid "Dotted overline (Bold)"
-msgstr ""
+msgstr "Ақәшьра ижәпаны кәаҧла"
 
 #: svxitems.src
 msgctxt ""
@@ -860,7 +861,7 @@ msgctxt ""
 "RID_SVXITEMS_TAB_FILL_CHAR\n"
 "string.text"
 msgid "Fill character:"
-msgstr ""
+msgstr "Ахарҭәаага:"
 
 #: svxitems.src
 msgctxt ""
@@ -1116,7 +1117,7 @@ msgctxt ""
 "RID_SVXITEMS_BLINK_TRUE\n"
 "string.text"
 msgid "Blinking"
-msgstr ""
+msgstr "Алацәҟәра"
 
 #: svxitems.src
 msgctxt ""
@@ -1124,7 +1125,7 @@ msgctxt ""
 "RID_SVXITEMS_BLINK_FALSE\n"
 "string.text"
 msgid "Not Blinking"
-msgstr ""
+msgstr "Имлацәҟәуа"
 
 #: svxitems.src
 msgctxt ""
@@ -1164,7 +1165,7 @@ msgctxt ""
 "RID_SVXITEMS_CONTOUR_TRUE\n"
 "string.text"
 msgid "Outline"
-msgstr ""
+msgstr "Аконтур"
 
 #: svxitems.src
 msgctxt ""
@@ -1172,7 +1173,7 @@ msgctxt ""
 "RID_SVXITEMS_CONTOUR_FALSE\n"
 "string.text"
 msgid "No Outline"
-msgstr ""
+msgstr "Аконтур ада"
 
 #: svxitems.src
 msgctxt ""
@@ -1324,7 +1325,7 @@ msgctxt ""
 "RID_SVXITEMS_PAGE_END_TRUE\n"
 "string.text"
 msgid "Page End"
-msgstr ""
+msgstr "Адаҟьа анҵәамҭа"
 
 #: svxitems.src
 msgctxt ""
@@ -1364,7 +1365,7 @@ msgctxt ""
 "RID_SVXITEMS_LRSPACE_FLINE\n"
 "string.text"
 msgid "First Line "
-msgstr ""
+msgstr "Актәи ацәаҳәа "
 
 #: svxitems.src
 msgctxt ""
@@ -1461,7 +1462,7 @@ msgctxt ""
 "RID_SVXITEMS_LINES\n"
 "string.text"
 msgid "%1 Lines"
-msgstr ""
+msgstr "Ацәаҳәақәа: %1"
 
 #: svxitems.src
 msgctxt ""
@@ -1485,7 +1486,7 @@ msgctxt ""
 "RID_SVXITEMS_HYPHEN_MINLEAD\n"
 "string.text"
 msgid "%1 characters at end of line"
-msgstr ""
+msgstr "%1 символ ацәаҳәа анҵәамҭаҿ"
 
 #: svxitems.src
 msgctxt ""
@@ -1493,7 +1494,7 @@ msgctxt ""
 "RID_SVXITEMS_HYPHEN_MINTRAIL\n"
 "string.text"
 msgid "%1 characters at beginning of line"
-msgstr ""
+msgstr "%1 символ ацәаҳәа алагамҭаҿ"
 
 #: svxitems.src
 msgctxt ""
@@ -1509,7 +1510,7 @@ msgctxt ""
 "RID_SVXITEMS_PAGEMODEL_COMPLETE\n"
 "string.text"
 msgid "Page Style: "
-msgstr ""
+msgstr "Адаҟьа астиль:"
 
 #: svxitems.src
 msgctxt ""
@@ -1685,7 +1686,7 @@ msgctxt ""
 "RID_SVXITEMS_CHARROTATE_FITLINE\n"
 "string.text"
 msgid "Fit to line"
-msgstr ""
+msgstr "Иҭагӡатәуп ацәаҳәа"
 
 #: svxitems.src
 msgctxt ""
@@ -1741,7 +1742,7 @@ msgctxt ""
 "RID_SVXITEMS_PARAVERTALIGN_BASELINE\n"
 "string.text"
 msgid "Text aligned to base line"
-msgstr ""
+msgstr "Ихадоу аҵәаӷәала атеқст аиҟаратәра"
 
 #: svxitems.src
 msgctxt ""
@@ -1773,7 +1774,7 @@ msgctxt ""
 "RID_SVXITEMS_FRMDIR_HORI_LEFT_TOP\n"
 "string.text"
 msgid "Text direction left-to-right (horizontal)"
-msgstr ""
+msgstr "Атеқст ахырхарҭа: армарахьтә-арӷьарахь (горизонталла)"
 
 #: svxitems.src
 msgctxt ""
@@ -1781,7 +1782,7 @@ msgctxt ""
 "RID_SVXITEMS_FRMDIR_HORI_RIGHT_TOP\n"
 "string.text"
 msgid "Text direction right-to-left (horizontal)"
-msgstr ""
+msgstr "Атеқст ахырхарҭа: арӷьарахьтә-армарахь (горизонталла)"
 
 #: svxitems.src
 msgctxt ""
@@ -1789,7 +1790,7 @@ msgctxt ""
 "RID_SVXITEMS_FRMDIR_VERT_TOP_RIGHT\n"
 "string.text"
 msgid "Text direction right-to-left (vertical)"
-msgstr ""
+msgstr "Атеқст ахырхарҭа: арӷьарахьтә-армарахь (вертикалла)"
 
 #: svxitems.src
 msgctxt ""
@@ -1797,7 +1798,7 @@ msgctxt ""
 "RID_SVXITEMS_FRMDIR_VERT_TOP_LEFT\n"
 "string.text"
 msgid "Text direction left-to-right (vertical)"
-msgstr ""
+msgstr "Атеқст ахырхарҭа: армарахьтә-арӷьарахь (вертикалла)"
 
 #: svxitems.src
 msgctxt ""

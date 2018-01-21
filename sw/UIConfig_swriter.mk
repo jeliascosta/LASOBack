@@ -36,6 +36,7 @@ $(eval $(call gb_UIConfig_add_statusbarfiles,modules/swriter,\
 
 $(eval $(call gb_UIConfig_add_toolbarfiles,modules/swriter,\
 	sw/uiconfig/swriter/toolbar/alignmentbar \
+	sw/uiconfig/swriter/toolbar/arrowsbar \
 	sw/uiconfig/swriter/toolbar/arrowshapes \
 	sw/uiconfig/swriter/toolbar/basicshapes \
 	sw/uiconfig/swriter/toolbar/bezierobjectbar \
@@ -145,6 +146,7 @@ $(eval $(call gb_UIConfig_add_uifiles,modules/swriter,\
 	sw/uiconfig/swriter/ui/frmaddpage \
 	sw/uiconfig/swriter/ui/frmtypepage \
 	sw/uiconfig/swriter/ui/frmurlpage \
+	sw/uiconfig/swriter/ui/gotopagedialog \
 	sw/uiconfig/swriter/ui/indexentry \
 	sw/uiconfig/swriter/ui/inputfielddialog \
 	sw/uiconfig/swriter/ui/indentpage \
@@ -202,7 +204,14 @@ $(eval $(call gb_UIConfig_add_uifiles,modules/swriter,\
 	sw/uiconfig/swriter/ui/mmselectpage \
 	sw/uiconfig/swriter/ui/mmsendmails \
 	sw/uiconfig/swriter/ui/mmsalutationpage \
+	sw/uiconfig/swriter/ui/navigatorpanel \
 	sw/uiconfig/swriter/ui/notebookbar \
+	sw/uiconfig/swriter/ui/notebookbar_groups \
+	sw/uiconfig/swriter/ui/notebookbar_single \
+	sw/uiconfig/swriter/ui/pagecolumncontrol \
+	sw/uiconfig/swriter/ui/pagemargincontrol \
+	sw/uiconfig/swriter/ui/pageorientationcontrol \
+	sw/uiconfig/swriter/ui/pagesizecontrol \
 	sw/uiconfig/swriter/ui/paradialog \
 	sw/uiconfig/swriter/ui/picturedialog \
 	sw/uiconfig/swriter/ui/picturepage \
@@ -225,6 +234,10 @@ $(eval $(call gb_UIConfig_add_uifiles,modules/swriter,\
 	sw/uiconfig/swriter/ui/selectindexdialog \
 	sw/uiconfig/swriter/ui/selecttabledialog \
 	sw/uiconfig/swriter/ui/sidebarpage \
+	sw/uiconfig/swriter/ui/pageformatpanel \
+	sw/uiconfig/swriter/ui/pagestylespanel \
+	sw/uiconfig/swriter/ui/pageheaderpanel \
+	sw/uiconfig/swriter/ui/pagefooterpanel \
 	sw/uiconfig/swriter/ui/sidebarwrap \
 	sw/uiconfig/swriter/ui/sidebarstylepresets \
     sw/uiconfig/swriter/ui/sidebartheme \

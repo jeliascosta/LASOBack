@@ -212,8 +212,8 @@ private:
     void*   pData;
 
 public:
-    VclWindowEvent( vcl::Window* pWin, sal_uLong n, void* pDat = nullptr );
-    virtual ~VclWindowEvent();
+    VclWindowEvent( vcl::Window* pWin, sal_uLong n, void* pDat );
+    virtual ~VclWindowEvent() override;
 
     vcl::Window* GetWindow() const { return pWindow; }
     void*   GetData() const { return pData; }
@@ -222,14 +222,17 @@ public:
 class VCL_DLLPUBLIC VclMenuEvent : public VclSimpleEvent
 {
 private:
-    Menu* pMenu;
+    VclPtr<Menu> pMenu;
     sal_uInt16 mnPos;
 
-public:
-    VclMenuEvent( Menu* pM, sal_uLong n, sal_uInt16 nPos ) : VclSimpleEvent(n) { pMenu = pM; mnPos = nPos; }
-    virtual ~VclMenuEvent() {}
+    VclMenuEvent(VclMenuEvent &) = delete;
+    void operator =(VclMenuEvent) = delete;
 
-    Menu* GetMenu() const { return pMenu; }
+public:
+    VclMenuEvent( Menu* pM, sal_uLong n, sal_uInt16 nPos );
+    virtual ~VclMenuEvent() override;
+
+    Menu* GetMenu() const;
     sal_uInt16 GetItemPos() const { return mnPos; }
 };
 
@@ -237,7 +240,7 @@ class VCL_DLLPUBLIC VclAccessibleEvent: public VclSimpleEvent
 {
 public:
     VclAccessibleEvent( sal_uLong n, const css::uno::Reference< css::accessibility::XAccessible >& rxAccessible );
-    virtual ~VclAccessibleEvent();
+    virtual ~VclAccessibleEvent() override;
     const css::uno::Reference< css::accessibility::XAccessible >& GetAccessible() const { return mxAccessible;}
 
 private:

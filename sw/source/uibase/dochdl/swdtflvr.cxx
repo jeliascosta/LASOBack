@@ -145,6 +145,7 @@ extern bool g_bExecuteDrag;
 #define SWTRANSFER_OBJECTTYPE_STRING            static_cast<SotClipboardFormatId>(0x00000008)
 #define SWTRANSFER_OBJECTTYPE_SWOLE             static_cast<SotClipboardFormatId>(0x00000010)
 #define SWTRANSFER_OBJECTTYPE_DDE               static_cast<SotClipboardFormatId>(0x00000020)
+#define SWTRANSFER_OBJECTTYPE_RICHTEXT          static_cast<SotClipboardFormatId>(0x00000040)
 
 using namespace ::svx;
 using namespace ::com::sun::star;
@@ -169,7 +170,7 @@ class SwTrnsfrDdeLink : public ::sfx2::SvBaseLink
     using sfx2::SvBaseLink::Disconnect;
 
 protected:
-    virtual ~SwTrnsfrDdeLink();
+    virtual ~SwTrnsfrDdeLink() override;
 
 public:
     SwTrnsfrDdeLink( SwTransferable& rTrans, SwWrtShell& rSh );
@@ -190,11 +191,10 @@ class SwTrnsfrActionAndUndo
     SwUndoId eUndoId;
 public:
     SwTrnsfrActionAndUndo( SwWrtShell *pS, SwUndoId nId,
-                           const SwRewriter * pRewriter = nullptr,
                            bool bDelSel = false)
         : pSh( pS ), eUndoId( nId )
     {
-        pSh->StartUndo( eUndoId, pRewriter );
+        pSh->StartUndo( eUndoId );
         if( bDelSel )
             pSh->DelRight();
         pSh->StartAllAction();
@@ -243,7 +243,7 @@ SwTransferable::~SwTransferable()
     // the DDELink still needs the WrtShell!
     if( m_xDdeLink.Is() )
     {
-        static_cast<SwTrnsfrDdeLink*>(&m_xDdeLink)->Disconnect( true );
+        static_cast<SwTrnsfrDdeLink*>( m_xDdeLink.get() )->Disconnect( true );
         m_xDdeLink.Clear();
     }
 
@@ -523,7 +523,7 @@ bool SwTransferable::GetData( const DataFlavor& rFlavor, const OUString& rDestDo
         {
         case SotClipboardFormatId::LINK:
             if( m_xDdeLink.Is() )
-                bOK = SetObject( &m_xDdeLink, SWTRANSFER_OBJECTTYPE_DDE, rFlavor );
+                bOK = SetObject( m_xDdeLink.get(), SWTRANSFER_OBJECTTYPE_DDE, rFlavor );
             break;
 
         case SotClipboardFormatId::OBJECTDESCRIPTOR:
@@ -550,7 +550,13 @@ bool SwTransferable::GetData( const DataFlavor& rFlavor, const OUString& rDestDo
             SwDoc *const pDoc = lcl_GetDoc(*m_pClpDocFac);
             bOK = SetObject( pDoc, SWTRANSFER_OBJECTTYPE_RTF, rFlavor );
         }
-            break;
+        break;
+        case SotClipboardFormatId::RICHTEXT:
+        {
+            SwDoc *const pDoc = lcl_GetDoc(*m_pClpDocFac);
+            bOK = SetObject( pDoc, SWTRANSFER_OBJECTTYPE_RICHTEXT, rFlavor );
+        }
+        break;
 
         case SotClipboardFormatId::HTML:
         {
@@ -640,7 +646,7 @@ bool SwTransferable::WriteObject( tools::SvRef<SotStorageStream>& xStream,
             for(sal_uInt16 a(0); a < pModel->GetPageCount(); a++)
             {
                 const SdrPage* pPage = pModel->GetPage(a);
-                SdrObjListIter aIter(*pPage, IM_DEEPNOGROUPS);
+                SdrObjListIter aIter(*pPage, SdrIterMode::DeepNoGroups);
 
                 while(aIter.IsMore())
                 {
@@ -722,6 +728,7 @@ bool SwTransferable::WriteObject( tools::SvRef<SotStorageStream>& xStream,
         break;
 
     case SWTRANSFER_OBJECTTYPE_RTF:
+    case SWTRANSFER_OBJECTTYPE_RICHTEXT:
         GetRTFWriter( aEmptyOUStr, OUString(), xWrt );
         break;
 
@@ -836,7 +843,7 @@ int SwTransferable::PrepareForCopy( bool bIsCut )
 
         // --> OD #i98753#
         // set size of embedded object at the object description structure
-        m_aObjDesc.maSize = OutputDevice::LogicToLogic( m_pWrtShell->GetObjSize(), MAP_TWIP, MAP_100TH_MM );
+        m_aObjDesc.maSize = OutputDevice::LogicToLogic( m_pWrtShell->GetObjSize(), MapUnit::MapTwip, MapUnit::Map100thMM );
         // <--
         PrepareOLE( m_aObjDesc );
         AddFormat( SotClipboardFormatId::OBJECTDESCRIPTOR );
@@ -885,7 +892,7 @@ int SwTransferable::PrepareForCopy( bool bIsCut )
 
         {
             IDocumentMarkAccess* const pMarkAccess = pTmpDoc->getIDocumentMarkAccess();
-            ::std::vector< ::sw::mark::IMark* > vDdeMarks;
+            std::vector< ::sw::mark::IMark* > vDdeMarks;
             // find all DDE-Bookmarks
             for(IDocumentMarkAccess::const_iterator_t ppMark = pMarkAccess->getAllMarksBegin();
                 ppMark != pMarkAccess->getAllMarksEnd();
@@ -895,7 +902,7 @@ int SwTransferable::PrepareForCopy( bool bIsCut )
                     vDdeMarks.push_back(ppMark->get());
             }
             // remove all DDE-Bookmarks, they are invalid inside the clipdoc!
-            for(::std::vector< ::sw::mark::IMark* >::iterator ppMark = vDdeMarks.begin();
+            for(std::vector< ::sw::mark::IMark* >::iterator ppMark = vDdeMarks.begin();
                 ppMark != vDdeMarks.end();
                 ++ppMark)
                 pMarkAccess->deleteMark(*ppMark);
@@ -930,6 +937,7 @@ int SwTransferable::PrepareForCopy( bool bIsCut )
         if( !m_pWrtShell->IsObjSelected() )
         {
             AddFormat( SotClipboardFormatId::RTF );
+            AddFormat( SotClipboardFormatId::RICHTEXT );
             AddFormat( SotClipboardFormatId::HTML );
         }
         if( m_pWrtShell->IsSelection() )
@@ -982,9 +990,8 @@ int SwTransferable::PrepareForCopy( bool bIsCut )
         //ObjectDescriptor was already filly from the old DocShell.
         //Now adjust it. Thus in GetData the first query can still
         //be answered with delayed rendering.
-        m_aObjDesc.mbCanLink = false;
         Size aSz( OLESIZE );
-        m_aObjDesc.maSize = OutputDevice::LogicToLogic( aSz, MAP_TWIP, MAP_100TH_MM );
+        m_aObjDesc.maSize = OutputDevice::LogicToLogic( aSz, MapUnit::MapTwip, MapUnit::Map100thMM );
 
         PrepareOLE( m_aObjDesc );
         AddFormat( SotClipboardFormatId::OBJECTDESCRIPTOR );
@@ -1070,15 +1077,15 @@ int SwTransferable::CopyGlossary( SwTextBlocks& rGlossary, const OUString& rStr 
     //When someone needs it, we 'OLE' her something.
     AddFormat( SotClipboardFormatId::EMBED_SOURCE );
     AddFormat( SotClipboardFormatId::RTF );
+    AddFormat( SotClipboardFormatId::RICHTEXT );
     AddFormat( SotClipboardFormatId::HTML );
     AddFormat( SotClipboardFormatId::STRING );
 
     //ObjectDescriptor was already filled from the old DocShell.
     //Now adjust it. Thus in GetData the first query can still
     //be answered with delayed rendering.
-    m_aObjDesc.mbCanLink = false;
     Size aSz( OLESIZE );
-    m_aObjDesc.maSize = OutputDevice::LogicToLogic( aSz, MAP_TWIP, MAP_100TH_MM );
+    m_aObjDesc.maSize = OutputDevice::LogicToLogic( aSz, MapUnit::MapTwip, MapUnit::Map100thMM );
 
     PrepareOLE( m_aObjDesc );
     AddFormat( SotClipboardFormatId::OBJECTDESCRIPTOR );
@@ -1173,6 +1180,11 @@ bool SwTransferable::Paste(SwWrtShell& rSh, TransferableDataHelper& rData, sal_u
             nAction = EXCHG_OUT_ACTION_INSERT_STRING;
             nFormat = SotClipboardFormatId::RTF;
         }
+        else if( rData.HasFormat( SotClipboardFormatId::RICHTEXT ) )
+        {
+            nAction = EXCHG_OUT_ACTION_INSERT_STRING;
+            nFormat = SotClipboardFormatId::RICHTEXT;
+        }
     }
 
     return EXCHG_INOUT_ACTION_NONE != nAction &&
@@ -1245,8 +1257,7 @@ bool SwTransferable::PasteData( TransferableDataHelper& rData,
 
         if( bDelSel )
             // #i34830#
-            pAction.reset(new SwTrnsfrActionAndUndo( &rSh, UNDO_PASTE_CLIPBOARD, nullptr,
-                                                     true ));
+            pAction.reset(new SwTrnsfrActionAndUndo( &rSh, UNDO_PASTE_CLIPBOARD, true ));
     }
 
     SwTransferable *pTrans=nullptr, *pTunneledTrans=GetSwTransferable( rData );
@@ -1330,6 +1341,7 @@ bool SwTransferable::PasteData( TransferableDataHelper& rData,
             case SotClipboardFormatId::HTML_SIMPLE:
             case SotClipboardFormatId::HTML_NO_COMMENT:
             case SotClipboardFormatId::RTF:
+            case SotClipboardFormatId::RICHTEXT:
             case SotClipboardFormatId::STRING:
                 bRet = SwTransferable::PasteFileContent( rData, rSh,
                                                             nFormat, bMsg );
@@ -1663,8 +1675,8 @@ bool SwTransferable::PasteFileContent( TransferableDataHelper& rData,
             }
             else
             {
-                pStream = &xStrm;
-                if( SotClipboardFormatId::RTF == nFormat )
+                pStream = xStrm.get();
+                if( SotClipboardFormatId::RTF == nFormat || SotClipboardFormatId::RICHTEXT == nFormat)
                     pRead = SwReaderWriter::GetRtfReader();
                 else if( !pRead )
                 {
@@ -1705,7 +1717,7 @@ bool SwTransferable::PasteFileContent( TransferableDataHelper& rData,
 
     if( bMsg && nResId )
     {
-        ScopedVclPtrInstance<MessageDialog>( nullptr, SW_RES( nResId ), VCL_MESSAGE_INFO)->Execute();
+        ScopedVclPtrInstance<MessageDialog>(nullptr, SW_RES(nResId), VclMessageType::Info)->Execute();
     }
     return bRet;
 }
@@ -1779,7 +1791,7 @@ bool SwTransferable::PasteOLE( TransferableDataHelper& rData, SwWrtShell& rSh,
         if( !IsError( aReader.Read( *pRead )) )
             bRet = true;
         else if( bMsg )
-            ScopedVclPtrInstance<MessageDialog>( nullptr, SW_RES(STR_ERROR_CLPBRD_READ), VCL_MESSAGE_INFO )->Execute();
+            ScopedVclPtrInstance<MessageDialog>(nullptr, SW_RES(STR_ERROR_CLPBRD_READ), VclMessageType::Info)->Execute();
     }
     else
     {
@@ -1861,7 +1873,7 @@ bool SwTransferable::PasteOLE( TransferableDataHelper& rData, SwWrtShell& rSh,
                 // if no other graphic is provided
                 // TODO/LATER: in future a default bitmap could be used
                 OUString aMimeType;
-                MapMode aMapMode( MAP_100TH_MM );
+                MapMode aMapMode( MapUnit::Map100thMM );
                 aGraphic.SetPrefSize( Size( 2500, 2500 ) );
                 aGraphic.SetPrefMapMode( aMapMode );
                 xObjRef.SetGraphic( aGraphic, aMimeType );
@@ -1876,7 +1888,7 @@ bool SwTransferable::PasteOLE( TransferableDataHelper& rData, SwWrtShell& rSh,
                     aSize = aObjDesc.maSize;
                 else
                 {
-                    MapMode aMapMode( MAP_100TH_MM );
+                    MapMode aMapMode( MapUnit::Map100thMM );
                     aSize = xObjRef.GetSize( &aMapMode );
                 }
             }
@@ -1884,7 +1896,7 @@ bool SwTransferable::PasteOLE( TransferableDataHelper& rData, SwWrtShell& rSh,
             {
                 aSize = Size( aObjDesc.maSize );    //always 100TH_MM
                 MapUnit aUnit = VCLUnoHelper::UnoEmbed2VCLMapUnit( xObj->getMapUnit( aObjDesc.mnViewAspect ) );
-                aSize = OutputDevice::LogicToLogic( aSize, MAP_100TH_MM, aUnit );
+                aSize = OutputDevice::LogicToLogic( aSize, MapUnit::Map100thMM, aUnit );
                 awt::Size aSz;
                 try
                 {
@@ -2074,6 +2086,7 @@ bool SwTransferable::PasteDDE( TransferableDataHelper& rData,
     // do we want to read in a graphic now?
     SotClipboardFormatId nFormat;
     if( !rData.HasFormat( SotClipboardFormatId::RTF ) &&
+        !rData.HasFormat( SotClipboardFormatId::RICHTEXT ) &&
         !rData.HasFormat( SotClipboardFormatId::HTML ) &&
         !rData.HasFormat( SotClipboardFormatId::STRING ) &&
         (rData.HasFormat( nFormat = SotClipboardFormatId::GDIMETAFILE ) ||
@@ -2157,7 +2170,7 @@ bool SwTransferable::PasteDDE( TransferableDataHelper& rData,
                 if (nRows > USHRT_MAX || nCols > USHRT_MAX)
                 {
                     if( bMsg )
-                        ScopedVclPtrInstance<MessageDialog>(nullptr, SW_RESSTR(STR_TABLE_TOO_LARGE), VCL_MESSAGE_INFO)->Execute();
+                        ScopedVclPtrInstance<MessageDialog>(nullptr, SW_RESSTR(STR_TABLE_TOO_LARGE), VclMessageType::Info)->Execute();
                     pDDETyp = nullptr;
                     break;
                 }
@@ -2166,7 +2179,7 @@ bool SwTransferable::PasteDDE( TransferableDataHelper& rData,
                 if( !nRows || !nCols )
                 {
                     if( bMsg )
-                        ScopedVclPtrInstance<MessageDialog>(nullptr, SW_RESSTR(STR_NO_TABLE), VCL_MESSAGE_INFO)->Execute();
+                        ScopedVclPtrInstance<MessageDialog>(nullptr, SW_RESSTR(STR_NO_TABLE), VclMessageType::Info)->Execute();
                     pDDETyp = nullptr;
                     break;
                 }
@@ -2265,7 +2278,7 @@ bool SwTransferable::PasteGrf( TransferableDataHelper& rData, SwWrtShell& rSh,
         if(rData.GetSotStorageStream(SotClipboardFormatId::SVXB, xStm))
         {
             ReadGraphic( *xStm, aGraphic );
-            bRet = (GRAPHIC_NONE != aGraphic.GetType() && GRAPHIC_DEFAULT != aGraphic.GetType());
+            bRet = (GraphicType::NONE != aGraphic.GetType() && GraphicType::Default != aGraphic.GetType());
         }
 
         break;
@@ -2431,7 +2444,7 @@ bool SwTransferable::PasteGrf( TransferableDataHelper& rData, SwWrtShell& rSh,
         // or should the file be an ImageMap-File?
         ImageMap aMap;
         SfxMedium aMed( INetURLObject(aBkmk.GetURL()).GetFull(),
-                            STREAM_STD_READ );
+                            StreamMode::STD_READ );
         SvStream* pStream = aMed.GetInStream();
         if( pStream != nullptr  &&
             !pStream->GetError()  &&
@@ -2641,7 +2654,8 @@ bool SwTransferable::PasteDBData( TransferableDataHelper& rData,
         {
             rSh.MakeDrawView();
             FmFormView* pFmView = dynamic_cast<FmFormView*>( rSh.GetDrawView()  );
-            if(pFmView) {
+            if (pFmView && pDragPt)
+            {
                 const OXFormsDescriptor &rDesc = OXFormsTransferable::extractDescriptor(rData);
                 SdrObject* pObj = pFmView->CreateXFormsControl(rDesc);
                 if(nullptr != pObj)
@@ -2672,14 +2686,14 @@ bool SwTransferable::PasteDBData( TransferableDataHelper& rData,
 
             if ( bDataAvailable )
             {
-                pConnectionItem.reset(new SfxUsrAnyItem(FN_DB_CONNECTION_ANY, aDesc[daConnection]));
-                pColumnItem.reset(new SfxUsrAnyItem(FN_DB_COLUMN_ANY, aDesc[daColumnObject]));
+                pConnectionItem.reset(new SfxUsrAnyItem(FN_DB_CONNECTION_ANY, aDesc[DataAccessDescriptorProperty::Connection]));
+                pColumnItem.reset(new SfxUsrAnyItem(FN_DB_COLUMN_ANY, aDesc[DataAccessDescriptorProperty::ColumnObject]));
                 pSourceItem.reset(new SfxUsrAnyItem(FN_DB_DATA_SOURCE_ANY, makeAny(aDesc.getDataSource())));
-                pCommandItem.reset(new SfxUsrAnyItem(FN_DB_DATA_COMMAND_ANY, aDesc[daCommand]));
-                pCommandTypeItem.reset(new SfxUsrAnyItem(FN_DB_DATA_COMMAND_TYPE_ANY, aDesc[daCommandType]));
-                pColumnNameItem.reset(new SfxUsrAnyItem(FN_DB_DATA_COLUMN_NAME_ANY, aDesc[daColumnName]));
-                pSelectionItem.reset(new SfxUsrAnyItem(FN_DB_DATA_SELECTION_ANY, aDesc[daSelection]));
-                pCursorItem.reset(new SfxUsrAnyItem(FN_DB_DATA_CURSOR_ANY, aDesc[daCursor]));
+                pCommandItem.reset(new SfxUsrAnyItem(FN_DB_DATA_COMMAND_ANY, aDesc[DataAccessDescriptorProperty::Command]));
+                pCommandTypeItem.reset(new SfxUsrAnyItem(FN_DB_DATA_COMMAND_TYPE_ANY, aDesc[DataAccessDescriptorProperty::CommandType]));
+                pColumnNameItem.reset(new SfxUsrAnyItem(FN_DB_DATA_COLUMN_NAME_ANY, aDesc[DataAccessDescriptorProperty::ColumnName]));
+                pSelectionItem.reset(new SfxUsrAnyItem(FN_DB_DATA_SELECTION_ANY, aDesc[DataAccessDescriptorProperty::Selection]));
+                pCursorItem.reset(new SfxUsrAnyItem(FN_DB_DATA_CURSOR_ANY, aDesc[DataAccessDescriptorProperty::Cursor]));
             }
 
             SwView& rView = rSh.GetView();
@@ -2698,7 +2712,7 @@ bool SwTransferable::PasteDBData( TransferableDataHelper& rData,
         {
             rSh.MakeDrawView();
             FmFormView* pFmView = dynamic_cast<FmFormView*>( rSh.GetDrawView()  );
-            if (pFmView && bHaveColumnDescriptor)
+            if (pFmView && bHaveColumnDescriptor && pDragPt)
             {
                 SdrObject* pObj = pFmView->CreateFieldControl( OColumnTransferable::extractColumnDescriptor(rData) );
                 if ( nullptr != pObj)
@@ -2709,7 +2723,7 @@ bool SwTransferable::PasteDBData( TransferableDataHelper& rData,
     }
     else if( bMsg )
     {
-        ScopedVclPtrInstance<MessageDialog>( nullptr, SW_RES(STR_CLPBRD_FORMAT_ERROR), VCL_MESSAGE_INFO)->Execute();
+        ScopedVclPtrInstance<MessageDialog>(nullptr, SW_RES(STR_CLPBRD_FORMAT_ERROR), VclMessageType::Info)->Execute();
     }
     return bRet;
 }
@@ -2748,7 +2762,7 @@ bool SwTransferable::PasteFileList( TransferableDataHelper& rData,
     }
     else if( bMsg )
     {
-        ScopedVclPtrInstance<MessageDialog>( nullptr, SW_RES(STR_CLPBRD_FORMAT_ERROR), VCL_MESSAGE_INFO)->Execute();
+        ScopedVclPtrInstance<MessageDialog>(nullptr, SW_RES(STR_CLPBRD_FORMAT_ERROR), VclMessageType::Info)->Execute();
     }
     return bRet;
 }
@@ -2859,6 +2873,7 @@ static SotClipboardFormatId aPasteSpecialIds[] =
     SotClipboardFormatId::HTML_SIMPLE,
     SotClipboardFormatId::HTML_NO_COMMENT,
     SotClipboardFormatId::RTF,
+    SotClipboardFormatId::RICHTEXT,
     SotClipboardFormatId::STRING,
     SotClipboardFormatId::SONLK,
     SotClipboardFormatId::NETSCAPE_BOOKMARK,
@@ -2881,7 +2896,7 @@ bool SwTransferable::PasteSpecial( SwWrtShell& rSh, TransferableDataHelper& rDat
 {
     bool bRet = false;
     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-    std::unique_ptr<SfxAbstractPasteDialog> pDlg(pFact->CreatePasteDialog( &rSh.GetView().GetEditWin() ));
+    ScopedVclPtr<SfxAbstractPasteDialog> pDlg(pFact->CreatePasteDialog( &rSh.GetView().GetEditWin() ));
 
     DataFlavorExVector aFormats( rData.GetDataFlavorExVector() );
     TransferableObjectDescriptor aDesc;
@@ -3055,6 +3070,7 @@ void SwTransferable::SetDataForDragAndDrop( const Point& rSttPos )
         if( !m_pWrtShell->IsObjSelected() )
         {
             AddFormat( SotClipboardFormatId::RTF );
+            AddFormat( SotClipboardFormatId::RICHTEXT );
             AddFormat( SotClipboardFormatId::HTML );
         }
         if( m_pWrtShell->IsSelection() )
@@ -3096,10 +3112,9 @@ void SwTransferable::SetDataForDragAndDrop( const Point& rSttPos )
         //ObjectDescriptor was already filled from the old DocShell.
         //Now adjust it. Thus in GetData the first query can still
         //be answered with delayed rendering.
-        m_aObjDesc.mbCanLink = false;
         m_aObjDesc.maDragStartPos = rSttPos;
         m_aObjDesc.maSize = OutputDevice::LogicToLogic( Size( OLESIZE ),
-                                                MAP_TWIP, MAP_100TH_MM );
+                                                MapUnit::MapTwip, MapUnit::Map100thMM );
         PrepareOLE( m_aObjDesc );
         AddFormat( SotClipboardFormatId::OBJECTDESCRIPTOR );
     }
@@ -3726,7 +3741,7 @@ bool SwTrnsfrDdeLink::WriteData( SvStream& rStrm )
     pMem[ nLen++ ] = 0;
     pMem[ nLen++ ] = 0;
 
-    rStrm.Write( pMem.get(), nLen );
+    rStrm.WriteBytes( pMem.get(), nLen );
     pMem.reset();
 
     IDocumentMarkAccess* const pMarkAccess = pDocShell->GetDoc()->getIDocumentMarkAccess();
@@ -3737,7 +3752,7 @@ bool SwTrnsfrDdeLink::WriteData( SvStream& rStrm )
         // the mark is still a DdeBookmark
         // we replace it with a Bookmark, so it will get saved etc.
         ::sw::mark::IMark* const pMark = ppMark->get();
-        ::sfx2::SvLinkSource* p = &refObj;
+        ::sfx2::SvLinkSource* p = refObj.get();
         SwServerObject& rServerObject = dynamic_cast<SwServerObject&>(*p);
 
         // collecting state of old mark
@@ -3759,7 +3774,8 @@ bool SwTrnsfrDdeLink::WriteData( SvStream& rStrm )
         ::sw::mark::IMark* const pNewMark = pMarkAccess->makeMark(
             aPaM,
             sMarkName,
-            IDocumentMarkAccess::MarkType::BOOKMARK);
+            IDocumentMarkAccess::MarkType::BOOKMARK,
+            ::sw::mark::InsertMode::New);
         rServerObject.SetDdeBookmark(*pNewMark);
     }
 

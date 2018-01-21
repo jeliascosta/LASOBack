@@ -49,7 +49,7 @@ protected:
 public:
 
     BibToolBarListener(BibToolBar *pTB, const OUString& aStr, sal_uInt16 nId);
-    virtual ~BibToolBarListener();
+    virtual ~BibToolBarListener() override;
 
     const OUString&          GetCommand() const { return aCommand;}
 
@@ -69,7 +69,7 @@ class BibTBListBoxListener: public BibToolBarListener
 public:
 
     BibTBListBoxListener(BibToolBar *pTB, const OUString& aStr, sal_uInt16 nId);
-    virtual ~BibTBListBoxListener();
+    virtual ~BibTBListBoxListener() override;
 
     virtual void    SAL_CALL statusChanged(const css::frame::FeatureStateEvent& Event)
                                             throw( css::uno::RuntimeException, std::exception ) override;
@@ -81,7 +81,7 @@ class BibTBEditListener: public BibToolBarListener
 public:
 
     BibTBEditListener(BibToolBar *pTB, const OUString& aStr, sal_uInt16 nId);
-    virtual ~BibTBEditListener();
+    virtual ~BibTBEditListener() override;
 
     virtual void    SAL_CALL statusChanged(const css::frame::FeatureStateEvent& Event)
                                             throw( css::uno::RuntimeException, std::exception ) override;
@@ -93,7 +93,7 @@ class BibTBQueryMenuListener:   public BibToolBarListener
 public:
 
     BibTBQueryMenuListener(BibToolBar *pTB, const OUString& aStr, sal_uInt16 nId);
-    virtual ~BibTBQueryMenuListener();
+    virtual ~BibTBQueryMenuListener() override;
 
     virtual void    SAL_CALL statusChanged(const css::frame::FeatureStateEvent& Event)
                                             throw( css::uno::RuntimeException, std::exception ) override;
@@ -116,7 +116,7 @@ class BibToolBar:   public ToolBox
         VclPtr<ListBox>         aLBSource;
         VclPtr<FixedText>       aFtQuery;
         VclPtr<Edit>            aEdQuery;
-        PopupMenu               aPopupMenu;
+        ScopedVclPtr<PopupMenu> pPopupMenu;
         sal_uInt16              nMenuId;
         sal_uInt16              nSelMenuItem;
         OUString                aQueryField;
@@ -135,11 +135,11 @@ class BibToolBar:   public ToolBox
         sal_uInt16              nTBC_BT_REMOVEFILTER;
 
         BibDataManager*         pDatMan;
-        DECL_LINK_TYPED( SelHdl, ListBox&, void );
-        DECL_LINK_TYPED( SendSelHdl, Idle*, void );
-        DECL_LINK_TYPED( MenuHdl, ToolBox*, void );
-        DECL_LINK_TYPED( OptionsChanged_Impl, LinkParamNone*, void );
-        DECL_LINK_TYPED( SettingsChanged_Impl, VclSimpleEvent&, void );
+        DECL_LINK( SelHdl, ListBox&, void );
+        DECL_LINK( SendSelHdl, Idle*, void );
+        DECL_LINK( MenuHdl, ToolBox*, void );
+        DECL_LINK( OptionsChanged_Impl, LinkParamNone*, void );
+        DECL_LINK( SettingsChanged_Impl, VclSimpleEvent&, void );
 
         void                    ApplyImageList();
         void                    RebuildToolbar();
@@ -156,7 +156,7 @@ class BibToolBar:   public ToolBox
     public:
 
         BibToolBar(vcl::Window* pParent, Link<void*,void> aLink);
-        virtual ~BibToolBar();
+        virtual ~BibToolBar() override;
         virtual void dispose() override;
 
         sal_uInt16  GetChangeSourceId() const { return nTBC_BT_CHANGESOURCE; }
@@ -164,12 +164,12 @@ class BibToolBar:   public ToolBox
         void    SetXController(const css::uno::Reference< css::frame::XController > &);
 
         void    ClearSourceList();
-        void    UpdateSourceList(bool bFlag=true);
-        void    EnableSourceList(bool bFlag=true);
+        void    UpdateSourceList(bool bFlag);
+        void    EnableSourceList(bool bFlag);
         void    InsertSourceEntry(const OUString& );
         void    SelectSourceEntry(const OUString& );
 
-        void    EnableQuery(bool bFlag=true);
+        void    EnableQuery(bool bFlag);
         void    SetQueryString(const OUString& );
         void    AdjustToolBox();
 

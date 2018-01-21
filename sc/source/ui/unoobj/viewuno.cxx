@@ -136,8 +136,7 @@ ScViewPaneBase::~ScViewPaneBase()
 
 void ScViewPaneBase::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
         pViewShell = nullptr;
 }
 
@@ -655,7 +654,7 @@ static void lcl_ShowObject( ScTabViewShell& rViewSh, ScDrawView& rDrawView, SdrO
         SdrPage* pPage = pModel->GetPage(i);
         if (pPage)
         {
-            SdrObjListIter aIter( *pPage, IM_DEEPWITHGROUPS );
+            SdrObjListIter aIter( *pPage, SdrIterMode::DeepWithGroups );
             SdrObject* pObject = aIter.Next();
             while (pObject && !bFound)
             {
@@ -860,6 +859,35 @@ sal_Bool SAL_CALL ScTabViewObj::select( const uno::Any& aSelection )
     return bRet;
 }
 
+uno::Reference<drawing::XShapes> ScTabViewShell::getSelectedXShapes()
+{
+    uno::Reference<drawing::XShapes> xShapes;
+    SdrView* pSdrView = GetSdrView();
+    if (pSdrView)
+    {
+        const SdrMarkList& rMarkList = pSdrView->GetMarkedObjectList();
+        const size_t nMarkCount = rMarkList.GetMarkCount();
+        if (nMarkCount)
+        {
+            //  generate ShapeCollection (like in SdXImpressView::getSelection in Draw)
+            //  XInterfaceRef will be returned and it has to be UsrObject-XInterface
+            xShapes = drawing::ShapeCollection::create(comphelper::getProcessComponentContext());
+
+            for (size_t i = 0; i < nMarkCount; ++i)
+            {
+                SdrObject* pDrawObj = rMarkList.GetMark(i)->GetMarkedSdrObj();
+                if (pDrawObj)
+                {
+                    uno::Reference<drawing::XShape> xShape( pDrawObj->getUnoShape(), uno::UNO_QUERY );
+                    if (xShape.is())
+                        xShapes->add(xShape);
+                }
+            }
+        }
+    }
+    return xShapes;
+}
+
 uno::Any SAL_CALL ScTabViewObj::getSelection()
     throw(uno::RuntimeException, std::exception)
 {
@@ -868,36 +896,10 @@ uno::Any SAL_CALL ScTabViewObj::getSelection()
     ScCellRangesBase* pObj = nullptr;
     if (pViewSh)
     {
-        //  Ist auf dem Drawing-Layer etwas selektiert?
-
-        SdrView* pDrawView = pViewSh->GetSdrView();
-        if (pDrawView)
-        {
-            const SdrMarkList& rMarkList = pDrawView->GetMarkedObjectList();
-            const size_t nMarkCount = rMarkList.GetMarkCount();
-            if (nMarkCount)
-            {
-                //  ShapeCollection erzeugen (wie in SdXImpressView::getSelection im Draw)
-                //  Zurueckgegeben wird XInterfaceRef, das muss das UsrObject-XInterface sein
-
-                uno::Reference< drawing::XShapes > xShapes = drawing::ShapeCollection::create(
-                        comphelper::getProcessComponentContext());
-
-                uno::Reference<uno::XInterface> xRet(xShapes);
-
-                for (size_t i=0; i<nMarkCount; ++i)
-                {
-                    SdrObject* pDrawObj = rMarkList.GetMark(i)->GetMarkedSdrObj();
-                    if (pDrawObj)
-                    {
-                        uno::Reference<drawing::XShape> xShape( pDrawObj->getUnoShape(), uno::UNO_QUERY );
-                        if (xShape.is())
-                            xShapes->add(xShape);
-                    }
-                }
-                return uno::makeAny(xRet);
-            }
-        }
+        //  is something selected in drawing layer?
+        uno::Reference<uno::XInterface> xRet(pViewSh->getSelectedXShapes());
+        if (xRet.is())
+            return uno::makeAny(xRet);
 
         //  sonst Tabellen-(Zellen-)Selektion
 
@@ -951,7 +953,7 @@ uno::Any SAL_CALL ScTabViewObj::getSelection()
             //  bei mehreren Tabellen Ranges kopieren
             //! sollte eigentlich schon in ScMarkData::FillRangeListWithMarks passieren?
             if ( nTabs > 1 )
-                rMark.ExtendRangeListTables( xRanges );
+                rMark.ExtendRangeListTables( xRanges.get() );
 
             pObj = new ScCellRangesObj( pDocSh, *xRanges );
         }
@@ -1285,7 +1287,7 @@ bool ScTabViewObj::MouseReleased( const awt::MouseEvent& e )
             ScDocument& rDoc = pDocSh->GetDocument();
             uno::Reference< script::vba::XVBAEventProcessor > xVbaEvents( rDoc.GetVbaEventProcessor(), uno::UNO_SET_THROW );
             uno::Sequence< uno::Any > aArgs( 1 );
-            aArgs[ 0 ] <<= getSelection();
+            aArgs[ 0 ] = getSelection();
             xVbaEvents->processVbaEvent( ScSheetEvents::GetVbaSheetEventId( ScSheetEventId::SELECT ), aArgs );
         }
         catch( uno::Exception& )
@@ -1754,7 +1756,7 @@ void ScTabViewObj::SelectionChanged()
         {
             uno::Reference< script::vba::XVBAEventProcessor > xVbaEvents( rDoc.GetVbaEventProcessor(), uno::UNO_SET_THROW );
             uno::Sequence< uno::Any > aArgs( 1 );
-            aArgs[ 0 ] <<= getSelection();
+            aArgs[ 0 ] = getSelection();
             xVbaEvents->processVbaEvent( ScSheetEvents::GetVbaSheetEventId( ScSheetEventId::SELECT ), aArgs );
         }
         catch( uno::Exception& )
@@ -2170,11 +2172,7 @@ sal_Bool SAL_CALL ScTabViewObj::supportsService( const OUString& rServiceName )
 uno::Sequence<OUString> SAL_CALL ScTabViewObj::getSupportedServiceNames()
                                                     throw(uno::RuntimeException, std::exception)
 {
-    uno::Sequence<OUString> aRet(2);
-    OUString* pArray = aRet.getArray();
-    pArray[0] = SCTABVIEWOBJ_SERVICE;
-    pArray[1] = SCVIEWSETTINGS_SERVICE;
-    return aRet;
+    return {SCTABVIEWOBJ_SERVICE, SCVIEWSETTINGS_SERVICE};
 }
 
 // XUnoTunnel
@@ -2335,8 +2333,7 @@ void ScPreviewObj::release() throw()
 
 void ScPreviewObj::Notify(SfxBroadcaster&, const SfxHint& rHint)
 {
-    const SfxSimpleHint* p = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if (p && p->GetId() == SFX_HINT_DYING)
+    if (rHint.GetId() == SFX_HINT_DYING)
         mpViewShell = nullptr;
 }
 

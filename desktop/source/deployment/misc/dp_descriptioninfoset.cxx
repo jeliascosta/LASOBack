@@ -62,7 +62,7 @@ class EmptyNodeList:
 public:
     EmptyNodeList();
 
-    virtual ~EmptyNodeList();
+    virtual ~EmptyNodeList() override;
 
     EmptyNodeList(const EmptyNodeList&) = delete;
     const EmptyNodeList& operator=(const EmptyNodeList&) = delete;
@@ -146,7 +146,7 @@ class FileDoesNotExistFilter
     css::uno::Reference< css::ucb::XCommandEnvironment > m_xCommandEnv;
 
 public:
-    virtual ~FileDoesNotExistFilter();
+    virtual ~FileDoesNotExistFilter() override;
     explicit FileDoesNotExistFilter(
         const css::uno::Reference< css::ucb::XCommandEnvironment >& xCmdEnv);
 
@@ -447,7 +447,7 @@ void DescriptionInfoset::checkBlacklist() const
 
 bool DescriptionInfoset::checkBlacklistVersion(
     const OUString& currentversion,
-    css::uno::Sequence< OUString > const & versions) const
+    css::uno::Sequence< OUString > const & versions)
 {
     sal_Int32 nLen = versions.getLength();
     for (sal_Int32 i=0; i<nLen; i++) {

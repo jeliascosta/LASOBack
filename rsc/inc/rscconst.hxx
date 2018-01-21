@@ -36,7 +36,7 @@ protected:
     sal_uInt32      nEntries;   // number of entries in field
 public:
                     RscConst( Atom nId, sal_uInt32 nTypId );
-                    virtual ~RscConst();
+                    virtual ~RscConst() override;
     virtual RSCCLASS_TYPE   GetClassType() const override;
                     // sets the allowed values
     void            SetConstant( Atom nVarName, sal_Int32 lValue );
@@ -52,11 +52,10 @@ class RscEnum : public RscConst
         sal_uInt32  nValue; // constant position in the array
         bool        bDflt;  // is default
     };
-    sal_uInt32      nSize;
 public:
                     RscEnum( Atom nId, sal_uInt32 nTypId );
-    RSCINST         Create( RSCINST * pInst, const RSCINST & rDfltInst, bool ) override;
-    sal_uInt32      Size() override { return nSize; }
+    RSCINST         Create( RSCINST * pInst, const RSCINST & rDfltInst, bool bOwnClass = false ) override;
+    sal_uInt32      Size() const override { return ALIGNED_SIZE(sizeof(RscEnumInst)); }
 
     virtual void    SetToDefault( const RSCINST & rInst ) override
                     {

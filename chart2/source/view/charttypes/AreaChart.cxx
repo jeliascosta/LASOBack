@@ -101,11 +101,6 @@ double AreaChart::getMaximumX()
     return fMax;
 }
 
-bool AreaChart::isExpandIfValuesCloseToBorder( sal_Int32 nDimensionIndex )
-{
-    return VSeriesPlotter::isExpandIfValuesCloseToBorder( nDimensionIndex );
-}
-
 bool AreaChart::isSeparateStackingForDifferentSigns( sal_Int32 /*nDimensionIndex*/ )
 {
     // no separate stacking in all types of line/area charts
@@ -248,19 +243,15 @@ void lcl_removeDuplicatePoints( drawing::PolyPolygonShape3D& rPolyPoly, Plotting
 
 bool AreaChart::create_stepped_line( drawing::PolyPolygonShape3D aStartPoly, chart2::CurveStyle eCurveStyle, PlottingPositionHelper* pPosHelper, drawing::PolyPolygonShape3D &aPoly )
 {
-    drawing::PolyPolygonShape3D aSteppedPoly;
-
-    aSteppedPoly.SequenceX.realloc(0);
-    aSteppedPoly.SequenceY.realloc(0);
-    aSteppedPoly.SequenceZ.realloc(0);
-
     sal_uInt32 nOuterCount = aStartPoly.SequenceX.getLength();
     if ( !nOuterCount )
         return false;
 
+    drawing::PolyPolygonShape3D aSteppedPoly;
     aSteppedPoly.SequenceX.realloc(nOuterCount);
     aSteppedPoly.SequenceY.realloc(nOuterCount);
     aSteppedPoly.SequenceZ.realloc(nOuterCount);
+
     for( sal_uInt32 nOuter = 0; nOuter < nOuterCount; ++nOuter )
     {
         if( aStartPoly.SequenceX[nOuter].getLength() <= 1 )
@@ -775,7 +766,7 @@ void AreaChart::createShapes()
                         fLogicY = fabs( fLogicY );
 
                     std::map< sal_Int32, double >& rLogicYSumMap = aLogicYSumMapByX[nIndex];
-                    if( pPosHelper->isPercentY() && !::rtl::math::approxEqual( rLogicYSumMap[nAttachedAxisIndex], 0.0 ) )
+                    if( pPosHelper->isPercentY() && rLogicYSumMap[nAttachedAxisIndex] != 0.0 )
                     {
                         fLogicY = fabs( fLogicY )/rLogicYSumMap[nAttachedAxisIndex];
                     }
@@ -931,7 +922,7 @@ void AreaChart::createShapes()
                             createErrorBar_X( aUnscaledLogicPosition, **aSeriesIter, nIndex, m_xErrorBarTarget );
 
                         if (bCreateYErrorBar)
-                            createErrorBar_Y( aUnscaledLogicPosition, **aSeriesIter, nIndex, m_xErrorBarTarget );
+                            createErrorBar_Y( aUnscaledLogicPosition, **aSeriesIter, nIndex, m_xErrorBarTarget, nullptr );
 
                         //create data point label
                         if( (**aSeriesIter).getDataPointLabelIfLabel(nIndex) )

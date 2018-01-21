@@ -34,7 +34,6 @@ class SvxMacroTableDtor;
 class SwXMLTextBlocks : public SwImpBlocks
 {
 protected:
-    bool                    bAutocorrBlock;
     SfxObjectShellRef       xDocShellRef;
     sal_uInt16              nFlags;
     OUString                aPackageName;
@@ -50,10 +49,10 @@ public:
     css::uno::Reference < css::embed::XStorage > xRoot;
     SwXMLTextBlocks( const OUString& rFile );
     SwXMLTextBlocks( const css::uno::Reference < css::embed::XStorage >&, const OUString& rFile );
-    void   AddName( const OUString&, const OUString&, const OUString&, bool bOnlyText = false );
+    void   AddName( const OUString&, const OUString&, const OUString&, bool bOnlyText );
     virtual void   AddName( const OUString&, const OUString&, bool bOnlyText = false ) override;
     static OUString GeneratePackageName ( const OUString& rShort );
-    virtual ~SwXMLTextBlocks();
+    virtual ~SwXMLTextBlocks() override;
     virtual sal_uLong Delete( sal_uInt16 ) override;
     virtual sal_uLong Rename( sal_uInt16, const OUString&, const OUString& ) override;
     virtual sal_uLong CopyBlock( SwImpBlocks& rImp, OUString& rShort, const OUString& rLong) override;

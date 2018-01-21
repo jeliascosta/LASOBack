@@ -57,15 +57,15 @@ private:
     css::uno::Reference< css::i18n::XCharacterClassification > mxCharClass;
 
 protected:
-    SAL_DLLPRIVATE sal_uInt16       ImplGetMnemonicIndex( sal_Unicode c );
-    SAL_DLLPRIVATE sal_Unicode  ImplFindMnemonic( const OUString& rKey );
+    SAL_DLLPRIVATE static sal_uInt16 ImplGetMnemonicIndex( sal_Unicode c );
+    SAL_DLLPRIVATE static sal_Unicode ImplFindMnemonic( const OUString& rKey );
 
 public:
                         MnemonicGenerator();
 
     void                RegisterMnemonic( const OUString& rKey );
     OUString            CreateMnemonic( const OUString& rKey );
-    css::uno::Reference< css::i18n::XCharacterClassification > GetCharClass();
+    css::uno::Reference< css::i18n::XCharacterClassification > const & GetCharClass();
 
     // returns a string where all '~'-characters and CJK mnemonics of the form (~A) are completely removed
     static OUString EraseAllMnemonicChars( const OUString& rStr );

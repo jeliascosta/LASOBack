@@ -27,11 +27,9 @@
 */
 class XMLPercentOrMeasurePropertyHandler : public XMLPropertyHandler
 {
-private:
-    bool mbPercent;
 public:
     XMLPercentOrMeasurePropertyHandler();
-    virtual ~XMLPercentOrMeasurePropertyHandler ();
+    virtual ~XMLPercentOrMeasurePropertyHandler () override;
 
     virtual bool importXML(
             const OUString& rStrImpValue,

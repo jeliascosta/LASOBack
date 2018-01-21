@@ -52,7 +52,7 @@ class ScViewForwarder : public SvxViewForwarder
     ScSplitPos          meSplitPos;
 public:
                         ScViewForwarder(ScTabViewShell* pViewShell, ScSplitPos eSplitPos, const ScAddress& rCell);
-    virtual             ~ScViewForwarder();
+    virtual             ~ScViewForwarder() override;
 
     virtual bool        IsValid() const override;
     virtual Rectangle   GetVisArea() const override;
@@ -150,7 +150,7 @@ class ScEditObjectViewForwarder : public SvxViewForwarder
 public:
                         ScEditObjectViewForwarder( vcl::Window* pWindow,
                                                    const EditView* _pEditView);
-    virtual             ~ScEditObjectViewForwarder();
+    virtual             ~ScEditObjectViewForwarder() override;
 
     virtual bool        IsValid() const override;
     virtual Rectangle   GetVisArea() const override;
@@ -248,7 +248,7 @@ protected:
     ScPreviewShell*     mpViewShell;
 public:
     explicit            ScPreviewViewForwarder(ScPreviewShell* pViewShell);
-    virtual             ~ScPreviewViewForwarder();
+    virtual             ~ScPreviewViewForwarder() override;
 
     virtual bool        IsValid() const override;
     virtual Rectangle   GetVisArea() const override;
@@ -376,7 +376,7 @@ class ScPreviewHeaderFooterViewForwarder : public ScPreviewViewForwarder
     bool            mbHeader;
 public:
                         ScPreviewHeaderFooterViewForwarder(ScPreviewShell* pViewShell, bool bHeader);
-    virtual             ~ScPreviewHeaderFooterViewForwarder();
+    virtual             ~ScPreviewHeaderFooterViewForwarder() override;
 
     virtual Rectangle   GetVisArea() const override;
 };
@@ -418,7 +418,7 @@ class ScPreviewCellViewForwarder : public ScPreviewViewForwarder
 public:
                         ScPreviewCellViewForwarder(ScPreviewShell* pViewShell,
                             ScAddress aCellPos);
-    virtual             ~ScPreviewCellViewForwarder();
+    virtual             ~ScPreviewCellViewForwarder() override;
 
     virtual Rectangle   GetVisArea() const override;
 };
@@ -460,7 +460,7 @@ public:
                         ScPreviewHeaderCellViewForwarder(ScPreviewShell* pViewShell,
                             ScAddress aCellPos,
                             bool bColHeader);
-    virtual             ~ScPreviewHeaderCellViewForwarder();
+    virtual             ~ScPreviewHeaderCellViewForwarder() override;
 
     virtual Rectangle   GetVisArea() const override;
 };
@@ -504,7 +504,7 @@ public:
                         ScPreviewNoteViewForwarder(ScPreviewShell* pViewShell,
                             ScAddress aCellPos,
                             bool bNoteMark);
-    virtual             ~ScPreviewNoteViewForwarder();
+    virtual             ~ScPreviewNoteViewForwarder() override;
 
     virtual Rectangle   GetVisArea() const override;
 };
@@ -546,7 +546,7 @@ class ScEditViewForwarder : public SvxEditViewForwarder
     VclPtr<vcl::Window> mpWindow;
 public:
                         ScEditViewForwarder(EditView* pEditView, vcl::Window* pWin);
-    virtual             ~ScEditViewForwarder();
+    virtual             ~ScEditViewForwarder() override;
 
     virtual bool        IsValid() const override;
     virtual Rectangle   GetVisArea() const override;
@@ -720,8 +720,7 @@ ScAccessibleCellTextData::~ScAccessibleCellTextData()
 
 void ScAccessibleCellTextData::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
     {
         mpViewShell = nullptr;                     // invalid now
         if (mpViewForwarder)
@@ -902,7 +901,7 @@ SvxEditViewForwarder* ScAccessibleCellTextData::GetEditViewForwarder( bool /* bC
     return nullptr;
 }
 
-IMPL_LINK_TYPED(ScAccessibleTextData, NotifyHdl, EENotify&, aNotify, void)
+IMPL_LINK(ScAccessibleTextData, NotifyHdl, EENotify&, aNotify, void)
 {
     ::std::unique_ptr< SfxHint > aHint = SvxEditSourceHelper::EENotification2Hint( &aNotify );
 
@@ -948,8 +947,7 @@ ScAccessibleEditObjectTextData::~ScAccessibleEditObjectTextData()
 
 void ScAccessibleEditObjectTextData::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
     {
         mpWindow = nullptr;
         mpEditView = nullptr;
@@ -1008,7 +1006,7 @@ SvxEditViewForwarder* ScAccessibleEditObjectTextData::GetEditViewForwarder( bool
     return mpEditViewForwarder;
 }
 
-IMPL_LINK_TYPED(ScAccessibleEditObjectTextData, NotifyHdl, EENotify&, rNotify, void)
+IMPL_LINK(ScAccessibleEditObjectTextData, NotifyHdl, EENotify&, rNotify, void)
 {
     ::std::unique_ptr< SfxHint > aHint = SvxEditSourceHelper::EENotification2Hint( &rNotify );
 
@@ -1042,7 +1040,7 @@ ScAccessibleEditLineTextData::~ScAccessibleEditLineTextData()
         delete mpEditEngine;
         mpEditEngine = nullptr;    // don't access in ScAccessibleEditObjectTextData dtor!
     }
-    else if (pTxtWnd && pTxtWnd->GetEditView() && pTxtWnd->GetEditView()->GetEditEngine())
+    else if (pTxtWnd && pTxtWnd->HasEditView() && pTxtWnd->GetEditView()->GetEditEngine())
     {
         //  the NotifyHdl also has to be removed from the ScTextWnd's EditEngine
         //  (it's set in ScAccessibleEditLineTextData::GetTextForwarder, and mpEditEngine
@@ -1076,9 +1074,10 @@ SvxTextForwarder* ScAccessibleEditLineTextData::GetTextForwarder()
 
     if (pTxtWnd)
     {
-        mpEditView = pTxtWnd->GetEditView();
-        if (mpEditView)
+        if (pTxtWnd->HasEditView())
         {
+            mpEditView = pTxtWnd->GetEditView();
+
             if (mbEditEngineCreated && mpEditEngine)
                 ResetEditMode();
             mbEditEngineCreated = false;
@@ -1089,6 +1088,8 @@ SvxTextForwarder* ScAccessibleEditLineTextData::GetTextForwarder()
         }
         else
         {
+            mpEditView = nullptr;
+
             if (mpEditEngine && !mbEditEngineCreated)
                 ResetEditMode();
             if (!mpEditEngine)
@@ -1098,7 +1099,7 @@ SvxTextForwarder* ScAccessibleEditLineTextData::GetTextForwarder()
                 mpEditEngine = new ScFieldEditEngine(nullptr, pEnginePool, nullptr, true);
                 mbEditEngineCreated = true;
                 mpEditEngine->EnableUndo( false );
-                mpEditEngine->SetRefMapMode( MAP_100TH_MM );
+                mpEditEngine->SetRefMapMode( MapUnit::Map100thMM );
                 mpForwarder = new SvxEditEngineForwarder(*mpEditEngine);
 
                 mpEditEngine->SetText(pTxtWnd->GetTextString());
@@ -1122,8 +1123,7 @@ SvxEditViewForwarder* ScAccessibleEditLineTextData::GetEditViewForwarder( bool b
 
     if (pTxtWnd)
     {
-        mpEditView = pTxtWnd->GetEditView();
-        if (!mpEditView && bCreate)
+        if (!pTxtWnd->HasEditView() && bCreate)
         {
             if ( !pTxtWnd->IsInputActive() )
             {
@@ -1144,7 +1144,7 @@ void ScAccessibleEditLineTextData::ResetEditMode()
 
     if (mbEditEngineCreated && mpEditEngine)
         delete mpEditEngine;
-    else if (pTxtWnd && pTxtWnd->GetEditView() && pTxtWnd->GetEditView()->GetEditEngine())
+    else if (pTxtWnd && pTxtWnd->HasEditView() && pTxtWnd->GetEditView()->GetEditEngine())
         pTxtWnd->GetEditView()->GetEditEngine()->SetNotifyHdl(Link<EENotify&,void>());
     mpEditEngine = nullptr;
 
@@ -1170,15 +1170,15 @@ void ScAccessibleEditLineTextData::StartEdit()
     ResetEditMode();
     mpEditView = nullptr;
 
-    // send HINT_BEGEDIT
-    SdrHint aHint(HINT_BEGEDIT);
+    // send SdrHintKind::BeginEdit
+    SdrHint aHint(SdrHintKind::BeginEdit);
     GetBroadcaster().Broadcast( aHint );
 }
 
 void ScAccessibleEditLineTextData::EndEdit()
 {
-    // send HINT_ENDEDIT
-    SdrHint aHint(HINT_ENDEDIT);
+    // send SdrHintKind::EndEdit
+    SdrHint aHint(SdrHintKind::EndEdit);
     GetBroadcaster().Broadcast( aHint );
 
     ResetEditMode();
@@ -1205,8 +1205,7 @@ ScAccessiblePreviewCellTextData::~ScAccessiblePreviewCellTextData()
 
 void ScAccessiblePreviewCellTextData::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
     {
         mpViewShell = nullptr;                     // invalid now
         if (mpViewForwarder)
@@ -1279,8 +1278,7 @@ ScAccessiblePreviewHeaderCellTextData::~ScAccessiblePreviewHeaderCellTextData()
 
 void ScAccessiblePreviewHeaderCellTextData::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
     {
         mpViewShell = nullptr;                     // invalid now
         if (mpViewForwarder)
@@ -1313,7 +1311,7 @@ SvxTextForwarder* ScAccessiblePreviewHeaderCellTextData::GetTextForwarder()
         if (pDocShell)
             pEditEngine->SetRefDevice(pDocShell->GetRefDevice());
         else
-            pEditEngine->SetRefMapMode( MAP_100TH_MM );
+            pEditEngine->SetRefMapMode( MapUnit::Map100thMM );
         pForwarder = new SvxEditEngineForwarder(*pEditEngine);
     }
 
@@ -1398,8 +1396,7 @@ ScAccessibleTextData* ScAccessibleHeaderTextData::Clone() const
 
 void ScAccessibleHeaderTextData::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
     {
         mpViewShell = nullptr;// invalid now
         mpDocSh = nullptr;
@@ -1417,7 +1414,7 @@ SvxTextForwarder* ScAccessibleHeaderTextData::GetTextForwarder()
         ScHeaderEditEngine* pHdrEngine = new ScHeaderEditEngine( pEnginePool );
 
         pHdrEngine->EnableUndo( false );
-        pHdrEngine->SetRefMapMode( MAP_TWIP );
+        pHdrEngine->SetRefMapMode( MapUnit::MapTwip );
 
         //  default font must be set, independently of document
         //  -> use global pool from module
@@ -1427,9 +1424,12 @@ SvxTextForwarder* ScAccessibleHeaderTextData::GetTextForwarder()
         rPattern.FillEditItemSet( &aDefaults );
         //  FillEditItemSet adjusts font height to 1/100th mm,
         //  but for header/footer twips is needed, as in the PatternAttr:
-        aDefaults.Put( rPattern.GetItem(ATTR_FONT_HEIGHT), EE_CHAR_FONTHEIGHT );
-        aDefaults.Put( rPattern.GetItem(ATTR_CJK_FONT_HEIGHT), EE_CHAR_FONTHEIGHT_CJK );
-        aDefaults.Put( rPattern.GetItem(ATTR_CTL_FONT_HEIGHT), EE_CHAR_FONTHEIGHT_CTL );
+        std::unique_ptr<SfxPoolItem> pNewItem(rPattern.GetItem(ATTR_FONT_HEIGHT).CloneSetWhich(EE_CHAR_FONTHEIGHT));
+        aDefaults.Put( *pNewItem );
+        pNewItem.reset(rPattern.GetItem(ATTR_CJK_FONT_HEIGHT).CloneSetWhich(EE_CHAR_FONTHEIGHT_CJK));
+        aDefaults.Put( *pNewItem );
+        pNewItem.reset(rPattern.GetItem(ATTR_CTL_FONT_HEIGHT).CloneSetWhich(EE_CHAR_FONTHEIGHT_CTL));
+        aDefaults.Put( *pNewItem );
         aDefaults.Put( SvxAdjustItem( meAdjust, EE_PARA_JUST ) );
         pHdrEngine->SetDefaults( aDefaults );
 
@@ -1509,8 +1509,7 @@ ScAccessibleTextData* ScAccessibleNoteTextData::Clone() const
 
 void ScAccessibleNoteTextData::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
     {
         mpViewShell = nullptr;// invalid now
         mpDocSh = nullptr;
@@ -1538,7 +1537,7 @@ SvxTextForwarder* ScAccessibleNoteTextData::GetTextForwarder()
         if (mpDocSh)
             mpEditEngine->SetRefDevice(mpDocSh->GetRefDevice());
         else
-            mpEditEngine->SetRefMapMode( MAP_100TH_MM );
+            mpEditEngine->SetRefMapMode( MapUnit::Map100thMM );
         mpForwarder = new SvxEditEngineForwarder(*mpEditEngine);
     }
 
@@ -1646,8 +1645,7 @@ ScAccessibleCsvTextData::~ScAccessibleCsvTextData()
 
 void ScAccessibleCsvTextData::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
     {
         mpWindow = nullptr;
         mpEditEngine = nullptr;

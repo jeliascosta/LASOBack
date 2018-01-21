@@ -55,7 +55,7 @@ private:
 
 public:
                             ScChartsObj(ScDocShell* pDocSh, SCTAB nT);
-    virtual                 ~ScChartsObj();
+    virtual                 ~ScChartsObj() override;
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
@@ -113,7 +113,7 @@ typedef ::cppu::WeakComponentImplHelper<
 typedef ::comphelper::OPropertyContainer ScChartObj_PBase;
 typedef ::comphelper::OPropertyArrayUsageHelper< ScChartObj > ScChartObj_PABase;
 
-class ScChartObj : public ::comphelper::OBaseMutex
+class ScChartObj : public ::cppu::BaseMutex
                   ,public ScChartObj_Base
                   ,public ScChartObj_PBase
                   ,public ScChartObj_PABase
@@ -141,7 +141,7 @@ protected:
 
 public:
                             ScChartObj(ScDocShell* pDocSh, SCTAB nT, const OUString& rN);
-    virtual                 ~ScChartObj();
+    virtual                 ~ScChartObj() override;
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
@@ -152,7 +152,7 @@ public:
     DECLARE_XTYPEPROVIDER()
 
     // XComponent
-    virtual void SAL_CALL disposing() override;
+    using ScChartObj_Base::disposing;
 
                             // XTableChart
     virtual sal_Bool SAL_CALL getHasColumnHeaders() throw(css::uno::RuntimeException, std::exception) override;

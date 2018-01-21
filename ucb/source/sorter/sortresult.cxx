@@ -97,7 +97,7 @@ private:
 
 public:
                 SRSPropertySetInfo();
-    virtual     ~SRSPropertySetInfo();
+    virtual     ~SRSPropertySetInfo() override;
 
     // XPropertySetInfo
     virtual Sequence< Property > SAL_CALL getProperties()
@@ -119,12 +119,11 @@ public:
 };
 
 
-SortedResultSet::SortedResultSet( Reference< XResultSet > aResult )
+SortedResultSet::SortedResultSet( Reference< XResultSet > const & aResult )
 {
     mpDisposeEventListeners = nullptr;
     mpPropChangeListeners   = nullptr;
     mpVetoChangeListeners   = nullptr;
-    mpPropSetInfo           = nullptr;
 
     mxOriginal  = aResult;
     mpSortInfo  = nullptr;
@@ -153,8 +152,7 @@ SortedResultSet::~SortedResultSet()
 
     mpSortInfo = nullptr;
 
-    if ( mpPropSetInfo )
-        mpPropSetInfo->release();
+    mpPropSetInfo.clear();
 
     delete mpPropChangeListeners;
     delete mpVetoChangeListeners;
@@ -165,11 +163,6 @@ SortedResultSet::~SortedResultSet()
 
 OUString SAL_CALL SortedResultSet::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
-OUString SortedResultSet::getImplementationName_Static()
 {
     return OUString( "com.sun.star.comp.ucb.SortedResultSet" );
 }
@@ -183,13 +176,7 @@ sal_Bool SAL_CALL SortedResultSet::supportsService( const OUString& ServiceName 
 css::uno::Sequence< OUString > SAL_CALL SortedResultSet::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
-}
-
-css::uno::Sequence< OUString >SortedResultSet::getSupportedServiceNames_Static()
-{
-    css::uno::Sequence<OUString> aSNS { RESULTSET_SERVICE_NAME };
-    return aSNS;
+    return { RESULTSET_SERVICE_NAME };
 }
 
 
@@ -830,13 +817,12 @@ SortedResultSet::getPropertySetInfo() throw( RuntimeException, std::exception )
 {
     osl::Guard< osl::Mutex > aGuard( maMutex );
 
-    if ( !mpPropSetInfo )
+    if ( !mpPropSetInfo.is() )
     {
         mpPropSetInfo = new SRSPropertySetInfo();
-        mpPropSetInfo->acquire();
     }
 
-    return Reference< XPropertySetInfo >( mpPropSetInfo );
+    return Reference< XPropertySetInfo >( mpPropSetInfo.get() );
 }
 
 
@@ -1336,8 +1322,8 @@ void SortedResultSet::PropertyChanged( const PropertyChangeEvent& rEvt )
 
 void SortedResultSet::CopyData( SortedResultSet *pSource )
 {
-    const SortedEntryList& rSrcS2O = pSource->GetS2OList();
-    const SimpleList&      rSrcO2S = pSource->GetO2SList();
+    const SortedEntryList& rSrcS2O = pSource->maS2O;
+    const SimpleList&      rSrcO2S = pSource->maO2S;
 
     sal_IntPtr i, nCount;
 
@@ -1357,11 +1343,11 @@ void SortedResultSet::CopyData( SortedResultSet *pSource )
     }
 
     mnLastSort = maS2O.Count();
-    mxOther = pSource->GetResultSet();
+    mxOther = pSource->mxOriginal;
 
     if ( !mpSortInfo )
     {
-        mpSortInfo = pSource->GetSortInfo();
+        mpSortInfo = pSource->mpSortInfo;
         mbIsCopy = true;
     }
 }

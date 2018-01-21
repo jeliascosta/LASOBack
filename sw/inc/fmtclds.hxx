@@ -34,8 +34,6 @@ class SwColumn
     sal_uInt16 m_nWish;   /**< Desired width, borders included.
                          It is inversely proportional to the ratio of
                          desired width environment / current width column. */
-    sal_uInt16 m_nUpper;  ///< Top border.
-    sal_uInt16 m_nLower;  ///< Bottom border.
     sal_uInt16 m_nLeft;   ///< Left border.
     sal_uInt16 m_nRight;  ///< Right border.
 
@@ -49,8 +47,6 @@ public:
     void SetRight( sal_uInt16  nNew ) { m_nRight = nNew; }
 
     sal_uInt16 GetWishWidth() const { return m_nWish;  }
-    sal_uInt16 GetUpper() const { return m_nUpper; }
-    sal_uInt16 GetLower() const { return m_nLower; }
     sal_uInt16 GetLeft () const { return m_nLeft; }
     sal_uInt16 GetRight() const { return m_nRight; }
 
@@ -93,10 +89,10 @@ class SW_DLLPUBLIC SwFormatCol : public SfxPoolItem
 public:
     SwFormatCol();
     SwFormatCol( const SwFormatCol& );
-    virtual ~SwFormatCol();
+    virtual ~SwFormatCol() override;
     //#i120133#
     sal_Int16 GetAdjustValue() const { return m_aWidthAdjustValue; }
-    void SetAdjustValue( const sal_Int16& n ) { m_aWidthAdjustValue = n; }
+    void SetAdjustValue( sal_Int16 n ) { m_aWidthAdjustValue = n; }
 
     SwFormatCol& operator=( const SwFormatCol& );
 
@@ -104,10 +100,10 @@ public:
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText,
-                                    const IntlWrapper* pIntl = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText,
+                                  const IntlWrapper* pIntl = nullptr ) const override;
 
     virtual bool QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;

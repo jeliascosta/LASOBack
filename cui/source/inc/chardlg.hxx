@@ -20,12 +20,13 @@
 #define INCLUDED_CUI_SOURCE_INC_CHARDLG_HXX
 
 #include <svtools/ctrlbox.hxx>
-#include <svtools/stdctrl.hxx>
 #include <sfx2/tabdlg.hxx>
 #include <svx/fntctrl.hxx>
 #include <svx/checklbx.hxx>
+#include <svx/colorbox.hxx>
 #include <svx/langbox.hxx>
 #include <vcl/layout.hxx>
+#include <memory>
 
 // forward ---------------------------------------------------------------
 
@@ -51,7 +52,7 @@ protected:
     inline SvxFont&     GetPreviewCTLFont();
 
 public:
-    virtual ~SvxCharBasePage();
+    virtual ~SvxCharBasePage() override;
     virtual void dispose() override;
 
     using SfxTabPage::ActivatePage;
@@ -104,7 +105,7 @@ private:
     VclPtr<SvxLanguageBox>     m_pCTLFontLanguageLB;
     VclPtr<FixedText>          m_pCTLFontTypeFT;
 
-    SvxCharNamePage_Impl*   m_pImpl;
+    std::unique_ptr<SvxCharNamePage_Impl>   m_pImpl;
 
                         SvxCharNamePage( vcl::Window* pParent, const SfxItemSet& rSet );
 
@@ -132,10 +133,10 @@ private:
     void                Reset_Impl( const SfxItemSet& rSet, LanguageGroup eLangGrp );
     bool                FillItemSet_Impl( SfxItemSet& rSet, LanguageGroup eLangGrp );
 
-    DECL_LINK_TYPED( UpdateHdl_Impl, Idle *, void );
-    DECL_LINK_TYPED( FontModifyEditHdl_Impl, Edit&, void );
-    DECL_LINK_TYPED( FontModifyListBoxHdl_Impl, ListBox&, void );
-    DECL_LINK_TYPED( FontModifyComboBoxHdl_Impl, ComboBox&, void );
+    DECL_LINK( UpdateHdl_Impl, Idle *, void );
+    DECL_LINK( FontModifyEditHdl_Impl, Edit&, void );
+    DECL_LINK( FontModifyListBoxHdl_Impl, ListBox&, void );
+    DECL_LINK( FontModifyComboBoxHdl_Impl, ComboBox&, void );
     void FontModifyHdl_Impl(void*);
 
 public:
@@ -143,10 +144,10 @@ public:
     using SfxTabPage::DeactivatePage;
 
     virtual void        ActivatePage( const SfxItemSet& rSet ) override;
-    virtual sfxpg       DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
 
 public:
-                        virtual ~SvxCharNamePage();
+                        virtual ~SvxCharNamePage() override;
     virtual void        dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rSet );
@@ -159,8 +160,6 @@ public:
     void                SetFontList( const SvxFontListItem& rItem );
     void                EnableRelativeMode();
     void                EnableSearchMode();
-    ///                  the writer uses SID_ATTR_BRUSH as font background
-    void                SetPreviewBackgroundToCharacter();
 
     void                DisableControls( sal_uInt16 nDisable );
     virtual void        PageCreated(const SfxAllItemSet& aSet) override;
@@ -174,8 +173,11 @@ class SvxCharEffectsPage : public SvxCharBasePage
 
 private:
     static const sal_uInt16 pEffectsRanges[];
+    bool                       m_bOrigFontColor;
+    bool                       m_bNewFontColor;
+    Color                      m_aOrigFontColor;
     VclPtr<FixedText>          m_pFontColorFT;
-    VclPtr<ColorListBox>       m_pFontColorLB;
+    VclPtr<SvxColorListBox>    m_pFontColorLB;
 
     VclPtr<FixedText>          m_pEffectsFT;
     VclPtr<ListBox>            m_pEffectsLB;
@@ -190,13 +192,13 @@ private:
 
     VclPtr<ListBox>            m_pOverlineLB;
     VclPtr<FixedText>          m_pOverlineColorFT;
-    VclPtr<ColorListBox>       m_pOverlineColorLB;
+    VclPtr<SvxColorListBox>    m_pOverlineColorLB;
 
     VclPtr<ListBox>            m_pStrikeoutLB;
 
     VclPtr<ListBox>            m_pUnderlineLB;
     VclPtr<FixedText>          m_pUnderlineColorFT;
-    VclPtr<ColorListBox>       m_pUnderlineColorLB;
+    VclPtr<SvxColorListBox>    m_pUnderlineColorLB;
 
     VclPtr<CheckBox>           m_pIndividualWordsBtn;
 
@@ -206,9 +208,9 @@ private:
     VclPtr<FixedText>          m_pPositionFT;
     VclPtr<ListBox>            m_pPositionLB;
 
-    sal_uInt16          m_nHtmlMode;
+    VclPtr<FixedText>          m_pA11yWarningFT;
 
-    OUString            m_aTransparentColorName;
+    sal_uInt16          m_nHtmlMode;
 
                         SvxCharEffectsPage( vcl::Window* pParent, const SfxItemSet& rSet );
 
@@ -219,18 +221,18 @@ private:
     bool                FillItemSetColor_Impl( SfxItemSet& rSet );
 
     void SelectHdl_Impl(ListBox*);
-    DECL_LINK_TYPED(SelectListBoxHdl_Impl, ListBox&, void);
-    DECL_LINK_TYPED(CbClickHdl_Impl, Button*, void);
-    DECL_LINK_TYPED(TristClickHdl_Impl, Button*, void);
-    DECL_LINK_TYPED(UpdatePreview_Impl, ListBox&, void);
-    DECL_LINK_TYPED(ColorBoxSelectHdl_Impl, ListBox&, void);
+    DECL_LINK(SelectListBoxHdl_Impl, ListBox&, void);
+    DECL_LINK(CbClickHdl_Impl, Button*, void);
+    DECL_LINK(TristClickHdl_Impl, Button*, void);
+    DECL_LINK(UpdatePreview_Impl, ListBox&, void);
+    DECL_LINK(ColorBoxSelectHdl_Impl, SvxColorListBox&, void);
 
 public:
-    virtual ~SvxCharEffectsPage();
+    virtual ~SvxCharEffectsPage() override;
     virtual void dispose() override;
 
     using SfxTabPage::DeactivatePage;
-    virtual sfxpg       DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
 
 public:
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rSet );
@@ -241,9 +243,6 @@ public:
     virtual void        ChangesApplied() override;
 
     void                DisableControls( sal_uInt16 nDisable );
-    void                EnableFlash();
-    ///                  the writer uses SID_ATTR_BRUSH as font background
-    void                SetPreviewBackgroundToCharacter();
     virtual void        PageCreated(const SfxAllItemSet& aSet) override;
 };
 
@@ -292,25 +291,25 @@ private:
 
     void                Initialize();
     void                UpdatePreview_Impl( sal_uInt8 nProp, sal_uInt8 nEscProp, short nEsc );
-    void                SetEscapement_Impl( sal_uInt16 nEsc );
+    void                SetEscapement_Impl( SvxEscapement nEsc );
 
-    DECL_LINK_TYPED(    PositionHdl_Impl, Button*, void );
-    DECL_LINK_TYPED(    RotationHdl_Impl, Button*, void );
-    DECL_LINK_TYPED(    FontModifyHdl_Impl, Edit&, void );
-    DECL_LINK_TYPED(    AutoPositionHdl_Impl, Button*, void );
-    DECL_LINK_TYPED(    FitToLineHdl_Impl, Button*, void );
-    DECL_LINK_TYPED(    KerningSelectHdl_Impl, ListBox&, void );
-    DECL_LINK_TYPED(    KerningModifyHdl_Impl, Edit&, void );
-    DECL_LINK_TYPED(    LoseFocusHdl_Impl, Control&, void );
-    DECL_LINK_TYPED(    ScaleWidthModifyHdl_Impl, Edit&, void );
+    DECL_LINK(    PositionHdl_Impl, Button*, void );
+    DECL_LINK(    RotationHdl_Impl, Button*, void );
+    DECL_LINK(    FontModifyHdl_Impl, Edit&, void );
+    DECL_LINK(    AutoPositionHdl_Impl, Button*, void );
+    DECL_LINK(    FitToLineHdl_Impl, Button*, void );
+    DECL_LINK(    KerningSelectHdl_Impl, ListBox&, void );
+    DECL_LINK(    KerningModifyHdl_Impl, Edit&, void );
+    DECL_LINK(    LoseFocusHdl_Impl, Control&, void );
+    DECL_LINK(    ScaleWidthModifyHdl_Impl, Edit&, void );
 
 public:
-    virtual ~SvxCharPositionPage();
+    virtual ~SvxCharPositionPage() override;
     virtual void dispose() override;
 
     using SfxTabPage::DeactivatePage;
 
-    virtual sfxpg       DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
 
 public:
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rSet );
@@ -320,8 +319,6 @@ public:
     virtual bool        FillItemSet( SfxItemSet* rSet ) override;
     virtual void        ChangesApplied() override;
     virtual void        FillUserData() override;
-    ///                  the writer uses SID_ATTR_BRUSH as font background
-    void                SetPreviewBackgroundToCharacter();
     virtual void        PageCreated(const SfxAllItemSet& aSet) override;
 };
 
@@ -347,26 +344,24 @@ private:
     void                SelectCharacter( ListBox* pBox );
     void                SetBracket( sal_Unicode cBracket, bool bStart );
 
-    DECL_LINK_TYPED(TwoLinesHdl_Impl, Button*, void);
-    DECL_LINK_TYPED(CharacterMapHdl_Impl, ListBox&, void );
+    DECL_LINK(TwoLinesHdl_Impl, Button*, void);
+    DECL_LINK(CharacterMapHdl_Impl, ListBox&, void );
 
 public:
-    virtual ~SvxCharTwoLinesPage();
+    virtual ~SvxCharTwoLinesPage() override;
     virtual void dispose() override;
 
     using SfxTabPage::ActivatePage;
     using SfxTabPage::DeactivatePage;
 
     virtual void        ActivatePage( const SfxItemSet& rSet ) override;
-    virtual sfxpg       DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rSet );
     static const sal_uInt16*  GetRanges() { return pTwoLinesRanges; }
 
     virtual void        Reset( const SfxItemSet* rSet ) override;
     virtual bool        FillItemSet( SfxItemSet* rSet ) override;
-    ///                  the writer uses SID_ATTR_BRUSH as font background
-    void                SetPreviewBackgroundToCharacter();
     virtual void        PageCreated(const SfxAllItemSet& aSet) override;
 };
 

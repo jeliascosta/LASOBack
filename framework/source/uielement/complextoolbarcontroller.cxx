@@ -196,7 +196,7 @@ throw ( RuntimeException, std::exception )
     }
 }
 
-IMPL_STATIC_LINK_TYPED( ComplexToolbarController, ExecuteHdl_Impl, void*, p, void )
+IMPL_STATIC_LINK( ComplexToolbarController, ExecuteHdl_Impl, void*, p, void )
 {
    ExecuteInfo* pExecuteInfo = static_cast<ExecuteInfo*>(p);
    SolarMutexReleaser aReleaser;
@@ -214,7 +214,7 @@ IMPL_STATIC_LINK_TYPED( ComplexToolbarController, ExecuteHdl_Impl, void*, p, voi
    delete pExecuteInfo;
 }
 
-IMPL_STATIC_LINK_TYPED( ComplexToolbarController, Notify_Impl, void*, p, void )
+IMPL_STATIC_LINK( ComplexToolbarController, Notify_Impl, void*, p, void )
 {
    NotifyInfo* pNotifyInfo = static_cast<NotifyInfo*>(p);
    SolarMutexReleaser aReleaser;
@@ -271,7 +271,7 @@ sal_Int32 ComplexToolbarController::getFontSizePixel( const vcl::Window* pWindow
 
     // Calculate height of the application font used by window
     sal_Int32 nHeight = sal_Int32( rFont.GetFontHeight() );
-    ::Size aPixelSize = pWindow->LogicToPixel( ::Size( 0, nHeight ), MAP_APPFONT );
+    ::Size aPixelSize = pWindow->LogicToPixel( ::Size( 0, nHeight ), MapUnit::MapAppFont );
     return aPixelSize.Height();
 }
 

@@ -76,11 +76,6 @@ const PrinterInfo& PrinterInfoManager::getPrinterInfo( const OUString& /* rPrint
     return aEmptyInfo;
 }
 
-void PrinterInfoManager::changePrinterInfo( const OUString& /* rPrinter */, const PrinterInfo& /* rNewInfo */ )
-{
-
-}
-
 bool PrinterInfoManager::writePrinterConfig()
 {
     return false;
@@ -99,11 +94,6 @@ bool PrinterInfoManager::removePrinter( const OUString& /* rPrinterName */, bool
 bool PrinterInfoManager::setDefaultPrinter( const OUString& /* rPrinterName */ )
 {
     return false;
-}
-
-const std::list< PrinterInfoManager::SystemPrintQueue >& PrinterInfoManager::getSystemPrintQueues()
-{
-    return m_aSystemPrintQueues;
 }
 
 bool PrinterInfoManager::checkFeatureToken( const OUString& /* rPrinterName */, const char* /* pToken */ ) const

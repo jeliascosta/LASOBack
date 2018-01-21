@@ -42,8 +42,8 @@ namespace dbaui
         VclPtr<PushButton>   m_pColumns_LH;
         VclPtr<ListBox>      m_pNewColumnNames; // right side
 
-        DECL_LINK_TYPED( ButtonClickHdl, Button *, void );
-        DECL_LINK_TYPED( ListDoubleClickHdl, ListBox&, void );
+        DECL_LINK( ButtonClickHdl, Button *, void );
+        DECL_LINK( ListDoubleClickHdl, ListBox&, void );
 
         static void clearListBox(ListBox& _rListBox);
         static void fillColumns( ListBox* pRight,
@@ -79,7 +79,7 @@ namespace dbaui
         virtual OUString        GetTitle() const override ;
 
         OWizColumnSelect(vcl::Window* pParent);
-        virtual ~OWizColumnSelect();
+        virtual ~OWizColumnSelect() override;
         virtual void dispose() override;
     };
 }

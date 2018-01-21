@@ -31,7 +31,7 @@ public:
         const css::uno::Reference< css::uno::XComponentContext > & xContext,
         sal_Int32 nDimensionCount = 2 );
     explicit CartesianCoordinateSystem( const CartesianCoordinateSystem & rSource );
-    virtual ~CartesianCoordinateSystem();
+    virtual ~CartesianCoordinateSystem() override;
 
     // ____ XCoordinateSystem ____
     virtual OUString SAL_CALL getCoordinateSystemType()
@@ -50,9 +50,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 };
 
 class CartesianCoordinateSystem2d : public CartesianCoordinateSystem
@@ -60,7 +57,7 @@ class CartesianCoordinateSystem2d : public CartesianCoordinateSystem
 public:
     explicit CartesianCoordinateSystem2d(
         const css::uno::Reference< css::uno::XComponentContext > & xContext );
-    virtual ~CartesianCoordinateSystem2d();
+    virtual ~CartesianCoordinateSystem2d() override;
 
     // ____ XServiceInfo ____
     virtual OUString SAL_CALL getImplementationName()
@@ -69,9 +66,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 };
 
 class CartesianCoordinateSystem3d : public CartesianCoordinateSystem
@@ -80,7 +74,7 @@ public:
     explicit CartesianCoordinateSystem3d(
         const css::uno::Reference<
             css::uno::XComponentContext > & xContext );
-    virtual ~CartesianCoordinateSystem3d();
+    virtual ~CartesianCoordinateSystem3d() override;
 
     // ____ XServiceInfo ____
     virtual OUString SAL_CALL getImplementationName()
@@ -89,9 +83,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 };
 
 }  // namespace chart

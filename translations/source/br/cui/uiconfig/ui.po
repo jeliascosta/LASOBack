@@ -3,8 +3,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LibO 40l10n\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2016-12-01 12:11+0100\n"
-"PO-Revision-Date: 2017-03-22 09:50+0000\n"
+"POT-Creation-Date: 2017-06-01 14:03+0200\n"
+"PO-Revision-Date: 2017-05-03 08:18+0000\n"
 "Last-Translator: Tornoz <tornoz@laposte.net>\n"
 "Language-Team: none\n"
 "Language: br\n"
@@ -13,8 +13,8 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
 "X-Accelerator-Marker: ~\n"
-"X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1490176227.000000\n"
+"X-Generator: LibreOffice\n"
+"X-POOTLE-MTIME: 1493799513.000000\n"
 
 #: aboutconfigdialog.ui
 msgctxt ""
@@ -184,8 +184,8 @@ msgctxt ""
 "copyright\n"
 "label\n"
 "string.text"
-msgid "Copyright © 2000–2016 LibreOffice contributors."
-msgstr "Copyright © 2000 - 2016 Perzhiaded LibreOffice."
+msgid "Copyright © 2000–2017 LibreOffice contributors."
+msgstr "Copyright © 2000 - 2017 Perzhiaded LibreOffice."
 
 #: aboutdialog.ui
 msgctxt ""
@@ -779,7 +779,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Hatch"
-msgstr ""
+msgstr "Barrennigoù"
 
 #: areatabpage.ui
 msgctxt ""
@@ -6161,7 +6161,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Hatch"
-msgstr ""
+msgstr "Barrennigoù"
 
 #: hatchpage.ui
 msgctxt ""
@@ -7980,7 +7980,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Style"
-msgstr ""
+msgstr "Stil"
 
 #: menuassignpage.ui
 msgctxt ""
@@ -7989,7 +7989,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Icons & Text"
-msgstr ""
+msgstr "Arlunioù ha testenn"
 
 #: menuassignpage.ui
 msgctxt ""
@@ -7998,7 +7998,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Icons"
-msgstr ""
+msgstr "Arlunioù"
 
 #: menuassignpage.ui
 msgctxt ""
@@ -8007,7 +8007,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Text"
-msgstr ""
+msgstr "Testenn"
 
 #: menuassignpage.ui
 msgctxt ""
@@ -8061,7 +8061,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Reset"
-msgstr ""
+msgstr "Adderaouekaat"
 
 #: menuassignpage.ui
 msgctxt ""
@@ -8079,7 +8079,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Remove"
-msgstr ""
+msgstr "Lemel kuit"
 
 #: menuassignpage.ui
 msgctxt ""
@@ -8088,7 +8088,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Add Command"
-msgstr ""
+msgstr "Ouzhpennañ un arc'had"
 
 #: menuassignpage.ui
 msgctxt ""
@@ -8097,7 +8097,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Add Separator"
-msgstr ""
+msgstr "Ouzhpennañ un dispartier"
 
 #: menuassignpage.ui
 msgctxt ""
@@ -8106,7 +8106,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Add Submenu"
-msgstr ""
+msgstr "Ouzhpennañ un islañser"
 
 #: menuassignpage.ui
 msgctxt ""
@@ -8466,7 +8466,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Den_ominator places:"
-msgstr ""
+msgstr "Sifroù en anver:"
 
 #: numberingformatpage.ui
 msgctxt ""
@@ -9267,7 +9267,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Tab stop at:"
-msgstr ""
+msgstr "Taolennata da:"
 
 #: numberingpositionpage.ui
 msgctxt ""
@@ -10036,7 +10036,7 @@ msgctxt ""
 "0\n"
 "stringlist.text"
 msgid "Arabic (1, 2, 3…)"
-msgstr ""
+msgstr "Arabeg (1, 2,3…)"
 
 #: optctlpage.ui
 msgctxt ""
@@ -10045,7 +10045,7 @@ msgctxt ""
 "1\n"
 "stringlist.text"
 msgid "Eastern Arabic (٣ ,٢ ,١…)"
-msgstr ""
+msgstr "Arabeg ar sav-heol (٣ ,٢ ,١…)"
 
 #: optctlpage.ui
 msgctxt ""
@@ -11026,7 +11026,7 @@ msgctxt ""
 "AtkObject::accessible-name\n"
 "string.text"
 msgid "Edit Available language modules"
-msgstr ""
+msgstr "Embann ar molladoù yezh hegerz"
 
 #: optlingupage.ui
 msgctxt ""
@@ -11062,7 +11062,7 @@ msgctxt ""
 "AtkObject::accessible-name\n"
 "string.text"
 msgid "Edit User-defined dictionaries"
-msgstr ""
+msgstr "Embann geriadurioù an arveriad"
 
 #: optlingupage.ui
 msgctxt ""
@@ -12066,8 +12066,8 @@ msgctxt ""
 "nameft\n"
 "label\n"
 "string.text"
-msgid "Name/initials:"
-msgstr "Anv/tallizherennoù:"
+msgid "First/last _name/initials:"
+msgstr "Kentanv/A_nv/Tallizherennoù :"
 
 #: optuserpage.ui
 msgctxt ""
@@ -12135,10 +12135,19 @@ msgstr "_Pelleiler/Postel :"
 #: optuserpage.ui
 msgctxt ""
 "optuserpage.ui\n"
+"firstname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "First name"
+msgstr "Kentanv"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
 "lastname-atkobject\n"
 "AtkObject::accessible-name\n"
 "string.text"
-msgid "Name"
+msgid "Last name"
 msgstr "Anv"
 
 #: optuserpage.ui
@@ -12239,6 +12248,87 @@ msgctxt ""
 "string.text"
 msgid "Use data for document properties"
 msgstr "Arverañ ar roadennoù evit perzhioù an teul"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"rusnameft\n"
+"label\n"
+"string.text"
+msgid "Last name/first _name/father’s name/initials:"
+msgstr "Anv/Kentanv/A_nv an Tad/Tallizherennoù :"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"ruslastname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Last name"
+msgstr "Anv"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"rusfathersname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Father's name"
+msgstr "Anv an tad"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"russhortname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Initials"
+msgstr "Tallizherennoù"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"rusfirstname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "First name"
+msgstr "Kentanv"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"eastnameft\n"
+"label\n"
+"string.text"
+msgid "Last/first _name/initials:"
+msgstr "Anv/Kenta_nv/Tallizherennoù :"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"eastlastname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Last name"
+msgstr "Anv"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"eastfirstname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "First name"
+msgstr "Kentanv"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"eastshortname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Initials"
+msgstr "Tallizherennoù"
 
 #: optuserpage.ui
 msgctxt ""
@@ -12396,33 +12486,6 @@ msgstr "Arl_unioù war al lañserioù :"
 #: optviewpage.ui
 msgctxt ""
 "optviewpage.ui\n"
-"menuicons\n"
-"0\n"
-"stringlist.text"
-msgid "Automatic"
-msgstr "Emgefreek"
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
-"menuicons\n"
-"1\n"
-"stringlist.text"
-msgid "Hide"
-msgstr "Masklañ"
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
-"menuicons\n"
-"2\n"
-"stringlist.text"
-msgid "Show"
-msgstr "Diskouez"
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
 "contextmenushortcuts\n"
 "0\n"
 "stringlist.text"
@@ -12455,6 +12518,33 @@ msgctxt ""
 "string.text"
 msgid "Shortcuts in context menus:"
 msgstr "Berradenn el lañserioù kemperzhel:"
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"menuicons\n"
+"0\n"
+"stringlist.text"
+msgid "Automatic"
+msgstr "Emgefreek"
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"menuicons\n"
+"1\n"
+"stringlist.text"
+msgid "Hide"
+msgstr "Masklañ"
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"menuicons\n"
+"2\n"
+"stringlist.text"
+msgid "Show"
+msgstr "Diskouez"
 
 #: optviewpage.ui
 msgctxt ""
@@ -12639,15 +12729,6 @@ msgstr "Lufrañ an nodrezhoù _skramm"
 #: optviewpage.ui
 msgctxt ""
 "optviewpage.ui\n"
-"aafrom\n"
-"label\n"
-"string.text"
-msgid "fro_m:"
-msgstr "e_us :"
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
 "label9\n"
 "label\n"
 "string.text"
@@ -12688,7 +12769,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Notebookbar icon size:"
-msgstr ""
+msgstr "Ment arlunioù ar _vetabarrenn:"
 
 #: optviewpage.ui
 msgctxt ""
@@ -12697,7 +12778,7 @@ msgctxt ""
 "0\n"
 "stringlist.text"
 msgid "Automatic"
-msgstr ""
+msgstr "Emgefreek"
 
 #: optviewpage.ui
 msgctxt ""
@@ -12706,7 +12787,7 @@ msgctxt ""
 "1\n"
 "stringlist.text"
 msgid "Small"
-msgstr ""
+msgstr "Bihan"
 
 #: optviewpage.ui
 msgctxt ""
@@ -12715,7 +12796,16 @@ msgctxt ""
 "2\n"
 "stringlist.text"
 msgid "Large"
-msgstr ""
+msgstr "Bras"
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"aafrom\n"
+"label\n"
+"string.text"
+msgid "fro_m:"
+msgstr "e_us :"
 
 #: optviewpage.ui
 msgctxt ""
@@ -12967,7 +13057,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Page numbers:"
-msgstr ""
+msgstr "Niverennoù pajenn:"
 
 #: pageformatpage.ui
 msgctxt ""
@@ -13450,7 +13540,7 @@ msgctxt ""
 "1\n"
 "stringlist.text"
 msgid "1.15 Lines"
-msgstr ""
+msgstr "1,15 linenn"
 
 #: paraindentspacing.ui
 msgctxt ""
@@ -13459,7 +13549,7 @@ msgctxt ""
 "2\n"
 "stringlist.text"
 msgid "1.5 Lines"
-msgstr ""
+msgstr "1,5 linenn"
 
 #: paraindentspacing.ui
 msgctxt ""
@@ -13468,7 +13558,7 @@ msgctxt ""
 "3\n"
 "stringlist.text"
 msgid "Double"
-msgstr ""
+msgstr "Daougement"
 
 #: paraindentspacing.ui
 msgctxt ""
@@ -13477,7 +13567,7 @@ msgctxt ""
 "4\n"
 "stringlist.text"
 msgid "Proportional"
-msgstr ""
+msgstr "Kenfeuriek"
 
 #: paraindentspacing.ui
 msgctxt ""
@@ -13486,7 +13576,7 @@ msgctxt ""
 "5\n"
 "stringlist.text"
 msgid "At least"
-msgstr ""
+msgstr "Da vihanañ"
 
 #: paraindentspacing.ui
 msgctxt ""
@@ -13495,7 +13585,7 @@ msgctxt ""
 "6\n"
 "stringlist.text"
 msgid "Leading"
-msgstr ""
+msgstr "Lizherennerezhel"
 
 #: paratabspage.ui
 msgctxt ""
@@ -13648,7 +13738,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "points"
-msgstr ""
+msgstr "a bikennoù"
 
 #: paratabspage.ui
 msgctxt ""
@@ -13657,7 +13747,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "dashes"
-msgstr ""
+msgstr "a c'hourzhelloù"
 
 #: paratabspage.ui
 msgctxt ""
@@ -13666,7 +13756,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "underscores"
-msgstr ""
+msgstr "a islinennoù"
 
 #: password.ui
 msgctxt ""
@@ -13792,7 +13882,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Modify"
-msgstr ""
+msgstr "_Daskemmañ"
 
 #: patterntabpage.ui
 msgctxt ""
@@ -13801,7 +13891,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Pattern"
-msgstr ""
+msgstr "Goustur"
 
 #: patterntabpage.ui
 msgctxt ""
@@ -13810,7 +13900,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Pattern Editor:"
-msgstr ""
+msgstr "Embanner goustur:"
 
 #: patterntabpage.ui
 msgctxt ""
@@ -13819,7 +13909,7 @@ msgctxt ""
 "AtkObject::accessible-name\n"
 "string.text"
 msgid "Pattern Editor"
-msgstr ""
+msgstr "Embanner goustur"
 
 #: patterntabpage.ui
 msgctxt ""
@@ -13828,7 +13918,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Foreground Color:"
-msgstr ""
+msgstr "Liv ar rakva:"
 
 #: patterntabpage.ui
 msgctxt ""
@@ -13837,7 +13927,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Background Color:"
-msgstr ""
+msgstr "Liv an drekleur:"
 
 #: patterntabpage.ui
 msgctxt ""
@@ -13846,7 +13936,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Options"
-msgstr ""
+msgstr "Dibarzhioù"
 
 #: patterntabpage.ui
 msgctxt ""
@@ -13855,7 +13945,7 @@ msgctxt ""
 "AtkObject::accessible-name\n"
 "string.text"
 msgid "Example"
-msgstr ""
+msgstr "Skouer"
 
 #: patterntabpage.ui
 msgctxt ""
@@ -13864,7 +13954,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Preview"
-msgstr ""
+msgstr "Alberz"
 
 #: percentdialog.ui
 msgctxt ""
@@ -14764,7 +14854,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Interactive Screenshot Annotation"
-msgstr ""
+msgstr "Notennoù etrewezhiat a dapadoù-skramm"
 
 #: screenshotannotationdialog.ui
 msgctxt ""
@@ -14773,7 +14863,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Save Screenshot..."
-msgstr ""
+msgstr "Enrollañ an dapadenn-skramm..."
 
 #: screenshotannotationdialog.ui
 msgctxt ""
@@ -14782,7 +14872,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Click the widgets to add annotation:"
-msgstr ""
+msgstr "Klikit war ar widjed evit ouzhpennañ un notenn"
 
 #: screenshotannotationdialog.ui
 msgctxt ""
@@ -14791,7 +14881,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Paste the following markup into the help file:"
-msgstr ""
+msgstr "Pegit ar c'hlav da-heul e-barzh ar restr skoazell:"
 
 #: scriptorganizer.ui
 msgctxt ""
@@ -15034,7 +15124,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Ctrl-click required _to follow links"
-msgstr ""
+msgstr "Reol + klik azgoulennet _a-benn heuliañ ereoù"
 
 #: securityoptionsdialog.ui
 msgctxt ""
@@ -16240,7 +16330,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Drawing Object Text"
-msgstr ""
+msgstr "Testenn ergorenn an dresadenn"
 
 #: textattrtabpage.ui
 msgctxt ""
@@ -16267,7 +16357,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Custom Shape Text"
-msgstr ""
+msgstr "Testenn gant ur stumm personelaet"
 
 #: textattrtabpage.ui
 msgctxt ""
@@ -16456,7 +16546,7 @@ msgctxt ""
 "AtkObject::accessible-name\n"
 "string.text"
 msgid "Page Style"
-msgstr ""
+msgstr "Giz ar bajenn"
 
 #: textflowpage.ui
 msgctxt ""
@@ -17140,7 +17230,7 @@ msgctxt ""
 "AtkObject::accessible-name\n"
 "string.text"
 msgid "Variable"
-msgstr ""
+msgstr "Argemmenn"
 
 #: zoomdialog.ui
 msgctxt ""
@@ -17185,7 +17275,7 @@ msgctxt ""
 "AtkObject::accessible-name\n"
 "string.text"
 msgid "Columns"
-msgstr ""
+msgstr "Bannoù"
 
 #: zoomdialog.ui
 msgctxt ""

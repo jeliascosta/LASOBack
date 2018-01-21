@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/extended/accessibleiconchoicectrlentry.hxx>
+#include <extended/accessibleiconchoicectrlentry.hxx>
 #include <svtools/ivctrl.hxx>
 #include <com/sun/star/awt/Point.hpp>
 #include <com/sun/star/awt/Rectangle.hpp>
@@ -232,33 +232,19 @@ throw(RuntimeException, std::exception)
 
     OUString SAL_CALL AccessibleIconChoiceCtrlEntry::getImplementationName() throw(RuntimeException, std::exception)
     {
-        return getImplementationName_Static();
+        return OUString( "com.sun.star.comp.svtools.AccessibleIconChoiceControlEntry" );
     }
 
     Sequence< OUString > SAL_CALL AccessibleIconChoiceCtrlEntry::getSupportedServiceNames() throw(RuntimeException, std::exception)
     {
-        return getSupportedServiceNames_Static();
+        return {"com.sun.star.accessibility.AccessibleContext",
+                "com.sun.star.accessibility.AccessibleComponent",
+                "com.sun.star.awt.AccessibleIconChoiceControlEntry"};
     }
 
     sal_Bool SAL_CALL AccessibleIconChoiceCtrlEntry::supportsService( const OUString& _rServiceName ) throw (RuntimeException, std::exception)
     {
         return cppu::supportsService(this, _rServiceName);
-    }
-
-    // XServiceInfo - static methods
-
-    Sequence< OUString > AccessibleIconChoiceCtrlEntry::getSupportedServiceNames_Static() throw( RuntimeException )
-    {
-        Sequence< OUString > aSupported(3);
-        aSupported[0] = "com.sun.star.accessibility.AccessibleContext";
-        aSupported[1] = "com.sun.star.accessibility.AccessibleComponent";
-        aSupported[2] = "com.sun.star.awt.AccessibleIconChoiceControlEntry";
-        return aSupported;
-    }
-
-    OUString AccessibleIconChoiceCtrlEntry::getImplementationName_Static() throw( RuntimeException )
-    {
-        return OUString( "com.sun.star.comp.svtools.AccessibleIconChoiceControlEntry" );
     }
 
     // XAccessible

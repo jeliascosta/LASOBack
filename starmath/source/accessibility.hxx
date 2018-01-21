@@ -81,7 +81,7 @@ protected:
 
 public:
     explicit SmGraphicAccessible( SmGraphicWindow *pGraphicWin );
-    virtual ~SmGraphicAccessible();
+    virtual ~SmGraphicAccessible() override;
 
     void                ClearWin();     // to be called when view is destroyed
     void                LaunchEvent(
@@ -166,7 +166,7 @@ class SmViewForwarder :
 
 public:
     explicit SmViewForwarder( SmEditAccessible &rAcc );
-    virtual             ~SmViewForwarder();
+    virtual             ~SmViewForwarder() override;
 
     virtual bool        IsValid() const override;
     virtual Rectangle   GetVisArea() const override;
@@ -181,14 +181,14 @@ class SmTextForwarder :     /* analog to SvxEditEngineForwarder */
     SmEditAccessible &  rEditAcc;
     SmEditSource &      rEditSource;
 
-    DECL_LINK_TYPED( NotifyHdl, EENotify&, void );
+    DECL_LINK( NotifyHdl, EENotify&, void );
 
     SmTextForwarder( const SmTextForwarder & ) = delete;
     SmTextForwarder & operator = ( const SmTextForwarder & ) = delete;
 
 public:
     SmTextForwarder( SmEditAccessible& rAcc, SmEditSource & rSource );
-    virtual ~SmTextForwarder();
+    virtual ~SmTextForwarder() override;
 
     virtual sal_Int32   GetParagraphCount() const override;
     virtual sal_Int32   GetTextLen( sal_Int32 nParagraph ) const override;
@@ -254,7 +254,7 @@ class SmEditViewForwarder :     /* analog to SvxEditEngineViewForwarder */
 
 public:
     explicit SmEditViewForwarder( SmEditAccessible& rAcc );
-    virtual             ~SmEditViewForwarder();
+    virtual             ~SmEditViewForwarder() override;
 
     virtual bool        IsValid() const override;
 
@@ -285,7 +285,7 @@ class SmEditSource :
 
 public:
             SmEditSource( SmEditWindow *pWin, SmEditAccessible &rAcc );
-    virtual ~SmEditSource();
+    virtual ~SmEditSource() override;
 
     virtual SvxEditSource*      Clone() const override;
     virtual SvxTextForwarder*   GetTextForwarder() override;
@@ -319,7 +319,7 @@ class SmEditAccessible :
 
 public:
     explicit SmEditAccessible( SmEditWindow *pEditWin );
-    virtual ~SmEditAccessible();
+    virtual ~SmEditAccessible() override;
 
     ::accessibility::AccessibleTextHelper *   GetTextHelper();
 

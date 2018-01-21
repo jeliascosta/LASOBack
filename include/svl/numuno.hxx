@@ -35,13 +35,6 @@ namespace comphelper
 }
 
 
-//  SvNumberFormatterServiceObj must be registered as service somewhere
-
-css::uno::Reference<css::uno::XInterface> SAL_CALL
-    SvNumberFormatterServiceObj_NewInstance(
-        const css::uno::Reference< css::lang::XMultiServiceFactory>& rSMgr );
-
-
 //  SvNumberFormatsSupplierObj: aggregate to document,
 //  construct with SvNumberFormatter
 
@@ -55,7 +48,7 @@ private:
 public:
                                 SvNumberFormatsSupplierObj();
                                 SvNumberFormatsSupplierObj(SvNumberFormatter* pForm);
-    virtual                     ~SvNumberFormatsSupplierObj();
+    virtual                     ~SvNumberFormatsSupplierObj() override;
 
     void                        SetNumberFormatter(SvNumberFormatter* pNew);
     SvNumberFormatter*          GetNumberFormatter() const;

@@ -55,7 +55,6 @@ enum class SvxSearchApp
     WRITER        = 0,
     CALC          = 1,
     DRAW          = 2,
-    BASE          = 3,
 };
 
 // class SvxSearchItem ---------------------------------------------------
@@ -97,16 +96,16 @@ public:
 
     explicit SvxSearchItem( const sal_uInt16 nId );
     SvxSearchItem( const SvxSearchItem& rItem );
-    virtual ~SvxSearchItem();
+    virtual ~SvxSearchItem() override;
 
     virtual bool             QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool             PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
     virtual bool             operator == ( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     // ConfigItem
     virtual void            Notify( const css::uno::Sequence< OUString > &rPropertyNames ) override;

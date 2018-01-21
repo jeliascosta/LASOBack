@@ -3,16 +3,17 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2014-11-22 15:16+0100\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"POT-Creation-Date: 2016-12-01 12:11+0100\n"
+"PO-Revision-Date: 2017-08-05 13:10+0000\n"
+"Last-Translator: Андрей Абухба <aabuchba@mail.ru>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: ab\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: LibreOffice\n"
 "X-Accelerator-Marker: ~\n"
+"X-Generator: Pootle 2.8\n"
+"X-POOTLE-MTIME: 1501938655.000000\n"
 
 #: cmdlinehelp.ui
 msgctxt ""
@@ -21,7 +22,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Help Message"
-msgstr ""
+msgstr "Аҵаҳәара"
 
 #: dependenciesdialog.ui
 msgctxt ""
@@ -53,19 +54,46 @@ msgstr ""
 #: extensionmanager.ui
 msgctxt ""
 "extensionmanager.ui\n"
-"add\n"
+"optionsbtn\n"
 "label\n"
 "string.text"
-msgid "Add..."
-msgstr ""
+msgid "_Options"
+msgstr "_Апараметрқәа"
 
 #: extensionmanager.ui
 msgctxt ""
 "extensionmanager.ui\n"
-"update\n"
+"updatebtn\n"
 "label\n"
 "string.text"
-msgid "Check for updates..."
+msgid "Check for _Updates"
+msgstr "Арҿыцрақәа ргәаҭара"
+
+#: extensionmanager.ui
+msgctxt ""
+"extensionmanager.ui\n"
+"addbtn\n"
+"label\n"
+"string.text"
+msgid "_Add"
+msgstr "_Иацҵатәуп"
+
+#: extensionmanager.ui
+msgctxt ""
+"extensionmanager.ui\n"
+"removebtn\n"
+"label\n"
+"string.text"
+msgid "_Remove"
+msgstr "_Ианыхтәуп"
+
+#: extensionmanager.ui
+msgctxt ""
+"extensionmanager.ui\n"
+"enablebtn\n"
+"label\n"
+"string.text"
+msgid "_Enable"
 msgstr ""
 
 #: extensionmanager.ui
@@ -75,7 +103,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Installed for all users"
-msgstr ""
+msgstr "Ахархәаҩцәа зегьы рзы"
 
 #: extensionmanager.ui
 msgctxt ""
@@ -84,7 +112,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Installed for current user"
-msgstr ""
+msgstr "Уажәтәи ахархәаҩ изы"
 
 #: extensionmanager.ui
 msgctxt ""
@@ -120,7 +148,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Get more extensions online..."
-msgstr ""
+msgstr "Арҭбаарақәа аИнтернет аҟны..."
 
 #: installforalldialog.ui
 msgctxt ""
@@ -147,7 +175,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_For all users"
-msgstr ""
+msgstr "Ахархәаҩцәа зеьы рзы"
 
 #: installforalldialog.ui
 msgctxt ""
@@ -156,7 +184,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Only for me"
-msgstr ""
+msgstr "Саззы мацара"
 
 #: licensedialog.ui
 msgctxt ""
@@ -183,7 +211,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Decline"
-msgstr ""
+msgstr "Мап ацәктәуп"
 
 #: licensedialog.ui
 msgctxt ""
@@ -201,7 +229,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "1."
-msgstr ""
+msgstr "1."
 
 #: licensedialog.ui
 msgctxt ""
@@ -210,7 +238,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "2."
-msgstr ""
+msgstr "2."
 
 #: licensedialog.ui
 msgctxt ""
@@ -218,7 +246,7 @@ msgctxt ""
 "label4\n"
 "label\n"
 "string.text"
-msgid "Read the complete License Agreement. Use the scroll bar or the 'Scroll Down' button in this dialog to view the entire license text.\""
+msgid "Read the complete License Agreement. Use the scroll bar or the 'Scroll Down' button in this dialog to view the entire license text."
 msgstr ""
 
 #: licensedialog.ui
@@ -264,7 +292,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Install"
-msgstr ""
+msgstr "Иқәыргылатәуп"
 
 #: updatedialog.ui
 msgctxt ""
@@ -282,7 +310,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Checking..."
-msgstr ""
+msgstr "Агәаҭара..."
 
 #: updatedialog.ui
 msgctxt ""
@@ -291,7 +319,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Show all updates"
-msgstr ""
+msgstr "Иаарҧштәуп арҿыцрақәа зегьы"
 
 #: updatedialog.ui
 msgctxt ""
@@ -300,7 +328,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Description"
-msgstr ""
+msgstr "Ахҳәаа"
 
 #: updatedialog.ui
 msgctxt ""
@@ -309,7 +337,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Publisher:"
-msgstr ""
+msgstr "Аҭыжьҩы:"
 
 #: updatedialog.ui
 msgctxt ""
@@ -318,7 +346,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "button"
-msgstr ""
+msgstr "Акнопка"
 
 #: updatedialog.ui
 msgctxt ""
@@ -327,7 +355,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "What is new:"
-msgstr ""
+msgstr "Ҿыцс иҟоу:"
 
 #: updatedialog.ui
 msgctxt ""
@@ -363,7 +391,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Result"
-msgstr ""
+msgstr "Алҵшәа"
 
 #: updaterequireddialog.ui
 msgctxt ""
@@ -399,7 +427,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Check for _Updates..."
-msgstr ""
+msgstr "Арҿыцрақәа ргәаҭара..."
 
 #: updaterequireddialog.ui
 msgctxt ""

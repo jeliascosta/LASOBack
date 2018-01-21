@@ -94,7 +94,7 @@ private:
 public:
                             ScIndexEnumeration(const css::uno::Reference<
                                 css::container::XIndexAccess>& rInd, const OUString& rServiceName);
-    virtual                 ~ScIndexEnumeration();
+    virtual                 ~ScIndexEnumeration() override;
 
                             // XEnumeration
     virtual sal_Bool SAL_CALL hasMoreElements() throw(css::uno::RuntimeException, std::exception) override;
@@ -124,7 +124,7 @@ private:
 public:
                             ScNameToIndexAccess(
                                 const css::uno::Reference< css::container::XNameAccess>& rNameObj );
-    virtual                 ~ScNameToIndexAccess();
+    virtual                 ~ScNameToIndexAccess() override;
 
                             // XIndexAccess
     virtual sal_Int32 SAL_CALL getCount(  ) throw(css::uno::RuntimeException, std::exception) override;
@@ -154,6 +154,8 @@ public:
                             AnyToInterface( const css::uno::Any& rAny );
     static bool             GetBoolProperty( const css::uno::Reference< css::beans::XPropertySet>& xProp,
                                             const OUString& rName, bool bDefault = false );
+    static sal_Int16        GetShortProperty( const css::uno::Reference< css::beans::XPropertySet>& xProp,
+                                            const OUString& rName, sal_Int16 nDefault );
     static sal_Int32        GetLongProperty( const css::uno::Reference< css::beans::XPropertySet>& xProp,
                                             const OUString& rName );
     static sal_Int32        GetEnumProperty( const css::uno::Reference< css::beans::XPropertySet>& xProp,

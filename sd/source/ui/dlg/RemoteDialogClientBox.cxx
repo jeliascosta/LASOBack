@@ -41,9 +41,9 @@ namespace sd {
 
 //                          struct ClientBoxEntry
 
-ClientBoxEntry::ClientBoxEntry( std::shared_ptr<ClientInfo> pClientInfo ) :
-    m_bActive( false ),
-    m_pClientInfo( pClientInfo )
+ClientBoxEntry::ClientBoxEntry(const std::shared_ptr<ClientInfo>& pClientInfo)
+    : m_bActive(false)
+    , m_pClientInfo(pClientInfo)
 {
 }
 
@@ -108,18 +108,11 @@ ClientBox::ClientBox( vcl::Window* pParent, WinBits nStyle ) :
     Show();
 }
 
-VCL_BUILDER_DECL_FACTORY(ClientBox)
-{
-    WinBits nWinStyle = WB_TABSTOP;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinStyle |= WB_BORDER;
-    rRet = VclPtr<ClientBox>::Create(pParent, nWinStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(ClientBox, WB_TABSTOP)
 
 Size ClientBox::GetOptimalSize() const
 {
-    return LogicToPixel(Size(200, 140), MAP_APPFONT);
+    return LogicToPixel(Size(200, 140), MapUnit::MapAppFont);
 }
 
 ClientBox::~ClientBox()
@@ -167,7 +160,7 @@ void ClientBox::CalcActiveHeight( const long nPos )
     aSize.Width() -= ICON_OFFSET;
 
     aSize = LogicToPixel( Size( RSC_CD_PUSHBUTTON_WIDTH, RSC_CD_PUSHBUTTON_HEIGHT ),
-                               MapMode( MAP_APPFONT ) );
+                               MapMode( MapUnit::MapAppFont ) );
     aTextHeight += aSize.Height();
 
     if ( aTextHeight < m_nStdHeight )
@@ -356,7 +349,7 @@ void ClientBox::RecalcAll()
 
     Size aPBSize = LogicToPixel(
                       Size( RSC_CD_PUSHBUTTON_WIDTH, RSC_CD_PUSHBUTTON_HEIGHT ),
-                      MapMode( MAP_APPFONT ) );
+                      MapMode( MapUnit::MapAppFont ) );
     m_aPinBox->SetSizePixel( aPBSize );
     m_aDeauthoriseButton->SetSizePixel( m_aDeauthoriseButton->GetOptimalSize() );
 
@@ -631,7 +624,7 @@ bool ClientBox::Notify( NotifyEvent& rNEvt )
         return true;
 }
 
-long ClientBox::addEntry( const std::shared_ptr<ClientInfo>& pClientInfo )
+void ClientBox::addEntry( const std::shared_ptr<ClientInfo>& pClientInfo )
 {
     long         nPos = 0;
 
@@ -664,8 +657,6 @@ long ClientBox::addEntry( const std::shared_ptr<ClientInfo>& pClientInfo )
         Invalidate();
 
     m_bNeedsRecalc = true;
-
-    return nPos;
 }
 
 void ClientBox::clearEntries()
@@ -718,12 +709,12 @@ void ClientBox::DoScroll( long nDelta )
     m_aScrollBar->SetPosPixel( aNewSBPt );
 }
 
-IMPL_LINK_TYPED( ClientBox, ScrollHdl, ScrollBar*, pScrBar, void )
+IMPL_LINK( ClientBox, ScrollHdl, ScrollBar*, pScrBar, void )
 {
     DoScroll( pScrBar->GetDelta() );
 }
 
-IMPL_LINK_NOARG_TYPED( ClientBox, DeauthoriseHdl, Button*, void )
+IMPL_LINK_NOARG( ClientBox, DeauthoriseHdl, Button*, void )
 {
     long aSelected = GetActiveEntryIndex();
     if ( aSelected < 0 )

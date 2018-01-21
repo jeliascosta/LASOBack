@@ -41,7 +41,6 @@ enum class DragMode {
 class SVT_DLLPUBLIC SvtTabAppearanceCfg : public utl::ConfigItem
 {
     DragMode        nDragMode           ;
-    short           nScaleFactor        ;
     SnapType        nSnapMode           ;
     MouseMiddleButtonAction nMiddleMouse;
 #if defined( UNX )
@@ -55,19 +54,16 @@ class SVT_DLLPUBLIC SvtTabAppearanceCfg : public utl::ConfigItem
 
     static bool  bInitialized ;
 
-    SVT_DLLPRIVATE const css::uno::Sequence<OUString>& GetPropertyNames();
+    SVT_DLLPRIVATE static const css::uno::Sequence<OUString>& GetPropertyNames();
     virtual void    ImplCommit() override;
 
 public:
     SvtTabAppearanceCfg( );
-    virtual ~SvtTabAppearanceCfg( );
+    virtual ~SvtTabAppearanceCfg( ) override;
 
     virtual void Notify( const css::uno::Sequence< OUString >& _rPropertyNames) override;
 
     DragMode  GetDragMode  () const { return nDragMode; }
-
-    sal_uInt16      GetScaleFactor () const { return nScaleFactor; }
-    void        SetScaleFactor ( sal_uInt16 nSet );
 
     SnapType    GetSnapMode () const { return nSnapMode; }
     void        SetSnapMode ( SnapType nSet );

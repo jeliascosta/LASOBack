@@ -48,18 +48,11 @@ GalleryPreview::GalleryPreview(vcl::Window* pParent, WinBits nStyle, GalleryThem
     InitSettings();
 }
 
-VCL_BUILDER_DECL_FACTORY(GalleryPreview)
-{
-    WinBits nWinBits = WB_TABSTOP;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinBits |= WB_BORDER;
-    rRet = VclPtr<GalleryPreview>::Create(pParent, nWinBits);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(GalleryPreview, WB_TABSTOP)
 
 Size GalleryPreview::GetOptimalSize() const
 {
-    return LogicToPixel(Size(70, 88), MAP_APPFONT);
+    return LogicToPixel(Size(70, 88), MapUnit::MapAppFont);
 }
 
 bool GalleryPreview::SetGraphic( const INetURLObject& _aURL )

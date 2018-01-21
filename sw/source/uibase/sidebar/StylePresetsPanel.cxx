@@ -66,19 +66,19 @@ BitmapEx GenerateStylePreview(SfxObjectShell& rSource, OUString& aName)
 
     ScopedVclPtrInstance<VirtualDevice> pVirtualDev(*Application::GetDefaultDevice());
 
-    sal_Int32 nScalingFactor = pVirtualDev->GetDPIScaleFactor();
+    float fScalingFactor = pVirtualDev->GetDPIScaleFactor();
 
-    sal_Int32 nMargin = 6 * nScalingFactor;
+    sal_Int32 nMargin = 6 * fScalingFactor;
 
-    sal_Int32 nPreviewWidth = 144 * nScalingFactor;
+    sal_Int32 nPreviewWidth = 144 * fScalingFactor;
 
-    sal_Int32 nNameHeight = 16 * nScalingFactor;
-    sal_Int32 nTitleHeight = 32 * nScalingFactor;
-    sal_Int32 nHeadingHeight = 24 * nScalingFactor;
-    sal_Int32 nTextBodyHeight = 16 * nScalingFactor;
-    sal_Int32 nBottomMargin = 2 * nScalingFactor;
+    sal_Int32 nNameHeight = 16 * fScalingFactor;
+    sal_Int32 nTitleHeight = 32 * fScalingFactor;
+    sal_Int32 nHeadingHeight = 24 * fScalingFactor;
+    sal_Int32 nTextBodyHeight = 16 * fScalingFactor;
+    sal_Int32 nBottomMargin = 2 * fScalingFactor;
 
-    sal_Int32 nNameFontSize = 12 * nScalingFactor;
+    sal_Int32 nNameFontSize = 12 * fScalingFactor;
 
     sal_Int32 nPreviewHeight = nNameHeight + nTitleHeight + nHeadingHeight + nTextBodyHeight + nBottomMargin;
 
@@ -131,7 +131,7 @@ BitmapEx GenerateStylePreview(SfxObjectShell& rSource, OUString& aName)
 
 BitmapEx CreatePreview(OUString& aUrl, OUString& aName)
 {
-    SfxMedium aMedium(aUrl, STREAM_STD_READWRITE);
+    SfxMedium aMedium(aUrl, StreamMode::STD_READWRITE);
     SfxObjectShell* pObjectShell = SfxObjectShell::Current();
     SfxObjectShellLock xTemplDoc = SfxObjectShell::CreateObjectByFactoryName(pObjectShell->GetFactory().GetFactoryName(), SfxObjectCreateMode::ORGANIZER);
     xTemplDoc->DoInitNew();
@@ -202,7 +202,7 @@ void StylePresetsPanel::dispose()
     PanelLayout::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(StylePresetsPanel, DoubleClickHdl, ValueSet*, void)
+IMPL_LINK_NOARG(StylePresetsPanel, DoubleClickHdl, ValueSet*, void)
 {
     sal_Int32 nItemId = mpValueSet->GetSelectItemId();
     TemplateEntry* pEntry = static_cast<TemplateEntry*>(mpValueSet->GetItemData(nItemId));

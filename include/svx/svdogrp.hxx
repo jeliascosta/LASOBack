@@ -44,11 +44,10 @@ protected:
 
     SdrObjList*                 pSub;    // Subliste (Kinder)
     Point                       aRefPoint; // Referenzpunkt innerhalb der Objektgruppe
-    bool                        bRefPoint; // Ist ein RefPoint gesetzt?
 
 public:
     SdrObjGroup();
-    virtual ~SdrObjGroup();
+    virtual ~SdrObjGroup() override;
 
     virtual void SetBoundRectDirty() override;
     virtual sal_uInt16 GetObjIdentifier() const override;

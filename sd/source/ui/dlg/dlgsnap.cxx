@@ -64,7 +64,7 @@ SdSnapLineDlg::SdSnapLineDlg(
     // determine PoolUnit
     SfxItemPool* pPool = rInAttrs.GetPool();
     DBG_ASSERT( pPool, "Where's the Pool?" );
-    SfxMapUnit ePoolUnit = pPool->GetMetric( SID_ATTR_FILL_HATCH );
+    MapUnit ePoolUnit = pPool->GetMetric( SID_ATTR_FILL_HATCH );
 
     // #i48497# Consider page origin
     SdrPageView* pPV = pView->GetSdrPageView();
@@ -105,8 +105,8 @@ SdSnapLineDlg::SdSnapLineDlg(
     nYValue = static_cast<const SfxInt32Item&>( rInAttrs.Get(ATTR_SNAPLINE_Y)).GetValue();
     nXValue = Fraction(nXValue) / aUIScale;
     nYValue = Fraction(nYValue) / aUIScale;
-    SetMetricValue( *m_pMtrFldX, nXValue, SFX_MAPUNIT_100TH_MM);
-    SetMetricValue( *m_pMtrFldY, nYValue, SFX_MAPUNIT_100TH_MM);
+    SetMetricValue( *m_pMtrFldX, nXValue, MapUnit::Map100thMM);
+    SetMetricValue( *m_pMtrFldY, nYValue, MapUnit::Map100thMM);
 
     m_pRbPoint->Check();
 }
@@ -133,7 +133,7 @@ void SdSnapLineDlg::dispose()
 /**
  * fills provided item sets with dialog box attributes
  */
-IMPL_LINK_TYPED( SdSnapLineDlg, ClickHdl, Button *, pBtn, void )
+IMPL_LINK( SdSnapLineDlg, ClickHdl, Button *, pBtn, void )
 {
     if ( pBtn == m_pRbPoint )        SetInputFields(true, true);
     else if ( pBtn == m_pRbHorz )    SetInputFields(false, true);
@@ -152,8 +152,8 @@ void SdSnapLineDlg::GetAttr(SfxItemSet& rOutAttrs)
     else if ( m_pRbVert->IsChecked() ) eKind = SK_VERTICAL;
     else                            eKind = SK_POINT;
 
-    nXValue = Fraction( GetCoreValue( *m_pMtrFldX, SFX_MAPUNIT_100TH_MM) ) * aUIScale;
-    nYValue = Fraction( GetCoreValue( *m_pMtrFldY, SFX_MAPUNIT_100TH_MM) ) * aUIScale;
+    nXValue = Fraction( GetCoreValue( *m_pMtrFldX, MapUnit::Map100thMM) ) * aUIScale;
+    nYValue = Fraction( GetCoreValue( *m_pMtrFldY, MapUnit::Map100thMM) ) * aUIScale;
 
     rOutAttrs.Put(SfxAllEnumItem(ATTR_SNAPLINE_KIND, (sal_uInt16)eKind));
     rOutAttrs.Put(SfxInt32Item(ATTR_SNAPLINE_X, nXValue));

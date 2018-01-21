@@ -22,7 +22,6 @@
 #include <osl/thread.h>
 #include <oox/helper/attributelist.hxx>
 #include <string.h>
-#include "biffinputstream.hxx"
 
 namespace oox {
 namespace xls {
@@ -73,11 +72,6 @@ BiffDecoder_XOR::BiffDecoder_XOR( const BiffDecoder_XOR& rDecoder ) :
 {
     if( isValid() )
         maCodec.initCodec( maEncryptionData );
-}
-
-BiffDecoder_XOR* BiffDecoder_XOR::implClone()
-{
-    return new BiffDecoder_XOR( *this );
 }
 
 Sequence< NamedValue > BiffDecoder_XOR::implVerifyPassword( const OUString& rPassword )
@@ -150,11 +144,6 @@ BiffDecoder_RCF::BiffDecoder_RCF( const BiffDecoder_RCF& rDecoder ) :
         maCodec.initCodec( maEncryptionData );
 }
 
-BiffDecoder_RCF* BiffDecoder_RCF::implClone()
-{
-    return new BiffDecoder_RCF( *this );
-}
-
 Sequence< NamedValue > BiffDecoder_RCF::implVerifyPassword( const OUString& rPassword )
 {
     maEncryptionData.realloc( 0 );
@@ -218,17 +207,6 @@ void BiffDecoder_RCF::implDecode( sal_uInt8* pnDestData, const sal_uInt8* pnSrcD
         nCurrPos += nDecBytes;
         nBytesLeft = nBytesLeft - nDecBytes;
     }
-}
-
-BiffCodecHelper::BiffCodecHelper( const WorkbookHelper& rHelper ) :
-    WorkbookHelper( rHelper )
-{
-}
-
-void BiffCodecHelper::cloneDecoder( BiffInputStream& rStrm )
-{
-    if( mxDecoder.get() )
-        rStrm.setDecoder( BiffDecoderRef( mxDecoder->clone() ) );
 }
 
 } // namespace xls

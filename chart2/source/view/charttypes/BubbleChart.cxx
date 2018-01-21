@@ -47,7 +47,6 @@ BubbleChart::BubbleChart( const uno::Reference<XChartType>& xChartTypeModel
                      , sal_Int32 nDimensionCount )
         : VSeriesPlotter( xChartTypeModel, nDimensionCount, false )
         , m_bShowNegativeValues(false)
-        , m_bBubbleSizeAsArea(true)
         , m_fBubbleSizeScaling(1.0)
         , m_fMaxLogicBubbleSize( 0.0 )
         , m_fBubbleSizeFactorToScreen( 1.0 )
@@ -131,13 +130,8 @@ drawing::Direction3D BubbleChart::transformToScreenBubbleSize( double fLogicSize
 
     double fMaxSize = m_fMaxLogicBubbleSize;
 
-    double fMaxRadius = fMaxSize;
-    double fRaduis = fLogicSize;
-    if( m_bBubbleSizeAsArea )
-    {
-        fMaxRadius = sqrt( fMaxSize / F_PI );
-        fRaduis = sqrt( fLogicSize / F_PI );
-    }
+    double fMaxRadius = sqrt( fMaxSize / F_PI );
+    double fRaduis = sqrt( fLogicSize / F_PI );
 
     aRet.DirectionX = m_fBubbleSizeScaling * m_fBubbleSizeFactorToScreen * fRaduis / fMaxRadius;
     aRet.DirectionY = aRet.DirectionX;
@@ -163,11 +157,6 @@ LegendSymbolStyle BubbleChart::getLegendSymbolStyle()
 drawing::Direction3D BubbleChart::getPreferredDiagramAspectRatio() const
 {
     return drawing::Direction3D(-1,-1,-1);
-}
-
-void BubbleChart::addSeries( VDataSeries* pSeries, sal_Int32 zSlot, sal_Int32 xSlot, sal_Int32 ySlot )
-{
-    VSeriesPlotter::addSeries( pSeries, zSlot, xSlot, ySlot );
 }
 
 //better performance for big data
@@ -266,7 +255,7 @@ void BubbleChart::createShapes()
                     if( !m_bShowNegativeValues && fBubbleSize<0.0 )
                         continue;
 
-                    if( ::rtl::math::approxEqual( fBubbleSize, 0.0 ) || ::rtl::math::isNan(fBubbleSize) )
+                    if( fBubbleSize == 0.0 || ::rtl::math::isNan(fBubbleSize) )
                         continue;
 
                     if(    ::rtl::math::isNan(fLogicX) || ::rtl::math::isInf(fLogicX)

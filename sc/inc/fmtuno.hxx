@@ -74,7 +74,7 @@ class ScTableConditionalFormat : public cppu::WeakImplHelper<
                             css::lang::XServiceInfo >
 {
 private:
-    std::vector<ScTableConditionalEntry*>   aEntries;
+    std::vector<rtl::Reference<ScTableConditionalEntry>>   maEntries;
 
     ScTableConditionalEntry*    GetObjectByIndex_Impl(sal_uInt16 nIndex) const;
     void                        AddEntry_Impl(const ScCondFormatEntryItem& aEntry);
@@ -82,7 +82,7 @@ public:
                             ScTableConditionalFormat() = delete;
                             ScTableConditionalFormat(ScDocument* pDoc, sal_uLong nKey,
                                     SCTAB nTab, formula::FormulaGrammar::Grammar eGrammar);
-    virtual                 ~ScTableConditionalFormat();
+    virtual                 ~ScTableConditionalFormat() override;
 
     void                    FillFormat( ScConditionalFormat& rFormat, ScDocument* pDoc,
                                 formula::FormulaGrammar::Grammar eGrammar) const;
@@ -147,7 +147,7 @@ private:
 public:
                             ScTableConditionalEntry() = delete;
                             ScTableConditionalEntry(const ScCondFormatEntryItem& aItem);
-    virtual                 ~ScTableConditionalEntry();
+    virtual                 ~ScTableConditionalEntry() override;
 
     void                    GetData(ScCondFormatEntryItem& rData) const;
 
@@ -223,7 +223,7 @@ public:
                             ScTableValidationObj() = delete;
                             ScTableValidationObj(ScDocument* pDoc, sal_uLong nKey,
                                                 const formula::FormulaGrammar::Grammar eGrammar);
-    virtual                 ~ScTableValidationObj();
+    virtual                 ~ScTableValidationObj() override;
 
     ScValidationData*       CreateValidationData( ScDocument* pDoc,
                                                 formula::FormulaGrammar::Grammar eGrammar ) const;

@@ -105,7 +105,6 @@ void RandRWrapper::releaseWrapper()
 #endif
 
 #include "unx/saldisp.hxx"
-#include "unx/salframe.h"
 #if OSL_DEBUG_LEVEL > 1
 #include <cstdio>
 #endif
@@ -137,11 +136,10 @@ void SalDisplay::DeInitRandR()
 void SalDisplay::processRandREvent( XEvent* pEvent )
 {
 #ifdef USE_RANDR
-    int nRet = 0;
     XConfigureEvent* pCnfEvent=reinterpret_cast<XConfigureEvent*>(pEvent);
     if( m_bUseRandRWrapper && pWrapper && pWrapper->XRRRootToScreen(GetDisplay(),pCnfEvent->window) != -1 )
     {
-        nRet = pWrapper->XRRUpdateConfiguration( pEvent );
+        int nRet = pWrapper->XRRUpdateConfiguration( pEvent );
         if( nRet == 1 && pEvent->type != ConfigureNotify) // this should then be a XRRScreenChangeNotifyEvent
         {
             // update screens
@@ -170,7 +168,7 @@ void SalDisplay::processRandREvent( XEvent* pEvent )
                     pWrapper->XRRFreeScreenConfigInfo( pConfig );
 
                     #if OSL_DEBUG_LEVEL > 1
-                    fprintf( stderr, "screen %d changed to size %dx%d\n", (int)i, (int)pTargetSize->width, (int)pTargetSize->height );
+                    fprintf( stderr, "screen %d changed to size %dx%d\n", (int)nId, (int)pTargetSize->width, (int)pTargetSize->height );
                     #endif
                 }
             }

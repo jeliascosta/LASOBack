@@ -30,7 +30,6 @@
 #include <unotools/configpaths.hxx>
 #include <com/sun/star/uno/Sequence.h>
 #include <svl/poolitem.hxx>
-#include <svl/smplhint.hxx>
 #include <osl/mutex.hxx>
 
 #include "itemholder2.hxx"
@@ -53,8 +52,6 @@ static const char g_sIsVisible[] = "/IsVisible";
 namespace svtools
 {
 
-static const sal_Char cColor[] = "/Color";
-static const sal_Char cColorSchemes[] = "ColorSchemes/";
 sal_Int32            nColorRefCount_Impl = 0;
 namespace
 {
@@ -67,7 +64,6 @@ ColorConfig_Impl*    ColorConfig::m_pImpl = nullptr;
 class ColorConfig_Impl : public utl::ConfigItem
 {
     ColorConfigValue m_aConfigValues[ColorConfigEntryCount];
-    bool             m_bEditMode;
     OUString         m_sLoadedScheme;
     bool             m_bAutoDetectSystemHC;
 
@@ -75,7 +71,7 @@ class ColorConfig_Impl : public utl::ConfigItem
 
 public:
     explicit ColorConfig_Impl();
-    virtual ~ColorConfig_Impl();
+    virtual ~ColorConfig_Impl() override;
 
     void                            Load(const OUString& rScheme);
     void                            CommitCurrentSchemeName();
@@ -94,12 +90,12 @@ public:
 
     void                            AddScheme(const OUString& rNode);
     void                            RemoveScheme(const OUString& rNode);
-    void                            SetModified(){ConfigItem::SetModified();}
-    void                            ClearModified(){ConfigItem::ClearModified();}
+    using ConfigItem::SetModified;
+    using ConfigItem::ClearModified;
     void                            SettingsChanged();
     bool GetAutoDetectSystemHC() {return m_bAutoDetectSystemHC;}
 
-    DECL_LINK_TYPED( DataChangedEventListener, VclSimpleEvent&, void );
+    DECL_LINK( DataChangedEventListener, VclSimpleEvent&, void );
 
     void ImplUpdateApplicationSettings();
 };
@@ -167,17 +163,16 @@ uno::Sequence< OUString> GetPropertyNames(const OUString& rScheme)
         { RTL_CONSTASCII_USTRINGPARAM("/SQLComment"),  false }
     };
     int nIndex = 0;
-    OUString sColor = cColor;
-    OUString sBase(cColorSchemes);
-    sBase += utl::wrapConfigurationElementName(rScheme);
+    OUString sBase = "ColorSchemes/"
+                   + utl::wrapConfigurationElementName(rScheme);
     const int nCount = ColorConfigEntryCount;
     for(sal_Int32 i = 0; i < 4 * nCount; i+= 4)
     {
-        OUString sBaseName(sBase);
         sal_Int32 nPos = i / 4;
-        sBaseName += OUString(cNames[nPos].cName, cNames[nPos].nLength, cNames[nPos].eEncoding);
+        OUString sBaseName = sBase
+                           + OUString(cNames[nPos].cName, cNames[nPos].nLength, cNames[nPos].eEncoding);
         pNames[nIndex] += sBaseName;
-        pNames[nIndex++] += sColor;
+        pNames[nIndex++] += "/Color";
         if(cNames[nPos].bCanBeVisible)
         {
             pNames[nIndex] += sBaseName;
@@ -192,15 +187,11 @@ uno::Sequence< OUString> GetPropertyNames(const OUString& rScheme)
 
 ColorConfig_Impl::ColorConfig_Impl() :
     ConfigItem("Office.UI/ColorScheme"),
-    m_bEditMode(false),
     m_bAutoDetectSystemHC(true)
 {
-    if(!m_bEditMode)
-    {
-        //try to register on the root node - if possible
-        uno::Sequence < OUString > aNames(1);
-        EnableNotification( aNames );
-    }
+    //try to register on the root node - if possible
+    uno::Sequence < OUString > aNames(1);
+    EnableNotification( aNames );
 
     if (!utl::ConfigManager::IsAvoidConfig())
         Load(OUString());
@@ -342,7 +333,7 @@ void ColorConfig_Impl::SettingsChanged()
     NotifyListeners(0);
 }
 
-IMPL_LINK_TYPED( ColorConfig_Impl, DataChangedEventListener, VclSimpleEvent&, rEvent, void )
+IMPL_LINK( ColorConfig_Impl, DataChangedEventListener, VclSimpleEvent&, rEvent, void )
 {
     if ( rEvent.GetId() == VCLEVENT_APPLICATION_DATACHANGED )
     {
@@ -509,11 +500,6 @@ ColorConfigValue ColorConfig::GetColorValue(ColorConfigEntry eEntry, bool bSmart
     }
 
     return aRet;
-}
-
-void ColorConfig::Reload()
-{
-    m_pImpl->Load(OUString());
 }
 
 EditableColorConfig::EditableColorConfig() :

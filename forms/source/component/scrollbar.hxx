@@ -58,7 +58,7 @@ namespace frm
         virtual void SAL_CALL setFastPropertyValue_NoBroadcast( sal_Int32 _nHandle, const css::uno::Any& _rValue )
             throw ( css::uno::Exception, std::exception ) override;
         virtual sal_Bool SAL_CALL convertFastPropertyValue( css::uno::Any& _rConvertedValue, css::uno::Any& _rOldValue, sal_Int32 _nHandle, const css::uno::Any& _rValue )
-            throw ( css::lang::IllegalArgumentException ) override;
+            throw ( css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception ) override;
 
         // OBoundControlModel
         virtual css::uno::Any   translateDbColumnToControlValue( ) override;
@@ -69,9 +69,6 @@ namespace frm
                                 getSupportedBindingTypes() override;
         virtual css::uno::Any   translateExternalValueToControlValue( const css::uno::Any& _rExternalValue ) const override;
         virtual css::uno::Any   translateControlValueToExternalValue( ) const override;
-
-        // XCoponent and related helpers
-        virtual void SAL_CALL disposing() override;
 
         // prevent method hiding
         using OBoundControlModel::disposing;

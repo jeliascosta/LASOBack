@@ -24,6 +24,7 @@
 #include <tools/gen.hxx>
 #include <cppuhelper/weakref.hxx>
 #include <cppuhelper/compbase.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <cppuhelper/typeprovider.hxx>
 #include <cppuhelper/interfacecontainer.hxx>
 
@@ -38,7 +39,6 @@
 #include <com/sun/star/accessibility/XAccessibleMultiLineText.hpp>
 
 #include <comphelper/accessibletexthelper.hxx>
-#include <comphelper/broadcasthelper.hxx>
 #include <editeng/AccessibleParaManager.hxx>
 #include <editeng/AccessibleImageBullet.hxx>
 #include <editeng/unoedprx.hxx>
@@ -58,7 +58,7 @@ namespace accessibility
 
     /** This class implements the actual text paragraphs for the EditEngine/Outliner UAA
      */
-    class EDITENG_DLLPUBLIC AccessibleEditableTextPara : public ::comphelper::OBaseMutex, public AccessibleTextParaInterfaceBase, public ::comphelper::OCommonAccessibleText
+    class EDITENG_DLLPUBLIC AccessibleEditableTextPara : public ::cppu::BaseMutex, public AccessibleTextParaInterfaceBase, public ::comphelper::OCommonAccessibleText
     {
 
     protected:
@@ -78,7 +78,7 @@ namespace accessibility
         AccessibleEditableTextPara ( const css::uno::Reference< css::accessibility::XAccessible >& rParent,
                                      const AccessibleParaManager* _pParaManager = nullptr );
 
-        virtual ~AccessibleEditableTextPara ();
+        virtual ~AccessibleEditableTextPara () override;
 
         // XInterface
         virtual css::uno::Any SAL_CALL queryInterface (const css::uno::Type & rType) throw (css::uno::RuntimeException, std::exception) override;
@@ -165,9 +165,6 @@ namespace accessibility
         virtual OUString SAL_CALL getImplementationName() throw (css::uno::RuntimeException, std::exception) override;
         virtual sal_Bool SAL_CALL supportsService (const OUString& sServiceName) throw (css::uno::RuntimeException, std::exception) override;
         virtual css::uno::Sequence< OUString> SAL_CALL getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override;
-
-        // XServiceName
-        static OUString SAL_CALL getServiceName() throw (css::uno::RuntimeException);
 
         /** Set the current index in the accessibility parent
 
@@ -303,10 +300,6 @@ namespace accessibility
             @return false, if the method was not able to determine the range
          */
         bool GetAttributeRun( sal_Int32& nStartIndex, sal_Int32& nEndIndex, sal_Int32 nIndex );
-
-        // syntactic sugar for FireEvent
-        void GotPropertyEvent( const css::uno::Any& rNewValue, const sal_Int16 nEventId ) const;
-        void LostPropertyEvent( const css::uno::Any& rOldValue, const sal_Int16 nEventId ) const;
 
         int getNotifierClientId() const { return mnNotifierClientId; }
 

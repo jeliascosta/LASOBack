@@ -37,7 +37,7 @@
 #include <editeng/brushitem.hxx>
 #include <editeng/editeng.hxx>
 #include <editeng/cmapitem.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <editeng/langitem.hxx>
 #include <editeng/charreliefitem.hxx>
 #include <editeng/emphasismarkitem.hxx>
@@ -121,9 +121,9 @@ SdStyleSheetPool::SdStyleSheetPool(SfxItemPool const& _rPool, SdDrawDocument* pD
             msTableFamilyName = xNamed->getName();
 
         // create presentation families, one for each master page
-        const sal_uInt16 nCount = mpDoc->GetMasterSdPageCount(PK_STANDARD);
+        const sal_uInt16 nCount = mpDoc->GetMasterSdPageCount(PageKind::Standard);
         for( sal_uInt16 nPage = 0; nPage < nCount; ++nPage )
-            AddStyleFamily( mpDoc->GetMasterSdPage(nPage,PK_STANDARD) );
+            AddStyleFamily( mpDoc->GetMasterSdPage(nPage,PageKind::Standard) );
 
     }
 }
@@ -245,12 +245,12 @@ void SdStyleSheetPool::CreateLayoutStyleSheets(const OUString& rLayoutName, bool
                 rSet.Put( SvxShadowedItem(false, EE_CHAR_SHADOW ) );
                 rSet.Put( SvxContourItem(false, EE_CHAR_OUTLINE ) );
                 rSet.Put( SvxEmphasisMarkItem(FontEmphasisMark::NONE, EE_CHAR_EMPHASISMARK ) );
-                rSet.Put( SvxCharReliefItem(RELIEF_NONE, EE_CHAR_RELIEF) );
+                rSet.Put( SvxCharReliefItem(FontRelief::NONE, EE_CHAR_RELIEF) );
                 rSet.Put( SvxColorItem( Color(COL_AUTO), EE_CHAR_COLOR) );
                 rSet.Put( SvxBackgroundColorItem( Color (COL_AUTO), EE_CHAR_BKGCOLOR )  );
                 rSet.Put( XLineStyleItem(css::drawing::LineStyle_NONE) );
                 rSet.Put( XFillStyleItem(drawing::FillStyle_NONE) );
-                rSet.Put( SdrTextFitToSizeTypeItem(SDRTEXTFIT_AUTOFIT) );
+                rSet.Put( SdrTextFitToSizeTypeItem(SdrFitToSizeType::Autofit) );
                 rSet.Put( makeSdrTextAutoGrowHeightItem(false) );
                 // #i16874# enable kerning by default but only for new documents
                 rSet.Put( SvxAutoKernItem( true, EE_CHAR_PAIRKERNING ) );
@@ -363,7 +363,7 @@ void SdStyleSheetPool::CreateLayoutStyleSheets(const OUString& rLayoutName, bool
         rTitleSet.Put(SvxShadowedItem(false, EE_CHAR_SHADOW ));
         rTitleSet.Put(SvxContourItem(false, EE_CHAR_OUTLINE ));
         rTitleSet.Put( SvxEmphasisMarkItem(FontEmphasisMark::NONE, EE_CHAR_EMPHASISMARK ) );
-        rTitleSet.Put( SvxCharReliefItem(RELIEF_NONE, EE_CHAR_RELIEF ) );
+        rTitleSet.Put( SvxCharReliefItem(FontRelief::NONE, EE_CHAR_RELIEF ) );
         rTitleSet.Put(SvxColorItem( Color(COL_AUTO), EE_CHAR_COLOR ));
         rTitleSet.Put(SvxBackgroundColorItem( Color(COL_AUTO), EE_CHAR_BKGCOLOR ));
         rTitleSet.Put(SvxAdjustItem(SVX_ADJUST_CENTER, EE_PARA_JUST ));
@@ -409,7 +409,7 @@ void SdStyleSheetPool::CreateLayoutStyleSheets(const OUString& rLayoutName, bool
         rSubtitleSet.Put(SvxShadowedItem(false, EE_CHAR_SHADOW ));
         rSubtitleSet.Put(SvxContourItem(false, EE_CHAR_OUTLINE ));
         rSubtitleSet.Put( SvxEmphasisMarkItem(FontEmphasisMark::NONE, EE_CHAR_EMPHASISMARK ) );
-        rSubtitleSet.Put( SvxCharReliefItem(RELIEF_NONE, EE_CHAR_RELIEF ) );
+        rSubtitleSet.Put( SvxCharReliefItem(FontRelief::NONE, EE_CHAR_RELIEF ) );
         rSubtitleSet.Put(SvxColorItem( Color(COL_AUTO), EE_CHAR_COLOR ));
         rSubtitleSet.Put(SvxBackgroundColorItem( Color(COL_AUTO), EE_CHAR_BKGCOLOR ));
         rSubtitleSet.Put(SvxAdjustItem(SVX_ADJUST_CENTER, EE_PARA_JUST ));
@@ -458,7 +458,7 @@ void SdStyleSheetPool::CreateLayoutStyleSheets(const OUString& rLayoutName, bool
         rNotesSet.Put( SvxShadowedItem(false, EE_CHAR_SHADOW ) );
         rNotesSet.Put( SvxContourItem(false, EE_CHAR_OUTLINE ) );
         rNotesSet.Put( SvxEmphasisMarkItem(FontEmphasisMark::NONE, EE_CHAR_EMPHASISMARK ) );
-        rNotesSet.Put( SvxCharReliefItem(RELIEF_NONE, EE_CHAR_RELIEF) );
+        rNotesSet.Put( SvxCharReliefItem(FontRelief::NONE, EE_CHAR_RELIEF) );
         rNotesSet.Put( SvxColorItem( Color(COL_AUTO), EE_CHAR_COLOR ) );
         rNotesSet.Put( SvxBackgroundColorItem( Color(COL_AUTO), EE_CHAR_BKGCOLOR ) );
         rNotesSet.Put( SvxLRSpaceItem( 0, 0, 600, -600, EE_PARA_LRSPACE  ) );
@@ -595,18 +595,13 @@ void SdStyleSheetPool::CopyCellSheets(SdStyleSheetPool& rSourcePool, SdStyleShee
 
 void SdStyleSheetPool::RenameAndCopyGraphicSheets(SdStyleSheetPool& rSourcePool, SdStyleSheetVector& rCreatedSheets, OUString &rRenameSuffix)
 {
-    RenameAndCopySheets( rSourcePool, SD_STYLE_FAMILY_GRAPHICS, rCreatedSheets, rRenameSuffix );
+    CopySheets( rSourcePool, SD_STYLE_FAMILY_GRAPHICS, rCreatedSheets, rRenameSuffix );
 }
 
 void SdStyleSheetPool::CopySheets(SdStyleSheetPool& rSourcePool, SfxStyleFamily eFamily )
 {
     SdStyleSheetVector aTmpSheets;
     CopySheets(rSourcePool, eFamily, aTmpSheets);
-}
-
-void SdStyleSheetPool::RenameAndCopySheets(SdStyleSheetPool& rSourcePool, SfxStyleFamily eFamily, SdStyleSheetVector& rCreatedSheets, OUString &rRenameSuffix)
-{
-    CopySheets( rSourcePool, eFamily, rCreatedSheets, rRenameSuffix );
 }
 
 void SdStyleSheetPool::CopySheets(SdStyleSheetPool& rSourcePool, SfxStyleFamily eFamily, SdStyleSheetVector& rCreatedSheets)
@@ -621,7 +616,7 @@ namespace
 struct HasFamilyPredicate : svl::StyleSheetPredicate
 {
     explicit HasFamilyPredicate(SfxStyleFamily eFamily)
-    : meFamily(eFamily) {;}
+    : meFamily(eFamily) {}
 
     bool Check(const SfxStyleSheetBase& sheet) override
     {
@@ -931,7 +926,7 @@ namespace
 struct StyleSheetIsUserDefinedPredicate : svl::StyleSheetPredicate
 {
     StyleSheetIsUserDefinedPredicate()
-    {;}
+    {}
 
     bool Check(const SfxStyleSheetBase& sheet) override
     {
@@ -1117,7 +1112,7 @@ void SdStyleSheetPool::PutNumBulletItem( SfxStyleSheetBase* pSheet,
             }
 
             rSet.Put( SvxNumBulletItem( aNumRule, EE_PARA_NUMBULLET ) );
-            static_cast<SfxStyleSheet*>(pSheet)->Broadcast(SfxSimpleHint( SFX_HINT_DATACHANGED ) );
+            static_cast<SfxStyleSheet*>(pSheet)->Broadcast(SfxHint( SFX_HINT_DATACHANGED ) );
         }
         break;
 
@@ -1150,7 +1145,7 @@ void SdStyleSheetPool::PutNumBulletItem( SfxStyleSheetBase* pSheet,
                 }
 
                 rSet.Put( SvxNumBulletItem( aNumRule, EE_PARA_NUMBULLET ) );
-                static_cast<SfxStyleSheet*>(pSheet)->Broadcast(SfxSimpleHint( SFX_HINT_DATACHANGED ) );
+                static_cast<SfxStyleSheet*>(pSheet)->Broadcast(SfxHint( SFX_HINT_DATACHANGED ) );
             }
         }
         break;
@@ -1175,7 +1170,7 @@ void SdStyleSheetPool::PutNumBulletItem( SfxStyleSheetBase* pSheet,
             }
 
             rSet.Put( SvxNumBulletItem( aNumRule, EE_PARA_NUMBULLET ) );
-            static_cast<SfxStyleSheet*>(pSheet)->Broadcast(SfxSimpleHint( SFX_HINT_DATACHANGED ) );
+            static_cast<SfxStyleSheet*>(pSheet)->Broadcast(SfxHint( SFX_HINT_DATACHANGED ) );
         }
         break;
     }
@@ -1421,16 +1416,6 @@ SdStyleSheetVector SdStyleSheetPool::CreateChildList( SdStyleSheet* pSheet )
     }
 
     return aResult;
-}
-
-void SAL_CALL SdStyleSheetPool::acquire() throw ()
-{
-    SdStyleSheetPoolBase::acquire();
-}
-
-void SAL_CALL SdStyleSheetPool::release() throw ()
-{
-    SdStyleSheetPoolBase::release();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

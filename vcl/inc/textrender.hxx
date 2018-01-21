@@ -26,7 +26,6 @@
 
 class ImplLayoutArgs;
 class ImplFontMetricData;
-class ServerFontLayout;
 class PhysicalFontCollection;
 class PhysicalFontFace;
 
@@ -37,8 +36,8 @@ public:
 
     virtual void                    SetTextColor( SalColor nSalColor ) = 0;
     virtual void                    SetFont( FontSelectPattern*, int nFallbackLevel ) = 0;
-    virtual void                    GetFontMetric( ImplFontMetricDataPtr&, int nFallbackLevel ) = 0;
-    virtual const FontCharMapPtr    GetFontCharMap() const = 0;
+    virtual void                    GetFontMetric( ImplFontMetricDataRef&, int nFallbackLevel ) = 0;
+    virtual const FontCharMapRef    GetFontCharMap() const = 0;
     virtual bool                    GetFontCapabilities(vcl::FontCapabilities &rFontCapabilities) const = 0;
     virtual void                    GetDevFontList( PhysicalFontCollection* ) = 0;
     virtual void                    ClearDevFontCache() = 0;
@@ -65,13 +64,13 @@ public:
     virtual void                    GetGlyphWidths(
                                         const PhysicalFontFace*,
                                         bool bVertical,
-                                        Int32Vector& rWidths,
+                                        std::vector< sal_Int32 >& rWidths,
                                         Ucs2UIntMap& rUnicodeEnc ) = 0;
 
     virtual bool                    GetGlyphBoundRect( sal_GlyphId nIndex, Rectangle& ) = 0;
     virtual bool                    GetGlyphOutline( sal_GlyphId nIndex, basegfx::B2DPolyPolygon& ) = 0;
     virtual SalLayout*              GetTextLayout( ImplLayoutArgs&, int nFallbackLevel ) = 0;
-    virtual void                    DrawServerFontLayout( const ServerFontLayout& ) = 0;
+    virtual void                    DrawServerFontLayout( const GenericSalLayout&, const FreetypeFont& ) = 0;
 #if ENABLE_CAIRO_CANVAS
     virtual SystemFontData          GetSysFontData( int nFallbackLevel ) const = 0;
 #endif // ENABLE_CAIRO_CANVAS

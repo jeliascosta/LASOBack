@@ -135,11 +135,11 @@ bool ScScenarioListBox::Notify( NotifyEvent& rNEvt )
             {
                 if( !pEntry->mbProtected )
                 {
-                    ScPopupMenu aPopup( ScResId( RID_POPUP_NAVIPI_SCENARIO ) );
-                    aPopup.Execute( this, pCEvt->GetMousePosPixel() );
-                    if (aPopup.WasHit())
+                    ScopedVclPtrInstance<ScPopupMenu> aPopup( ScResId( RID_POPUP_NAVIPI_SCENARIO ) );
+                    aPopup->Execute( this, pCEvt->GetMousePosPixel() );
+                    if (aPopup->WasHit())
                     {
-                        switch( aPopup.GetSelected() )
+                        switch( aPopup->GetSelected() )
                         {
                             case RID_NAVIPI_SCENARIO_DELETE:
                                 DeleteScenario();
@@ -274,18 +274,18 @@ void ScScenarioWindow::NotifyState( const SfxPoolItem* pState )
     }
 }
 
-void ScScenarioWindow::SetSizePixel( const Size& rNewSize )
+void ScScenarioWindow::Resize()
 {
-    Size aSize( rNewSize );
+    Window::Resize();
+
+    Size aSize(GetSizePixel());
     long nHeight = aSize.Height() / 2;
 
-    Window::SetSizePixel( aSize );
-
     aSize.Height() = nHeight;
-    aLbScenario->SetSizePixel( aSize );
+    aLbScenario->SetSizePixel(aSize);
 
     aSize.Height() -= 4;
-    aEdComment->SetPosSizePixel( Point( 0, nHeight+4 ), aSize );
+    aEdComment->SetPosSizePixel(Point(0, nHeight + 4), aSize);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

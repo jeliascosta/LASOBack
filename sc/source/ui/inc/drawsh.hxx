@@ -39,7 +39,7 @@ class ScDrawShell : public SfxShell
     ScViewData* pViewData;
     ::rtl::Reference<svx::sidebar::SelectionChangeHandler> mpSelectionChangeHandler;
 
-    DECL_LINK_TYPED( NameObjectHdl, AbstractSvxObjectNameDialog&, bool );
+    DECL_LINK( NameObjectHdl, AbstractSvxObjectNameDialog&, bool );
 
     void SetHlinkForObject( SdrObject* pObj, const OUString& rHlnk );
 
@@ -56,7 +56,7 @@ private:
 
 public:
                     ScDrawShell(ScViewData* pData);
-                    virtual ~ScDrawShell();
+                    virtual ~ScDrawShell() override;
 
     static void StateDisableItems( SfxItemSet &rSet );
 

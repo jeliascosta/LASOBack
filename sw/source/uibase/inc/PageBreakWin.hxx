@@ -22,7 +22,7 @@ class SwPageFrame;
   */
 class SwPageBreakWin : public SwFrameMenuButtonBase
 {
-    PopupMenu*            m_pPopupMenu;
+    VclPtr<PopupMenu>     m_pPopupMenu;
     VclPtr<vcl::Window>   m_pLine;
     bool                  m_bIsAppearing;
     int                   m_nFadeRate;
@@ -34,7 +34,7 @@ class SwPageBreakWin : public SwFrameMenuButtonBase
 
 public:
     SwPageBreakWin( SwEditWin* pEditWin, const SwFrame *pFrame );
-    virtual ~SwPageBreakWin();
+    virtual ~SwPageBreakWin() override;
     virtual void dispose() override;
 
     virtual void Paint( vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect ) override;
@@ -53,8 +53,8 @@ public:
 
 private:
     /// Hide the button (used when the popup menu is closed by clicking outside)
-    DECL_LINK_TYPED( HideHandler, Menu *, bool );
-    DECL_LINK_TYPED( FadeHandler, Timer *, void );
+    DECL_LINK( HideHandler, Menu *, bool );
+    DECL_LINK( FadeHandler, Timer *, void );
 };
 
 #endif

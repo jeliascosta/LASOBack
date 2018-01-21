@@ -20,7 +20,7 @@
 #ifndef INCLUDED_SW_SOURCE_CORE_INC_SCRIPTINFO_HXX
 #define INCLUDED_SW_SOURCE_CORE_INC_SCRIPTINFO_HXX
 
-#include <list>
+#include <vector>
 #include <deque>
 #include "swscanner.hxx"
 #include <rtl/ustrbuf.hxx>
@@ -29,7 +29,7 @@
 class SwTextNode;
 class Point;
 class MultiSelection;
-typedef std::list< sal_Int32 > PositionList;
+typedef std::vector< sal_Int32 > PositionList;
 enum class SwFontScript;
 
 #define SPACING_PRECISION_FACTOR 100
@@ -351,6 +351,13 @@ public:
                                   long* pScrArray, sal_Int32 nIdx,
                                   sal_Int32 nLen, sal_Int32 nNumberOfBlanks = 0,
                                   long nSpaceAdd = 0 );
+
+    static sal_Int32 CountCJKCharacters( const OUString &rText, sal_Int32 nPos, sal_Int32 nEnd, LanguageType aLang);
+
+    static void CJKJustify( const OUString& rText, long* pKernArray,
+                                  long* pScrArray, sal_Int32 nStt,
+                                  sal_Int32 nLen, LanguageType aLang,
+                                  long nSpaceAdd );
 
     static SwScriptInfo* GetScriptInfo( const SwTextNode& rNode,
                                         bool bAllowInvalid = false );

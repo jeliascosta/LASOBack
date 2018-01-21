@@ -27,7 +27,7 @@ using namespace ::com::sun::star::uno;
 
 rtl::Reference< AquaA11yFocusListener > AquaA11yFocusListener::theListener;
 
-rtl::Reference< AquaA11yFocusListener > AquaA11yFocusListener::get()
+rtl::Reference< AquaA11yFocusListener > const & AquaA11yFocusListener::get()
 {
     if ( ! theListener.is() )
         theListener = new AquaA11yFocusListener();
@@ -42,7 +42,7 @@ AquaA11yFocusListener::AquaA11yFocusListener() : m_focusedObject(nil)
 id AquaA11yFocusListener::getFocusedUIElement()
 {
     if ( nil == m_focusedObject ) {
-        Reference< XAccessible > xAccessible( AquaA11yFocusTracker::get().getFocusedObject() );
+        Reference< XAccessible > xAccessible( TheAquaA11yFocusTracker::get().getFocusedObject() );
         try {
             if( xAccessible.is() ) {
                 Reference< XAccessibleContext > xContext(xAccessible->getAccessibleContext());

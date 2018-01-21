@@ -37,16 +37,7 @@ class RscTypCont;
 extern OString* pStdParType;
 extern OString* pStdPar1;
 extern OString* pStdPar2;
-extern OString* pWinParType;
-extern OString* pWinPar1;
-extern OString* pWinPar2;
 extern sal_uInt32       nRefDeep;
-extern sal_uInt32       nRsc_XYMAPMODEId;
-extern sal_uInt32       nRsc_WHMAPMODEId;
-extern sal_uInt32       nRsc_X;
-extern sal_uInt32       nRsc_Y;
-extern sal_uInt32       nRsc_WIDTH;
-extern sal_uInt32       nRsc_HEIGHT;
 extern sal_uInt32       nRsc_DELTALANG;
 extern sal_uInt32       nRsc_DELTASYSTEM;
 extern sal_uInt32       nRsc_EXTRADATA;
@@ -78,19 +69,19 @@ struct RSCINST
     RscTop *    pClass;
     CLASS_DATA  pData;
 
-                RSCINST(){ pClass = NULL; pData = NULL; }
+                RSCINST(){ pClass = nullptr; pData = nullptr; }
                 RSCINST( RscTop * pCl, CLASS_DATA pClassData )
                     {
                         pClass = pCl;
                         pData = pClassData;
                     }
-    bool        IsInst() const { return( pData != NULL ); }
+    bool        IsInst() const { return( pData != nullptr ); }
 };
 
 /********************** S U B I N F O S T R U C T ************************/
 struct SUBINFO_STRUCT
 {
-    SUBINFO_STRUCT(){ nPos = 0; pClass = NULL; };
+    SUBINFO_STRUCT(){ nPos = 0; pClass = nullptr; };
     RscId        aId;    // Identifier der Resource
     sal_uInt32   nPos;   // Position der Resource
     RscTop *     pClass; // Klasse des Eintrages

@@ -22,12 +22,12 @@
 #include <com/sun/star/accessibility/XAccessible.hpp>
 #include <com/sun/star/accessibility/XAccessibleContext.hpp>
 
-#include <cppuhelper/compbase1.hxx>
+#include <cppuhelper/compbase.hxx>
 #include <cppuhelper/basemutex.hxx>
 
 namespace
 {
-    typedef ::cppu::WeakComponentImplHelper1 <
+    typedef cppu::WeakComponentImplHelper <
         css::accessibility::XAccessible
         > AccessibleInterfaceBase;
 }
@@ -46,7 +46,7 @@ class Accessible
 public:
     explicit Accessible (
         const css::uno::Reference<css::accessibility::XAccessibleContext>& rxContext);
-    virtual ~Accessible();
+    virtual ~Accessible() override;
     Accessible(const Accessible&) = delete;
     Accessible& operator=( const Accessible& ) = delete;
 

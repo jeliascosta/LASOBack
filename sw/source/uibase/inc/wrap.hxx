@@ -77,18 +77,18 @@ class SwWrapTabPage: public SfxTabPage
     bool m_bDrawMode;
     bool m_bContourImage;
 
-    virtual ~SwWrapTabPage();
+    virtual ~SwWrapTabPage() override;
     virtual void dispose() override;
 
     void            ApplyImageList();
     virtual void    ActivatePage(const SfxItemSet& rSet) override;
-    virtual sfxpg   DeactivatePage(SfxItemSet *pSet) override;
+    virtual DeactivateRC   DeactivatePage(SfxItemSet *pSet) override;
     virtual void    DataChanged( const DataChangedEvent& rDCEvt ) override;
 
-    DECL_LINK_TYPED( RangeModifyHdl, SpinField&, void );
-    DECL_LINK_TYPED( RangeLoseFocusHdl, Control&, void );
-    DECL_LINK_TYPED( WrapTypeHdl, Button *, void );
-    DECL_LINK_TYPED( ContourHdl, Button *, void);
+    DECL_LINK( RangeModifyHdl, SpinField&, void );
+    DECL_LINK( RangeLoseFocusHdl, Control&, void );
+    DECL_LINK( WrapTypeHdl, Button *, void );
+    DECL_LINK( ContourHdl, Button *, void);
 
     using SfxTabPage::ActivatePage;
     using SfxTabPage::DeactivatePage;

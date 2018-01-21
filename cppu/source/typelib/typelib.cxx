@@ -1481,7 +1481,7 @@ extern "C" void SAL_CALL typelib_typedescription_register(
                 {
                     if (osl_atomic_increment( &pTDR->pType->nRefCount ) > 1)
                     {
-                        // The refence is incremented. The object cannot be destroyed.
+                        // The reference is incremented. The object cannot be destroyed.
                         // Release the guard at the earliest point.
                         aGuard.clear();
                         ::typelib_typedescription_release( *ppNewDescription );
@@ -1874,55 +1874,38 @@ extern "C" void SAL_CALL typelib_typedescription_getByName(
             // avoid recursion during the next ...new calls
             bInited = true;
 
-            rtl_uString * pTypeName = nullptr;
             typelib_TypeDescription * pType = nullptr;
-            rtl_uString_newFromAscii( &pTypeName, "type" );
-            typelib_typedescription_new( &pType, typelib_TypeClass_TYPE, pTypeName, nullptr, 0, nullptr );
+            typelib_typedescription_new( &pType, typelib_TypeClass_TYPE, OUString("type").pData, nullptr, 0, nullptr );
             typelib_typedescription_register( &pType );
-            rtl_uString_newFromAscii( &pTypeName, "void" );
-            typelib_typedescription_new( &pType, typelib_TypeClass_VOID, pTypeName, nullptr, 0, nullptr );
+            typelib_typedescription_new( &pType, typelib_TypeClass_VOID, OUString("void").pData, nullptr, 0, nullptr );
             typelib_typedescription_register( &pType );
-            rtl_uString_newFromAscii( &pTypeName, "boolean" );
-            typelib_typedescription_new( &pType, typelib_TypeClass_BOOLEAN, pTypeName, nullptr, 0, nullptr );
+            typelib_typedescription_new( &pType, typelib_TypeClass_BOOLEAN, OUString("boolean").pData, nullptr, 0, nullptr );
             typelib_typedescription_register( &pType );
-            rtl_uString_newFromAscii( &pTypeName, "char" );
-            typelib_typedescription_new( &pType, typelib_TypeClass_CHAR, pTypeName, nullptr, 0, nullptr );
+            typelib_typedescription_new( &pType, typelib_TypeClass_CHAR, OUString("char").pData, nullptr, 0, nullptr );
             typelib_typedescription_register( &pType );
-            rtl_uString_newFromAscii( &pTypeName, "byte" );
-            typelib_typedescription_new( &pType, typelib_TypeClass_BYTE, pTypeName, nullptr, 0, nullptr );
+            typelib_typedescription_new( &pType, typelib_TypeClass_BYTE, OUString("byte").pData, nullptr, 0, nullptr );
             typelib_typedescription_register( &pType );
-            rtl_uString_newFromAscii( &pTypeName, "string" );
-            typelib_typedescription_new( &pType, typelib_TypeClass_STRING, pTypeName, nullptr, 0, nullptr );
+            typelib_typedescription_new( &pType, typelib_TypeClass_STRING, OUString("string").pData, nullptr, 0, nullptr );
             typelib_typedescription_register( &pType );
-            rtl_uString_newFromAscii( &pTypeName, "short" );
-            typelib_typedescription_new( &pType, typelib_TypeClass_SHORT, pTypeName, nullptr, 0, nullptr );
+            typelib_typedescription_new( &pType, typelib_TypeClass_SHORT, OUString("short").pData, nullptr, 0, nullptr );
             typelib_typedescription_register( &pType );
-            rtl_uString_newFromAscii( &pTypeName, "unsigned short" );
-            typelib_typedescription_new( &pType, typelib_TypeClass_UNSIGNED_SHORT, pTypeName, nullptr, 0, nullptr );
+            typelib_typedescription_new( &pType, typelib_TypeClass_UNSIGNED_SHORT, OUString("unsigned short").pData, nullptr, 0, nullptr );
             typelib_typedescription_register( &pType );
-            rtl_uString_newFromAscii( &pTypeName, "long" );
-            typelib_typedescription_new( &pType, typelib_TypeClass_LONG, pTypeName, nullptr, 0, nullptr );
+            typelib_typedescription_new( &pType, typelib_TypeClass_LONG, OUString("long").pData, nullptr, 0, nullptr );
             typelib_typedescription_register( &pType );
-            rtl_uString_newFromAscii( &pTypeName, "unsigned long" );
-            typelib_typedescription_new( &pType, typelib_TypeClass_UNSIGNED_LONG, pTypeName, nullptr, 0, nullptr );
+            typelib_typedescription_new( &pType, typelib_TypeClass_UNSIGNED_LONG, OUString("unsigned long").pData, nullptr, 0, nullptr );
             typelib_typedescription_register( &pType );
-            rtl_uString_newFromAscii( &pTypeName, "hyper" );
-            typelib_typedescription_new( &pType, typelib_TypeClass_HYPER, pTypeName, nullptr, 0, nullptr );
+            typelib_typedescription_new( &pType, typelib_TypeClass_HYPER, OUString("hyper").pData, nullptr, 0, nullptr );
             typelib_typedescription_register( &pType );
-            rtl_uString_newFromAscii( &pTypeName, "unsigned hyper" );
-            typelib_typedescription_new( &pType, typelib_TypeClass_UNSIGNED_HYPER, pTypeName, nullptr, 0, nullptr );
+            typelib_typedescription_new( &pType, typelib_TypeClass_UNSIGNED_HYPER, OUString("unsigned hyper").pData, nullptr, 0, nullptr );
             typelib_typedescription_register( &pType );
-            rtl_uString_newFromAscii( &pTypeName, "float" );
-            typelib_typedescription_new( &pType, typelib_TypeClass_FLOAT, pTypeName, nullptr, 0, nullptr );
+            typelib_typedescription_new( &pType, typelib_TypeClass_FLOAT, OUString("float").pData, nullptr, 0, nullptr );
             typelib_typedescription_register( &pType );
-            rtl_uString_newFromAscii( &pTypeName, "double" );
-            typelib_typedescription_new( &pType, typelib_TypeClass_DOUBLE, pTypeName, nullptr, 0, nullptr );
+            typelib_typedescription_new( &pType, typelib_TypeClass_DOUBLE, OUString("double").pData, nullptr, 0, nullptr );
             typelib_typedescription_register( &pType );
-            rtl_uString_newFromAscii( &pTypeName, "any" );
-            typelib_typedescription_new( &pType, typelib_TypeClass_ANY, pTypeName, nullptr, 0, nullptr );
+            typelib_typedescription_new( &pType, typelib_TypeClass_ANY, OUString("any").pData, nullptr, 0, nullptr );
             typelib_typedescription_register( &pType );
             typelib_typedescription_release( pType );
-            rtl_uString_release( pTypeName );
         }
     }
 
@@ -2217,7 +2200,7 @@ extern "C" void SAL_CALL typelib_typedescriptionreference_getDescription(
         sal_Int32 n = osl_atomic_increment( &pRef->pType->nRefCount );
         if( n > 1 )
         {
-            // The refence is incremented. The object cannot be destroyed.
+            // The reference is incremented. The object cannot be destroyed.
             // Release the guard at the earliest point.
             *ppRet = pRef->pType;
             return;
@@ -2259,7 +2242,7 @@ extern "C" void SAL_CALL typelib_typedescriptionreference_getByName(
             sal_Int32 n = osl_atomic_increment( &(*aIt).second->nRefCount );
             if( n > 1 )
             {
-                // The refence is incremented. The object cannot be destroyed.
+                // The reference is incremented. The object cannot be destroyed.
                 // Release the guard at the earliest point.
                 *ppRet = (*aIt).second;
             }

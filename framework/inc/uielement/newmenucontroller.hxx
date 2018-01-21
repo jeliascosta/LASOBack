@@ -46,20 +46,13 @@
 
 namespace framework
 {
-    struct NewDocument
-    {
-        css::util::URL                                    aTargetURL;
-        css::uno::Sequence< css::beans::PropertyValue >   aArgSeq;
-        css::uno::Reference< css::frame::XDispatch >      xDispatch;
-    };
-
     class NewMenuController :  public svt::PopupMenuControllerBase
     {
         using svt::PopupMenuControllerBase::disposing;
 
         public:
             NewMenuController( const css::uno::Reference< css::uno::XComponentContext >& xContext );
-            virtual ~NewMenuController();
+            virtual ~NewMenuController() override;
 
             // XServiceInfo
             DECLARE_XSERVICEINFO
@@ -76,8 +69,6 @@ namespace framework
 
             // XEventListener
             virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw ( css::uno::RuntimeException, std::exception ) override;
-
-            DECL_STATIC_LINK_TYPED( NewMenuController, ExecuteHdl_Impl, void*, void );
 
         private:
             virtual void impl_setPopupMenu() override;

@@ -41,9 +41,9 @@ class SVL_DLLPUBLIC SvInputStream: public SvStream
 
     SVL_DLLPRIVATE bool open();
 
-    SVL_DLLPRIVATE virtual sal_uLong GetData(void * pData, sal_uLong nSize) override;
+    SVL_DLLPRIVATE virtual std::size_t GetData(void * pData, std::size_t nSize) override;
 
-    SVL_DLLPRIVATE virtual sal_uLong PutData(void const *, sal_uLong) override;
+    SVL_DLLPRIVATE virtual std::size_t PutData(void const *, std::size_t) override;
 
     SVL_DLLPRIVATE virtual sal_uInt64 SeekPos(sal_uInt64 nPos) override;
 
@@ -54,7 +54,7 @@ class SVL_DLLPUBLIC SvInputStream: public SvStream
 public:
     SvInputStream( css::uno::Reference< css::io::XInputStream > const & rTheStream );
 
-    virtual ~SvInputStream();
+    virtual ~SvInputStream() override;
 };
 
 #endif // INCLUDED_SVL_INSTRM_HXX

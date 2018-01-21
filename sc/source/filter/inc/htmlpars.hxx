@@ -83,7 +83,7 @@ protected:
 
 public:
     explicit                    ScHTMLParser( EditEngine* pEditEngine, ScDocument* pDoc );
-    virtual                     ~ScHTMLParser();
+    virtual                     ~ScHTMLParser() override;
 
     virtual sal_uLong           Read( SvStream& rStrm, const OUString& rBaseURL  ) override = 0;
 
@@ -176,7 +176,7 @@ private:
     bool                bInCell:1;
     bool                bInTitle:1;
 
-    DECL_LINK_TYPED( HTMLImportHdl, ImportInfo&, void );
+    DECL_LINK( HTMLImportHdl, ImportInfo&, void );
     void                NewActEntry( ScEEParseEntry* );
     static void         EntryEnd( ScEEParseEntry*, const ESelection& );
     void                ProcToken( ImportInfo* );
@@ -214,7 +214,7 @@ private:
 
 public:
                         ScHTMLLayoutParser( EditEngine*, const OUString& rBaseURL, const Size& aPageSize, ScDocument* );
-    virtual             ~ScHTMLLayoutParser();
+    virtual             ~ScHTMLLayoutParser() override;
     virtual sal_uLong   Read( SvStream&, const OUString& rBaseURL  ) override;
     virtual const ScHTMLTable*  GetGlobalTable() const override;
 };
@@ -411,7 +411,7 @@ public:
     /** Returns the resulting Calc position of the top left edge of the table. */
     inline const ScHTMLPos& GetDocPos() const { return maDocBasePos; }
     /** Calculates the resulting Calc position of the specified HTML column/row. */
-    SCCOLROW            GetDocPos( ScHTMLOrient eOrient, SCCOLROW nCellPos = 0 ) const;
+    SCCOLROW            GetDocPos( ScHTMLOrient eOrient, SCCOLROW nCellPos ) const;
     /** Calculates the resulting Calc position of the specified HTML cell. */
     ScHTMLPos           GetDocPos( const ScHTMLPos& rCellPos ) const;
 
@@ -554,7 +554,7 @@ public:
                             ::std::vector< ScEEParseEntry* >& rEEParseList,
                             ScHTMLTableId& rnUnusedId, ScHTMLParser* pParser );
 
-    virtual             ~ScHTMLGlobalTable();
+    virtual             ~ScHTMLGlobalTable() override;
 
     /** Recalculates sizes and resulting positions of all document entries. */
     void                Recalc();
@@ -569,7 +569,7 @@ class ScHTMLQueryParser : public ScHTMLParser
 {
 public:
     explicit            ScHTMLQueryParser( EditEngine* pEditEngine, ScDocument* pDoc );
-    virtual             ~ScHTMLQueryParser();
+    virtual             ~ScHTMLQueryParser() override;
 
     virtual sal_uLong   Read( SvStream& rStrm, const OUString& rBaseURL  ) override;
 
@@ -605,7 +605,7 @@ private:
 
     void                ParseStyle(const OUString& rStrm);
 
-    DECL_LINK_TYPED( HTMLImportHdl, ImportInfo&, void );
+    DECL_LINK( HTMLImportHdl, ImportInfo&, void );
 
 private:
     typedef ::std::unique_ptr< ScHTMLGlobalTable >    ScHTMLGlobalTablePtr;

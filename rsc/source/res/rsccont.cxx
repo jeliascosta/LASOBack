@@ -35,16 +35,14 @@ void ENTRY_STRUCT::Destroy()
     }
 }
 
-RscBaseCont::RscBaseCont( Atom nId, sal_uInt32 nTypeId, RscTop * pSuper,
+RscBaseCont::RscBaseCont( Atom nId, sal_uInt32 nTypeId,
                           bool bNoIdent )
-    : RscTop( nId, nTypeId, pSuper )
-    , nSize( 0 )
+    : RscTop(nId, nTypeId, nullptr)
+    , pTypeClass(nullptr), pTypeClass1(nullptr)
+    , bNoId(bNoIdent), nOffInstData(RscTop::Size())
+    , nSize(nOffInstData + ALIGNED_SIZE(sizeof(RscBaseContInst)))
+
 {
-    pTypeClass = nullptr;
-    pTypeClass1 = nullptr;
-    bNoId = bNoIdent;
-    nOffInstData = RscTop::Size();
-    nSize = nOffInstData + ALIGNED_SIZE( sizeof( RscBaseContInst ) );
 }
 
 RscBaseCont::~RscBaseCont()
@@ -508,7 +506,7 @@ ERRTYPE RscBaseCont::SetRef( const RSCINST & rInst, const RscId & rRefId )
             aError = GetElement( rInst, RscId(), pTypeClass1, RSCINST(), &aTmpI );
             aError = aTmpI.pClass->GetRef( aTmpI, &aId );
             if( aError.IsOk() )
-                aError = aTmpI.pClass->SetNumber( aTmpI, rRefId );
+                aError = aTmpI.pClass->SetNumber( aTmpI, rRefId.GetNumber() );
         }
 
         if( aError.IsError() )
@@ -536,8 +534,8 @@ bool RscBaseCont::IsConsistent( const RSCINST & rInst )
     {
         if( !bNoId )
         {
-            if( (sal_Int32)pClassData->pEntries[ i ].aName > 0x7FFF ||
-                (sal_Int32)pClassData->pEntries[ i ].aName < 1 )
+            if( (sal_Int32)pClassData->pEntries[ i ].aName.GetNumber() > 0x7FFF ||
+                (sal_Int32)pClassData->pEntries[ i ].aName.GetNumber() < 1 )
             {
                 bRet = false;
             }
@@ -721,9 +719,8 @@ ERRTYPE RscBaseCont::WriteRc( const RSCINST & rInst, RscWriteRc & rMem,
     return aError;
 }
 
-RscContWriteSrc::RscContWriteSrc( Atom nId, sal_uInt32 nTypeId,
-                                  RscTop * pSuper )
-    : RscBaseCont( nId, nTypeId, pSuper, true )
+RscContWriteSrc::RscContWriteSrc( Atom nId, sal_uInt32 nTypeId )
+    : RscBaseCont( nId, nTypeId, true )
 {
 }
 
@@ -749,8 +746,8 @@ void RscContWriteSrc::WriteSrc( const RSCINST & rInst, FILE * fOutput,
     fprintf( fOutput, "}" );
 }
 
-RscCont::RscCont( Atom nId, sal_uInt32 nTypeId, RscTop * pSuper )
-    : RscContWriteSrc( nId, nTypeId, pSuper )
+RscCont::RscCont( Atom nId, sal_uInt32 nTypeId )
+    : RscContWriteSrc( nId, nTypeId )
 {
 }
 
@@ -772,9 +769,8 @@ ERRTYPE RscCont::WriteRc( const RSCINST & rInst, RscWriteRc & rMem,
     return aError;
 }
 
-RscContExtraData::RscContExtraData( Atom nId, sal_uInt32 nTypeId,
-                                    RscTop * pSuper )
-    : RscContWriteSrc( nId, nTypeId, pSuper )
+RscContExtraData::RscContExtraData( Atom nId, sal_uInt32 nTypeId )
+    : RscContWriteSrc( nId, nTypeId )
 {
 }
 

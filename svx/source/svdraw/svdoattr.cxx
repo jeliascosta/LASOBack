@@ -31,7 +31,7 @@
 #include <svx/svdorect.hxx>
 #include <svx/svdocirc.hxx>
 #include <svx/svdomeas.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <svl/itemiter.hxx>
 #include <svx/xenum.hxx>
 #include <svx/xlineit0.hxx>
@@ -121,8 +121,7 @@ void SdrAttrObj::SetModel(SdrModel* pNewModel)
 
 void SdrAttrObj::Notify(SfxBroadcaster& /*rBC*/, const SfxHint& rHint)
 {
-    const SfxSimpleHint* pSimple = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    bool bDataChg(pSimple && SFX_HINT_DATACHANGED == pSimple->GetId());
+    bool bDataChg(SFX_HINT_DATACHANGED == rHint.GetId());
 
     if(bDataChg)
     {
@@ -133,7 +132,7 @@ void SdrAttrObj::Notify(SfxBroadcaster& /*rBC*/, const SfxHint& rHint)
         // This may have led to object change
         SetChanged();
         BroadcastObjectChange();
-        SendUserCall(SDRUSERCALL_CHGATTR, aBoundRect);
+        SendUserCall(SdrUserCallType::ChangeAttr, aBoundRect);
     }
 }
 

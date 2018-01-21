@@ -26,7 +26,7 @@
 #include <sfx2/app.hxx>
 #include <sfx2/viewfrm.hxx>
 #include <sfx2/dispatch.hxx>
-#include <sfx2/sidebar/EnumContext.hxx>
+#include <vcl/EnumContext.hxx>
 #include <svl/srchitem.hxx>
 #include <svx/fmglob.hxx>
 #include <svx/svdouno.hxx>
@@ -89,7 +89,7 @@ void SwDrawFormShell::Execute(SfxRequest &rReq)
             if (rMarkList.GetMark(0))
             {
                 SdrUnoObj* pUnoCtrl = dynamic_cast<SdrUnoObj*>( rMarkList.GetMark(0)->GetMarkedSdrObj() );
-                if (pUnoCtrl && FmFormInventor == pUnoCtrl->GetObjInventor())
+                if (pUnoCtrl && SdrInventor::FmForm == pUnoCtrl->GetObjInventor())
                 {
                     if(bConvertToText)
                     {
@@ -142,8 +142,7 @@ void SwDrawFormShell::Execute(SfxRequest &rReq)
                                     xPropSet->setPropertyValue( "TargetFrame", aTmp );
                                 }
 
-                                form::FormButtonType eButtonType = form::FormButtonType_URL;
-                                aTmp.setValue( &eButtonType, ::cppu::UnoType<form::FormButtonType>::get());
+                                aTmp <<= form::FormButtonType_URL;
                                 xPropSet->setPropertyValue( "ButtonType", aTmp );
                             }
                         }
@@ -178,7 +177,7 @@ void SwDrawFormShell::GetState(SfxItemSet& rSet)
                 if (rMarkList.GetMark(0))
                 {
                     SdrUnoObj* pUnoCtrl = dynamic_cast<SdrUnoObj*>( rMarkList.GetMark(0)->GetMarkedSdrObj() );
-                    if (pUnoCtrl && FmFormInventor == pUnoCtrl->GetObjInventor())
+                    if (pUnoCtrl && SdrInventor::FmForm == pUnoCtrl->GetObjInventor())
                     {
                         uno::Reference< awt::XControlModel >  xControlModel = pUnoCtrl->GetUnoControlModel();
 
@@ -251,7 +250,7 @@ SwDrawFormShell::SwDrawFormShell(SwView &_rView) :
     SetHelpId(SW_DRAWFORMSHELL);
     GetShell().NoEdit();
     SetName("DrawForm");
-    SfxShell::SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_Form));
+    SfxShell::SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context_Form));
 }
 
 SwDrawFormShell::~SwDrawFormShell()

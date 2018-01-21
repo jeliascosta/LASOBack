@@ -65,7 +65,7 @@ namespace
 
     public:
         explicit ImpTimedRefDev(scoped_timed_RefDev& rOwnerofMe);
-        virtual ~ImpTimedRefDev();
+        virtual ~ImpTimedRefDev() override;
         virtual void Invoke() override;
 
         VirtualDevice& acquireVirtualDevice();
@@ -85,7 +85,7 @@ namespace
     ImpTimedRefDev::~ImpTimedRefDev()
     {
         OSL_ENSURE(0L == mnUseCount, "destruction of a still used ImpTimedRefDev (!)");
-        const SolarMutexGuard aGuard;
+        const SolarMutexGuard aSolarGuard;
         mpVirDev.disposeAndClear();
     }
 
@@ -100,7 +100,7 @@ namespace
         if(!mpVirDev)
         {
             mpVirDev = VclPtr<VirtualDevice>::Create();
-            mpVirDev->SetReferenceDevice( VirtualDevice::REFDEV_MODE_MSO1 );
+            mpVirDev->SetReferenceDevice( VirtualDevice::RefDevMode::MSO1 );
         }
 
         if(!mnUseCount)
@@ -152,7 +152,8 @@ namespace drawinglayer
         }
 
         TextLayouterDevice::TextLayouterDevice()
-        :   mrDevice(acquireGlobalVirtualDevice())
+        :   maSolarGuard(),
+            mrDevice(acquireGlobalVirtualDevice())
         {
         }
 

@@ -60,7 +60,7 @@ public:
                 const css::ucb::ContentInfo& aInfo);
 
 
-    virtual ~FTPContent();
+    virtual ~FTPContent() override;
 
     // XInterface
     virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
@@ -85,9 +85,6 @@ public:
         throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
         throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // XContent
     virtual OUString SAL_CALL getContentType()

@@ -19,9 +19,9 @@
 
 #include <hintids.hxx>
 #include <comphelper/classids.hxx>
+#include <o3tl/any.hxx>
 #include <tools/stream.hxx>
 #include <vcl/svapp.hxx>
-#include <svl/mailenum.hxx>
 #include <svx/svxids.hrc>
 #include <editeng/svxenum.hxx>
 #include <osl/diagnose.h>
@@ -177,7 +177,7 @@ OUString SwModuleOptions::ConvertWordDelimiter(const OUString& rDelim, bool bFro
                             nChar += nVal;
                         }
                         if( bValidData )
-                            sReturn += OUString(nChar);
+                            sReturn += OUStringLiteral1(nChar);
                         break;
                     }
 
@@ -188,7 +188,7 @@ OUString SwModuleOptions::ConvertWordDelimiter(const OUString& rDelim, bool bFro
                 }
             }
             else
-                sReturn += OUString(c);
+                sReturn += OUStringLiteral1(c);
         }
     }
     else
@@ -210,7 +210,7 @@ OUString SwModuleOptions::ConvertWordDelimiter(const OUString& rDelim, bool bFro
                     }
                     else
                     {
-                        sReturn += OUString(c);
+                        sReturn += OUStringLiteral1(c);
                     }
             }
         }
@@ -804,7 +804,7 @@ static void lcl_ReadOpt(InsCaptionOpt& rOpt, const Any* pValues, sal_Int32 nProp
     switch(nOffset)
     {
         case 0:
-            rOpt.UseCaption() = *static_cast<sal_Bool const *>(pValues[nProp].getValue());
+            rOpt.UseCaption() = *o3tl::doAccess<bool>(pValues[nProp]);
         break;//Enable
         case 1:
         {
@@ -899,7 +899,7 @@ void SwInsertConfig::Load()
     {
         if (pValues[nProp].hasValue())
         {
-            bool bBool = nProp < INS_PROP_CAP_OBJECT_TABLE_ENABLE && *static_cast<sal_Bool const *>(pValues[nProp].getValue());
+            bool bBool = nProp < INS_PROP_CAP_OBJECT_TABLE_ENABLE && *o3tl::doAccess<bool>(pValues[nProp]);
             switch (nProp)
             {
                 case INS_PROP_TABLE_HEADER:
@@ -1172,9 +1172,9 @@ void SwTableConfig::Load()
                 case 2 : pValues[nProp] >>= nTemp; nTableHInsert = (sal_uInt16)convertMm100ToTwip(nTemp); break;   //"Insert/Row",
                 case 3 : pValues[nProp] >>= nTemp; nTableVInsert = (sal_uInt16)convertMm100ToTwip(nTemp); break;   //"Insert/Column",
                 case 4 : pValues[nProp] >>= nTemp; eTableChgMode = (TableChgMode)nTemp; break;   //"Change/Effect",
-                case 5 : bInsTableFormatNum = *static_cast<sal_Bool const *>(pValues[nProp].getValue());  break;  //"Input/NumberRecognition",
-                case 6 : bInsTableChangeNumFormat = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;  //"Input/NumberFormatRecognition",
-                case 7 : bInsTableAlignNum = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;  //"Input/Alignment"
+                case 5 : bInsTableFormatNum = *o3tl::doAccess<bool>(pValues[nProp]);  break;  //"Input/NumberRecognition",
+                case 6 : bInsTableChangeNumFormat = *o3tl::doAccess<bool>(pValues[nProp]); break;  //"Input/NumberFormatRecognition",
+                case 7 : bInsTableAlignNum = *o3tl::doAccess<bool>(pValues[nProp]); break;  //"Input/Alignment"
             }
         }
     }
@@ -1276,22 +1276,16 @@ void SwMiscConfig::Load()
                 case 0 : pValues[nProp] >>= sTmp;
                     sWordDelimiter = SwModuleOptions::ConvertWordDelimiter(sTmp, true);
                 break;
-                case 1 : bDefaultFontsInCurrDocOnly = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;
-                case 2 : bShowIndexPreview = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;
-                case 3 : bGrfToGalleryAsLnk = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;
-                case 4 : bNumAlignSize = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;
-                case 5 : bSinglePrintJob = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;
-                case 6 :
-                    {
-                        sal_Int32 n = 0;
-                        pValues[nProp] >>= n;
-                        nMailingFormats = static_cast<MailTextFormats>(n);
-                        break;
-                    }
+                case 1 : bDefaultFontsInCurrDocOnly = *o3tl::doAccess<bool>(pValues[nProp]); break;
+                case 2 : bShowIndexPreview = *o3tl::doAccess<bool>(pValues[nProp]); break;
+                case 3 : bGrfToGalleryAsLnk = *o3tl::doAccess<bool>(pValues[nProp]); break;
+                case 4 : bNumAlignSize = *o3tl::doAccess<bool>(pValues[nProp]); break;
+                case 5 : bSinglePrintJob = *o3tl::doAccess<bool>(pValues[nProp]); break;
+                case 6 : nMailingFormats = static_cast<MailTextFormats>(*o3tl::doAccess<sal_Int32>(pValues[nProp])); break;
                 case 7 : pValues[nProp] >>= sTmp; sNameFromColumn = sTmp; break;
                 case 8 : pValues[nProp] >>= sTmp; sMailingPath = sTmp;  break;
                 case 9 : pValues[nProp] >>= sTmp; sMailName = sTmp;     break;
-                case 10: bIsNameFromColumn = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;
+                case 10: bIsNameFromColumn = *o3tl::doAccess<bool>(pValues[nProp]); break;
                 case 11: pValues[nProp] >>= bAskForMailMergeInPrint; break;
             }
         }
@@ -1325,7 +1319,7 @@ SwCompareConfig::SwCompareConfig() :
         ConfigItemMode::DelayedUpdate|ConfigItemMode::ReleaseTree)
     ,m_bStoreRsid(true)
 {
-    eCmpMode = SVX_CMP_AUTO;
+    eCmpMode = SwCompareMode::Auto;
     bUseRsid = false;
     bIgnorePieces = false;
     nPieceLen = 1;
@@ -1367,11 +1361,11 @@ void SwCompareConfig::Load()
 
             switch(nProp)
             {
-                case 0 : eCmpMode = (SvxCompareMode) nVal; break;
-                case 1 : bUseRsid = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;
-                case 2 : bIgnorePieces = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;
+                case 0 : eCmpMode = (SwCompareMode) nVal; break;
+                case 1 : bUseRsid = *o3tl::doAccess<bool>(pValues[nProp]); break;
+                case 2 : bIgnorePieces = *o3tl::doAccess<bool>(pValues[nProp]); break;
                 case 3 : nPieceLen = nVal; break;
-                case 4 : m_bStoreRsid = *static_cast<sal_Bool const *>(pValues[nProp].getValue()); break;
+                case 4 : m_bStoreRsid = *o3tl::doAccess<bool>(pValues[nProp]); break;
             }
         }
     }

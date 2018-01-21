@@ -157,7 +157,7 @@ OUString getShapeDescription( const Reference< XShape >& xShape, bool bWithText 
     return aDescription;
 }
 
-static OUString getDescription( const Any& rTarget, bool bWithText = true )
+static OUString getDescription( const Any& rTarget, bool bWithText )
 {
     OUString aDescription;
 
@@ -202,9 +202,9 @@ class CustomAnimationListEntryItem : public SvLBoxString
 {
 public:
     CustomAnimationListEntryItem(const OUString& aDescription,
-                                 CustomAnimationEffectPtr pEffect, CustomAnimationList* pParent);
-    virtual ~CustomAnimationListEntryItem();
-    void InitViewData(SvTreeListBox*,SvTreeListEntry*,SvViewDataItem*) override;
+                                 const CustomAnimationEffectPtr& pEffect, CustomAnimationList* pParent);
+    virtual ~CustomAnimationListEntryItem() override;
+    void InitViewData(SvTreeListBox*,SvTreeListEntry*,SvViewDataItem* = nullptr) override;
     SvLBoxItem* Create() const override;
     void Clone(SvLBoxItem* pSource) override;
 
@@ -216,11 +216,11 @@ private:
     OUString        msEffectName;
     CustomAnimationEffectPtr mpEffect;
     const CustomAnimationPresets* mpCustomAnimationPresets;
-    const long nIconWidth = 19;
-    const long nItemMinHeight = 38;
+    static const long nIconWidth = 19;
+    static const long nItemMinHeight = 38;
 };
 
-CustomAnimationListEntryItem::CustomAnimationListEntryItem( const OUString& aDescription, CustomAnimationEffectPtr pEffect, CustomAnimationList* pParent  )
+CustomAnimationListEntryItem::CustomAnimationListEntryItem( const OUString& aDescription, const CustomAnimationEffectPtr& pEffect, CustomAnimationList* pParent  )
 : SvLBoxString( aDescription )
 , mpParent( pParent )
 , msDescription( aDescription )
@@ -349,8 +349,8 @@ class CustomAnimationListEntry : public SvTreeListEntry
 {
 public:
     CustomAnimationListEntry();
-    explicit CustomAnimationListEntry( CustomAnimationEffectPtr pEffect );
-    virtual ~CustomAnimationListEntry();
+    explicit CustomAnimationListEntry(const CustomAnimationEffectPtr& pEffect);
+    virtual ~CustomAnimationListEntry() override;
 
     const CustomAnimationEffectPtr& getEffect() const { return mpEffect; }
 
@@ -362,7 +362,7 @@ CustomAnimationListEntry::CustomAnimationListEntry()
 {
 }
 
-CustomAnimationListEntry::CustomAnimationListEntry( CustomAnimationEffectPtr pEffect )
+CustomAnimationListEntry::CustomAnimationListEntry(const CustomAnimationEffectPtr& pEffect)
 : mpEffect( pEffect )
 {
 }
@@ -375,8 +375,8 @@ class CustomAnimationTriggerEntryItem : public SvLBoxString
 {
 public:
     explicit        CustomAnimationTriggerEntryItem( const OUString& aDescription );
-    virtual         ~CustomAnimationTriggerEntryItem();
-    void            InitViewData( SvTreeListBox*,SvTreeListEntry*,SvViewDataItem* ) override;
+    virtual         ~CustomAnimationTriggerEntryItem() override;
+    void            InitViewData( SvTreeListBox*,SvTreeListEntry*,SvViewDataItem* = nullptr ) override;
     SvLBoxItem*     Create() const override;
     void            Clone( SvLBoxItem* pSource ) override;
     virtual void Paint(const Point& rPos, SvTreeListBox& rOutDev, vcl::RenderContext& rRenderContext,
@@ -384,7 +384,7 @@ public:
 
 private:
     OUString        msDescription;
-    const long nIconWidth = 19;
+    static const long nIconWidth = 19;
 };
 
 CustomAnimationTriggerEntryItem::CustomAnimationTriggerEntryItem( const OUString& aDescription )
@@ -434,7 +434,7 @@ void CustomAnimationTriggerEntryItem::Paint(const Point& rPos, SvTreeListBox& rD
     // draw the category title
 
     int nVertBorder = ((aSize.Height() - rDev.GetTextHeight()) >> 1);
-    int nHorzBorder = rRenderContext.LogicToPixel(Size(3, 3), MAP_APPFONT).Width();
+    int nHorzBorder = rRenderContext.LogicToPixel(Size(3, 3), MapUnit::MapAppFont).Width();
 
     aOutRect.Left() += nHorzBorder;
     aOutRect.Right() -= nHorzBorder;
@@ -463,7 +463,7 @@ CustomAnimationList::CustomAnimationList( vcl::Window* pParent )
 {
 
     EnableContextMenuHandling();
-    SetSelectionMode( MULTIPLE_SELECTION );
+    SetSelectionMode( SelectionMode::Multiple );
     SetOptimalImageIndent();
     SetNodeDefaultImages();
 }
@@ -906,10 +906,9 @@ bool CustomAnimationList::DoubleClickHdl()
     return false;
 }
 
-std::unique_ptr<PopupMenu> CustomAnimationList::CreateContextMenu()
+VclPtr<PopupMenu> CustomAnimationList::CreateContextMenu()
 {
-    std::unique_ptr<PopupMenu> pMenu(
-        new PopupMenu(SdResId( RID_EFFECT_CONTEXTMENU )));
+    VclPtrInstance<PopupMenu> pMenu(SdResId( RID_EFFECT_CONTEXTMENU ));
 
     sal_Int16 nNodeType = -1;
     sal_Int16 nEntries = 0;
@@ -952,11 +951,6 @@ void CustomAnimationList::ExecuteContextMenuAction( sal_uInt16 nSelectedPopupEnt
     mpController->onContextMenu( nSelectedPopupEntry );
 }
 
-void CustomAnimationList::SetTabs()
-{
-    SvTreeListBox::SetTabs();
-}
-
 void CustomAnimationList::notify_change()
 {
     update();
@@ -975,7 +969,7 @@ void CustomAnimationList::Paint(vcl::RenderContext& rRenderContext, const Rectan
     {
         Color aOldColor(rRenderContext.GetTextColor());
         rRenderContext.SetTextColor(rRenderContext.GetSettings().GetStyleSettings().GetDisableColor());
-        ::Point aOffset(rRenderContext.LogicToPixel(Point(6, 6), MAP_APPFONT));
+        ::Point aOffset(rRenderContext.LogicToPixel(Point(6, 6), MapUnit::MapAppFont));
 
         Rectangle aRect(Point(0,0), GetOutputSizePixel());
 

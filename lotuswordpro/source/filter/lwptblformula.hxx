@@ -165,7 +165,7 @@ class LwpFormulaFunc :public LwpFormulaArg
 {
 public:
     explicit LwpFormulaFunc(sal_uInt16 nTokenType);
-    virtual ~LwpFormulaFunc();
+    virtual ~LwpFormulaFunc() override;
 
     void AddArg(LwpFormulaArg* pArg);
 
@@ -180,14 +180,14 @@ protected:
 class LwpFormulaOp : public LwpFormulaFunc
 {
 public:
-    explicit LwpFormulaOp(sal_uInt16 nTokenType):LwpFormulaFunc(nTokenType){;}
+    explicit LwpFormulaOp(sal_uInt16 nTokenType):LwpFormulaFunc(nTokenType){}
     virtual OUString ToString(LwpTableLayout* pCellsMap) override;
 };
 
 class LwpFormulaUnaryOp : public LwpFormulaFunc
 {
 public:
-    explicit LwpFormulaUnaryOp(sal_uInt16 nTokenType):LwpFormulaFunc(nTokenType){;}
+    explicit LwpFormulaUnaryOp(sal_uInt16 nTokenType):LwpFormulaFunc(nTokenType){}
     virtual OUString ToString(LwpTableLayout* pCellsMap) override;
 };
 
@@ -196,7 +196,7 @@ class LwpFormulaInfo : public LwpCellList
 public:
     LwpFormulaInfo(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
     OUString Convert(LwpTableLayout* pCellsMap);
-    void Convert(XFCell * pCell, LwpTableLayout* pCellsMap) override;
+    void Convert(XFCell * pCell, LwpTableLayout* pCellsMap=nullptr) override;
 protected:
     void Read() override;
     bool ReadCellID();
@@ -206,7 +206,7 @@ protected:
     void ReadArguments(LwpFormulaFunc& aFunc);
     bool m_bSupported;
 private:
-    virtual ~LwpFormulaInfo();
+    virtual ~LwpFormulaInfo() override;
 
     std::vector<LwpFormulaArg*> m_aStack;
     void ReadConst();

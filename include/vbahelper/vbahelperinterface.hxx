@@ -19,10 +19,22 @@
 #ifndef INCLUDED_VBAHELPER_VBAHELPERINTERFACE_HXX
 #define INCLUDED_VBAHELPER_VBAHELPERINTERFACE_HXX
 
-#include <cppuhelper/implbase.hxx>
-#include <ooo/vba/XHelperInterface.hpp>
-#include <vbahelper/vbahelper.hxx>
 #include <com/sun/star/container/XNameAccess.hpp>
+#include <com/sun/star/script/BasicErrorException.hpp>
+#include <com/sun/star/uno/Any.hxx>
+#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/uno/RuntimeException.hpp>
+#include <com/sun/star/uno/Sequence.hxx>
+#include <cppuhelper/implbase.hxx>
+#include <cppuhelper/weakref.hxx>
+#include <ooo/vba/XHelperInterface.hpp>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+#include <vbahelper/vbahelper.hxx>
+
+namespace com { namespace sun { namespace star {
+    namespace uno { class XComponentContext; } }
+} }
 
 // use this class when you have an a object like
 // interface  XAnInterface which contains XHelperInterface in its inheritance hierarchy
@@ -58,8 +70,6 @@ protected:
     css::uno::WeakReference< ov::XHelperInterface > mxParent;
     css::uno::Reference< css::uno::XComponentContext > mxContext;
 public:
-    InheritedHelperInterfaceImpl() {}
-    InheritedHelperInterfaceImpl( const css::uno::Reference< css::uno::XComponentContext >& xContext ) : mxContext( xContext ) {}
     InheritedHelperInterfaceImpl( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext >& xContext ) : mxParent( xParent ), mxContext( xContext ) {}
     virtual OUString getServiceImplName() = 0;
     virtual css::uno::Sequence<OUString> getServiceNames() = 0;
@@ -102,8 +112,6 @@ class SAL_DLLPUBLIC_TEMPLATE InheritedHelperInterfaceWeakImpl : public Inherited
 {
     typedef InheritedHelperInterfaceImpl< ::cppu::WeakImplHelper< Ifc... > > Base;
 public:
-    InheritedHelperInterfaceWeakImpl< Ifc... >() {}
-    InheritedHelperInterfaceWeakImpl< Ifc... >( const css::uno::Reference< css::uno::XComponentContext >& xContext ) : Base( xContext ) {}
     InheritedHelperInterfaceWeakImpl< Ifc... >( const css::uno::Reference< ov::XHelperInterface >& xParent, const css::uno::Reference< css::uno::XComponentContext >& xContext ) : Base( xParent, xContext ) {}
 };
 

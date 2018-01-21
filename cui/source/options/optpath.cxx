@@ -161,7 +161,7 @@ static OUString Convert_Impl( const OUString& rValue )
             aReturn += aObj.PathToFileName();
         if ( nPos < 0 )
             break;
-        aReturn += OUStringLiteral1<MULTIPATH_DELIMITER>();
+        aReturn += OUStringLiteral1(MULTIPATH_DELIMITER);
     }
 
     return aReturn;
@@ -204,7 +204,7 @@ SvxPathTabPage::SvxPathTabPage(vcl::Window* pParent, const SfxItemSet& rSet)
     m_pPathBtn->SetClickHdl( LINK( this, SvxPathTabPage, PathHdl_Impl ) );
 
     Size aControlSize(236 , 147);
-    aControlSize = LogicToPixel(aControlSize, MAP_APPFONT);
+    aControlSize = LogicToPixel(aControlSize, MapUnit::MapAppFont);
     m_pPathCtrl->set_width_request(aControlSize.Width());
     m_pPathCtrl->set_height_request(aControlSize.Height());
     WinBits nBits = WB_SORT | WB_HSCROLL | WB_CLIPCHILDREN | WB_TABSTOP;
@@ -227,11 +227,11 @@ SvxPathTabPage::SvxPathTabPage(vcl::Window* pParent, const SfxItemSet& rSet)
     long aTabs[] = {3, 0, 0, 0};
     aTabs[2] = nWidth1 + 12;
     aTabs[3] = aTabs[2] + nWidth2 + 12;
-    pPathBox->SetTabs(aTabs, MAP_PIXEL);
+    pPathBox->SetTabs(aTabs, MapUnit::MapPixel);
 
     pPathBox->SetDoubleClickHdl( LINK( this, SvxPathTabPage, DoubleClickPathHdl_Impl ) );
     pPathBox->SetSelectHdl( LINK( this, SvxPathTabPage, PathSelect_Impl ) );
-    pPathBox->SetSelectionMode( MULTIPLE_SELECTION );
+    pPathBox->SetSelectionMode( SelectionMode::Multiple );
     pPathBox->SetHighlightRange();
 
     xDialogListener->SetDialogClosedLink( LINK( this, SvxPathTabPage, DialogClosedHdl ) );
@@ -321,7 +321,7 @@ void SvxPathTabPage::Reset( const SfxItemSet* )
                 GetPathList( i, sInternal, sUser, sWritable, bReadOnly );
                 OUString sTmpPath = sUser;
                 if ( !sTmpPath.isEmpty() && !sWritable.isEmpty() )
-                    sTmpPath += OUStringLiteral1<MULTIPATH_DELIMITER>();
+                    sTmpPath += OUStringLiteral1(MULTIPATH_DELIMITER);
                 sTmpPath += sWritable;
                 const OUString aValue = Convert_Impl( sTmpPath );
                 nWidth2 = std::max(nWidth2, pPathBox->GetTextWidth(aValue));
@@ -342,7 +342,7 @@ void SvxPathTabPage::Reset( const SfxItemSet* )
     long aTabs[] = {3, 0, 0, 0};
     aTabs[2] = nWidth1 + 12;
     aTabs[3] = aTabs[2] + nWidth2 + 12;
-    pPathBox->SetTabs(aTabs, MAP_PIXEL);
+    pPathBox->SetTabs(aTabs, MapUnit::MapPixel);
 
 #if 0
     String aUserData = GetUserData();
@@ -387,7 +387,7 @@ void SvxPathTabPage::FillUserData()
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxPathTabPage, PathSelect_Impl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(SvxPathTabPage, PathSelect_Impl, SvTreeListBox*, void)
 {
     sal_uInt16 nSelCount = 0;
     SvTreeListEntry* pEntry = pPathBox->FirstSelected();
@@ -408,7 +408,7 @@ IMPL_LINK_NOARG_TYPED(SvxPathTabPage, PathSelect_Impl, SvTreeListBox*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxPathTabPage, StandardHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxPathTabPage, StandardHdl_Impl, Button*, void)
 {
     SvTreeListEntry* pEntry = pPathBox->FirstSelected();
     while ( pEntry )
@@ -440,7 +440,7 @@ IMPL_LINK_NOARG_TYPED(SvxPathTabPage, StandardHdl_Impl, Button*, void)
                 if ( !bFound )
                 {
                     if ( !sTemp.isEmpty() )
-                        sTemp += OUStringLiteral1<MULTIPATH_DELIMITER>();
+                        sTemp += OUStringLiteral1(MULTIPATH_DELIMITER);
                     sTemp += sOnePath;
                 }
             }
@@ -460,7 +460,7 @@ IMPL_LINK_NOARG_TYPED(SvxPathTabPage, StandardHdl_Impl, Button*, void)
                         break;
                     }
                     if ( !sUserPath.isEmpty() )
-                        sUserPath += OUStringLiteral1<MULTIPATH_DELIMITER>();
+                        sUserPath += OUStringLiteral1(MULTIPATH_DELIMITER);
                     sUserPath += sToken;
                 }
             }
@@ -536,13 +536,13 @@ void SvxPathTabPage::ChangeCurrentEntry( const OUString& _rFolder )
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxPathTabPage, DoubleClickPathHdl_Impl, SvTreeListBox*, bool)
+IMPL_LINK_NOARG(SvxPathTabPage, DoubleClickPathHdl_Impl, SvTreeListBox*, bool)
 {
     PathHdl_Impl(nullptr);
     return false;
 }
 
-IMPL_LINK_NOARG_TYPED(SvxPathTabPage, PathHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxPathTabPage, PathHdl_Impl, Button*, void)
 {
     SvTreeListEntry* pEntry = pPathBox->GetCurEntry();
     sal_uInt16 nPos = ( pEntry != nullptr ) ? static_cast<PathUserData_Impl*>(pEntry->GetUserData())->nRealId : 0;
@@ -566,13 +566,13 @@ IMPL_LINK_NOARG_TYPED(SvxPathTabPage, PathHdl_Impl, Button*, void)
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
         if ( pFact )
         {
-            std::unique_ptr<AbstractSvxMultiPathDialog> pMultiDlg(
+            ScopedVclPtr<AbstractSvxMultiPathDialog> pMultiDlg(
                 pFact->CreateSvxMultiPathDialog( this ));
             DBG_ASSERT( pMultiDlg, "Dialog creation failed!" );
 
             OUString sPath( sUser );
             if ( !sPath.isEmpty() )
-                sPath += OUStringLiteral1<MULTIPATH_DELIMITER>();
+                sPath += OUStringLiteral1(MULTIPATH_DELIMITER);
             sPath += sWritable;
             pMultiDlg->SetPath( sPath );
 
@@ -599,12 +599,12 @@ IMPL_LINK_NOARG_TYPED(SvxPathTabPage, PathHdl_Impl, Button*, void)
                             break;
                         }
                         if ( !sUser.isEmpty() )
-                            sUser += OUStringLiteral1<MULTIPATH_DELIMITER>();
+                            sUser += OUStringLiteral1(MULTIPATH_DELIMITER);
                         sUser += sToken;
                     }
                     sFullPath = sUser;
                     if ( !sFullPath.isEmpty() )
-                        sFullPath += OUStringLiteral1<MULTIPATH_DELIMITER>();
+                        sFullPath += OUStringLiteral1(MULTIPATH_DELIMITER);
                     sFullPath += sWritable;
                 }
 
@@ -666,7 +666,7 @@ IMPL_LINK_NOARG_TYPED(SvxPathTabPage, PathHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_TYPED( SvxPathTabPage, HeaderSelect_Impl, HeaderBar*, pBar, void )
+IMPL_LINK( SvxPathTabPage, HeaderSelect_Impl, HeaderBar*, pBar, void )
 {
     if (!pBar || pBar->GetCurItemId() != ITEMID_TYPE)
         return;
@@ -693,7 +693,7 @@ IMPL_LINK_TYPED( SvxPathTabPage, HeaderSelect_Impl, HeaderBar*, pBar, void )
 }
 
 
-IMPL_LINK_TYPED( SvxPathTabPage, HeaderEndDrag_Impl, HeaderBar*, pBar, void )
+IMPL_LINK( SvxPathTabPage, HeaderEndDrag_Impl, HeaderBar*, pBar, void )
 {
     if (!pBar || !pBar->GetCurItemId())
         return;
@@ -716,12 +716,12 @@ IMPL_LINK_TYPED( SvxPathTabPage, HeaderEndDrag_Impl, HeaderBar*, pBar, void )
             long _nWidth = pBar->GetItemSize(i);
             aSz.Width() =  _nWidth + nTmpSz;
             nTmpSz += _nWidth;
-            pPathBox->SetTab( i, PixelToLogic( aSz, MapMode(MAP_APPFONT) ).Width() );
+            pPathBox->SetTab( i, PixelToLogic( aSz, MapMode(MapUnit::MapAppFont) ).Width() );
         }
     }
 }
 
-IMPL_LINK_TYPED( SvxPathTabPage, DialogClosedHdl, DialogClosedEvent*, pEvt, void )
+IMPL_LINK( SvxPathTabPage, DialogClosedHdl, DialogClosedEvent*, pEvt, void )
 {
     if (RET_OK == pEvt->DialogResult)
     {

@@ -81,13 +81,13 @@ namespace dp_gui {
 class UpdateInstallDialog::Thread: public salhelper::Thread {
     friend class UpdateCommandEnv;
 public:
-    Thread(cssu::Reference< cssu::XComponentContext > ctx,
+    Thread(cssu::Reference< cssu::XComponentContext > const & ctx,
         UpdateInstallDialog & dialog, std::vector< dp_gui::UpdateData > & aVecUpdateData);
 
     void stop();
 
 private:
-    virtual ~Thread();
+    virtual ~Thread() override;
 
     virtual void execute() override;
     void downloadExtensions();
@@ -121,7 +121,7 @@ class UpdateCommandEnv
     cssu::Reference< cssu::XComponentContext > m_xContext;
 
 public:
-    virtual ~UpdateCommandEnv();
+    virtual ~UpdateCommandEnv() override;
     UpdateCommandEnv( cssu::Reference< cssu::XComponentContext > const & xCtx,
         ::rtl::Reference<UpdateInstallDialog::Thread>const & thread);
 
@@ -146,7 +146,7 @@ public:
 
 
 UpdateInstallDialog::Thread::Thread(
-    cssu::Reference< cssu::XComponentContext> xCtx,
+    cssu::Reference< cssu::XComponentContext> const & xCtx,
     UpdateInstallDialog & dialog,
     std::vector< dp_gui::UpdateData > & aVecUpdateData):
     salhelper::Thread("dp_gui_updateinstalldialog"),
@@ -320,7 +320,7 @@ void UpdateInstallDialog::setError(OUString const & exceptionMessage)
     m_pMle_info->SetText(m_pMle_info->GetText() + exceptionMessage + "\n");
 }
 
-IMPL_LINK_NOARG_TYPED(UpdateInstallDialog, cancelHandler, Button*, void)
+IMPL_LINK_NOARG(UpdateInstallDialog, cancelHandler, Button*, void)
 {
     m_thread->stop();
     EndDialog();

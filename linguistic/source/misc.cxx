@@ -68,14 +68,12 @@ osl::Mutex &    GetLinguMutex()
     return LinguMutex::get();
 }
 
-LocaleDataWrapper & GetLocaleDataWrapper( sal_Int16 nLang )
+const LocaleDataWrapper & GetLocaleDataWrapper( LanguageType nLang )
 {
     static LocaleDataWrapper aLclDtaWrp( SvtSysLocale().GetLanguageTag() );
 
-    const LanguageTag &rLcl = aLclDtaWrp.getLoadedLanguageTag();
-    LanguageTag aLcl( nLang );
-    if (aLcl != rLcl)
-        aLclDtaWrp.setLanguageTag( aLcl );
+    if (nLang != aLclDtaWrp.getLoadedLanguageTag().getLanguageType())
+        aLclDtaWrp.setLanguageTag( LanguageTag( nLang ) );
     return aLclDtaWrp;
 }
 
@@ -568,7 +566,7 @@ uno::Reference< XHyphenatedWord > RebuildHyphensAndControlChars(
 
         if (nOrigHyphenPos == -1  ||  nOrigHyphenationPos == -1)
         {
-            DBG_ASSERT( false, "failed to get nOrigHyphenPos or nOrigHyphenationPos" );
+            SAL_WARN( "linguistic", "failed to get nOrigHyphenPos or nOrigHyphenationPos" );
         }
         else
         {
@@ -732,7 +730,7 @@ uno::Reference< XSearchableDictionaryList > GetDictionaryList()
     }
     catch (const uno::Exception &)
     {
-        DBG_ASSERT( false, "createInstance failed" );
+        SAL_WARN( "linguistic", "createInstance failed" );
     }
 
     return xRef;
@@ -759,7 +757,7 @@ AppExitListener::AppExitListener()
     }
     catch (const uno::Exception &)
     {
-        DBG_ASSERT( false, "createInstance failed" );
+        SAL_WARN( "linguistic", "createInstance failed" );
     }
 }
 

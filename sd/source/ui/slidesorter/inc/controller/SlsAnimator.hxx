@@ -69,13 +69,10 @@ public:
         the specified duration.
         @param rAnimation
             The animation operation.
-        @param nDuration
-            The duration in milli seconds.
     */
     AnimationId AddAnimation (
         const AnimationFunctor& rAnimation,
-        const sal_Int32 nDuration,
-        const FinishFunctor& rFinishFunctor = FinishFunctor());
+        const FinishFunctor& rFinishFunctor);
 
     /** Abort and remove an animation.  In order to reduce the bookkeeping
         on the caller side, it is OK to call this method with an animation
@@ -103,7 +100,7 @@ private:
 
     AnimationId mnNextAnimationId;
 
-    DECL_LINK_TYPED(TimeoutHandler, Idle *, void);
+    DECL_LINK(TimeoutHandler, Idle *, void);
 
     /** Execute one step of every active animation.
         @param nTime

@@ -23,6 +23,7 @@
 #include <osl/mutex.hxx>
 
 #include <svtools/toolbarmenu.hxx>
+#include <svx/colorwindow.hxx>
 #include <vcl/toolbox.hxx>
 #include <sfx2/app.hxx>
 #include <sfx2/dispatch.hxx>
@@ -41,7 +42,6 @@
 #include "helpid.hrc"
 #include "extrusioncontrols.hxx"
 #include "extrusioncontrols.hrc"
-#include "colorwindow.hxx"
 #include "extrusiondepthdialog.hxx"
 
 using namespace ::com::sun::star::uno;
@@ -59,11 +59,9 @@ static const char g_sExtrusionProjection[] = ".uno:ExtrusionProjection";
 
 ExtrusionDirectionWindow::ExtrusionDirectionWindow(
     svt::ToolboxController& rController,
-    const css::uno::Reference< css::frame::XFrame >& rFrame,
     vcl::Window* pParentWindow
 )
-    : ToolbarMenu(rFrame, pParentWindow,
-                  WB_MOVEABLE|WB_CLOSEABLE|WB_HIDE|WB_3DLOOK)
+    : ToolbarMenu(rController.getFrameInterface(), pParentWindow, WB_STDPOPUP)
     , mrController(rController)
     , maImgPerspective(SVX_RES(RID_SVXIMG_PERSPECTIVE))
     , maImgParallel(SVX_RES(RID_SVXIMG_PARALLEL))
@@ -174,7 +172,7 @@ void ExtrusionDirectionWindow::statusChanged(
         {
             sal_Int32 nValue = 0;
             if( Event.State >>= nValue )
-                implSetDirection( nValue );
+                implSetDirection( nValue, true );
         }
     }
     else if( Event.FeatureURL.Main == g_sExtrusionProjection )
@@ -187,17 +185,17 @@ void ExtrusionDirectionWindow::statusChanged(
         {
             sal_Int32 nValue = 0;
             if( Event.State >>= nValue )
-                implSetProjection( nValue );
+                implSetProjection( nValue, true );
         }
     }
 }
 
 
-IMPL_LINK_TYPED( ExtrusionDirectionWindow, SelectValueSetHdl, ValueSet*, pControl, void )
+IMPL_LINK( ExtrusionDirectionWindow, SelectValueSetHdl, ValueSet*, pControl, void )
 {
     SelectHdl(pControl);
 }
-IMPL_LINK_TYPED( ExtrusionDirectionWindow, SelectToolbarMenuHdl, ToolbarMenu*, pControl, void )
+IMPL_LINK( ExtrusionDirectionWindow, SelectToolbarMenuHdl, ToolbarMenu*, pControl, void )
 {
     SelectHdl(pControl);
 }
@@ -224,7 +222,7 @@ void ExtrusionDirectionWindow::SelectHdl(void* pControl)
             aArgs[0].Value <<= (sal_Int32)nProjection;
 
             mrController.dispatchCommand( g_sExtrusionProjection, aArgs );
-            implSetProjection( nProjection );
+            implSetProjection( nProjection, true );
         }
     }
 }
@@ -242,7 +240,7 @@ ExtrusionDirectionControl::ExtrusionDirectionControl(
 
 VclPtr<vcl::Window> ExtrusionDirectionControl::createPopupWindow( vcl::Window* pParent )
 {
-    return VclPtr<ExtrusionDirectionWindow>::Create( *this, m_xFrame, pParent );
+    return VclPtr<ExtrusionDirectionWindow>::Create( *this, pParent );
 }
 
 // XInitialization
@@ -321,9 +319,8 @@ double aDepthListMM[] = { 0, 1000, 2500, 5000, 10000 };
 
 ExtrusionDepthWindow::ExtrusionDepthWindow(
     svt::ToolboxController& rController,
-    const css::uno::Reference< css::frame::XFrame >& rFrame,
     vcl::Window* pParentWindow
-)   : ToolbarMenu( rFrame, pParentWindow, WB_MOVEABLE|WB_CLOSEABLE|WB_HIDE|WB_3DLOOK)
+)   : ToolbarMenu( rController.getFrameInterface(), pParentWindow, WB_STDPOPUP )
     , mrController( rController )
     , maImgDepth0(SVX_RES(RID_SVXIMG_DEPTH_0))
     , maImgDepth1(SVX_RES(RID_SVXIMG_DEPTH_1))
@@ -415,7 +412,7 @@ void ExtrusionDepthWindow::statusChanged(
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ExtrusionDepthWindow, SelectHdl, ToolbarMenu*, void)
+IMPL_LINK_NOARG(ExtrusionDepthWindow, SelectHdl, ToolbarMenu*, void)
 {
     int nSelected = getSelectedEntryId();
     if( nSelected != -1 )
@@ -478,7 +475,7 @@ ExtrusionDepthController::ExtrusionDepthController(
 
 VclPtr<vcl::Window> ExtrusionDepthController::createPopupWindow( vcl::Window* pParent )
 {
-    return VclPtr<ExtrusionDepthWindow>::Create( *this, m_xFrame, pParent );
+    return VclPtr<ExtrusionDepthWindow>::Create( *this, pParent );
 }
 
 // XInitialization
@@ -528,9 +525,8 @@ static const char g_sExtrusionLightingDirection[] = ".uno:ExtrusionLightingDirec
 static const char g_sExtrusionLightingIntensity[] = ".uno:ExtrusionLightingIntensity";
 
 ExtrusionLightingWindow::ExtrusionLightingWindow(svt::ToolboxController& rController,
-                                                 const css::uno::Reference<css::frame::XFrame >& rFrame,
                                                  vcl::Window* pParentWindow)
-    : ToolbarMenu(rFrame, pParentWindow, WB_MOVEABLE|WB_CLOSEABLE|WB_HIDE|WB_3DLOOK)
+    : ToolbarMenu(rController.getFrameInterface(), pParentWindow, WB_STDPOPUP)
     , mrController(rController)
     , maImgBright(SVX_RES(RID_SVXIMG_LIGHTING_BRIGHT))
     , maImgNormal(SVX_RES(RID_SVXIMG_LIGHTING_NORMAL))
@@ -681,11 +677,11 @@ void ExtrusionLightingWindow::DataChanged( const DataChangedEvent& rDCEvt )
 }
 
 
-IMPL_LINK_TYPED( ExtrusionLightingWindow, SelectValueSetHdl, ValueSet*, pControl, void )
+IMPL_LINK( ExtrusionLightingWindow, SelectValueSetHdl, ValueSet*, pControl, void )
 {
     SelectHdl(pControl);
 }
-IMPL_LINK_TYPED( ExtrusionLightingWindow, SelectToolbarMenuHdl, ToolbarMenu*, pControl, void )
+IMPL_LINK( ExtrusionLightingWindow, SelectToolbarMenuHdl, ToolbarMenu*, pControl, void )
 {
     SelectHdl(pControl);
 }
@@ -744,7 +740,7 @@ ExtrusionLightingControl::ExtrusionLightingControl(
 
 VclPtr<vcl::Window> ExtrusionLightingControl::createPopupWindow( vcl::Window* pParent )
 {
-    return VclPtr<ExtrusionLightingWindow>::Create( *this, m_xFrame, pParent );
+    return VclPtr<ExtrusionLightingWindow>::Create( *this, pParent );
 }
 
 // XInitialization
@@ -798,9 +794,8 @@ static const char g_sExtrusionSurface[] = ".uno:ExtrusionSurface";
 
 ExtrusionSurfaceWindow::ExtrusionSurfaceWindow(
     svt::ToolboxController& rController,
-    const css::uno::Reference< css::frame::XFrame >& rFrame,
     vcl::Window* pParentWindow)
-    : ToolbarMenu(rFrame, pParentWindow, WB_MOVEABLE|WB_CLOSEABLE|WB_HIDE|WB_3DLOOK)
+    : ToolbarMenu(rController.getFrameInterface(), pParentWindow, WB_STDPOPUP)
     , mrController(rController)
     , maImgSurface1(SVX_RES(RID_SVXIMG_WIRE_FRAME))
     , maImgSurface2(SVX_RES(RID_SVXIMG_MATTE))
@@ -848,7 +843,7 @@ void ExtrusionSurfaceWindow::statusChanged(
 }
 
 
-IMPL_LINK_NOARG_TYPED(ExtrusionSurfaceWindow, SelectHdl, ToolbarMenu*, void)
+IMPL_LINK_NOARG(ExtrusionSurfaceWindow, SelectHdl, ToolbarMenu*, void)
 {
     if ( IsInPopupMode() )
         EndPopupMode();
@@ -881,7 +876,7 @@ ExtrusionSurfaceControl::ExtrusionSurfaceControl(
 
 VclPtr<vcl::Window> ExtrusionSurfaceControl::createPopupWindow( vcl::Window* pParent )
 {
-    return VclPtr<ExtrusionSurfaceWindow>::Create( *this, m_xFrame, pParent );
+    return VclPtr<ExtrusionSurfaceWindow>::Create( *this, pParent );
 }
 
 // XInitialization

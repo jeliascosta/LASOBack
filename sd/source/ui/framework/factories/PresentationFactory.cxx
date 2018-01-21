@@ -46,7 +46,7 @@ class PresentationFactoryProvider
 {
 public:
     explicit PresentationFactoryProvider (const Reference<XComponentContext>& rxContext);
-    virtual ~PresentationFactoryProvider();
+    virtual ~PresentationFactoryProvider() override;
 
     virtual void SAL_CALL disposing() override;
 
@@ -70,7 +70,7 @@ class PresentationView
 public:
     explicit PresentationView (const Reference<XResourceId>& rxViewId)
         : PresentationViewInterfaceBase(maMutex),mxResourceId(rxViewId) {};
-    virtual ~PresentationView() {};
+    virtual ~PresentationView() override {};
 
     // XView
 
@@ -88,7 +88,7 @@ private:
 
 //===== PresentationFactory ===================================================
 
-const OUString PresentationFactory::msPresentationViewURL("private:resource/view/Presentation");
+static const char gsPresentationViewURL[] = "private:resource/view/Presentation";
 
 PresentationFactory::PresentationFactory (
     const Reference<frame::XController>& rxController)
@@ -125,7 +125,7 @@ Reference<XResource> SAL_CALL PresentationFactory::createResource (
     ThrowIfDisposed();
 
     if (rxViewId.is())
-        if ( ! rxViewId->hasAnchor() && rxViewId->getResourceURL().equals(msPresentationViewURL))
+        if ( ! rxViewId->hasAnchor() && rxViewId->getResourceURL() == gsPresentationViewURL)
             return new PresentationView(rxViewId);
 
     return Reference<XResource>();
@@ -215,7 +215,7 @@ void SAL_CALL PresentationFactoryProvider::initialize(
             Reference<XConfigurationController> xCC (xCM->getConfigurationController());
             if (xCC.is())
                 xCC->addResourceFactory(
-                    PresentationFactory::msPresentationViewURL,
+                    gsPresentationViewURL,
                     new PresentationFactory(xController));
         }
         catch (RuntimeException&)

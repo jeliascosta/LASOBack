@@ -39,14 +39,14 @@ class ScEditShell : public SfxShell
 private:
     EditView*   pEditView;
     ScViewData* pViewData;
-    TransferableClipboardListener* pClipEvtLstnr;
+    rtl::Reference<TransferableClipboardListener> mxClipEvtLstnr;
     bool        bPastePossible;
     bool        bIsInsertMode;
 
     const SvxURLField* GetURLField();
     ScInputHandler* GetMyInputHdl();
 
-    DECL_LINK_TYPED( ClipboardChanged, TransferableDataHelper*, void );
+    DECL_LINK( ClipboardChanged, TransferableDataHelper*, void );
 
 public:
     SFX_DECL_INTERFACE(SCID_EDIT_SHELL)
@@ -57,7 +57,7 @@ private:
 
 public:
     ScEditShell(EditView* pView, ScViewData* pData);
-    virtual ~ScEditShell();
+    virtual ~ScEditShell() override;
 
     void    SetEditView(EditView* pView);
     EditView* GetEditView() {return pEditView;}

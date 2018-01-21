@@ -114,11 +114,6 @@ void SdrPageView::ClearPageWindows()
     maPageWindows.clear();
 }
 
-void SdrPageView::AppendPageWindow(SdrPageWindow& rNew)
-{
-    maPageWindows.push_back(&rNew);
-}
-
 SdrPageWindow* SdrPageView::RemovePageWindow(SdrPageWindow& rOld)
 {
     const SdrPageWindowVector::iterator aFindResult = ::std::find(maPageWindows.begin(), maPageWindows.end(), &rOld);
@@ -171,17 +166,11 @@ SdrPageView::~SdrPageView()
     ClearPageWindows();
 }
 
-void SdrPageView::CreateNewPageWindowEntry(SdrPaintWindow& rPaintWindow)
-{
-    SdrPageWindow& rWindow = *(new SdrPageWindow(*this, rPaintWindow));
-    AppendPageWindow(rWindow);
-}
-
 void SdrPageView::AddPaintWindowToPageView(SdrPaintWindow& rPaintWindow)
 {
     if(!FindPageWindow(rPaintWindow))
     {
-        CreateNewPageWindowEntry(rPaintWindow);
+        maPageWindows.push_back(new SdrPageWindow(*this, rPaintWindow));
     }
 }
 
@@ -647,59 +636,47 @@ bool SdrPageView::IsLayer(const OUString& rName, const SetOfByte& rBS) const
 
 bool SdrPageView::IsObjMarkable(SdrObject* pObj) const
 {
-    if(pObj)
+    if (!pObj)
+        return false;
+    if (pObj->IsMarkProtect())
+        return false;    // excluded from selection?
+    if (!pObj->IsVisible())
+        return false;    // only visible are selectable
+    if (!pObj->IsInserted())
+        return false;    // Obj deleted?
+    if (dynamic_cast<const SdrObjGroup*>(pObj) !=  nullptr)
     {
-        // excluded from selection?
-        if(pObj->IsMarkProtect())
-        {
-            return false;
-        }
+        // If object is a Group object, visibility may depend on
+        // multiple layers. If one object is markable, Group is markable.
+        SdrObjList* pObjList = static_cast<SdrObjGroup*>(pObj)->GetSubList();
 
-        // only visible are selectable
-        if( !pObj->IsVisible() )
+        if (pObjList && pObjList->GetObjCount())
         {
-            return false;
-        }
-
-        if(dynamic_cast<const SdrObjGroup*>( pObj) !=  nullptr)
-        {
-            // If object is a Group object, visibility may depend on
-            // multiple layers. If one object is markable, Group is markable.
-            SdrObjList* pObjList = static_cast<SdrObjGroup*>(pObj)->GetSubList();
-
-            if(pObjList && pObjList->GetObjCount())
+            for (size_t a = 0; a < pObjList->GetObjCount(); ++a)
             {
-                bool bGroupIsMarkable(false);
-
-                for(size_t a = 0; !bGroupIsMarkable && a < pObjList->GetObjCount(); ++a)
-                {
-                    SdrObject* pCandidate = pObjList->GetObj(a);
-
-                    // call recursively
-                    if(IsObjMarkable(pCandidate))
-                    {
-                        bGroupIsMarkable = true;
-                    }
-                }
-
-                return bGroupIsMarkable;
+                SdrObject* pCandidate = pObjList->GetObj(a);
+                // call recursively
+                if (IsObjMarkable(pCandidate))
+                    return true;
             }
-            else
-            {
-                // #i43302#
-                // Allow empty groups to be selected to be able to delete them
-                return true;
-            }
+            return false;
         }
         else
         {
-            // the layer has to be visible and must not be locked
-            SdrLayerID nL = pObj->GetLayer();
-            return (aLayerVisi.IsSet(sal_uInt8(nL)) && !aLayerLock.IsSet(sal_uInt8(nL)));
+            // #i43302#
+            // Allow empty groups to be selected to be able to delete them
+            return true;
         }
     }
-
-    return false;
+    if (!pObj->Is3DObj() && pObj->GetPage()!=GetPage())
+        return false; // Obj suddenly in different Page
+    // the layer has to be visible and must not be locked
+    SdrLayerID nL = pObj->GetLayer();
+    if (!aLayerVisi.IsSet(sal_uInt8(nL)))
+        return false;
+    if (aLayerLock.IsSet(sal_uInt8(nL)))
+        return false;
+    return true;
 }
 
 void SdrPageView::SetPageOrigin(const Point& rOrg)
@@ -748,8 +725,8 @@ void SdrPageView::SetHelpLine(sal_uInt16 nNum, const SdrHelpLine& rNewHelpLine)
         bool bNeedRedraw = true;
         if (aHelpLines[nNum].GetKind()==rNewHelpLine.GetKind()) {
             switch (rNewHelpLine.GetKind()) {
-                case SDRHELPLINE_VERTICAL  : if (aHelpLines[nNum].GetPos().X()==rNewHelpLine.GetPos().X()) bNeedRedraw = false; break;
-                case SDRHELPLINE_HORIZONTAL: if (aHelpLines[nNum].GetPos().Y()==rNewHelpLine.GetPos().Y()) bNeedRedraw = false; break;
+                case SdrHelpLineKind::Vertical  : if (aHelpLines[nNum].GetPos().X()==rNewHelpLine.GetPos().X()) bNeedRedraw = false; break;
+                case SdrHelpLineKind::Horizontal: if (aHelpLines[nNum].GetPos().Y()==rNewHelpLine.GetPos().Y()) bNeedRedraw = false; break;
                 default: break;
             } // switch
         }
@@ -824,10 +801,7 @@ bool SdrPageView::EnterGroup(SdrObject* pObj)
         GetView().AdjustMarkHdl();
 
         // invalidate only when view wants to visualize group entering
-        if(GetView().DoVisualizeEnteredGroup())
-        {
-            InvalidateAllWin();
-        }
+        InvalidateAllWin();
 
         if (bGlueInvalidate)
         {
@@ -870,8 +844,7 @@ void SdrPageView::LeaveOneGroup()
         GetView().AdjustMarkHdl();
 
         // invalidate only if view wants to visualize group entering
-        if(GetView().DoVisualizeEnteredGroup())
-            InvalidateAllWin();
+        InvalidateAllWin();
 
         if(bGlueInvalidate)
             GetView().GlueInvalidate();
@@ -908,8 +881,7 @@ void SdrPageView::LeaveAllGroup()
         GetView().AdjustMarkHdl();
 
         // invalidate only when view wants to visualize group entering
-        if(GetView().DoVisualizeEnteredGroup())
-            InvalidateAllWin();
+        InvalidateAllWin();
 
         if(bGlueInvalidate)
             GetView().GlueInvalidate();

@@ -24,7 +24,6 @@
 #include "CharacterProperties.hxx"
 #include "UserDefinedProperties.hxx"
 #include "LegendHelper.hxx"
-#include "ContainerHelper.hxx"
 #include "CloneHelper.hxx"
 #include "PropertyHelper.hxx"
 #include <com/sun/star/beans/PropertyAttribute.hpp>
@@ -47,8 +46,6 @@ using ::com::sun::star::beans::Property;
 
 namespace
 {
-
-static const char lcl_aServiceName[] = "com.sun.star.comp.chart2.Legend";
 
 enum
 {
@@ -255,27 +252,7 @@ void SAL_CALL Legend::disposing( const lang::EventObject& /* Source */ )
 // ____ OPropertySet ____
 void Legend::firePropertyChangeEvent()
 {
-    fireModifyEvent();
-}
-
-void Legend::fireModifyEvent()
-{
     m_xModifyEventForwarder->modified( lang::EventObject( static_cast< uno::XWeak* >( this )));
-}
-
-Sequence< OUString > Legend::getSupportedServiceNames_Static()
-{
-    const sal_Int32 nNumServices( 6 );
-    sal_Int32 nI = 0;
-    Sequence< OUString > aServices( nNumServices );
-    aServices[ nI++ ] = "com.sun.star.chart2.Legend";
-    aServices[ nI++ ] = "com.sun.star.beans.PropertySet";
-    aServices[ nI++ ] = "com.sun.star.drawing.FillProperties";
-    aServices[ nI++ ] = "com.sun.star.drawing.LineProperties";
-    aServices[ nI++ ] = "com.sun.star.style.CharacterProperties";
-    aServices[ nI++ ] = "com.sun.star.layout.LayoutElement";
-    OSL_ASSERT( nNumServices == nI );
-    return aServices;
 }
 
 // ____ OPropertySet ____
@@ -305,12 +282,7 @@ Reference< beans::XPropertySetInfo > SAL_CALL Legend::getPropertySetInfo()
 OUString SAL_CALL Legend::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString Legend::getImplementationName_Static()
-{
-    return OUString(lcl_aServiceName);
+    return OUString("com.sun.star.comp.chart2.Legend");
 }
 
 sal_Bool SAL_CALL Legend::supportsService( const OUString& rServiceName )
@@ -322,7 +294,14 @@ sal_Bool SAL_CALL Legend::supportsService( const OUString& rServiceName )
 css::uno::Sequence< OUString > SAL_CALL Legend::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        "com.sun.star.chart2.Legend",
+        "com.sun.star.beans.PropertySet",
+        "com.sun.star.drawing.FillProperties",
+        "com.sun.star.drawing.LineProperties",
+        "com.sun.star.style.CharacterProperties",
+        "com.sun.star.layout.LayoutElement"
+    };
 }
 
 // needed by MSC compiler

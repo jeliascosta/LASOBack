@@ -68,7 +68,7 @@ void Window::SetSettings( const AllSettings& rSettings, bool bChild )
         DataChanged( aDCEvt );
     }
 
-    if ( bChild || mpWindowImpl->mbChildNotify )
+    if ( bChild )
     {
         vcl::Window* pChild = mpWindowImpl->mpFirstChild;
         while ( pChild )
@@ -133,7 +133,7 @@ void Window::UpdateSettings( const AllSettings& rSettings, bool bChild )
         CallEventListeners( VCLEVENT_WINDOW_DATACHANGED, &aDCEvt);
     }
 
-    if ( bChild || mpWindowImpl->mbChildNotify )
+    if ( bChild )
     {
         vcl::Window* pChild = mpWindowImpl->mpFirstChild;
         while ( pChild )
@@ -166,7 +166,7 @@ void Window::ImplUpdateGlobalSettings( AllSettings& rSettings, bool bCallHdl )
         defFontheight = maxFontheight;
 
     // if the UI is korean, chinese or another locale
-    // where the system font size is kown to be often too small to
+    // where the system font size is known to be often too small to
     // generate readable fonts enforce a minimum font size of 9 points
     bool bBrokenLangFontHeight = MsLangId::isCJK(Application::GetSettings().GetUILanguageTag().getLanguageType());
     if (bBrokenLangFontHeight)
@@ -211,9 +211,6 @@ void Window::ImplUpdateGlobalSettings( AllSettings& rSettings, bool bCallHdl )
     aFont = aStyleSettings.GetLabelFont();
     aFont.SetFontHeight( defFontheight );
     aStyleSettings.SetLabelFont( aFont );
-    aFont = aStyleSettings.GetInfoFont();
-    aFont.SetFontHeight( defFontheight );
-    aStyleSettings.SetInfoFont( aFont );
     aFont = aStyleSettings.GetRadioCheckFont();
     aFont.SetFontHeight( defFontheight );
     aStyleSettings.SetRadioCheckFont( aFont );

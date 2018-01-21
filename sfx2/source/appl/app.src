@@ -68,11 +68,6 @@ String STR_NO_ABS_URI_REF
     Text [ en-US ] = "\"$(ARG1)\" is not an absolute URL that can be passed to an external application to open it." ;
 };
 
-Resource SID_UNKNOWN
-{
-    String 1 "-" ;
-};
-
 String GID_INTERN
 {
     Text [ en-US ] = "Internal" ;
@@ -337,6 +332,10 @@ String RID_SVXSTR_GRAFIKLINK
 String STR_SFX_FILTERNAME_ALL
 {
     Text [ en-US ] = "All files" ;
+};
+String STR_SFX_FILTERNAME_PDF
+{
+    Text [ en-US ] = "PDF files" ;
 };
 String RID_SVXSTR_EDITGRFLINK
 {

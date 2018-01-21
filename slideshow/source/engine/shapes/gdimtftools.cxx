@@ -81,7 +81,7 @@ bool hasUnsupportedActions( const GDIMetaFile& rMtf )
         {
             case MetaActionType::RASTEROP:
                 // overpaint is okay - that's the default, anyway
-                if( ROP_OVERPAINT ==
+                if( RasterOp::OverPaint ==
                     static_cast<MetaRasterOpAction*>(pCurrAct)->GetRasterOp() )
                 {
                     break;
@@ -133,7 +133,7 @@ public:
 
         Graphic aGraphic( mxGraphic );
 
-        if( aGraphic.GetType() == GRAPHIC_BITMAP ||
+        if( aGraphic.GetType() == GraphicType::Bitmap ||
             (bForeignSource &&
              hasUnsupportedActions(aGraphic.GetGDIMetaFile()) ) )
         {
@@ -291,32 +291,8 @@ bool getAnimationFromGraphic( VectorOfMtfAnimationFrames&   o_rFrames,
     pVDevMask->SetOutputSizePixel( aAnimSize );
     pVDevMask->EnableMapMode( false );
 
-    switch( aAnimation.GetCycleMode() )
-    {
-        case CYCLE_NOT:
-            o_rLoopCount = 1;
-            o_eCycleMode = CYCLE_LOOP;
-            break;
-
-        case CYCLE_FALLBACK:
-            // FALLTHROUGH intended
-        case CYCLE_NORMAL:
-            o_rLoopCount = aAnimation.GetLoopCount();
-            o_eCycleMode = CYCLE_LOOP;
-            break;
-
-        case CYCLE_REVERS:
-            // FALLTHROUGH intended
-        case CYCLE_REVERS_FALLBACK:
-            o_rLoopCount = aAnimation.GetLoopCount();
-            o_eCycleMode = CYCLE_PINGPONGLOOP;
-            break;
-
-        default:
-            ENSURE_OR_RETURN_FALSE(false,
-                              "getAnimationFromGraphic(): Unexpected case" );
-            break;
-    }
+    o_rLoopCount = aAnimation.GetLoopCount();
+    o_eCycleMode = CYCLE_LOOP;
 
     for( sal_uInt16 i=0, nCount=aAnimation.Count(); i<nCount; ++i )
     {

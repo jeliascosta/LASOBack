@@ -257,24 +257,24 @@ void SwTextMargin::CtorInitTextMargin( SwTextFrame *pNewFrame, SwTextSizeInfo *p
             {
                 switch( pSpace->GetLineSpaceRule() )
                 {
-                    case SVX_LINE_SPACE_AUTO:
+                    case SvxLineSpaceRule::Auto:
                     break;
-                    case SVX_LINE_SPACE_MIN:
+                    case SvxLineSpaceRule::Min:
                     {
                         if( nFirstLineOfs < pSpace->GetLineHeight() )
                             nFirstLineOfs = pSpace->GetLineHeight();
                         break;
                     }
-                    case SVX_LINE_SPACE_FIX:
+                    case SvxLineSpaceRule::Fix:
                         nFirstLineOfs = pSpace->GetLineHeight();
                     break;
                     default: OSL_FAIL( ": unknown LineSpaceRule" );
                 }
                 switch( pSpace->GetInterLineSpaceRule() )
                 {
-                    case SVX_INTER_LINE_SPACE_OFF:
+                    case SvxInterLineSpaceRule::Off:
                     break;
-                    case SVX_INTER_LINE_SPACE_PROP:
+                    case SvxInterLineSpaceRule::Prop:
                     {
                         long nTmp = pSpace->GetPropLineSpace();
                         // 50% is the minimum, at 0% we switch to
@@ -289,7 +289,7 @@ void SwTextMargin::CtorInitTextMargin( SwTextFrame *pNewFrame, SwTextSizeInfo *p
                         nFirstLineOfs = nTmp;
                         break;
                     }
-                    case SVX_INTER_LINE_SPACE_FIX:
+                    case SvxInterLineSpaceRule::Fix:
                     {
                         nFirstLineOfs += pSpace->GetInterLineSpace();
                         break;
@@ -344,14 +344,6 @@ void SwTextMargin::CtorInitTextMargin( SwTextFrame *pNewFrame, SwTextSizeInfo *p
     // #i91133#
     mnTabLeft = pNode->GetLeftMarginForTabCalculation();
 
-#if OSL_DEBUG_LEVEL > 1
-    static bool bOne = false;
-    static bool bLast = false;
-    static bool bCenter = false;
-    bOneBlock |= bOne;
-    bLastBlock |= bLast;
-    bLastCenter |= bCenter;
-#endif
     DropInit();
 }
 
@@ -831,7 +823,7 @@ void SwTextCursor::GetCharRect_( SwRect* pOrig, const sal_Int32 nOfst,
                                 // correct for reverse (270 degree) portions
                                 if( static_cast<SwMultiPortion*>(pPor)->IsRevers() )
                                 {
-                                    if ( SvxParaVertAlignItem::AUTOMATIC ==
+                                    if ( SvxParaVertAlignItem::Align::Automatic ==
                                          GetLineInfo().GetVertAlign() )
                                         // if vertical alignment is set to auto,
                                         // we switch from base line alignment
@@ -1413,7 +1405,7 @@ sal_Int32 SwTextCursor::GetCursorOfst( SwPosition *pPos, const Point &rPoint,
     if( bFieldInfo && ( nWidth30 < nX || bRightOver || bLeftOver ||
         ( pPor->InNumberGrp() && !pPor->IsFootnoteNumPortion() ) ||
         ( pPor->IsMarginPortion() && nWidth > nX + 30 ) ) )
-        static_cast<SwCursorMoveState*>(pCMS)->m_bPosCorr = true;
+        pCMS->m_bPosCorr = true;
 
     // #i27615#
     if (pCMS)
@@ -1434,16 +1426,16 @@ sal_Int32 SwTextCursor::GetCursorOfst( SwPosition *pPos, const Point &rPoint,
         if( pCMS )
         {
             if( pPor->IsFlyPortion() && bFieldInfo )
-                static_cast<SwCursorMoveState*>(pCMS)->m_bPosCorr = true;
+                pCMS->m_bPosCorr = true;
 
             if (!bRightOver && nX)
             {
                 if( pPor->IsFootnoteNumPortion())
-                    static_cast<SwCursorMoveState*>(pCMS)->m_bFootnoteNoInfo = true;
+                    pCMS->m_bFootnoteNoInfo = true;
                 else if (pPor->InNumberGrp() ) // #i23726#
                 {
-                    static_cast<SwCursorMoveState*>(pCMS)->m_nInNumPostionOffset = nX;
-                    static_cast<SwCursorMoveState*>(pCMS)->m_bInNumPortion = true;
+                    pCMS->m_nInNumPostionOffset = nX;
+                    pCMS->m_bInNumPortion = true;
                 }
             }
         }
@@ -1554,7 +1546,7 @@ sal_Int32 SwTextCursor::GetCursorOfst( SwPosition *pPos, const Point &rPoint,
                  ! static_cast<SwMultiPortion*>(pPor)->OnTop() )
                 nTmpY = 0;
 
-            SwTextCursorSave aSave( const_cast<SwTextCursor*>(static_cast<const SwTextCursor*>(this)), static_cast<SwMultiPortion*>(pPor),
+            SwTextCursorSave aSave( const_cast<SwTextCursor*>(this), static_cast<SwMultiPortion*>(pPor),
                  nTmpY, nX, nCurrStart, nSpaceAdd );
 
             SwLayoutModeModifier aLayoutModeModifier( *GetInfo().GetOut() );
@@ -1680,7 +1672,7 @@ sal_Int32 SwTextCursor::GetCursorOfst( SwPosition *pPos, const Point &rPoint,
 
                 // set cursor bidi level
                 if ( pCMS )
-                    static_cast<SwCursorMoveState*>(pCMS)->m_nCursorBidiLevel =
+                    pCMS->m_nCursorBidiLevel =
                         aDrawInf.GetCursorBidiLevel();
 
                 if( bFieldInfo && nLength == pPor->GetLen() &&
@@ -1786,11 +1778,11 @@ bool SwTextFrame::FillSelection( SwSelectionList& rSelList, const SwRect& rRect 
             SwTextInfo aInf( const_cast<SwTextFrame*>(this) );
             SwTextIter aLine( const_cast<SwTextFrame*>(this), &aInf );
             // We have to care for top-to-bottom layout, where right becomes top etc.
-            SWRECTFN( this )
-            SwTwips nTop = (aRect.*fnRect->fnGetTop)();
-            SwTwips nBottom = (aRect.*fnRect->fnGetBottom)();
-            SwTwips nLeft = (aRect.*fnRect->fnGetLeft)();
-            SwTwips nRight = (aRect.*fnRect->fnGetRight)();
+            SwRectFnSet aRectFnSet(this);
+            SwTwips nTop = (aRect.*aRectFnSet->fnGetTop)();
+            SwTwips nBottom = (aRect.*aRectFnSet->fnGetBottom)();
+            SwTwips nLeft = (aRect.*aRectFnSet->fnGetLeft)();
+            SwTwips nRight = (aRect.*aRectFnSet->fnGetRight)();
             SwTwips nY = aLine.Y(); // Top position of the first line
             SwTwips nLastY = nY;
             while( nY < nTop && aLine.Next() ) // line above rectangle
@@ -1814,7 +1806,7 @@ bool SwTextFrame::FillSelection( SwSelectionList& rSelList, const SwRect& rRect 
                 {
                     nLastY += nY;
                     nLastY /= 2;
-                    if( bVert )
+                    if( aRectFnSet.bVert )
                     {
                         aPoint.X() = nLastY;
                         aPoint.Y() = nLeft;
@@ -1829,7 +1821,7 @@ bool SwTextFrame::FillSelection( SwSelectionList& rSelList, const SwRect& rRect 
                     SwCursorMoveState aState( MV_UPDOWN );
                     if( GetCursorOfst( &aPosL, aPoint, &aState ) )
                     {
-                        if( bVert )
+                        if( aRectFnSet.bVert )
                         {
                             aPoint.X() = nLastY;
                             aPoint.Y() = nRight;

@@ -64,15 +64,11 @@ public:
 
 void SfxModelessDialog_Impl::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint )
+    switch( rHint.GetId() )
     {
-        switch( pSimpleHint->GetId() )
-        {
-            case SFX_HINT_DYING:
-                pMgr->Destroy();
-                break;
-        }
+        case SFX_HINT_DYING:
+            pMgr->Destroy();
+        break;
     }
 }
 
@@ -89,15 +85,11 @@ public:
 
 void SfxFloatingWindow_Impl::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint )
+    switch( rHint.GetId() )
     {
-        switch( pSimpleHint->GetId() )
-        {
-            case SFX_HINT_DYING:
-                pMgr->Destroy();
-                break;
-        }
+        case SFX_HINT_DYING:
+            pMgr->Destroy();
+        break;
     }
 }
 
@@ -152,18 +144,13 @@ void SfxModalDialog::GetDialogData_Impl()
     }
 }
 
-void SfxModalDialog::init()
-{
-    GetDialogData_Impl();
-}
-
 SfxModalDialog::SfxModalDialog(vcl::Window *pParent, const OUString& rID, const OUString& rUIXMLDescription )
 :   ModalDialog(pParent, rID, rUIXMLDescription),
     nUniqId(0), //todo: remove this member when the ResId using ctor is removed
     pInputSet(nullptr),
     pOutputSet(nullptr)
 {
-    init();
+    GetDialogData_Impl();
 }
 
 SfxModalDialog::~SfxModalDialog()
@@ -289,7 +276,7 @@ void SfxModelessDialog::Move()
     Implements a timer event that is triggered by a move or resize of the window
     This will save config information to Views.xcu with a small delay
 */
-IMPL_LINK_NOARG_TYPED(SfxModelessDialog, TimerHdl, Idle *, void)
+IMPL_LINK_NOARG(SfxModelessDialog, TimerHdl, Idle *, void)
 {
     pImpl->aMoveIdle.Stop();
     if ( pImpl->bConstructed && pImpl->pMgr )
@@ -341,7 +328,6 @@ bool SfxModelessDialog::Notify( NotifyEvent& rEvt )
         else if ( rEvt.GetType() == MouseNotifyEvent::LOSEFOCUS && !HasChildPathFocus() )
         {
             pBindings->SetActiveFrame( css::uno::Reference< css::frame::XFrame > () );
-            pImpl->pMgr->Deactivate_Impl();
         }
         else if( rEvt.GetType() == MouseNotifyEvent::KEYINPUT )
         {
@@ -429,7 +415,6 @@ bool SfxFloatingWindow::Notify( NotifyEvent& rEvt )
             if ( !HasChildPathFocus() )
             {
                 pBindings->SetActiveFrame( nullptr );
-                pImpl->pMgr->Deactivate_Impl();
             }
         }
         else if( rEvt.GetType() == MouseNotifyEvent::KEYINPUT )
@@ -542,7 +527,7 @@ void SfxFloatingWindow::Move()
     Implements a timer event that is triggered by a move or resize of the window
     This will save config information to Views.xcu with a small delay
 */
-IMPL_LINK_NOARG_TYPED(SfxFloatingWindow, TimerHdl, Idle *, void)
+IMPL_LINK_NOARG(SfxFloatingWindow, TimerHdl, Idle *, void)
 {
     pImpl->aMoveIdle.Stop();
     if ( pImpl->bConstructed && pImpl->pMgr )
@@ -606,7 +591,7 @@ void SfxFloatingWindow::FillInfo(SfxChildWinInfo& rInfo) const
 
 // SfxSingleTabDialog ----------------------------------------------------
 
-IMPL_LINK_NOARG_TYPED(SfxSingleTabDialog, OKHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SfxSingleTabDialog, OKHdl_Impl, Button*, void)
 
 /*  [Description]
 
@@ -629,8 +614,8 @@ IMPL_LINK_NOARG_TYPED(SfxSingleTabDialog, OKHdl_Impl, Button*, void)
 
     if ( pImpl->m_pSfxPage->HasExchangeSupport() )
     {
-        int nRet = pImpl->m_pSfxPage->DeactivatePage( GetOutputSetImpl() );
-        if ( nRet != SfxTabPage::LEAVE_PAGE )
+        DeactivateRC nRet = pImpl->m_pSfxPage->DeactivatePage( GetOutputSetImpl() );
+        if ( nRet != DeactivateRC::LeavePage )
             return;
         else
             bModified = ( GetOutputItemSet()->Count() > 0 );
@@ -665,7 +650,6 @@ IMPL_LINK_NOARG_TYPED(SfxSingleTabDialog, OKHdl_Impl, Button*, void)
 SfxSingleTabDialog::SfxSingleTabDialog(vcl::Window *pParent, const SfxItemSet& rSet,
     const OUString& rID, const OUString& rUIXMLDescription)
     : SfxModalDialog(pParent, rID, rUIXMLDescription)
-    , fnGetRanges(nullptr)
     , pImpl(new SingleTabDlgImpl)
 {
     get(pOKBtn, "ok");
@@ -678,7 +662,6 @@ SfxSingleTabDialog::SfxSingleTabDialog(vcl::Window *pParent, const SfxItemSet& r
 SfxSingleTabDialog::SfxSingleTabDialog(vcl::Window* pParent, const SfxItemSet* pInSet,
     const OUString& rID, const OUString& rUIXMLDescription)
     : SfxModalDialog(pParent, rID, rUIXMLDescription)
-    , fnGetRanges(nullptr)
     , pImpl(new SingleTabDlgImpl)
 {
     get(pOKBtn, "ok");
@@ -705,7 +688,7 @@ void SfxSingleTabDialog::dispose()
 }
 
 void SfxSingleTabDialog::SetTabPage(SfxTabPage* pTabPage,
-    GetTabPageRanges pRangesFunc, sal_uInt32 nSettingsId)
+    sal_uInt32 nSettingsId)
 /*  [Description]
 
     Insert a (new) TabPage; an existing page is deleted.
@@ -717,7 +700,6 @@ void SfxSingleTabDialog::SetTabPage(SfxTabPage* pTabPage,
     SetUniqId(nSettingsId);
     pImpl->m_pSfxPage.disposeAndClear();
     pImpl->m_pSfxPage = pTabPage;
-    fnGetRanges = pRangesFunc;
 
     if ( pImpl->m_pSfxPage )
     {

@@ -41,14 +41,14 @@ class DocumentListsManager : public IDocumentListsAccess
         void deleteList( const OUString& rListId ) override;
         SwList* getListByName( const OUString& rListId ) const override;
 
-        SwList* createListForListStyle( const OUString& rListStyleName ) override;
+        void createListForListStyle( const OUString& rListStyleName ) override;
         SwList* getListForListStyle( const OUString& rListStyleName ) const override;
         void deleteListForListStyle( const OUString& rListStyleName ) override;
         void deleteListsByDefaultListStyle( const OUString& rListStyleName ) override;
         // #i91400#
         void trackChangeOfListStyleName( const OUString& rListStyleName,
                                                  const OUString& rNewListStyleName ) override;
-        virtual ~DocumentListsManager();
+        virtual ~DocumentListsManager() override;
 
     private:
 

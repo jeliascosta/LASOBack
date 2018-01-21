@@ -140,18 +140,28 @@ void SvtFilePicker::prepareExecute()
     // --**-- doesn't match the spec yet
     if ( !m_aDisplayDirectory.isEmpty() || !m_aDefaultName.isEmpty() )
     {
+        bool isFileSet = false;
         if ( !m_aDisplayDirectory.isEmpty() )
         {
 
-            INetURLObject aPath( m_aDisplayDirectory );
+            INetURLObject aPath;
+            INetURLObject givenPath( m_aDisplayDirectory );
+            if (!givenPath.HasError())
+                aPath = givenPath;
+            else
+            {
+                INetURLObject aStdDirObj( SvtPathOptions().GetWorkPath() );
+                aPath = aStdDirObj;
+            }
             if ( !m_aDefaultName.isEmpty() )
             {
                 aPath.insertName( m_aDefaultName );
                 getDialog()->SetHasFilename( true );
             }
             getDialog()->SetPath( aPath.GetMainURL( INetURLObject::NO_DECODE ) );
+            isFileSet = true;
         }
-        else if ( !m_aDefaultName.isEmpty() )
+        if ( !isFileSet && !m_aDefaultName.isEmpty() )
         {
             getDialog()->SetPath( m_aDefaultName );
             getDialog()->SetHasFilename( true );
@@ -211,7 +221,7 @@ void SvtFilePicker::prepareExecute()
 }
 
 
-IMPL_LINK_TYPED( SvtFilePicker, DialogClosedHdl, Dialog&, rDlg, void )
+IMPL_LINK( SvtFilePicker, DialogClosedHdl, Dialog&, rDlg, void )
 {
     if ( m_xDlgClosedListener.is() )
     {
@@ -269,6 +279,10 @@ PickerFlags SvtFilePicker::getPickerFlags()
     {
         nBits = PickerFlags::Open | PickerFlags::PlayButton;
     }
+    else if ( m_nServiceType == TemplateDescription::FILEOPEN_LINK_PLAY )
+    {
+        nBits = PickerFlags::Open | PickerFlags::InsertAsLink | PickerFlags::PlayButton;
+    }
     else if ( m_nServiceType == TemplateDescription::FILEOPEN_READONLY_VERSION )
     {
         nBits = PickerFlags::Open | PickerFlags::ReadOnly | PickerFlags::ShowVersions;
@@ -276,6 +290,10 @@ PickerFlags SvtFilePicker::getPickerFlags()
     else if ( m_nServiceType == TemplateDescription::FILEOPEN_LINK_PREVIEW )
     {
         nBits = PickerFlags::Open | PickerFlags::InsertAsLink | PickerFlags::ShowPreview;
+    }
+    else if ( m_nServiceType == TemplateDescription::FILEOPEN_PREVIEW )
+    {
+        nBits = PickerFlags::Open | PickerFlags::ShowPreview;
     }
     if ( m_bMultiSelection && ( nBits & PickerFlags::Open ) )
         nBits |= PickerFlags::MultiSelection;
@@ -1031,7 +1049,7 @@ void SAL_CALL SvtFilePicker::initialize( const Sequence< Any >& _rArguments )
         for ( int i = index; i < _rArguments.getLength(); i++)
         {
             NamedValue namedValue;
-            aArguments[i] <<= _rArguments[i];
+            aArguments[i] = _rArguments[i];
 
             if (aArguments[i] >>= namedValue )
             {

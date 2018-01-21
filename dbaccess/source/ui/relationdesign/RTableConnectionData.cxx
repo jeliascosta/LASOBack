@@ -47,7 +47,7 @@ ORelationTableConnectionData::ORelationTableConnectionData()
     :OTableConnectionData()
     ,m_nUpdateRules(KeyRule::NO_ACTION)
     ,m_nDeleteRules(KeyRule::NO_ACTION)
-    ,m_nCardinality(CARDINAL_UNDEFINED)
+    ,m_nCardinality(Cardinality::Undefined)
 {
 }
 
@@ -57,7 +57,7 @@ ORelationTableConnectionData::ORelationTableConnectionData( const TTableWindowDa
     :OTableConnectionData( _pReferencingTable, _pReferencedTable )
     ,m_nUpdateRules(KeyRule::NO_ACTION)
     ,m_nDeleteRules(KeyRule::NO_ACTION)
-    ,m_nCardinality(CARDINAL_UNDEFINED)
+    ,m_nCardinality(Cardinality::Undefined)
 {
     m_aConnName = rConnName;
 
@@ -127,20 +127,20 @@ void ORelationTableConnectionData::ChangeOrientation()
 void ORelationTableConnectionData::SetCardinality()
 {
     ::osl::MutexGuard aGuard( m_aMutex );
-    m_nCardinality = CARDINAL_UNDEFINED;
+    m_nCardinality = Cardinality::Undefined;
 
     if( IsSourcePrimKey() )
     {
         if( IsDestPrimKey() )
-            m_nCardinality = CARDINAL_ONE_ONE;
+            m_nCardinality = Cardinality::OneOne;
         else
-            m_nCardinality = CARDINAL_ONE_MANY;
+            m_nCardinality = Cardinality::OneMany;
     }
 
     if( IsDestPrimKey() )
     {
         if( !IsSourcePrimKey() )
-            m_nCardinality = CARDINAL_MANY_ONE;
+            m_nCardinality = Cardinality::ManyOne;
     }
 
 }
@@ -272,8 +272,7 @@ bool ORelationTableConnectionData::Update()
         // build a foreign key name
         OUString sSourceName;
         xTableProp->getPropertyValue(PROPERTY_NAME) >>= sSourceName;
-        OUString sKeyName = sSourceName;
-        sKeyName += getReferencedTable()->GetTableName();
+        OUString sKeyName = sSourceName + getReferencedTable()->GetTableName();
 
         xKey->setPropertyValue(PROPERTY_NAME,makeAny(sKeyName));
         xKey->setPropertyValue(PROPERTY_TYPE,makeAny(KeyType::FOREIGN));

@@ -24,10 +24,6 @@
 #include <com/sun/star/frame/XDispatch.hpp>
 #include <com/sun/star/frame/XFrame2.hpp>
 
-namespace com { namespace sun { namespace star { namespace awt { class XWindow; } } } }
-namespace com { namespace sun { namespace star { namespace i18n { class XBreakIterator; } } } }
-namespace com { namespace sun { namespace star { namespace text { class XTextRange; } } } }
-
 #include <vcl/window.hxx>
 #include <vcl/idle.hxx>
 #include <vcl/toolbox.hxx>
@@ -44,6 +40,11 @@ namespace com { namespace sun { namespace star { namespace text { class XTextRan
 
 #include "srchdlg.hxx"
 
+namespace com { namespace sun { namespace star { namespace awt { class XWindow; } } } }
+namespace com { namespace sun { namespace star { namespace i18n { class XBreakIterator; } } } }
+namespace com { namespace sun { namespace star { namespace text { class XTextRange; } } } }
+
+
 // ContentListBox_Impl ---------------------------------------------------
 
 class ContentListBox_Impl : public SvTreeListBox
@@ -58,7 +59,7 @@ private:
 
 public:
     ContentListBox_Impl(vcl::Window* pParent, WinBits nStyle);
-    virtual ~ContentListBox_Impl();
+    virtual ~ContentListBox_Impl() override;
     virtual void dispose() override;
 
     virtual void    RequestingChildren( SvTreeListEntry* pParent ) override;
@@ -80,7 +81,7 @@ protected:
 public:
     HelpTabPage_Impl(vcl::Window* pParent, SfxHelpIndexWindow_Impl* _pIdxWin,
         const OString& rID, const OUString& rUIXMLDescription);
-    virtual ~HelpTabPage_Impl();
+    virtual ~HelpTabPage_Impl() override;
     virtual void dispose() override;
 
     virtual Control*    GetLastFocusControl() = 0;
@@ -95,7 +96,7 @@ private:
 
 public:
     ContentTabPage_Impl(vcl::Window* pParent, SfxHelpIndexWindow_Impl* _pIdxWin);
-    virtual ~ContentTabPage_Impl();
+    virtual ~ContentTabPage_Impl() override;
     virtual void dispose() override;
 
     virtual void        ActivatePage() override;
@@ -137,13 +138,13 @@ private:
     void                InitializeIndex();
     void                ClearIndex();
 
-    DECL_LINK_TYPED(OpenHdl, Button*, void);
-    DECL_LINK_TYPED(IdleHdl, Idle*, void);
-    DECL_LINK_TYPED(TimeoutHdl, Timer*, void);
+    DECL_LINK(OpenHdl, Button*, void);
+    DECL_LINK(IdleHdl, Idle*, void);
+    DECL_LINK(TimeoutHdl, Timer*, void);
 
 public:
     IndexTabPage_Impl( vcl::Window* pParent, SfxHelpIndexWindow_Impl* _pIdxWin );
-    virtual ~IndexTabPage_Impl();
+    virtual ~IndexTabPage_Impl() override;
     virtual void dispose() override;
 
     virtual void        ActivatePage() override;
@@ -214,14 +215,14 @@ private:
     void                ClearSearchResults();
     void                RememberSearchText( const OUString& rSearchText );
 
-    DECL_LINK_TYPED(SearchHdl, LinkParamNone*, void);
-    DECL_LINK_TYPED(ClickHdl, Button*, void);
-    DECL_LINK_TYPED(OpenHdl, Button*, void);
-    DECL_LINK_TYPED(ModifyHdl, Edit&, void);
+    DECL_LINK(SearchHdl, LinkParamNone*, void);
+    DECL_LINK(ClickHdl, Button*, void);
+    DECL_LINK(OpenHdl, Button*, void);
+    DECL_LINK(ModifyHdl, Edit&, void);
 
 public:
     SearchTabPage_Impl( vcl::Window* pParent, SfxHelpIndexWindow_Impl* _pIdxWin );
-    virtual ~SearchTabPage_Impl();
+    virtual ~SearchTabPage_Impl() override;
     virtual void dispose() override;
 
     virtual void        ActivatePage() override;
@@ -247,7 +248,7 @@ private:
 
 public:
     BookmarksBox_Impl(vcl::Window* pParent, WinBits nStyle);
-    virtual ~BookmarksBox_Impl();
+    virtual ~BookmarksBox_Impl() override;
     virtual void dispose() override;
 
     virtual bool        Notify( NotifyEvent& rNEvt ) override;
@@ -259,11 +260,11 @@ private:
     VclPtr<BookmarksBox_Impl>  m_pBookmarksBox;
     VclPtr<PushButton>         m_pBookmarksPB;
 
-    DECL_LINK_TYPED(OpenHdl, Button*, void);
+    DECL_LINK(OpenHdl, Button*, void);
 
 public:
     BookmarksTabPage_Impl( vcl::Window* pParent, SfxHelpIndexWindow_Impl* _pIdxWin );
-    virtual ~BookmarksTabPage_Impl();
+    virtual ~BookmarksTabPage_Impl() override;
     virtual void dispose() override;
 
     virtual void        ActivatePage() override;
@@ -312,18 +313,18 @@ private:
     inline SearchTabPage_Impl*      GetSearchPage();
     inline BookmarksTabPage_Impl*   GetBookmarksPage();
 
-    DECL_LINK_TYPED(ActivatePageHdl, TabControl*, void );
-    DECL_LINK_TYPED(SelectHdl, ListBox&, void);
-    DECL_LINK_TYPED(InitHdl, Idle *, void);
-    DECL_LINK_TYPED(SelectFactoryHdl, Idle *, void);
-    DECL_LINK_TYPED(KeywordHdl, IndexTabPage_Impl&, void);
-    DECL_LINK_TYPED(ContentTabPageDoubleClickHdl, SvTreeListBox*, bool);
-    DECL_LINK_TYPED(TabPageDoubleClickHdl, ListBox&, void);
-    DECL_LINK_TYPED(IndexTabPageDoubleClickHdl, ComboBox&, void);
+    DECL_LINK(ActivatePageHdl, TabControl*, void );
+    DECL_LINK(SelectHdl, ListBox&, void);
+    DECL_LINK(InitHdl, Idle *, void);
+    DECL_LINK(SelectFactoryHdl, Idle *, void);
+    DECL_LINK(KeywordHdl, IndexTabPage_Impl&, void);
+    DECL_LINK(ContentTabPageDoubleClickHdl, SvTreeListBox*, bool);
+    DECL_LINK(TabPageDoubleClickHdl, ListBox&, void);
+    DECL_LINK(IndexTabPageDoubleClickHdl, ComboBox&, void);
 
 public:
     explicit SfxHelpIndexWindow_Impl( SfxHelpWindow_Impl* pParent );
-    virtual ~SfxHelpIndexWindow_Impl();
+    virtual ~SfxHelpIndexWindow_Impl() override;
     virtual void dispose() override;
 
     virtual void        Resize() override;
@@ -447,22 +448,22 @@ private:
     void                    InitOnStartupBox();
     void                    SetOnStartupBoxPosition();
 
-    css::uno::Reference< css::i18n::XBreakIterator >
+    css::uno::Reference< css::i18n::XBreakIterator > const &
                             GetBreakIterator();
     css::uno::Reference< css::text::XTextRange >
                             getCursor() const;
     bool                    isHandledKey( const vcl::KeyCode& _rKeyCode );
 
-    DECL_LINK_TYPED(        SelectHdl, Idle *, void);
-    DECL_LINK_TYPED(        NotifyHdl, LinkParamNone*, void );
-    DECL_LINK_TYPED(        FindHdl, sfx2::SearchDialog&, void );
-    DECL_LINK_TYPED(        CloseHdl, sfx2::SearchDialog*, void );
-    DECL_LINK_TYPED(        CheckHdl, Button*, void );
+    DECL_LINK(        SelectHdl, Idle *, void);
+    DECL_LINK(        NotifyHdl, LinkParamNone*, void );
+    DECL_LINK(        FindHdl, sfx2::SearchDialog&, void );
+    DECL_LINK(        CloseHdl, sfx2::SearchDialog*, void );
+    DECL_LINK(        CheckHdl, Button*, void );
     void                    FindHdl(sfx2::SearchDialog*);
 
 public:
     explicit SfxHelpTextWindow_Impl( SfxHelpWindow_Impl* pParent );
-    virtual ~SfxHelpTextWindow_Impl();
+    virtual ~SfxHelpTextWindow_Impl() override;
     virtual void dispose() override;
 
     virtual void            Resize() override;
@@ -521,15 +522,15 @@ friend class SfxHelpIndexWindow_Impl;
     void                SaveConfig();
     void                ShowStartPage();
 
-    DECL_LINK_TYPED(    SelectHdl, ToolBox*, void );
-    DECL_LINK_TYPED(    OpenHdl, Control*, bool );
-    DECL_LINK_TYPED(    SelectFactoryHdl, SfxHelpIndexWindow_Impl*, void );
-    DECL_LINK_TYPED(    ChangeHdl, HelpListener_Impl&, void );
+    DECL_LINK(    SelectHdl, ToolBox*, void );
+    DECL_LINK(    OpenHdl, Control*, bool );
+    DECL_LINK(    SelectFactoryHdl, SfxHelpIndexWindow_Impl*, void );
+    DECL_LINK(    ChangeHdl, HelpListener_Impl&, void );
 
 public:
     SfxHelpWindow_Impl( const css::uno::Reference < css::frame::XFrame2 >& rFrame,
                         vcl::Window* pParent, WinBits nBits );
-    virtual ~SfxHelpWindow_Impl();
+    virtual ~SfxHelpWindow_Impl() override;
     virtual void dispose() override;
 
     virtual bool        PreNotify( NotifyEvent& rNEvt ) override;
@@ -553,9 +554,8 @@ public:
                                        bool         bSuccess);
 
     static OUString     buildHelpURL(const OUString& sFactory        ,
-                                         const OUString& sContent        ,
-                                         const OUString& sAnchor         ,
-                                               bool         bUseQuestionMark);
+                                     const OUString& sContent        ,
+                                     const OUString& sAnchor);
 
     void                loadHelpContent(const OUString& sHelpURL                ,
                                               bool         bAddToHistory = true);
@@ -566,8 +566,8 @@ class SfxAddHelpBookmarkDialog_Impl : public ModalDialog
 private:
     VclPtr<Edit> m_pTitleED;
 public:
-    SfxAddHelpBookmarkDialog_Impl( vcl::Window* pParent, bool bRename = true );
-    virtual ~SfxAddHelpBookmarkDialog_Impl();
+    SfxAddHelpBookmarkDialog_Impl( vcl::Window* pParent, bool bRename );
+    virtual ~SfxAddHelpBookmarkDialog_Impl() override;
     virtual void dispose() override;
 
     void SetTitle( const OUString& rTitle );

@@ -61,7 +61,7 @@ protected:
     // This derived class additionally sets MULTISELECTABLE(+)
     virtual void GetStates( ::utl::AccessibleStateSetHelper& rStateSet ) override;
 
-    virtual ~SwAccessibleTable();
+    virtual ~SwAccessibleTable() override;
 
     // #i77106#
     inline void SetDesc( const OUString& sNewDesc )
@@ -86,7 +86,8 @@ protected:
     virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew) override;
 
 public:
-    SwAccessibleTable( SwAccessibleMap* pInitMap, const SwTabFrame* pTableFrame );
+    SwAccessibleTable(std::shared_ptr<SwAccessibleMap> const& pInitMap,
+                      const SwTabFrame* pTableFrame);
 
     // XInterface
 
@@ -224,10 +225,10 @@ public:
     virtual void InvalidatePosOrSize( const SwRect& rOldBox ) override;
 
     // The object is not visible an longer and should be destroyed
-    virtual void Dispose( bool bRecursive = false ) override;
+    virtual void Dispose(bool bRecursive, bool bCanSkipInvisible = true) override;
 
     virtual void DisposeChild( const sw::access::SwAccessibleChild& rFrameOrObj,
-                               bool bRecursive ) override;
+                               bool bRecursive, bool bCanSkipInvisible ) override;
     virtual void InvalidateChildPosOrSize( const sw::access::SwAccessibleChild& rFrameOrObj,
                                            const SwRect& rFrame ) override;
 
@@ -266,7 +267,7 @@ public:
     // XAccessibleComponent
     sal_Int32 SAL_CALL getBackground()
         throw (css::uno::RuntimeException, std::exception) override;
-    typedef std::vector< ::std::pair<SwAccessibleContext*,
+    typedef std::vector< std::pair<SwAccessibleContext*,
         css::uno::WeakReference<css::accessibility::XAccessible> > > Cells_t;
     Cells_t m_vecCellAdd;
     Cells_t m_vecCellRemove;
@@ -285,26 +286,21 @@ inline SwAccessibleTableData_Impl& SwAccessibleTable::GetTableData()
 class SwAccessibleTableColHeaders : public SwAccessibleTable
 {
 protected:
-    virtual ~SwAccessibleTableColHeaders()
+    virtual ~SwAccessibleTableColHeaders() override
     {}
 
     virtual SwAccessibleTableData_Impl* CreateNewTableData() override;
     virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew) override;
 
 public:
-    SwAccessibleTableColHeaders( SwAccessibleMap *pMap, const SwTabFrame *pTabFrame );
+    SwAccessibleTableColHeaders(std::shared_ptr<SwAccessibleMap> const& pMap,
+                                const SwTabFrame *pTabFrame);
 
     // XInterface
 
     virtual css::uno::Any SAL_CALL queryInterface(
         const css::uno::Type& aType )
         throw (css::uno::RuntimeException, std::exception) override;
-
-    virtual void SAL_CALL acquire(  ) throw () override
-        { SwAccessibleContext::acquire(); };
-
-    virtual void SAL_CALL release(  ) throw () override
-        { SwAccessibleContext::release(); };
 
     // XAccessibleContext
 

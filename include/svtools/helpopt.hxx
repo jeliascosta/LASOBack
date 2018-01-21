@@ -24,16 +24,17 @@
 #include <list>
 #include <rtl/ustring.hxx>
 #include <unotools/options.hxx>
+#include <memory>
 
 class SvtHelpOptions_Impl;
 
 class SVT_DLLPUBLIC SvtHelpOptions: public utl::detail::Options
 {
-    SvtHelpOptions_Impl*    pImp;
+    std::shared_ptr<SvtHelpOptions_Impl>    pImpl;
 
 public:
                     SvtHelpOptions();
-                    virtual ~SvtHelpOptions();
+                    virtual ~SvtHelpOptions() override;
 
     void            SetExtendedHelp( bool b );
     bool            IsExtendedHelp() const;

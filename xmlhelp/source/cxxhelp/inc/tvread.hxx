@@ -71,7 +71,7 @@ namespace treeview {
 
     public:
 
-        virtual ~TVBase() { }
+        virtual ~TVBase() override { }
 
         // XNameAccess
 
@@ -166,9 +166,9 @@ namespace treeview {
         friend class TVChildTarget;
 
     public:
-        TVRead( const ConfigData& configData,TVDom* tvDom = nullptr );
+        TVRead( const ConfigData& configData, TVDom* tvDom );
 
-        virtual ~TVRead();
+        virtual ~TVRead() override;
 
         // XNameAccess
 
@@ -214,7 +214,7 @@ namespace treeview {
 
         TVChildTarget( const css::uno::Reference< css::uno::XComponentContext >& xContext );
 
-        virtual ~TVChildTarget();
+        virtual ~TVChildTarget() override;
 
         virtual css::uno::Any SAL_CALL
         getByName( const OUString& aName )
@@ -272,12 +272,12 @@ namespace treeview {
 
     };  // end class TVChildTarget
 
-    enum IteratorState
+    enum class IteratorState
     {
-        USER_EXTENSIONS,
-        SHARED_EXTENSIONS,
-        BUNDLED_EXTENSIONS,
-        END_REACHED
+        UserExtensions,
+        SharedExtensions,
+        BundledExtensions,
+        EndReached
     };
 
     class ExtensionIteratorBase

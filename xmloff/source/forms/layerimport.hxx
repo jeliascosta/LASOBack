@@ -58,7 +58,7 @@ namespace xmloff
         /// the supplier for the forms of the currently imported page
         css::uno::Reference< css::form::XFormsSupplier2 >
                                             m_xCurrentPageFormsSupp;
-        SvXMLStylesContext*                 m_pAutoStyles;
+        rtl::Reference<SvXMLStylesContext>  m_xAutoStyles;
 
     protected:
         typedef std::map< OUString, css::uno::Reference< css::beans::XPropertySet > > MapString2PropertySet;
@@ -129,7 +129,8 @@ namespace xmloff
             const OUString& _rSubmissionID
         );
 
-        virtual ~OFormLayerXMLImport_Impl();
+        ~OFormLayerXMLImport_Impl() override;
+
     protected:
         explicit OFormLayerXMLImport_Impl(SvXMLImport& _rImporter);
 

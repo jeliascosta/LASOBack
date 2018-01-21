@@ -43,11 +43,11 @@ protected:
     impl_InitResultSetTwo( const css::uno::Reference< css::sdbc::XResultSet >& xResultSet ) override;
 
 public:
-    CachedDynamicResultSet( css::uno::Reference< css::ucb::XDynamicResultSet > xOrigin
+    CachedDynamicResultSet( css::uno::Reference< css::ucb::XDynamicResultSet > const & xOrigin
         , const css::uno::Reference< css::ucb::XContentIdentifierMapping > & xContentMapping
         , const css::uno::Reference< css::uno::XComponentContext > & xContext );
 
-    virtual ~CachedDynamicResultSet();
+    virtual ~CachedDynamicResultSet() override;
 
 
     // XInterface
@@ -73,10 +73,6 @@ public:
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
         throw( css::uno::RuntimeException, std::exception ) override;
 
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
-
-
     // own methods ( inherited )
 
     virtual void SAL_CALL
@@ -99,7 +95,7 @@ public:
     CachedDynamicResultSetFactory(
         const css::uno::Reference< css::uno::XComponentContext > & xContext);
 
-    virtual ~CachedDynamicResultSetFactory();
+    virtual ~CachedDynamicResultSetFactory() override;
 
 
     // XInterface

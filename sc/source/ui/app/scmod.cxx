@@ -20,6 +20,7 @@
 #include <config_features.h>
 
 #include <com/sun/star/ui/dialogs/XSLTFilterDialog.hpp>
+#include <comphelper/lok.hxx>
 #include <comphelper/processfactory.hxx>
 
 #include "scitems.hxx"
@@ -85,6 +86,7 @@
 #include "docsh.hxx"
 #include "drwlayer.hxx"
 #include "uiitems.hxx"
+#include "globstr.hrc"
 #include "sc.hrc"
 #include "cfgids.hxx"
 #include "inputhdl.hxx"
@@ -130,7 +132,7 @@ void ScModule::InitInterface_Impl()
 }
 
 ScModule::ScModule( SfxObjectFactory* pFact ) :
-    SfxModule( ResMgr::CreateResMgr( "sc" ), false, pFact, nullptr ),
+    SfxModule( ResMgr::CreateResMgr( "sc" ), {pFact} ),
     aIdleTimer("sc ScModule IdleTimer"),
     aSpellIdle("sc ScModule SpellIdle"),
     mpDragData(new ScDragData),
@@ -319,8 +321,7 @@ void ScModule::ConfigurationChanged( utl::ConfigurationBroadcaster* p, sal_uInt3
 
 void ScModule::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DEINITIALIZING )
+    if ( rHint.GetId() == SFX_HINT_DEINITIALIZING )
     {
         // ConfigItems must be removed before ConfigManager
         DeleteCfg();
@@ -1251,7 +1252,7 @@ void ScModule::ModifyOptions( const SfxItemSet& rOptSet )
         SetPrintOptions( rNewOpt );
 
         // broadcast causes all previews to recalc page numbers
-        SfxGetpApp()->Broadcast( SfxSimpleHint( SID_SCPRINTOPTIONS ) );
+        SfxGetpApp()->Broadcast( SfxHint( SID_SCPRINTOPTIONS ) );
     }
 
     if ( bSaveAppOptions )
@@ -1266,7 +1267,7 @@ void ScModule::ModifyOptions( const SfxItemSet& rOptSet )
         // Re-compile cells with name error, and recalc if at least one cell
         // has been re-compiled.  In the future we may want to find a way to
         // recalc only those that are affected.
-        if (pDoc->CompileErrorCells(formula::errNoName))
+        if (pDoc->CompileErrorCells(FormulaError::NoName))
             bCalcAll = true;
     }
 
@@ -1370,12 +1371,12 @@ ScInputHandler* ScModule::GetInputHdl( ScTabViewShell* pViewSh, bool bUseRef )
     return pHdl;
 }
 
-void ScModule::ViewShellChanged()
+void ScModule::ViewShellChanged(bool bStopEditing /*=true*/)
 {
     ScInputHandler* pHdl   = GetInputHdl();
     ScTabViewShell* pShell = ScTabViewShell::GetActiveViewShell();
     if ( pShell && pHdl )
-        pShell->UpdateInputHandler();
+        pShell->UpdateInputHandler(false, bStopEditing);
 }
 
 void ScModule::SetInputMode( ScInputMode eMode, const OUString* pInitText )
@@ -1431,7 +1432,7 @@ void ScModule::InputChanged( EditView* pView )
 {
     ScInputHandler* pHdl = GetInputHdl();
     if (pHdl)
-        pHdl->InputChanged( pView );
+        pHdl->InputChanged( pView, false );
 }
 
 void ScModule::ViewShellGone( ScTabViewShell* pViewSh )
@@ -1553,7 +1554,7 @@ void ScModule::SetRefDialog( sal_uInt16 nId, bool bVis, SfxViewFrame* pViewFrm )
         }
 
         SfxApplication* pSfxApp = SfxGetpApp();
-        pSfxApp->Broadcast( SfxSimpleHint( FID_REFMODECHANGED ) );
+        pSfxApp->Broadcast( SfxHint( FID_REFMODECHANGED ) );
     }
 }
 
@@ -1829,7 +1830,7 @@ static void lcl_CheckNeedsRepaint( ScDocShell* pDocShell )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ScModule, IdleHandler, Timer *, void)
+IMPL_LINK_NOARG(ScModule, IdleHandler, Timer *, void)
 {
     if ( Application::AnyInput( VclInputFlags::MOUSE | VclInputFlags::KEYBOARD ) )
     {
@@ -1900,7 +1901,7 @@ IMPL_LINK_NOARG_TYPED(ScModule, IdleHandler, Timer *, void)
     aIdleTimer.Start();
 }
 
-IMPL_LINK_NOARG_TYPED(ScModule, SpellTimerHdl, Idle *, void)
+IMPL_LINK_NOARG(ScModule, SpellTimerHdl, Idle *, void)
 {
     if ( Application::AnyInput( VclInputFlags::KEYBOARD ) )
     {
@@ -2126,7 +2127,7 @@ VclPtr<SfxTabPage> ScModule::CreateTabPage( sal_uInt16 nId, vcl::Window* pParent
     return pRet;
 }
 
-IMPL_LINK_TYPED( ScModule, CalcFieldValueHdl, EditFieldInfo*, pInfo, void )
+IMPL_LINK( ScModule, CalcFieldValueHdl, EditFieldInfo*, pInfo, void )
 {
     //TODO: Merge with ScFieldEditEngine!
     if (!pInfo)
@@ -2266,6 +2267,25 @@ bool ScModule::HasThesaurusLanguage( sal_uInt16 nLang )
     }
 
     return bHasLang;
+}
+
+SfxStyleFamilies* ScModule::CreateStyleFamilies()
+{
+    SfxStyleFamilies *pStyleFamilies = new SfxStyleFamilies;
+
+    ImageList aEntryImages(ScResId(RID_STYLEFAMILY_IMAGELIST));
+
+    pStyleFamilies->emplace_back(SfxStyleFamilyItem(SfxStyleFamily::Para,
+                                                    ScGlobal::GetRscString(STR_STYLE_FAMILY_CELL),
+                                                    aEntryImages.GetImage(1),
+                                                    ScResId(RID_CELLSTYLEFAMILY)));
+
+    pStyleFamilies->emplace_back(SfxStyleFamilyItem(SfxStyleFamily::Page,
+                                                    ScGlobal::GetRscString(STR_STYLE_FAMILY_PAGE),
+                                                    aEntryImages.GetImage(2),
+                                                    ScResId(RID_PAGESTYLEFAMILY)));
+
+    return pStyleFamilies;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

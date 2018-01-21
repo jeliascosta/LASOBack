@@ -30,6 +30,7 @@
 #include "smdll.hxx"
 #include "smmod.hxx"
 #include "cfgitem.hxx"
+#include <cassert>
 #include <stack>
 
 using namespace ::com::sun::star::i18n;
@@ -150,7 +151,7 @@ static const SmTokenTableEntry aTokenTable[] =
     { "infinity" , TINFINITY, MS_INFINITY, TG::Standalone, 5},
     { "infty" , TINFINITY, MS_INFINITY, TG::Standalone, 5},
     { "int", TINT, MS_INT, TG::Oper, 5},
-    { "intd", TINTD, MS_INT, TG::UnOper, 5},
+    { "intd", TINTD, MS_INT, TG::Oper, 5},
     { "intersection", TINTERSECT, MS_INTERSECT, TG::Product, 0},
     { "ital", TITALIC, '\0', TG::FontAttr, 5},
     { "italic", TITALIC, '\0', TG::FontAttr, 5},
@@ -297,7 +298,7 @@ const SmTokenTableEntry * SmParser::GetTokenTableEntry( const OUString &rName )
     {
         for (auto const &token : aTokenTable)
         {
-            if (rName.equalsIgnoreAsciiCase( OUString::createFromAscii(token.pIdent) ))
+            if (rName.equalsIgnoreAsciiCaseAscii( token.pIdent ))
                 return &token;
         }
     }
@@ -338,7 +339,7 @@ bool IsDelimiter( const OUString &rTxt, sal_Int32 nPos )
 
 void SmParser::Replace( sal_Int32 nPos, sal_Int32 nLen, const OUString &rText )
 {
-    OSL_ENSURE( nPos + nLen <= m_aBufferString.getLength(), "argument mismatch" );
+    assert( nPos + nLen <= m_aBufferString.getLength() );
 
     m_aBufferString = m_aBufferString.replaceAt( nPos, nLen, rText );
     sal_Int32 nChg = rText.getLength() - nLen;
@@ -414,7 +415,7 @@ void SmParser::NextToken()
                 '\n' == m_aBufferString[ nRealStart ] )
         {
             // keep data needed for tokens row and col entry up to date
-            ++m_Row;
+            ++m_nRow;
             m_nBufferIndex = m_nColOff = nRealStart + 1;
             bCont = true;
         }
@@ -436,7 +437,7 @@ void SmParser::NextToken()
     // set index of current token
     m_nTokenIndex = m_nBufferIndex;
 
-    m_aCurToken.nRow   = m_Row;
+    m_aCurToken.nRow   = m_nRow;
     m_aCurToken.nCol   = nRealStart - m_nColOff + 1;
 
     bool bHandled = true;
@@ -459,7 +460,7 @@ void SmParser::NextToken()
             --aRes.EndPos;
         }
         sal_Int32 n = aRes.EndPos - nRealStart;
-        OSL_ENSURE( n >= 0, "length < 0" );
+        assert(n >= 0);
         m_aCurToken.eType      = TNUMBER;
         m_aCurToken.cMathChar  = '\0';
         m_aCurToken.nGroup     = TG::NONE;
@@ -475,13 +476,13 @@ void SmParser::NextToken()
         m_aCurToken.nGroup     = TG::NONE;
         m_aCurToken.nLevel     = 5;
         m_aCurToken.aText     = aRes.DequotedNameOrString;
-        m_aCurToken.nRow       = m_Row;
+        m_aCurToken.nRow       = m_nRow;
         m_aCurToken.nCol       = nRealStart - m_nColOff + 2;
     }
     else if (aRes.TokenType & KParseType::IDENTNAME)
     {
         sal_Int32 n = aRes.EndPos - nRealStart;
-        OSL_ENSURE( n >= 0, "length < 0" );
+        assert(n >= 0);
         OUString aName( m_aBufferString.copy( nRealStart, n ) );
         const SmTokenTableEntry *pEntry = GetTokenTableEntry( aName );
 
@@ -655,7 +656,7 @@ void SmParser::NextToken()
                         m_aCurToken.nGroup     = TG::NONE;
                         m_aCurToken.nLevel     = 5;
                         m_aCurToken.aText      ="%";
-                        m_aCurToken.nRow       = m_Row;
+                        m_aCurToken.nRow       = m_nRow;
                         m_aCurToken.nCol       = nTmpStart - m_nColOff;
 
                         if (aTmpRes.TokenType & KParseType::IDENTNAME)
@@ -944,7 +945,7 @@ void SmParser::NextToken()
 
 // grammar
 
-void SmParser::DoTable()
+SmTableNode *SmParser::DoTable()
 {
     DoLine();
     while (m_aCurToken.eType == TNEWLINE)
@@ -962,9 +963,9 @@ void SmParser::DoTable()
         *rIt = popOrZero(m_aNodeStack);
     }
 
-    std::unique_ptr<SmStructureNode> pSNode(new SmTableNode(m_aCurToken));
+    std::unique_ptr<SmTableNode> pSNode(new SmTableNode(m_aCurToken));
     pSNode->SetSubNodes(LineArray);
-    m_aNodeStack.push_front(std::move(pSNode));
+    return pSNode.release();
 }
 
 void SmParser::DoAlign()
@@ -1507,10 +1508,7 @@ void SmParser::DoTerm(bool bGroupNumberIdent)
                         DoFontAttribut();
 
                     SmNode* pTmp = popOrZero(m_aNodeStack);
-
-                    // check if casting in following line is ok
-                    OSL_ENSURE(pTmp && !pTmp->IsVisible(), "Sm : Ooops...");
-
+                    assert(pTmp && !pTmp->IsVisible());
                     aStack.push(static_cast<SmStructureNode *>(pTmp));
                 }
 
@@ -1566,31 +1564,29 @@ void SmParser::DoEscape()
             Error(PE_UNEXPECTED_TOKEN);
     }
 
-    std::unique_ptr<SmNode> pNode(new SmMathSymbolNode(m_aCurToken));
-    m_aNodeStack.push_front(std::move(pNode));
+    m_aNodeStack.push_front(o3tl::make_unique<SmMathSymbolNode>(m_aCurToken));
 
     NextToken();
 }
 
 void SmParser::DoOperator()
 {
-    if (TokenInGroup(TG::Oper))
-    {
-        std::unique_ptr<SmStructureNode> pSNode(new SmOperNode(m_aCurToken));
+    assert(TokenInGroup(TG::Oper));
 
-        // put operator on top of stack
-        DoOper();
+    std::unique_ptr<SmStructureNode> pSNode(new SmOperNode(m_aCurToken));
 
-        if (TokenInGroup(TG::Limit) || TokenInGroup(TG::Power))
-            DoSubSup(m_aCurToken.nGroup);
-        SmNode *pOperator = popOrZero(m_aNodeStack);
+    // put operator on top of stack
+    DoOper();
 
-        // get argument
-        DoPower();
+    if (TokenInGroup(TG::Limit) || TokenInGroup(TG::Power))
+        DoSubSup(m_aCurToken.nGroup);
+    SmNode *pOperator = popOrZero(m_aNodeStack);
 
-        pSNode->SetSubNodes(pOperator, popOrZero(m_aNodeStack));
-        m_aNodeStack.push_front(std::move(pSNode));
-    }
+    // get argument
+    DoPower();
+
+    pSNode->SetSubNodes(pOperator, popOrZero(m_aNodeStack));
+    m_aNodeStack.push_front(std::move(pSNode));
 }
 
 void SmParser::DoOper()
@@ -1604,6 +1600,7 @@ void SmParser::DoOper()
         case TPROD :
         case TCOPROD :
         case TINT :
+        case TINTD :
         case TIINT :
         case TIIINT :
         case TLINT :
@@ -1648,7 +1645,7 @@ void SmParser::DoOper()
 
 void SmParser::DoUnOper()
 {
-    OSL_ENSURE(TokenInGroup(TG::UnOper), "Sm: wrong token");
+    assert(TokenInGroup(TG::UnOper));
 
     SmToken      aNodeToken = m_aCurToken;
     SmTokenType  eType      = m_aCurToken.eType;
@@ -1663,10 +1660,6 @@ void SmParser::DoUnOper()
     {
         case TABS :
         case TSQRT :
-           /* Dynamic integrals are handled as unary operators so we can wrap
-             the symbol together with the body in a upper level node and make
-             proper graphic arrangements */
-        case TINTD:
             NextToken();
             break;
 
@@ -1727,12 +1720,6 @@ void SmParser::DoUnOper()
         pOper = new SmRootSymbolNode(aNodeToken);
         pSNode->SetSubNodes(pExtra, pOper, pArg);
     }
-    else if(eType == TINTD)
-    {
-        pSNode.reset(new SmDynIntegralNode(aNodeToken));
-        pOper = new SmDynIntegralSymbolNode(aNodeToken);
-        pSNode->SetSubNodes(pOper, pArg);
-    }
     else
     {
         pSNode.reset(new SmUnHorNode(aNodeToken));
@@ -1748,7 +1735,7 @@ void SmParser::DoUnOper()
 
 void SmParser::DoAttribut()
 {
-    OSL_ENSURE(TokenInGroup(TG::Attribute), "Sm: wrong token group");
+    assert(TokenInGroup(TG::Attribute));
 
     std::unique_ptr<SmStructureNode> pSNode(new SmAttributNode(m_aCurToken));
     SmNode      *pAttr;
@@ -1776,7 +1763,7 @@ void SmParser::DoAttribut()
 
     NextToken();
 
-    pSNode->SetSubNodes(pAttr, nullptr);
+    pSNode->SetSubNodes(pAttr, nullptr); // the body will be filled later
     pSNode->SetScaleMode(eScaleMode);
     m_aNodeStack.push_front(std::move(pSNode));
 }
@@ -1784,7 +1771,7 @@ void SmParser::DoAttribut()
 
 void SmParser::DoFontAttribut()
 {
-    OSL_ENSURE(TokenInGroup(TG::FontAttr), "Sm: wrong token group");
+    assert(TokenInGroup(TG::FontAttr));
 
     switch (m_aCurToken.eType)
     {
@@ -1810,13 +1797,13 @@ void SmParser::DoFontAttribut()
             break;
 
         default :
-            SAL_WARN("starmath", "unknown case");
+            assert(false);
     }
 }
 
 void SmParser::DoColor()
 {
-    OSL_ENSURE(m_aCurToken.eType == TCOLOR, "Sm : Ooops...");
+    assert(m_aCurToken.eType == TCOLOR);
 
     // last color rules, get that one
     SmToken  aToken;
@@ -1836,7 +1823,7 @@ void SmParser::DoColor()
 
 void SmParser::DoFont()
 {
-    OSL_ENSURE(m_aCurToken.eType == TFONT, "Sm : Ooops...");
+    assert(m_aCurToken.eType == TFONT);
 
     // last font rules, get that one
     SmToken  aToken;
@@ -1879,7 +1866,7 @@ static bool lcl_IsNumber(const OUString& rText)
 
 void SmParser::DoFontSize()
 {
-    OSL_ENSURE(m_aCurToken.eType == TSIZE, "Sm : Ooops...");
+    assert(m_aCurToken.eType == TSIZE);
 
     FontSizeType   Type;
     std::unique_ptr<SmFontNode> pFontNode(new SmFontNode(m_aCurToken));
@@ -1945,13 +1932,10 @@ void SmParser::DoFontSize()
 
 void SmParser::DoBrace()
 {
-    OSL_ENSURE(m_aCurToken.eType == TLEFT  ||  TokenInGroup(TG::LBrace),
-        "Sm: kein Klammer Ausdruck");
+    assert(m_aCurToken.eType == TLEFT  ||  TokenInGroup(TG::LBrace));
 
     std::unique_ptr<SmStructureNode> pSNode(new SmBraceNode(m_aCurToken));
-    SmNode *pBody   = nullptr,
-           *pLeft   = nullptr,
-           *pRight  = nullptr;
+    std::unique_ptr<SmNode> pBody, pLeft, pRight;
     SmScaleMode   eScaleMode = SCALE_NONE;
     SmParseError  eError     = PE_NONE;
 
@@ -1963,11 +1947,11 @@ void SmParser::DoBrace()
         // check for left bracket
         if (TokenInGroup(TG::LBrace) || TokenInGroup(TG::RBrace))
         {
-            pLeft = new SmMathSymbolNode(m_aCurToken);
+            pLeft.reset(new SmMathSymbolNode(m_aCurToken));
 
             NextToken();
             DoBracebody(true);
-            pBody = popOrZero(m_aNodeStack);
+            pBody.reset(popOrZero(m_aNodeStack));
 
             if (m_aCurToken.eType == TRIGHT)
             {   NextToken();
@@ -1975,7 +1959,7 @@ void SmParser::DoBrace()
                 // check for right bracket
                 if (TokenInGroup(TG::LBrace) || TokenInGroup(TG::RBrace))
                 {
-                    pRight = new SmMathSymbolNode(m_aCurToken);
+                    pRight.reset(new SmMathSymbolNode(m_aCurToken));
                     NextToken();
                 }
                 else
@@ -1989,57 +1973,48 @@ void SmParser::DoBrace()
     }
     else
     {
-        if (TokenInGroup(TG::LBrace))
+        assert(TokenInGroup(TG::LBrace));
+
+        pLeft.reset(new SmMathSymbolNode(m_aCurToken));
+
+        NextToken();
+        DoBracebody(false);
+        pBody.reset(popOrZero(m_aNodeStack));
+
+        SmTokenType  eExpectedType = TUNKNOWN;
+        switch (pLeft->GetToken().eType)
+        {   case TLPARENT :     eExpectedType = TRPARENT;   break;
+            case TLBRACKET :    eExpectedType = TRBRACKET;  break;
+            case TLBRACE :      eExpectedType = TRBRACE;    break;
+            case TLDBRACKET :   eExpectedType = TRDBRACKET; break;
+            case TLLINE :       eExpectedType = TRLINE;     break;
+            case TLDLINE :      eExpectedType = TRDLINE;    break;
+            case TLANGLE :      eExpectedType = TRANGLE;    break;
+            case TLFLOOR :      eExpectedType = TRFLOOR;    break;
+            case TLCEIL :       eExpectedType = TRCEIL;     break;
+            default :
+                SAL_WARN("starmath", "unknown case");
+            }
+
+        if (m_aCurToken.eType == eExpectedType)
         {
-            pLeft = new SmMathSymbolNode(m_aCurToken);
-
+            pRight.reset(new SmMathSymbolNode(m_aCurToken));
             NextToken();
-            DoBracebody(false);
-            pBody = popOrZero(m_aNodeStack);
-
-            SmTokenType  eExpectedType = TUNKNOWN;
-            switch (pLeft->GetToken().eType)
-            {   case TLPARENT :     eExpectedType = TRPARENT;   break;
-                case TLBRACKET :    eExpectedType = TRBRACKET;  break;
-                case TLBRACE :      eExpectedType = TRBRACE;    break;
-                case TLDBRACKET :   eExpectedType = TRDBRACKET; break;
-                case TLLINE :       eExpectedType = TRLINE;     break;
-                case TLDLINE :      eExpectedType = TRDLINE;    break;
-                case TLANGLE :      eExpectedType = TRANGLE;    break;
-                case TLFLOOR :      eExpectedType = TRFLOOR;    break;
-                case TLCEIL :       eExpectedType = TRCEIL;     break;
-                default :
-                    SAL_WARN("starmath", "unknown case");
-            }
-
-            if (m_aCurToken.eType == eExpectedType)
-            {
-                pRight = new SmMathSymbolNode(m_aCurToken);
-                NextToken();
-            }
-            else
-                eError = PE_PARENT_MISMATCH;
         }
         else
-            eError = PE_LBRACE_EXPECTED;
+            eError = PE_PARENT_MISMATCH;
     }
 
     if (eError == PE_NONE)
-    {   OSL_ENSURE(pLeft,  "Sm: NULL pointer");
-        OSL_ENSURE(pRight, "Sm: NULL pointer");
-        pSNode->SetSubNodes(pLeft, pBody, pRight);
+    {
+        assert(pLeft);
+        assert(pRight);
+        pSNode->SetSubNodes(pLeft.release(), pBody.release(), pRight.release());
         pSNode->SetScaleMode(eScaleMode);
         m_aNodeStack.push_front(std::move(pSNode));
     }
     else
-    {
-        pSNode.reset();
-        delete pBody;
-        delete pLeft;
-        delete pRight;
-
         Error(eError);
-    }
 }
 
 void SmParser::DoBracebody(bool bIsLeftRight)
@@ -2146,11 +2121,9 @@ void SmParser::DoBinom()
     DoSum();
     DoSum();
 
-    SmNodeArray ExpressionArray(2);
-    ExpressionArray[1] = popOrZero(m_aNodeStack);
-    ExpressionArray[0] = popOrZero(m_aNodeStack);
-
-    pSNode->SetSubNodes(ExpressionArray);
+    SmNode *pSecond = popOrZero(m_aNodeStack);
+    SmNode *pFirst = popOrZero(m_aNodeStack);
+    pSNode->SetSubNodes(pFirst, pSecond);
     m_aNodeStack.push_front(std::move(pSNode));
 }
 
@@ -2282,7 +2255,7 @@ void SmParser::DoSpecial()
     // add symbol name to list of used symbols
     const OUString aSymbolName(m_aCurToken.aText.copy(1));
     if (!aSymbolName.isEmpty())
-        AddToUsedSymbols( aSymbolName );
+        m_aUsedSymbols.insert( aSymbolName );
 
     m_aNodeStack.push_front(o3tl::make_unique<SmSpecialNode>(m_aCurToken));
     NextToken();
@@ -2297,7 +2270,7 @@ void SmParser::DoGlyphSpecial()
 void SmParser::Error(SmParseError eError)
 {
     SmStructureNode *pSNode = new SmExpressionNode(m_aCurToken);
-    SmErrorNode     *pErr   = new SmErrorNode(eError, m_aCurToken);
+    SmErrorNode     *pErr   = new SmErrorNode(m_aCurToken);
     pSNode->SetSubNodes(pErr, nullptr);
 
     //! put a structure node on the stack (instead of the error node itself)
@@ -2318,22 +2291,22 @@ SmParser::SmParser()
     : m_nCurError( 0 )
     , m_nBufferIndex( 0 )
     , m_nTokenIndex( 0 )
-    , m_Row( 0 )
+    , m_nRow( 0 )
     , m_nColOff( 0 )
-    , bImportSymNames( false )
+    , m_bImportSymNames( false )
     , m_bExportSymNames( false )
     , m_aDotLoc( LanguageTag::convertToLocale( LANGUAGE_ENGLISH_US ) )
 {
 }
 
-SmNode *SmParser::Parse(const OUString &rBuffer)
+SmTableNode *SmParser::Parse(const OUString &rBuffer)
 {
-    ClearUsedSymbols();
+    m_aUsedSymbols.clear();
 
     m_aBufferString = convertLineEnd(rBuffer, LINEEND_LF);
     m_nBufferIndex  = 0;
     m_nTokenIndex   = 0;
-    m_Row           = 1;
+    m_nRow          = 1;
     m_nColOff       = 0;
     m_nCurError     = -1;
 
@@ -2342,10 +2315,7 @@ SmNode *SmParser::Parse(const OUString &rBuffer)
     m_aNodeStack.clear();
 
     NextToken();
-    DoTable();
-
-    SmNode* result = popOrZero(m_aNodeStack);
-    return result;
+    return DoTable();
 }
 
 SmNode *SmParser::ParseExpression(const OUString &rBuffer)
@@ -2353,7 +2323,7 @@ SmNode *SmParser::ParseExpression(const OUString &rBuffer)
     m_aBufferString = convertLineEnd(rBuffer, LINEEND_LF);
     m_nBufferIndex  = 0;
     m_nTokenIndex   = 0;
-    m_Row           = 1;
+    m_nRow          = 1;
     m_nColOff       = 0;
     m_nCurError     = -1;
 
@@ -2387,9 +2357,6 @@ void SmParser::AddError(SmParseError Type, SmNode *pNode)
         case PE_RBRACE_EXPECTED:     nRID = RID_ERR_RBRACEEXPECTED;         break;
         case PE_FUNC_EXPECTED:       nRID = RID_ERR_FUNCEXPECTED;           break;
         case PE_UNOPER_EXPECTED:     nRID = RID_ERR_UNOPEREXPECTED;         break;
-        case PE_BINOPER_EXPECTED:    nRID = RID_ERR_BINOPEREXPECTED;        break;
-        case PE_SYMBOL_EXPECTED:     nRID = RID_ERR_SYMBOLEXPECTED;         break;
-        case PE_IDENTIFIER_EXPECTED: nRID = RID_ERR_IDENTEXPECTED;          break;
         case PE_POUND_EXPECTED:      nRID = RID_ERR_POUNDEXPECTED;          break;
         case PE_COLOR_EXPECTED:      nRID = RID_ERR_COLOREXPECTED;          break;
         case PE_RIGHT_EXPECTED:      nRID = RID_ERR_RIGHTEXPECTED;          break;

@@ -92,7 +92,7 @@ namespace sdr
             :   ViewContactOfSdrObj(rObj)
             {
             }
-            virtual ~VCOfSwFlyDrawObj();
+            virtual ~VCOfSwFlyDrawObj() override;
         };
 
         drawinglayer::primitive2d::Primitive2DContainer VCOfSwFlyDrawObj::createViewIndependentPrimitive2DSequence() const
@@ -130,9 +130,9 @@ SwFlyDrawObj::~SwFlyDrawObj()
 
 // SwFlyDrawObj - Factory-Methods
 
-sal_uInt32 SwFlyDrawObj::GetObjInventor() const
+SdrInventor SwFlyDrawObj::GetObjInventor() const
 {
-    return SWGInventor;
+    return SdrInventor::Swg;
 }
 
 sal_uInt16 SwFlyDrawObj::GetObjIdentifier() const
@@ -154,7 +154,7 @@ namespace drawinglayer
 
         protected:
             /// method which is to be used to implement the local decomposition of a 2D primitive
-            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
 
         public:
             SwVirtFlyDrawObjPrimitive(
@@ -171,7 +171,7 @@ namespace drawinglayer
             virtual basegfx::B2DRange getB2DRange(const geometry::ViewInformation2D& rViewInformation) const override;
 
             // override to allow callbacks to wrap_DoPaintObject
-            virtual Primitive2DContainer get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void get2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
 
             // data read access
             const SwVirtFlyDrawObj& getSwVirtFlyDrawObj() const { return mrSwVirtFlyDrawObj; }
@@ -187,10 +187,8 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer SwVirtFlyDrawObjPrimitive::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
+        void SwVirtFlyDrawObjPrimitive::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
-            Primitive2DContainer aRetval;
-
             if(!getOuterRange().isEmpty())
             {
                 // currently this SW object has no primitive representation. As long as this is the case,
@@ -199,15 +197,11 @@ namespace drawinglayer
                 // the old SwVirtFlyDrawObj::CheckHit implementation are handled now in SwDrawView::PickObj;
                 // this removed the 'hack' to get a view from inside model data or to react on null-tolerance
                 // as it was done in the old implementation
-                const Primitive2DReference aHitTestReference(
+                rContainer.push_back(
                     createHiddenGeometryPrimitives2D(
                         true,
                         getOuterRange()));
-
-                aRetval = Primitive2DContainer { aHitTestReference };
             }
-
-            return aRetval;
         }
 
         bool SwVirtFlyDrawObjPrimitive::operator==(const BasePrimitive2D& rPrimitive) const
@@ -228,7 +222,7 @@ namespace drawinglayer
             return getOuterRange();
         }
 
-        Primitive2DContainer SwVirtFlyDrawObjPrimitive::get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const
+        void SwVirtFlyDrawObjPrimitive::get2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const
         {
             // This is the callback to keep the FlyFrame painting in SW alive as long as it
             // is not changed to primitives. This is the method which will be called by the processors
@@ -238,7 +232,7 @@ namespace drawinglayer
             getSwVirtFlyDrawObj().wrap_DoPaintObject(rViewInformation);
 
             // call parent
-            return BufferedDecompositionPrimitive2D::get2DDecomposition(rViewInformation);
+            BufferedDecompositionPrimitive2D::get2DDecomposition(rContainer, rViewInformation);
         }
 
         // provide unique ID
@@ -271,7 +265,7 @@ namespace sdr
             :   ViewContactOfVirtObj(rObj)
             {
             }
-            virtual ~VCOfSwVirtFlyDrawObj();
+            virtual ~VCOfSwVirtFlyDrawObj() override;
 
             /// access to SwVirtFlyDrawObj
             SwVirtFlyDrawObj& GetSwVirtFlyDrawObj() const
@@ -539,7 +533,7 @@ void SwVirtFlyDrawObj::SetSnapRect(const Rectangle& )
     SetChanged();
     BroadcastObjectChange();
     if (pUserCall!=nullptr)
-        pUserCall->Changed(*this, SDRUSERCALL_RESIZE, aTmp);
+        pUserCall->Changed(*this, SdrUserCallType::Resize, aTmp);
 }
 
 void SwVirtFlyDrawObj::NbcSetSnapRect(const Rectangle& )
@@ -560,7 +554,7 @@ void SwVirtFlyDrawObj::SetLogicRect(const Rectangle& )
     SetChanged();
     BroadcastObjectChange();
     if (pUserCall!=nullptr)
-        pUserCall->Changed(*this, SDRUSERCALL_RESIZE, aTmp);
+        pUserCall->Changed(*this, SdrUserCallType::Resize, aTmp);
 }
 
 void SwVirtFlyDrawObj::NbcSetLogicRect(const Rectangle& )
@@ -751,9 +745,9 @@ void SwVirtFlyDrawObj::NbcCrop(const Point& rRef, const Fraction& xFact, const F
     GraphicObject const *pGraphicObject = pSh->GetGraphicObj();
     if (!pGraphicObject)
         return;
-    const MapMode aMapMode100thmm(MAP_100TH_MM);
+    const MapMode aMapMode100thmm(MapUnit::Map100thMM);
     Size aGraphicSize(pGraphicObject->GetPrefSize());
-    if( MAP_PIXEL == pGraphicObject->GetPrefMapMode().GetMapUnit() )
+    if( MapUnit::MapPixel == pGraphicObject->GetPrefMapMode().GetMapUnit() )
         aGraphicSize = Application::GetDefaultDevice()->PixelToLogic( aGraphicSize, aMapMode100thmm );
     else
         aGraphicSize = OutputDevice::LogicToLogic( aGraphicSize, pGraphicObject->GetPrefMapMode(), aMapMode100thmm);
@@ -940,14 +934,14 @@ void SwVirtFlyDrawObj::addCropHandles(SdrHdlList& rTarget) const
 
     if(!aRect.IsEmpty())
     {
-       rTarget.AddHdl(new SdrCropHdl(aRect.TopLeft()     , HDL_UPLFT, 0, 0));
-       rTarget.AddHdl(new SdrCropHdl(aRect.TopCenter()   , HDL_UPPER, 0, 0));
-       rTarget.AddHdl(new SdrCropHdl(aRect.TopRight()    , HDL_UPRGT, 0, 0));
-       rTarget.AddHdl(new SdrCropHdl(aRect.LeftCenter()  , HDL_LEFT , 0, 0));
-       rTarget.AddHdl(new SdrCropHdl(aRect.RightCenter() , HDL_RIGHT, 0, 0));
-       rTarget.AddHdl(new SdrCropHdl(aRect.BottomLeft()  , HDL_LWLFT, 0, 0));
-       rTarget.AddHdl(new SdrCropHdl(aRect.BottomCenter(), HDL_LOWER, 0, 0));
-       rTarget.AddHdl(new SdrCropHdl(aRect.BottomRight() , HDL_LWRGT, 0, 0));
+       rTarget.AddHdl(new SdrCropHdl(aRect.TopLeft()     , SdrHdlKind::UpperLeft, 0, 0));
+       rTarget.AddHdl(new SdrCropHdl(aRect.TopCenter()   , SdrHdlKind::Upper, 0, 0));
+       rTarget.AddHdl(new SdrCropHdl(aRect.TopRight()    , SdrHdlKind::UpperRight, 0, 0));
+       rTarget.AddHdl(new SdrCropHdl(aRect.LeftCenter()  , SdrHdlKind::Left , 0, 0));
+       rTarget.AddHdl(new SdrCropHdl(aRect.RightCenter() , SdrHdlKind::Right, 0, 0));
+       rTarget.AddHdl(new SdrCropHdl(aRect.BottomLeft()  , SdrHdlKind::LowerLeft, 0, 0));
+       rTarget.AddHdl(new SdrCropHdl(aRect.BottomCenter(), SdrHdlKind::Lower, 0, 0));
+       rTarget.AddHdl(new SdrCropHdl(aRect.BottomRight() , SdrHdlKind::LowerRight, 0, 0));
     }
 }
 
@@ -997,20 +991,6 @@ SdrObject* SwVirtFlyDrawObj::CheckMacroHit( const SdrObjMacroHitRec& rRec ) cons
         }
     }
     return SdrObject::CheckMacroHit( rRec );
-}
-
-// Dragging
-
-bool SwVirtFlyDrawObj::supportsFullDrag() const
-{
-    // call parent
-    return SdrVirtObj::supportsFullDrag();
-}
-
-SdrObject* SwVirtFlyDrawObj::getFullDragClone() const
-{
-    // call parent
-    return SdrVirtObj::getFullDragClone();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

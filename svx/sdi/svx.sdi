@@ -1010,8 +1010,6 @@ SfxBoolItem CenterPara SID_ATTR_PARA_ADJUST_CENTER
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -2324,8 +2322,6 @@ SfxVoidItem DefaultBullet FN_NUM_BULLET_ON
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
     SlotType = SfxBoolItem
 
     AccelConfig = TRUE,
@@ -2749,9 +2745,9 @@ XFillColorItem FillPageColor SID_ATTR_PAGE_COLOR
 
 
     /* config: */
-    AccelConfig = TRUE,
-    MenuConfig = TRUE,
-    ToolBoxConfig = TRUE,
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = FALSE,
     GroupId = GID_FORMAT;
 ]
 
@@ -2860,9 +2856,9 @@ XFillStyleItem FillPageStyle SID_ATTR_PAGE_FILLSTYLE
     RecordPerSet;
 
     /* config: */
-    AccelConfig = TRUE,
-    MenuConfig = TRUE,
-    ToolBoxConfig = TRUE,
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = FALSE,
     GroupId = GID_FORMAT;
 ]
 
@@ -3597,25 +3593,6 @@ SfxBoolItem Freeline_Unfilled SID_DRAW_FREELINE_NOFILL
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
     GroupId = GID_DRAWING;
-]
-
-
-SfxBoolItem AutoColorInvalid SID_ATTR_AUTO_COLOR_INVALID
-
-[
-    AutoUpdate = TRUE,
-    FastCall = FALSE,
-    ReadOnlyDoc = FALSE,
-    Toggle = FALSE,
-    Container = TRUE,
-    RecordAbsolute = FALSE,
-    RecordPerSet;
-
-
-    AccelConfig = FALSE,
-    MenuConfig = FALSE,
-    ToolBoxConfig = FALSE,
-    GroupId = GID_INSERT;
 ]
 
 
@@ -4813,8 +4790,6 @@ SfxVoidItem DefaultNumbering FN_NUM_NUMBERING_ON
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
     SlotType = SfxBoolItem
 
     AccelConfig = TRUE,
@@ -5111,9 +5086,6 @@ SfxBoolItem JustifyPara SID_ATTR_PARA_ADJUST_BLOCK
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
-
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -5264,8 +5236,6 @@ SfxBoolItem LeftPara SID_ATTR_PARA_ADJUST_LEFT
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -5303,6 +5273,8 @@ SfxVoidItem LeftRightParaMargin SID_ATTR_PARA_LRSPACE
     RecordAbsolute = FALSE,
     RecordPerSet;
 
+    SlotType = SvxLRSpaceItem
+
     AccelConfig = FALSE,
     MenuConfig = FALSE,
     ToolBoxConfig = FALSE,
@@ -5328,7 +5300,7 @@ SfxVoidItem LeftRightParaMargin_Vertical SID_ATTR_PARA_LRSPACE_VERTICAL
 ]
 
 
-SfxBoolItem Line SID_DRAW_LINE
+SfxBoolItem MeasureLine SID_DRAW_MEASURELINE
 
 [
     AutoUpdate = TRUE,
@@ -5347,6 +5319,150 @@ SfxBoolItem Line SID_DRAW_LINE
 ]
 
 
+SfxBoolItem Line SID_DRAW_LINE
+
+[
+    AutoUpdate = TRUE,
+    FastCall = FALSE,
+    ReadOnlyDoc = FALSE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerItem;
+
+
+    AccelConfig = TRUE,
+    MenuConfig = TRUE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_DRAWING;
+]
+
+SfxBoolItem LineArrowCircle SID_LINE_ARROW_CIRCLE
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = FALSE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerItem;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_DRAWING;
+]
+
+SfxBoolItem LineArrowEnd SID_LINE_ARROW_END
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = FALSE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerItem;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_DRAWING;
+]
+
+SfxBoolItem LineArrows SID_LINE_ARROWS
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = FALSE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerItem;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_DRAWING;
+]
+
+SfxBoolItem LineArrowSquare SID_LINE_ARROW_SQUARE
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = FALSE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerItem;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_DRAWING;
+]
+
+SfxBoolItem LineArrowStart SID_LINE_ARROW_START
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = FALSE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerItem;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_DRAWING;
+]
+
+SfxBoolItem LineCircleArrow SID_LINE_CIRCLE_ARROW
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = FALSE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerItem;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_DRAWING;
+]
+
+SfxBoolItem LineSquareArrow SID_LINE_SQUARE_ARROW
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = FALSE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerItem;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_DRAWING;
+]
+
 SfxBoolItem Line_Diagonal SID_DRAW_XLINE
 
 [
@@ -5364,6 +5480,23 @@ SfxBoolItem Line_Diagonal SID_DRAW_XLINE
     GroupId = GID_DRAWING;
 ]
 
+SfxVoidItem ArrowsToolbox SID_DRAWTBX_ARROWS
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = FALSE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+
+    AccelConfig = TRUE,
+    MenuConfig = TRUE,
+    ToolBoxConfig = TRUE,
+    GroupId = GID_DRAWING;
+]
 
 SvxColorItem FrameLineColor SID_FRAME_LINECOLOR
 
@@ -5776,8 +5909,6 @@ SfxVoidItem OutlineBullet SID_OUTLINE_BULLET
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
     AccelConfig = FALSE,
     MenuConfig = FALSE,
     ToolBoxConfig = TRUE,
@@ -6093,6 +6224,25 @@ SvxPageItem AttributePage SID_ATTR_PAGE
     AccelConfig = FALSE,
     MenuConfig = FALSE,
     ToolBoxConfig = FALSE,
+    GroupId = GID_FORMAT;
+]
+
+
+SvxPageItem Orientation SID_ATTR_PAGE_ORIENTATION
+
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = TRUE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = TRUE,
     GroupId = GID_FORMAT;
 ]
 
@@ -6946,8 +7096,6 @@ SfxBoolItem RightPara SID_ATTR_PARA_ADJUST_RIGHT
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -7786,9 +7934,6 @@ SfxBoolItem SpacePara1 SID_ATTR_PARA_LINESPACE_10
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
-
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -7807,9 +7952,6 @@ SfxBoolItem SpacePara15 SID_ATTR_PARA_LINESPACE_15
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
-
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -7827,9 +7969,6 @@ SfxBoolItem SpacePara2 SID_ATTR_PARA_LINESPACE_20
     Container = FALSE,
     RecordAbsolute = FALSE,
     RecordPerSet;
-
-    ImageRotation = TRUE;
-    ImageReflection = TRUE;
 
     AccelConfig = TRUE,
     MenuConfig = TRUE,
@@ -9234,8 +9373,6 @@ SfxBoolItem ParaLeftToRight SID_ATTR_PARA_LEFT_TO_RIGHT
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -9253,8 +9390,6 @@ SfxBoolItem ParaRightToLeft SID_ATTR_PARA_RIGHT_TO_LEFT
     Container = FALSE,
     RecordAbsolute = FALSE,
     RecordPerSet;
-
-    ImageRotation = TRUE;
 
     AccelConfig = TRUE,
     MenuConfig = TRUE,
@@ -9998,9 +10133,6 @@ SfxVoidItem IncrementIndent SID_INC_INDENT
     RecordAbsolute = FALSE,
     RecordPerSet;
 
-    ImageRotation = TRUE;
-        ImageReflection = TRUE;
-
     AccelConfig = TRUE,
     MenuConfig = TRUE,
     ToolBoxConfig = TRUE,
@@ -10018,9 +10150,6 @@ SfxVoidItem DecrementIndent SID_DEC_INDENT
     Container = FALSE,
     RecordAbsolute = FALSE,
     RecordPerSet;
-
-    ImageRotation = TRUE;
-        ImageReflection = TRUE;
 
     AccelConfig = TRUE,
     MenuConfig = TRUE,
@@ -10397,6 +10526,22 @@ SvxHatchListItem HatchListState SID_HATCH_LIST
 ]
 
 SvxBitmapListItem BitmapListState SID_BITMAP_LIST
+[
+    AutoUpdate = FALSE,
+    FastCall = FALSE,
+    ReadOnlyDoc = TRUE,
+    Toggle = FALSE,
+    Container = FALSE,
+    RecordAbsolute = FALSE,
+    RecordPerSet;
+
+    AccelConfig = FALSE,
+    MenuConfig = FALSE,
+    ToolBoxConfig = FALSE,
+    GroupId = GID_EDIT;
+]
+
+SvxPatternListItem PatternListState SID_PATTERN_LIST
 [
     AutoUpdate = FALSE,
     FastCall = FALSE,

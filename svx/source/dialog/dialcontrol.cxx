@@ -378,7 +378,7 @@ sal_Int32 DialControl::GetRotation() const
 
 Size DialControl::GetOptimalSize() const
 {
-    return LogicToPixel(Size(42 , 43), MAP_APPFONT);
+    return LogicToPixel(Size(42 , 43), MapUnit::MapAppFont);
 }
 
 void DialControl::SetRotation( sal_Int32 nAngle )
@@ -415,15 +415,15 @@ void DialControl::SetLinkedField( NumericField* pField, sal_Int32 nDecimalPlaces
         rField.SetLoseFocusHdl( LINK( this, DialControl, LinkedFieldFocusHdl ) );
     }
 }
-IMPL_LINK_NOARG_TYPED( DialControl, LinkedFieldModifyHdl, Edit&, void )
+IMPL_LINK_NOARG( DialControl, LinkedFieldModifyHdl, Edit&, void )
 {
     LinkedFieldModifyHdl();
 }
-IMPL_LINK_NOARG_TYPED( DialControl, LinkedFieldFocusHdl, Control&, void )
+IMPL_LINK_NOARG( DialControl, LinkedFieldFocusHdl, Control&, void )
 {
     LinkedFieldModifyHdl();
 }
-IMPL_LINK_NOARG_TYPED(DialControl, SpinFieldHdl, SpinField&, void)
+IMPL_LINK_NOARG(DialControl, SpinFieldHdl, SpinField&, void)
 {
     LinkedFieldModifyHdl();
 }

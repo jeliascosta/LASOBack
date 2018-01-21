@@ -75,7 +75,7 @@ struct inistruct
         tcode xcode;        // KAM    encoding set - forced
         bool ruscode;       // false  Russian tables turned on
         bool reformatpars;  // false  Reformat paragraphs (whitespaces and line breaks)
-        sal_Int16 fontsize;       // font size in points
+        static const sal_Int16 fontsize = 10; // font size in points
 
         inistruct()
             : showcomm( true )
@@ -83,7 +83,6 @@ struct inistruct
             , xcode ( KAM )
             , ruscode ( false )
             , reformatpars ( false )
-            , fontsize (10)
         {
         };
 };
@@ -102,7 +101,7 @@ class T602ImportFilterDialog : public cppu::WeakImplHelper <
     OUString getResStr( sal_Int16 resid );
     void initLocale();
 
-    virtual ~T602ImportFilterDialog();
+    virtual ~T602ImportFilterDialog() override;
 
     // XExecutableDialog
        virtual void SAL_CALL setTitle( const OUString& aTitle )
@@ -253,8 +252,8 @@ private:
 
     public:
         explicit T602ImportFilter(const css::uno::Reference<css::lang::XMultiServiceFactory > &r );
-        explicit T602ImportFilter(css::uno::Reference<css::io::XInputStream> xInputStream);
-        virtual ~T602ImportFilter();
+        explicit T602ImportFilter(css::uno::Reference<css::io::XInputStream> const & xInputStream);
+        virtual ~T602ImportFilter() override;
 
     // XFilter
         virtual sal_Bool SAL_CALL filter( const css::uno::Sequence< css::beans::PropertyValue >& aDescriptor )

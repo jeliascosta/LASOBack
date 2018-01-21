@@ -46,9 +46,11 @@
 #include "tokenarray.hxx"
 #include "globalnames.hxx"
 #include "stlsheet.hxx"
+#include "dpcache.hxx"
 
 #include <com/sun/star/sheet/DataPilotFieldFilter.hpp>
 
+#include <limits>
 #include <string.h>
 #include <math.h>
 
@@ -95,7 +97,7 @@ double ScInterpreter::GetDateSerial( sal_Int16 nYear, sal_Int16 nMonth, sal_Int1
         return (double) (aDate - *(pFormatter->GetNullDate()));
     else
     {
-        SetError(errNoValue);
+        SetError(FormulaError::NoValue);
         return 0;
     }
 }
@@ -124,21 +126,21 @@ void ScInterpreter::ScGetActTime()
 void ScInterpreter::ScGetYear()
 {
     Date aDate = *(pFormatter->GetNullDate());
-    aDate += (long) ::rtl::math::approxFloor(GetDouble());
+    aDate += (long) GetInt32();
     PushDouble( (double) aDate.GetYear() );
 }
 
 void ScInterpreter::ScGetMonth()
 {
     Date aDate = *(pFormatter->GetNullDate());
-    aDate += (long) ::rtl::math::approxFloor(GetDouble());
+    aDate += (long) GetInt32();
     PushDouble( (double) aDate.GetMonth() );
 }
 
 void ScInterpreter::ScGetDay()
 {
     Date aDate = *(pFormatter->GetNullDate());
-    aDate += (long)::rtl::math::approxFloor(GetDouble());
+    aDate += (long) GetInt32();
     PushDouble((double) aDate.GetDay());
 }
 
@@ -175,7 +177,10 @@ void ScInterpreter::ScGetDateValue()
     {
         short eType = pFormatter->GetType(nFIndex);
         if (eType == css::util::NumberFormat::DATE || eType == css::util::NumberFormat::DATETIME)
+        {
+            nFuncFmtType = css::util::NumberFormat::DATE;
             PushDouble(::rtl::math::approxFloor(fVal));
+        }
         else
             PushIllegalArgument();
     }
@@ -188,14 +193,14 @@ void ScInterpreter::ScGetDayOfWeek()
     sal_uInt8 nParamCount = GetByte();
     if ( MustHaveParamCount( nParamCount, 1, 2 ) )
     {
-        short nFlag;
+        sal_Int16 nFlag;
         if (nParamCount == 2)
-            nFlag = (short) ::rtl::math::approxFloor(GetDouble());
+            nFlag = GetInt16();
         else
             nFlag = 1;
 
         Date aDate = *(pFormatter->GetNullDate());
-        aDate += (long)::rtl::math::approxFloor(GetDouble());
+        aDate += (long) GetInt32();
         int nVal = (int) aDate.GetDayOfWeek();  // MONDAY = 0
         switch (nFlag)
         {
@@ -224,7 +229,7 @@ void ScInterpreter::ScGetDayOfWeek()
                     nVal -= nFlag - 12;     // nVal -= ((nFlag - 11) - 1 = x - 1 = -1,0,1,2,3,4,5)
             break;
             default:
-                SetError( errIllegalArgument);
+                SetError( FormulaError::IllegalArgument);
         }
         PushInt( nVal );
     }
@@ -234,10 +239,10 @@ void ScInterpreter::ScWeeknumOOo()
 {
     if ( MustHaveParamCount( GetByte(), 2 ) )
     {
-        short nFlag = (short) ::rtl::math::approxFloor(GetDouble());
+        sal_Int16 nFlag = GetInt16();
 
         Date aDate = *(pFormatter->GetNullDate());
-        aDate += (long)::rtl::math::approxFloor(GetDouble());
+        aDate += (long) GetInt32();
         PushInt( (int) aDate.GetWeekOfYear( nFlag == 1 ? SUNDAY : MONDAY ));
     }
 }
@@ -247,10 +252,14 @@ void ScInterpreter::ScGetWeekOfYear()
     sal_uInt8 nParamCount = GetByte();
     if ( MustHaveParamCount( nParamCount, 1, 2 ) )
     {
-        short nFlag = (nParamCount == 1) ? 1 : (short) ::rtl::math::approxFloor(GetDouble());
+        sal_Int16 nFlag;
+        if (nParamCount == 1)
+            nFlag = 1;
+        else
+            nFlag = GetInt16();
 
         Date aDate = *(pFormatter->GetNullDate());
-        aDate += (long)::rtl::math::approxFloor(GetDouble());
+        aDate += (long) GetInt32();
 
         sal_Int32 nMinimumNumberOfDaysInWeek;
         DayOfWeek eFirstDayOfWeek;
@@ -293,7 +302,7 @@ void ScInterpreter::ScGetIsoWeekOfYear()
     if ( MustHaveParamCount( GetByte(), 1 ) )
     {
         Date aDate = *(pFormatter->GetNullDate());
-        aDate += (long)::rtl::math::approxFloor(GetDouble());
+        aDate += (long) GetInt32();
         PushInt( (int) aDate.GetWeekOfYear() );
     }
 }
@@ -304,7 +313,12 @@ void ScInterpreter::ScEasterSunday()
     if ( MustHaveParamCount( GetByte(), 1 ) )
     {
         sal_Int16 nDay, nMonth, nYear;
-        nYear = (sal_Int16) ::rtl::math::approxFloor( GetDouble() );
+        nYear = GetInt16();
+        if (nGlobalError != FormulaError::NONE)
+        {
+            PushError( nGlobalError);
+            return;
+        }
         if ( nYear < 100 )
             nYear = pFormatter->ExpandTwoDigitYear( nYear );
         if (nYear < 1583 || nYear > 9956)
@@ -334,7 +348,7 @@ void ScInterpreter::ScEasterSunday()
     }
 }
 
-sal_uInt16 ScInterpreter::GetWeekendAndHolidayMasks(
+FormulaError ScInterpreter::GetWeekendAndHolidayMasks(
     const sal_uInt8 nParamCount, const sal_uInt32 nNullDate, vector< double >& rSortArray,
     bool bWeekendMask[ 7 ] )
 {
@@ -342,12 +356,12 @@ sal_uInt16 ScInterpreter::GetWeekendAndHolidayMasks(
     {
         vector< double > nWeekendDays;
         GetNumberSequenceArray( 1, nWeekendDays, false );
-        if ( nGlobalError )
+        if ( nGlobalError != FormulaError::NONE )
             return nGlobalError;
         else
         {
             if ( nWeekendDays.size() != 7 )
-                return  errIllegalArgument;
+                return  FormulaError::IllegalArgument;
 
             // Weekend days defined by string, Sunday...Saturday
             for ( int i = 0; i < 7; i++ )
@@ -374,11 +388,11 @@ sal_uInt16 ScInterpreter::GetWeekendAndHolidayMasks(
     return nGlobalError;
 }
 
-sal_uInt16 ScInterpreter::GetWeekendAndHolidayMasks_MS(
+FormulaError ScInterpreter::GetWeekendAndHolidayMasks_MS(
     const sal_uInt8 nParamCount, const sal_uInt32 nNullDate, vector< double >& rSortArray,
-    bool bWeekendMask[ 7 ] )
+    bool bWeekendMask[ 7 ], bool bWorkdayFunction )
 {
-    sal_uInt16 nErr = 0;
+    FormulaError nErr = FormulaError::NONE;
     OUString aWeekendDays;
     if ( nParamCount == 4 )
     {
@@ -389,7 +403,43 @@ sal_uInt16 ScInterpreter::GetWeekendAndHolidayMasks_MS(
     }
 
     if ( nParamCount >= 3 )
-        aWeekendDays = GetString().getString();
+    {
+        if ( IsMissing() )
+            Pop();
+        else
+        {
+            switch ( GetStackType() )
+            {
+                case svDoubleRef :
+                case svExternalDoubleRef :
+                    return FormulaError::NoValue;
+                    break;
+
+                default :
+                    {
+                        double fDouble;
+                        svl::SharedString aSharedString;
+                        bool bDouble = GetDoubleOrString( fDouble, aSharedString);
+                        if ( bDouble )
+                        {
+                            if ( fDouble >= 1.0 && fDouble <= 17 )
+                                aWeekendDays = OUString::number( fDouble );
+                            else
+                                return FormulaError::NoValue;
+                        }
+                        else
+                        {
+                            if ( aSharedString.isEmpty() || aSharedString.getLength() != 7 ||
+                                 ( bWorkdayFunction && aSharedString.getString() == "1111111" ) )
+                                return FormulaError::NoValue;
+                            else
+                                aWeekendDays = aSharedString.getString();
+                        }
+                    }
+                    break;
+            }
+        }
+    }
 
     for ( int i = 0; i < 7; i++ )
         bWeekendMask[ i] = false;
@@ -414,7 +464,7 @@ sal_uInt16 ScInterpreter::GetWeekendAndHolidayMasks_MS(
                     case '5' : bWeekendMask[ WEDNESDAY ] = true; bWeekendMask[ THURSDAY ]  = true; break;
                     case '6' : bWeekendMask[ THURSDAY ]  = true; bWeekendMask[ FRIDAY ]    = true; break;
                     case '7' : bWeekendMask[ FRIDAY ]    = true; bWeekendMask[ SATURDAY ]  = true; break;
-                    default  : nErr = errIllegalArgument;                                          break;
+                    default  : nErr = FormulaError::IllegalArgument;                                          break;
                 }
                 break;
             case 2 :
@@ -430,26 +480,26 @@ sal_uInt16 ScInterpreter::GetWeekendAndHolidayMasks_MS(
                         case '5' : bWeekendMask[ THURSDAY ]  = true; break;
                         case '6' : bWeekendMask[ FRIDAY ]    = true; break;
                         case '7' : bWeekendMask[ SATURDAY ]  = true; break;
-                        default  : nErr = errIllegalArgument;        break;
+                        default  : nErr = FormulaError::IllegalArgument;        break;
                     }
                 }
                 else
-                    nErr = errIllegalArgument;
+                    nErr = FormulaError::IllegalArgument;
                 break;
             case 7 :
                 // Weekend days defined by string
-                for ( int i = 0; i < 7 && !nErr; i++ )
+                for ( int i = 0; i < 7 && nErr == FormulaError::NONE; i++ )
                 {
                     switch ( aWeekendDays[ i ] )
                     {
                         case '0' : bWeekendMask[ i ] = false; break;
                         case '1' : bWeekendMask[ i ] = true;  break;
-                        default  : nErr = errIllegalArgument; break;
+                        default  : nErr = FormulaError::IllegalArgument; break;
                     }
                 }
                 break;
             default :
-                nErr = errIllegalArgument;
+                nErr = FormulaError::IllegalArgument;
                 break;
         }
     }
@@ -465,23 +515,30 @@ void ScInterpreter::ScNetWorkdays( bool bOOXML_Version )
         bool bWeekendMask[ 7 ];
         Date aNullDate = *( pFormatter->GetNullDate() );
         sal_uInt32 nNullDate = Date::DateToDays( aNullDate.GetDay(), aNullDate.GetMonth(), aNullDate.GetYear() );
-        sal_uInt16 nErr;
+        FormulaError nErr;
         if ( bOOXML_Version )
         {
             nErr = GetWeekendAndHolidayMasks_MS( nParamCount, nNullDate,
-                            nSortArray, bWeekendMask );
+                            nSortArray, bWeekendMask, false );
         }
         else
         {
             nErr = GetWeekendAndHolidayMasks( nParamCount, nNullDate,
                             nSortArray, bWeekendMask );
         }
-        if ( nErr )
+        if ( nErr != FormulaError::NONE )
             PushError( nErr );
         else
         {
-            sal_uInt32 nDate2 = ( sal_uInt32 )::rtl::math::approxFloor( GetDouble() ) + nNullDate;
-            sal_uInt32 nDate1 = ( sal_uInt32 )::rtl::math::approxFloor( GetDouble() ) + nNullDate;
+            sal_uInt32 nDate2 = GetUInt32();
+            sal_uInt32 nDate1 = GetUInt32();
+            if (nGlobalError != FormulaError::NONE || (nDate1 > SAL_MAX_UINT32 - nNullDate) || nDate2 > (SAL_MAX_UINT32 - nNullDate))
+            {
+                PushIllegalArgument();
+                return;
+            }
+            nDate2 += nNullDate;
+            nDate1 += nNullDate;
 
             sal_Int32 nCnt = 0;
             size_t nRef = 0;
@@ -519,14 +576,20 @@ void ScInterpreter::ScWorkday_MS()
         bool bWeekendMask[ 7 ];
         Date aNullDate = *( pFormatter->GetNullDate() );
         sal_uInt32 nNullDate = Date::DateToDays( aNullDate.GetDay(), aNullDate.GetMonth(), aNullDate.GetYear() );
-        sal_uInt16 nErr = GetWeekendAndHolidayMasks_MS( nParamCount, nNullDate,
-                            nSortArray, bWeekendMask );
-        if ( nErr )
+        FormulaError nErr = GetWeekendAndHolidayMasks_MS( nParamCount, nNullDate,
+                            nSortArray, bWeekendMask, true );
+        if ( nErr != FormulaError::NONE )
             PushError( nErr );
         else
         {
-            sal_Int32 nDays = ::rtl::math::approxFloor( GetDouble() );
-            sal_uInt32 nDate = ( sal_uInt32 )::rtl::math::approxFloor( GetDouble() ) + nNullDate;
+            sal_Int32 nDays = GetInt32();
+            sal_uInt32 nDate = GetUInt32();
+            if (nGlobalError != FormulaError::NONE || (nDate > SAL_MAX_UINT32 - nNullDate))
+            {
+                PushIllegalArgument();
+                return;
+            }
+            nDate += nNullDate;
 
             if ( !nDays )
                 PushDouble( ( double ) ( nDate - nNullDate ) );
@@ -546,6 +609,7 @@ void ScInterpreter::ScWorkday_MS()
 
                         while ( nRef < nMax && nSortArray.at( nRef ) < nDate )
                             nRef++;
+
                         if ( !( nRef < nMax && nSortArray.at( nRef ) == nDate ) || nRef >= nMax )
                             nDays--;
                     }
@@ -563,6 +627,7 @@ void ScInterpreter::ScWorkday_MS()
 
                         while ( nRef >= 0 && nSortArray.at( nRef ) > nDate )
                             nRef--;
+
                         if ( !( nRef >= 0 && nSortArray.at( nRef ) == nDate ) || nRef < 0 )
                              nDays++;
                     }
@@ -578,10 +643,12 @@ void ScInterpreter::ScGetDate()
     nFuncFmtType = css::util::NumberFormat::DATE;
     if ( MustHaveParamCount( GetByte(), 3 ) )
     {
-        sal_Int16 nDay   = (sal_Int16) ::rtl::math::approxFloor(GetDouble());
-        sal_Int16 nMonth = (sal_Int16) ::rtl::math::approxFloor(GetDouble());
-        sal_Int16 nYear  = (sal_Int16) ::rtl::math::approxFloor(GetDouble());
-        if (nYear < 0)
+        sal_Int16 nDay   = GetInt16();
+        sal_Int16 nMonth = GetInt16();
+        if (IsMissing())
+            SetError( FormulaError::ParameterExpected);    // Year must be given.
+        sal_Int16 nYear  = GetInt16();
+        if (nGlobalError != FormulaError::NONE || nYear < 0)
             PushIllegalArgument();
         else
         {
@@ -653,7 +720,7 @@ void ScInterpreter::ScGetDiffDate360()
             bFlag = false;
         double nDate2 = GetDouble();
         double nDate1 = GetDouble();
-        if (nGlobalError)
+        if (nGlobalError != FormulaError::NONE)
             PushError( nGlobalError);
         else
         {
@@ -716,10 +783,10 @@ void ScInterpreter::ScGetDateDif()
     if ( MustHaveParamCount( GetByte(), 3 ) )
     {
         OUString aInterval = GetString().getString();
-        double nDate2    = GetDouble();
-        double nDate1    = GetDouble();
+        long nDate2 = ::rtl::math::approxFloor( GetDouble() );
+        long nDate1 = ::rtl::math::approxFloor( GetDouble() );
 
-        if (nGlobalError)
+        if (nGlobalError != FormulaError::NONE)
         {
             PushError( nGlobalError);
             return;
@@ -741,17 +808,24 @@ void ScInterpreter::ScGetDateDif()
         }
 
         // split dates in day, month, year for use with formats other than "d"
-        sal_uInt16 d1, m1, y1, d2, m2, y2;
+        sal_uInt16 d1, m1, d2, m2;
+        sal_Int16 y1, y2;
         Date aDate1( *( pFormatter->GetNullDate()));
-        aDate1 += (long) ::rtl::math::approxFloor( nDate1 );
+        aDate1 += nDate1;
         y1 = aDate1.GetYear();
         m1 = aDate1.GetMonth();
         d1 = aDate1.GetDay();
         Date aDate2( *( pFormatter->GetNullDate()));
-        aDate2 += (long) ::rtl::math::approxFloor( nDate2 );
+        aDate2 += nDate2;
         y2 = aDate2.GetYear();
         m2 = aDate2.GetMonth();
         d2 = aDate2.GetDay();
+
+        // Close the year 0 gap to calculate year difference.
+        if (y1 < 0 && y2 > 0)
+            ++y1;
+        else if (y1 > 0 && y2 < 0)
+            ++y2;
 
         if (  aInterval.equalsIgnoreAsciiCase( "m" ) )
         {
@@ -805,7 +879,7 @@ void ScInterpreter::ScGetDateDif()
             {
                 if (m2 == 1)
                 {
-                    aDate1.SetYear( y2 - 1 );
+                    aDate1.SetYear( y2 == 1 ? -1 : y2 - 1 );
                     aDate1.SetMonth( 12 );
                 }
                 else
@@ -830,9 +904,6 @@ void ScInterpreter::ScGetDateDif()
         else if ( aInterval.equalsIgnoreAsciiCase( "yd" ) )
         {
             // Return number of days, excluding years.
-
-            /* TODO: check what Excel really does, though this seems to be
-             * reasonable */
 
             // Condition corresponds with "y".
             if (m2 > m1 || (m2 == m1 && d2 >= d1))
@@ -866,6 +937,7 @@ void ScInterpreter::ScGetTimeValue()
         short eType = pFormatter->GetType(nFIndex);
         if (eType == css::util::NumberFormat::TIME || eType == css::util::NumberFormat::DATETIME)
         {
+            nFuncFmtType = css::util::NumberFormat::TIME;
             double fDateVal = rtl::math::approxFloor(fVal);
             double fTimeVal = fVal - fDateVal;
             PushDouble(fTimeVal);
@@ -908,11 +980,11 @@ void ScInterpreter::RoundNumber( rtl_math_RoundingMode eMode )
             fVal = ::rtl::math::round( GetDouble(), 0, eMode );
         else
         {
-            sal_Int32 nDec = (sal_Int32) ::rtl::math::approxFloor(GetDouble());
-            if( nDec < -20 || nDec > 20 )
+            sal_Int16 nDec = GetInt16();
+            if ( nGlobalError != FormulaError::NONE || nDec < -20 || nDec > 20 )
                 PushIllegalArgument();
             else
-                fVal = ::rtl::math::round( GetDouble(), (short)nDec, eMode );
+                fVal = ::rtl::math::round( GetDouble(), nDec, eMode );
         }
         PushDouble(fVal);
     }
@@ -1193,11 +1265,11 @@ void ScInterpreter::ScNPV()
     {
         double nVal = 0.0;
         //We turn the stack upside down!
-        FormulaToken* pTemp[ 31 ];
+        const FormulaToken* pTemp[ 31 ];
         for( short i = 0; i < nParamCount; i++ )
             pTemp[ i ] = pStack[ sp - i - 1 ];
         memcpy( &pStack[ sp - nParamCount ], pTemp, nParamCount * sizeof( FormulaToken* ) );
-        if (nGlobalError == 0)
+        if (nGlobalError == FormulaError::NONE)
         {
             double  nCount = 1.0;
             double  nInterest = GetDouble();
@@ -1230,20 +1302,55 @@ void ScInterpreter::ScNPV()
                     case svDoubleRef :
                     case svRefList :
                     {
-                        sal_uInt16 nErr = 0;
+                        FormulaError nErr = FormulaError::NONE;
                         double nCellVal;
                         PopDoubleRef( aRange, nParamCount, nRefInList);
                         ScHorizontalValueIterator aValIter( pDok, aRange );
-                        while ((nErr == 0) && aValIter.GetNext(nCellVal, nErr))
+                        while ((nErr == FormulaError::NONE) && aValIter.GetNext(nCellVal, nErr))
                         {
                             nVal += (nCellVal / pow(1.0 + nInterest, (double)nCount));
                             nCount++;
                         }
-                        if ( nErr != 0 )
+                        if ( nErr != FormulaError::NONE )
                             SetError(nErr);
                     }
                     break;
-                    default : SetError(errIllegalParameter); break;
+                    case svMatrix :
+                    case svExternalSingleRef:
+                    case svExternalDoubleRef:
+                    {
+                        ScMatrixRef pMat = GetMatrix();
+                        if (pMat)
+                        {
+                            SCSIZE nC, nR;
+                            pMat->GetDimensions(nC, nR);
+                            if (nC == 0 || nR == 0)
+                            {
+                                PushIllegalArgument();
+                                return;
+                            }
+                            else
+                            {
+                                double fx;
+                                for ( SCSIZE j = 0; j < nC; j++ )
+                                {
+                                    for (SCSIZE k = 0; k < nR; ++k)
+                                    {
+                                        if (!pMat->IsValue(j,k))
+                                        {
+                                            PushIllegalArgument();
+                                            return;
+                                        }
+                                        fx = pMat->GetDouble(j,k);
+                                        nVal += (fx / pow(1.0 + nInterest, nCount));
+                                        nCount++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    break;
+                    default : SetError(FormulaError::IllegalParameter); break;
                 }
             }
         }
@@ -1287,7 +1394,7 @@ void ScInterpreter::ScIRR()
         sp = sPos;                          // reset stack
         double fNom = 0.0;
         double fDenom = 0.0;
-        sal_uInt16 nErr = 0;
+        FormulaError nErr = FormulaError::NONE;
         PopDoubleRef( aRange );
         ScValueIterator aValIter(pDok, aRange, mnSubTotalFlags);
         if (aValIter.GetFirst(fValue, nErr))
@@ -1296,7 +1403,7 @@ void ScInterpreter::ScIRR()
             fNom +=           fValue / pow(1.0+x,(double)nCount);
             fDenom  += -nCount * fValue / pow(1.0+x,nCount+1.0);
             nCount++;
-            while ((nErr == 0) && aValIter.GetNext(fValue, nErr))
+            while ((nErr == FormulaError::NONE) && aValIter.GetNext(fValue, nErr))
             {
                 fNom +=           fValue / pow(1.0+x,(double)nCount);
                 fDenom  += -nCount * fValue / pow(1.0+x,nCount+1.0);
@@ -1314,52 +1421,127 @@ void ScInterpreter::ScIRR()
     if (fEps < SCdEpsilon)
         PushDouble(x);
     else
-        PushError( errNoConvergence);
+        PushError( FormulaError::NoConvergence);
 }
 
 void ScInterpreter::ScMIRR()
 {   // range_of_values ; rate_invest ; rate_reinvest
     nFuncFmtType = css::util::NumberFormat::PERCENT;
-    if( MustHaveParamCount( GetByte(), 3 ) )
+    if ( MustHaveParamCount( GetByte(), 3 ) )
     {
         double fRate1_reinvest = GetDouble() + 1;
         double fRate1_invest = GetDouble() + 1;
 
         ScRange aRange;
-        PopDoubleRef( aRange );
+        ScMatrixRef pMat;
+        SCSIZE nC = 0;
+        SCSIZE nR = 0;
+        bool bIsMatrix = false;
+        switch ( GetStackType() )
+        {
+            case svDoubleRef :
+                PopDoubleRef( aRange );
+                break;
+            case svMatrix :
+            case svExternalSingleRef:
+            case svExternalDoubleRef:
+                {
+                    pMat = GetMatrix();
+                    if ( pMat )
+                    {
+                        pMat->GetDimensions( nC, nR );
+                        if ( nC == 0 || nR == 0 )
+                            SetError( FormulaError::IllegalArgument );
+                        bIsMatrix = true;
+                    }
+                    else
+                        SetError( FormulaError::IllegalArgument );
+                }
+                break;
+            default :
+                SetError( FormulaError::IllegalParameter );
+                break;
+        }
 
-        if( nGlobalError )
-            PushError( nGlobalError);
+        if ( nGlobalError != FormulaError::NONE )
+            PushError( nGlobalError );
         else
         {
             double fNPV_reinvest = 0.0;
             double fPow_reinvest = 1.0;
             double fNPV_invest = 0.0;
             double fPow_invest = 1.0;
-            ScValueIterator aValIter( pDok, aRange, mnSubTotalFlags );
-            double fCellValue;
             sal_uLong nCount = 0;
-            sal_uInt16 nIterError = 0;
+            bool bHasPosValue = false;
+            bool bHasNegValue = false;
 
-            bool bLoop = aValIter.GetFirst( fCellValue, nIterError );
-            while( bLoop )
+            if ( bIsMatrix )
             {
-                if( fCellValue > 0.0 )          // reinvestments
-                    fNPV_reinvest += fCellValue * fPow_reinvest;
-                else if( fCellValue < 0.0 )     // investments
-                    fNPV_invest += fCellValue * fPow_invest;
-                fPow_reinvest /= fRate1_reinvest;
-                fPow_invest /= fRate1_invest;
-                nCount++;
+                double fX;
+                for ( SCSIZE j = 0; j < nC; j++ )
+                {
+                    for ( SCSIZE k = 0; k < nR; ++k )
+                    {
+                        if ( !pMat->IsValue( j, k ) )
+                            continue;
+                        fX = pMat->GetDouble( j, k );
+                        if ( nGlobalError != FormulaError::NONE )
+                            break;
 
-                bLoop = aValIter.GetNext( fCellValue, nIterError );
+                        if ( fX > 0.0 )
+                        {    // reinvestments
+                            bHasPosValue = true;
+                            fNPV_reinvest += fX * fPow_reinvest;
+                        }
+                        else if ( fX < 0.0 )
+                        {   // investments
+                            bHasNegValue = true;
+                            fNPV_invest += fX * fPow_invest;
+                        }
+                        fPow_reinvest /= fRate1_reinvest;
+                        fPow_invest /= fRate1_invest;
+                        nCount++;
+                    }
+                }
             }
-            if( nIterError )
-                PushError( nIterError );
+            else
+            {
+                ScValueIterator aValIter( pDok, aRange, mnSubTotalFlags );
+                double fCellValue;
+                FormulaError nIterError = FormulaError::NONE;
+
+                bool bLoop = aValIter.GetFirst( fCellValue, nIterError );
+                while( bLoop )
+                {
+                    if( fCellValue > 0.0 )          // reinvestments
+                    {    // reinvestments
+                        bHasPosValue = true;
+                        fNPV_reinvest += fCellValue * fPow_reinvest;
+                    }
+                    else if( fCellValue < 0.0 )     // investments
+                    {   // investments
+                        bHasNegValue = true;
+                        fNPV_invest += fCellValue * fPow_invest;
+                    }
+                    fPow_reinvest /= fRate1_reinvest;
+                    fPow_invest /= fRate1_invest;
+                    nCount++;
+
+                    bLoop = aValIter.GetNext( fCellValue, nIterError );
+                }
+
+                if ( nIterError != FormulaError::NONE )
+                    SetError( nIterError );
+            }
+            if ( !( bHasPosValue && bHasNegValue ) )
+                SetError( FormulaError::IllegalArgument );
+
+            if ( nGlobalError != FormulaError::NONE )
+                PushError( nGlobalError );
             else
             {
                 double fResult = -fNPV_reinvest / fNPV_invest;
-                fResult *= pow( fRate1_reinvest, (double) nCount - 1 );
+                fResult *= pow( fRate1_reinvest, (double)( nCount - 1 ) );
                 fResult = pow( fResult, div( 1.0, (nCount - 1)) );
                 PushDouble( fResult - 1.0 );
             }
@@ -1376,7 +1558,7 @@ void ScInterpreter::ScISPMT()
         double fPeriod = GetDouble();
         double fRate = GetDouble();
 
-        if( nGlobalError )
+        if( nGlobalError != FormulaError::NONE )
             PushError( nGlobalError);
         else
             PushDouble( fInvest * fRate * (fPeriod / fTotal - 1.0) );
@@ -1385,36 +1567,40 @@ void ScInterpreter::ScISPMT()
 
 // Finanzfunktionen
 double ScInterpreter::ScGetBw(double fInterest, double fZzr, double fRmz,
-                              double fZw, double fF)
+                              double fZw, bool bPayInAdvance)
 {
     double fBw;
     if (fInterest == 0.0)
         fBw = fZw + fRmz * fZzr;
-    else if (fF > 0.0)
-        fBw = (fZw * pow(1.0 + fInterest, -fZzr))
-                + (fRmz * (1.0 - pow(1.0 + fInterest, -fZzr + 1.0)) / fInterest)
-                + fRmz;
     else
-        fBw = (fZw * pow(1.0 + fInterest, -fZzr))
-                + (fRmz * (1.0 - pow(1.0 + fInterest, -fZzr)) / fInterest);
+    {
+        if (bPayInAdvance)
+            fBw = (fZw * pow(1.0 + fInterest, -fZzr))
+                    + (fRmz * (1.0 - pow(1.0 + fInterest, -fZzr + 1.0)) / fInterest)
+                    + fRmz;
+        else
+            fBw = (fZw * pow(1.0 + fInterest, -fZzr))
+                    + (fRmz * (1.0 - pow(1.0 + fInterest, -fZzr)) / fInterest);
+    }
     return -fBw;
 }
 
 void ScInterpreter::ScPV()
 {
     nFuncFmtType = css::util::NumberFormat::CURRENCY;
-    double nRmz, nZzr, nInterest, nZw = 0, nFlag = 0;
+    double nRmz, nZzr, nInterest, nZw = 0;
+    bool bPayInAdvance = false;
     sal_uInt8 nParamCount = GetByte();
     if ( !MustHaveParamCount( nParamCount, 3, 5 ) )
         return;
     if (nParamCount == 5)
-        nFlag = GetDouble();
+        bPayInAdvance = GetBool();
     if (nParamCount >= 4)
         nZw   = GetDouble();
     nRmz  = GetDouble();
     nZzr  = GetDouble();
     nInterest = GetDouble();
-    PushDouble(ScGetBw(nInterest, nZzr, nRmz, nZw, nFlag));
+    PushDouble(ScGetBw(nInterest, nZzr, nRmz, nZw, bPayInAdvance));
 }
 
 void ScInterpreter::ScSYD()
@@ -1497,7 +1683,8 @@ void ScInterpreter::ScDB()
     double nRest = GetDouble();
     double nValue = GetDouble();
     if (nMonths < 1.0 || nMonths > 12.0 || nTimeLength > 1200.0 || nRest < 0.0 ||
-        nPeriod > (nTimeLength + 1.0) || nRest > nValue || nValue < 0.0)
+        nPeriod > (nTimeLength + 1.0) || nRest > nValue || nValue <= 0.0 ||
+        nTimeLength <= 0 || nPeriod <= 0 )
     {
         PushIllegalArgument();
         return;
@@ -1624,33 +1811,44 @@ void ScInterpreter::ScVDB()
             }
             else
             {
-
-                double fTimeLength1=fTimeLength;
-
-                //@ The question of all questions: 'Is this right'
-                if(!::rtl::math::approxEqual(fStart,::rtl::math::approxFloor(fStart)))
+                double fPart = 0.0;
+                // respect partial period in the Beginning / End:
+                if ( !::rtl::math::approxEqual( fStart, fIntStart ) ||
+                     !::rtl::math::approxEqual( fEnd, fIntEnd ) )
                 {
-                    if(fFactor>1)
+                    if ( !::rtl::math::approxEqual( fStart, fIntStart ) )
                     {
-                        if(fStart>fTimeLength/2 || ::rtl::math::approxEqual(fStart,fTimeLength/2))
-                        {
-                            double fPart=fStart-fTimeLength/2;
-                            fStart=fTimeLength/2;
-                            fEnd-=fPart;
-                            fTimeLength1+=1;
-                        }
+                        // part to be subtracted at the beginning
+                        double fTempIntEnd = fIntStart + 1.0;
+                        double fTempValue = fValue -
+                            ScInterVDB( fValue, fRest, fTimeLength, fTimeLength, fIntStart, fFactor );
+                        fPart += ( fStart - fIntStart ) *
+                            ScInterVDB( fTempValue, fRest, fTimeLength, fTimeLength - fIntStart,
+                            fTempIntEnd - fIntStart, fFactor);
+                    }
+                    if ( !::rtl::math::approxEqual( fEnd, fIntEnd ) )
+                    {
+                        // part to be subtracted at the end
+                        double fTempIntStart = fIntEnd - 1.0;
+                        double fTempValue = fValue -
+                            ScInterVDB( fValue, fRest, fTimeLength, fTimeLength, fTempIntStart, fFactor );
+                        fPart += ( fIntEnd - fEnd ) *
+                            ScInterVDB( fTempValue, fRest, fTimeLength, fTimeLength - fTempIntStart,
+                            fIntEnd - fTempIntStart, fFactor);
                     }
                 }
-
-                fValue-=ScInterVDB(fValue,fRest,fTimeLength,fTimeLength1,fStart,fFactor);
-                fVdb=ScInterVDB(fValue,fRest,fTimeLength,fTimeLength-fStart,fEnd-fStart,fFactor);
+                // calculate depreciation for whole periods
+                fValue -= ScInterVDB( fValue, fRest, fTimeLength, fTimeLength, fIntStart, fFactor );
+                fVdb = ScInterVDB( fValue, fRest, fTimeLength, fTimeLength - fIntStart,
+                    fIntEnd - fIntStart, fFactor);
+                fVdb -= fPart;
             }
         }
         PushDouble(fVdb);
     }
 }
 
-void ScInterpreter::ScDuration()
+void ScInterpreter::ScPDuration()
 {
     if ( MustHaveParamCount( GetByte(), 3 ) )
     {
@@ -1674,14 +1872,14 @@ void ScInterpreter::ScSLN()
 }
 
 double ScInterpreter::ScGetRmz(double fRate, double fNper, double fPv,
-                       double fFv, double fPaytype)
+                       double fFv, bool bPayInAdvance)
 {
     double fPayment;
     if (fRate == 0.0)
         fPayment = (fPv + fFv) / fNper;
     else
     {
-        if (fPaytype > 0.0) // payment in advance
+        if (bPayInAdvance) // payment in advance
             fPayment = (fFv + fPv * exp( fNper * ::rtl::math::log1p(fRate) ) ) * fRate /
                 (::rtl::math::expm1( (fNper + 1) * ::rtl::math::log1p(fRate) ) - fRate);
         else  // payment in arrear
@@ -1693,19 +1891,20 @@ double ScInterpreter::ScGetRmz(double fRate, double fNper, double fPv,
 
 void ScInterpreter::ScPMT()
 {
-    double nInterest, nZzr, nBw, nZw = 0, nFlag = 0;
+    double nInterest, nZzr, nBw, nZw = 0;
+    bool bFlag = false;
     nFuncFmtType = css::util::NumberFormat::CURRENCY;
     sal_uInt8 nParamCount = GetByte();
     if ( !MustHaveParamCount( nParamCount, 3, 5 ) )
         return;
     if (nParamCount == 5)
-        nFlag = GetDouble();
+        bFlag = GetBool();
     if (nParamCount >= 4)
         nZw   = GetDouble();
     nBw   = GetDouble();
     nZzr  = GetDouble();
     nInterest = GetDouble();
-    PushDouble(ScGetRmz(nInterest, nZzr, nBw, nZw, nFlag));
+    PushDouble(ScGetRmz(nInterest, nZzr, nBw, nZw, bFlag));
 }
 
 void ScInterpreter::ScRRI()
@@ -1721,7 +1920,7 @@ void ScInterpreter::ScRRI()
 }
 
 double ScInterpreter::ScGetZw(double fInterest, double fZzr, double fRmz,
-                              double fBw, double fF)
+                              double fBw, bool bFlag)
 {
     double fZw;
     if (fInterest == 0.0)
@@ -1729,7 +1928,7 @@ double ScInterpreter::ScGetZw(double fInterest, double fZzr, double fRmz,
     else
     {
         double fTerm = pow(1.0 + fInterest, fZzr);
-        if (fF > 0.0)
+        if (bFlag)
             fZw = fBw * fTerm + fRmz*(1.0 + fInterest)*(fTerm - 1.0)/fInterest;
         else
             fZw = fBw * fTerm + fRmz*(fTerm - 1.0)/fInterest;
@@ -1739,29 +1938,31 @@ double ScInterpreter::ScGetZw(double fInterest, double fZzr, double fRmz,
 
 void ScInterpreter::ScFV()
 {
-    double nInterest, nZzr, nRmz, nBw = 0, nFlag = 0;
+    double nInterest, nZzr, nRmz, nBw = 0;
+    bool bFlag = false;
     nFuncFmtType = css::util::NumberFormat::CURRENCY;
     sal_uInt8 nParamCount = GetByte();
     if ( !MustHaveParamCount( nParamCount, 3, 5 ) )
         return;
     if (nParamCount == 5)
-        nFlag = GetDouble();
+        bFlag = GetBool();
     if (nParamCount >= 4)
         nBw   = GetDouble();
     nRmz  = GetDouble();
     nZzr  = GetDouble();
     nInterest = GetDouble();
-    PushDouble(ScGetZw(nInterest, nZzr, nRmz, nBw, nFlag));
+    PushDouble(ScGetZw(nInterest, nZzr, nRmz, nBw, bFlag));
 }
 
 void ScInterpreter::ScNper()
 {
-    double nInterest, nRmz, nBw, nZw = 0, nFlag = 0;
+    double nInterest, nRmz, nBw, nZw = 0;
+    bool bPayInAdvance = false;
     sal_uInt8 nParamCount = GetByte();
     if ( !MustHaveParamCount( nParamCount, 3, 5 ) )
         return;
     if (nParamCount == 5)
-        nFlag = GetDouble();
+        bPayInAdvance = GetBool();
     if (nParamCount >= 4)
         nZw   = GetDouble();
     nBw   = GetDouble();
@@ -1769,7 +1970,7 @@ void ScInterpreter::ScNper()
     nInterest = GetDouble();
     if (nInterest == 0.0)
         PushDouble(-(nBw + nZw)/nRmz);
-    else if (nFlag > 0.0)
+    else if (bPayInAdvance)
         PushDouble(log(-(nInterest*nZw-nRmz*(1.0+nInterest))/(nInterest*nBw+nRmz*(1.0+nInterest)))
                   /boost::math::log1p(nInterest));
     else
@@ -1777,7 +1978,7 @@ void ScInterpreter::ScNper()
 }
 
 bool ScInterpreter::RateIteration( double fNper, double fPayment, double fPv,
-                                   double fFv, double fPayType, double & fGuess )
+                                   double fFv, bool bPayType, double & fGuess )
 {
     // See also #i15090#
     // Newton-Raphson method: x(i+1) = x(i) - f(x(i)) / f'(x(i))
@@ -1790,9 +1991,12 @@ bool ScInterpreter::RateIteration( double fNper, double fPayment, double fPv,
     const sal_uInt16 nIterationsMax = 150;
     sal_uInt16 nCount = 0;
     const double fEpsilonSmall = 1.0E-14;
-    // convert any fPayType situation to fPayType == zero situation
-    fFv = fFv - fPayment * fPayType;
-    fPv = fPv + fPayment * fPayType;
+    if ( bPayType )
+    {
+        // payment at beginning of each period
+        fFv = fFv - fPayment;
+        fPv = fPv + fPayment;
+    }
     if (fNper == ::rtl::math::round( fNper ))
     { // Nper is an integer value
         fX = fGuess;
@@ -1801,7 +2005,7 @@ bool ScInterpreter::RateIteration( double fNper, double fPayment, double fPv,
             double fPowN, fPowNminus1;  // for (1.0+fX)^Nper and (1.0+fX)^(Nper-1)
             fPowNminus1 = pow( 1.0+fX, fNper-1.0);
             fPowN = fPowNminus1 * (1.0+fX);
-            if (rtl::math::approxEqual( fabs(fX), 0.0))
+            if (fX == 0.0)
             {
                 fGeoSeries = fNper;
                 fGeoSeriesDerivation = fNper * (fNper-1.0)/2.0;
@@ -1817,7 +2021,7 @@ bool ScInterpreter::RateIteration( double fNper, double fPayment, double fPv,
                 bFound = true;  // will catch root which is at an extreme
             else
             {
-                if (rtl::math::approxEqual( fabs(fTermDerivation), 0.0))
+                if (fTermDerivation == 0.0)
                     fXnew = fX + 1.1 * SCdEpsilon;  // move away from zero slope
                 else
                     fXnew = fX - fTerm / fTermDerivation;
@@ -1840,7 +2044,7 @@ bool ScInterpreter::RateIteration( double fNper, double fPayment, double fPv,
         fX = (fGuess < -1.0) ? -1.0 : fGuess;   // start with a valid fX
         while (bValid && !bFound && nCount < nIterationsMax)
         {
-            if (rtl::math::approxEqual( fabs(fX), 0.0))
+            if (fX == 0.0)
             {
                 fGeoSeries = fNper;
                 fGeoSeriesDerivation = fNper * (fNper-1.0)/2.0;
@@ -1856,7 +2060,7 @@ bool ScInterpreter::RateIteration( double fNper, double fPayment, double fPv,
                 bFound = true;  // will catch root which is at an extreme
             else
             {
-                if (rtl::math::approxEqual( fabs(fTermDerivation), 0.0))
+                if (fTermDerivation == 0.0)
                     fXnew = fX + 1.1 * SCdEpsilon;  // move away from zero slope
                 else
                     fXnew = fX - fTerm / fTermDerivation;
@@ -1877,8 +2081,8 @@ void ScInterpreter::ScRate()
 {
     double fPv, fPayment, fNper;
     // defaults for missing arguments, see ODFF spec
-    double fFv = 0, fPayType = 0, fGuess = 0.1, fOrigGuess = 0.1;
-    bool bValid = true;
+    double fFv = 0, fGuess = 0.1, fOrigGuess = 0.1;
+    bool bPayType = false, bValid = true;
     bool bDefaultGuess = true;
     nFuncFmtType = css::util::NumberFormat::PERCENT;
     sal_uInt8 nParamCount = GetByte();
@@ -1890,7 +2094,7 @@ void ScInterpreter::ScRate()
         bDefaultGuess = false;
     }
     if (nParamCount >= 5)
-        fPayType = GetDouble();
+        bPayType = GetBool();
     if (nParamCount >= 4)
         fFv = GetDouble();
     fPv = GetDouble();
@@ -1901,10 +2105,7 @@ void ScInterpreter::ScRate()
         PushIllegalArgument();
         return;
     }
-    // other values for fPayType might be meaningful,
-    // ODFF spec is not clear yet, enable statement if you want only 0 and 1
-    //if (fPayType != 0.0) fPayType = 1.0;
-    bValid = RateIteration(fNper, fPayment, fPv, fFv, fPayType, fGuess);
+    bValid = RateIteration(fNper, fPayment, fPv, fFv, bPayType, fGuess);
     if (!bValid)
     {
         /* TODO: try also for specified guess values, not only default? As is,
@@ -1922,52 +2123,53 @@ void ScInterpreter::ScRate()
             for (int nStep = 2; nStep <= 10 && !bValid; ++nStep)
             {
                 fGuess = fX * nStep;
-                bValid = RateIteration( fNper, fPayment, fPv, fFv, fPayType, fGuess);
+                bValid = RateIteration( fNper, fPayment, fPv, fFv, bPayType, fGuess);
                 if (!bValid)
                 {
                     fGuess = fX / nStep;
-                    bValid = RateIteration( fNper, fPayment, fPv, fFv, fPayType, fGuess);
+                    bValid = RateIteration( fNper, fPayment, fPv, fFv, bPayType, fGuess);
                 }
             }
         }
         if (!bValid)
-            SetError(errNoConvergence);
+            SetError(FormulaError::NoConvergence);
     }
     PushDouble(fGuess);
 }
 
 double ScInterpreter::ScGetCompoundInterest(double fInterest, double fZr, double fZzr, double fBw,
-                                 double fZw, double fF, double& fRmz)
+                                 double fZw, bool bPayInAdvance, double& fRmz)
 {
-    fRmz = ScGetRmz(fInterest, fZzr, fBw, fZw, fF);     // fuer kapz auch bei fZr == 1
+    fRmz = ScGetRmz(fInterest, fZzr, fBw, fZw, bPayInAdvance);     // fuer kapz auch bei fZr == 1
     double fCompoundInterest;
     nFuncFmtType = css::util::NumberFormat::CURRENCY;
     if (fZr == 1.0)
     {
-        if (fF > 0.0)
+        if (bPayInAdvance)
             fCompoundInterest = 0.0;
         else
             fCompoundInterest = -fBw;
     }
     else
     {
-        if (fF > 0.0)
-            fCompoundInterest = ScGetZw(fInterest, fZr-2.0, fRmz, fBw, 1.0) - fRmz;
+        if (bPayInAdvance)
+            fCompoundInterest = ScGetZw(fInterest, fZr-2.0, fRmz, fBw, true) - fRmz;
         else
-            fCompoundInterest = ScGetZw(fInterest, fZr-1.0, fRmz, fBw, 0.0);
+            fCompoundInterest = ScGetZw(fInterest, fZr-1.0, fRmz, fBw, false);
     }
     return fCompoundInterest * fInterest;
 }
 
 void ScInterpreter::ScIpmt()
 {
-    double nInterest, nZr, nZzr, nBw, nZw = 0, nFlag = 0;
+    double nInterest, nZr, nZzr, nBw, nZw = 0;
+    bool bPayInAdvance = false;
     nFuncFmtType = css::util::NumberFormat::CURRENCY;
     sal_uInt8 nParamCount = GetByte();
     if ( !MustHaveParamCount( nParamCount, 4, 6 ) )
         return;
     if (nParamCount == 6)
-        nFlag = GetDouble();
+        bPayInAdvance = GetBool();
     if (nParamCount >= 5)
         nZw   = GetDouble();
     nBw   = GetDouble();
@@ -1979,19 +2181,20 @@ void ScInterpreter::ScIpmt()
     else
     {
         double nRmz;
-        PushDouble(ScGetCompoundInterest(nInterest, nZr, nZzr, nBw, nZw, nFlag, nRmz));
+        PushDouble(ScGetCompoundInterest(nInterest, nZr, nZzr, nBw, nZw, bPayInAdvance, nRmz));
     }
 }
 
 void ScInterpreter::ScPpmt()
 {
-    double nInterest, nZr, nZzr, nBw, nZw = 0, nFlag = 0;
+    double nInterest, nZr, nZzr, nBw, nZw = 0;
+    bool bPayInAdvance = false;
     nFuncFmtType = css::util::NumberFormat::CURRENCY;
     sal_uInt8 nParamCount = GetByte();
     if ( !MustHaveParamCount( nParamCount, 4, 6 ) )
         return;
     if (nParamCount == 6)
-        nFlag = GetDouble();
+        bPayInAdvance = GetBool();
     if (nParamCount >= 5)
         nZw   = GetDouble();
     nBw   = GetDouble();
@@ -2003,7 +2206,7 @@ void ScInterpreter::ScPpmt()
     else
     {
         double nRmz;
-        double nInterestz = ScGetCompoundInterest(nInterest, nZr, nZzr, nBw, nZw, nFlag, nRmz);
+        double nInterestz = ScGetCompoundInterest(nInterest, nZr, nZzr, nBw, nZw, bPayInAdvance, nRmz);
         PushDouble(nRmz - nInterestz);
     }
 }
@@ -2013,34 +2216,36 @@ void ScInterpreter::ScCumIpmt()
     nFuncFmtType = css::util::NumberFormat::CURRENCY;
     if ( MustHaveParamCount( GetByte(), 6 ) )
     {
-        double fInterest, fZzr, fBw, fStart, fEnd, fF;
-        fF      = GetDouble();
+        double fInterest, fZzr, fBw, fStart, fEnd;
+        double fFlag = GetDoubleWithDefault( -1.0 );
         fEnd   = ::rtl::math::approxFloor(GetDouble());
         fStart = ::rtl::math::approxFloor(GetDouble());
         fBw     = GetDouble();
         fZzr    = GetDouble();
         fInterest   = GetDouble();
         if (fStart < 1.0 || fEnd < fStart || fInterest <= 0.0 ||
-            fEnd > fZzr  || fZzr <= 0.0 || fBw <= 0.0)
+            fEnd > fZzr  || fZzr <= 0.0 || fBw <= 0.0 ||
+            ( fFlag != 0.0 && fFlag != 1.0 ))
             PushIllegalArgument();
         else
         {
+            bool bPayInAdvance = ( bool ) fFlag;
             sal_uLong nStart = (sal_uLong) fStart;
             sal_uLong nEnd = (sal_uLong) fEnd ;
-            double fRmz = ScGetRmz(fInterest, fZzr, fBw, 0.0, fF);
+            double fRmz = ScGetRmz(fInterest, fZzr, fBw, 0.0, bPayInAdvance);
             double fCompoundInterest = 0.0;
             if (nStart == 1)
             {
-                if (fF <= 0.0)
+                if (!bPayInAdvance)
                     fCompoundInterest = -fBw;
                 nStart++;
             }
             for (sal_uLong i = nStart; i <= nEnd; i++)
             {
-                if (fF > 0.0)
-                    fCompoundInterest += ScGetZw(fInterest, (double)(i-2), fRmz, fBw, 1.0) - fRmz;
+                if (bPayInAdvance)
+                    fCompoundInterest += ScGetZw(fInterest, (double)(i-2), fRmz, fBw, true) - fRmz;
                 else
-                    fCompoundInterest += ScGetZw(fInterest, (double)(i-1), fRmz, fBw, 0.0);
+                    fCompoundInterest += ScGetZw(fInterest, (double)(i-1), fRmz, fBw, false);
             }
             fCompoundInterest *= fInterest;
             PushDouble(fCompoundInterest);
@@ -2053,43 +2258,45 @@ void ScInterpreter::ScCumPrinc()
     nFuncFmtType = css::util::NumberFormat::CURRENCY;
     if ( MustHaveParamCount( GetByte(), 6 ) )
     {
-        double fInterest, fZzr, fBw, fStart, fEnd, fF;
-        fF      = GetDouble();
+        double fInterest, fZzr, fBw, fStart, fEnd;
+        double fFlag = GetDoubleWithDefault( -1.0 );
         fEnd   = ::rtl::math::approxFloor(GetDouble());
         fStart = ::rtl::math::approxFloor(GetDouble());
         fBw     = GetDouble();
         fZzr    = GetDouble();
         fInterest   = GetDouble();
         if (fStart < 1.0 || fEnd < fStart || fInterest <= 0.0 ||
-            fEnd > fZzr  || fZzr <= 0.0 || fBw <= 0.0)
+            fEnd > fZzr  || fZzr <= 0.0 || fBw <= 0.0 ||
+            ( fFlag != 0.0 && fFlag != 1.0 ))
             PushIllegalArgument();
         else
         {
-            double fRmz = ScGetRmz(fInterest, fZzr, fBw, 0.0, fF);
+            bool bPayInAdvance = ( bool ) fFlag;
+            double fRmz = ScGetRmz(fInterest, fZzr, fBw, 0.0, bPayInAdvance);
             double fKapZ = 0.0;
             sal_uLong nStart = (sal_uLong) fStart;
             sal_uLong nEnd = (sal_uLong) fEnd;
             if (nStart == 1)
             {
-                if (fF <= 0.0)
-                    fKapZ = fRmz + fBw * fInterest;
-                else
+                if (bPayInAdvance)
                     fKapZ = fRmz;
+                else
+                    fKapZ = fRmz + fBw * fInterest;
                 nStart++;
             }
             for (sal_uLong i = nStart; i <= nEnd; i++)
             {
-                if (fF > 0.0)
-                    fKapZ += fRmz - (ScGetZw(fInterest, (double)(i-2), fRmz, fBw, 1.0) - fRmz) * fInterest;
+                if (bPayInAdvance)
+                    fKapZ += fRmz - (ScGetZw(fInterest, (double)(i-2), fRmz, fBw, true) - fRmz) * fInterest;
                 else
-                    fKapZ += fRmz - ScGetZw(fInterest, (double)(i-1), fRmz, fBw, 0.0) * fInterest;
+                    fKapZ += fRmz - ScGetZw(fInterest, (double)(i-1), fRmz, fBw, false) * fInterest;
             }
             PushDouble(fKapZ);
         }
     }
 }
 
-void ScInterpreter::ScEffective()
+void ScInterpreter::ScEffect()
 {
     nFuncFmtType = css::util::NumberFormat::PERCENT;
     if ( MustHaveParamCount( GetByte(), 2 ) )
@@ -2127,30 +2334,29 @@ void ScInterpreter::ScMod()
 {
     if ( MustHaveParamCount( GetByte(), 2 ) )
     {
-        double fVal2 = GetDouble(); // Denominator
-        double fVal1 = GetDouble(); // Numerator
-        if (fVal2 == floor(fVal2))  // a pure integral number stored in double
+        double fDenom   = GetDouble();   // Denominator
+        if ( fDenom == 0.0 )
         {
-            double fResult = fmod(fVal1,fVal2);
-            if ( (fResult != 0.0) &&
-                ((fVal1 > 0.0 && fVal2 < 0.0) || (fVal1 < 0.0 && fVal2 > 0.0)))
-                fResult += fVal2 ;
-            PushDouble( fResult );
+            PushIllegalArgument();
+            return;
         }
+        double fNum = GetDouble();   // Numerator
+        double fRes = ::rtl::math::approxSub( fNum,
+                ::rtl::math::approxFloor( fNum / fDenom ) * fDenom );
+        if ( ( fDenom > 0 && fRes >= 0 && fRes < fDenom ) ||
+             ( fDenom < 0 && fRes <= 0 && fRes > fDenom ) )
+            PushDouble( fRes );
         else
-        {
-            PushDouble( ::rtl::math::approxSub( fVal1,
-                    ::rtl::math::approxFloor(fVal1 / fVal2) * fVal2));
-        }
+            PushError( FormulaError::NoValue );
     }
 }
 
 void ScInterpreter::ScIntersect()
 {
-    formula::FormulaTokenRef p2nd = PopToken();
-    formula::FormulaTokenRef p1st = PopToken();
+    formula::FormulaConstTokenRef p2nd = PopToken();
+    formula::FormulaConstTokenRef p1st = PopToken();
 
-    if (nGlobalError || !p2nd || !p1st)
+    if (nGlobalError != FormulaError::NONE || !p2nd || !p1st)
     {
         PushIllegalArgument();
         return;
@@ -2165,29 +2371,34 @@ void ScInterpreter::ScIntersect()
         return;
     }
 
-    formula::FormulaToken* x1 = p1st.get();
-    formula::FormulaToken* x2 = p2nd.get();
+    const formula::FormulaToken* x1 = p1st.get();
+    const formula::FormulaToken* x2 = p2nd.get();
     if (sv1 == svRefList || sv2 == svRefList)
     {
         // Now this is a bit nasty but it simplifies things, and having
         // intersections with lists isn't too common, if at all..
         // Convert a reference to list.
-        formula::FormulaToken* xt[2] = { x1, x2 };
+        const formula::FormulaToken* xt[2] = { x1, x2 };
         StackVar sv[2] = { sv1, sv2 };
+        // There may only be one reference; the other is necessarily a list
+        // Ensure converted list proper destruction
+        std::unique_ptr<formula::FormulaToken> p;
         for (size_t i=0; i<2; ++i)
         {
             if (sv[i] == svSingleRef)
             {
                 ScComplexRefData aRef;
                 aRef.Ref1 = aRef.Ref2 = *xt[i]->GetSingleRef();
-                xt[i] = new ScRefListToken;
-                xt[i]->GetRefList()->push_back( aRef);
+                p.reset(new ScRefListToken);
+                p->GetRefList()->push_back( aRef);
+                xt[i] = p.get();
             }
             else if (sv[i] == svDoubleRef)
             {
                 ScComplexRefData aRef = *xt[i]->GetDoubleRef();
-                xt[i] = new ScRefListToken;
-                xt[i]->GetRefList()->push_back( aRef);
+                p.reset(new ScRefListToken);
+                p->GetRefList()->push_back( aRef);
+                xt[i] = p.get();
             }
         }
         x1 = xt[0];
@@ -2225,7 +2436,7 @@ void ScInterpreter::ScIntersect()
         }
         size_t n = pRefList->size();
         if (!n)
-            PushError( errNoRef);
+            PushError( FormulaError::NoRef);
         else if (n == 1)
         {
             const ScComplexRefData& rRef = (*pRefList)[0];
@@ -2235,11 +2446,11 @@ void ScInterpreter::ScIntersect()
                 PushTempToken( new ScDoubleRefToken( rRef));
         }
         else
-            PushTempToken( xRes.get());
+            PushTokenRef( xRes);
     }
     else
     {
-        formula::FormulaToken* pt[2] = { x1, x2 };
+        const formula::FormulaToken* pt[2] = { x1, x2 };
         StackVar sv[2] = { sv1, sv2 };
         SCCOL nC1[2], nC2[2];
         SCROW nR1[2], nR2[2];
@@ -2283,7 +2494,7 @@ void ScInterpreter::ScIntersect()
         SCROW nRow2 = ::std::min( nR2[0], nR2[1]);
         SCTAB nTab2 = ::std::min( nT2[0], nT2[1]);
         if (nCol2 < nCol1 || nRow2 < nRow1 || nTab2 < nTab1)
-            PushError( errNoRef);
+            PushError( FormulaError::NoRef);
         else if (nCol2 == nCol1 && nRow2 == nRow1 && nTab2 == nTab1)
             PushSingleRef( nCol1, nRow1, nTab1);
         else
@@ -2293,27 +2504,30 @@ void ScInterpreter::ScIntersect()
 
 void ScInterpreter::ScRangeFunc()
 {
-    formula::FormulaTokenRef x2 = PopToken();
-    formula::FormulaTokenRef x1 = PopToken();
+    formula::FormulaConstTokenRef x2 = PopToken();
+    formula::FormulaConstTokenRef x1 = PopToken();
 
-    if (nGlobalError || !x2 || !x1)
+    if (nGlobalError != FormulaError::NONE || !x2 || !x1)
     {
         PushIllegalArgument();
         return;
     }
-    FormulaTokenRef xRes = extendRangeReference( *x1, *x2, aPos, false);
+    // We explicitly tell extendRangeReference() to not reuse the token,
+    // casting const away spares two clones.
+    FormulaTokenRef xRes = extendRangeReference(
+            const_cast<FormulaToken&>(*x1), const_cast<FormulaToken&>(*x2), aPos, false);
     if (!xRes)
         PushIllegalArgument();
     else
-        PushTempToken( xRes.get());
+        PushTokenRef( xRes);
 }
 
 void ScInterpreter::ScUnionFunc()
 {
-    formula::FormulaTokenRef p2nd = PopToken();
-    formula::FormulaTokenRef p1st = PopToken();
+    formula::FormulaConstTokenRef p2nd = PopToken();
+    formula::FormulaConstTokenRef p1st = PopToken();
 
-    if (nGlobalError || !p2nd || !p1st)
+    if (nGlobalError != FormulaError::NONE || !p2nd || !p1st)
     {
         PushIllegalArgument();
         return;
@@ -2328,25 +2542,25 @@ void ScInterpreter::ScUnionFunc()
         return;
     }
 
-    formula::FormulaToken* x1 = p1st.get();
-    formula::FormulaToken* x2 = p2nd.get();
+    const formula::FormulaToken* x1 = p1st.get();
+    const formula::FormulaToken* x2 = p2nd.get();
 
     ScTokenRef xRes;
     // Append to an existing RefList if there is one.
     if (sv1 == svRefList)
     {
-        xRes = x1;
+        xRes = x1->Clone();
         sv1 = svUnknown;    // mark as handled
     }
     else if (sv2 == svRefList)
     {
-        xRes = x2;
+        xRes = x2->Clone();
         sv2 = svUnknown;    // mark as handled
     }
     else
         xRes = new ScRefListToken;
     ScRefList* pRes = xRes->GetRefList();
-    formula::FormulaToken* pt[2] = { x1, x2 };
+    const formula::FormulaToken* pt[2] = { x1, x2 };
     StackVar sv[2] = { sv1, sv2 };
     for (size_t i=0; i<2; ++i)
     {
@@ -2380,19 +2594,19 @@ void ScInterpreter::ScUnionFunc()
         }
     }
     ValidateRef( *pRes);    // set #REF! if needed
-    PushTempToken( xRes.get());
+    PushTokenRef( xRes);
 }
 
 void ScInterpreter::ScCurrent()
 {
-    FormulaTokenRef xTok( PopToken());
+    FormulaConstTokenRef xTok( PopToken());
     if (xTok)
     {
-        PushTempToken( xTok.get());
-        PushTempToken( xTok.get());
+        PushTokenRef( xTok);
+        PushTokenRef( xTok);
     }
     else
-        PushError( errUnknownStackVariable);
+        PushError( FormulaError::UnknownStackVariable);
 }
 
 void ScInterpreter::ScStyle()
@@ -2472,7 +2686,15 @@ void ScInterpreter::ScDde()
     {
         sal_uInt8 nMode = SC_DDE_DEFAULT;
         if (nParamCount == 4)
-            nMode = (sal_uInt8) ::rtl::math::approxFloor(GetDouble());
+        {
+            sal_uInt32 nTmp = GetUInt32();
+            if (nGlobalError != FormulaError::NONE || nTmp > SAL_MAX_UINT8)
+            {
+                PushIllegalArgument();
+                return;
+            }
+            nMode = (sal_uInt8) nTmp;
+        }
         OUString aItem  = GetString().getString();
         OUString aTopic = GetString().getString();
         OUString aAppl  = GetString().getString();
@@ -2507,7 +2729,7 @@ void ScInterpreter::ScDde()
         //TODO: Save Dde-links (in addition) more efficient at document !!!!!
         //      ScDdeLink* pLink = pDok->GetDdeLink( aAppl, aTopic, aItem );
 
-        bool bWasError = ( pMyFormulaCell && pMyFormulaCell->GetRawError() != 0 );
+        bool bWasError = ( pMyFormulaCell && pMyFormulaCell->GetRawError() != FormulaError::NONE );
 
         if (!pLink)
         {
@@ -2538,8 +2760,8 @@ void ScInterpreter::ScDde()
         //  If an new Error from Reschedule appears when the link is executed then reset the errorflag
 
 
-        if ( pMyFormulaCell && pMyFormulaCell->GetRawError() && !bWasError )
-            pMyFormulaCell->SetErrCode(0);
+        if ( pMyFormulaCell && pMyFormulaCell->GetRawError() != FormulaError::NONE && !bWasError )
+            pMyFormulaCell->SetErrCode(FormulaError::NONE);
 
             //  check the value
 
@@ -2598,7 +2820,7 @@ void ScInterpreter::ScBase()
         if ( fChars >= SAL_MAX_UINT16 )
             nMinLen = 0;    // Error
 
-        if ( !nGlobalError && nMinLen && 2 <= fBase && fBase <= nDigits && 0 <= fVal )
+        if ( nGlobalError == FormulaError::NONE && nMinLen && 2 <= fBase && fBase <= nDigits && 0 <= fVal )
         {
             const sal_Int32 nConstBuf = 128;
             sal_Unicode aBuf[nConstBuf];
@@ -2676,7 +2898,7 @@ void ScInterpreter::ScBase()
                 }
             }
             if ( fVal )
-                PushError( errStringOverflow );
+                PushError( FormulaError::StringOverflow );
             else
             {
                 if ( nBuf - (p - pBuf) <= nMinLen )
@@ -2697,7 +2919,7 @@ void ScInterpreter::ScDecimal()
     {
         double fBase = ::rtl::math::approxFloor( GetDouble() );
         OUString aStr = GetString().getString();
-        if ( !nGlobalError && 2 <= fBase && fBase <= 36 )
+        if ( nGlobalError == FormulaError::NONE && 2 <= fBase && fBase <= 36 )
         {
             double fVal = 0.0;
             int nBase = (int) fBase;
@@ -2747,14 +2969,14 @@ void ScInterpreter::ScDecimal()
     }
 }
 
-void ScInterpreter::ScConvert()
+void ScInterpreter::ScConvertOOo()
 {   // Value, FromUnit, ToUnit
     if ( MustHaveParamCount( GetByte(), 3 ) )
     {
         OUString aToUnit = GetString().getString();
         OUString aFromUnit = GetString().getString();
         double fVal = GetDouble();
-        if ( nGlobalError )
+        if ( nGlobalError != FormulaError::NONE )
             PushError( nGlobalError);
         else
         {
@@ -2777,7 +2999,7 @@ void ScInterpreter::ScRoman()
     {
         double fMode = (nParamCount == 2) ? ::rtl::math::approxFloor( GetDouble() ) : 0.0;
         double fVal = ::rtl::math::approxFloor( GetDouble() );
-        if( nGlobalError )
+        if( nGlobalError != FormulaError::NONE )
             PushError( nGlobalError);
         else if( (fMode >= 0.0) && (fMode < 5.0) && (fVal >= 0.0) && (fVal < 4000.0) )
         {
@@ -2809,8 +3031,8 @@ void ScInterpreter::ScRoman()
                         else
                             nSteps = nMode;
                     }
-                    aRoman += OUString( pChars[ nIndex ] );
-                    aRoman += OUString( pChars[ nIndex2 ] );
+                    aRoman += OUStringLiteral1( pChars[ nIndex ] )
+                        + OUStringLiteral1( pChars[ nIndex2 ] );
                     nVal = sal::static_int_cast<sal_uInt16>( nVal + pValues[ nIndex ] );
                     nVal = sal::static_int_cast<sal_uInt16>( nVal - pValues[ nIndex2 ] );
                 }
@@ -2820,7 +3042,7 @@ void ScInterpreter::ScRoman()
                     {
                         // assert can't happen with nVal<4000 precondition
                         assert( nIndex >= 1 );
-                        aRoman += OUString( pChars[ nIndex - 1 ] );
+                        aRoman += OUStringLiteral1( pChars[ nIndex - 1 ] );
                     }
                     sal_Int32 nPad = nDigit % 5;
                     if (nPad)
@@ -2860,7 +3082,7 @@ static bool lcl_GetArabicValue( sal_Unicode cChar, sal_uInt16& rnValue, bool& rb
 void ScInterpreter::ScArabic()
 {
     OUString aRoman = GetString().getString();
-    if( nGlobalError )
+    if( nGlobalError != FormulaError::NONE )
         PushError( nGlobalError);
     else
     {
@@ -2921,7 +3143,7 @@ void ScInterpreter::ScHyperLink()
     {
         double fVal = 0.0;
         svl::SharedString aStr;
-        ScMatValType nResultType = SC_MATVAL_STRING;
+        ScMatValType nResultType = ScMatValType::String;
 
         if ( nParamCount == 2 )
         {
@@ -2929,7 +3151,7 @@ void ScInterpreter::ScHyperLink()
             {
                 case svDouble:
                     fVal = GetDouble();
-                    nResultType = SC_MATVAL_VALUE;
+                    nResultType = ScMatValType::Value;
                 break;
                 case svString:
                     aStr = GetString();
@@ -2943,16 +3165,16 @@ void ScInterpreter::ScHyperLink()
 
                     ScRefCellValue aCell(*pDok, aAdr);
                     if (aCell.hasEmptyValue())
-                        nResultType = SC_MATVAL_EMPTY;
+                        nResultType = ScMatValType::Empty;
                     else
                     {
-                        sal_uInt16 nErr = GetCellErrCode(aCell);
-                        if (nErr)
+                        FormulaError nErr = GetCellErrCode(aCell);
+                        if (nErr != FormulaError::NONE)
                             SetError( nErr);
                         else if (aCell.hasNumeric())
                         {
                             fVal = GetCellValue(aAdr, aCell);
-                            nResultType = SC_MATVAL_VALUE;
+                            nResultType = ScMatValType::Value;
                         }
                         else
                             GetCellString(aStr, aCell);
@@ -2967,21 +3189,21 @@ void ScInterpreter::ScHyperLink()
                     Pop();
                     // mimic xcl
                     fVal = 0.0;
-                    nResultType = SC_MATVAL_VALUE;
+                    nResultType = ScMatValType::Value;
                 break;
                 default:
                     PopError();
-                    SetError( errIllegalArgument);
+                    SetError( FormulaError::IllegalArgument);
             }
         }
         svl::SharedString aUrl = GetString();
         ScMatrixRef pResMat = GetNewMat( 1, 2);
-        if (nGlobalError)
+        if (nGlobalError != FormulaError::NONE)
         {
             fVal = CreateDoubleError( nGlobalError);
-            nResultType = SC_MATVAL_VALUE;
+            nResultType = ScMatValType::Value;
         }
-        if (nParamCount == 2 || nGlobalError)
+        if (nParamCount == 2 || nGlobalError != FormulaError::NONE)
         {
             if (ScMatrix::IsValueType( nResultType))
                 pResMat->PutDouble( fVal, 0);
@@ -3064,7 +3286,7 @@ void ScInterpreter::ScEuroConvert()
         OUString aToUnit = GetString().getString();
         OUString aFromUnit = GetString().getString();
         double fVal = GetDouble();
-        if ( nGlobalError )
+        if ( nGlobalError != FormulaError::NONE )
             PushError( nGlobalError);
         else
         {
@@ -3222,7 +3444,7 @@ void ScInterpreter::ScBahtText()
     if ( MustHaveParamCount( nParamCount, 1 ) )
     {
         double fValue = GetDouble();
-        if( nGlobalError )
+        if( nGlobalError != FormulaError::NONE )
         {
             PushError( nGlobalError);
             return;
@@ -3289,7 +3511,7 @@ void ScInterpreter::ScGetPivotData()
 
     if (!MustHaveParamCount(nParamCount, 2, 30) || (nParamCount % 2) == 1)
     {
-        PushError(errNoRef);
+        PushError(FormulaError::NoRef);
         return;
     }
 
@@ -3323,7 +3545,7 @@ void ScInterpreter::ScGetPivotData()
             }
             break;
             default:
-                PushError(errNoRef);
+                PushError(FormulaError::NoRef);
                 return;
         }
     }
@@ -3337,8 +3559,62 @@ void ScInterpreter::ScGetPivotData()
         sal_uInt16 i = nFilterCount;
         while (i-- > 0)
         {
-            //TODO: should allow numeric constraint values
-            aFilters[i].MatchValue = GetString().getString();
+            /* TODO: also, in case of numeric the entire filter match should
+             * not be on a (even if locale independent) formatted string down
+             * below in pDPObj->GetPivotData(). */
+
+            bool bEvaluateFormatIndex;
+            switch (GetRawStackType())
+            {
+                case svSingleRef:
+                case svDoubleRef:
+                    bEvaluateFormatIndex = true;
+                break;
+                default:
+                    bEvaluateFormatIndex = false;
+            }
+
+            double fDouble;
+            svl::SharedString aSharedString;
+            bool bDouble = GetDoubleOrString( fDouble, aSharedString);
+            if (nGlobalError != FormulaError::NONE)
+            {
+                PushError( nGlobalError);
+                return;
+            }
+
+            if (bDouble)
+            {
+                sal_uInt32 nNumFormat;
+                if (bEvaluateFormatIndex && nCurFmtIndex)
+                    nNumFormat = nCurFmtIndex;
+                else
+                {
+                    if (nCurFmtType == css::util::NumberFormat::UNDEFINED)
+                        nNumFormat = 0;
+                    else
+                        nNumFormat = pFormatter->GetStandardFormat( nCurFmtType, ScGlobal::eLnge);
+                }
+                Color* pColor;
+                pFormatter->GetOutputString( fDouble, nNumFormat, aFilters[i].MatchValueName, &pColor);
+                aFilters[i].MatchValue = ScDPCache::GetLocaleIndependentFormattedString(
+                        fDouble, *pFormatter, nNumFormat);
+            }
+            else
+            {
+                aFilters[i].MatchValueName = aSharedString.getString();
+
+                // Parse possible number from MatchValueName and format
+                // locale independent as MatchValue.
+                sal_uInt32 nNumFormat = 0;
+                double fValue;
+                if (pFormatter->IsNumberFormat( aFilters[i].MatchValueName, nNumFormat, fValue))
+                    aFilters[i].MatchValue = ScDPCache::GetLocaleIndependentFormattedString(
+                            fValue, *pFormatter, nNumFormat);
+                else
+                    aFilters[i].MatchValue = aFilters[i].MatchValueName;
+            }
+
             aFilters[i].FieldName = GetString().getString();
         }
 
@@ -3355,11 +3631,18 @@ void ScInterpreter::ScGetPivotData()
             }
             break;
             default:
-                PushError(errNoRef);
+                PushError(FormulaError::NoRef);
                 return;
         }
 
         aDataFieldName = GetString().getString(); // First parameter is data field name.
+    }
+
+    // Early bail-out, don't grind through data pilot cache and all.
+    if (nGlobalError != FormulaError::NONE)
+    {
+        PushError( nGlobalError);
+        return;
     }
 
     // NOTE : MS Excel docs claim to use the 'most recent' which is not
@@ -3368,17 +3651,17 @@ void ScInterpreter::ScGetPivotData()
     ScDPObject* pDPObj = pDok->GetDPAtBlock(aBlock);
     if (!pDPObj)
     {
-        PushError(errNoRef);
+        PushError(FormulaError::NoRef);
         return;
     }
 
     if (bOldSyntax)
     {
         OUString aFilterStr = aDataFieldName;
-        std::vector<sheet::GeneralFunction> aFilterFuncs;
+        std::vector<sal_Int16> aFilterFuncs;
         if (!pDPObj->ParseFilters(aDataFieldName, aFilters, aFilterFuncs, aFilterStr))
         {
-            PushError(errNoRef);
+            PushError(FormulaError::NoRef);
             return;
         }
 
@@ -3390,7 +3673,7 @@ void ScInterpreter::ScGetPivotData()
     double fVal = pDPObj->GetPivotData(aDataFieldName, aFilters);
     if (rtl::math::isNan(fVal))
     {
-        PushError(errNoRef);
+        PushError(FormulaError::NoRef);
         return;
     }
     PushDouble(fVal);

@@ -60,7 +60,7 @@ namespace rptui
 using namespace ::com::sun::star;
 
 
-IMPL_LINK_NOARG_TYPED( DlgEdFunc, ScrollTimeout, Timer *, void )
+IMPL_LINK_NOARG( DlgEdFunc, ScrollTimeout, Timer *, void )
 {
     ForceScroll( m_pParent->PixelToLogic( m_pParent->GetPointerPosPixel() ) );
 }
@@ -92,16 +92,16 @@ void DlgEdFunc::ForceScroll( const Point& rPos )
     {
         ScrollBar& rHScroll = pScrollWindow->GetHScroll();
         ScrollBar& rVScroll = pScrollWindow->GetVScroll();
-        ScrollType eH = SCROLL_LINEDOWN,eV = SCROLL_LINEDOWN;
+        ScrollType eH = ScrollType::LineDown,eV = ScrollType::LineDown;
         if( rPos.X() < aOutRect.Left() )
-            eH = SCROLL_LINEUP;
+            eH = ScrollType::LineUp;
         else if( rPos.X() <= aOutRect.Right() )
-            eH = SCROLL_DONTKNOW;
+            eH = ScrollType::DontKnow;
 
         if( rPos.Y() < aOutRect.Top() )
-            eV = SCROLL_LINEUP;
+            eV = ScrollType::LineUp;
         else if( rPos.Y() <= aOutRect.Bottom() )
-            eV = SCROLL_DONTKNOW;
+            eV = ScrollType::DontKnow;
 
         rHScroll.DoScrollAction(eH);
         rVScroll.DoScrollAction(eV);
@@ -202,7 +202,7 @@ bool DlgEdFunc::MouseButtonDown( const MouseEvent& rMEvt )
     {
         SdrPageView* pPV = m_rView.GetSdrPageView();
         SdrViewEvent aVEvt;
-        if ( m_rView.PickAnything(rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt) != SDRHIT_MARKEDOBJECT && !rMEvt.IsShift() )
+        if ( m_rView.PickAnything(rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt) != SdrHitKind::MarkedObject && !rMEvt.IsShift() )
             m_pParent->getSectionWindow()->getViewsWindow()->unmarkAllObjects(nullptr);
         if ( aVEvt.pRootObj )
             m_rView.MarkObj(aVEvt.pRootObj, pPV);
@@ -490,7 +490,7 @@ void DlgEdFunc::unColorizeOverlappedObj()
 bool DlgEdFunc::isOverlapping(const MouseEvent& rMEvt)
 {
     SdrViewEvent aVEvt;
-    bool bOverlapping = m_rView.PickAnything(rMEvt, SdrMouseEventKind::BUTTONUP, aVEvt) != SDRHIT_NONE;
+    bool bOverlapping = m_rView.PickAnything(rMEvt, SdrMouseEventKind::BUTTONUP, aVEvt) != SdrHitKind::NONE;
     if (bOverlapping && aVEvt.pObj)
     {
         colorizeOverlappedObject(aVEvt.pObj);
@@ -570,14 +570,14 @@ bool DlgEdFunc::isRectangleHit(const MouseEvent& rMEvt)
 
     SdrViewEvent aVEvt;
     const SdrHitKind eHit = m_rView.PickAnything(rMEvt, SdrMouseEventKind::MOVE, aVEvt);
-    bool bIsSetPoint = (eHit == SDRHIT_UNMARKEDOBJECT);
+    bool bIsSetPoint = (eHit == SdrHitKind::UnmarkedObject);
     if ( !bIsSetPoint )
     {
         // no drag rect, we have to check every single select rect
         const SdrDragStat& rDragStat = m_rView.GetDragStat();
         if (rDragStat.GetDragMethod() != nullptr)
         {
-            SdrObjListIter aIter(*m_pParent->getPage(),IM_DEEPNOGROUPS);
+            SdrObjListIter aIter(*m_pParent->getPage(),SdrIterMode::DeepNoGroups);
             SdrObject* pObjIter = nullptr;
             // loop through all marked objects and check if there new rect overlapps an old one.
             while( (pObjIter = aIter.Next()) != nullptr && !bIsSetPoint)
@@ -660,7 +660,7 @@ bool DlgEdFuncInsert::MouseButtonDown( const MouseEvent& rMEvt )
 
     const SdrHitKind eHit = m_rView.PickAnything(rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt);
 
-    if (eHit == SDRHIT_UNMARKEDOBJECT && nId != OBJ_CUSTOMSHAPE)
+    if (eHit == SdrHitKind::UnmarkedObject && nId != OBJ_CUSTOMSHAPE)
     {
         // there is an object under the mouse cursor, but not a customshape
         m_pParent->getSectionWindow()->getViewsWindow()->BrkAction();
@@ -701,7 +701,7 @@ bool DlgEdFuncInsert::MouseButtonUp( const MouseEvent& rMEvt )
             return true;
         }
 
-        m_rView.EndCreateObj(SDRCREATE_FORCEEND);
+        m_rView.EndCreateObj(SdrCreateCmd::ForceEnd);
 
         if ( !m_rView.AreObjectsMarked() )
         {
@@ -797,7 +797,7 @@ bool DlgEdFuncSelect::MouseButtonDown( const MouseEvent& rMEvt )
 
     SdrViewEvent aVEvt;
     const SdrHitKind eHit = m_rView.PickAnything(rMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt);
-    if( eHit == SDRHIT_UNMARKEDOBJECT )
+    if( eHit == SdrHitKind::UnmarkedObject )
     {
         // if not multi selection, unmark all
         if ( !rMEvt.IsShift() )

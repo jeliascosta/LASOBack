@@ -45,7 +45,7 @@ class Player : public ::cppu::BaseMutex,
 public:
 
     explicit Player();
-    virtual ~Player();
+    virtual ~Player() override;
 
     void preparePlaybin( const OUString& rURL, GstElement *pSink );
     bool create( const OUString& rURL );
@@ -75,7 +75,7 @@ public:
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames(  ) throw (css::uno::RuntimeException, std::exception) override;
 
     // ::cppu::OComponentHelper
-    virtual void SAL_CALL disposing() override;
+    virtual void SAL_CALL disposing() final override;
 
 protected:
     OUString                maURL;

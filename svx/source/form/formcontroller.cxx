@@ -493,7 +493,7 @@ void FmXAutoControl::ImplSetPeerProperty( const OUString& rPropName, const Any& 
 }
 
 
-IMPL_LINK_NOARG_TYPED( FormController, OnActivateTabOrder, Idle*, void )
+IMPL_LINK_NOARG( FormController, OnActivateTabOrder, Idle*, void )
 {
     activateTabOrder();
 }
@@ -509,7 +509,7 @@ struct UpdateAllListeners : public ::std::unary_function< Reference< XDispatch >
     }
 };
 
-IMPL_LINK_NOARG_TYPED( FormController, OnInvalidateFeatures, Timer*, void )
+IMPL_LINK_NOARG( FormController, OnInvalidateFeatures, Timer*, void )
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     for ( ::std::set< sal_Int16 >::const_iterator aLoop = m_aInvalidFeatures.begin();
@@ -688,7 +688,7 @@ void SAL_CALL FormController::resetted(const EventObject& rEvent) throw( Runtime
 }
 
 
-Sequence< OUString> FormController::getSupportedServiceNames_Static()
+Sequence< OUString> const & FormController::getSupportedServiceNames_Static()
 {
     static Sequence< OUString> aServices;
     if (!aServices.getLength())
@@ -1432,7 +1432,7 @@ void FormController::toggleAutoFields(bool bAutoFields)
 }
 
 
-IMPL_LINK_NOARG_TYPED(FormController, OnToggleAutoFields, void*, void)
+IMPL_LINK_NOARG(FormController, OnToggleAutoFields, void*, void)
 {
     OSL_ENSURE( !impl_isDisposed_nofail(), "FormController: already disposed!" );
 
@@ -1753,7 +1753,7 @@ void FormController::focusGained(const FocusEvent& e) throw( RuntimeException, s
 }
 
 
-IMPL_LINK_NOARG_TYPED( FormController, OnActivated, void*, void )
+IMPL_LINK_NOARG( FormController, OnActivated, void*, void )
 {
     EventObject aEvent;
     aEvent.Source = *this;
@@ -1761,7 +1761,7 @@ IMPL_LINK_NOARG_TYPED( FormController, OnActivated, void*, void )
 }
 
 
-IMPL_LINK_NOARG_TYPED( FormController, OnDeactivated, void*, void )
+IMPL_LINK_NOARG( FormController, OnDeactivated, void*, void )
 {
     EventObject aEvent;
     aEvent.Source = *this;
@@ -2604,7 +2604,7 @@ void FormController::updateAllDispatchers() const
 }
 
 
-IMPL_LINK_NOARG_TYPED(FormController, OnLoad, void*, void)
+IMPL_LINK_NOARG(FormController, OnLoad, void*, void)
 {
     OSL_ENSURE( !impl_isDisposed_nofail(), "FormController: already disposed!" );
     m_bLocked = determineLockState();
@@ -4165,21 +4165,17 @@ Reference< XDispatchProviderInterceptor >  FormController::createInterceptor(con
     OSL_ENSURE( !impl_isDisposed_nofail(), "FormController: already disposed!" );
 #ifdef DBG_UTIL
     // check if we already have a interceptor for the given object
-    for (   Interceptors::const_iterator aIter = m_aControlDispatchInterceptors.begin();
-            aIter != m_aControlDispatchInterceptors.end();
-            ++aIter
-        )
+    for ( const auto & it : m_aControlDispatchInterceptors )
     {
-        if ((*aIter)->getIntercepted() == _xInterception)
+        if (it->getIntercepted() == _xInterception)
             OSL_FAIL("FormController::createInterceptor : we already do intercept this objects dispatches !");
     }
 #endif
 
-    DispatchInterceptionMultiplexer* pInterceptor = new DispatchInterceptionMultiplexer( _xInterception, this );
-    pInterceptor->acquire();
-    m_aControlDispatchInterceptors.insert( m_aControlDispatchInterceptors.end(), pInterceptor );
+    rtl::Reference<DispatchInterceptionMultiplexer> pInterceptor(new DispatchInterceptionMultiplexer( _xInterception, this ));
+    m_aControlDispatchInterceptors.push_back( pInterceptor );
 
-    return pInterceptor;
+    return pInterceptor.get();
 }
 
 
@@ -4208,28 +4204,20 @@ void FormController::deleteInterceptor(const Reference< XDispatchProviderInterce
 {
     OSL_ENSURE( !impl_isDisposed_nofail(), "FormController: already disposed!" );
     // search the interceptor responsible for the given object
-    Interceptors::const_iterator aEnd = m_aControlDispatchInterceptors.end();
-    Interceptors::iterator aIter;
-    for (   aIter = m_aControlDispatchInterceptors.begin();
+    const auto aEnd = m_aControlDispatchInterceptors.end();
+    for ( auto aIter = m_aControlDispatchInterceptors.begin();
             aIter != aEnd;
             ++aIter
         )
     {
-        if ((*aIter)->getIntercepted() == _xInterception)
-            break;
+        if ((*aIter)->getIntercepted() == _xInterception) {
+            // log off the interception from its interception object
+            (*aIter)->dispose();
+            // remove the interceptor from our array
+            m_aControlDispatchInterceptors.erase(aIter);
+            return;
+        }
     }
-    if (aIter == aEnd)
-    {
-        return;
-    }
-
-    // log off the interception from its interception object
-    DispatchInterceptionMultiplexer* pInterceptorImpl = *aIter;
-    pInterceptorImpl->dispose();
-    pInterceptorImpl->release();
-
-    // remove the interceptor from our array
-    m_aControlDispatchInterceptors.erase(aIter);
 }
 
 

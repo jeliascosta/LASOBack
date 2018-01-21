@@ -68,7 +68,7 @@ namespace
         {
         }
 
-        Image getImage() const
+        Image const & getImage() const
         {
             if ( !m_defaultImage )
                 m_defaultImage = Image( ModuleRes( m_defaultImageID ) );
@@ -107,7 +107,7 @@ namespace
         {
         }
 
-        std::shared_ptr< ImageProvider >   getImageProvider( SQLExceptionInfo::TYPE _eType ) const
+        std::shared_ptr< ImageProvider > const & getImageProvider( SQLExceptionInfo::TYPE _eType ) const
         {
             std::shared_ptr< ImageProvider >* ppProvider( &m_pErrorImage );
             sal_uInt16 nNormalImageID( BMP_EXCEPTION_ERROR );
@@ -133,7 +133,7 @@ namespace
             return *ppProvider;
         }
 
-        std::shared_ptr< LabelProvider >   getLabelProvider( SQLExceptionInfo::TYPE _eType, bool _bSubLabel ) const
+        std::shared_ptr< LabelProvider > const & getLabelProvider( SQLExceptionInfo::TYPE _eType, bool _bSubLabel ) const
         {
             std::shared_ptr< LabelProvider >* ppProvider( &m_pErrorLabel );
             sal_uInt16 nLabelID( STR_EXCEPTION_ERROR );
@@ -286,7 +286,7 @@ class OExceptionChainDialog : public ModalDialog
 
 public:
     OExceptionChainDialog( vcl::Window* pParent, const ExceptionDisplayChain& _rExceptions );
-    virtual ~OExceptionChainDialog() { disposeOnce(); }
+    virtual ~OExceptionChainDialog() override { disposeOnce(); }
     virtual void dispose() override
     {
         m_pExceptionList.clear();
@@ -295,7 +295,7 @@ public:
     }
 
 protected:
-    DECL_LINK_TYPED(OnExceptionSelected, SvTreeListBox*, void);
+    DECL_LINK(OnExceptionSelected, SvTreeListBox*, void);
 };
 
 OExceptionChainDialog::OExceptionChainDialog(vcl::Window* pParent, const ExceptionDisplayChain& _rExceptions)
@@ -303,18 +303,18 @@ OExceptionChainDialog::OExceptionChainDialog(vcl::Window* pParent, const Excepti
     , m_aExceptions(_rExceptions)
 {
     get(m_pExceptionList, "list");
-    Size aListSize(LogicToPixel(Size(85, 93), MAP_APPFONT));
+    Size aListSize(LogicToPixel(Size(85, 93), MapUnit::MapAppFont));
     m_pExceptionList->set_width_request(aListSize.Width());
     m_pExceptionList->set_height_request(aListSize.Height());
     get(m_pExceptionText, "description");
-    Size aTextSize(LogicToPixel(Size(125 , 93), MAP_APPFONT));
+    Size aTextSize(LogicToPixel(Size(125 , 93), MapUnit::MapAppFont));
     m_pExceptionText->set_width_request(aTextSize.Width());
     m_pExceptionText->set_height_request(aTextSize.Height());
 
     m_sStatusLabel = ModuleRes( STR_EXCEPTION_STATUS );
     m_sErrorCodeLabel = ModuleRes( STR_EXCEPTION_ERRORCODE );
 
-    m_pExceptionList->SetSelectionMode(SINGLE_SELECTION);
+    m_pExceptionList->SetSelectionMode(SelectionMode::Single);
     m_pExceptionList->SetDragDropMode(DragDropMode::NONE);
     m_pExceptionList->EnableInplaceEditing(false);
     m_pExceptionList->SetStyle(m_pExceptionList->GetStyle() | WB_HASLINES | WB_HASBUTTONS | WB_HASBUTTONSATROOT | WB_HSCROLL);
@@ -350,7 +350,7 @@ OExceptionChainDialog::OExceptionChainDialog(vcl::Window* pParent, const Excepti
     }
 }
 
-IMPL_LINK_NOARG_TYPED(OExceptionChainDialog, OnExceptionSelected, SvTreeListBox*, void)
+IMPL_LINK_NOARG(OExceptionChainDialog, OnExceptionSelected, SvTreeListBox*, void)
 {
     SvTreeListEntry* pSelected = m_pExceptionList->FirstSelected();
     OSL_ENSURE(!pSelected || !m_pExceptionList->NextSelected(pSelected), "OExceptionChainDialog::OnExceptionSelected : multi selection ?");
@@ -364,18 +364,12 @@ IMPL_LINK_NOARG_TYPED(OExceptionChainDialog, OnExceptionSelected, SvTreeListBox*
 
         if ( !aExceptionInfo.sSQLState.isEmpty() )
         {
-            sText += m_sStatusLabel;
-            sText += ": ";
-            sText += aExceptionInfo.sSQLState;
-            sText += "\n";
+            sText += m_sStatusLabel + ": " + aExceptionInfo.sSQLState + "\n";
         }
 
         if ( !aExceptionInfo.sErrorCode.isEmpty() )
         {
-            sText += m_sErrorCodeLabel;
-            sText += ": ";
-            sText += aExceptionInfo.sErrorCode;
-            sText += "\n";
+            sText += m_sErrorCodeLabel + ": " + aExceptionInfo.sErrorCode + "\n";
         }
 
         if ( !sText.isEmpty() )
@@ -404,8 +398,8 @@ namespace
 {
     void lcl_positionInAppFont( const vcl::Window& _rParent, vcl::Window& _rChild, long _nX, long _nY, long Width, long Height )
     {
-        Point aPos = _rParent.LogicToPixel( Point( _nX, _nY ), MAP_APPFONT );
-        Size aSize = _rParent.LogicToPixel( Size( Width, Height ), MAP_APPFONT );
+        Point aPos = _rParent.LogicToPixel( Point( _nX, _nY ), MapUnit::MapAppFont );
+        Size aSize = _rParent.LogicToPixel( Size( Width, Height ), MapUnit::MapAppFont );
         _rChild.SetPosSizePixel( aPos, aSize );
     }
 
@@ -518,35 +512,13 @@ void OSQLMessageBox::impl_positionControls()
 
     // adjust dialog size accordingly
     const Rectangle& rBottomTextRect( bHaveSecondaryText ? aSecondaryRect : aPrimaryRect );
-    Size aBorderSize = LogicToPixel( Size( OUTER_MARGIN, OUTER_MARGIN ), MAP_APPFONT );
-    Size aDialogSize( LogicToPixel( Size( DIALOG_WIDTH, 30 ), MAP_APPFONT ) );
+    Size aBorderSize = LogicToPixel( Size( OUTER_MARGIN, OUTER_MARGIN ), MapUnit::MapAppFont );
+    Size aDialogSize( LogicToPixel( Size( DIALOG_WIDTH, 30 ), MapUnit::MapAppFont ) );
     aDialogSize.Height() = rBottomTextRect.Bottom() + aBorderSize.Height();
     aDialogSize.Width() = aPrimaryRect.Right() + aBorderSize.Width();
 
     SetSizePixel( aDialogSize );
     SetPageSizePixel( aDialogSize );
-}
-
-void OSQLMessageBox::impl_initImage( MessageType _eImage )
-{
-    switch (_eImage)
-    {
-        default:
-            OSL_FAIL( "OSQLMessageBox::impl_initImage: unsupported image type!" );
-            SAL_FALLTHROUGH;
-        case Info:
-            m_aInfoImage->SetImage(InfoBox::GetStandardImage());
-            break;
-        case Warning:
-            m_aInfoImage->SetImage(WarningBox::GetStandardImage());
-            break;
-        case Error:
-            m_aInfoImage->SetImage(ErrorBox::GetStandardImage());
-            break;
-        case Query:
-            m_aInfoImage->SetImage(QueryBox::GetStandardImage());
-            break;
-    }
 }
 
 void OSQLMessageBox::impl_createStandardButtons( WinBits _nStyle )
@@ -643,7 +615,24 @@ void OSQLMessageBox::Construct( WinBits _nStyle, MessageType _eImage )
         default: OSL_FAIL( "OSQLMessageBox::Construct: invalid type!" );
         }
     }
-    impl_initImage( eType );
+    switch (eType)
+    {
+        default:
+            OSL_FAIL( "OSQLMessageBox::impl_initImage: unsupported image type!" );
+            SAL_FALLTHROUGH;
+        case Info:
+            m_aInfoImage->SetImage(InfoBox::GetStandardImage());
+            break;
+        case Warning:
+            m_aInfoImage->SetImage(WarningBox::GetStandardImage());
+            break;
+        case Error:
+            m_aInfoImage->SetImage(ErrorBox::GetStandardImage());
+            break;
+        case Query:
+            m_aInfoImage->SetImage(QueryBox::GetStandardImage());
+            break;
+    }
 
     // create buttons
     impl_createStandardButtons( _nStyle );
@@ -691,7 +680,7 @@ void OSQLMessageBox::dispose()
     ButtonDialog::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED( OSQLMessageBox, ButtonClickHdl, Button *, void )
+IMPL_LINK_NOARG( OSQLMessageBox, ButtonClickHdl, Button *, void )
 {
     ScopedVclPtrInstance< OExceptionChainDialog > aDlg( this, m_pImpl->aDisplayInfo );
     aDlg->Execute();
@@ -705,9 +694,8 @@ OSQLWarningBox::OSQLWarningBox( vcl::Window* _pParent, const OUString& _rMessage
 }
 
 // OSQLErrorBox
-OSQLErrorBox::OSQLErrorBox( vcl::Window* _pParent, const OUString& _rMessage, WinBits _nStyle,
-    const ::dbtools::SQLExceptionInfo* _pAdditionalErrorInfo )
-    :OSQLMessageBox( _pParent, ModuleRes( STR_EXCEPTION_ERROR ), _rMessage, _nStyle, OSQLMessageBox::Error, _pAdditionalErrorInfo )
+OSQLErrorBox::OSQLErrorBox( vcl::Window* _pParent, const OUString& _rMessage )
+    :OSQLMessageBox( _pParent, ModuleRes( STR_EXCEPTION_ERROR ), _rMessage, WB_OK | WB_DEF_OK, OSQLMessageBox::Error, nullptr )
 {
 }
 

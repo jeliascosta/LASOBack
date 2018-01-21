@@ -46,7 +46,7 @@
 
 #include <svx/dialogs.hrc>
 #include <sfx2/viewfrm.hxx>
-#include <sfx2/sidebar/EnumContext.hxx>
+#include <vcl/EnumContext.hxx>
 #include <svx/svdopage.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
 #include <svx/xlndsit.hxx>
@@ -91,6 +91,9 @@
 #include <drawinglayer/primitive2d/textprimitive2d.hxx>
 #include <svx/unoapi.hxx>
 #include <basegfx/matrix/b2dhommatrixtools.hxx>
+#include <comphelper/lok.hxx>
+#include <sfx2/lokhelper.hxx>
+#include <LibreOfficeKit/LibreOfficeKitEnums.h>
 #include "DrawController.hxx"
 
 #include <memory>
@@ -177,7 +180,7 @@ class ViewRedirector : public sdr::contact::ViewObjectContactRedirector
 {
 public:
     ViewRedirector();
-    virtual ~ViewRedirector();
+    virtual ~ViewRedirector() override;
 
     // all default implementations just call the same methods at the original. To do something
     // different, override the method and at least do what the method does.
@@ -205,7 +208,7 @@ drawinglayer::primitive2d::Primitive2DContainer ViewRedirector::createRedirected
     {
         const bool bDoCreateGeometry(pObject->GetPage()->checkVisibility( rOriginal, rDisplayInfo, true ));
 
-        if(!bDoCreateGeometry && !(( pObject->GetObjInventor() == SdrInventor ) && ( pObject->GetObjIdentifier() == OBJ_PAGE )) )
+        if(!bDoCreateGeometry && !(( pObject->GetObjInventor() == SdrInventor::Default ) && ( pObject->GetObjIdentifier() == OBJ_PAGE )) )
             return xRetval;
 
         PresObjKind eKind(PRESOBJ_NONE);
@@ -231,7 +234,7 @@ drawinglayer::primitive2d::Primitive2DContainer ViewRedirector::createRedirected
                     bCreateOutline = true;
                 }
             }
-            else if( ( pObject->GetObjInventor() == SdrInventor ) && ( pObject->GetObjIdentifier() == OBJ_TEXT ) )
+            else if( ( pObject->GetObjInventor() == SdrInventor::Default ) && ( pObject->GetObjIdentifier() == OBJ_TEXT ) )
             {
                 if( pObjectsSdPage )
                 {
@@ -247,11 +250,11 @@ drawinglayer::primitive2d::Primitive2DContainer ViewRedirector::createRedirected
                     }
                 }
             }
-            else if( ( pObject->GetObjInventor() == SdrInventor ) && ( pObject->GetObjIdentifier() == OBJ_PAGE ) )
+            else if( ( pObject->GetObjInventor() == SdrInventor::Default ) && ( pObject->GetObjIdentifier() == OBJ_PAGE ) )
             {
                 // only for handout page, else this frame will be created for each
                 // page preview object in SlideSorter and PagePane
-                if(pObjectsSdPage && PK_HANDOUT == pObjectsSdPage->GetPageKind())
+                if(pObjectsSdPage && PageKind::Handout == pObjectsSdPage->GetPageKind())
                 {
                     bCreateOutline = true;
                 }
@@ -305,7 +308,7 @@ drawinglayer::primitive2d::Primitive2DContainer ViewRedirector::createRedirected
                         {
                             case PRESOBJ_TITLE:
                             {
-                                if(pObjectsSdPage && pObjectsSdPage->GetPageKind() == PK_STANDARD)
+                                if(pObjectsSdPage && pObjectsSdPage->GetPageKind() == PageKind::Standard)
                                 {
                                     static OUString aTitleAreaStr(SD_RESSTR(STR_PLACEHOLDER_DESCRIPTION_TITLE));
                                     aObjectString = aTitleAreaStr;
@@ -345,7 +348,7 @@ drawinglayer::primitive2d::Primitive2DContainer ViewRedirector::createRedirected
                             }
                             case PRESOBJ_SLIDENUMBER:
                             {
-                                if(pObjectsSdPage && pObjectsSdPage->GetPageKind() == PK_STANDARD)
+                                if(pObjectsSdPage && pObjectsSdPage->GetPageKind() == PageKind::Standard)
                                 {
                                     static OUString aSlideAreaStr(SD_RESSTR(STR_PLACEHOLDER_DESCRIPTION_SLIDE));
                                     aObjectString = aSlideAreaStr;
@@ -605,12 +608,6 @@ void View::SelectAll()
     }
 }
 
-void View::ModelHasChanged()
-{
-    // First, notify SdrView
-    FmFormView::ModelHasChanged();
-}
-
 bool View::SetStyleSheet(SfxStyleSheet* pStyleSheet, bool bDontRemoveHardAttr)
 {
     // forward to SdrView
@@ -648,6 +645,16 @@ void OutlinerMasterViewFilter::End()
     }
 }
 
+SfxViewShell* View::GetSfxViewShell() const
+{
+    SfxViewShell* pRet = nullptr;
+
+    if (mpViewSh)
+        pRet = &mpViewSh->GetViewShellBase();
+
+    return pRet;
+}
+
 bool View::SdrBeginTextEdit(
     SdrObject* pObj, SdrPageView* pPV, vcl::Window* pWin,
     bool bIsNewObj,
@@ -658,7 +665,7 @@ bool View::SdrBeginTextEdit(
     bool bMasterPage = pPage && pPage->IsMasterPage();
 
     GetViewShell()->GetViewShellBase().GetEventMultiplexer()->MultiplexEvent(
-        sd::tools::EventMultiplexerEvent::EID_BEGIN_TEXT_EDIT, static_cast<void*>(pObj) );
+        EventMultiplexerEventId::BeginTextEdit, static_cast<void*>(pObj) );
 
     if( pOutl==nullptr && pObj )
         pOutl = SdrMakeOutliner(OutlinerMode::TextObject, *pObj->GetModel());
@@ -700,6 +707,18 @@ bool View::SdrBeginTextEdit(
     if ( mpViewSh )
     {
         mpViewSh->GetViewShellBase().GetDrawController().FireSelectionChangeListener();
+
+        if (comphelper::LibreOfficeKit::isActive())
+        {
+            if (OutlinerView* pView = GetTextEditOutlinerView())
+            {
+                Rectangle aRectangle = pView->GetOutputArea();
+                if (pWin && pWin->GetMapMode().GetMapUnit() == MapUnit::Map100thMM)
+                    aRectangle = OutputDevice::LogicToLogic(aRectangle, MapUnit::Map100thMM, MapUnit::MapTwip);
+                OString sRectangle = aRectangle.toString();
+                SfxLokHelper::notifyOtherViews(&mpViewSh->GetViewShellBase(), LOK_CALLBACK_VIEW_LOCK, "rectangle", sRectangle);
+            }
+        }
     }
 
     if (bReturn)
@@ -709,7 +728,7 @@ bool View::SdrBeginTextEdit(
         if( pObj && pObj->GetPage() )
         {
             Color aBackground;
-            if( pObj->GetObjInventor() == SdrInventor && pObj->GetObjIdentifier() == OBJ_TABLE )
+            if( pObj->GetObjInventor() == SdrInventor::Default && pObj->GetObjIdentifier() == OBJ_TABLE )
             {
                 aBackground = GetTextEditBackgroundColor(*this);
             }
@@ -767,7 +786,7 @@ SdrEndTextEditKind View::SdrEndTextEdit(bool bDontDeleteReally)
         }
         else
         {
-            eKind = SDRENDTEXTEDIT_UNCHANGED;
+            eKind = SdrEndTextEditKind::Unchanged;
         }
     }
     else if( xObj.is() && xObj->IsEmptyPresObj() )
@@ -782,7 +801,7 @@ SdrEndTextEditKind View::SdrEndTextEdit(bool bDontDeleteReally)
     }
 
     GetViewShell()->GetViewShellBase().GetEventMultiplexer()->MultiplexEvent(
-        sd::tools::EventMultiplexerEvent::EID_END_TEXT_EDIT,
+        EventMultiplexerEventId::EndTextEdit,
         static_cast<void*>(xObj.get()) );
 
     if( xObj.is() )
@@ -790,6 +809,10 @@ SdrEndTextEditKind View::SdrEndTextEdit(bool bDontDeleteReally)
         if ( mpViewSh )
         {
             mpViewSh->GetViewShellBase().GetDrawController().FireSelectionChangeListener();
+
+            if (comphelper::LibreOfficeKit::isActive())
+                SfxLokHelper::notifyOtherViews(&mpViewSh->GetViewShellBase(), LOK_CALLBACK_VIEW_LOCK, "rectangle", "EMPTY");
+
         }
 
         SdPage* pPage = dynamic_cast< SdPage* >( xObj->GetPage() );
@@ -843,7 +866,7 @@ void View::SetMarkedOriginalSize()
     {
         SdrObject* pObj = GetMarkedObjectByIndex(i);
 
-        if( pObj->GetObjInventor() == SdrInventor )
+        if( pObj->GetObjInventor() == SdrInventor::Default )
         {
             if( pObj->GetObjIdentifier() == OBJ_OLE2 )
             {
@@ -857,7 +880,7 @@ void View::SetMarkedOriginalSize()
 
                     if ( nAspect == embed::Aspects::MSOLE_ICON )
                     {
-                        MapMode aMap100( MAP_100TH_MM );
+                        MapMode aMap100( MapUnit::Map100thMM );
                         aOleSize = static_cast<SdrOle2Obj*>(pObj)->GetOrigObjSize( &aMap100 );
                         bOK = true;
                     }
@@ -867,7 +890,7 @@ void View::SetMarkedOriginalSize()
                         try
                         {
                             awt::Size aSz = xObj->getVisualAreaSize( nAspect );
-                            aOleSize = OutputDevice::LogicToLogic( Size( aSz.Width, aSz.Height ), aUnit, MAP_100TH_MM );
+                            aOleSize = OutputDevice::LogicToLogic( Size( aSz.Width, aSz.Height ), aUnit, MapUnit::Map100thMM );
                             bOK = true;
                         }
                         catch( embed::NoVisualAreaSizeException& )
@@ -892,7 +915,6 @@ void View::SetMarkedOriginalSize()
                 Rectangle aRect( pObj->GetLogicRect() );
                 aRect.SetSize( aSize );
                 pObj->SetLogicRect( aRect );
-
                 bOK = true;
             }
         }
@@ -1003,7 +1025,7 @@ bool View::IsVectorizeAllowed() const
 
         if(pObj)
         {
-            if(GRAPHIC_BITMAP == pObj->GetGraphicType() && !pObj->isEmbeddedSvg())
+            if(GraphicType::Bitmap == pObj->GetGraphicType() && !pObj->isEmbeddedSvg())
             {
                 bRet = true;
             }
@@ -1055,32 +1077,30 @@ void View::onAccessibilityOptionsChanged()
     }
 }
 
-IMPL_LINK_TYPED( View, OnParagraphInsertedHdl, ::Outliner *, pOutliner, void )
+IMPL_LINK( View, OnParagraphInsertedHdl, ::Outliner::ParagraphHdlParam, aParam, void )
 {
-    Paragraph* pPara = pOutliner->GetHdlParagraph();
     SdrObject* pObj = GetTextEditObject();
 
-    if( pPara && pObj )
+    if( aParam.pPara && pObj )
     {
         SdPage* pPage = dynamic_cast< SdPage* >( pObj->GetPage() );
         if( pPage )
-            pPage->onParagraphInserted( pOutliner, pPara, pObj );
+            pPage->onParagraphInserted( aParam.pOutliner, aParam.pPara, pObj );
     }
 }
 
 /**
  * Handler for the deletion of the pages (paragraphs).
  */
-IMPL_LINK_TYPED( View, OnParagraphRemovingHdl, ::Outliner *, pOutliner, void )
+IMPL_LINK( View, OnParagraphRemovingHdl, ::Outliner::ParagraphHdlParam, aParam, void )
 {
-    Paragraph* pPara = pOutliner->GetHdlParagraph();
     SdrObject* pObj = GetTextEditObject();
 
-    if( pPara && pObj )
+    if( aParam.pPara && pObj )
     {
         SdPage* pPage = dynamic_cast< SdPage* >( pObj->GetPage() );
         if( pPage )
-            pPage->onParagraphRemoving( pOutliner, pPara, pObj );
+            pPage->onParagraphRemoving( aParam.pOutliner, aParam.pPara, pObj );
     }
 }
 
@@ -1109,7 +1129,7 @@ void View::updateHandles()
 
 SdrViewContext View::GetContext() const
 {
-    SdrViewContext eContext = SDRCONTEXT_STANDARD;
+    SdrViewContext eContext = SdrViewContext::Standard;
     if( maSmartTags.getContext( eContext ) )
         return eContext;
     else
@@ -1187,24 +1207,25 @@ void View::OnEndPasteOrDrop( PasteOrDropInfos* pInfo )
     /* Style Sheet handling */
     SdrTextObj* pTextObj = dynamic_cast< SdrTextObj* >( GetTextEditObject() );
     SdrOutliner* pOutliner = GetTextEditOutliner();
-    if( pOutliner && pTextObj && pTextObj->GetPage() )
+    if( !pOutliner || !pTextObj || !pTextObj->GetPage() )
+        return;
+
+    SdPage* pPage = static_cast< SdPage* >( pTextObj->GetPage() );
+    const PresObjKind eKind = pPage->GetPresObjKind(pTextObj);
+
+    // outline kinds are taken care of in Outliner::ImplSetLevelDependendStyleSheet
+    if( eKind == PRESOBJ_OUTLINE )
+        return;
+
+    SfxStyleSheet* pStyleSheet = nullptr;
+    if( eKind != PRESOBJ_NONE )
+        pStyleSheet = pPage->GetStyleSheetForPresObj(eKind);
+    else
+         pStyleSheet = pTextObj->GetStyleSheet();
+    // just put the object style on each new paragraph
+    for ( sal_Int32 nPara = pInfo->nStartPara; nPara <= pInfo->nEndPara; nPara++ )
     {
-        SdPage* pPage = static_cast< SdPage* >( pTextObj->GetPage() );
-        const PresObjKind eKind = pPage->GetPresObjKind(pTextObj);
-        // outline kinds are taken care of in Outliner::ImplSetLevelDependendStyleSheet
-        if( eKind != PRESOBJ_OUTLINE )
-        {
-            SfxStyleSheet* pStyleSheet = nullptr;
-            if( eKind != PRESOBJ_NONE )
-                pStyleSheet = pPage->GetStyleSheetForPresObj(eKind);
-            else
-                pStyleSheet = pTextObj->GetStyleSheet();
-            // just put the object style on each new paragraph
-            for ( sal_Int32 nPara = pInfo->nStartPara; nPara <= pInfo->nEndPara; nPara++ )
-            {
-                pOutliner->SetStyleSheet( nPara, pStyleSheet );
-            }
-        }
+        pOutliner->SetStyleSheet( nPara, pStyleSheet );
     }
 }
 

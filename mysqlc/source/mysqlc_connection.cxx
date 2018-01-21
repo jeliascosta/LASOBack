@@ -67,7 +67,6 @@ OConnection::OConnection(MysqlCDriver& _rDriver, sql::Driver * _cppDriver)
     ,m_rDriver(_rDriver)
     ,cppDriver(_cppDriver)
     ,m_bClosed(false)
-    ,m_bUseCatalog(false)
 {
     OSL_TRACE("OConnection::OConnection");
     m_rDriver.acquire();
@@ -86,7 +85,7 @@ void SAL_CALL OConnection::release()
     throw()
 {
     OSL_TRACE("OConnection::release");
-    relase_ChildImpl();
+    release_ChildImpl();
 }
 
 void OConnection::construct(const rtl::OUString& url, const Sequence< PropertyValue >& info)

@@ -20,10 +20,11 @@
 #ifndef INCLUDED_FILTER_MSFILTER_DFFRECORDHEADER_HXX
 #define INCLUDED_FILTER_MSFILTER_DFFRECORDHEADER_HXX
 
-#include <tools/solar.h>
-#include <tools/stream.hxx>
 #include <filter/msfilter/msfilterdllapi.h>
 #include <svx/msdffdef.hxx>
+#include <sal/types.h>
+#include <tools/solar.h>
+#include <tools/stream.hxx>
 
 class MSFILTER_DLLPUBLIC DffRecordHeader
 {
@@ -43,12 +44,12 @@ public:
         { return nFilePos + DFF_COMMON_RECORD_HEADER_SIZE + nRecLen; }
     bool SeekToEndOfRecord(SvStream& rIn) const
     {
-        sal_Size nPos = nFilePos + DFF_COMMON_RECORD_HEADER_SIZE + nRecLen;
+        sal_uInt64 const nPos = nFilePos + DFF_COMMON_RECORD_HEADER_SIZE + nRecLen;
         return nPos == rIn.Seek(nPos);
     }
     bool SeekToContent(SvStream& rIn) const
     {
-        sal_Size nPos = nFilePos + DFF_COMMON_RECORD_HEADER_SIZE;
+        sal_uInt64 const nPos = nFilePos + DFF_COMMON_RECORD_HEADER_SIZE;
         return nPos == rIn.Seek(nPos);
     }
     bool SeekToBegOfRecord(SvStream& rIn) const

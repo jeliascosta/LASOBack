@@ -27,6 +27,8 @@
 #include "textattr.hxx"
 #include <dialmgr.hxx>
 #include "svx/dlgutil.hxx"
+#include "svx/svdmark.hxx"
+#include "svx/svdview.hxx"
 
 const sal_uInt16 SvxTextAnimationPage::pRanges[] =
 {
@@ -63,10 +65,21 @@ SvxTextTabDialog::SvxTextTabDialog( vcl::Window* pParent,
 void SvxTextTabDialog::PageCreated( sal_uInt16 nId, SfxTabPage &rPage )
 {
     if (nId == m_nTextId)
+    {
+        const SdrMarkList& rMarkList = pView->GetMarkedObjectList();
+        bool bHasMarked = rMarkList.GetMarkCount() > 0;
+        SdrObjKind eKind = OBJ_NONE;
+        if (bHasMarked)
         {
-            static_cast<SvxTextAttrPage&>(rPage).SetView( pView );
-            static_cast<SvxTextAttrPage&>(rPage).Construct();
+            if (rMarkList.GetMarkCount() == 1)
+            {
+                const SdrObject* pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
+                eKind = (SdrObjKind)pObj->GetObjIdentifier();
+            }
         }
+        static_cast<SvxTextAttrPage&>(rPage).SetObjKind(eKind);
+        static_cast<SvxTextAttrPage&>(rPage).Construct();
+    }
 }
 
 
@@ -76,13 +89,14 @@ void SvxTextTabDialog::PageCreated( sal_uInt16 nId, SfxTabPage &rPage )
 |*
 \************************************************************************/
 
-SvxTextAnimationPage::SvxTextAnimationPage( vcl::Window* pWindow, const SfxItemSet& rInAttrs ) :
-                SfxTabPage      ( pWindow
-                                  ,"TextAnimation"
-                                  ,"cui/ui/textanimtabpage.ui"
-                                  ,&rInAttrs ),
-                rOutAttrs       ( rInAttrs ),
-                eAniKind        ( SDRTEXTANI_NONE )
+SvxTextAnimationPage::SvxTextAnimationPage(vcl::Window* pWindow, const SfxItemSet& rInAttrs)
+    : SfxTabPage(pWindow, "TextAnimation", "cui/ui/textanimtabpage.ui", &rInAttrs)
+    , rOutAttrs(rInAttrs)
+    , eAniKind(SDRTEXTANI_NONE)
+    , m_aUpState(TRISTATE_INDET)
+    , m_aLeftState(TRISTATE_INDET)
+    , m_aRightState(TRISTATE_INDET)
+    , m_aDownState(TRISTATE_INDET)
 {
     get(m_pLbEffect, "LB_EFFECT");
     get(m_pBoxDirection,"boxDIRECTION");
@@ -188,10 +202,10 @@ void SvxTextAnimationPage::Reset( const SfxItemSet* rAttrs )
         m_pBtnRight->Check( false );
         m_pBtnDown->Check( false );
     }
-    m_pBtnUp->SaveValue();
-    m_pBtnLeft->SaveValue();
-    m_pBtnRight->SaveValue();
-    m_pBtnDown->SaveValue();
+    m_aUpState = m_pBtnUp->GetState();
+    m_aLeftState = m_pBtnLeft->GetState();
+    m_aRightState = m_pBtnRight->GetState();
+    m_aDownState = m_pBtnDown->GetState();
 
     // Start inside
     pItem = GetItem( *rAttrs, SDRATTR_TEXT_ANISTARTINSIDE );
@@ -363,10 +377,10 @@ bool SvxTextAnimationPage::FillItemSet( SfxItemSet* rAttrs)
     }
 
     // animation direction
-    if( m_pBtnUp->IsValueChangedFromSaved() ||
-        m_pBtnLeft->IsValueChangedFromSaved() ||
-        m_pBtnRight->IsValueChangedFromSaved() ||
-        m_pBtnDown->IsValueChangedFromSaved() )
+    if (m_aUpState != m_pBtnUp->GetState() ||
+        m_aLeftState != m_pBtnLeft->GetState() ||
+        m_aRightState != m_pBtnRight->GetState() ||
+        m_aDownState != m_pBtnDown->GetState())
     {
         SdrTextAniDirection eValue = (SdrTextAniDirection) GetSelectedDirection();
         rAttrs->Put( SdrTextAniDirectionItem( eValue ) );
@@ -467,7 +481,7 @@ VclPtr<SfxTabPage> SvxTextAnimationPage::Create( vcl::Window* pWindow,
     return VclPtr<SvxTextAnimationPage>::Create( pWindow, *rAttrs );
 }
 
-IMPL_LINK_NOARG_TYPED(SvxTextAnimationPage, SelectEffectHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG(SvxTextAnimationPage, SelectEffectHdl_Impl, ListBox&, void)
 {
     sal_Int32 nPos = m_pLbEffect->GetSelectEntryPos();
     if( nPos != LISTBOX_ENTRY_NOTFOUND )
@@ -524,7 +538,7 @@ IMPL_LINK_NOARG_TYPED(SvxTextAnimationPage, SelectEffectHdl_Impl, ListBox&, void
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxTextAnimationPage, ClickEndlessHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxTextAnimationPage, ClickEndlessHdl_Impl, Button*, void)
 {
 
     if( eAniKind != SDRTEXTANI_SLIDE )
@@ -543,7 +557,7 @@ IMPL_LINK_NOARG_TYPED(SvxTextAnimationPage, ClickEndlessHdl_Impl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxTextAnimationPage, ClickAutoHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxTextAnimationPage, ClickAutoHdl_Impl, Button*, void)
 {
     TriState eState = m_pTsbAuto->GetState();
     if( eState != TRISTATE_FALSE )
@@ -558,7 +572,7 @@ IMPL_LINK_NOARG_TYPED(SvxTextAnimationPage, ClickAutoHdl_Impl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxTextAnimationPage, ClickPixelHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxTextAnimationPage, ClickPixelHdl_Impl, Button*, void)
 {
     TriState eState = m_pTsbPixel->GetState();
     if( eState == TRISTATE_TRUE )
@@ -595,7 +609,7 @@ IMPL_LINK_NOARG_TYPED(SvxTextAnimationPage, ClickPixelHdl_Impl, Button*, void)
     }
 }
 
-IMPL_LINK_TYPED( SvxTextAnimationPage, ClickDirectionHdl_Impl, Button *, pBtn, void )
+IMPL_LINK( SvxTextAnimationPage, ClickDirectionHdl_Impl, Button *, pBtn, void )
 {
     m_pBtnUp->Check( pBtn == m_pBtnUp );
     m_pBtnLeft->Check( pBtn == m_pBtnLeft );
@@ -605,26 +619,26 @@ IMPL_LINK_TYPED( SvxTextAnimationPage, ClickDirectionHdl_Impl, Button *, pBtn, v
 
 void SvxTextAnimationPage::SelectDirection( SdrTextAniDirection nValue )
 {
-    m_pBtnUp->Check( nValue == SDRTEXTANI_UP );
-    m_pBtnLeft->Check( nValue == SDRTEXTANI_LEFT );
-    m_pBtnRight->Check( nValue == SDRTEXTANI_RIGHT );
-    m_pBtnDown->Check( nValue == SDRTEXTANI_DOWN );
+    m_pBtnUp->Check( nValue == SdrTextAniDirection::Up );
+    m_pBtnLeft->Check( nValue == SdrTextAniDirection::Left );
+    m_pBtnRight->Check( nValue == SdrTextAniDirection::Right );
+    m_pBtnDown->Check( nValue == SdrTextAniDirection::Down );
 }
 
 sal_uInt16 SvxTextAnimationPage::GetSelectedDirection()
 {
-    sal_uInt16 nValue = 0;
+    SdrTextAniDirection nValue = SdrTextAniDirection::Left;
 
     if( m_pBtnUp->IsChecked() )
-        nValue = SDRTEXTANI_UP;
+        nValue = SdrTextAniDirection::Up;
     else if( m_pBtnLeft->IsChecked() )
-        nValue = SDRTEXTANI_LEFT;
+        nValue = SdrTextAniDirection::Left;
     else if( m_pBtnRight->IsChecked() )
-        nValue = SDRTEXTANI_RIGHT;
+        nValue = SdrTextAniDirection::Right;
     else if( m_pBtnDown->IsChecked() )
-        nValue = SDRTEXTANI_DOWN;
+        nValue = SdrTextAniDirection::Down;
 
-    return nValue;
+    return (sal_uInt16)nValue;
 }
 
 

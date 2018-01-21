@@ -79,17 +79,6 @@ bool FuConstArc::MouseButtonDown( const MouseEvent& rMEvt )
 
 /*************************************************************************
 |*
-|* MouseMove-event
-|*
-\************************************************************************/
-
-bool FuConstArc::MouseMove( const MouseEvent& rMEvt )
-{
-    return FuConstruct::MouseMove(rMEvt);
-}
-
-/*************************************************************************
-|*
 |* MouseButtonUp-event
 |*
 \************************************************************************/
@@ -103,24 +92,10 @@ bool FuConstArc::MouseButtonUp( const MouseEvent& rMEvt )
 
     if ( pView->IsCreateObj() && rMEvt.IsLeft() )
     {
-        pView->EndCreateObj( SDRCREATE_NEXTPOINT );
+        pView->EndCreateObj( SdrCreateCmd::NextPoint );
         bReturn = true;
     }
     return (FuConstruct::MouseButtonUp(rMEvt) || bReturn);
-}
-
-/*************************************************************************
-|*
-|* Tastaturereignisse bearbeiten
-|*
-|* Wird ein KeyEvent bearbeitet, so ist der Return-Wert sal_True, andernfalls
-|* FALSE.
-|*
-\************************************************************************/
-
-bool FuConstArc::KeyInput(const KeyEvent& rKEvt)
-{
-    return FuConstruct::KeyInput(rKEvt);
 }
 
 /*************************************************************************

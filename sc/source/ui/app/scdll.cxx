@@ -35,6 +35,7 @@
 #include <svx/ParaLineSpacingPopup.hxx>
 #include <svx/TextCharacterSpacingPopup.hxx>
 #include <svx/TextUnderlinePopup.hxx>
+#include <NumberFormatControl.hxx>
 
 #include <svtools/parhtml.hxx>
 #include <sot/formats.hxx>
@@ -84,6 +85,7 @@
 #include <svx/formatpaintbrushctrl.hxx>
 #include "tbzoomsliderctrl.hxx"
 #include <svx/zoomsliderctrl.hxx>
+#include <sfx2/emojipopup.hxx>
 
 #include <svx/xmlsecctrl.hxx>
 // Child windows
@@ -101,6 +103,8 @@
 
 #include "dwfunctr.hxx"
 #include "acredlin.hxx"
+#include <o3tl/make_unique.hxx>
+#include "scabstdlg.hxx"
 
 ScResId::ScResId( sal_uInt16 nId ) :
     ResId( nId, *SC_MOD()->GetResMgr() )
@@ -109,14 +113,14 @@ ScResId::ScResId( sal_uInt16 nId ) :
 
 void ScDLL::Init()
 {
-    ScModule **ppShlPtr = reinterpret_cast<ScModule**>(GetAppData(SHL_CALC));
-    if ( *ppShlPtr )
+    if ( SfxApplication::GetModule(SfxToolsModule::Calc) )    // Module already active
         return;
 
     ScDocumentPool::InitVersionMaps(); // Is needed in the ScModule ctor
 
-    ScModule* pMod = new ScModule( &ScDocShell::Factory() );
-    (*ppShlPtr) = pMod;
+    auto pUniqueModule = o3tl::make_unique<ScModule>(&ScDocShell::Factory());
+    ScModule* pMod = pUniqueModule.get();
+    SfxApplication::SetModule(SfxToolsModule::Calc, std::move(pUniqueModule));
 
     ScDocShell::Factory().SetDocumentServiceName( "com.sun.star.sheet.SpreadsheetDocument" );
 
@@ -160,12 +164,9 @@ void ScDLL::Init()
     SvxColorToolBoxControl          ::RegisterControl(SID_ATTR_FILL_COLOR,      pMod);
     SvxLineEndToolBoxControl        ::RegisterControl(SID_ATTR_LINEEND_STYLE,   pMod);
     SvxStyleToolBoxControl          ::RegisterControl(SID_STYLE_APPLY,          pMod);
-    SvxFontNameToolBoxControl       ::RegisterControl(SID_ATTR_CHAR_FONT,       pMod);
     SvxColorToolBoxControl          ::RegisterControl(SID_ATTR_CHAR_COLOR,      pMod);
     SvxColorToolBoxControl          ::RegisterControl(SID_BACKGROUND_COLOR,     pMod);
     SvxColorToolBoxControl          ::RegisterControl(SID_ATTR_CHAR_BACK_COLOR, pMod);
-    SvxFrameToolBoxControl          ::RegisterControl(SID_ATTR_BORDER,          pMod);
-    SvxFrameLineStyleToolBoxControl ::RegisterControl(SID_FRAME_LINESTYLE,      pMod);
     SvxColorToolBoxControl          ::RegisterControl(SID_FRAME_LINECOLOR,      pMod);
     SvxClipBoardControl             ::RegisterControl(SID_PASTE,                pMod );
     SvxUndoRedoControl              ::RegisterControl(SID_UNDO,                 pMod );
@@ -174,6 +175,7 @@ void ScDLL::Init()
     svx::TextCharacterSpacingPopup  ::RegisterControl(SID_ATTR_CHAR_KERNING,    pMod );
     svx::TextUnderlinePopup         ::RegisterControl(SID_ATTR_CHAR_UNDERLINE,  pMod );
     svx::FormatPaintBrushToolBoxControl::RegisterControl(SID_FORMATPAINTBRUSH,  pMod );
+    sc::ScNumberFormatControl       ::RegisterControl(SID_NUMBER_TYPE_FORMAT,   pMod );
 
     SvxGrafModeToolBoxControl       ::RegisterControl(SID_ATTR_GRAF_MODE,       pMod);
     SvxGrafRedToolBoxControl        ::RegisterControl(SID_ATTR_GRAF_RED,        pMod);
@@ -190,6 +192,8 @@ void ScDLL::Init()
     SvxVertTextTbxCtrl::RegisterControl(SID_TEXTDIRECTION_TOP_TO_BOTTOM,    pMod);
     SvxCTLTextTbxCtrl::RegisterControl(SID_ATTR_PARA_LEFT_TO_RIGHT, pMod);
     SvxCTLTextTbxCtrl::RegisterControl(SID_ATTR_PARA_RIGHT_TO_LEFT, pMod);
+
+    EmojiPopup::RegisterControl(SID_EMOJI_CONTROL, pMod );
 
     // Media Controller
     ::avmedia::MediaToolBoxControl::RegisterControl( SID_AVMEDIA_TOOLBOX, pMod );

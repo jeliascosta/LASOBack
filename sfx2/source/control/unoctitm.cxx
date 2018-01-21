@@ -26,6 +26,7 @@
 #include <svl/itemset.hxx>
 #include <svl/visitem.hxx>
 #include <svtools/javacontext.hxx>
+#include <svtools/javainteractionhandler.hxx>
 #include <svl/itempool.hxx>
 #include <tools/urlobj.hxx>
 #include <com/sun/star/awt/FontDescriptor.hpp>
@@ -65,6 +66,7 @@
 #include "statcach.hxx"
 #include <sfx2/msgpool.hxx>
 #include <sfx2/objsh.hxx>
+#include <sfx2/viewsh.hxx>
 #include <osl/file.hxx>
 #include <rtl/ustring.hxx>
 #include <unotools/pathoptions.hxx>
@@ -73,6 +75,8 @@
 #include <iostream>
 #include <map>
 #include <memory>
+
+#include <o3tl/make_unique.hxx>
 
 #include <sal/log.hxx>
 #include <LibreOfficeKit/LibreOfficeKitEnums.h>
@@ -107,6 +111,7 @@ const char* URLTypeNames[URLType_COUNT] =
     "double"
 };
 
+static void InterceptLOKStateChangeEvent(const SfxViewFrame* pViewFrame, const css::frame::FeatureStateEvent& aEvent);
 
 void SfxStatusDispatcher::ReleaseAll()
 {
@@ -161,24 +166,24 @@ sal_Int64 SAL_CALL SfxOfficeDispatch::getSomething( const css::uno::Sequence< sa
 }
 
 SfxOfficeDispatch::SfxOfficeDispatch( SfxBindings& rBindings, SfxDispatcher* pDispat, const SfxSlot* pSlot, const css::util::URL& rURL )
+    : pImpl( new SfxDispatchController_Impl( this, &rBindings, pDispat, pSlot, rURL ))
 {
-    // this object is an adapter that shows a css::frame::XDispatch-Interface to the outside and uses a SfxControllerItem to monitor a state
-    pControllerItem = new SfxDispatchController_Impl( this, &rBindings, pDispat, pSlot, rURL );
+    // pImpl is an adapter that shows a css::frame::XDispatch-Interface to the outside and uses a SfxControllerItem to monitor a state
+
 }
 
 SfxOfficeDispatch::SfxOfficeDispatch( SfxDispatcher* pDispat, const SfxSlot* pSlot, const css::util::URL& rURL )
+    : pImpl( new SfxDispatchController_Impl( this, nullptr, pDispat, pSlot, rURL ))
 {
-    // this object is an adapter that shows a css::frame::XDispatch-Interface to the outside and uses a SfxControllerItem to monitor a state
-    pControllerItem = new SfxDispatchController_Impl( this, nullptr, pDispat, pSlot, rURL );
+    // pImpl is an adapter that shows a css::frame::XDispatch-Interface to the outside and uses a SfxControllerItem to monitor a state
 }
 
 SfxOfficeDispatch::~SfxOfficeDispatch()
 {
-    if ( pControllerItem )
+    if ( pImpl )
     {
         // when dispatch object is released, destroy its connection to this object and destroy it
-        pControllerItem->UnBindController();
-        delete pControllerItem;
+        pImpl->UnBindController();
     }
 }
 
@@ -190,23 +195,39 @@ const css::uno::Sequence< sal_Int8 >& SfxOfficeDispatch::impl_getStaticIdentifie
     return seqID ;
 }
 
+#if HAVE_FEATURE_JAVA
+// The JavaContext contains an interaction handler which is used when
+// the creation of a Java Virtual Machine fails. There shall only be one
+// user notification (message box) even if the same error (interaction)
+// reoccurs. The effect is, that if a user selects a menu entry than they
+// may get only one notification that a JRE is not selected.
+// This function checks if a JavaContext is already available (typically
+// created by Desktop::Main() in app.cxx), and creates new one if not.
+namespace {
+std::unique_ptr< css::uno::ContextLayer > EnsureJavaContext()
+{
+    css::uno::Reference< css::uno::XCurrentContext > xContext(css::uno::getCurrentContext());
+    if (xContext.is())
+    {
+        css::uno::Reference< css::task::XInteractionHandler > xHandler;
+        xContext->getValueByName(JAVA_INTERACTION_HANDLER_NAME) >>= xHandler;
+        if (xHandler.is())
+            return nullptr; // No need to add new layer: JavaContext already present
+    }
+    return o3tl::make_unique< css::uno::ContextLayer >(new svt::JavaContext(xContext));
+}
+}
+#endif
 
 void SAL_CALL SfxOfficeDispatch::dispatch( const css::util::URL& aURL, const css::uno::Sequence< css::beans::PropertyValue >& aArgs ) throw ( css::uno::RuntimeException, std::exception )
 {
     // ControllerItem is the Impl class
-    if ( pControllerItem )
+    if ( pImpl )
     {
 #if HAVE_FEATURE_JAVA
-        // The JavaContext contains an interaction handler which is used when
-        // the creation of a Java Virtual Machine fails. The second parameter
-        // indicates, that there shall only be one user notification (message box)
-        // even if the same error (interaction) reoccurs. The effect is, that if a
-        // user selects a menu entry than they may get only one notification that
-        // a JRE is not selected.
-        css::uno::ContextLayer layer(
-            new svt::JavaContext( css::uno::getCurrentContext() ) );
+        std::unique_ptr< css::uno::ContextLayer > layer(EnsureJavaContext());
 #endif
-        pControllerItem->dispatch( aURL, aArgs, css::uno::Reference < css::frame::XDispatchResultListener >() );
+        pImpl->dispatch( aURL, aArgs, css::uno::Reference < css::frame::XDispatchResultListener >() );
     }
 }
 
@@ -215,41 +236,40 @@ void SAL_CALL SfxOfficeDispatch::dispatchWithNotification( const css::util::URL&
         const css::uno::Reference< css::frame::XDispatchResultListener >& rListener ) throw( css::uno::RuntimeException, std::exception )
 {
     // ControllerItem is the Impl class
-    if ( pControllerItem )
+    if ( pImpl )
     {
 #if HAVE_FEATURE_JAVA
-        // see comment for SfxOfficeDispatch::dispatch
-        css::uno::ContextLayer layer( new svt::JavaContext( css::uno::getCurrentContext() ) );
+        std::unique_ptr< css::uno::ContextLayer > layer(EnsureJavaContext());
 #endif
-        pControllerItem->dispatch( aURL, aArgs, rListener );
+        pImpl->dispatch( aURL, aArgs, rListener );
     }
 }
 
 void SAL_CALL SfxOfficeDispatch::addStatusListener(const css::uno::Reference< css::frame::XStatusListener > & aListener, const css::util::URL& aURL) throw ( css::uno::RuntimeException, std::exception )
 {
     GetListeners().addInterface( aURL.Complete, aListener );
-    if ( pControllerItem )
+    if ( pImpl )
     {
         // ControllerItem is the Impl class
-        pControllerItem->addStatusListener( aListener, aURL );
+        pImpl->addStatusListener( aListener, aURL );
     }
 }
 
 SfxDispatcher* SfxOfficeDispatch::GetDispatcher_Impl()
 {
-    return pControllerItem->GetDispatcher();
+    return pImpl->GetDispatcher();
 }
 
 void SfxOfficeDispatch::SetFrame(const css::uno::Reference< css::frame::XFrame >& xFrame)
 {
-    if ( pControllerItem )
-        pControllerItem->SetFrame( xFrame );
+    if ( pImpl )
+        pImpl->SetFrame( xFrame );
 }
 
 void SfxOfficeDispatch::SetMasterUnoCommand( bool bSet )
 {
-    if ( pControllerItem )
-        pControllerItem->setMasterSlaveCommand( bSet );
+    if ( pImpl )
+        pImpl->setMasterSlaveCommand( bSet );
 }
 
 // Determine if URL contains a master/slave command which must be handled a little bit different
@@ -315,7 +335,7 @@ SfxDispatchController_Impl::~SfxDispatchController_Impl()
     if ( pDispatch )
     {
         // disconnect
-        pDispatch->pControllerItem = nullptr;
+        pDispatch->pImpl = nullptr;
 
         // force all listeners to release the dispatch object
         css::lang::EventObject aObject;
@@ -397,7 +417,7 @@ void SfxDispatchController_Impl::addParametersToArgs( const css::util::URL& aURL
             else if ( aParamType.equalsAsciiL( URLTypeNames[URLType_SHORT], 5 ))
             {
                 // SHORT support
-                rArgs[nLen].Value <<= sal_Int8( aValue.toInt32() );
+                rArgs[nLen].Value <<= sal_Int16( aValue.toInt32() );
             }
             else if ( aParamType.equalsAsciiL( URLTypeNames[URLType_HYPER], 5 ))
             {
@@ -424,7 +444,7 @@ void SfxDispatchController_Impl::addParametersToArgs( const css::util::URL& aURL
     }
 }
 
-SfxMapUnit SfxDispatchController_Impl::GetCoreMetric( SfxItemPool& rPool, sal_uInt16 nSlotId )
+MapUnit SfxDispatchController_Impl::GetCoreMetric( SfxItemPool& rPool, sal_uInt16 nSlotId )
 {
     sal_uInt16 nWhich = rPool.GetWhich( nSlotId );
     return rPool.GetMetric( nWhich );
@@ -671,7 +691,7 @@ void SAL_CALL SfxDispatchController_Impl::dispatch( const css::util::URL& aURL,
 
         bool bSuccess = false;
         const SfxPoolItem* pItem = nullptr;
-        SfxMapUnit eMapUnit( SFX_MAPUNIT_100TH_MM );
+        MapUnit eMapUnit( MapUnit::Map100thMM );
 
         // Extra scope so that aInternalSet is destroyed before
         // rListener->dispatchFinished potentially calls
@@ -710,7 +730,14 @@ void SAL_CALL SfxDispatchController_Impl::dispatch( const css::util::URL& aURL,
                         {
                             // execute with arguments - call directly
                             pItem = pDispatcher->Execute(GetId(), nCall, xSet.get(), &aInternalSet, nModifier);
-                            bSuccess = (pItem != nullptr);
+                            if ( pItem != nullptr )
+                            {
+                                if ( dynamic_cast< const SfxBoolItem *>( pItem ) !=  nullptr )
+                                    bSuccess = dynamic_cast< const SfxBoolItem *>( pItem )->GetValue();
+                                else if ( dynamic_cast< const SfxVoidItem *>( pItem ) ==  nullptr )
+                                    bSuccess = true;  // all other types are true
+                            }
+                            // else bSuccess = false look to line 664 it is false
                         }
                         else
                         {
@@ -774,7 +801,7 @@ void SAL_CALL SfxDispatchController_Impl::dispatch( const css::util::URL& aURL,
             if ( bSuccess && pItem && dynamic_cast< const SfxVoidItem *>( pItem ) ==  nullptr )
             {
                 sal_uInt16 nSubId( 0 );
-                if ( eMapUnit == SFX_MAPUNIT_TWIP )
+                if ( eMapUnit == MapUnit::MapTwip )
                     nSubId |= CONVERT_TWIPS;
                 pItem->QueryValue( aEvent.Result, (sal_uInt8)nSubId );
             }
@@ -891,7 +918,7 @@ void SfxDispatchController_Impl::StateChanged( sal_uInt16 nSID, SfxItemState eSt
         {
             // Retrieve metric from pool to have correct sub ID when calling QueryValue
             sal_uInt16     nSubId( 0 );
-            SfxMapUnit eMapUnit( SFX_MAPUNIT_100TH_MM );
+            MapUnit eMapUnit( MapUnit::Map100thMM );
 
             // retrieve the core metric
             // it's enough to check the objectshell, the only shell that does not use the pool of the document
@@ -905,7 +932,7 @@ void SfxDispatchController_Impl::StateChanged( sal_uInt16 nSID, SfxItemState eSt
                     eMapUnit = GetCoreMetric( pShell->GetPool(), nSID );
             }
 
-            if ( eMapUnit == SFX_MAPUNIT_TWIP )
+            if ( eMapUnit == MapUnit::MapTwip )
                 nSubId |= CONVERT_TWIPS;
 
             pState->QueryValue( aState, (sal_uInt8)nSubId );
@@ -927,8 +954,7 @@ void SfxDispatchController_Impl::StateChanged( sal_uInt16 nSID, SfxItemState eSt
 
         if (pDispatcher && pDispatcher->GetFrame())
         {
-            InterceptLOKStateChangeEvent(
-                    pDispatcher->GetFrame()->GetObjectShell(), aEvent);
+            InterceptLOKStateChangeEvent(pDispatcher->GetFrame(), aEvent);
         }
 
         Sequence< OUString > seqNames = pDispatch->GetListeners().getContainedTypes();
@@ -946,14 +972,14 @@ void SfxDispatchController_Impl::StateChanged( sal_uInt16 nSID, SfxItemState eSt
     StateChanged( nSID, eState, pState, nullptr );
 }
 
-void SfxDispatchController_Impl::InterceptLOKStateChangeEvent(const SfxObjectShell* objSh, const css::frame::FeatureStateEvent& aEvent)
+static void InterceptLOKStateChangeEvent(const SfxViewFrame* pViewFrame, const css::frame::FeatureStateEvent& aEvent)
 {
     if (!comphelper::LibreOfficeKit::isActive())
         return;
 
     OUStringBuffer aBuffer;
     aBuffer.append(aEvent.FeatureURL.Complete);
-    aBuffer.append("=");
+    aBuffer.append(static_cast<sal_Unicode>('='));
 
     if (aEvent.FeatureURL.Path == "Bold" ||
         aEvent.FeatureURL.Path == "CenterPara" ||
@@ -970,7 +996,9 @@ void SfxDispatchController_Impl::InterceptLOKStateChangeEvent(const SfxObjectShe
         aEvent.FeatureURL.Path == "SuperScript" ||
         aEvent.FeatureURL.Path == "Strikeout" ||
         aEvent.FeatureURL.Path == "Underline" ||
-        aEvent.FeatureURL.Path == "ModifiedStatus")
+        aEvent.FeatureURL.Path == "ModifiedStatus" ||
+        aEvent.FeatureURL.Path == "TrackChanges" ||
+        aEvent.FeatureURL.Path == "AcceptTrackedChange")
     {
         bool bTemp = false;
         aEvent.State >>= bTemp;
@@ -1028,16 +1056,83 @@ void SfxDispatchController_Impl::InterceptLOKStateChangeEvent(const SfxObjectShe
     }
     else if (aEvent.FeatureURL.Path == "InsertPage" ||
              aEvent.FeatureURL.Path == "DeletePage" ||
-             aEvent.FeatureURL.Path == "DuplicatePage")
+             aEvent.FeatureURL.Path == "DuplicatePage" ||
+             aEvent.FeatureURL.Path == "SortAscending" ||
+             aEvent.FeatureURL.Path == "SortDescending")
     {
         aBuffer.append(OUString::boolean(aEvent.IsEnabled));
+    }
+    else if (aEvent.FeatureURL.Path == "AssignLayout" ||
+             aEvent.FeatureURL.Path == "StatusSelectionMode" ||
+             aEvent.FeatureURL.Path == "Signature" ||
+             aEvent.FeatureURL.Path == "SelectionMode" ||
+             aEvent.FeatureURL.Path == "StatusBarFunc")
+    {
+        sal_Int32 aInt32;
+
+        if (aEvent.IsEnabled && (aEvent.State >>= aInt32))
+        {
+            aBuffer.append(OUString::number(aInt32));
+        }
+    }
+    else if (aEvent.FeatureURL.Path == "StatusDocPos" ||
+             aEvent.FeatureURL.Path == "RowColSelCount" ||
+             aEvent.FeatureURL.Path == "StatusPageStyle" ||
+             aEvent.FeatureURL.Path == "StateTableCell" ||
+             aEvent.FeatureURL.Path == "StatePageNumber" ||
+             aEvent.FeatureURL.Path == "StateWordCount" ||
+             aEvent.FeatureURL.Path == "PageStyleName" ||
+             aEvent.FeatureURL.Path == "PageStatus" ||
+             aEvent.FeatureURL.Path == "LayoutStatus" ||
+             aEvent.FeatureURL.Path == "Context")
+    {
+        OUString aString;
+
+        if (aEvent.IsEnabled && (aEvent.State >>= aString))
+        {
+            aBuffer.append(aString);
+        }
+    }
+    else if (aEvent.FeatureURL.Path == "InsertMode" ||
+             aEvent.FeatureURL.Path == "WrapText" ||
+             aEvent.FeatureURL.Path == "ToggleMergeCells" ||
+             aEvent.FeatureURL.Path == "NumberFormatCurrency" ||
+             aEvent.FeatureURL.Path == "NumberFormatPercent" ||
+             aEvent.FeatureURL.Path == "NumberFormatDate")
+    {
+        sal_Bool aBool;
+
+        if (aEvent.IsEnabled && (aEvent.State >>= aBool))
+        {
+            aBuffer.append(OUString::boolean(aBool));
+        }
+    }
+    else if (aEvent.FeatureURL.Path == "Position")
+    {
+        css::awt::Point aPoint;
+
+        if (aEvent.IsEnabled && (aEvent.State >>= aPoint))
+        {
+            aBuffer.append(OUString::number(aPoint.X) + " / " + OUString::number(aPoint.Y));
+        }
+    }
+    else if (aEvent.FeatureURL.Path == "Size")
+    {
+        css::awt::Size aSize;
+
+        if (aEvent.IsEnabled && (aEvent.State >>= aSize))
+        {
+            aBuffer.append(OUString::number(aSize.Width) + " x " + OUString::number(aSize.Height));
+        }
     }
     else
     {
         return;
     }
+
     OUString payload = aBuffer.makeStringAndClear();
-    objSh->libreOfficeKitCallback(LOK_CALLBACK_STATE_CHANGED, payload.toUtf8().getStr());
+    if (const SfxViewShell* pViewShell = pViewFrame->GetViewShell())
+        pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_STATE_CHANGED, payload.toUtf8().getStr());
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

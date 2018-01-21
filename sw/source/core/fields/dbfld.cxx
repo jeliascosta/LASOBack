@@ -18,6 +18,7 @@
  */
 
 #include <float.h>
+#include <o3tl/any.hxx>
 #include <sfx2/app.hxx>
 #include <svl/zforlist.hxx>
 #include <svx/pageitem.hxx>
@@ -46,7 +47,7 @@ using namespace ::com::sun::star;
 /// replace database separator by dots for display
 static OUString lcl_DBTrennConv(const OUString& aContent)
 {
-    return aContent.replaceAll(OUString(DB_DELIM), ".");
+    return aContent.replaceAll(OUStringLiteral1(DB_DELIM), ".");
 }
 
 // database field type
@@ -61,9 +62,9 @@ SwDBFieldType::SwDBFieldType(SwDoc* pDocPtr, const OUString& rNam, const SwDBDat
     if(!aDBData.sDataSource.isEmpty() || !aDBData.sCommand.isEmpty())
     {
         sName = aDBData.sDataSource
-            + OUString(DB_DELIM)
+            + OUStringLiteral1(DB_DELIM)
             + aDBData.sCommand
-            + OUString(DB_DELIM)
+            + OUStringLiteral1(DB_DELIM)
             + sName;
     }
 }
@@ -116,7 +117,7 @@ bool SwDBFieldType::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         rAny <<= aDBData.nCommandType;
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -159,7 +160,7 @@ bool SwDBFieldType::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         rAny >>= aDBData.nCommandType;
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -236,9 +237,9 @@ OUString SwDBField::GetFieldName() const
 
     if (sContent.getLength() > 1)
     {
-        sContent += OUString(DB_DELIM)
+        sContent += OUStringLiteral1(DB_DELIM)
             + rDBName.getToken(1, DB_DELIM)
-            + OUString(DB_DELIM)
+            + OUStringLiteral1(DB_DELIM)
             + rDBName.getToken(2, DB_DELIM);
     }
     return lcl_DBTrennConv(sContent);
@@ -391,7 +392,7 @@ bool SwDBField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
     switch( nWhichId )
     {
     case FIELD_PROP_BOOL1:
-        if( *static_cast<sal_Bool const *>(rAny.getValue()) )
+        if( *o3tl::doAccess<bool>(rAny) )
             SetSubType(GetSubType()&~nsSwExtendedSubType::SUB_OWN_FMT);
         else
             SetSubType(GetSubType()|nsSwExtendedSubType::SUB_OWN_FMT);
@@ -476,7 +477,7 @@ OUString SwDBNameInfField::GetFieldName() const
     {
         sStr += ":"
             + aDBData.sDataSource
-            + OUString(DB_DELIM)
+            + OUStringLiteral1(DB_DELIM)
             + aDBData.sCommand;
     }
     return lcl_DBTrennConv(sStr);
@@ -499,7 +500,7 @@ bool SwDBNameInfField::QueryValue( uno::Any& rAny, sal_uInt16 nWhichId ) const
         rAny <<= 0 == (GetSubType() & nsSwExtendedSubType::SUB_INVISIBLE);
         break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -531,7 +532,7 @@ bool SwDBNameInfField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
     }
     break;
     default:
-        OSL_FAIL("illegal property");
+        assert(false);
     }
     return true;
 }
@@ -866,7 +867,7 @@ bool SwDBSetNumberField::PutValue( const uno::Any& rAny, sal_uInt16 nWhichId )
         {
             sal_Int16 nSet = 0;
             rAny >>= nSet;
-            if(nSet < (sal_Int16) SVX_NUMBER_NONE )
+            if(nSet < css::style::NumberingType::NUMBER_NONE )
                 SetFormat(nSet);
             else {
             }

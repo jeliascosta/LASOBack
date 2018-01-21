@@ -75,13 +75,13 @@ SwParaSelection::SwParaSelection(SwCursor & rCursor)
     // is it at the start?
     if (m_rCursor.GetPoint()->nContent != 0)
     {
-        m_rCursor.MovePara(fnParaCurr, fnParaStart);
+        m_rCursor.MovePara(GoCurrPara, fnParaStart);
     }
     // or at the end already?
     if (m_rCursor.GetPoint()->nContent != m_rCursor.GetContentNode()->Len())
     {
         m_rCursor.SetMark();
-        m_rCursor.MovePara(fnParaCurr, fnParaEnd);
+        m_rCursor.MovePara(GoCurrPara, fnParaEnd);
     }
 }
 
@@ -90,7 +90,7 @@ SwParaSelection::~SwParaSelection()
     if (m_rCursor.GetPoint()->nContent != 0)
     {
         m_rCursor.DeleteMark();
-        m_rCursor.MovePara(fnParaCurr, fnParaStart);
+        m_rCursor.MovePara(GoCurrPara, fnParaStart);
     }
 }
 
@@ -528,9 +528,9 @@ throw(uno::RuntimeException)
 
             if(bDoIt)
             {
-                const SfxMapUnit eMapUnit(rSet.GetPool()->GetMetric(rEntry.nWID));
+                const MapUnit eMapUnit(rSet.GetPool()->GetMetric(rEntry.nWID));
 
-                if(eMapUnit != SFX_MAPUNIT_100TH_MM)
+                if(eMapUnit != MapUnit::Map100thMM)
                 {
                     SvxUnoConvertToMM(eMapUnit, rAny);
                 }
@@ -894,7 +894,7 @@ bool ::sw::GetDefaultTextContentValue(
         {   uno::Sequence<text::TextContentAnchorType> aTypes(1);
             text::TextContentAnchorType* pArray = aTypes.getArray();
             pArray[0] = text::TextContentAnchorType_AT_PARAGRAPH;
-            rAny.setValue(&aTypes, cppu::UnoType<uno::Sequence<text::TextContentAnchorType>>::get());
+            rAny <<= aTypes;
         }
         break;
         default:
@@ -1180,7 +1180,7 @@ throw (beans::UnknownPropertyException, uno::RuntimeException, std::exception)
             auto pTemp( aCursor.GetDoc()->CreateUnoCursor(aStart) );
             if(!SwUnoCursorHelper::IsStartOfPara(*pTemp))
             {
-                pTemp->MovePara(fnParaCurr, fnParaStart);
+                pTemp->MovePara(GoCurrPara, fnParaStart);
             }
 
             pTemp->SetMark();
@@ -1190,7 +1190,7 @@ throw (beans::UnknownPropertyException, uno::RuntimeException, std::exception)
 
             if (!SwUnoCursorHelper::IsEndOfPara(*pTemp))
             {
-                pTemp->MovePara(fnParaCurr, fnParaEnd);
+                pTemp->MovePara(GoCurrPara, fnParaEnd);
             }
 
 
@@ -1399,11 +1399,11 @@ throw (uno::RuntimeException, std::exception)
         SwPosition aPos( *pTextNode );
         SwCursor aCursor( aPos, nullptr );
         if (!SwUnoCursorHelper::IsStartOfPara(aCursor)) {
-            aCursor.MovePara(fnParaCurr, fnParaStart);
+            aCursor.MovePara(GoCurrPara, fnParaStart);
         }
         SwUnoCursorHelper::SelectPam(aCursor, true);
         if (pTextNode->GetText().getLength()) {
-            aCursor.MovePara(fnParaCurr, fnParaEnd);
+            aCursor.MovePara(GoCurrPara, fnParaEnd);
         }
         SwUnoCursorHelper::SetString(aCursor, aString);
         SwUnoCursorHelper::SelectPam(aCursor, false);

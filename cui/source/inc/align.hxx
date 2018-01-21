@@ -57,7 +57,7 @@ class AlignmentTabPage : public SfxTabPage
     static const sal_uInt16 s_pRanges[];
 
 public:
-    virtual             ~AlignmentTabPage();
+    virtual             ~AlignmentTabPage() override;
     virtual void        dispose() override;
 
     static VclPtr<SfxTabPage> Create( vcl::Window* pParent, const SfxItemSet* rAttrSet );
@@ -65,7 +65,7 @@ public:
 
     virtual bool        FillItemSet( SfxItemSet* rSet ) override;
     virtual void        Reset( const SfxItemSet* rSet ) override;
-    virtual sfxpg       DeactivatePage( SfxItemSet* pSet ) override;
+    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
     virtual void        DataChanged( const DataChangedEvent& rDCEvt ) override;
 
 private:
@@ -76,8 +76,8 @@ private:
 
     bool                HasAlignmentChanged( const SfxItemSet& rNew, sal_uInt16 nWhich ) const;
 
-    DECL_LINK_TYPED( UpdateEnableHdl, ListBox&, void );
-    DECL_LINK_TYPED( UpdateEnableClickHdl, Button*, void );
+    DECL_LINK( UpdateEnableHdl, ListBox&, void );
+    DECL_LINK( UpdateEnableClickHdl, Button*, void );
 
 private:
     VclPtr<ListBox>             m_pLbHorAlign;

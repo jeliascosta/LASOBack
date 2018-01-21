@@ -23,6 +23,7 @@
 #include "layfrm.hxx"
 #include <list>
 #include "frmfmt.hxx"
+#include <anchoredobject.hxx>
 
 class SwPageFrame;
 class SwFormatFrameSize;
@@ -34,8 +35,8 @@ class SwAttrSetChg;
 namespace tools { class PolyPolygon; }
 class SwFlyDrawContact;
 class SwFormat;
+class SwViewShell;
 
-#include <anchoredobject.hxx>
 
 /** search an anchor for paragraph bound frames starting from pOldAnch
 
@@ -111,11 +112,6 @@ protected:
     bool m_bLayout :1;       ///< FLY_AT_PAGE, FLY_AT_FLY, at page or at frame
     bool m_bAutoPosition :1; ///< FLY_AT_CHAR, anchored at character
 
-    bool m_bNoShrink :1;     ///< temporary forbid shrinking to avoid loops
-    // If true, the content of the fly frame will not be deleted when it
-    // is moved to an invisible layer.
-    bool m_bLockDeleteContent :1;
-
     friend class SwNoTextFrame; // is allowed to call NotifyBackground
 
     Point m_aContentPos;        // content area's position relatively to Frame
@@ -129,12 +125,11 @@ protected:
     void Unlock()       { m_bLocked = false; }
 
     Size CalcRel( const SwFormatFrameSize &rSz ) const;
-    SwTwips CalcAutoWidth() const;
 
     SwFlyFrame( SwFlyFrameFormat*, SwFrame*, SwFrame *pAnchor );
 
     virtual void DestroyImpl() override;
-    virtual ~SwFlyFrame();
+    virtual ~SwFlyFrame() override;
 
     /** method to assure that anchored object is registered at the correct
         page frame
@@ -203,8 +198,6 @@ public:
     bool IsNotifyBack() const { return m_bNotifyBack; }
     void SetNotifyBack()      { m_bNotifyBack = true; }
     void ResetNotifyBack()    { m_bNotifyBack = false; }
-    bool IsNoShrink()   const { return m_bNoShrink; }
-    bool IsLockDeleteContent()  const { return m_bLockDeleteContent; }
 
     bool IsClipped()        const   { return m_bHeightClipped || m_bWidthClipped; }
     bool IsHeightClipped()  const   { return m_bHeightClipped; }

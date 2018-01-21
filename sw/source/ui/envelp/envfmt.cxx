@@ -218,11 +218,11 @@ void SwEnvFormatPage::dispose()
 }
 
 
-IMPL_LINK_TYPED( SwEnvFormatPage, LoseFocusHdl, Control&, rControl, void )
+IMPL_LINK( SwEnvFormatPage, LoseFocusHdl, Control&, rControl, void )
 {
     ModifyHdl(static_cast<SpinField&>(rControl));
 }
-IMPL_LINK_TYPED( SwEnvFormatPage, ModifyHdl, SpinField&, rEdit, void )
+IMPL_LINK( SwEnvFormatPage, ModifyHdl, SpinField&, rEdit, void )
 {
     long lWVal = static_cast< long >(GetFieldVal(*m_pSizeWidthField ));
     long lHVal = static_cast< long >(GetFieldVal(*m_pSizeHeightField));
@@ -235,7 +235,7 @@ IMPL_LINK_TYPED( SwEnvFormatPage, ModifyHdl, SpinField&, rEdit, void )
         long nRotatedWidth = lHeight;
         long nRotatedHeight = lWidth;
         Paper ePaper = SvxPaperInfo::GetSvxPaper(
-            Size(nRotatedWidth, nRotatedHeight), MAP_TWIP, true);
+            Size(nRotatedWidth, nRotatedHeight), MapUnit::MapTwip, true);
         for (size_t i = 0; i < aIDs.size(); ++i)
             if (aIDs[i] == (sal_uInt16)ePaper)
                 m_pSizeFormatBox->SelectEntryPos(static_cast<sal_Int32>(i));
@@ -257,7 +257,7 @@ IMPL_LINK_TYPED( SwEnvFormatPage, ModifyHdl, SpinField&, rEdit, void )
     }
 }
 
-IMPL_LINK_TYPED( SwEnvFormatPage, EditHdl, MenuButton *, pButton, void )
+IMPL_LINK( SwEnvFormatPage, EditHdl, MenuButton *, pButton, void )
 {
     SwWrtShell* pSh = GetParentSwEnvDlg()->pSh;
     OSL_ENSURE(pSh, "Shell missing");
@@ -283,7 +283,7 @@ IMPL_LINK_TYPED( SwEnvFormatPage, EditHdl, MenuButton *, pButton, void )
         OSL_ENSURE(pFact, "SwAbstractDialogFactory fail!");
 
         const OUString sFormatStr = pColl->GetName();
-        std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateSwCharDlg(GetParentSwEnvDlg(), pSh->GetView(), aTmpSet, SwCharDlgMode::Env, &sFormatStr));
+        ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateSwCharDlg(GetParentSwEnvDlg(), pSh->GetView(), aTmpSet, SwCharDlgMode::Env, &sFormatStr));
         OSL_ENSURE(pDlg, "Dialog creation failed!");
         if (pDlg->Execute() == RET_OK)
         {
@@ -334,7 +334,7 @@ IMPL_LINK_TYPED( SwEnvFormatPage, EditHdl, MenuButton *, pButton, void )
                 false, &pItem ) &&
                 nDefDist != (nNewDist = static_cast<const SfxUInt16Item*>(pItem)->GetValue()) )
             {
-                SvxTabStopItem aDefTabs( 0, 0, SVX_TAB_ADJUST_DEFAULT, RES_PARATR_TABSTOP );
+                SvxTabStopItem aDefTabs( 0, 0, SvxTabAdjust::Default, RES_PARATR_TABSTOP );
                 MakeDefTabs( nNewDist, aDefTabs );
                 pSh->SetDefault( aDefTabs );
                 pOutputSet->ClearItem( SID_ATTR_TABSTOP_DEFAULTS );
@@ -383,7 +383,7 @@ SfxItemSet *SwEnvFormatPage::GetCollItemSet(SwTextFormatColl* pColl, bool bSende
     return pAddrSet;
 }
 
-IMPL_LINK_NOARG_TYPED(SwEnvFormatPage, FormatHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwEnvFormatPage, FormatHdl, ListBox&, void)
 {
     long lWidth;
     long lHeight;
@@ -473,11 +473,11 @@ void SwEnvFormatPage::ActivatePage(const SfxItemSet& rSet)
     Reset(&aSet);
 }
 
-SfxTabPage::sfxpg SwEnvFormatPage::DeactivatePage(SfxItemSet* _pSet)
+DeactivateRC SwEnvFormatPage::DeactivatePage(SfxItemSet* _pSet)
 {
     if( _pSet )
         FillItemSet(_pSet);
-    return SfxTabPage::LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 void SwEnvFormatPage::FillItem(SwEnvItem& rItem)
@@ -517,7 +517,7 @@ void SwEnvFormatPage::Reset(const SfxItemSet* rSet)
 
     Paper ePaper = SvxPaperInfo::GetSvxPaper(
         Size( std::min(rItem.lWidth, rItem.lHeight),
-        std::max(rItem.lWidth, rItem.lHeight)), MAP_TWIP, true);
+        std::max(rItem.lWidth, rItem.lHeight)), MapUnit::MapTwip, true);
     for (size_t i = 0; i < aIDs.size(); ++i)
         if (aIDs[i] == (sal_uInt16)ePaper)
             m_pSizeFormatBox->SelectEntryPos(static_cast<sal_Int32>(i));

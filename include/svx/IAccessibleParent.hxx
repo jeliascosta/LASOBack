@@ -71,7 +71,7 @@ public:
            occurs that does not result in an exception then <FALSE/> is
            returned.
 
-        @raises RuntimeException
+        @throws RuntimeException
            in case something went heavily wrong
     */
     virtual bool ReplaceChild (
@@ -79,7 +79,7 @@ public:
         const css::uno::Reference< css::drawing::XShape >& _rxShape,
         const long _nIndex,
         const AccessibleShapeTreeInfo& _rShapeTreeInfo
-    )   throw (css::uno::RuntimeException) = 0;
+    )   throw (css::uno::RuntimeException, std::exception) = 0;
     //Add this method to support Form Controls
     virtual AccessibleControlShape* GetAccControlShapeFromModel
         (css::beans::XPropertySet*)

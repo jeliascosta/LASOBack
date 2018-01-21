@@ -440,37 +440,57 @@ public:
     {
         B2DHomMatrix mat;
         mat.rotate(90*F_PI180);
-        CPPUNIT_ASSERT_MESSAGE("rotate pi/2 yields exact matrix",
-                               mat.get(0,0) == 0.0 &&
-                               mat.get(0,1) == -1.0 &&
-                               mat.get(0,2) == 0.0 &&
-                               mat.get(1,0) == 1.0 &&
-                               mat.get(1,1) == 0.0 &&
-                               mat.get(1,2) == 0.0);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate pi/2 yields exact matrix", 0.0, mat.get(0,0), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate pi/2 yields exact matrix", -1.0, mat.get(0,1), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate pi/2 yields exact matrix", 0.0, mat.get(0,2), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate pi/2 yields exact matrix", 1.0, mat.get(1,0), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate pi/2 yields exact matrix", 0.0, mat.get(1,1), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate pi/2 yields exact matrix", 0.0, mat.get(1,2), 1E-12);
         mat.rotate(90*F_PI180);
-        CPPUNIT_ASSERT_MESSAGE("rotate pi yields exact matrix",
-                               mat.get(0,0) == -1.0 &&
-                               mat.get(0,1) == 0.0 &&
-                               mat.get(0,2) == 0.0 &&
-                               mat.get(1,0) == 0.0 &&
-                               mat.get(1,1) == -1.0 &&
-                               mat.get(1,2) == 0.0);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate pi yields exact matrix", -1.0, mat.get(0,0), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate pi yields exact matrix", 0.0, mat.get(0,1), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate pi yields exact matrix", 0.0, mat.get(0,2), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate pi yields exact matrix", 0.0, mat.get(1,0), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate pi yields exact matrix", -1.0, mat.get(1,1), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate pi yields exact matrix", 0.0, mat.get(1,2), 1E-12);
         mat.rotate(90*F_PI180);
-        CPPUNIT_ASSERT_MESSAGE("rotate 3/2 pi yields exact matrix",
-                               mat.get(0,0) == 0.0 &&
-                               mat.get(0,1) == 1.0 &&
-                               mat.get(0,2) == 0.0 &&
-                               mat.get(1,0) == -1.0 &&
-                               mat.get(1,1) == 0.0 &&
-                               mat.get(1,2) == 0.0);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate 3/2 pi yields exact matrix", 0.0, mat.get(0,0), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate 3/2 pi yields exact matrix", 1.0, mat.get(0,1), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate 3/2 pi yields exact matrix", 0.0, mat.get(0,2), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate 3/2 pi yields exact matrix", -1.0, mat.get(1,0), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate 3/2 pi yields exact matrix", 0.0, mat.get(1,1), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate 3/2 pi yields exact matrix", 0.0, mat.get(1,2), 1E-12);
         mat.rotate(90*F_PI180);
-        CPPUNIT_ASSERT_MESSAGE("rotate 2 pi yields exact matrix",
-                               mat.get(0,0) == 1.0 &&
-                               mat.get(0,1) == 0.0 &&
-                               mat.get(0,2) == 0.0 &&
-                               mat.get(1,0) == 0.0 &&
-                               mat.get(1,1) == 1.0 &&
-                               mat.get(1,2) == 0.0);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate 2 pi yields exact matrix", 1.0, mat.get(0,0), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate 2 pi yields exact matrix", 0.0, mat.get(0,1), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate 2 pi yields exact matrix", 0.0, mat.get(0,2), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate 2 pi yields exact matrix", 0.0, mat.get(1,0), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate 2 pi yields exact matrix", 1.0, mat.get(1,1), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(
+            "rotate 2 pi yields exact matrix", 0.0, mat.get(1,2), 1E-12);
     }
 
     void translate()
@@ -661,9 +681,10 @@ public:
         double fDRot;
         double fDShX;
         aTest.decompose(aDScale, aDTrans, fDRot, fDShX);
-        CPPUNIT_ASSERT_MESSAGE("decompose: error test J1", aDScale.getX() == 6425 && aDScale.getY() == 3938);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE("decompose: error test J1", 6425.0, aDScale.getX(), 1E-12);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE("decompose: error test J1", 3938.0, aDScale.getY(), 1E-12);
         CPPUNIT_ASSERT_MESSAGE("decompose: error test J1", aDTrans.getX() == 10482 && aDTrans.getY() == 4921);
-        CPPUNIT_ASSERT_MESSAGE("decompose: error test J1", fDRot == 180*F_PI180);
+        CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE("decompose: error test J1", 180*F_PI180, fDRot, 1E-12 );
     }
 
     // Change the following lines only, if you add, remove or rename
@@ -778,47 +799,52 @@ public:
             tools::createPolygonFromRect(
                 B2DRange(0,0,1,1) ) );
 
-        B2DPolygon aRect2;
-        aRect2.append( B2DPoint(0,0) );
-        aRect2.append( B2DPoint(1,0) );
-        aRect2.append( B2DPoint(1,.5));
-        aRect2.append( B2DPoint(1,1) );
-        aRect2.append( B2DPoint(0,1) );
+        B2DPolygon aRect2 {
+            {0, 0},
+            {1, 0},
+            {1, 0.5},
+            {1, 1},
+            {0, 1}
+        };
         aRect2.setClosed(true);
 
-        B2DPolygon aNonRect1;
-        aNonRect1.append( B2DPoint(0,0) );
-        aNonRect1.append( B2DPoint(1,0) );
-        aNonRect1.append( B2DPoint(1,1) );
-        aNonRect1.append( B2DPoint(0.5,1) );
-        aNonRect1.append( B2DPoint(0.5,0) );
+        B2DPolygon aNonRect1 {
+            {0, 0},
+            {1, 0},
+            {0.5, 1},
+            {0.5, 0}
+        };
         aNonRect1.setClosed(true);
 
-        B2DPolygon aNonRect2;
-        aNonRect2.append( B2DPoint(0,0) );
-        aNonRect2.append( B2DPoint(1,1) );
-        aNonRect2.append( B2DPoint(1,0) );
-        aNonRect2.append( B2DPoint(0,1) );
+        B2DPolygon aNonRect2 {
+            {0, 0},
+            {1, 1},
+            {1, 0},
+            {0, 1}
+        };
         aNonRect2.setClosed(true);
 
-        B2DPolygon aNonRect3;
-        aNonRect3.append( B2DPoint(0,0) );
-        aNonRect3.append( B2DPoint(1,0) );
-        aNonRect3.append( B2DPoint(1,1) );
+        B2DPolygon aNonRect3 {
+            {0, 0},
+            {1, 0},
+            {1, 1}
+        };
         aNonRect3.setClosed(true);
 
-        B2DPolygon aNonRect4;
-        aNonRect4.append( B2DPoint(0,0) );
-        aNonRect4.append( B2DPoint(1,0) );
-        aNonRect4.append( B2DPoint(1,1) );
-        aNonRect4.append( B2DPoint(0,1) );
+        B2DPolygon aNonRect4 {
+            {0, 0},
+            {1, 0},
+            {1, 1},
+            {0, 1}
+        };
 
-        B2DPolygon aNonRect5;
-        aNonRect5.append( B2DPoint(0,0) );
-        aNonRect5.append( B2DPoint(1,0) );
-        aNonRect5.append( B2DPoint(1,1) );
-        aNonRect5.append( B2DPoint(0,1) );
-        aNonRect5.setControlPoints(1,B2DPoint(1,0),B2DPoint(-11,0));
+        B2DPolygon aNonRect5 {
+            {0, 0},
+            {1, 0},
+            {1, 1},
+            {0, 1}
+        };
+        aNonRect5.setControlPoints(1, B2DPoint(1,0), B2DPoint(-11,0));
         aNonRect5.setClosed(true);
 
         CPPUNIT_ASSERT_MESSAGE("checking rectangle-ness of rectangle 1",

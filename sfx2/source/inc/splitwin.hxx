@@ -57,9 +57,9 @@ private:
                             const Size& rSize,
                             sal_uInt16 nLine,
                             sal_uInt16 nPos,
-                            bool bNewLine=false );
+                            bool bNewLine );
 
-    DECL_LINK_TYPED(    TimerHdl, Timer*, void );
+    DECL_LINK(    TimerHdl, Timer*, void );
     bool                CursorIsOverRect() const;
     void                SetPinned_Impl( bool );
     void                SetFadeIn_Impl( bool );
@@ -71,15 +71,13 @@ protected:
     virtual void        StartSplit() override;
     virtual void        SplitResize() override;
     virtual void        Split() override;
-    virtual void        Command ( const CommandEvent& rCEvt ) override;
     virtual void        MouseButtonDown ( const MouseEvent& ) override;
 
 public:
                         SfxSplitWindow( vcl::Window* pParent, SfxChildAlignment eAl,
-                            SfxWorkWindow *pW, bool bWithButtons,
-                            WinBits nBits = WB_BORDER | WB_SIZEABLE | WB_3DLOOK );
+                            SfxWorkWindow *pW, bool bWithButtons );
 
-                        virtual ~SfxSplitWindow();
+                        virtual ~SfxSplitWindow() override;
     virtual void        dispose() override;
 
     void                ReleaseWindow_Impl(SfxDockingWindow *pWin, bool bSaveConfig=true);
@@ -91,13 +89,13 @@ public:
                             const Size& rSize,
                             sal_uInt16 nLine,
                             sal_uInt16 nPos,
-                            bool bNewLine=false );
+                            bool bNewLine );
 
     void                MoveWindow( SfxDockingWindow* pDockWin,
                             const Size& rSize,
                             sal_uInt16 nLine,
                             sal_uInt16 nPos,
-                            bool bNewLine=false );
+                            bool bNewLine );
 
     void                RemoveWindow( SfxDockingWindow* pDockWin, bool bHide=true);
 
@@ -119,7 +117,7 @@ public:
 
     bool                IsPinned() const { return bPinned; }
     bool                IsFadeIn() const;
-    bool                IsAutoHide( bool bSelf = false ) const;
+    bool                IsAutoHide( bool bSelf ) const;
     SplitWindow*        GetSplitWindow();
 
     virtual void        AutoHide() override;

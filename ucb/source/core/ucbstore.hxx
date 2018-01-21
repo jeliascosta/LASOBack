@@ -56,7 +56,7 @@ class UcbStore : public cppu::WeakImplHelper <
 
 public:
     explicit UcbStore( const css::uno::Reference< css::uno::XComponentContext >& xContext );
-    virtual ~UcbStore();
+    virtual ~UcbStore() override;
 
     // XServiceInfo
     virtual OUString SAL_CALL getImplementationName()
@@ -83,9 +83,6 @@ public:
     initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
         throw( css::uno::Exception,
                css::uno::RuntimeException, std::exception ) override;
-
-    const css::uno::Sequence< css::uno::Any >&
-    getInitArgs() const;
 };
 
 
@@ -116,7 +113,7 @@ public:
     PropertySetRegistry(
         const css::uno::Reference< css::uno::XComponentContext >& xContext,
         const css::uno::Sequence< css::uno::Any >& rInitArgs);
-    virtual ~PropertySetRegistry();
+    virtual ~PropertySetRegistry() override;
 
 
     // XServiceInfo
@@ -126,9 +123,6 @@ public:
         throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
         throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // XPropertySetRegistry
     virtual css::uno::Reference< css::ucb::XPersistentPropertySet > SAL_CALL
@@ -190,7 +184,7 @@ public:
     PersistentPropertySet(
         PropertySetRegistry& rCreator,
         const OUString& rKey );
-    virtual ~PersistentPropertySet();
+    virtual ~PersistentPropertySet() override;
 
     // XServiceInfo
     virtual OUString SAL_CALL getImplementationName()
@@ -199,9 +193,6 @@ public:
         throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
         throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // XComponent
     virtual void SAL_CALL

@@ -106,17 +106,6 @@
 #define STR_BOX_YNI                 66
 #define STR_NO_REF_TABLE            67
 
-#define STR_PIVOTFUNC_SUM           68  // pivot.cxx
-#define STR_PIVOTFUNC_COUNT         69
-#define STR_PIVOTFUNC_AVG           70
-#define STR_PIVOTFUNC_MAX           71
-#define STR_PIVOTFUNC_MIN           72
-#define STR_PIVOTFUNC_PROD          73
-#define STR_PIVOTFUNC_COUNT2        74
-#define STR_PIVOTFUNC_STDDEV        75
-#define STR_PIVOTFUNC_STDDEV2       76
-#define STR_PIVOTFUNC_VAR           77
-#define STR_PIVOTFUNC_VAR2          78
 #define STR_PIVOT_TOTAL             79
 #define STR_PIVOT_DATA              80
 
@@ -140,7 +129,8 @@
 #define STR_UNKNOWN_FILTER          94
 
 #define STR_DATABASE_NOTFOUND       95
-#define STR_DATABASE_ABORTED        96
+
+#define STR_COND_AND                96
 
 #define STR_UNDO_PRINTRANGES        97
 
@@ -159,6 +149,7 @@
 #define STR_FUN_TEXT_SUM            108
 #define STR_FUN_TEXT_COUNT          109
 #define STR_FUN_TEXT_AVG            110
+#define STR_FUN_TEXT_MEDIAN         544
 #define STR_FUN_TEXT_MAX            111
 #define STR_FUN_TEXT_MIN            112
 #define STR_FUN_TEXT_PRODUCT        113
@@ -708,7 +699,18 @@
 
 #define STR_FILTER_SELCOUNT             533
 
-#define SC_GLOBSTR_STR_COUNT            534     /**< the count of permanently resident strings */
+#define STR_GENERAL                     534
+#define STR_NUMBER                      535
+#define STR_PERCENT                     536
+#define STR_CURRENCY                    537
+#define STR_DATE                        538
+#define STR_TIME                        539
+#define STR_SCIENTIFIC                  540
+#define STR_FRACTION                    541
+#define STR_BOOLEAN_VALUE               542
+#define STR_TEXT                        543
+
+#define SC_GLOBSTR_STR_COUNT            545     /**< the count of permanently resident strings */
 
 #endif
 

@@ -21,6 +21,7 @@
 
 #include <svx/dlgctrl.hxx>
 #include <svx/dialcontrol.hxx>
+#include <svx/anchorid.hxx>
 
 #include <vcl/fixed.hxx>
 
@@ -35,14 +36,6 @@ class SdrView;
 |*
 \************************************************************************/
 
-/** put this into the nAnchorTypes parameter of the SvxTransformTabDialog c'tor
-    to disable the size controls */
-const sal_uInt16 SVX_OBJ_NORESIZE = 0x0100;
-
-/** put this into the nAnchorTypes parameter of the SvxTransformTabDialog c'tor
-    to disable the protect controls */
-const sal_uInt16 SVX_OBJ_NOPROTECT = 0x0200;
-
 struct SvxSwFrameValidation;
 class SvxTransformTabDialog : public SfxTabDialog
 {
@@ -53,7 +46,7 @@ class SvxTransformTabDialog : public SfxTabDialog
 private:
     const SdrView*      pView;
 
-    sal_uInt16          nAnchorCtrls;
+    SvxAnchorIds        nAnchorCtrls;
     Link<SvxSwFrameValidation&,void> aValidateLink;
 
     virtual void        PageCreated( sal_uInt16 nId, SfxTabPage &rPage ) override;
@@ -62,7 +55,7 @@ public:
 
             SvxTransformTabDialog( vcl::Window* pParent, const SfxItemSet* pAttr,
                             const SdrView* pView,
-                            sal_uInt16 nAnchorTypes = 0);
+                            SvxAnchorIds nAnchorTypes = SvxAnchorIds::NONE);
 
             //link for the Writer to validate positions
             void SetValidateFramePosLink( const Link<SvxSwFrameValidation&,void>& rLink );
@@ -116,7 +109,7 @@ private:
     basegfx::B2DRange   maWorkRange;
     basegfx::B2DPoint   maAnchor;
 
-    SfxMapUnit          mePoolUnit;
+    MapUnit             mePoolUnit;
     FieldUnit           meDlgUnit;
     TriState            mnProtectSizeState;
     bool                mbPageDisabled;
@@ -128,23 +121,23 @@ private:
     // #i75273#
     double              mfOldWidth;
     double              mfOldHeight;
-    RECT_POINT          meRP;
+    RectPoint          meRP;
 
 
-    DECL_LINK_TYPED( ChangePosProtectHdl, Button*, void );
-    DECL_LINK_TYPED( ChangeSizeProtectHdl, Button*, void );
+    DECL_LINK( ChangePosProtectHdl, Button*, void );
+    DECL_LINK( ChangeSizeProtectHdl, Button*, void );
 
     void SetMinMaxPosition();
     void GetTopLeftPosition(double& rfX, double& rfY, const basegfx::B2DRange& rRange);
 
-    DECL_LINK_TYPED( ChangeWidthHdl, Edit&, void );
-    DECL_LINK_TYPED( ChangeHeightHdl, Edit&, void );
-    DECL_LINK_TYPED( ClickSizeProtectHdl, Button*, void );
-    DECL_LINK_TYPED( ClickAutoHdl, Button*, void );
+    DECL_LINK( ChangeWidthHdl, Edit&, void );
+    DECL_LINK( ChangeHeightHdl, Edit&, void );
+    DECL_LINK( ClickSizeProtectHdl, Button*, void );
+    DECL_LINK( ClickAutoHdl, Button*, void );
 
 public:
     SvxPositionSizeTabPage( vcl::Window* pParent, const SfxItemSet& rInAttrs  );
-    virtual ~SvxPositionSizeTabPage();
+    virtual ~SvxPositionSizeTabPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create( vcl::Window*, const SfxItemSet* );
@@ -154,9 +147,9 @@ public:
     virtual void Reset( const SfxItemSet * ) override;
 
     virtual void ActivatePage( const SfxItemSet& rSet ) override;
-    virtual sfxpg DeactivatePage( SfxItemSet* pSet ) override;
+    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
 
-    virtual void PointChanged( vcl::Window* pWindow, RECT_POINT eRP ) override;
+    virtual void PointChanged( vcl::Window* pWindow, RectPoint eRP ) override;
 
     void         Construct();
     void         SetView( const SdrView* pSdrView ) { mpView = pSdrView; }
@@ -197,12 +190,12 @@ private:
     basegfx::B2DRange   maRange;
     basegfx::B2DPoint   maAnchor;
 
-    SfxMapUnit          ePoolUnit;
+    MapUnit             ePoolUnit;
     FieldUnit           eDlgUnit;
 
 public:
          SvxAngleTabPage( vcl::Window* pParent, const SfxItemSet& rInAttrs  );
-    virtual ~SvxAngleTabPage();
+    virtual ~SvxAngleTabPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create( vcl::Window*, const SfxItemSet* );
@@ -212,9 +205,9 @@ public:
     virtual void Reset( const SfxItemSet * ) override;
 
     virtual void ActivatePage( const SfxItemSet& rSet ) override;
-    virtual sfxpg DeactivatePage( SfxItemSet* pSet ) override;
+    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
 
-    virtual void PointChanged( vcl::Window* pWindow, RECT_POINT eRP ) override;
+    virtual void PointChanged( vcl::Window* pWindow, RectPoint eRP ) override;
 
     void         Construct();
     void         SetView( const SdrView* pSdrView ) { pView = pSdrView; }
@@ -250,12 +243,12 @@ private:
     // #i75273#
     basegfx::B2DRange   maRange;
 
-    SfxMapUnit          ePoolUnit;
+    MapUnit             ePoolUnit;
     FieldUnit           eDlgUnit;
 
 public:
          SvxSlantTabPage( vcl::Window* pParent, const SfxItemSet& rInAttrs  );
-    virtual ~SvxSlantTabPage();
+    virtual ~SvxSlantTabPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create( vcl::Window*, const SfxItemSet* );
@@ -265,9 +258,9 @@ public:
     virtual void Reset( const SfxItemSet * ) override;
 
     virtual void ActivatePage( const SfxItemSet& rSet ) override;
-    virtual sfxpg DeactivatePage( SfxItemSet* pSet ) override;
+    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
 
-    virtual void PointChanged( vcl::Window* pWindow, RECT_POINT eRP ) override;
+    virtual void PointChanged( vcl::Window* pWindow, RectPoint eRP ) override;
 
     void         Construct();
     void         SetView( const SdrView* pSdrView ) { pView = pSdrView; }

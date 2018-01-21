@@ -76,8 +76,7 @@ ScUndoCursorAttr::ScUndoCursorAttr( ScDocShell* pNewDocShell,
     nRow( nNewRow ),
     nTab( nNewTab ),
     pOldEditData( static_cast<EditTextObject*>(nullptr) ),
-    pNewEditData( static_cast<EditTextObject*>(nullptr) ),
-    bIsAutomatic( false )
+    pNewEditData( static_cast<EditTextObject*>(nullptr) )
 {
     ScDocumentPool* pPool = pDocShell->GetDocument().GetPool();
     pNewPattern = const_cast<ScPatternAttr*>(static_cast<const ScPatternAttr*>( &pPool->Put( *pNewPat ) ));
@@ -134,24 +133,13 @@ void ScUndoCursorAttr::DoChange( const ScPatternAttr* pWhichPattern, const share
         nFlags |= SC_PF_LINES;
     if (bPaintRows)
         nFlags |= SC_PF_WHOLEROWS;
-    pDocShell->PostPaint( nCol,nRow,nTab, nCol,nRow,nTab, PAINT_GRID, nFlags );
+    pDocShell->PostPaint( nCol,nRow,nTab, nCol,nRow,nTab, PaintPartFlags::Grid, nFlags );
 }
 
 void ScUndoCursorAttr::Undo()
 {
     BeginUndo();
     DoChange(pOldPattern, pOldEditData);
-
-    if ( bIsAutomatic )
-    {
-        // if automatic formatting is reversed, then
-        // automatic formatting should also not continue to be done
-
-        ScTabViewShell* pViewShell = ScTabViewShell::GetActiveViewShell();
-        if (pViewShell)
-            pViewShell->ForgetFormatArea();
-    }
-
     EndUndo();
 }
 
@@ -242,7 +230,7 @@ void ScUndoEnterData::Undo()
     for (Value & rVal : maOldValues)
     {
         ScCellValue aNewCell;
-        aNewCell.assign(rVal.maCell, rDoc, SC_CLONECELL_STARTLISTENING);
+        aNewCell.assign(rVal.maCell, rDoc, ScCloneFlags::StartListening);
         ScAddress aPos = maPos;
         aPos.SetTab(rVal.mnTab);
         aNewCell.release(rDoc, aPos);
@@ -354,7 +342,7 @@ void ScUndoEnterValue::Undo()
 
     ScDocument& rDoc = pDocShell->GetDocument();
     ScCellValue aNewCell;
-    aNewCell.assign(maOldCell, rDoc, SC_CLONECELL_STARTLISTENING);
+    aNewCell.assign(maOldCell, rDoc, ScCloneFlags::StartListening);
     aNewCell.release(rDoc, aPos);
 
     pDocShell->PostPaintCell( aPos );
@@ -998,7 +986,7 @@ void ScUndoRangeNames::DoChange( bool bUndo )
 
     rDoc.CompileHybridFormula();
 
-    SfxGetpApp()->Broadcast( SfxSimpleHint( SC_HINT_AREAS_CHANGED ) );
+    SfxGetpApp()->Broadcast( SfxHint( SC_HINT_AREAS_CHANGED ) );
 }
 
 void ScUndoRangeNames::Undo()

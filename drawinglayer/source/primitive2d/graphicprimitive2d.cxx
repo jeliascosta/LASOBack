@@ -32,15 +32,12 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer GraphicPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D&
-            ) const
+        void GraphicPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& ) const
         {
-            Primitive2DContainer aRetval;
-
             if(255L == getGraphicAttr().GetTransparency())
             {
                 // content is invisible, done
-                return aRetval;
+                return;
             }
 
             // do not apply mirroring from GraphicAttr to the Metafile by calling
@@ -81,7 +78,7 @@ namespace drawinglayer
 
             const GraphicObject& rGraphicObject = getGraphicObject();
             Graphic aTransformedGraphic(rGraphicObject.GetGraphic());
-            const bool isBitmap(GRAPHIC_BITMAP == aTransformedGraphic.GetType() && !aTransformedGraphic.getSvgData().get());
+            const bool isBitmap(GraphicType::Bitmap == aTransformedGraphic.GetType() && !aTransformedGraphic.getSvgData().get());
             const bool isAdjusted(getGraphicAttr().IsAdjusted());
             const bool isDrawMode(GRAPHICDRAWMODE_STANDARD != getGraphicAttr().GetDrawMode());
 
@@ -92,9 +89,9 @@ namespace drawinglayer
                 // instead of creating all as in create2DColorModifierEmbeddingsAsNeeded (see below).
                 // Still, crop, rotation, mirroring and transparency is handled by primitives already
                 // (see above).
-                // This could even be done when vector graphic, but we explicitely want to have the
+                // This could even be done when vector graphic, but we explicitly want to have the
                 // pure primitive solution for this; this will allow vector graphics to stay vector
-                // geraphics, independent from the color filtering stuff. This will enhance e.g.
+                // graphics, independent from the color filtering stuff. This will enhance e.g.
                 // SVG and print quality while reducing data size at the same time.
                 // The other way around the old modifications when only used on already bitmap objects
                 // will not lose any quality.
@@ -106,14 +103,16 @@ namespace drawinglayer
 
             // create sub-content; helper takes care of correct handling of
             // bitmap, svg or metafile content
-            aRetval = create2DDecompositionOfGraphic(
+            Primitive2DContainer aRetval;
+            create2DDecompositionOfGraphic(
+                aRetval,
                 aTransformedGraphic,
                 aTransform);
 
             if(!aRetval.size())
             {
                 // content is invisible, done
-                return aRetval;
+                return;
             }
 
             if(isAdjusted || isDrawMode)
@@ -134,7 +133,7 @@ namespace drawinglayer
                 if(!aRetval.size())
                 {
                     // content is invisible, done
-                    return aRetval;
+                    return;
                 }
             }
 
@@ -182,7 +181,7 @@ namespace drawinglayer
                 aRetval = Primitive2DContainer { xPrimitive };
             }
 
-            return aRetval;
+            rContainer.insert(rContainer.end(), aRetval.begin(), aRetval.end());
         }
 
         GraphicPrimitive2D::GraphicPrimitive2D(

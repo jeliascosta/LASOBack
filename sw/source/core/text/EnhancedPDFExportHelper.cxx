@@ -172,7 +172,7 @@ bool lcl_IsHeadlineCell( const SwCellFrame& rCellFrame )
         const SwFormat* pTextFormat = pTextNode->GetFormatColl();
 
         OUString sStyleName;
-        SwStyleNameMapper::FillProgName( pTextFormat->GetName(), sStyleName, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, true );
+        SwStyleNameMapper::FillProgName( pTextFormat->GetName(), sStyleName, SwGetPoolIdFromName::TxtColl, true );
         bRet = sStyleName == aTableHeadingName;
     }
 
@@ -480,7 +480,7 @@ void SwTaggedPDFHelper::SetAttributes( vcl::PDFWriter::StructElement eType )
     if ( mpFrameInfo )
     {
         const SwFrame* pFrame = &mpFrameInfo->mrFrame;
-        SWRECTFN( pFrame )
+        SwRectFnSet aRectFnSet(pFrame);
 
         bool bPlacement = false;
         bool bWritingMode = false;
@@ -589,28 +589,28 @@ void SwTaggedPDFHelper::SetAttributes( vcl::PDFWriter::StructElement eType )
 
         if ( bSpaceBefore )
         {
-            nVal = (pFrame->*fnRect->fnGetTopMargin)();
+            nVal = (pFrame->*aRectFnSet->fnGetTopMargin)();
             if ( 0 != nVal )
                 mpPDFExtOutDevData->SetStructureAttributeNumerical( vcl::PDFWriter::SpaceBefore, nVal );
         }
 
         if ( bSpaceAfter )
         {
-            nVal = (pFrame->*fnRect->fnGetBottomMargin)();
+            nVal = (pFrame->*aRectFnSet->fnGetBottomMargin)();
             if ( 0 != nVal )
                 mpPDFExtOutDevData->SetStructureAttributeNumerical( vcl::PDFWriter::SpaceAfter, nVal );
         }
 
         if ( bStartIndent )
         {
-            nVal = (pFrame->*fnRect->fnGetLeftMargin)();
+            nVal = (pFrame->*aRectFnSet->fnGetLeftMargin)();
             if ( 0 != nVal )
                 mpPDFExtOutDevData->SetStructureAttributeNumerical( vcl::PDFWriter::StartIndent, nVal );
         }
 
         if ( bEndIndent )
         {
-            nVal = (pFrame->*fnRect->fnGetRightMargin)();
+            nVal = (pFrame->*aRectFnSet->fnGetRightMargin)();
             if ( 0 != nVal )
                 mpPDFExtOutDevData->SetStructureAttributeNumerical( vcl::PDFWriter::EndIndent, nVal );
         }
@@ -660,13 +660,13 @@ void SwTaggedPDFHelper::SetAttributes( vcl::PDFWriter::StructElement eType )
 
         if ( bWidth )
         {
-            nVal = (pFrame->Frame().*fnRect->fnGetWidth)();
+            nVal = (pFrame->Frame().*aRectFnSet->fnGetWidth)();
             mpPDFExtOutDevData->SetStructureAttributeNumerical( vcl::PDFWriter::Width, nVal );
         }
 
         if ( bHeight )
         {
-            nVal = (pFrame->Frame().*fnRect->fnGetHeight)();
+            nVal = (pFrame->Frame().*aRectFnSet->fnGetHeight)();
             mpPDFExtOutDevData->SetStructureAttributeNumerical( vcl::PDFWriter::Height, nVal );
         }
 
@@ -695,7 +695,7 @@ void SwTaggedPDFHelper::SetAttributes( vcl::PDFWriter::StructElement eType )
                 const SwTabFrame* pTabFrame = pThisCell->FindTabFrame();
                 const SwTable* pTable = pTabFrame->GetTable();
 
-                SWRECTFNX( pTabFrame )
+                SwRectFnSet fnRectX(pTabFrame);
 
                 const TableColumnsMapEntry& rCols = SwEnhancedPDFExportHelper::GetTableColumnsMap()[ pTable ];
 
@@ -1067,9 +1067,9 @@ void SwTaggedPDFHelper::BeginBlockStructureElements()
                 OUString sParentStyleName;
 
                 if ( pTextFormat)
-                    SwStyleNameMapper::FillProgName( pTextFormat->GetName(), sStyleName, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, true );
+                    SwStyleNameMapper::FillProgName( pTextFormat->GetName(), sStyleName, SwGetPoolIdFromName::TxtColl, true );
                 if ( pParentTextFormat)
-                    SwStyleNameMapper::FillProgName( pParentTextFormat->GetName(), sParentStyleName, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, true );
+                    SwStyleNameMapper::FillProgName( pParentTextFormat->GetName(), sParentStyleName, SwGetPoolIdFromName::TxtColl, true );
 
                 // This is the default. If the paragraph could not be mapped to
                 // any of the standard pdf tags, we write a user defined tag
@@ -1145,8 +1145,7 @@ void SwTaggedPDFHelper::BeginBlockStructureElements()
                 else if ( pFrame->IsInSct() )
                 {
                     const SwSectionFrame* pSctFrame = pFrame->FindSctFrame();
-                    const SwSection* pSection =
-                            static_cast<const SwSectionFrame*>(pSctFrame)->GetSection();
+                    const SwSection* pSection = pSctFrame->GetSection();
 
                     if ( TOX_CONTENT_SECTION == pSection->GetType() )
                     {
@@ -1178,7 +1177,7 @@ void SwTaggedPDFHelper::BeginBlockStructureElements()
 
                 if ( aIter == rTableColumnsMap.end() )
                 {
-                    SWRECTFN( pTabFrame )
+                    SwRectFnSet aRectFnSet(pTabFrame);
                     TableColumnsMapEntry& rCols = rTableColumnsMap[ pTable ];
 
                     const SwTabFrame* pMasterFrame = pTabFrame->IsFollow() ? pTabFrame->FindMaster( true ) : pTabFrame;
@@ -1191,18 +1190,18 @@ void SwTaggedPDFHelper::BeginBlockStructureElements()
                         {
                             const SwFrame* pCellFrame = pRowFrame->GetLower();
 
-                            const long nLeft  = (pCellFrame->Frame().*fnRect->fnGetLeft)();
+                            const long nLeft  = (pCellFrame->Frame().*aRectFnSet->fnGetLeft)();
                             rCols.insert( nLeft );
 
                             while ( pCellFrame )
                             {
-                                const long nRight = (pCellFrame->Frame().*fnRect->fnGetRight)();
+                                const long nRight = (pCellFrame->Frame().*aRectFnSet->fnGetRight)();
                                 rCols.insert( nRight );
                                 pCellFrame = pCellFrame->GetNext();
                             }
                             pRowFrame = static_cast<const SwRowFrame*>(pRowFrame->GetNext());
                         }
-                        pMasterFrame = static_cast<const SwTabFrame*>(pMasterFrame->GetFollow());
+                        pMasterFrame = pMasterFrame->GetFollow();
                     }
                 }
             }
@@ -1347,13 +1346,13 @@ void SwTaggedPDFHelper::BeginInlineStructureElements()
                 OUString sStyleName;
                 if ( !pInetFormatAttr )
                 {
-                    ::std::vector<SwTextAttr *> const charAttrs(
+                    std::vector<SwTextAttr *> const charAttrs(
                         pNd->GetTextAttrsAt(rInf.GetIdx(), RES_TXTATR_CHARFMT));
                     // TODO: handle more than 1 char style?
                     const SwCharFormat* pCharFormat = (charAttrs.size())
                         ? (*charAttrs.begin())->GetCharFormat().GetCharFormat() : nullptr;
                     if ( pCharFormat )
-                        SwStyleNameMapper::FillProgName( pCharFormat->GetName(), sStyleName, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, true );
+                        SwStyleNameMapper::FillProgName( pCharFormat->GetName(), sStyleName, SwGetPoolIdFromName::TxtColl, true );
                 }
 
                 // Check for Link:
@@ -1548,7 +1547,7 @@ void SwEnhancedPDFExportHelper::EnhancedPDFExport()
 
     mrOut.Push( PushFlags::MAPMODE );
     MapMode aMapMode( mrOut.GetMapMode() );
-    aMapMode.SetMapUnit( MAP_TWIP );
+    aMapMode.SetMapUnit( MapUnit::MapTwip );
     mrOut.SetMapMode( aMapMode );
 
     // Create new cursor and lock the view:

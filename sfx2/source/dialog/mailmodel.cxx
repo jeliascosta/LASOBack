@@ -90,7 +90,7 @@ class PrepareListener_Impl : public ::cppu::WeakImplHelper< css::frame::XStatusL
     bool m_bState;
 public:
         PrepareListener_Impl();
-        virtual ~PrepareListener_Impl();
+        virtual ~PrepareListener_Impl() override;
 
         // css.frame.XStatusListener
         virtual void SAL_CALL statusChanged(const css::frame::FeatureStateEvent& aEvent)
@@ -648,57 +648,25 @@ SfxMailModel::SaveResult SfxMailModel::SaveDocumentAsFormat(
     return eRet;
 }
 
-SfxMailModel::SfxMailModel() :
-    mpToList    ( nullptr ),
-    mpCcList    ( nullptr ),
-    mpBccList   ( nullptr )
+SfxMailModel::SfxMailModel()
 {
 }
 
 SfxMailModel::~SfxMailModel()
 {
-    delete mpToList;
-    delete mpCcList;
-    delete mpBccList;
 }
 
-void SfxMailModel::AddAddress( const OUString& rAddress, AddressRole eRole )
+void SfxMailModel::AddToAddress( const OUString& rAddress )
 {
     // don't add a empty address
     if ( !rAddress.isEmpty() )
     {
-        AddressList_Impl* pList = nullptr;
-        if ( ROLE_TO == eRole )
-        {
-            if ( !mpToList )
-                // create the list
-                mpToList = new AddressList_Impl();
-            pList = mpToList;
-        }
-        else if ( ROLE_CC == eRole )
-        {
-            if ( !mpCcList )
-                // create the list
-                mpCcList = new AddressList_Impl();
-            pList = mpCcList;
-        }
-        else if ( ROLE_BCC == eRole )
-        {
-            if ( !mpBccList )
-                // create the list
-                mpBccList = new AddressList_Impl();
-            pList = mpBccList;
-        }
-        else
-        {
-            SAL_WARN( "sfx.dialog", "invalid address role" );
-        }
+        if ( !mpToList )
+            // create the list
+            mpToList.reset(new AddressList_Impl);
 
-        if ( pList )
-        {
-            // add address to list
-            pList->push_back( rAddress );
-        }
+        // add address to list
+        mpToList->push_back( rAddress );
     }
 }
 
@@ -853,7 +821,7 @@ SfxMailModel::SendMailResult SfxMailModel::Send( const css::uno::Reference< css:
                     css::uno::Reference< css::awt::XWindow > xParentWindow = xFrame->getContainerWindow();
 
                     SolarMutexGuard aGuard;
-                    vcl::Window* pParentWindow = VCLUnoHelper::GetWindow( xParentWindow );
+                    VclPtr<vcl::Window> pParentWindow = VCLUnoHelper::GetWindow( xParentWindow );
 
                     ScopedVclPtrInstance< MessageDialog > aBox(pParentWindow, "ErrorFindEmailDialog", "sfx/ui/errorfindemaildialog.ui");
                     aBox->Execute();
@@ -920,15 +888,12 @@ bool CreateFromAddress_Impl( OUString& rFrom )
         }
         rFrom += comphelper::string::strip(aName, ' ');
         // remove illegal characters
-        rFrom = comphelper::string::remove(rFrom, '<');
-        rFrom = comphelper::string::remove(rFrom, '>');
-        rFrom = comphelper::string::remove(rFrom, '@');
+        rFrom = rFrom.replaceAll("<", "").replaceAll(">", "").replaceAll("@", "");
     }
     OUString aEmailName = aUserCFG.GetEmail();
 
     // remove illegal characters
-    aEmailName = comphelper::string::remove(aEmailName, '<');
-    aEmailName = comphelper::string::remove(aEmailName, '>');
+    aEmailName = aEmailName.replaceAll("<", "").replaceAll(">", "");
 
     if ( !aEmailName.isEmpty() )
     {

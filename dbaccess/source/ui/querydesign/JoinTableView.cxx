@@ -196,10 +196,11 @@ void OJoinTableView::dispose()
     m_pSelectedConn.clear();
     m_pLastFocusTabWin.clear();
     m_pView.clear();
+    m_vTableConnection.clear();
     vcl::Window::dispose();
 }
 
-IMPL_LINK_TYPED( OJoinTableView, ScrollHdl, ScrollBar*, pScrollBar, void )
+IMPL_LINK( OJoinTableView, ScrollHdl, ScrollBar*, pScrollBar, void )
 {
     // move all windows
     ScrollPane( pScrollBar->GetDelta(), (pScrollBar == &GetHScrollBar()), false );
@@ -219,7 +220,7 @@ void OJoinTableView::Resize()
     m_aScrollOffset.X() = GetHScrollBar().GetThumbPos();
     m_aScrollOffset.Y() = GetVScrollBar().GetThumbPos();
 
-    OTableWindow* pCheck = m_aTableMap.begin()->second;
+    VclPtr<OTableWindow> pCheck = m_aTableMap.begin()->second;
     Point aRealPos = pCheck->GetPosPixel();
     Point aAssumedPos = pCheck->GetData()->GetPosition() - GetScrollOffset();
 
@@ -1072,7 +1073,7 @@ void OJoinTableView::ScrollWhileDragging()
     ShowTracking( m_aDragRect, ShowTrackFlags::Small | ShowTrackFlags::TrackWindow );
 }
 
-IMPL_LINK_NOARG_TYPED(OJoinTableView, OnDragScrollTimer, Idle *, void)
+IMPL_LINK_NOARG(OJoinTableView, OnDragScrollTimer, Idle *, void)
 {
     ScrollWhileDragging();
 }
@@ -1128,8 +1129,8 @@ bool OJoinTableView::IsAddAllowed()
 
 void OJoinTableView::executePopup(const Point& _aPos, VclPtr<OTableConnection>& rSelConnection)
 {
-    PopupMenu aContextMenu( ModuleRes( RID_MENU_JOINVIEW_CONNECTION ) );
-    switch (aContextMenu.Execute(this, _aPos))
+    ScopedVclPtrInstance<PopupMenu> aContextMenu( ModuleRes( RID_MENU_JOINVIEW_CONNECTION ) );
+    switch (aContextMenu->Execute(this, _aPos))
     {
         case SID_DELETE:
             RemoveConnection(rSelConnection, true);
@@ -1191,7 +1192,7 @@ void OJoinTableView::Command(const CommandEvent& rEvt)
         Window::Command(rEvt);
 }
 
-OTableConnection* OJoinTableView::GetTabConn(const OTableWindow* pLhs,const OTableWindow* pRhs,bool _bSupressCrossOrNaturalJoin,const OTableConnection* _rpFirstAfter) const
+OTableConnection* OJoinTableView::GetTabConn(const OTableWindow* pLhs,const OTableWindow* pRhs,bool _bSupressCrossOrNaturalJoin) const
 {
     OTableConnection* pConn = nullptr;
     OSL_ENSURE(pRhs || pLhs, "OJoinTableView::GetTabConn : invalid args !");
@@ -1199,8 +1200,6 @@ OTableConnection* OJoinTableView::GetTabConn(const OTableWindow* pLhs,const OTab
 
     if ((!pLhs || pLhs->ExistsAConn()) && (!pRhs || pRhs->ExistsAConn()))
     {
-        bool bFoundStart = _rpFirstAfter == nullptr;
-
         auto aIter = m_vTableConnection.begin();
         auto aEnd = m_vTableConnection.end();
         for(;aIter != aEnd;++aIter)
@@ -1224,19 +1223,8 @@ OTableConnection* OJoinTableView::GetTabConn(const OTableWindow* pLhs,const OTab
                     if ( supressCrossNaturalJoin(pData->GetData()) )
                         continue;
                 }
-                if (bFoundStart)
-                {
-                    pConn = pData;
-                    break;
-                }
-
-                if (!pConn)
-                    // used as fallback : if there is no conn after _rpFirstAfter the first conn between the two tables
-                    // will be used
-                    pConn = pData;
-
-                if (pData == _rpFirstAfter)
-                    bFoundStart = true;
+                pConn = pData;
+                break;
             }
         }
     }
@@ -1450,7 +1438,7 @@ void OJoinTableView::GrabTabWinFocus()
     }
     else if (!m_aTableMap.empty() && m_aTableMap.begin()->second && m_aTableMap.begin()->second->IsVisible())
     {
-        OTableWindow* pFirstWin = m_aTableMap.begin()->second;
+        VclPtr<OTableWindow> pFirstWin = m_aTableMap.begin()->second;
         if (pFirstWin->GetListBox())
             pFirstWin->GetListBox()->GrabFocus();
         else

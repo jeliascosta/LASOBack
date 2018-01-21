@@ -40,12 +40,8 @@
 #include <svx/dataaccessdescriptor.hxx>
 
 #include <com/sun/star/sheet/DataImportMode.hpp>
-#include <com/sun/star/table/TableSortField.hpp>
-#include <com/sun/star/table/TableSortFieldType.hpp>
-#include <com/sun/star/sheet/XSubTotalField.hpp>
 #include <com/sun/star/sheet/XDatabaseRanges.hpp>
 #include <com/sun/star/sheet/XDatabaseRange.hpp>
-#include <com/sun/star/table/TableOrientation.hpp>
 #include <comphelper/extract.hxx>
 
 #include <map>
@@ -227,11 +223,11 @@ private:
 
         svx::ODataAccessDescriptor aDescriptor;
         aDescriptor.setDataSource(aParam.aDBName);
-        if (aDescriptor.has(svx::daDataSource))
+        if (aDescriptor.has(svx::DataAccessDescriptorProperty::DataSource))
         {
             sDatabaseName = aParam.aDBName;
         }
-        else if (aDescriptor.has(svx::daConnectionResource))
+        else if (aDescriptor.has(svx::DataAccessDescriptorProperty::ConnectionResource))
         {
             sConRes = aParam.aDBName;
         }

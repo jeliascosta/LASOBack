@@ -33,8 +33,8 @@ using namespace ::com::sun::star::frame;
 
 // Class SfxSaveAsTemplateDialog --------------------------------------------------
 
-SfxSaveAsTemplateDialog::SfxSaveAsTemplateDialog( vcl::Window* pParent):
-        ModalDialog(pParent, "SaveAsTemplateDialog", "sfx/ui/saveastemplatedlg.ui"),
+SfxSaveAsTemplateDialog::SfxSaveAsTemplateDialog():
+        ModalDialog(nullptr, "SaveAsTemplateDialog", "sfx/ui/saveastemplatedlg.ui"),
         msSelectedCategory(OUString()),
         msTemplateName(OUString()),
         mnRegionPos(0),
@@ -66,6 +66,7 @@ void SfxSaveAsTemplateDialog::dispose()
     mpLBCategory.clear();
     mpTemplateNameEdit.clear();
     mpOKButton.clear();
+    mpCBXDefault.clear();
 
     ModalDialog::dispose();
 }
@@ -75,9 +76,9 @@ void SfxSaveAsTemplateDialog::setDocumentModel(const uno::Reference<frame::XMode
     m_xModel = rModel;
 }
 
-IMPL_LINK_NOARG_TYPED(SfxSaveAsTemplateDialog, OkClickHdl, Button*, void)
+IMPL_LINK_NOARG(SfxSaveAsTemplateDialog, OkClickHdl, Button*, void)
 {
-    ScopedVclPtrInstance< MessageDialog > aQueryDlg(this, OUString(), VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
+    ScopedVclPtrInstance< MessageDialog > aQueryDlg(this, OUString(), VclMessageType::Question, VCL_BUTTONS_YES_NO);
 
     if(!IsTemplateNameUnique())
     {
@@ -98,13 +99,13 @@ IMPL_LINK_NOARG_TYPED(SfxSaveAsTemplateDialog, OkClickHdl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SfxSaveAsTemplateDialog, TemplateNameEditHdl, Edit&, void)
+IMPL_LINK_NOARG(SfxSaveAsTemplateDialog, TemplateNameEditHdl, Edit&, void)
 {
     msTemplateName = comphelper::string::strip(mpTemplateNameEdit->GetText(), ' ');
     SelectCategoryHdl(*mpLBCategory);
 }
 
-IMPL_LINK_NOARG_TYPED(SfxSaveAsTemplateDialog, SelectCategoryHdl, ListBox&, void)
+IMPL_LINK_NOARG(SfxSaveAsTemplateDialog, SelectCategoryHdl, ListBox&, void)
 {
     if(mpLBCategory->GetSelectEntryPos() == 0)
     {

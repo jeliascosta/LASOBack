@@ -668,7 +668,7 @@ void SmXMLExport::ExportExpression(const SmNode *pNode, int nLevel,
 
 void SmXMLExport::ExportBinaryVertical(const SmNode *pNode, int nLevel)
 {
-    OSL_ENSURE(pNode->GetNumSubNodes()==3,"Bad Fraction");
+    assert(pNode->GetNumSubNodes() == 3);
     const SmNode *pNum = pNode->GetSubNode(0);
     const SmNode *pDenom = pNode->GetSubNode(2);
     if (pNum->GetType() == NALIGN && pNum->GetToken().eType != TALIGNC)
@@ -692,7 +692,7 @@ void SmXMLExport::ExportBinaryVertical(const SmNode *pNode, int nLevel)
 
 void SmXMLExport::ExportBinaryDiagonal(const SmNode *pNode, int nLevel)
 {
-    OSL_ENSURE(pNode->GetNumSubNodes()==3, "Bad Slash");
+    assert(pNode->GetNumSubNodes() == 3);
 
     if (pNode->GetToken().eType == TWIDESLASH)
     {
@@ -796,13 +796,20 @@ void SmXMLExport::ExportTable(const SmNode *pNode, int nLevel)
 
 void SmXMLExport::ExportMath(const SmNode *pNode, int /*nLevel*/)
 {
-    const SmMathSymbolNode *pTemp = static_cast<const SmMathSymbolNode *>(pNode);
+    const SmTextNode *pTemp = static_cast<const SmTextNode *>(pNode);
     SvXMLElementExport *pMath = nullptr;
 
     if (pNode->GetType() == NMATH || pNode->GetType() == NGLYPH_SPECIAL)
     {
         // Export NMATH and NGLYPH_SPECIAL symbols as <mo> elements
         pMath = new SvXMLElementExport(*this, XML_NAMESPACE_MATH, XML_MO, true, false);
+    }
+    else if (pNode->GetType() == NSPECIAL)
+    {
+        bool bIsItalic = IsItalic(pNode->GetFont());
+        if (!bIsItalic)
+            AddAttribute(XML_NAMESPACE_MATH, XML_MATHVARIANT, XML_NORMAL);
+        pMath = new SvXMLElementExport(*this, XML_NAMESPACE_MATH, XML_MI, true, false);
     }
     else
     {
@@ -870,7 +877,7 @@ void SmXMLExport::ExportBlank(const SmNode *pNode, int /*nLevel*/)
     {
         // Attach a width attribute. We choose the (somewhat arbitrary) values
         // ".5em" for a small gap '`' and "2em" for a large gap '~'.
-        // (see SmBlankNode::IncreaseBy for how pTemp->nNum is set).
+        // (see SmBlankNode::IncreaseBy for how pTemp->mnNum is set).
         OUStringBuffer sStrBuf;
         ::sax::Converter::convertDouble(sStrBuf, pTemp->GetBlankNum() * .5);
         sStrBuf.append("em");
@@ -1384,7 +1391,7 @@ void SmXMLExport::ExportFont(const SmNode *pNode, int nLevel)
 }
 
 
-void SmXMLExport::ExportVerticalBrace(const SmNode *pNode, int nLevel)
+void SmXMLExport::ExportVerticalBrace(const SmVerticalBraceNode *pNode, int nLevel)
 {
     // "[body] overbrace [script]"
 
@@ -1410,18 +1417,17 @@ void SmXMLExport::ExportVerticalBrace(const SmNode *pNode, int nLevel)
             break;
     }
 
-    OSL_ENSURE(pNode->GetNumSubNodes()==3,"Bad Vertical Brace");
     SvXMLElementExport aOver1(*this, XML_NAMESPACE_MATH,which, true, true);
     {//Scoping
         // using accents will draw the over-/underbraces too close to the base
         // see http://www.w3.org/TR/MathML2/chapter3.html#id.3.4.5.2
         // also XML_ACCENT is illegal with XML_MUNDER. Thus no XML_ACCENT attribute here!
         SvXMLElementExport aOver2(*this, XML_NAMESPACE_MATH,which, true, true);
-        ExportNodes(pNode->GetSubNode(0), nLevel);
+        ExportNodes(pNode->Body(), nLevel);
         AddAttribute(XML_NAMESPACE_MATH, XML_STRETCHY, XML_TRUE);
-        ExportNodes(pNode->GetSubNode(1), nLevel);
+        ExportNodes(pNode->Brace(), nLevel);
     }
-    ExportNodes(pNode->GetSubNode(2), nLevel);
+    ExportNodes(pNode->Script(), nLevel);
 }
 
 void SmXMLExport::ExportMatrix(const SmNode *pNode, int nLevel)
@@ -1485,6 +1491,14 @@ void SmXMLExport::ExportNodes(const SmNode *pNode, int nLevel)
                 }
                 else
                 {
+                    switch (pNode->GetToken().eType)
+                    {
+                        case TINTD:
+                            AddAttribute(XML_NAMESPACE_MATH, XML_STRETCHY, XML_TRUE);
+                            break;
+                        default:
+                            break;
+                    }
                     //To fully handle generic MathML we need to implement the full
                     //operator dictionary, we will generate MathML with explicit
                     //stretchiness for now.
@@ -1547,7 +1561,7 @@ void SmXMLExport::ExportNodes(const SmNode *pNode, int nLevel)
             ExportFont(pNode, nLevel);
             break;
         case NVERTICAL_BRACE:
-            ExportVerticalBrace(pNode, nLevel);
+            ExportVerticalBrace(static_cast<const SmVerticalBraceNode *>(pNode), nLevel);
             break;
         case NMATRIX:
             ExportMatrix(pNode, nLevel);

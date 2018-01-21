@@ -40,6 +40,12 @@ namespace chart
 namespace
 {
 
+const OUStringLiteral our_aLBEntryMap[] = {
+    OUStringLiteral(" "),
+    OUStringLiteral(", "),
+    OUStringLiteral("; "),
+    OUStringLiteral("\n")};
+
 bool lcl_ReadNumberFormatFromItemSet( const SfxItemSet& rSet, sal_uInt16 nValueWhich, sal_uInt16 nSourceFormatWhich, sal_uLong& rnFormatKeyOut, bool& rbSourceFormatOut, bool& rbSourceFormatMixedStateOut )
 {
     bool bSet = false;
@@ -123,11 +129,6 @@ DataLabelResources::DataLabelResources(VclBuilderContainer* pWindow, vcl::Window
     pWindow->get(m_pSeparatorResources, "boxSEPARATOR");
     pWindow->get(m_pLB_Separator, "LB_TEXT_SEPARATOR");
 
-    m_aEntryMap[0] = " ";
-    m_aEntryMap[1] = ", ";
-    m_aEntryMap[2] = "; ";
-    m_aEntryMap[3] = "\n" ;
-
     //fill label placement list
     std::map< sal_Int32, OUString > aPlacementToStringMap;
     for( sal_Int32 nEnum=0; nEnum<m_pLB_LabelPlacement->GetEntryCount(); ++nEnum )
@@ -181,7 +182,7 @@ void DataLabelResources::SetNumberFormatter( SvNumberFormatter* pFormatter )
     m_pNumberFormatter = pFormatter;
 }
 
-IMPL_LINK_TYPED( DataLabelResources, NumberFormatDialogHdl, Button *, pButton, void )
+IMPL_LINK( DataLabelResources, NumberFormatDialogHdl, Button *, pButton, void )
 {
     if( !m_pPool || !m_pNumberFormatter )
     {
@@ -229,7 +230,7 @@ IMPL_LINK_TYPED( DataLabelResources, NumberFormatDialogHdl, Button *, pButton, v
     }
 }
 
-IMPL_LINK_TYPED( DataLabelResources, CheckHdl, Button*, pBox, void )
+IMPL_LINK( DataLabelResources, CheckHdl, Button*, pBox, void )
 {
     if( pBox )
         static_cast<CheckBox*>(pBox)->EnableTriState( false );
@@ -298,7 +299,7 @@ bool DataLabelResources::FillItemSet( SfxItemSet* rOutAttrs ) const
     if( m_pCBWrapText->GetState()!= TRISTATE_INDET )
         rOutAttrs->Put( SfxBoolItem( SCHATTR_DATADESCR_WRAP_TEXT, m_pCBWrapText->IsChecked()) );
 
-    OUString aSep = m_aEntryMap[m_pLB_Separator->GetSelectEntryPos()];
+    OUString aSep = our_aLBEntryMap[m_pLB_Separator->GetSelectEntryPos()];
     rOutAttrs->Put( SfxStringItem( SCHATTR_DATADESCR_SEPARATOR, aSep) );
 
     ::std::map< sal_uInt16, sal_Int32 >::const_iterator aIt( m_aListBoxToPlacementMap.find(m_pLB_LabelPlacement->GetSelectEntryPos()) );
@@ -336,9 +337,9 @@ void DataLabelResources::Reset(const SfxItemSet& rInAttrs)
 
     const SfxPoolItem *pPoolItem = nullptr;
     if( rInAttrs.GetItemState(SCHATTR_DATADESCR_SEPARATOR, true, &pPoolItem) == SfxItemState::SET )
-       for(sal_Int32 i=0; i < NUMBER_SEPARATORS; ++i )
+       for(sal_uInt32 i=0; i < SAL_N_ELEMENTS(our_aLBEntryMap); ++i )
        {
-          if( m_aEntryMap[i] == static_cast<const SfxStringItem*>(pPoolItem)->GetValue())
+          if( our_aLBEntryMap[i] == static_cast<const SfxStringItem*>(pPoolItem)->GetValue())
               m_pLB_Separator->SelectEntryPos( i );
        }
     else

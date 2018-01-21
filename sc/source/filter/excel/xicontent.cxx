@@ -114,7 +114,7 @@ void lclAppendString32( OUString& rString, XclImpStream& rStrm, sal_uInt32 nChar
     sal_uInt16 nReadChars = ulimit_cast< sal_uInt16 >( nChars );
     rString += rStrm.ReadRawUniString( nReadChars, b16Bit );
     // ignore remaining chars
-    sal_Size nIgnore = nChars - nReadChars;
+    std::size_t nIgnore = nChars - nReadChars;
     if( b16Bit )
         nIgnore *= 2;
     rStrm.Ignore( nIgnore );
@@ -390,8 +390,7 @@ void XclImpHyperlink::ConvertToValidTabName(OUString& rUrl)
                 // quite.  When this occurs, the whole table name needs to be
                 // quoted.
                 bQuoteTabName = true;
-                aTabName += OUString(c);
-                aTabName += OUString(c);
+                aTabName += OUStringLiteral1(c) + OUStringLiteral1(c);
                 ++i;
                 continue;
             }
@@ -407,9 +406,9 @@ void XclImpHyperlink::ConvertToValidTabName(OUString& rUrl)
             }
         }
         else if (bInQuote)
-            aTabName += OUString(c);
+            aTabName += OUStringLiteral1(c);
         else
-            aNewUrl += OUString(c);
+            aNewUrl += OUStringLiteral1(c);
     }
 
     if (bInQuote)

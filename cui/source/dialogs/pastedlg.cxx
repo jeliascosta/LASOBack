@@ -73,13 +73,13 @@ void SvPasteObjectDialog::SelectObject()
     }
 }
 
-IMPL_LINK_NOARG_TYPED( SvPasteObjectDialog, SelectHdl, ListBox&, void )
+IMPL_LINK_NOARG( SvPasteObjectDialog, SelectHdl, ListBox&, void )
 {
     if ( !m_pOKButton->IsEnabled() )
         m_pOKButton->Enable();
 }
 
-IMPL_LINK_NOARG_TYPED( SvPasteObjectDialog, DoubleClickHdl, ListBox&, void )
+IMPL_LINK_NOARG( SvPasteObjectDialog, DoubleClickHdl, ListBox&, void )
 {
     EndDialog( RET_OK );
 }
@@ -194,7 +194,7 @@ SotClipboardFormatId SvPasteObjectDialog::GetFormat( const TransferableDataHelpe
         aTypeName = convertLineEnd(aTypeName, GetSystemLineEnd());
     }
 
-    ObjectSource().SetText( aTypeName );
+    m_pFtObjectSource->SetText( aTypeName );
 
     if( Dialog::Execute() == RET_OK )
     {

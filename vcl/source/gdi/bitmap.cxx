@@ -55,7 +55,7 @@ Bitmap::Bitmap(const Bitmap& rBitmap)
 
 Bitmap::Bitmap(SalBitmap* pSalBitmap)
     : mxImpBmp(new ImpBitmap(pSalBitmap))
-    , maPrefMapMode(MapMode(MAP_PIXEL))
+    , maPrefMapMode(MapMode(MapUnit::MapPixel))
     , maPrefSize(mxImpBmp->ImplGetSize())
 {
 }
@@ -230,10 +230,19 @@ Bitmap& Bitmap::operator=( const Bitmap& rBitmap )
     return *this;
 }
 
+Bitmap& Bitmap::operator=( Bitmap&& rBitmap )
+{
+    maPrefSize = std::move(rBitmap.maPrefSize);
+    maPrefMapMode = std::move(rBitmap.maPrefMapMode);
+    mxImpBmp = std::move(rBitmap.mxImpBmp);
+
+    return *this;
+}
+
 bool Bitmap::IsEqual( const Bitmap& rBmp ) const
 {
-    return(IsSameInstance(rBmp) || // Includes both are nullptr
-        (rBmp.mxImpBmp && mxImpBmp && mxImpBmp->ImplIsEqual(*rBmp.mxImpBmp)));
+    return rBmp.mxImpBmp == mxImpBmp || // Includes both are nullptr
+           (rBmp.mxImpBmp && mxImpBmp && mxImpBmp->ImplIsEqual(*rBmp.mxImpBmp));
 }
 
 void Bitmap::SetEmpty()
@@ -276,6 +285,21 @@ BitmapChecksum Bitmap::GetChecksum() const
     if( mxImpBmp )
     {
         nRet = mxImpBmp->ImplGetChecksum();
+
+        if (!nRet)
+        {
+            // nRet == 0 => probably, we were not able to acquire
+            // the buffer in SalBitmap::updateChecksum;
+            // so, we need to update the imp bitmap for this bitmap instance
+            // as we do in BitmapInfoAccess::ImplCreate
+            std::shared_ptr<ImpBitmap> xNewImpBmp(new ImpBitmap);
+            if (xNewImpBmp->ImplCreate(*mxImpBmp, GetBitCount()))
+            {
+                Bitmap* pThis = const_cast<Bitmap*>(this);
+                pThis->mxImpBmp = xNewImpBmp;
+                nRet = mxImpBmp->ImplGetChecksum();
+            }
+        }
     }
 
     return nRet;
@@ -1522,7 +1546,7 @@ bool Bitmap::Replace( const Color& rSearchColor, const Color& rReplaceColor, sal
         if (xImpBmp->ImplCreate(*mxImpBmp) && xImpBmp->ImplReplace(rSearchColor, rReplaceColor, nTol))
         {
             ImplSetImpBitmap(xImpBmp);
-            maPrefMapMode = MapMode( MAP_PIXEL );
+            maPrefMapMode = MapMode( MapUnit::MapPixel );
             maPrefSize = xImpBmp->ImplGetSize();
             return true;
         }

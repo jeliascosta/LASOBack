@@ -37,16 +37,12 @@ protected:
     SfxItemInfo*    mpLocalItemInfos;
 
 public:
-    XOutdevItemPool(
-        SfxItemPool* pMaster = nullptr,
-        sal_uInt16 nAttrStart = XATTR_START,
-        sal_uInt16 nAttrEnd = XATTR_END,
-        bool bLoadRefCounts = true);
+    XOutdevItemPool( SfxItemPool* pMaster, bool bLoadRefCounts = true);
     XOutdevItemPool(const XOutdevItemPool& rPool);
 
     virtual SfxItemPool* Clone() const override;
 protected:
-    virtual ~XOutdevItemPool();
+    virtual ~XOutdevItemPool() override;
 };
 
 #endif // INCLUDED_SVX_XPOOL_HXX

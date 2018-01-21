@@ -470,7 +470,7 @@ void OGridControlModel::getFastPropertyValue(Any& rValue, sal_Int32 nHandle ) co
             rValue <<= (sal_Int16)m_nBorder;
             break;
         case PROPERTY_ID_BORDERCOLOR:
-            rValue <<= m_aBorderColor;
+            rValue = m_aBorderColor;
             break;
         case PROPERTY_ID_DEFAULTCONTROL:
             rValue <<= m_aDefaultControl;
@@ -488,8 +488,10 @@ void OGridControlModel::getFastPropertyValue(Any& rValue, sal_Int32 nHandle ) co
                 OControlModel::getFastPropertyValue( rValue, nHandle );
     }
 }
+
 sal_Bool OGridControlModel::convertFastPropertyValue( Any& rConvertedValue, Any& rOldValue,
-                                                    sal_Int32 nHandle, const Any& rValue )throw( IllegalArgumentException )
+                                                    sal_Int32 nHandle, const Any& rValue )
+    throw(IllegalArgumentException, RuntimeException, std::exception)
 {
     bool bModified(false);
     switch (nHandle)
@@ -521,7 +523,7 @@ sal_Bool OGridControlModel::convertFastPropertyValue( Any& rConvertedValue, Any&
                 }
                 rOldValue = m_aCursorColor;
                 rConvertedValue = rValue;
-                bModified = (rOldValue.getValue() != rConvertedValue.getValue());
+                bModified = rOldValue != rConvertedValue;
             }
             else
                 bModified = tryPropertyValue(rConvertedValue, rOldValue, rValue, getINT32(m_aCursorColor));
@@ -940,8 +942,8 @@ void OGridControlModel::read(const Reference<XObjectInputStream>& _rxInStream) t
         aFont.Underline = _rxInStream->readShort();
         aFont.Strikeout = _rxInStream->readShort();
         aFont.Orientation = ( (float)_rxInStream->readShort() ) / 10;
-        aFont.Kerning = _rxInStream->readBoolean();
-        aFont.WordLineMode = _rxInStream->readBoolean();
+        aFont.Kerning = _rxInStream->readBoolean() != 0;
+        aFont.WordLineMode = _rxInStream->readBoolean() != 0;
     }
     if ( nAnyMask & FONTSIZE )
     {

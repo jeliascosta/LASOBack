@@ -58,9 +58,9 @@ class SC_DLLPUBLIC ScMergeAttr: public SfxPoolItem
 public:
                 static SfxPoolItem* CreateDefault();
                 ScMergeAttr();
-                ScMergeAttr( SCsCOL nCol, SCsROW nRow = 0);
+                ScMergeAttr( SCsCOL nCol, SCsROW nRow );
                 ScMergeAttr( const ScMergeAttr& );
-                virtual ~ScMergeAttr();
+                virtual ~ScMergeAttr() override;
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
@@ -84,9 +84,9 @@ class SC_DLLPUBLIC ScMergeFlagAttr: public SfxInt16Item
 public:
             ScMergeFlagAttr();
             ScMergeFlagAttr(ScMF nFlags);
-            virtual ~ScMergeFlagAttr();
+            virtual ~ScMergeFlagAttr() override;
 
-    SfxPoolItem * Clone(SfxItemPool * pPool) const override;
+    SfxPoolItem * Clone(SfxItemPool * pPool = nullptr) const override;
 
     ScMF    GetValue() const { return (ScMF) SfxInt16Item::GetValue(); }
 
@@ -116,13 +116,13 @@ public:
                                                 bool bHCell = false,
                                                 bool bHPrint = false);
                             ScProtectionAttr( const ScProtectionAttr& );
-                            virtual ~ScProtectionAttr();
+                            virtual ~ScProtectionAttr() override;
 
     OUString     GetValueText() const;
     virtual bool GetPresentation(
                                     SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
+                                    MapUnit eCoreMetric,
+                                    MapUnit ePresMetric,
                                     OUString& rText,
                                     const IntlWrapper* pIntl = nullptr ) const override;
 
@@ -165,10 +165,10 @@ public:
     // "pure virtual methods" from SfxPoolItem
     virtual bool                operator==( const SfxPoolItem& ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                                 SfxMapUnit eCoreMetric,
-                                                 SfxMapUnit ePresMetric,
-                                                 OUString &rText,
-                                                 const IntlWrapper* pIntl = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText,
+                                  const IntlWrapper* pIntl = nullptr ) const override;
     virtual SfxPoolItem*        Clone( SfxItemPool *pPool = nullptr ) const override;
 
 private:
@@ -199,17 +199,17 @@ public:
 
     inline  ScTableListItem( const sal_uInt16 nWhich );
             ScTableListItem( const ScTableListItem& rCpy );
-            virtual ~ScTableListItem();
+            virtual ~ScTableListItem() override;
 
     ScTableListItem& operator=( const ScTableListItem &rCpy );
 
     // "pure virtual Methoden" from SfxPoolItem
     virtual bool                operator==( const SfxPoolItem& ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                                 SfxMapUnit eCoreMetric,
-                                                 SfxMapUnit ePresMetric,
-                                                 OUString &rText,
-                                                 const IntlWrapper* pIntl = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText,
+                                  const IntlWrapper* pIntl = nullptr ) const override;
     virtual SfxPoolItem*        Clone( SfxItemPool *pPool = nullptr ) const override;
 
 public:
@@ -236,7 +236,7 @@ class SC_DLLPUBLIC ScPageHFItem : public SfxPoolItem
 public:
                 ScPageHFItem( sal_uInt16 nWhich );
                 ScPageHFItem( const ScPageHFItem& rItem );
-                virtual ~ScPageHFItem();
+                virtual ~ScPageHFItem() override;
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
@@ -267,26 +267,26 @@ public:
 
                 ScViewObjectModeItem( sal_uInt16 nWhich );
                 ScViewObjectModeItem( sal_uInt16 nWhich, ScVObjMode eMode );
-                virtual ~ScViewObjectModeItem();
+                virtual ~ScViewObjectModeItem() override;
 
     virtual sal_uInt16          GetValueCount() const override;
     virtual SfxPoolItem*        Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*        Create(SvStream &, sal_uInt16) const override;
     virtual sal_uInt16          GetVersion( sal_uInt16 nFileVersion ) const override;
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                                 SfxMapUnit eCoreMetric,
-                                                 SfxMapUnit ePresMetric,
-                                                 OUString& rText,
-                                                 const IntlWrapper* pIntl = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString& rText,
+                                  const IntlWrapper* pIntl = nullptr ) const override;
 };
 
 class ScDoubleItem : public SfxPoolItem
 {
 public:
                 static SfxPoolItem* CreateDefault();
-                ScDoubleItem( sal_uInt16 nWhich, double nVal=0 );
+                ScDoubleItem( sal_uInt16 nWhich, double nVal );
                 ScDoubleItem( const ScDoubleItem& rItem );
-                virtual ~ScDoubleItem();
+                virtual ~ScDoubleItem() override;
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
@@ -312,7 +312,7 @@ public:
     explicit                    ScPageScaleToItem();
     explicit                    ScPageScaleToItem( sal_uInt16 nWidth, sal_uInt16 nHeight );
 
-    virtual                     ~ScPageScaleToItem();
+    virtual                     ~ScPageScaleToItem() override;
 
     virtual ScPageScaleToItem*  Clone( SfxItemPool* = nullptr ) const override;
 
@@ -327,11 +327,10 @@ public:
     inline void                 Set( sal_uInt16 nWidth, sal_uInt16 nHeight )
                                     { mnWidth = nWidth; mnHeight = nHeight; }
 
-    virtual bool GetPresentation(
-                                    SfxItemPresentation ePresentation,
-                                    SfxMapUnit, SfxMapUnit,
-                                    OUString& rText,
-                                    const IntlWrapper* = nullptr ) const override;
+    virtual bool GetPresentation( SfxItemPresentation ePresentation,
+                                  MapUnit, MapUnit,
+                                  OUString& rText,
+                                  const IntlWrapper* = nullptr ) const override;
 
     virtual bool                QueryValue( css::uno::Any& rAny, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool                PutValue( const css::uno::Any& rAny, sal_uInt8 nMemberId ) override;
@@ -349,7 +348,7 @@ public:
     explicit ScCondFormatItem();
     explicit ScCondFormatItem(const std::vector<sal_uInt32>& nIndex);
 
-    virtual ~ScCondFormatItem();
+    virtual ~ScCondFormatItem() override;
 
     virtual bool operator==(const SfxPoolItem& rCmp ) const override;
     virtual ScCondFormatItem*  Clone( SfxItemPool* = nullptr ) const override;
@@ -357,6 +356,8 @@ public:
     const std::vector<sal_uInt32>& GetCondFormatData() const { return maIndex;}
     void AddCondFormatData( sal_uInt32 nIndex );
     void SetCondFormatData( const std::vector<sal_uInt32>& aIndex );
+
+    virtual void dumpAsXml(struct _xmlTextWriter* pWriter) const override;
 
 private:
     std::vector<sal_uInt32> maIndex;

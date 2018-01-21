@@ -55,7 +55,7 @@ namespace internal
         bool operator <(const OPropertyAccessor& rOb) const { return nPos < rOb.nPos; }
     };
 
-    typedef std::map< sal_Int32, OPropertyAccessor, ::std::less< sal_Int32 > >  PropertyAccessorMap;
+    typedef std::map< sal_Int32, OPropertyAccessor >  PropertyAccessorMap;
     typedef PropertyAccessorMap::iterator           PropertyAccessorMapIterator;
     typedef PropertyAccessorMap::const_iterator     ConstPropertyAccessorMapIterator;
 }
@@ -247,7 +247,7 @@ public:
     /** only implemented for "forwarded" properties, every other property must be handled
         in the derivee, and will assert if passed herein
     */
-    virtual sal_Bool SAL_CALL convertFastPropertyValue( css::uno::Any& _rConvertedValue, css::uno::Any& _rOldValue, sal_Int32 _nHandle, const css::uno::Any& _rValue ) throw(css::lang::IllegalArgumentException) override;
+    virtual sal_Bool SAL_CALL convertFastPropertyValue( css::uno::Any& _rConvertedValue, css::uno::Any& _rOldValue, sal_Int32 _nHandle, const css::uno::Any& _rValue ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     /** only implemented for "forwarded" properties, every other property must be handled
         in the derivee, and will assert if passed herein
@@ -255,7 +255,7 @@ public:
     virtual void SAL_CALL setFastPropertyValue_NoBroadcast( sal_Int32 _nHandle, const css::uno::Any& _rValue ) throw ( css::uno::Exception, std::exception ) override;
 
 protected:
-    virtual ~OPropertySetAggregationHelper();
+    virtual ~OPropertySetAggregationHelper() override;
 
     virtual void SAL_CALL getFastPropertyValue(css::uno::Any& rValue, sal_Int32 nHandle) const override;
     void disposing();

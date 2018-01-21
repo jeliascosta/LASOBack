@@ -340,7 +340,7 @@ SvStream& SvxFieldItem::Store( SvStream& rStrm, sal_uInt16 /*nItemVersion*/ ) co
 
 bool SvxFieldItem::operator==( const SfxPoolItem& rItem ) const
 {
-    DBG_ASSERT( SfxPoolItem::operator==( rItem ), "unequal which or type" );
+    assert(SfxPoolItem::operator==(rItem));
 
     const SvxFieldData* pOtherFld = static_cast<const SvxFieldItem&>(rItem).GetField();
     if( pField == pOtherFld )
@@ -396,7 +396,7 @@ void SvxDateField::Load( SvPersistStream & rStm )
 {
     sal_uInt16 nType, nFormat;
 
-    rStm.ReadUInt32( nFixDate );
+    rStm.ReadInt32( nFixDate );
     rStm.ReadUInt16( nType );
     rStm.ReadUInt16( nFormat );
 
@@ -407,7 +407,7 @@ void SvxDateField::Load( SvPersistStream & rStm )
 
 void SvxDateField::Save( SvPersistStream & rStm )
 {
-    rStm.WriteUInt32( nFixDate );
+    rStm.WriteInt32( nFixDate );
     rStm.WriteUInt16( eType );
     rStm.WriteUInt16( eFormat );
 }
@@ -529,7 +529,7 @@ static void write_unicode( SvPersistStream & rStm, const OUString& rString )
     sal_uInt16 nL =  sal::static_int_cast<sal_uInt16>(rString.getLength());
     rStm.WriteUInt16( nL );
     //endian specific?, yipes!
-    rStm.Write( rString.getStr(), nL*sizeof(sal_Unicode) );
+    rStm.WriteBytes( rString.getStr(), nL*sizeof(sal_Unicode) );
 }
 
 static OUString read_unicode( SvPersistStream & rStm )
@@ -548,7 +548,7 @@ static OUString read_unicode( SvPersistStream & rStm )
     {
         pStr = rtl_uString_alloc(nL);
         //endian specific?, yipes!
-        rStm.Read(pStr->buffer, nL*sizeof(sal_Unicode));
+        rStm.ReadBytes(pStr->buffer, nL*sizeof(sal_Unicode));
     }
     //take ownership of buffer and return, otherwise return empty string
     return pStr ? OUString(pStr, SAL_NO_ACQUIRE) : OUString();

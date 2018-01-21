@@ -66,9 +66,6 @@ SdPrintOptions::SdPrintOptions( vcl::Window* pParent, const SfxItemSet& rInAttrs
 #ifndef MACOSX
     SetDrawMode();
 #endif
-
-    m_pCbxFront->SetAccessibleRelationLabeledBy( m_pRbtBooklet );
-    m_pCbxBack->SetAccessibleRelationLabeledBy( m_pRbtBooklet );
 }
 
 SdPrintOptions::~SdPrintOptions()
@@ -120,7 +117,7 @@ bool SdPrintOptions::FillItemSet( SfxItemSet* rAttrs )
         m_pRbtGrayscale->IsValueChangedFromSaved()||
         m_pRbtBlackWhite->IsValueChangedFromSaved())
     {
-        SdOptionsPrintItem aOptions( ATTR_OPTIONS_PRINT );
+        SdOptionsPrintItem aOptions;
 
         aOptions.GetOptionsPrint().SetDraw( m_pCbxDraw->IsChecked() );
         aOptions.GetOptionsPrint().SetNotes( m_pCbxNotes->IsChecked() );
@@ -212,7 +209,7 @@ VclPtr<SfxTabPage> SdPrintOptions::Create( vcl::Window* pWindow,
     return VclPtr<SdPrintOptions>::Create( pWindow, *rOutAttrs );
 }
 
-IMPL_LINK_TYPED( SdPrintOptions, ClickCheckboxHdl, Button*, pCbx, void )
+IMPL_LINK( SdPrintOptions, ClickCheckboxHdl, Button*, pCbx, void )
 {
     // there must be at least one of them checked
     if( !m_pCbxDraw->IsChecked() && !m_pCbxNotes->IsChecked() && !m_pCbxOutline->IsChecked() && !m_pCbxHandout->IsChecked() )
@@ -221,7 +218,7 @@ IMPL_LINK_TYPED( SdPrintOptions, ClickCheckboxHdl, Button*, pCbx, void )
     updateControls();
 }
 
-IMPL_LINK_NOARG_TYPED(SdPrintOptions, ClickBookletHdl, Button*, void)
+IMPL_LINK_NOARG(SdPrintOptions, ClickBookletHdl, Button*, void)
 {
     updateControls();
 }

@@ -117,24 +117,24 @@ public:
     SfxClassificationCategory* m_pCategory;
 
     SfxClassificationParser();
-    virtual ~SfxClassificationParser();
+    ~SfxClassificationParser() override;
 
-    virtual void SAL_CALL startDocument() throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
+    void SAL_CALL startDocument() throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL endDocument() throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
+    void SAL_CALL endDocument() throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL startElement(const OUString& aName, const uno::Reference<xml::sax::XAttributeList>& xAttribs)
+    void SAL_CALL startElement(const OUString& aName, const uno::Reference<xml::sax::XAttributeList>& xAttribs)
     throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL endElement(const OUString& aName) throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
+    void SAL_CALL endElement(const OUString& aName) throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL characters(const OUString& aChars) throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
+    void SAL_CALL characters(const OUString& aChars) throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL ignorableWhitespace(const OUString& aWhitespaces) throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
+    void SAL_CALL ignorableWhitespace(const OUString& aWhitespaces) throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL processingInstruction(const OUString& aTarget, const OUString& aData) throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
+    void SAL_CALL processingInstruction(const OUString& aTarget, const OUString& aData) throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL setDocumentLocator(const uno::Reference<xml::sax::XLocator>& xLocator)
+    void SAL_CALL setDocumentLocator(const uno::Reference<xml::sax::XLocator>& xLocator)
     throw (xml::sax::SAXException, uno::RuntimeException, std::exception) override;
 };
 
@@ -150,9 +150,7 @@ SfxClassificationParser::SfxClassificationParser()
 {
 }
 
-SfxClassificationParser::~SfxClassificationParser()
-{
-}
+SfxClassificationParser::~SfxClassificationParser() = default;
 
 void SAL_CALL SfxClassificationParser::startDocument() throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
@@ -188,7 +186,7 @@ throw (xml::sax::SAXException, uno::RuntimeException, std::exception)
             OUString aIdentifier = xAttribs->getValueByName("Identifier");
 
             // Create a new category and initialize it with the data that's true for all categories.
-            m_aCategories.push_back(SfxClassificationCategory());
+            m_aCategories.emplace_back(SfxClassificationCategory());
             SfxClassificationCategory& rCategory = m_aCategories.back();
             rCategory.m_aName = aName;
             rCategory.m_aLabels["PolicyAuthority:Name"] = m_aPolicyAuthorityName;
@@ -404,7 +402,7 @@ void SfxClassificationHelper::Impl::setStartValidity(SfxClassificationPolicyType
         return;
 
     SfxClassificationCategory& rCategory = itCategory->second;
-    std::map<OUString, OUString>::iterator it = rCategory.m_aLabels.find(policyTypeToString(eType) + PROP_STARTVALIDITY());
+    auto it = rCategory.m_aLabels.find(policyTypeToString(eType) + PROP_STARTVALIDITY());
     if (it != rCategory.m_aLabels.end())
     {
         if (it->second == PROP_NONE())
@@ -504,14 +502,14 @@ bool SfxClassificationHelper::ShowPasteInfo(SfxClassificationCheckPasteResult eR
     case SfxClassificationCheckPasteResult::TargetDocNotClassified:
     {
         if (!Application::IsHeadlessModeEnabled())
-            ScopedVclPtrInstance<MessageDialog>(nullptr, SfxResId(STR_TARGET_DOC_NOT_CLASSIFIED), VCL_MESSAGE_INFO)->Execute();
+            ScopedVclPtrInstance<MessageDialog>(nullptr, SfxResId(STR_TARGET_DOC_NOT_CLASSIFIED), VclMessageType::Info)->Execute();
         return false;
     }
     break;
     case SfxClassificationCheckPasteResult::DocClassificationTooLow:
     {
         if (!Application::IsHeadlessModeEnabled())
-            ScopedVclPtrInstance<MessageDialog>(nullptr, SfxResId(STR_DOC_CLASSIFICATION_TOO_LOW), VCL_MESSAGE_INFO)->Execute();
+            ScopedVclPtrInstance<MessageDialog>(nullptr, SfxResId(STR_DOC_CLASSIFICATION_TOO_LOW), VclMessageType::Info)->Execute();
         return false;
     }
     break;
@@ -552,9 +550,7 @@ SfxClassificationHelper::SfxClassificationHelper(const uno::Reference<document::
     }
 }
 
-SfxClassificationHelper::~SfxClassificationHelper()
-{
-}
+SfxClassificationHelper::~SfxClassificationHelper() = default;
 
 const OUString& SfxClassificationHelper::GetBACName(SfxClassificationPolicyType eType)
 {
@@ -568,7 +564,7 @@ bool SfxClassificationHelper::HasImpactLevel()
         return false;
 
     SfxClassificationCategory& rCategory = itCategory->second;
-    std::map<OUString, OUString>::iterator it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_IMPACTSCALE());
+    auto it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_IMPACTSCALE());
     if (it == rCategory.m_aLabels.end())
         return false;
 
@@ -586,7 +582,7 @@ bool SfxClassificationHelper::HasDocumentHeader()
         return false;
 
     SfxClassificationCategory& rCategory = itCategory->second;
-    std::map<OUString, OUString>::iterator it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_DOCHEADER());
+    auto it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_DOCHEADER());
     if (it == rCategory.m_aLabels.end() || it->second.isEmpty())
         return false;
 
@@ -600,7 +596,7 @@ bool SfxClassificationHelper::HasDocumentFooter()
         return false;
 
     SfxClassificationCategory& rCategory = itCategory->second;
-    std::map<OUString, OUString>::iterator it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_DOCFOOTER());
+    auto it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_DOCFOOTER());
     if (it == rCategory.m_aLabels.end() || it->second.isEmpty())
         return false;
 
@@ -616,7 +612,7 @@ basegfx::BColor SfxClassificationHelper::GetImpactLevelColor()
         return aRet;
 
     SfxClassificationCategory& rCategory = itCategory->second;
-    std::map<OUString, OUString>::iterator it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_IMPACTSCALE());
+    auto it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_IMPACTSCALE());
     if (it == rCategory.m_aLabels.end())
         return aRet;
     OUString aScale = it->second;
@@ -638,7 +634,7 @@ basegfx::BColor SfxClassificationHelper::GetImpactLevelColor()
             aColors["2"] = basegfx::BColor(1.0, 0.5, 0.0);
             aColors["3"] = basegfx::BColor(0.5, 0.0, 0.0);
         }
-        std::map<OUString, basegfx::BColor>::iterator itColor = aColors.find(aLevel);
+        auto itColor = aColors.find(aLevel);
         if (itColor == aColors.end())
             return aRet;
         aRet = itColor->second;
@@ -653,7 +649,7 @@ basegfx::BColor SfxClassificationHelper::GetImpactLevelColor()
             aColors["Moderate"] = basegfx::BColor(1.0, 0.5, 0.0);
             aColors["High"] = basegfx::BColor(0.5, 0.0, 0.0);
         }
-        std::map<OUString, basegfx::BColor>::iterator itColor = aColors.find(aLevel);
+        auto itColor = aColors.find(aLevel);
         if (itColor == aColors.end())
             return aRet;
         aRet = itColor->second;
@@ -671,7 +667,7 @@ sal_Int32 SfxClassificationHelper::GetImpactLevel()
         return nRet;
 
     SfxClassificationCategory& rCategory = itCategory->second;
-    std::map<OUString, OUString>::iterator it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_IMPACTSCALE());
+    auto it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_IMPACTSCALE());
     if (it == rCategory.m_aLabels.end())
         return nRet;
     OUString aScale = it->second;
@@ -697,7 +693,7 @@ sal_Int32 SfxClassificationHelper::GetImpactLevel()
             aValues["Moderate"] = 1;
             aValues["High"] = 2;
         }
-        std::map<OUString, sal_Int32>::iterator itValues = aValues.find(aLevel);
+        auto itValues = aValues.find(aLevel);
         if (itValues == aValues.end())
             return nRet;
         nRet = itValues->second;
@@ -713,7 +709,7 @@ OUString SfxClassificationHelper::GetImpactScale()
         return OUString();
 
     SfxClassificationCategory& rCategory = itCategory->second;
-    std::map<OUString, OUString>::iterator it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_IMPACTSCALE());
+    auto it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_IMPACTSCALE());
     if (it != rCategory.m_aLabels.end())
         return it->second;
 
@@ -727,7 +723,7 @@ OUString SfxClassificationHelper::GetDocumentWatermark()
         return OUString();
 
     SfxClassificationCategory& rCategory = itCategory->second;
-    std::map<OUString, OUString>::iterator it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_DOCWATERMARK());
+    auto it = rCategory.m_aLabels.find(PROP_PREFIX_INTELLECTUALPROPERTY() + PROP_DOCWATERMARK());
     if (it != rCategory.m_aLabels.end())
         return it->second;
 
@@ -752,7 +748,7 @@ void SfxClassificationHelper::SetBACName(const OUString& rName, SfxClassificatio
     if (m_pImpl->m_aCategories.empty())
         m_pImpl->parsePolicy();
 
-    std::vector<SfxClassificationCategory>::iterator it = std::find_if(m_pImpl->m_aCategories.begin(), m_pImpl->m_aCategories.end(), [&](const SfxClassificationCategory& rCategory)
+    auto it = std::find_if(m_pImpl->m_aCategories.begin(), m_pImpl->m_aCategories.end(), [&](const SfxClassificationCategory& rCategory)
     {
         return rCategory.m_aName == rName;
     });

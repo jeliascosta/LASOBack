@@ -31,7 +31,7 @@
 namespace basctl
 {
 
-typedef ::std::multimap< sal_Int16, OUString, ::std::less< sal_Int16 > > IndexToNameMap;
+typedef ::std::multimap< sal_Int16, OUString > IndexToNameMap;
 
 
 class DlgEdForm;
@@ -69,7 +69,7 @@ protected:
     using SfxListener::StartListening;
     void StartListening();
     using SfxListener::EndListening;
-    void    EndListening(bool bRemoveListener = true);
+    void    EndListening(bool bRemoveListener);
     bool    isListening() const { return bIsListening; }
 
     bool TransformSdrToControlCoordinates(
@@ -87,13 +87,12 @@ protected:
 
 public:
 
-    virtual ~DlgEdObj();
-    virtual void SetPage(SdrPage* pNewPage) override;
+    virtual ~DlgEdObj() override;
 
     void SetDlgEdForm( DlgEdForm* pForm ) { pDlgEdForm = pForm; }
     DlgEdForm* GetDlgEdForm() const { return pDlgEdForm; }
 
-    virtual sal_uInt32 GetObjInventor() const override;
+    virtual SdrInventor GetObjInventor() const override;
     virtual sal_uInt16 GetObjIdentifier() const override;
 
     virtual DlgEdObj*   Clone() const override;                                          // not working yet
@@ -156,7 +155,7 @@ protected:
 
 public:
 
-    virtual ~DlgEdForm();
+    virtual ~DlgEdForm() override;
 
     DlgEditor& GetDlgEditor () const { return rDlgEditor; }
 

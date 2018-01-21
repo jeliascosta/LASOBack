@@ -60,13 +60,6 @@ class AcceleratorConfigurationReader : public ::cppu::WeakImplHelper< css::xml::
             E_ATTRIBUTE_URL
         };
 
-        /** @short  some namespace defines */
-        enum EAcceleratorXMLNamespace
-        {
-            E_NAMESPACE_ACCEL,
-            E_NAMESPACE_XLINK
-        };
-
     // member
 
     private:
@@ -105,7 +98,7 @@ class AcceleratorConfigurationReader : public ::cppu::WeakImplHelper< css::xml::
         AcceleratorConfigurationReader(AcceleratorCache& rContainer);
 
         /** @short  does nothing real ... */
-        virtual ~AcceleratorConfigurationReader();
+        virtual ~AcceleratorConfigurationReader() override;
 
         // XDocumentHandler
         virtual void SAL_CALL startDocument()

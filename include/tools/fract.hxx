@@ -38,7 +38,8 @@ class SAL_WARN_UNUSED TOOLS_DLLPUBLIC Fraction
 public:
                     Fraction();
                     Fraction( const Fraction & rFrac );
-                    Fraction( long nNum, long nDen=1 );
+                    Fraction( Fraction && rFrac );
+                    Fraction( long nNum, long nDen );
                     Fraction( double dVal );
                     ~Fraction();
 
@@ -51,6 +52,7 @@ public:
     operator        double() const;
 
     Fraction&       operator=( const Fraction& rfrFrac );
+    Fraction&       operator=( Fraction&& rfrFrac );
 
     Fraction&       operator+=( const Fraction& rfrFrac );
     Fraction&       operator-=( const Fraction& rfrFrac );
@@ -71,7 +73,7 @@ public:
     TOOLS_DLLPUBLIC friend bool operator<=( const Fraction& rVal1, const Fraction& rVal2 );
     TOOLS_DLLPUBLIC friend bool operator>=( const Fraction& rVal1, const Fraction& rVal2 );
 
-    TOOLS_DLLPUBLIC friend SvStream& ReadFraction( SvStream& rIStream, Fraction& rFract );
+    TOOLS_DLLPUBLIC friend SvStream& ReadFraction( SvStream& rIStream, Fraction const & rFract );
     TOOLS_DLLPUBLIC friend SvStream& WriteFraction( SvStream& rOStream, const Fraction& rFract );
 };
 

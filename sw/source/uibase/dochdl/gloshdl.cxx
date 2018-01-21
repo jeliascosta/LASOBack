@@ -20,9 +20,7 @@
 #include <hintids.hxx>
 #include <editeng/wghtitem.hxx>
 #include <editeng/adjustitem.hxx>
-#ifndef __RSC //autogen
 #include <tools/errinf.hxx>
-#endif
 #include <vcl/msgbox.hxx>
 #include <svl/macitem.hxx>
 #include <sfx2/fcontnr.hxx>
@@ -78,7 +76,7 @@ void SwGlossaryHdl::GlossaryDlg()
 {
     SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
     assert(pFact && "Dialog creation failed!");
-    std::unique_ptr<AbstractGlossaryDlg> pDlg(pFact->CreateGlossaryDlg(pViewFrame, this, pWrtShell));
+    ScopedVclPtr<AbstractGlossaryDlg> pDlg(pFact->CreateGlossaryDlg(pViewFrame, this, pWrtShell));
     assert(pDlg && "Dialog creation failed!");
     OUString sName;
     OUString sShortName;
@@ -89,7 +87,7 @@ void SwGlossaryHdl::GlossaryDlg()
         sShortName = pDlg->GetCurrShortName();
     }
 
-    pDlg.reset();
+    pDlg.disposeAndClear();
     DELETEZ(pCurGrp);
     if(HasGlossaryList())
     {
@@ -107,7 +105,7 @@ void SwGlossaryHdl::SetCurGroup(const OUString &rGrp, bool bApi, bool bAlwaysCre
     OUString sGroup(rGrp);
     if (sGroup.indexOf(GLOS_DELIM)<0 && !FindGroupName(sGroup))
     {
-        sGroup += OUStringLiteral1<GLOS_DELIM>() + "0";
+        sGroup += OUStringLiteral1(GLOS_DELIM) + "0";
     }
     if(pCurGrp)
     {
@@ -203,7 +201,7 @@ void SwGlossaryHdl::RenameGroup(const OUString& rOld, OUString& rNew, const OUSt
         OUString sNewGroup(rNew);
         if (sNewGroup.indexOf(GLOS_DELIM)<0)
         {
-            sNewGroup += OUStringLiteral1<GLOS_DELIM>() + "0";
+            sNewGroup += OUStringLiteral1(GLOS_DELIM) + "0";
         }
         rStatGlossaries.RenameGroupDoc(sOldGroup, sNewGroup, rNewTitle);
         rNew = sNewGroup;
@@ -325,7 +323,7 @@ bool SwGlossaryHdl::NewGlossary(const OUString& rName, const OUString& rShortNam
                             rCfg.IsSaveRelFile(), pOnlyText );
     if(nSuccess == (sal_uInt16) -1 )
     {
-        ScopedVclPtrInstance<MessageDialog>(pWrtShell->GetView().GetWindow(), SW_RES(STR_ERR_INSERT_GLOS), VCL_MESSAGE_INFO)->Execute();
+        ScopedVclPtrInstance<MessageDialog>(pWrtShell->GetView().GetWindow(), SW_RES(STR_ERR_INSERT_GLOS), VclMessageType::Info)->Execute();
     }
     if( !pCurGrp )
         delete pTmp;
@@ -439,7 +437,7 @@ bool SwGlossaryHdl::Expand( const OUString& rShortName,
                 SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
                 assert(pFact && "SwAbstractDialogFactory fail!");
 
-                std::unique_ptr<AbstractSwSelGlossaryDlg> pDlg(pFact->CreateSwSelGlossaryDlg(aShortName));
+                ScopedVclPtr<AbstractSwSelGlossaryDlg> pDlg(pFact->CreateSwSelGlossaryDlg(aShortName));
                 assert(pDlg && "Dialog creation failed!");
                 for(TextBlockInfo_Impl & i : aFoundArr)
                 {
@@ -449,7 +447,7 @@ bool SwGlossaryHdl::Expand( const OUString& rShortName,
                 const sal_Int32 nRet = RET_OK == pDlg->Execute()?
                                         pDlg->GetSelectedIdx():
                                         LISTBOX_ENTRY_NOTFOUND;
-                pDlg.reset();
+                pDlg.disposeAndClear();
                 if(LISTBOX_ENTRY_NOTFOUND != nRet)
                 {
                     TextBlockInfo_Impl* pData = &aFoundArr[nRet];

@@ -150,7 +150,11 @@ std::shared_ptr<utl::TempFile> ChartTest::reload(const OUString& rFilterName)
         if(!mbSkipValidation)
             validate(pTempFile->GetFileName(), test::ODF);
     }
-
+    else if(rFilterName == "MS Excel 97")
+    {
+        if(!mbSkipValidation)
+            validate(pTempFile->GetFileName(), test::MSBINARY);
+    }
     CPPUNIT_ASSERT(mxComponent.is());
     return pTempFile;
 }
@@ -171,7 +175,7 @@ void ChartTest::tearDown()
 
 }
 
-Reference< lang::XComponent > getChartCompFromSheet( sal_Int32 nSheet, uno::Reference< lang::XComponent > xComponent )
+Reference< lang::XComponent > getChartCompFromSheet( sal_Int32 nSheet, uno::Reference< lang::XComponent > const & xComponent )
 {
     // let us assume that we only have one chart per sheet
 
@@ -201,14 +205,14 @@ Reference< lang::XComponent > getChartCompFromSheet( sal_Int32 nSheet, uno::Refe
 
 }
 
-Reference< chart2::XChartDocument > getChartDocFromSheet( sal_Int32 nSheet, uno::Reference< lang::XComponent > xComponent )
+Reference< chart2::XChartDocument > getChartDocFromSheet( sal_Int32 nSheet, uno::Reference< lang::XComponent > const & xComponent )
 {
     uno::Reference< chart2::XChartDocument > xChartDoc ( getChartCompFromSheet(nSheet, xComponent), UNO_QUERY_THROW );
     CPPUNIT_ASSERT(xChartDoc.is());
     return xChartDoc;
 }
 
-Reference< chart2::XChartType > getChartTypeFromDoc( Reference< chart2::XChartDocument > xChartDoc,
+Reference< chart2::XChartType > getChartTypeFromDoc( Reference< chart2::XChartDocument > const & xChartDoc,
                                                                 sal_Int32 nChartType, sal_Int32 nCooSys = 0 )
 {
     CPPUNIT_ASSERT( xChartDoc.is() );
@@ -252,7 +256,7 @@ Reference<chart2::XAxis> getAxisFromDoc(
     return xAxis;
 }
 
-Reference< chart2::XDataSeries > getDataSeriesFromDoc( uno::Reference< chart2::XChartDocument > xChartDoc,
+Reference< chart2::XDataSeries > getDataSeriesFromDoc( uno::Reference< chart2::XChartDocument > const & xChartDoc,
                                                                 sal_Int32 nDataSeries, sal_Int32 nChartType = 0, sal_Int32 nCooSys = 0 )
 {
     Reference< chart2::XChartType > xChartType = getChartTypeFromDoc( xChartDoc, nChartType, nCooSys );
@@ -268,7 +272,7 @@ Reference< chart2::XDataSeries > getDataSeriesFromDoc( uno::Reference< chart2::X
 }
 
 Reference< chart2::data::XDataSequence > getLabelDataSequenceFromDoc(
-        Reference< chart2::XChartDocument > xChartDoc,
+        Reference< chart2::XChartDocument > const & xChartDoc,
         sal_Int32 nDataSeries = 0, sal_Int32 nChartType = 0 )
 {
     Reference< chart2::XDataSeries > xDataSeries =
@@ -291,7 +295,7 @@ Reference< chart2::data::XDataSequence > getLabelDataSequenceFromDoc(
 }
 
 Reference< chart2::data::XDataSequence > getDataSequenceFromDocByRole(
-        Reference< chart2::XChartDocument > xChartDoc, const OUString& rRole,
+        Reference< chart2::XChartDocument > const & xChartDoc, const OUString& rRole,
         sal_Int32 nDataSeries = 0, sal_Int32 nChartType = 0 )
 {
     Reference< chart2::XDataSeries > xDataSeries =
@@ -317,7 +321,7 @@ Reference< chart2::data::XDataSequence > getDataSequenceFromDocByRole(
     return Reference< chart2::data::XDataSequence > ();
 }
 
-uno::Sequence < OUString > getWriterChartColumnDescriptions( Reference< lang::XComponent > mxComponent )
+uno::Sequence < OUString > getWriterChartColumnDescriptions( Reference< lang::XComponent > const & mxComponent )
 {
     uno::Reference<drawing::XDrawPageSupplier> xDrawPageSupplier(mxComponent, uno::UNO_QUERY);
     uno::Reference<drawing::XDrawPage> xDrawPage = xDrawPageSupplier->getDrawPage();

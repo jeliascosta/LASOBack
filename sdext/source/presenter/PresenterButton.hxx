@@ -62,7 +62,7 @@ public:
         const css::uno::Reference<css::awt::XWindow>& rxParentWindow,
         const css::uno::Reference<css::rendering::XCanvas>& rxParentCanvas,
         const OUString& rsConfigurationName);
-    virtual ~PresenterButton();
+    virtual ~PresenterButton() override;
     PresenterButton(const PresenterButton&) = delete;
     PresenterButton& operator=(const PresenterButton&) = delete;
 
@@ -72,7 +72,7 @@ public:
     void SetCanvas (
         const css::uno::Reference<css::rendering::XCanvas>& rxParentCanvas,
         const css::uno::Reference<css::awt::XWindow>& rxParentWindow);
-    css::geometry::IntegerSize2D GetSize();
+    css::geometry::IntegerSize2D const & GetSize();
 
     // XWindowListener
 

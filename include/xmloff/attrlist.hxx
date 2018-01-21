@@ -31,12 +31,12 @@
 #include <com/sun/star/xml/sax/XLocator.hpp>
 #include <com/sun/star/lang/XUnoTunnel.hpp>
 
-#include <cppuhelper/implbase3.hxx>
+#include <cppuhelper/implbase.hxx>
 #include <memory>
 
 struct SvXMLAttributeList_Impl;
 
-class XMLOFF_DLLPUBLIC SvXMLAttributeList : public ::cppu::WeakImplHelper3<
+class XMLOFF_DLLPUBLIC SvXMLAttributeList : public ::cppu::WeakImplHelper<
         css::xml::sax::XAttributeList,
         css::util::XCloneable,
         css::lang::XUnoTunnel>
@@ -48,7 +48,7 @@ public:
     SvXMLAttributeList( const SvXMLAttributeList& );
     SvXMLAttributeList( const css::uno::Reference<
         css::xml::sax::XAttributeList> & rAttrList );
-    virtual ~SvXMLAttributeList();
+    virtual ~SvXMLAttributeList() override;
 
     static const css::uno::Sequence< sal_Int8 > & getUnoTunnelId() throw();
     static SvXMLAttributeList* getImplementation( const css::uno::Reference< css::uno::XInterface >& ) throw();

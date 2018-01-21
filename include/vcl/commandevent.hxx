@@ -140,7 +140,7 @@ class VCL_DLLPUBLIC CommandWheelData
 private:
     long              mnDelta;
     long              mnNotchDelta;
-    sal_uLong         mnLines;
+    double            mnLines;
     CommandWheelMode  mnWheelMode;
     sal_uInt16        mnCode;
     bool              mbHorz;
@@ -149,13 +149,13 @@ private:
 public:
                     CommandWheelData();
                     CommandWheelData( long nWheelDelta, long nWheelNotchDelta,
-                                      sal_uLong nScrollLines,
+                                      double nScrollLines,
                                       CommandWheelMode nWheelMode, sal_uInt16 nKeyModifier,
-                                      bool bHorz = false, bool bDeltaIsPixel = false );
+                                      bool bHorz, bool bDeltaIsPixel = false );
 
     long            GetDelta() const { return mnDelta; }
     long            GetNotchDelta() const { return mnNotchDelta; }
-    sal_uLong       GetScrollLines() const { return mnLines; }
+    double          GetScrollLines() const { return mnLines; }
     bool            IsHorz() const { return mbHorz; }
     bool            IsDeltaPixel() const { return mbDeltaIsPixel; }
 
@@ -187,11 +187,13 @@ public:
 class VCL_DLLPUBLIC CommandModKeyData
 {
 private:
+    bool                mbDown;
     sal_uInt16          mnCode;
 
 public:
-                    CommandModKeyData( sal_uInt16 nCode );
+                    CommandModKeyData( sal_uInt16 nCode, bool bDown );
 
+    bool            IsDown()    const { return mbDown; }
     bool            IsMod1()    const { return (mnCode & MODKEY_MOD1) != 0; }
     bool            IsMod2()    const { return (mnCode & MODKEY_MOD2) != 0; }
     bool            IsLeftShift() const { return (mnCode & MODKEY_LSHIFT) != 0; }
@@ -208,7 +210,7 @@ class VCL_DLLPUBLIC CommandDialogData
 {
     ShowDialogId   m_nDialogId;
 public:
-    CommandDialogData( ShowDialogId nDialogId = ShowDialogId::Preferences )
+    CommandDialogData( ShowDialogId nDialogId )
     : m_nDialogId( nDialogId )
     {}
 
@@ -236,10 +238,8 @@ enum class MediaCommand
     VolumeMute            = 16,// Mute the volume.
     VolumeUp              = 17,// Raise the volume.
     Menu                  = 18,// Button Menu pressed.
-    MenuHold              = 19,// Button Menu (long) pressed.
     PlayHold              = 20,// Button Play (long) pressed.
     NextTrackHold         = 21,// Button Right holding pressed.
-    PreviousTrackHold     = 22,// Button Left holding pressed.
 };
 
 class VCL_DLLPUBLIC CommandMediaData

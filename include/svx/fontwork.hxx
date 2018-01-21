@@ -35,6 +35,7 @@
 class SdrView;
 class SdrPageView;
 class SdrObject;
+class SvxColorListBox;
 
 class XFormTextAdjustItem;
 class XFormTextDistanceItem;
@@ -107,7 +108,7 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC SvxFontWorkDialog : public SfxDockingWindow
     VclPtr<FixedImage>      m_pFbShadowY;
     VclPtr<MetricField>     m_pMtrFldShadowY;
 
-    VclPtr<ColorLB>         m_pShadowColorLB;
+    VclPtr<SvxColorListBox> m_pShadowColorLB;
 
     SfxBindings&    rBindings;
     Idle            aInputIdle;
@@ -138,19 +139,17 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC SvxFontWorkDialog : public SfxDockingWindow
     long            nSaveShadowAngle;
     long            nSaveShadowSize;
 
-    XColorListRef   pColorList;
-
  friend class SvxFontWorkChildWindow;
  friend class SvxFontWorkControllerItem;
 
-    DECL_LINK_TYPED( SelectStyleHdl_Impl, ToolBox *, void );
-    DECL_LINK_TYPED( SelectAdjustHdl_Impl, ToolBox *, void );
-    DECL_LINK_TYPED( SelectShadowHdl_Impl, ToolBox *, void );
+    DECL_LINK( SelectStyleHdl_Impl, ToolBox *, void );
+    DECL_LINK( SelectAdjustHdl_Impl, ToolBox *, void );
+    DECL_LINK( SelectShadowHdl_Impl, ToolBox *, void );
 
-    DECL_LINK_TYPED( ModifyInputHdl_Impl, Edit&, void );
-    DECL_LINK_TYPED( InputTimoutHdl_Impl, Idle *, void );
+    DECL_LINK( ModifyInputHdl_Impl, Edit&, void );
+    DECL_LINK( InputTimoutHdl_Impl, Idle *, void );
 
-    DECL_LINK_TYPED( ColorSelectHdl_Impl, ListBox&, void );
+    DECL_LINK( ColorSelectHdl_Impl, SvxColorListBox&, void );
 
     void SetStyle_Impl(const XFormTextStyleItem*);
     void SetAdjust_Impl(const XFormTextAdjustItem*);
@@ -173,10 +172,8 @@ class SAL_WARN_UNUSED SVX_DLLPUBLIC SvxFontWorkDialog : public SfxDockingWindow
  public:
     SvxFontWorkDialog(SfxBindings *pBinding, SfxChildWindow *pCW,
                       vcl::Window* pParent);
-    virtual ~SvxFontWorkDialog();
+    virtual ~SvxFontWorkDialog() override;
     virtual void dispose() override;
-
-    void SetColorList(const XColorListRef &pTable);
 };
 
 #endif // INCLUDED_SVX_FONTWORK_HXX

@@ -79,16 +79,6 @@ SalSystem* ImplGetSalSystem()
     return pSVData->mpSalSystem;
 }
 
-ImplSVData::ImplSVData()
-{
-    // init global instance data
-    memset( this, 0, sizeof( ImplSVData ) );
-    maHelpData.mbAutoHelpId = true;
-    maNWFData.maMenuBarHighlightTextColor = Color( COL_TRANSPARENT );
-    maNWFData.mbEnableAccel = true;
-    maNWFData.mbAutoAccel = false;
-}
-
 ImplSVGDIData::~ImplSVGDIData()
 {
     // FIXME: deliberately leak any remaining OutputDevice
@@ -237,7 +227,7 @@ FieldUnitStringList* ImplGetCleanedFieldUnits()
             for( size_t i = 0; i < nUnits; ++i )
             {
                 OUString aUnit( (*pUnits)[i].first );
-                aUnit = comphelper::string::remove(aUnit, ' ');
+                aUnit = aUnit.replaceAll(" ", "");
                 aUnit = aUnit.toAsciiLowerCase();
                 std::pair< OUString, FieldUnit > aElement( aUnit, (*pUnits)[i].second );
                 pSVData->maCtrlData.mpCleanUnitStrings->push_back( aElement );
@@ -264,10 +254,6 @@ BlendFrameCache* ImplGetBlendFrameCache()
 
     return pSVData->mpBlendFrameCache;
 }
-
-#ifdef _WIN32
-bool HasAtHook();
-#endif
 
 #ifdef _WIN32
 bool ImplInitAccessBridge()

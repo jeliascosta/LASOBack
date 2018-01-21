@@ -22,16 +22,17 @@
 
 #include <svl/svldllapi.h>
 #include <svl/intitem.hxx>
+#include <memory>
 
 struct SfxImageItem_Impl;
 class SVL_DLLPUBLIC SfxImageItem : public SfxInt16Item
 {
-    SfxImageItem_Impl*      pImp;
+    std::unique_ptr<SfxImageItem_Impl>      pImpl;
 public:
                             static SfxPoolItem* CreateDefault();
                             SfxImageItem( sal_uInt16 nWhich = 0 );
                             SfxImageItem( const SfxImageItem& );
-    virtual                 ~SfxImageItem();
+    virtual                 ~SfxImageItem() override;
 
     virtual SfxPoolItem*    Clone( SfxItemPool* pPool = nullptr ) const override;
     virtual bool            operator==( const SfxPoolItem& ) const override;

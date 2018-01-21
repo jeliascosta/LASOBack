@@ -117,13 +117,13 @@ namespace dbaui
         VclPtr<FixedLine>                   m_aFL;
         VclPtr<OApplicationDetailView>      m_pDetailView;
 
-        DECL_LINK_TYPED( OnEntrySelectHdl, SvTreeListBox*, void );
+        DECL_LINK( OnEntrySelectHdl, SvTreeListBox*, void );
         void ImplInitSettings();
     protected:
         virtual void DataChanged(const DataChangedEvent& rDCEvt) override;
     public:
         OTasksWindow(vcl::Window* _pParent,OApplicationDetailView* _pDetailView);
-        virtual ~OTasksWindow();
+        virtual ~OTasksWindow() override;
         virtual void dispose() override;
 
         // Window overrides
@@ -160,10 +160,9 @@ namespace dbaui
 
     public:
         OApplicationDetailView(OAppBorderWindow& _rParent,PreviewMode _ePreviewMode);
-        virtual ~OApplicationDetailView();
+        virtual ~OApplicationDetailView() override;
         // Window overrides
         virtual void dispose() override;
-        virtual void GetFocus() override;
 
         /** creates the tables page
             @param  _xConnection

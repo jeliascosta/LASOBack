@@ -149,7 +149,7 @@ class UcbPropertiesChangeListener_Impl : public ::cppu::WeakImplHelper< XPropert
 public:
     UcbLockBytesRef         m_xLockBytes;
 
-    explicit UcbPropertiesChangeListener_Impl( UcbLockBytesRef rRef )
+    explicit UcbPropertiesChangeListener_Impl( UcbLockBytesRef const & rRef )
         : m_xLockBytes( rRef )
     {}
 
@@ -176,7 +176,7 @@ void SAL_CALL UcbPropertiesChangeListener_Impl::propertiesChange ( const Sequenc
 
                     if (aName.compareToIgnoreAsciiCaseAscii("Expires") == 0)
                     {
-                        DateTime aExpires (0, 0);
+                        DateTime aExpires( DateTime::EMPTY );
                         if (INetMIMEMessage::ParseDateField (aValue, aExpires))
                         {
                             aExpires.ConvertToLocalTime();
@@ -220,8 +220,8 @@ class Moderator
 
 public:
     Moderator(
-        Reference < XContent >& xContent,
-        Reference < XInteractionHandler >& xInteract,
+        Reference < XContent > const & xContent,
+        Reference < XInteractionHandler > const & xInteract,
         const Command& rArg
     )
         throw(
@@ -229,7 +229,7 @@ public:
             RuntimeException
         );
 
-    virtual ~Moderator();
+    virtual ~Moderator() override;
 
     enum ResultType {
         NORESULT,
@@ -282,7 +282,6 @@ public:
     enum ReplyType {
         NOREPLY,
         EXIT,
-        RETRY,
         REQUESTHANDLED
     };
 
@@ -342,7 +341,7 @@ public:
 
     explicit ModeratorsActiveDataStreamer(Moderator &theModerator);
 
-    virtual ~ModeratorsActiveDataStreamer();
+    virtual ~ModeratorsActiveDataStreamer() override;
 
     // XActiveDataStreamer
     virtual void SAL_CALL
@@ -378,7 +377,7 @@ public:
 
     explicit ModeratorsActiveDataSink(Moderator &theModerator);
 
-    virtual ~ModeratorsActiveDataSink();
+    virtual ~ModeratorsActiveDataSink() override;
 
     // XActiveDataSink.
     virtual void SAL_CALL
@@ -461,7 +460,7 @@ public:
 
     explicit ModeratorsInteractionHandler(Moderator &theModerator);
 
-    virtual ~ModeratorsInteractionHandler();
+    virtual ~ModeratorsInteractionHandler() override;
 
     virtual void SAL_CALL
     handle( const Reference<XInteractionRequest >& Request )
@@ -495,8 +494,8 @@ ModeratorsInteractionHandler::handle(
 }
 
 Moderator::Moderator(
-    Reference < XContent >& xContent,
-    Reference < XInteractionHandler >& xInteract,
+    Reference < XContent > const & xContent,
+    Reference < XInteractionHandler > const & xInteract,
     const Command& rArg
 )
     throw(
@@ -720,10 +719,10 @@ static bool UCBOpenContentSync_(
 
 static bool UCBOpenContentSync(
     const UcbLockBytesRef& xLockBytes,
-    Reference < XContent > xContent,
+    Reference < XContent > const & xContent,
     const Command& rArg,
     const Reference < XInterface >& xSink,
-    Reference < XInteractionHandler > xInteract )
+    Reference < XInteractionHandler > const & xInteract )
 {
     // http protocol must be handled in a special way:
     //        during the opening process the input stream may change
@@ -1049,7 +1048,7 @@ UcbLockBytes::UcbLockBytes()
     , m_bDontClose( false )
     , m_bStreamValid  (false)
 {
-    SetSynchronMode( true );
+    SetSynchronMode();
 }
 
 UcbLockBytes::~UcbLockBytes()
@@ -1168,13 +1167,8 @@ void UcbLockBytes::terminate_Impl()
     }
 }
 
-void UcbLockBytes::SetSynchronMode (bool bSynchron)
-{
-    SvLockBytes::SetSynchronMode (bSynchron);
-}
-
 ErrCode UcbLockBytes::ReadAt(sal_uInt64 const nPos,
-        void *pBuffer, sal_uLong nCount, sal_uLong *pRead) const
+        void *pBuffer, std::size_t nCount, std::size_t *pRead) const
 {
     if ( IsSynchronMode() )
     {
@@ -1236,13 +1230,13 @@ ErrCode UcbLockBytes::ReadAt(sal_uInt64 const nPos,
 
     memcpy (pBuffer, aData.getConstArray(), nSize);
     if (pRead)
-        *pRead = sal_uLong(nSize);
+        *pRead = static_cast<std::size_t>(nSize);
 
     return ERRCODE_NONE;
 }
 
 ErrCode UcbLockBytes::WriteAt(sal_uInt64 const nPos, const void *pBuffer,
-        sal_uLong nCount, sal_uLong *pWritten)
+        std::size_t nCount, std::size_t *pWritten)
 {
     if ( pWritten )
         *pWritten = 0;
@@ -1302,7 +1296,7 @@ ErrCode UcbLockBytes::SetSize (sal_uInt64 const nNewSize)
 {
     SvLockBytesStat aStat;
     Stat( &aStat, (SvLockBytesStatFlag) 0 );
-    sal_uLong nSize = aStat.nSize;
+    std::size_t nSize = aStat.nSize;
 
     if ( nSize > nNewSize )
     {
@@ -1319,7 +1313,7 @@ ErrCode UcbLockBytes::SetSize (sal_uInt64 const nNewSize)
 
     if ( nSize < nNewSize )
     {
-        sal_uLong nDiff = nNewSize-nSize, nCount=0;
+        std::size_t nDiff = nNewSize-nSize, nCount=0;
         sal_uInt8* pBuffer = new sal_uInt8[ nDiff ];
         memset(pBuffer, 0, nDiff); // initialize for enhanced security
         WriteAt( nSize, pBuffer, nDiff, &nCount );
@@ -1398,12 +1392,12 @@ UcbLockBytesRef UcbLockBytes::CreateLockBytes( const Reference < XContent >& xCo
         return nullptr;
 
     UcbLockBytesRef xLockBytes = new UcbLockBytes;
-    xLockBytes->SetSynchronMode( true );
+    xLockBytes->SetSynchronMode();
     Reference< XActiveDataControl > xSink;
     if ( eOpenMode & StreamMode::WRITE )
-        xSink = static_cast<XActiveDataControl*>(new UcbStreamer_Impl( xLockBytes ));
+        xSink = static_cast<XActiveDataControl*>(new UcbStreamer_Impl( xLockBytes.get() ));
     else
-        xSink = static_cast<XActiveDataControl*>(new UcbDataSink_Impl( xLockBytes ));
+        xSink = static_cast<XActiveDataControl*>(new UcbDataSink_Impl( xLockBytes.get() ));
 
     if ( rProps.getLength() )
     {

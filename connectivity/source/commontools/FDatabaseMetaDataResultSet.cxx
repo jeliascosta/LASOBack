@@ -149,9 +149,9 @@ Any SAL_CALL ODatabaseMetaDataResultSet::queryInterface( const Type & rType ) th
 
 Sequence< Type > SAL_CALL ODatabaseMetaDataResultSet::getTypes(  ) throw(RuntimeException, std::exception)
 {
-    ::cppu::OTypeCollection aTypes( cppu::UnoType<com::sun::star::beans::XMultiPropertySet>::get(),
-                                    cppu::UnoType<com::sun::star::beans::XFastPropertySet>::get(),
-                                    cppu::UnoType<com::sun::star::beans::XPropertySet>::get());
+    ::cppu::OTypeCollection aTypes( cppu::UnoType<css::beans::XMultiPropertySet>::get(),
+                                    cppu::UnoType<css::beans::XFastPropertySet>::get(),
+                                    cppu::UnoType<css::beans::XPropertySet>::get());
 
     return ::comphelper::concatSequences(aTypes.getTypes(),ODatabaseMetaDataResultSet_BASE::getTypes());
 }
@@ -187,18 +187,18 @@ sal_Int32 SAL_CALL ODatabaseMetaDataResultSet::findColumn( const OUString& colum
 #endif
 }
 
-void ODatabaseMetaDataResultSet::checkIndex(sal_Int32 columnIndex ) throw(::com::sun::star::sdbc::SQLException)
+void ODatabaseMetaDataResultSet::checkIndex(sal_Int32 columnIndex ) throw(css::sdbc::SQLException)
 {
     if(columnIndex >= (sal_Int32)(*m_aRowsIter).size() || columnIndex < 1)
         ::dbtools::throwInvalidIndexException(*this);
 }
 
-Reference< ::com::sun::star::io::XInputStream > SAL_CALL ODatabaseMetaDataResultSet::getBinaryStream( sal_Int32 /*columnIndex*/ ) throw(SQLException, RuntimeException, std::exception)
+Reference< css::io::XInputStream > SAL_CALL ODatabaseMetaDataResultSet::getBinaryStream( sal_Int32 /*columnIndex*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     return nullptr;
 }
 
-Reference< ::com::sun::star::io::XInputStream > SAL_CALL ODatabaseMetaDataResultSet::getCharacterStream( sal_Int32 /*columnIndex*/ ) throw(SQLException, RuntimeException, std::exception)
+Reference< css::io::XInputStream > SAL_CALL ODatabaseMetaDataResultSet::getCharacterStream( sal_Int32 /*columnIndex*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     return nullptr;
 }
@@ -222,7 +222,7 @@ Sequence< sal_Int8 > SAL_CALL ODatabaseMetaDataResultSet::getBytes( sal_Int32 co
 }
 
 
-::com::sun::star::util::Date SAL_CALL ODatabaseMetaDataResultSet::getDate( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
+css::util::Date SAL_CALL ODatabaseMetaDataResultSet::getDate( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     return getValue(columnIndex);
 }
@@ -293,7 +293,7 @@ Reference< XRef > SAL_CALL ODatabaseMetaDataResultSet::getRef( sal_Int32 /*colum
 }
 
 
-Any SAL_CALL ODatabaseMetaDataResultSet::getObject( sal_Int32 columnIndex, const Reference< ::com::sun::star::container::XNameAccess >& /*typeMap*/ ) throw(SQLException, RuntimeException, std::exception)
+Any SAL_CALL ODatabaseMetaDataResultSet::getObject( sal_Int32 columnIndex, const Reference< css::container::XNameAccess >& /*typeMap*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     return getValue(columnIndex).makeAny();
 }
@@ -311,13 +311,13 @@ OUString SAL_CALL ODatabaseMetaDataResultSet::getString( sal_Int32 columnIndex )
 }
 
 
-::com::sun::star::util::Time SAL_CALL ODatabaseMetaDataResultSet::getTime( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
+css::util::Time SAL_CALL ODatabaseMetaDataResultSet::getTime( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     return getValue(columnIndex);
 }
 
 
-::com::sun::star::util::DateTime SAL_CALL ODatabaseMetaDataResultSet::getTimestamp( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
+css::util::DateTime SAL_CALL ODatabaseMetaDataResultSet::getTimestamp( sal_Int32 columnIndex ) throw(SQLException, RuntimeException, std::exception)
 {
     return getValue(columnIndex);
 }
@@ -638,7 +638,7 @@ void ODatabaseMetaDataResultSet::setImportedKeysMap()
     m_xMetaData = pMetaData;
 }
 
-Reference< ::com::sun::star::beans::XPropertySetInfo > SAL_CALL ODatabaseMetaDataResultSet::getPropertySetInfo(  ) throw(RuntimeException, std::exception)
+Reference< css::beans::XPropertySetInfo > SAL_CALL ODatabaseMetaDataResultSet::getPropertySetInfo(  ) throw(RuntimeException, std::exception)
 {
     return ::cppu::OPropertySetHelper::createPropertySetInfo(getInfoHelper());
 }
@@ -666,82 +666,82 @@ const ORowSetValue& ODatabaseMetaDataResultSet::getValue(sal_Int32 columnIndex)
 }
 
 /// return an empty ORowSetValueDecorator
-ORowSetValueDecoratorRef ODatabaseMetaDataResultSet::getEmptyValue()
+ORowSetValueDecoratorRef const & ODatabaseMetaDataResultSet::getEmptyValue()
 {
     static ORowSetValueDecoratorRef aEmptyValueRef = new ORowSetValueDecorator();
     return aEmptyValueRef;
 }
 
 /// return an ORowSetValueDecorator with 0 as value
-ORowSetValueDecoratorRef ODatabaseMetaDataResultSet::get0Value()
+ORowSetValueDecoratorRef const & ODatabaseMetaDataResultSet::get0Value()
 {
     static ORowSetValueDecoratorRef a0ValueRef = new ORowSetValueDecorator((sal_Int32)0);
     return a0ValueRef;
 }
 
 /// return an ORowSetValueDecorator with 1 as value
-ORowSetValueDecoratorRef ODatabaseMetaDataResultSet::get1Value()
+ORowSetValueDecoratorRef const & ODatabaseMetaDataResultSet::get1Value()
 {
     static ORowSetValueDecoratorRef a1ValueRef = new ORowSetValueDecorator((sal_Int32)1);
     return a1ValueRef;
 }
 
 /// return an ORowSetValueDecorator with ColumnSearch::BASIC as value
-ORowSetValueDecoratorRef ODatabaseMetaDataResultSet::getBasicValue()
+ORowSetValueDecoratorRef const & ODatabaseMetaDataResultSet::getBasicValue()
 {
     static ORowSetValueDecoratorRef aValueRef = new ORowSetValueDecorator(ColumnSearch::BASIC);
     return aValueRef;
 }
 
-ORowSetValueDecoratorRef ODatabaseMetaDataResultSet::getSelectValue()
+ORowSetValueDecoratorRef const & ODatabaseMetaDataResultSet::getSelectValue()
 {
     static ORowSetValueDecoratorRef aValueRef = new ORowSetValueDecorator(OUString("SELECT"));
     return aValueRef;
 }
 
-ORowSetValueDecoratorRef ODatabaseMetaDataResultSet::getInsertValue()
+ORowSetValueDecoratorRef const & ODatabaseMetaDataResultSet::getInsertValue()
 {
     static ORowSetValueDecoratorRef aValueRef = new ORowSetValueDecorator(OUString("INSERT"));
     return aValueRef;
 }
 
-ORowSetValueDecoratorRef ODatabaseMetaDataResultSet::getDeleteValue()
+ORowSetValueDecoratorRef const & ODatabaseMetaDataResultSet::getDeleteValue()
 {
     static ORowSetValueDecoratorRef aValueRef = new ORowSetValueDecorator(OUString("DELETE"));
     return aValueRef;
 }
 
-ORowSetValueDecoratorRef ODatabaseMetaDataResultSet::getUpdateValue()
+ORowSetValueDecoratorRef const & ODatabaseMetaDataResultSet::getUpdateValue()
 {
     static ORowSetValueDecoratorRef aValueRef = new ORowSetValueDecorator(OUString("UPDATE"));
     return aValueRef;
 }
 
-ORowSetValueDecoratorRef ODatabaseMetaDataResultSet::getCreateValue()
+ORowSetValueDecoratorRef const & ODatabaseMetaDataResultSet::getCreateValue()
 {
     static ORowSetValueDecoratorRef aValueRef = new ORowSetValueDecorator(OUString("CREATE"));
     return aValueRef;
 }
 
-ORowSetValueDecoratorRef ODatabaseMetaDataResultSet::getReadValue()
+ORowSetValueDecoratorRef const & ODatabaseMetaDataResultSet::getReadValue()
 {
     static ORowSetValueDecoratorRef aValueRef = new ORowSetValueDecorator(OUString("READ"));
     return aValueRef;
 }
 
-ORowSetValueDecoratorRef ODatabaseMetaDataResultSet::getAlterValue()
+ORowSetValueDecoratorRef const & ODatabaseMetaDataResultSet::getAlterValue()
 {
     static ORowSetValueDecoratorRef aValueRef = new ORowSetValueDecorator(OUString("ALTER"));
     return aValueRef;
 }
 
-ORowSetValueDecoratorRef ODatabaseMetaDataResultSet::getDropValue()
+ORowSetValueDecoratorRef const & ODatabaseMetaDataResultSet::getDropValue()
 {
     static ORowSetValueDecoratorRef aValueRef = new ORowSetValueDecorator(OUString("DROP"));
     return aValueRef;
 }
 
-ORowSetValueDecoratorRef ODatabaseMetaDataResultSet::getQuoteValue()
+ORowSetValueDecoratorRef const & ODatabaseMetaDataResultSet::getQuoteValue()
 {
     static ORowSetValueDecoratorRef aValueRef = new ORowSetValueDecorator(OUString("'"));
     return aValueRef;

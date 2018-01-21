@@ -94,15 +94,15 @@ class CachedContentResultSet
             throw( css::sdbc::SQLException,
             css::uno::RuntimeException );
 
-        const OUString& SAL_CALL
+        OUString SAL_CALL
         getContentIdentifierString( sal_Int32 nRow )
             throw( css::uno::RuntimeException );
 
-        const css::uno::Reference< css::ucb::XContentIdentifier >& SAL_CALL
+        css::uno::Reference< css::ucb::XContentIdentifier > SAL_CALL
         getContentIdentifier( sal_Int32 nRow )
             throw( css::uno::RuntimeException );
 
-        const css::uno::Reference< css::ucb::XContent >& SAL_CALL
+        css::uno::Reference< css::ucb::XContent > SAL_CALL
         getContent( sal_Int32 nRow )
             throw( css::uno::RuntimeException );
     };
@@ -185,7 +185,7 @@ public:
                         const css::uno::Reference< css::sdbc::XResultSet > &               xOrigin,
                         const css::uno::Reference< css::ucb::XContentIdentifierMapping > & xContentIdentifierMapping );
 
-    virtual ~CachedContentResultSet();
+    virtual ~CachedContentResultSet() override;
 
 
     // XInterface
@@ -210,9 +210,6 @@ public:
         throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
         throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // XPropertySet inherited
 
@@ -475,7 +472,7 @@ public:
 
     CachedContentResultSetFactory( const css::uno::Reference< css::uno::XComponentContext > & rxContext);
 
-    virtual ~CachedContentResultSetFactory();
+    virtual ~CachedContentResultSetFactory() override;
 
 
     // XInterface

@@ -34,13 +34,6 @@ void GoStartDoc( SwPosition*);
 void GoEndDoc( SwPosition*);
 void GoStartSection( SwPosition*);
 void GoEndSection( SwPosition*);
-bool GoInDoc( SwPaM&, SwMoveFn);
-bool GoInSection( SwPaM&, SwMoveFn);
-bool GoInNode( SwPaM&, SwMoveFn);
-bool GoInContent( SwPaM&, SwMoveFn);
-bool GoInContentCells( SwPaM&, SwMoveFn);
-bool GoInContentSkipHidden( SwPaM&, SwMoveFn);
-bool GoInContentCellsSkipHidden( SwPaM&, SwMoveFn);
 const SwTextAttr* GetFrwrdTextHint( const SwpHints&, sal_uInt16&, sal_Int32 );
 const SwTextAttr* GetBkwrdTextHint( const SwpHints&, sal_uInt16&, sal_Int32 );
 
@@ -48,14 +41,6 @@ bool GoNext(SwNode* pNd, SwIndex * pIdx, sal_uInt16 nMode );
 bool GoPrevious(SwNode* pNd, SwIndex * pIdx, sal_uInt16 nMode );
 SW_DLLPUBLIC SwContentNode* GoNextNds( SwNodeIndex * pIdx, bool );
 SwContentNode* GoPreviousNds( SwNodeIndex * pIdx, bool );
-
-// Funktionsdefinitionen fuer die SwCursorShell
-bool GoPrevPara( SwPaM&, SwPosPara);
-bool GoCurrPara( SwPaM&, SwPosPara);
-bool GoNextPara( SwPaM&, SwPosPara);
-bool GoPrevSection( SwPaM&, SwPosSection);
-bool GoCurrSection( SwPaM&, SwPosSection);
-bool GoNextSection( SwPaM&, SwPosSection);
 
 // Typedefiniton fuer Funktionen
 typedef bool (*GoNd)( SwNode*, SwIndex*, sal_uInt16 );
@@ -81,7 +66,7 @@ struct SwMoveFnCollection
 };
 
 // Funktionsdefinitionen fuers Suchen
-SwContentNode* GetNode( SwPaM&, bool&, SwMoveFn, bool bInReadOnly = false );
+SwContentNode* GetNode( SwPaM&, bool&, SwMoveFnCollection const &, bool bInReadOnly = false );
 
 #endif
 

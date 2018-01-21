@@ -23,6 +23,7 @@
 #include <svx/pageitem.hxx>
 #include <editeng/itemtype.hxx>
 #include <svx/unomid.hxx>
+#include <com/sun/star/style/NumberingType.hpp>
 #include <com/sun/star/style/PageStyleLayout.hpp>
 #include <com/sun/star/style/BreakType.hpp>
 #include <svl/itemset.hxx>
@@ -36,9 +37,9 @@ SfxPoolItem* SvxPageItem::CreateDefault() { return new   SvxPageItem(0);}
 
 SvxPageItem::SvxPageItem( const sal_uInt16 nId ) : SfxPoolItem( nId ),
 
-    eNumType    ( SVX_ARABIC ),
+    eNumType    ( css::style::NumberingType::ARABIC ),
     bLandscape  ( false ),
-    eUse        ( SVX_PAGE_ALL )
+    eUse        ( SvxPageUsage::All )
 {
 }
 
@@ -62,21 +63,21 @@ SfxPoolItem* SvxPageItem::Clone( SfxItemPool * ) const
 // Test for equality
 bool SvxPageItem::operator==( const SfxPoolItem& rAttr ) const
 {
-    DBG_ASSERT( SfxPoolItem::operator==(rAttr), "unequal types" );
+    assert(SfxPoolItem::operator==(rAttr));
     const SvxPageItem& rItem = static_cast<const SvxPageItem&>(rAttr);
     return ( eNumType   == rItem.eNumType   &&
              bLandscape == rItem.bLandscape &&
              eUse       == rItem.eUse );
 }
 
-inline OUString GetUsageText( const sal_uInt16 eU )
+inline OUString GetUsageText( const SvxPageUsage eU )
 {
-    switch( eU & 0x000f )
+    switch( eU )
     {
-        case SVX_PAGE_LEFT  : return SVX_RESSTR(RID_SVXITEMS_PAGE_USAGE_LEFT);
-        case SVX_PAGE_RIGHT : return SVX_RESSTR(RID_SVXITEMS_PAGE_USAGE_RIGHT);
-        case SVX_PAGE_ALL   : return SVX_RESSTR(RID_SVXITEMS_PAGE_USAGE_ALL);
-        case SVX_PAGE_MIRROR: return SVX_RESSTR(RID_SVXITEMS_PAGE_USAGE_MIRROR);
+        case SvxPageUsage::Left  : return SVX_RESSTR(RID_SVXITEMS_PAGE_USAGE_LEFT);
+        case SvxPageUsage::Right : return SVX_RESSTR(RID_SVXITEMS_PAGE_USAGE_RIGHT);
+        case SvxPageUsage::All   : return SVX_RESSTR(RID_SVXITEMS_PAGE_USAGE_ALL);
+        case SvxPageUsage::Mirror: return SVX_RESSTR(RID_SVXITEMS_PAGE_USAGE_MIRROR);
         default:              return OUString();
     }
 }
@@ -85,8 +86,8 @@ inline OUString GetUsageText( const sal_uInt16 eU )
 bool SvxPageItem::GetPresentation
 (
     SfxItemPresentation ePres,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
@@ -95,13 +96,13 @@ bool SvxPageItem::GetPresentation
 
     switch ( ePres )
     {
-        case SFX_ITEM_PRESENTATION_NAMELESS:
+        case SfxItemPresentation::Nameless:
         {
             if ( !aDescName.isEmpty() )
             {
                 rText = aDescName + cpDelimTmp;
             }
-            DBG_ASSERT( eNumType <= SVX_NUMBER_NONE, "enum overflow" );
+            DBG_ASSERT( eNumType <= css::style::NumberingType::NUMBER_NONE, "enum overflow" );
             rText += SVX_RESSTR(RID_SVXITEMS_PAGE_NUM_BEGIN + eNumType) + cpDelimTmp;
             if ( bLandscape )
                 rText += SVX_RESSTR(RID_SVXITEMS_PAGE_LAND_TRUE);
@@ -114,14 +115,14 @@ bool SvxPageItem::GetPresentation
             }
             return true;
         }
-        case SFX_ITEM_PRESENTATION_COMPLETE:
+        case SfxItemPresentation::Complete:
         {
             rText += SVX_RESSTR(RID_SVXITEMS_PAGE_COMPLETE);
             if ( !aDescName.isEmpty() )
             {
                 rText += aDescName + cpDelimTmp;
             }
-            DBG_ASSERT( eNumType <= SVX_NUMBER_NONE, "enum overflow" );
+            DBG_ASSERT( eNumType <= css::style::NumberingType::NUMBER_NONE, "enum overflow" );
             rText += SVX_RESSTR(RID_SVXITEMS_PAGE_NUM_BEGIN + eNumType) + cpDelimTmp;
             if ( bLandscape )
                 rText += SVX_RESSTR(RID_SVXITEMS_PAGE_LAND_TRUE);
@@ -159,12 +160,12 @@ bool SvxPageItem::QueryValue( uno::Any& rVal, sal_uInt8 nMemberId ) const
         case MID_PAGE_LAYOUT     :
         {
             style::PageStyleLayout eRet;
-            switch(eUse & 0x0f)
+            switch(eUse)
             {
-                case SVX_PAGE_LEFT  : eRet = style::PageStyleLayout_LEFT;      break;
-                case SVX_PAGE_RIGHT : eRet = style::PageStyleLayout_RIGHT;     break;
-                case SVX_PAGE_ALL   : eRet = style::PageStyleLayout_ALL;       break;
-                case SVX_PAGE_MIRROR: eRet = style::PageStyleLayout_MIRRORED; break;
+                case SvxPageUsage::Left  : eRet = style::PageStyleLayout_LEFT;      break;
+                case SvxPageUsage::Right : eRet = style::PageStyleLayout_RIGHT;     break;
+                case SvxPageUsage::All   : eRet = style::PageStyleLayout_ALL;       break;
+                case SvxPageUsage::Mirror: eRet = style::PageStyleLayout_MIRRORED; break;
                 default:
                     OSL_FAIL("what layout is this?");
                     return false;
@@ -179,7 +180,7 @@ bool SvxPageItem::QueryValue( uno::Any& rVal, sal_uInt8 nMemberId ) const
 
 bool SvxPageItem::PutValue( const uno::Any& rVal, sal_uInt8 nMemberId )
 {
-    switch( nMemberId )
+    switch( nMemberId & ~CONVERT_TWIPS )
     {
         case MID_PAGE_NUMTYPE:
         {
@@ -203,13 +204,12 @@ bool SvxPageItem::PutValue( const uno::Any& rVal, sal_uInt8 nMemberId )
                     return false;
                 eLayout = (style::PageStyleLayout)nValue;
             }
-            eUse &= 0xfff0;
             switch( eLayout )
             {
-                case style::PageStyleLayout_LEFT     : eUse |= SVX_PAGE_LEFT ; break;
-                case style::PageStyleLayout_RIGHT   : eUse |= SVX_PAGE_RIGHT; break;
-                case style::PageStyleLayout_ALL     : eUse |= SVX_PAGE_ALL  ; break;
-                case style::PageStyleLayout_MIRRORED: eUse |= SVX_PAGE_MIRROR;break;
+                case style::PageStyleLayout_LEFT    : eUse = SvxPageUsage::Left ; break;
+                case style::PageStyleLayout_RIGHT   : eUse = SvxPageUsage::Right; break;
+                case style::PageStyleLayout_ALL     : eUse = SvxPageUsage::All  ; break;
+                case style::PageStyleLayout_MIRRORED: eUse = SvxPageUsage::Mirror;break;
                 default: ;//prevent warning
             }
         }
@@ -236,7 +236,7 @@ SfxPoolItem* SvxPageItem::Create( SvStream& rStream, sal_uInt16 ) const
     pPage->SetDescName( sStr );
     pPage->SetNumType( (SvxNumType)eType );
     pPage->SetLandscape( bLand );
-    pPage->SetPageUsage( nUse );
+    pPage->SetPageUsage( (SvxPageUsage)nUse );
     return pPage;
 }
 
@@ -246,7 +246,7 @@ SvStream& SvxPageItem::Store( SvStream &rStrm, sal_uInt16 /*nItemVersion*/ ) con
     // UNICODE: rStrm << aDescName;
     rStrm.WriteUniOrByteString(aDescName, rStrm.GetStreamCharSet());
 
-    rStrm.WriteUChar( eNumType ).WriteBool( bLandscape ).WriteUInt16( eUse );
+    rStrm.WriteUChar( eNumType ).WriteBool( bLandscape ).WriteUInt16( (sal_uInt16)eUse );
     return rStrm;
 }
 
@@ -278,8 +278,8 @@ SfxPoolItem* SvxSetItem::Clone( SfxItemPool * ) const
 bool SvxSetItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {

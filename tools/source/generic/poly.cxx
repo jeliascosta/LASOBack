@@ -212,7 +212,7 @@ void ImplPolygon::ImplSetSize( sal_uInt16 nNewSize, bool bResize )
     mnPoints   = nNewSize;
 }
 
-bool ImplPolygon::ImplSplit( sal_uInt16 nPos, sal_uInt16 nSpace, ImplPolygon* pInitPoly )
+bool ImplPolygon::ImplSplit( sal_uInt16 nPos, sal_uInt16 nSpace, ImplPolygon const * pInitPoly )
 {
     //Can't fit this in :-(, throw ?
     if (mnPoints + nSpace > USHRT_MAX)
@@ -1139,8 +1139,8 @@ public:
     Vector2D&    operator-=( const Vector2D& rVec ) { mfX -= rVec.mfX; mfY -= rVec.mfY; return *this; }
     double       Scalar( const Vector2D& rVec ) const { return mfX * rVec.mfX + mfY * rVec.mfY ; }
     Vector2D&    Normalize();
-    bool         IsPositive( Vector2D& rVec ) const { return ( mfX * rVec.mfY - mfY * rVec.mfX ) >= 0.0; }
-    bool         IsNegative( Vector2D& rVec ) const { return !IsPositive( rVec ); }
+    bool         IsPositive( Vector2D const & rVec ) const { return ( mfX * rVec.mfY - mfY * rVec.mfX ) >= 0.0; }
+    bool         IsNegative( Vector2D const & rVec ) const { return !IsPositive( rVec ); }
 };
 Vector2D& Vector2D::Normalize()
 {
@@ -1530,6 +1530,12 @@ tools::Polygon& Polygon::operator=( const tools::Polygon& rPoly )
     return *this;
 }
 
+tools::Polygon& Polygon::operator=( tools::Polygon&& rPoly )
+{
+    std::swap(mpImplPolygon, rPoly.mpImplPolygon);
+    return *this;
+}
+
 bool Polygon::operator==( const tools::Polygon& rPoly ) const
 {
 
@@ -1562,8 +1568,6 @@ bool Polygon::IsEqual( const tools::Polygon& rPoly ) const
 
 SvStream& ReadPolygon( SvStream& rIStream, tools::Polygon& rPoly )
 {
-    SAL_WARN_IF( !rIStream.GetVersion(), "tools", "Polygon::>> - Solar-Version not set on rIStream" );
-
     sal_uInt16          i;
     sal_uInt16          nPoints(0);
 
@@ -1594,7 +1598,7 @@ SvStream& ReadPolygon( SvStream& rIStream, tools::Polygon& rPoly )
 #else
         if ( rIStream.GetEndian() == SvStreamEndian::LITTLE )
 #endif
-            rIStream.Read( rPoly.mpImplPolygon->mpPointAry, nPoints*sizeof(Point) );
+            rIStream.ReadBytes(rPoly.mpImplPolygon->mpPointAry, nPoints*sizeof(Point));
         else
 #endif
         {
@@ -1629,7 +1633,7 @@ SvStream& WritePolygon( SvStream& rOStream, const tools::Polygon& rPoly )
 #endif
         {
             if ( nPoints )
-                rOStream.Write( rPoly.mpImplPolygon->mpPointAry, nPoints*sizeof(Point) );
+                rOStream.WriteBytes(rPoly.mpImplPolygon->mpPointAry, nPoints*sizeof(Point));
         }
         else
 #endif
@@ -1655,7 +1659,7 @@ void Polygon::ImplRead( SvStream& rIStream )
     if ( bHasPolyFlags )
     {
         mpImplPolygon->mpFlagAry = new sal_uInt8[ mpImplPolygon->mnPoints ];
-        rIStream.Read( mpImplPolygon->mpFlagAry, mpImplPolygon->mnPoints );
+        rIStream.ReadBytes(mpImplPolygon->mpFlagAry, mpImplPolygon->mnPoints);
     }
 }
 
@@ -1673,7 +1677,7 @@ void Polygon::ImplWrite( SvStream& rOStream ) const
     rOStream.WriteBool(bHasPolyFlags);
 
     if ( bHasPolyFlags )
-        rOStream.Write( mpImplPolygon->mpFlagAry, mpImplPolygon->mnPoints );
+        rOStream.WriteBytes( mpImplPolygon->mpFlagAry, mpImplPolygon->mnPoints );
 }
 
 void Polygon::Write( SvStream& rOStream ) const

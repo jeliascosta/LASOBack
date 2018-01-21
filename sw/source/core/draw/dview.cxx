@@ -64,13 +64,13 @@ class SwSdrHdl : public SdrHdl
 {
 public:
     SwSdrHdl(const Point& rPnt, bool bTopRight ) :
-        SdrHdl( rPnt, bTopRight ? HDL_ANCHOR_TR : HDL_ANCHOR ) {}
+        SdrHdl( rPnt, bTopRight ? SdrHdlKind::Anchor_TR : SdrHdlKind::Anchor ) {}
     virtual bool IsFocusHdl() const override;
 };
 
 bool SwSdrHdl::IsFocusHdl() const
 {
-    if( HDL_ANCHOR == eKind || HDL_ANCHOR_TR == eKind )
+    if( SdrHdlKind::Anchor == eKind || SdrHdlKind::Anchor_TR == eKind )
         return true;
     return SdrHdl::IsFocusHdl();
 }
@@ -375,7 +375,7 @@ void SwDrawView::MoveRepeatedObjs( const SwAnchoredObject& _rMovedAnchoredObj,
                 }
                 else
                 {
-                    rImp.DisposeAccessibleObj( pAnchoredObj->GetDrawObj() );
+                    rImp.DisposeAccessibleObj(pAnchoredObj->GetDrawObj(), true);
                     rImp.AddAccessibleObj( pAnchoredObj->GetDrawObj() );
                 }
             }
@@ -411,7 +411,7 @@ void SwDrawView::MoveRepeatedObjs( const SwAnchoredObject& _rMovedAnchoredObj,
                     }
                     else
                     {
-                        rImp.DisposeAccessibleObj( pAnchoredObj->GetDrawObj() );
+                        rImp.DisposeAccessibleObj(pAnchoredObj->GetDrawObj(), true);
                         rImp.AddAccessibleObj( pAnchoredObj->GetDrawObj() );
                     }
                 }
@@ -621,7 +621,7 @@ void SwDrawView::ObjOrderChanged( SdrObject* pObj, sal_uLong nOldPos,
                 }
                 else
                 {
-                    rImp.DisposeAccessibleObj( pTmpObj );
+                    rImp.DisposeAccessibleObj(pTmpObj, true);
                     rImp.AddAccessibleObj( pTmpObj );
                 }
             }
@@ -640,7 +640,7 @@ void SwDrawView::ObjOrderChanged( SdrObject* pObj, sal_uLong nOldPos,
     else
     {
         // adjustments for accessibility API
-        rImp.DisposeAccessibleObj( pObj );
+        rImp.DisposeAccessibleObj(pObj, true);
         rImp.AddAccessibleObj( pObj );
     }
 
@@ -656,7 +656,7 @@ bool SwDrawView::TakeDragLimit( SdrDragMode eMode,
     {
         const SdrObject *pObj = rMrkList.GetMark( 0 )->GetMarkedSdrObj();
         SwRect aRect;
-        if( ::CalcClipRect( pObj, aRect, eMode == SDRDRAG_MOVE ) )
+        if( ::CalcClipRect( pObj, aRect, eMode == SdrDragMode::Move ) )
         {
             rRect = aRect.SVRect();
             bRet = true;
@@ -746,9 +746,9 @@ const SwFrame* SwDrawView::CalcAnchor()
 
 void SwDrawView::ShowDragAnchor()
 {
-    SdrHdl* pHdl = maHdlList.GetHdl(HDL_ANCHOR);
+    SdrHdl* pHdl = maHdlList.GetHdl(SdrHdlKind::Anchor);
     if ( ! pHdl )
-        pHdl = maHdlList.GetHdl(HDL_ANCHOR_TR);
+        pHdl = maHdlList.GetHdl(SdrHdlKind::Anchor_TR);
 
     if(pHdl)
     {
@@ -920,6 +920,11 @@ void SwDrawView::ReplaceMarkedDrawVirtObjs( SdrMarkView& _rMarkView )
     }
 }
 
+SfxViewShell* SwDrawView::GetSfxViewShell() const
+{
+    return rImp.GetShell()->GetSfxViewShell();
+}
+
 void SwDrawView::DeleteMarked()
 {
     SwDoc* pDoc = Imp().GetShell()->GetDoc();
@@ -948,7 +953,7 @@ void SwDrawView::DeleteMarked()
         SdrObject *pObject = rMarkList.GetMark(i)->GetMarkedSdrObj();
         SwDrawContact* pDrawContact = static_cast<SwDrawContact*>(GetUserCall(pObject));
         SwFrameFormat* pFormat = pDrawContact->GetFormat();
-        if (SwFrameFormat* pTextBox = SwTextBoxHelper::findTextBox(pFormat))
+        if (SwFrameFormat* pTextBox = SwTextBoxHelper::getOtherTextBoxFormat(pFormat, RES_DRAWFRMFMT))
             aTextBoxesToDelete.push_back(pTextBox);
     }
 

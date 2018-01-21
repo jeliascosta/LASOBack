@@ -46,19 +46,20 @@ public:
                     PoEntry();
                     PoEntry( const OString& rSourceFile, const OString& rResType, const OString& rGroupId,
                              const OString& rLocalId, const OString& rHelpText, const OString& rText,
-                             const TYPE eType = TTEXT );
+                             const TYPE eType );
                     ~PoEntry();
 
                     PoEntry( const PoEntry& rPo );
     PoEntry&        operator=( const PoEntry& rPo );
+    PoEntry&        operator=( PoEntry&& rPo );
 
-    OString         getSourceFile() const;      ///< Get name of file from which entry is extracted
+    OString const &  getSourceFile() const;      ///< Get name of file from which entry is extracted
     OString         getGroupId() const;
     OString         getLocalId() const;
     OString         getResourceType() const;    ///< Get the type of component from which entry is extracted
     TYPE            getType() const;            ///< Get the type of entry
-    OString         getMsgId() const;
-    OString         getMsgStr() const;
+    OString const & getMsgId() const;
+    OString const & getMsgStr() const;
     bool            isFuzzy() const;
 
     /// Check whether po-s belong to the same localization component
@@ -104,7 +105,7 @@ public:
     enum OpenMode { TRUNC, APP };
 
             PoOfstream();
-            PoOfstream(const OString& rFileName, OpenMode aMode = TRUNC );
+            PoOfstream(const OString& rFileName, OpenMode aMode );
             ~PoOfstream();
             PoOfstream(const PoOfstream&) = delete;
     PoOfstream& operator=(const PoOfstream&) = delete;

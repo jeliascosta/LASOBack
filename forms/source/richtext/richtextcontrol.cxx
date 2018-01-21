@@ -86,7 +86,7 @@ namespace frm
         }
 
 
-        void implAdjustTwoStateFlag( const Any& _rValue, WinBits& _rAllBits, WinBits _nFlag, bool _bInvert = false )
+        void implAdjustTwoStateFlag( const Any& _rValue, WinBits& _rAllBits, WinBits _nFlag, bool _bInvert )
         {
             bool bFlagValue = false;
             if ( _rValue >>= bFlagValue )
@@ -215,30 +215,16 @@ namespace frm
         }
     }
 
-
     OUString SAL_CALL ORichTextControl::getImplementationName()  throw( RuntimeException, std::exception )
-    {
-        return getImplementationName_Static();
-    }
-
-
-    Sequence< OUString > SAL_CALL ORichTextControl::getSupportedServiceNames()  throw( RuntimeException, std::exception )
-    {
-        return getSupportedServiceNames_Static();
-    }
-
-    OUString SAL_CALL ORichTextControl::getImplementationName_Static()
     {
         return OUString( "com.sun.star.comp.form.ORichTextControl" );
     }
 
-    Sequence< OUString > SAL_CALL ORichTextControl::getSupportedServiceNames_Static()
+    Sequence< OUString > SAL_CALL ORichTextControl::getSupportedServiceNames()  throw( RuntimeException, std::exception )
     {
-        Sequence< OUString > aServices( 3 );
-        aServices[ 0 ] = "com.sun.star.awt.UnoControl";
-        aServices[ 1 ] = "com.sun.star.awt.UnoControlEdit";
-        aServices[ 2 ] = FRM_SUN_CONTROL_RICHTEXTCONTROL;
-        return aServices;
+        return { "com.sun.star.awt.UnoControl",
+                 "com.sun.star.awt.UnoControlEdit",
+                 FRM_SUN_CONTROL_RICHTEXTCONTROL };
     }
 
     Reference< XDispatch > SAL_CALL ORichTextControl::queryDispatch( const css::util::URL& _rURL, const OUString& _rTargetFrameName, sal_Int32 _nSearchFlags ) throw (RuntimeException, std::exception)
@@ -345,12 +331,12 @@ namespace frm
 
         ::Size aSize = pControl->GetSizePixel();
         const MapUnit eTargetUnit = pTargetDevice->GetMapMode().GetMapUnit();
-        if ( eTargetUnit != MAP_PIXEL )
+        if ( eTargetUnit != MapUnit::MapPixel )
             aSize = pTargetDevice->PixelToLogic( aSize );
 
         ::Point aPos( _nX, _nY );
         // the XView::draw API talks about pixels, always ...
-        if ( eTargetUnit != MAP_PIXEL )
+        if ( eTargetUnit != MapUnit::MapPixel )
             aPos = pTargetDevice->PixelToLogic( aPos );
 
         pControl->Draw( pTargetDevice, aPos, aSize, DrawFlags::NoControls );

@@ -27,6 +27,7 @@
 #include <com/sun/star/sdb/XSQLErrorListener.hpp>
 
 #include <cppuhelper/implbase.hxx>
+#include <rtl/ref.hxx>
 
 #include <vector>
 
@@ -72,7 +73,7 @@ namespace svx
     {
     protected:
         IControllerFeatureInvalidation* m_pInvalidationCallback;    // necessary as long as m_pImpl is not yet constructed
-        FormControllerHelper*           m_pImpl;
+        rtl::Reference<FormControllerHelper>  m_pImpl;
 
     public:
         /** standard ctor
@@ -91,13 +92,9 @@ namespace svx
             @param _rxController
                 The form controller which the helper should be responsible for. Must not
                 be <NULL/>, and must have a valid model (form).
-
-            @param _pInvalidationCallback
-                the callback for invalidating feature states
         */
         ControllerFeatures(
-            const css::uno::Reference< css::form::runtime::XFormController >& _rxController,
-            IControllerFeatureInvalidation* _pInvalidationCallback
+            const css::uno::Reference< css::form::runtime::XFormController >& _rxController
         );
 
         /// dtor
@@ -116,8 +113,8 @@ namespace svx
         void dispose();
 
         // access to the instance which implements the functionality. Not to be used when not assigned
-        inline const FormControllerHelper* operator->() const { return m_pImpl; }
-        inline       FormControllerHelper* operator->()       { return m_pImpl; }
+        inline const FormControllerHelper* operator->() const { return m_pImpl.get(); }
+        inline       FormControllerHelper* operator->()       { return m_pImpl.get(); }
     };
 
 
@@ -181,7 +178,7 @@ namespace svx
 
     protected:
         /// dtor
-        virtual ~FormControllerHelper();
+        virtual ~FormControllerHelper() override;
 
         // XFeatureInvalidation
         virtual void SAL_CALL invalidateFeatures( const css::uno::Sequence< ::sal_Int16 >& Features ) throw (css::uno::RuntimeException, std::exception) override;

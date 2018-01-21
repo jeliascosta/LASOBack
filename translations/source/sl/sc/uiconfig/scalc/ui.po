@@ -1,16 +1,16 @@
 #. extracted from sc/uiconfig/scalc/ui
 msgid ""
 msgstr ""
-"Project-Id-Version: LibreOffice 5.4\n"
+"Project-Id-Version: LibreOffice 5.3\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2017-04-10 17:20+0200\n"
-"PO-Revision-Date: 2017-04-10 21:46+0200\n"
+"POT-Creation-Date: 2017-01-06 11:51+0100\n"
+"PO-Revision-Date: 2016-12-26 02:45+0200\n"
 "Last-Translator: Martin Srebotnjak <miles@filmsi.net>\n"
 "Language-Team: sl.libreoffice.org\n"
-"Language: sl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Language: sl\n"
 "Plural-Forms: nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);\n"
 "X-Generator: Virtaal 0.7.1\n"
 "X-Accelerator-Marker: ~\n"
@@ -3461,33 +3461,6 @@ msgctxt ""
 msgid "Edit Setting"
 msgstr "Uredi nastavitev"
 
-#: dropmenu.ui
-msgctxt ""
-"dropmenu.ui\n"
-"hyperlink\n"
-"label\n"
-"string.text"
-msgid "Insert as Hyperlink"
-msgstr "Vstavi kot hiperpovezavo"
-
-#: dropmenu.ui
-msgctxt ""
-"dropmenu.ui\n"
-"link\n"
-"label\n"
-"string.text"
-msgid "Insert as Link"
-msgstr "Vstavi kot povezavo"
-
-#: dropmenu.ui
-msgctxt ""
-"dropmenu.ui\n"
-"copy\n"
-"label\n"
-"string.text"
-msgid "Insert as Copy"
-msgstr "Vstavi kot kopijo"
-
 #: erroralerttabpage.ui
 msgctxt ""
 "erroralerttabpage.ui\n"
@@ -4323,7 +4296,7 @@ msgctxt ""
 "6\n"
 "stringlist.text"
 msgid "Logical"
-msgstr "Logika"
+msgstr "Logično"
 
 #: functionpanel.ui
 msgctxt ""
@@ -6200,6 +6173,69 @@ msgstr "Slog 4"
 #: notebookbar_groups.ui
 msgctxt ""
 "notebookbar_groups.ui\n"
+"rowmenuaddup\n"
+"label\n"
+"string.text"
+msgid "Insert Rows Above"
+msgstr "Vstavi vrstice nad"
+
+#: notebookbar_groups.ui
+msgctxt ""
+"notebookbar_groups.ui\n"
+"rowmenuadddown\n"
+"label\n"
+"string.text"
+msgid "Insert Rows Below"
+msgstr "Vstavi vrstice pod"
+
+#: notebookbar_groups.ui
+msgctxt ""
+"notebookbar_groups.ui\n"
+"rowmenudel\n"
+"label\n"
+"string.text"
+msgid "Delete Rows"
+msgstr "Izbriši vrstice"
+
+#: notebookbar_groups.ui
+msgctxt ""
+"notebookbar_groups.ui\n"
+"rowmenuselect\n"
+"label\n"
+"string.text"
+msgid "Select Rows"
+msgstr "Izberi vrstice"
+
+#: notebookbar_groups.ui
+msgctxt ""
+"notebookbar_groups.ui\n"
+"rowmenuheight\n"
+"label\n"
+"string.text"
+msgid "Row Height..."
+msgstr "Višina vrstice ..."
+
+#: notebookbar_groups.ui
+msgctxt ""
+"notebookbar_groups.ui\n"
+"rowmenuoptimalrow\n"
+"label\n"
+"string.text"
+msgid "Optimal Row Height"
+msgstr "Optimalna višina vrstice"
+
+#: notebookbar_groups.ui
+msgctxt ""
+"notebookbar_groups.ui\n"
+"rowmenudistribute\n"
+"label\n"
+"string.text"
+msgid "Distribute Rows Evenly"
+msgstr "Enakomerno razporedi vrstice"
+
+#: notebookbar_groups.ui
+msgctxt ""
+"notebookbar_groups.ui\n"
 "filegrouplabel\n"
 "label\n"
 "string.text"
@@ -6272,11 +6308,29 @@ msgstr "Desno"
 #: notebookbar_groups.ui
 msgctxt ""
 "notebookbar_groups.ui\n"
-"formatgrouplabel\n"
+"fomatgrouplabel\n"
 "label\n"
 "string.text"
 msgid "Text"
 msgstr "Besedilo"
+
+#: notebookbar_groups.ui
+msgctxt ""
+"notebookbar_groups.ui\n"
+"tablerowsb\n"
+"label\n"
+"string.text"
+msgid "Row"
+msgstr "Vrstica"
+
+#: notebookbar_groups.ui
+msgctxt ""
+"notebookbar_groups.ui\n"
+"tablecolumnsb\n"
+"label\n"
+"string.text"
+msgid "Column"
+msgstr "Stolpec"
 
 #: notebookbar_groups.ui
 msgctxt ""
@@ -8905,24 +8959,6 @@ msgctxt ""
 "string.text"
 msgid "on"
 msgstr "dne"
-
-#: scenariomenu.ui
-msgctxt ""
-"scenariomenu.ui\n"
-"delete\n"
-"label\n"
-"string.text"
-msgid "Delete"
-msgstr "Izbriši"
-
-#: scenariomenu.ui
-msgctxt ""
-"scenariomenu.ui\n"
-"edit\n"
-"label\n"
-"string.text"
-msgid "Properties..."
-msgstr "Lastnosti ..."
 
 #: scgeneralpage.ui
 msgctxt ""

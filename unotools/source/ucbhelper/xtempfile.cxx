@@ -88,11 +88,6 @@ throw ( css::uno::RuntimeException, std::exception )
     }
     return pTypeCollection->getTypes();
 };
-css::uno::Sequence< sal_Int8 > SAL_CALL OTempFileService::getImplementationId(  )
-throw ( css::uno::RuntimeException, std::exception )
-{
-    return OTempFileBase::getImplementationId();
-}
 
 //  XTempFile
 
@@ -165,10 +160,10 @@ throw (css::io::NotConnectedException, css::io::BufferSizeExceededException, css
     if (aData.getLength() < nBytesToRead)
         aData.realloc(nBytesToRead);
 
-    sal_uInt32 nRead = mpStream->Read(static_cast < void* > ( aData.getArray() ), nBytesToRead);
+    sal_uInt32 nRead = mpStream->ReadBytes(static_cast<void*>(aData.getArray()), nBytesToRead);
     checkError();
 
-    if (nRead < (sal_Size)aData.getLength())
+    if (nRead < (std::size_t)aData.getLength())
         aData.realloc( nRead );
 
     if ( sal::static_int_cast<sal_uInt32>(nBytesToRead) > nRead )
@@ -262,7 +257,7 @@ throw ( css::io::NotConnectedException, css::io::BufferSizeExceededException, cs
         throw css::io::NotConnectedException ( OUString(), const_cast < css::uno::XWeak * > ( static_cast < const css::uno::XWeak * > (this ) ) );
 
     checkConnected();
-    sal_uInt32 nWritten = mpStream->Write(aData.getConstArray(),aData.getLength());
+    sal_uInt32 nWritten = mpStream->WriteBytes(aData.getConstArray(), aData.getLength());
     checkError();
     if  ( nWritten != (sal_uInt32)aData.getLength())
         throw css::io::BufferSizeExceededException( OUString(),static_cast < css::uno::XWeak * > ( this ) );
@@ -317,10 +312,10 @@ void OTempFileService::checkConnected ()
 {
     if (!mpStream && mpTempFile)
     {
-        mpStream = mpTempFile->GetStream( STREAM_STD_READWRITE );
+        mpStream = mpTempFile->GetStream( StreamMode::STD_READWRITE );
         if ( mpStream && mbHasCachedPos )
         {
-            mpStream->Seek( sal::static_int_cast<sal_Size>(mnCachedPos) );
+            mpStream->Seek( sal::static_int_cast<std::size_t>(mnCachedPos) );
             if ( mpStream->SvStream::GetError () == ERRCODE_NONE )
             {
                 mbHasCachedPos = false;

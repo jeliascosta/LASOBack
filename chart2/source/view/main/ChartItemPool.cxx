@@ -37,13 +37,13 @@ namespace chart
 {
 
 ChartItemPool::ChartItemPool():
-        SfxItemPool( "ChartItemPool" , SCHATTR_START, SCHATTR_END, nullptr, nullptr )
+        SfxItemPool( "ChartItemPool" , SCHATTR_START, SCHATTR_END, nullptr, nullptr ),
+        pItemInfos(new SfxItemInfo[SCHATTR_END - SCHATTR_START + 1])
 {
     /**************************************************************************
     * PoolDefaults
     **************************************************************************/
-    ppPoolDefaults = new SfxPoolItem*[SCHATTR_END - SCHATTR_START + 1];
-
+    SfxPoolItem** ppPoolDefaults = new SfxPoolItem*[SCHATTR_END - SCHATTR_START + 1];
     ppPoolDefaults[SCHATTR_DATADESCR_SHOW_NUMBER    - SCHATTR_START] = new SfxBoolItem(SCHATTR_DATADESCR_SHOW_NUMBER);
     ppPoolDefaults[SCHATTR_DATADESCR_SHOW_PERCENTAGE- SCHATTR_START] = new SfxBoolItem(SCHATTR_DATADESCR_SHOW_PERCENTAGE);
     ppPoolDefaults[SCHATTR_DATADESCR_SHOW_CATEGORY  - SCHATTR_START] = new SfxBoolItem(SCHATTR_DATADESCR_SHOW_CATEGORY);
@@ -66,12 +66,12 @@ ChartItemPool::ChartItemPool():
 
     //statistic
     ppPoolDefaults[SCHATTR_STAT_AVERAGE             - SCHATTR_START] = new SfxBoolItem (SCHATTR_STAT_AVERAGE);
-    ppPoolDefaults[SCHATTR_STAT_KIND_ERROR          - SCHATTR_START] = new SvxChartKindErrorItem (CHERROR_NONE, SCHATTR_STAT_KIND_ERROR);
+    ppPoolDefaults[SCHATTR_STAT_KIND_ERROR          - SCHATTR_START] = new SvxChartKindErrorItem (SvxChartKindError::NONE, SCHATTR_STAT_KIND_ERROR);
     ppPoolDefaults[SCHATTR_STAT_PERCENT             - SCHATTR_START] = new SvxDoubleItem (0.0, SCHATTR_STAT_PERCENT);
     ppPoolDefaults[SCHATTR_STAT_BIGERROR            - SCHATTR_START] = new SvxDoubleItem (0.0, SCHATTR_STAT_BIGERROR);
     ppPoolDefaults[SCHATTR_STAT_CONSTPLUS           - SCHATTR_START] = new SvxDoubleItem (0.0, SCHATTR_STAT_CONSTPLUS);
     ppPoolDefaults[SCHATTR_STAT_CONSTMINUS          - SCHATTR_START] = new SvxDoubleItem (0.0, SCHATTR_STAT_CONSTMINUS);
-    ppPoolDefaults[SCHATTR_STAT_INDICATE            - SCHATTR_START] = new SvxChartIndicateItem (CHINDICATE_NONE, SCHATTR_STAT_INDICATE);
+    ppPoolDefaults[SCHATTR_STAT_INDICATE            - SCHATTR_START] = new SvxChartIndicateItem (SvxChartIndicate::NONE, SCHATTR_STAT_INDICATE);
     ppPoolDefaults[SCHATTR_STAT_RANGE_POS           - SCHATTR_START] = new SfxStringItem (SCHATTR_STAT_RANGE_POS, OUString());
     ppPoolDefaults[SCHATTR_STAT_RANGE_NEG           - SCHATTR_START] = new SfxStringItem (SCHATTR_STAT_RANGE_NEG, OUString());
     ppPoolDefaults[SCHATTR_STAT_ERRORBAR_TYPE       - SCHATTR_START] = new SfxBoolItem(SCHATTR_STAT_ERRORBAR_TYPE, true);
@@ -121,7 +121,7 @@ ChartItemPool::ChartItemPool():
 
     //axis label
     ppPoolDefaults[SCHATTR_AXIS_SHOWDESCR       - SCHATTR_START] = new SfxBoolItem(SCHATTR_AXIS_SHOWDESCR,false);
-    ppPoolDefaults[SCHATTR_AXIS_LABEL_ORDER     - SCHATTR_START] = new SvxChartTextOrderItem(CHTXTORDER_SIDEBYSIDE, SCHATTR_AXIS_LABEL_ORDER);
+    ppPoolDefaults[SCHATTR_AXIS_LABEL_ORDER     - SCHATTR_START] = new SvxChartTextOrderItem(SvxChartTextOrder::SideBySide, SCHATTR_AXIS_LABEL_ORDER);
     ppPoolDefaults[SCHATTR_AXIS_LABEL_OVERLAP   - SCHATTR_START] = new SfxBoolItem(SCHATTR_AXIS_LABEL_OVERLAP,false);
     ppPoolDefaults[SCHATTR_AXIS_LABEL_BREAK     - SCHATTR_START] = new SfxBoolItem(SCHATTR_AXIS_LABEL_BREAK, false );
 
@@ -137,7 +137,7 @@ ChartItemPool::ChartItemPool():
     ppPoolDefaults[SCHATTR_NUM_OF_LINES_FOR_BAR - SCHATTR_START] = new SfxInt32Item( SCHATTR_NUM_OF_LINES_FOR_BAR, 0 );
     ppPoolDefaults[SCHATTR_SPLINE_ORDER         - SCHATTR_START] = new SfxInt32Item( SCHATTR_SPLINE_ORDER, 3 );
     ppPoolDefaults[SCHATTR_SPLINE_RESOLUTION    - SCHATTR_START] = new SfxInt32Item( SCHATTR_SPLINE_RESOLUTION, 20 );
-    ppPoolDefaults[SCHATTR_DIAGRAM_STYLE        - SCHATTR_START] = new SvxChartStyleItem( CHSTYLE_2D_COLUMN, SCHATTR_DIAGRAM_STYLE );
+    ppPoolDefaults[SCHATTR_DIAGRAM_STYLE        - SCHATTR_START] = new SvxChartStyleItem( SvxChartStyle::Column2D, SCHATTR_DIAGRAM_STYLE );
     ppPoolDefaults[SCHATTR_GROUP_BARS_PER_AXIS  - SCHATTR_START] = new SfxBoolItem(SCHATTR_GROUP_BARS_PER_AXIS, false);
     ppPoolDefaults[SCHATTR_STARTING_ANGLE       - SCHATTR_START] = new SfxInt32Item( SCHATTR_STARTING_ANGLE, 90 );
     ppPoolDefaults[SCHATTR_CLOCKWISE            - SCHATTR_START] = new SfxBoolItem( SCHATTR_CLOCKWISE, false );
@@ -148,7 +148,7 @@ ChartItemPool::ChartItemPool():
 
     ppPoolDefaults[SCHATTR_AXIS_FOR_ALL_SERIES  - SCHATTR_START] = new SfxInt32Item(SCHATTR_AXIS_FOR_ALL_SERIES, 0);
 
-    ppPoolDefaults[SCHATTR_REGRESSION_TYPE                  - SCHATTR_START] = new SvxChartRegressItem  (CHREGRESS_NONE, SCHATTR_REGRESSION_TYPE);
+    ppPoolDefaults[SCHATTR_REGRESSION_TYPE                  - SCHATTR_START] = new SvxChartRegressItem  (SvxChartRegress::NONE, SCHATTR_REGRESSION_TYPE);
     ppPoolDefaults[SCHATTR_REGRESSION_SHOW_EQUATION         - SCHATTR_START] = new SfxBoolItem(SCHATTR_REGRESSION_SHOW_EQUATION, false);
     ppPoolDefaults[SCHATTR_REGRESSION_SHOW_COEFF            - SCHATTR_START] = new SfxBoolItem(SCHATTR_REGRESSION_SHOW_COEFF, false);
     ppPoolDefaults[SCHATTR_REGRESSION_DEGREE                - SCHATTR_START] = new SfxInt32Item(SCHATTR_REGRESSION_DEGREE, 2);
@@ -158,12 +158,12 @@ ChartItemPool::ChartItemPool():
     ppPoolDefaults[SCHATTR_REGRESSION_SET_INTERCEPT         - SCHATTR_START] = new SfxBoolItem(SCHATTR_REGRESSION_SET_INTERCEPT, false);
     ppPoolDefaults[SCHATTR_REGRESSION_INTERCEPT_VALUE       - SCHATTR_START] = new SvxDoubleItem(0.0, SCHATTR_REGRESSION_INTERCEPT_VALUE);
     ppPoolDefaults[SCHATTR_REGRESSION_CURVE_NAME            - SCHATTR_START] = new SfxStringItem(SCHATTR_REGRESSION_CURVE_NAME, OUString());
+    ppPoolDefaults[SCHATTR_REGRESSION_XNAME                 - SCHATTR_START] = new SfxStringItem(SCHATTR_REGRESSION_XNAME, OUString("x"));
+    ppPoolDefaults[SCHATTR_REGRESSION_YNAME                 - SCHATTR_START] = new SfxStringItem(SCHATTR_REGRESSION_YNAME, OUString("f(x)"));
 
     /**************************************************************************
     * ItemInfos
     **************************************************************************/
-    pItemInfos = new SfxItemInfo[SCHATTR_END - SCHATTR_START + 1];
-
     const sal_uInt16 nMax = SCHATTR_END - SCHATTR_START + 1;
     for( sal_uInt16 i = 0; i < nMax; i++ )
     {
@@ -181,24 +181,17 @@ ChartItemPool::ChartItemPool():
 }
 
 ChartItemPool::ChartItemPool(const ChartItemPool& rPool):
-    SfxItemPool(rPool), ppPoolDefaults(nullptr), pItemInfos(nullptr)
+    SfxItemPool(rPool), pItemInfos(nullptr)
 {
 }
 
 ChartItemPool::~ChartItemPool()
 {
     Delete();
+    // release and delete static pool default items
+    ReleaseDefaults(true);
 
     delete[] pItemInfos;
-
-    const sal_uInt16 nMax = SCHATTR_END - SCHATTR_START + 1;
-    for( sal_uInt16 i=0; i<nMax; ++i )
-    {
-        SetRefCount(*ppPoolDefaults[i], 0);
-        delete ppPoolDefaults[i];
-    }
-
-    delete[] ppPoolDefaults;
 }
 
 SfxItemPool* ChartItemPool::Clone() const
@@ -206,9 +199,9 @@ SfxItemPool* ChartItemPool::Clone() const
     return new ChartItemPool(*this);
 }
 
-SfxMapUnit ChartItemPool::GetMetric(sal_uInt16 /* nWhich */) const
+MapUnit ChartItemPool::GetMetric(sal_uInt16 /* nWhich */) const
 {
-    return SFX_MAPUNIT_100TH_MM;
+    return MapUnit::Map100thMM;
 }
 
 SfxItemPool* ChartItemPool::CreateChartItemPool()

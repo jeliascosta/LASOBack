@@ -85,11 +85,11 @@ OUString convertRopToString(RasterOp eRop)
 {
     switch (eRop)
     {
-        case ROP_OVERPAINT: return OUString("overpaint");
-        case ROP_XOR:       return OUString("xor");
-        case ROP_0:         return OUString("0");
-        case ROP_1:         return OUString("1");
-        case ROP_INVERT:    return OUString("invert");
+        case RasterOp::OverPaint: return OUString("overpaint");
+        case RasterOp::Xor:       return OUString("xor");
+        case RasterOp::N0:        return OUString("0");
+        case RasterOp::N1:        return OUString("1");
+        case RasterOp::Invert:    return OUString("invert");
     }
     return OUString();
 }
@@ -116,10 +116,10 @@ OUString convertLineStyleToString(LineStyle eAlign)
 {
     switch (eAlign)
     {
-        case LINE_NONE:    return OUString("none");
-        case LINE_SOLID:   return OUString("solid");
-        case LINE_DASH:    return OUString("dash");
-        case LineStyle_FORCE_EQUAL_SIZE: return OUString("equalsize");
+        case LineStyle::NONE:    return OUString("none");
+        case LineStyle::Solid:   return OUString("solid");
+        case LineStyle::Dash:    return OUString("dash");
+        default: break;
     }
     return OUString();
 }
@@ -260,7 +260,7 @@ xmlDocPtr MetafileXmlDump::dumpAndParse(const GDIMetaFile& rMetaFile, const OUSt
     if (rTempStreamName.isEmpty())
         pStream.reset(new SvMemoryStream());
     else
-        pStream.reset(new SvFileStream(rTempStreamName, STREAM_STD_READWRITE | StreamMode::TRUNC));
+        pStream.reset(new SvFileStream(rTempStreamName, StreamMode::STD_READWRITE | StreamMode::TRUNC));
 
     XmlWriter aWriter(pStream.get());
     aWriter.startDocument();
@@ -335,7 +335,7 @@ void MetafileXmlDump::writeXml(const GDIMetaFile& rMetaFile, XmlWriter& rWriter)
                 MetaRasterOpAction* pMetaRasterOpAction = static_cast<MetaRasterOpAction*>(pAction);
                 rWriter.startElement(sCurrentElementTag);
 
-                if (pMetaRasterOpAction->GetRasterOp() != ROP_OVERPAINT)
+                if (pMetaRasterOpAction->GetRasterOp() != RasterOp::OverPaint)
                 {
                     rWriter.attribute("operation", convertRopToString(pMetaRasterOpAction->GetRasterOp()));
                 }

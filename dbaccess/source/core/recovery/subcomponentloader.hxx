@@ -39,7 +39,7 @@ namespace dbaccess
     /** is a helper class which loads/opens a given sub component as soon as the main application
         window becomes visible.
     */
-    class DBACCESS_DLLPRIVATE SubComponentLoader : public SubComponentLoader_Base
+    class SubComponentLoader : public SubComponentLoader_Base
     {
     public:
         SubComponentLoader(
@@ -62,7 +62,7 @@ namespace dbaccess
         virtual void SAL_CALL disposing( const css::lang::EventObject& Source ) throw (css::uno::RuntimeException, std::exception) override;
 
     protected:
-        virtual ~SubComponentLoader();
+        virtual ~SubComponentLoader() override;
 
     private:
         SubComponentLoader_Data*    m_pData;

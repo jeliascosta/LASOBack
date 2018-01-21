@@ -364,6 +364,10 @@ void Test::testFormulaParseReference()
     CPPUNIT_ASSERT_MESSAGE("Should fail to parse.", !(nRes & ScRefFlags::VALID));
 
     aRange.aStart.SetTab(0);
+    nRes = aRange.Parse("B1:B2~C1", m_pDoc, formula::FormulaGrammar::CONV_OOO);
+    CPPUNIT_ASSERT_MESSAGE("Should fail to parse.", !(nRes & ScRefFlags::VALID));
+
+    aRange.aStart.SetTab(0);
     nRes = aRange.Parse("B:B", m_pDoc, formula::FormulaGrammar::CONV_OOO);
     CPPUNIT_ASSERT_MESSAGE("Failed to parse.", (nRes & ScRefFlags::VALID));
     CPPUNIT_ASSERT_EQUAL(static_cast<SCTAB>(0), aRange.aStart.Tab());
@@ -372,14 +376,14 @@ void Test::testFormulaParseReference()
     CPPUNIT_ASSERT_EQUAL(static_cast<SCTAB>(0), aRange.aEnd.Tab());
     CPPUNIT_ASSERT_EQUAL(static_cast<SCCOL>(1), aRange.aEnd.Col());
     CPPUNIT_ASSERT_EQUAL(static_cast<SCROW>(MAXROW), aRange.aEnd.Row());
-    CPPUNIT_ASSERT((nRes & (ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
-                ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID)) ==
-                           (ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
-                ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID));
-    CPPUNIT_ASSERT((nRes & (ScRefFlags::COL_ABS | ScRefFlags::COL2_ABS)) ==
-                            ScRefFlags::ZERO);
-    CPPUNIT_ASSERT((nRes & (ScRefFlags::ROW_ABS | ScRefFlags::ROW2_ABS)) ==
-                           (ScRefFlags::ROW_ABS | ScRefFlags::ROW2_ABS));
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
+                                                 ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID),
+                         static_cast<sal_uInt16>(nRes & (ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
+                                                         ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID)));
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(ScRefFlags::ZERO),
+                         static_cast<sal_uInt16>(nRes & (ScRefFlags::COL_ABS | ScRefFlags::COL2_ABS)));
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(ScRefFlags::ROW_ABS | ScRefFlags::ROW2_ABS),
+                         static_cast<sal_uInt16>(nRes & (ScRefFlags::ROW_ABS | ScRefFlags::ROW2_ABS)));
 
     aRange.aStart.SetTab(0);
     nRes = aRange.Parse("2:2", m_pDoc, formula::FormulaGrammar::CONV_OOO);
@@ -390,14 +394,14 @@ void Test::testFormulaParseReference()
     CPPUNIT_ASSERT_EQUAL(static_cast<SCTAB>(0), aRange.aEnd.Tab());
     CPPUNIT_ASSERT_EQUAL(static_cast<SCCOL>(MAXCOL), aRange.aEnd.Col());
     CPPUNIT_ASSERT_EQUAL(static_cast<SCROW>(1), aRange.aEnd.Row());
-    CPPUNIT_ASSERT((nRes & (ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
-                ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID)) ==
-                           (ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
-                ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID));
-    CPPUNIT_ASSERT((nRes & (ScRefFlags::ROW_ABS | ScRefFlags::ROW2_ABS)) ==
-                            ScRefFlags::ZERO);
-    CPPUNIT_ASSERT((nRes & (ScRefFlags::COL_ABS | ScRefFlags::COL2_ABS)) ==
-                           (ScRefFlags::COL_ABS | ScRefFlags::COL2_ABS));
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
+                                                 ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID),
+                         static_cast<sal_uInt16>(nRes & (ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
+                                                         ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID)));
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(ScRefFlags::ZERO),
+                         static_cast<sal_uInt16>(nRes & (ScRefFlags::ROW_ABS | ScRefFlags::ROW2_ABS)));
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(ScRefFlags::COL_ABS | ScRefFlags::COL2_ABS),
+                         static_cast<sal_uInt16>(nRes & (ScRefFlags::COL_ABS | ScRefFlags::COL2_ABS)));
 
     nRes = aRange.Parse("NoQuote.B:C", m_pDoc, formula::FormulaGrammar::CONV_OOO);
     CPPUNIT_ASSERT_MESSAGE("Failed to parse.", (nRes & ScRefFlags::VALID));
@@ -407,14 +411,14 @@ void Test::testFormulaParseReference()
     CPPUNIT_ASSERT_EQUAL(static_cast<SCTAB>(4), aRange.aEnd.Tab());
     CPPUNIT_ASSERT_EQUAL(static_cast<SCCOL>(2), aRange.aEnd.Col());
     CPPUNIT_ASSERT_EQUAL(static_cast<SCROW>(MAXROW), aRange.aEnd.Row());
-    CPPUNIT_ASSERT((nRes & (ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
-                ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID)) ==
-                           (ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
-                ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID));
-    CPPUNIT_ASSERT((nRes & (ScRefFlags::COL_ABS | ScRefFlags::COL2_ABS)) ==
-                            ScRefFlags::ZERO);
-    CPPUNIT_ASSERT((nRes & (ScRefFlags::ROW_ABS | ScRefFlags::ROW2_ABS)) ==
-                           (ScRefFlags::ROW_ABS | ScRefFlags::ROW2_ABS));
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
+                                                 ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID),
+                         static_cast<sal_uInt16>(nRes & (ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
+                                                         ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID)));
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(ScRefFlags::ZERO),
+                         static_cast<sal_uInt16>(nRes & (ScRefFlags::COL_ABS | ScRefFlags::COL2_ABS)));
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(ScRefFlags::ROW_ABS | ScRefFlags::ROW2_ABS),
+                         static_cast<sal_uInt16>(nRes & (ScRefFlags::ROW_ABS | ScRefFlags::ROW2_ABS)));
 
     // Both rows at sheet bounds and relative => convert to absolute => entire column reference.
     aRange.aStart.SetTab(0);
@@ -426,14 +430,14 @@ void Test::testFormulaParseReference()
     CPPUNIT_ASSERT_EQUAL(static_cast<SCTAB>(0), aRange.aEnd.Tab());
     CPPUNIT_ASSERT_EQUAL(static_cast<SCCOL>(1), aRange.aEnd.Col());
     CPPUNIT_ASSERT_EQUAL(static_cast<SCROW>(MAXROW), aRange.aEnd.Row());
-    CPPUNIT_ASSERT((nRes & (ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
-                ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID)) ==
-                           (ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
-                ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID));
-    CPPUNIT_ASSERT((nRes & (ScRefFlags::COL_ABS | ScRefFlags::COL2_ABS)) ==
-                           ScRefFlags::ZERO);
-    CPPUNIT_ASSERT((nRes & (ScRefFlags::ROW_ABS | ScRefFlags::ROW2_ABS)) ==
-                           (ScRefFlags::ROW_ABS | ScRefFlags::ROW2_ABS));
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
+                                                 ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID),
+                         static_cast<sal_uInt16>(nRes & (ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
+                                                         ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID)));
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(ScRefFlags::ZERO),
+                         static_cast<sal_uInt16>(nRes & (ScRefFlags::COL_ABS | ScRefFlags::COL2_ABS)));
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(ScRefFlags::ROW_ABS | ScRefFlags::ROW2_ABS),
+                         static_cast<sal_uInt16>(nRes & (ScRefFlags::ROW_ABS | ScRefFlags::ROW2_ABS)));
 
     // Both columns at sheet bounds and relative => convert to absolute => entire row reference.
     aRange.aStart.SetTab(0);
@@ -445,14 +449,14 @@ void Test::testFormulaParseReference()
     CPPUNIT_ASSERT_EQUAL(static_cast<SCTAB>(0), aRange.aEnd.Tab());
     CPPUNIT_ASSERT_EQUAL(static_cast<SCCOL>(MAXCOL), aRange.aEnd.Col());
     CPPUNIT_ASSERT_EQUAL(static_cast<SCROW>(1), aRange.aEnd.Row());
-    CPPUNIT_ASSERT((nRes & (ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
-                ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID)) ==
-                           (ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
-                ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID));
-    CPPUNIT_ASSERT((nRes & (ScRefFlags::ROW_ABS | ScRefFlags::ROW2_ABS)) ==
-                            ScRefFlags::ZERO);
-    CPPUNIT_ASSERT((nRes & (ScRefFlags::COL_ABS | ScRefFlags::COL2_ABS)) ==
-                           (ScRefFlags::COL_ABS | ScRefFlags::COL2_ABS));
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
+                                                 ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID),
+                         static_cast<sal_uInt16>(nRes & (ScRefFlags::COL_VALID | ScRefFlags::ROW_VALID | ScRefFlags::TAB_VALID |
+                                                         ScRefFlags::COL2_VALID | ScRefFlags::ROW2_VALID | ScRefFlags::TAB2_VALID)));
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(ScRefFlags::ZERO),
+                         static_cast<sal_uInt16>(nRes & (ScRefFlags::ROW_ABS | ScRefFlags::ROW2_ABS)));
+    CPPUNIT_ASSERT_EQUAL(static_cast<sal_uInt16>(ScRefFlags::COL_ABS | ScRefFlags::COL2_ABS),
+                         static_cast<sal_uInt16>(nRes & (ScRefFlags::COL_ABS | ScRefFlags::COL2_ABS)));
 
     // Check for reference input conversion to and display string of entire column/row.
     {
@@ -702,7 +706,7 @@ void Test::testFetchVectorRefArray()
 
     // Clear everything and start over.
     clearRange(m_pDoc, ScRange(0,0,0,MAXCOL,MAXROW,0));
-    m_pDoc->ClearFormulaContext();
+    m_pDoc->PrepareFormulaCalc();
 
     // Totally empty range in a totally empty column (Column A).
     aArray = m_pDoc->FetchVectorRefArray(ScAddress(0,0,0), 3); // A1:A3
@@ -735,6 +739,43 @@ void Test::testFetchVectorRefArray()
     CPPUNIT_ASSERT(rtl::math::isNan(aArray.mpNumericArray[0]));
     CPPUNIT_ASSERT(rtl::math::isNan(aArray.mpNumericArray[1]));
     CPPUNIT_ASSERT(rtl::math::isNan(aArray.mpNumericArray[2]));
+
+    // The column begins with a string header at row 1 (Column C).
+    m_pDoc->SetString(ScAddress(2,0,0), "MyHeader");
+    for (SCROW i = 1; i <= 9; ++i) // rows 2-10 are numeric.
+        m_pDoc->SetValue(ScAddress(2,i,0), i);
+
+    aArray = m_pDoc->FetchVectorRefArray(ScAddress(2,1,0), 9); // C2:C10
+    CPPUNIT_ASSERT_MESSAGE("Array should have a numeric array.", aArray.mpNumericArray);
+    CPPUNIT_ASSERT_MESSAGE("Array should NOT have a string array.", !aArray.mpStringArray);
+    for (size_t i = 0; i < 9; ++i)
+        CPPUNIT_ASSERT_EQUAL(double(i+1), aArray.mpNumericArray[i]);
+
+    // The column begins with a number, followed by a string then followed by
+    // a block of numbers (Column D).
+    m_pDoc->SetValue(ScAddress(3,0,0), 0.0);
+    m_pDoc->SetString(ScAddress(3,1,0), "Some string");
+    for (SCROW i = 2; i <= 9; ++i) // rows 3-10 are numeric.
+        m_pDoc->SetValue(ScAddress(3,i,0), i);
+
+    aArray = m_pDoc->FetchVectorRefArray(ScAddress(3,2,0), 8); // D3:D10
+    CPPUNIT_ASSERT_MESSAGE("Array should have a numeric array.", aArray.mpNumericArray);
+    CPPUNIT_ASSERT_MESSAGE("Array should NOT have a string array.", !aArray.mpStringArray);
+    for (size_t i = 0; i < 8; ++i)
+        CPPUNIT_ASSERT_EQUAL(double(i+2), aArray.mpNumericArray[i]);
+
+    // The column begins with a formula, followed by a string then followed by
+    // a block of numbers (Column E).
+    m_pDoc->SetString(ScAddress(4,0,0), "=1*2");
+    m_pDoc->SetString(ScAddress(4,1,0), "Some string");
+    for (SCROW i = 2; i <= 9; ++i) // rows 3-10 are numeric.
+        m_pDoc->SetValue(ScAddress(4,i,0), i*2);
+
+    aArray = m_pDoc->FetchVectorRefArray(ScAddress(4,2,0), 8); // E3:E10
+    CPPUNIT_ASSERT_MESSAGE("Array should have a numeric array.", aArray.mpNumericArray);
+    CPPUNIT_ASSERT_MESSAGE("Array should NOT have a string array.", !aArray.mpStringArray);
+    for (size_t i = 0; i < 8; ++i)
+        CPPUNIT_ASSERT_EQUAL(double((i+2)*2), aArray.mpNumericArray[i]);
 
     m_pDoc->DeleteTab(0);
 }
@@ -784,7 +825,7 @@ void Test::testFormulaHashAndTag()
         if (aHashTests[i].bEqual)
         {
             os << " Error: these hashes should be equal." << endl;
-            CPPUNIT_ASSERT_MESSAGE(os.str().c_str(), nHashVal1 == nHashVal2);
+            CPPUNIT_ASSERT_EQUAL_MESSAGE(os.str().c_str(), nHashVal1, nHashVal2);
         }
         else
         {
@@ -1141,11 +1182,11 @@ void Test::testFormulaRefUpdate()
     aPos = ScAddress(2,1,0);
     ScFormulaCell* pFC = m_pDoc->GetFormulaCell(aPos);
     CPPUNIT_ASSERT_MESSAGE("This should be a formula cell.", pFC);
-    CPPUNIT_ASSERT_EQUAL(formula::errNoRef, pFC->GetErrCode());
+    CPPUNIT_ASSERT_EQUAL((int)FormulaError::NoRef, (int)pFC->GetErrCode());
     aPos = ScAddress(2,2,0);
     pFC = m_pDoc->GetFormulaCell(aPos);
     CPPUNIT_ASSERT_MESSAGE("This should be a formula cell.", pFC);
-    CPPUNIT_ASSERT_EQUAL(formula::errNoRef, pFC->GetErrCode());
+    CPPUNIT_ASSERT_EQUAL((int)FormulaError::NoRef, (int)pFC->GetErrCode());
 
     // Clear all and start over.
     clearRange(m_pDoc, ScRange(0,0,0,10,10,0));
@@ -1245,11 +1286,11 @@ void Test::testFormulaRefUpdate()
     // Both A4 and A5 should show #REF! errors.
     pFC = m_pDoc->GetFormulaCell(ScAddress(0,3,0));
     CPPUNIT_ASSERT_MESSAGE("This should be a formula cell.", pFC);
-    CPPUNIT_ASSERT_EQUAL(formula::errNoRef, pFC->GetErrCode());
+    CPPUNIT_ASSERT_EQUAL((int)FormulaError::NoRef, (int)pFC->GetErrCode());
 
     pFC = m_pDoc->GetFormulaCell(ScAddress(0,4,0));
     CPPUNIT_ASSERT_MESSAGE("This should be a formula cell.", pFC);
-    CPPUNIT_ASSERT_EQUAL(formula::errNoRef, pFC->GetErrCode());
+    CPPUNIT_ASSERT_EQUAL((int)FormulaError::NoRef, (int)pFC->GetErrCode());
 
     m_pDoc->DeleteTab(0);
 }
@@ -1862,7 +1903,7 @@ void Test::testFormulaRefUpdateInsertRows()
     rFunc.InsertCells(ScRange(0,1,0,MAXCOL,3,0), &aMark, INS_INSROWS_BEFORE, false, true);
     ScFormulaCell* pFC = m_pDoc->GetFormulaCell(ScAddress(0,5,0));
     CPPUNIT_ASSERT(pFC);
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("This formula cell should not be an error.", static_cast<sal_uInt16>(0), pFC->GetErrCode());
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("This formula cell should not be an error.", 0, (int)pFC->GetErrCode());
     ASSERT_DOUBLES_EQUAL(3.0, m_pDoc->GetValue(ScAddress(0,5,0)));
 
     ASSERT_FORMULA_EQUAL(*m_pDoc, ScAddress(0,5,0), "MAX(A7:A9)", "Wrong formula!");
@@ -2764,6 +2805,20 @@ void Test::testFormulaRefUpdateNameExpandRef()
     m_pDoc->SetValue(ScAddress(0,3,0), 4.0);
     CPPUNIT_ASSERT_EQUAL(10.0, m_pDoc->GetValue(ScAddress(0,6,0)));
 
+    // Insert a new column at column 2, which should not expand the named
+    // range as it is only one column wide.
+    rFunc.InsertCells(ScRange(1,0,0,1,MAXROW,0), &aMark, INS_INSCOLS_BEFORE, false, true);
+    pName = m_pDoc->GetRangeName()->findByUpperName("MYRANGE");
+    CPPUNIT_ASSERT(pName);
+    pName->GetSymbol(aSymbol, m_pDoc->GetGrammar());
+    CPPUNIT_ASSERT_EQUAL(OUString("$A$1:$A$4"), aSymbol);
+
+    // Make sure the referenced area has not changed.
+    m_pDoc->SetValue(ScAddress(0,3,0), 2.0);
+    CPPUNIT_ASSERT_EQUAL(8.0, m_pDoc->GetValue(ScAddress(0,6,0)));
+    m_pDoc->SetValue(ScAddress(1,3,0), 2.0);
+    CPPUNIT_ASSERT_EQUAL(8.0, m_pDoc->GetValue(ScAddress(0,6,0)));
+
     // Clear the document and start over.
     m_pDoc->GetRangeName()->clear();
     clearSheet(m_pDoc, 0);
@@ -3547,19 +3602,19 @@ void Test::testFuncSUM()
 
     // Set #DIV/0! error to A3. A4 should also inherit this error.
     m_pDoc->SetString(ScAddress(0,2,0), "=1/0");
-    sal_uInt16 nErr = m_pDoc->GetErrCode(ScAddress(0,2,0));
+    FormulaError nErr = m_pDoc->GetErrCode(ScAddress(0,2,0));
     CPPUNIT_ASSERT_EQUAL_MESSAGE("Cell should have a division by zero error.",
-                           errDivisionByZero, nErr);
+                           (int)FormulaError::DivisionByZero, (int)nErr);
     nErr = m_pDoc->GetErrCode(ScAddress(0,3,0));
     CPPUNIT_ASSERT_EQUAL_MESSAGE("SUM should have also inherited a div-by-zero error.",
-                           errDivisionByZero, nErr);
+                           (int)FormulaError::DivisionByZero, (int)nErr);
 
     // Set #NA! to A2. A4 should now inherit this error.
     m_pDoc->SetString(ScAddress(0,1,0), "=NA()");
     nErr = m_pDoc->GetErrCode(ScAddress(0,1,0));
-    CPPUNIT_ASSERT_MESSAGE("A2 should be an error.", nErr);
+    CPPUNIT_ASSERT_MESSAGE("A2 should be an error.", nErr != FormulaError::NONE);
     CPPUNIT_ASSERT_EQUAL_MESSAGE("A4 should have inherited the same error as A2.",
-                           nErr, m_pDoc->GetErrCode(ScAddress(0,3,0)));
+                           (int)nErr, (int)m_pDoc->GetErrCode(ScAddress(0,3,0)));
 
     m_pDoc->DeleteTab(0);
 }
@@ -3642,8 +3697,8 @@ void Test::testFuncSUMPRODUCT()
 
     // Force an error in C2 and test ForcedArray matrix error propagation.
     m_pDoc->SetString( 2, 1, 0, "=1/0");
-    sal_uInt16 nError = m_pDoc->GetErrCode(aPos);
-    CPPUNIT_ASSERT_MESSAGE("Formula result should be a propagated error", nError);
+    FormulaError nError = m_pDoc->GetErrCode(aPos);
+    CPPUNIT_ASSERT_MESSAGE("Formula result should be a propagated error", nError != FormulaError::NONE);
 
     // Test ForceArray propagation of SUMPRODUCT parameters to ABS and + operator.
     // => ABS({-3,4})*({-3,4}+{-3,4}) => {3,4}*{-6,8} => {-18,32} => 14
@@ -3715,8 +3770,8 @@ void Test::testFuncMIN()
     CPPUNIT_ASSERT_EQUAL(static_cast<SCCOL>(1), nCols);
     CPPUNIT_ASSERT_EQUAL(static_cast<SCROW>(2), nRows);
 
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("Formula in C1 is invalid.", static_cast<sal_uInt16>(0), m_pDoc->GetErrCode(ScAddress(2,0,0)));
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("Formula in C2 is invalid.", static_cast<sal_uInt16>(0), m_pDoc->GetErrCode(ScAddress(2,1,0)));
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Formula in C1 is invalid.", 0, (int)m_pDoc->GetErrCode(ScAddress(2,0,0)));
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Formula in C2 is invalid.", 0, (int)m_pDoc->GetErrCode(ScAddress(2,1,0)));
 
     CPPUNIT_ASSERT_EQUAL(0.0, m_pDoc->GetValue(ScAddress(2,0,0)));
     CPPUNIT_ASSERT_EQUAL(0.0, m_pDoc->GetValue(ScAddress(2,1,0)));
@@ -3910,6 +3965,30 @@ void Test::testFuncCOUNTIF()
     // We should correctly count with empty string key.
     CPPUNIT_ASSERT_EQUAL(4.0, m_pDoc->GetValue(ScAddress(0,4,0)));
 
+    // Another test case adopted from tdf#99291, empty array elements should
+    // not match empty cells, but cells with 0.
+    clearSheet(m_pDoc, 0);
+    ScMarkData aMark;
+    aMark.SelectOneTable(0);
+    m_pDoc->InsertMatrixFormula(0,0, 0,1, aMark, "=COUNTIF(B1:B5;C1:C2)");
+    // As we will be testing for 0.0 values, check that formulas are actually present.
+    OUString aFormula;
+    m_pDoc->GetFormula(0,0,0, aFormula);
+    CPPUNIT_ASSERT_EQUAL(OUString("{=COUNTIF(B1:B5;C1:C2)}"), aFormula);
+    m_pDoc->GetFormula(0,1,0, aFormula);
+    CPPUNIT_ASSERT_EQUAL(OUString("{=COUNTIF(B1:B5;C1:C2)}"), aFormula);
+    // The 0.0 results expected.
+    CPPUNIT_ASSERT_EQUAL(0.0, m_pDoc->GetValue(ScAddress(0,0,0)));
+    CPPUNIT_ASSERT_EQUAL(0.0, m_pDoc->GetValue(ScAddress(0,1,0)));
+    // 0.0 in B2, 1.0 in B3 and B4
+    m_pDoc->SetValue( ScAddress(1,1,0), 0.0);
+    m_pDoc->SetValue( ScAddress(1,2,0), 1.0);
+    m_pDoc->SetValue( ScAddress(1,3,0), 1.0);
+    // Matched by 0.0 produced by empty cell in array, and 1.0 in C2.
+    m_pDoc->SetValue( ScAddress(2,1,0), 1.0);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("One cell with 0.0",  1.0, m_pDoc->GetValue(ScAddress(0,0,0)));
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Two cells with 1.0", 2.0, m_pDoc->GetValue(ScAddress(0,1,0)));
+
     m_pDoc->DeleteTab(0);
 }
 
@@ -3926,6 +4005,32 @@ void Test::testFuncIF()
     m_pDoc->SetValue(ScAddress(1,0,0), 3.0);
     CPPUNIT_ASSERT_EQUAL(OUString("not two"), m_pDoc->GetString(ScAddress(0,0,0)));
 
+    // Test nested IF in array/matrix if the nested IF condition is a scalar.
+    ScMarkData aMark;
+    aMark.SelectOneTable(0);
+    m_pDoc->InsertMatrixFormula(0,2, 1,2, aMark, "=IF({1;0};IF(1;23);42)");
+    // Results must be 23 and 42.
+    CPPUNIT_ASSERT_EQUAL(23.0, m_pDoc->GetValue(ScAddress(0,2,0)));
+    CPPUNIT_ASSERT_EQUAL(42.0, m_pDoc->GetValue(ScAddress(1,2,0)));
+
+    // Test nested IF in array/matrix if nested IF conditions are range
+    // references, data in A5:C8, matrix formula in D4 so there is no
+    // implicit intersection between formula and ranges.
+    {
+        const char* aData[][3] = {
+            { "1", "1", "16" },
+            { "0", "1", "32" },
+            { "1", "0", "64" },
+            { "0", "0", "128" }
+        };
+        ScAddress aPos(0,4,0);
+        ScRange aRange = insertRangeData(m_pDoc, aPos, aData, SAL_N_ELEMENTS(aData));
+        CPPUNIT_ASSERT_EQUAL(aPos, aRange.aStart);
+    }
+    m_pDoc->InsertMatrixFormula(3,3, 3,3, aMark, "=SUM(IF(A5:A8;IF(B5:B8;C5:C8;0);0))");
+    // Result must be 16, only the first row matches all criteria.
+    CPPUNIT_ASSERT_EQUAL(16.0, m_pDoc->GetValue(ScAddress(3,3,0)));
+
     m_pDoc->DeleteTab(0);
 }
 
@@ -3936,8 +4041,8 @@ void Test::testFuncCHOOSE()
     m_pDoc->InsertTab(0, "Formula");
 
     m_pDoc->SetString(ScAddress(0,0,0), "=CHOOSE(B1;\"one\";\"two\";\"three\")");
-    sal_uInt16 nError = m_pDoc->GetErrCode(ScAddress(0,0,0));
-    CPPUNIT_ASSERT_MESSAGE("Formula result should be an error since B1 is still empty.", nError);
+    FormulaError nError = m_pDoc->GetErrCode(ScAddress(0,0,0));
+    CPPUNIT_ASSERT_MESSAGE("Formula result should be an error since B1 is still empty.", nError != FormulaError::NONE);
     m_pDoc->SetValue(ScAddress(1,0,0), 1.0);
     CPPUNIT_ASSERT_EQUAL(OUString("one"), m_pDoc->GetString(ScAddress(0,0,0)));
     m_pDoc->SetValue(ScAddress(1,0,0), 2.0);
@@ -3946,7 +4051,7 @@ void Test::testFuncCHOOSE()
     CPPUNIT_ASSERT_EQUAL(OUString("three"), m_pDoc->GetString(ScAddress(0,0,0)));
     m_pDoc->SetValue(ScAddress(1,0,0), 4.0);
     nError = m_pDoc->GetErrCode(ScAddress(0,0,0));
-    CPPUNIT_ASSERT_MESSAGE("Formula result should be an error due to out-of-bound input..", nError);
+    CPPUNIT_ASSERT_MESSAGE("Formula result should be an error due to out-of-bound input..", nError != FormulaError::NONE);
 
     m_pDoc->DeleteTab(0);
 }
@@ -4259,9 +4364,9 @@ void Test::testFuncLOOKUP()
     printRange(m_pDoc, ScRange(0,4,0,1,6,0), "Data range for LOOKUP.");
 
     // Values for B5:B7 should be 1, 2, and 3.
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("This formula should not have an error code.", static_cast<sal_uInt16>(0), m_pDoc->GetErrCode(ScAddress(1,4,0)));
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("This formula should not have an error code.", static_cast<sal_uInt16>(0), m_pDoc->GetErrCode(ScAddress(1,5,0)));
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("This formula should not have an error code.", static_cast<sal_uInt16>(0), m_pDoc->GetErrCode(ScAddress(1,6,0)));
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("This formula should not have an error code.", 0, (int)m_pDoc->GetErrCode(ScAddress(1,4,0)));
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("This formula should not have an error code.", 0, (int)m_pDoc->GetErrCode(ScAddress(1,5,0)));
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("This formula should not have an error code.", 0, (int)m_pDoc->GetErrCode(ScAddress(1,6,0)));
 
     ASSERT_DOUBLES_EQUAL(1.0, m_pDoc->GetValue(ScAddress(1,4,0)));
     ASSERT_DOUBLES_EQUAL(2.0, m_pDoc->GetValue(ScAddress(1,5,0)));
@@ -4897,7 +5002,7 @@ void Test::testFuncINDIRECT2()
     // Check formula cell error
     ScFormulaCell* pFC = m_pDoc->GetFormulaCell(ScAddress(0,9,2));
     CPPUNIT_ASSERT_MESSAGE("This should be a formula cell.", pFC);
-    CPPUNIT_ASSERT_MESSAGE("This formula cell should be an error.", pFC->GetErrCode() != 0);
+    CPPUNIT_ASSERT_MESSAGE("This formula cell should be an error.", pFC->GetErrCode() != FormulaError::NONE);
 
     m_pDoc->DeleteTab(2);
     m_pDoc->DeleteTab(1);
@@ -5089,8 +5194,8 @@ void Test::testFormulaDepTrackingDeleteRow()
     CPPUNIT_ASSERT(pBC);
     SvtBroadcaster::ListenersType* pListeners = &pBC->GetAllListeners();
     CPPUNIT_ASSERT_EQUAL_MESSAGE("A5 should have one listener.", size_t(1), pListeners->size());
-    SvtListener* pListener = pListeners->at(0);
-    CPPUNIT_ASSERT_MESSAGE("A6 should be listening to A5.", pListener == pFC);
+    const SvtListener* pListener = pListeners->at(0);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("A6 should be listening to A5.", static_cast<const ScFormulaCell*>(pListener), pFC);
 
     // Check initial values.
     CPPUNIT_ASSERT_EQUAL(9.0, m_pDoc->GetValue(ScAddress(0,4,0)));
@@ -5109,7 +5214,7 @@ void Test::testFormulaDepTrackingDeleteRow()
     pFC = m_pDoc->GetFormulaCell(ScAddress(0,4,0));
     CPPUNIT_ASSERT(pFC);
     pListener = pListeners->at(0);
-    CPPUNIT_ASSERT_MESSAGE("A5 should be listening to A4.", pFC == pListener);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("A5 should be listening to A4.", static_cast<const ScFormulaCell*>(pListener), pFC);
 
     // Check values after row deletion.
     CPPUNIT_ASSERT_EQUAL(6.0, m_pDoc->GetValue(ScAddress(0,3,0)));
@@ -5263,11 +5368,12 @@ void Test::testFormulaMatrixResultUpdate()
 void Test::testExternalRef()
 {
     ScDocShellRef xExtDocSh = new ScDocShell;
+    xExtDocSh->SetIsInUcalc();
     OUString aExtDocName("file:///extdata.fake");
     OUString aExtSh1Name("Data1");
     OUString aExtSh2Name("Data2");
     OUString aExtSh3Name("Data3");
-    SfxMedium* pMed = new SfxMedium(aExtDocName, STREAM_STD_READWRITE);
+    SfxMedium* pMed = new SfxMedium(aExtDocName, StreamMode::STD_READWRITE);
     xExtDocSh->DoInitNew(pMed);
     CPPUNIT_ASSERT_MESSAGE("external document instance not loaded.",
                            findLoadedDocShellByName(aExtDocName) != nullptr);
@@ -5414,7 +5520,7 @@ void Test::testExternalRef()
 
     // Sheet2 is not referenced at all; the cache table shouldn't even exist.
     pCacheTab = pRefMgr->getCacheTable(nFileId, aExtSh2Name, false);
-    CPPUNIT_ASSERT_MESSAGE("Cache table for sheet 2 should *not* exist.", pCacheTab.get() == nullptr);
+    CPPUNIT_ASSERT_MESSAGE("Cache table for sheet 2 should *not* exist.", !pCacheTab.get());
 
     // Sheet3's row 5 is not referenced; it should not be cached.
     pCacheTab = pRefMgr->getCacheTable(nFileId, aExtSh3Name, false);
@@ -5427,7 +5533,7 @@ void Test::testExternalRef()
     // Unload the external document shell.
     xExtDocSh->DoClose();
     CPPUNIT_ASSERT_MESSAGE("external document instance should have been unloaded.",
-                           findLoadedDocShellByName(aExtDocName) == nullptr);
+                           !findLoadedDocShellByName(aExtDocName));
 
     m_pDoc->DeleteTab(0);
 }
@@ -5435,9 +5541,10 @@ void Test::testExternalRef()
 void Test::testExternalRangeName()
 {
     ScDocShellRef xExtDocSh = new ScDocShell;
+    xExtDocSh->SetIsInUcalc();
     OUString aExtDocName("file:///extdata.fake");
     OUString aExtSh1Name("Data1");
-    SfxMedium* pMed = new SfxMedium(aExtDocName, STREAM_STD_READWRITE);
+    SfxMedium* pMed = new SfxMedium(aExtDocName, StreamMode::STD_READWRITE);
     xExtDocSh->DoInitNew(pMed);
     CPPUNIT_ASSERT_MESSAGE("external document instance not loaded.",
                            findLoadedDocShellByName(aExtDocName) != nullptr);
@@ -5459,7 +5566,7 @@ void Test::testExternalRangeName()
 
     xExtDocSh->DoClose();
     CPPUNIT_ASSERT_MESSAGE("external document instance should have been unloaded.",
-                           findLoadedDocShellByName(aExtDocName) == nullptr);
+                           !findLoadedDocShellByName(aExtDocName));
     m_pDoc->DeleteTab(0);
 }
 
@@ -5531,8 +5638,9 @@ void testExtRefFuncVLOOKUP(ScDocument* pDoc, ScDocument& rExtDoc)
 void Test::testExternalRefFunctions()
 {
     ScDocShellRef xExtDocSh = new ScDocShell;
+    xExtDocSh->SetIsInUcalc();
     OUString aExtDocName("file:///extdata.fake");
-    SfxMedium* pMed = new SfxMedium(aExtDocName, STREAM_STD_READWRITE);
+    SfxMedium* pMed = new SfxMedium(aExtDocName, StreamMode::STD_READWRITE);
     xExtDocSh->DoInitNew(pMed);
     CPPUNIT_ASSERT_MESSAGE("external document instance not loaded.",
                            findLoadedDocShellByName(aExtDocName) != nullptr);
@@ -5591,15 +5699,15 @@ void Test::testExternalRefFunctions()
     // areas these tests may be adapted.
     m_pDoc->SetString(0, 0, 0, "=SUM('file:///extdata.fake'#Data.B1:AMJ1048575)");
     ScFormulaCell* pFC = m_pDoc->GetFormulaCell( ScAddress(0,0,0));
-    sal_uInt16 nErr = pFC->GetErrCode();
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("huge external range reference expected to yield errMatrixSize", errMatrixSize, nErr);
+    FormulaError nErr = pFC->GetErrCode();
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("huge external range reference expected to yield FormulaError::MatrixSize", (int)FormulaError::MatrixSize, (int)nErr);
 
     ScMarkData aMark;
     aMark.SelectOneTable(0);
     m_pDoc->InsertMatrixFormula(0,0,0,0, aMark, "'file:///extdata.fake'#Data.B1:AMJ1048575");
     pFC = m_pDoc->GetFormulaCell( ScAddress(0,0,0));
     nErr = pFC->GetErrCode();
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("huge external range reference expected to yield errMatrixSize", errMatrixSize, nErr);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("huge external range reference expected to yield FormulaError::MatrixSize", (int)FormulaError::MatrixSize, (int)nErr);
     SCSIZE nMatCols, nMatRows;
     const ScMatrix* pMat = pFC->GetMatrix();
     CPPUNIT_ASSERT_MESSAGE("matrix expected", pMat != nullptr);
@@ -5614,7 +5722,7 @@ void Test::testExternalRefFunctions()
     // Unload the external document shell.
     xExtDocSh->DoClose();
     CPPUNIT_ASSERT_MESSAGE("external document instance should have been unloaded.",
-                           findLoadedDocShellByName(aExtDocName) == nullptr);
+                           !findLoadedDocShellByName(aExtDocName));
 
     m_pDoc->DeleteTab(0);
 }
@@ -6270,6 +6378,94 @@ void Test::testFuncFTEST()
     CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE("Calculation of FTEST failed", 0.0110, m_pDoc->GetValue(aPos), 10e-4);
 
     m_pDoc->DeleteTab(0);
+    m_pDoc->InsertTab(0, "FTest2");
+
+    /* Summary of the following test
+       A1:A5   =  SQRT(C1*9/10)*{ 1.0, 1.0, 1.0, 1.0, 1.0 };
+       A6:A10  = -SQRT(C1*9/10)*{ 1.0, 1.0, 1.0, 1.0, 1.0 };
+       B1:B10  =  SQRT(C2*19/20)*{ 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
+       B11:B20 = -SQRT(C2*19/20)*{ 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
+       C1      =  POWER(1.5, D1)   ; This is going to be the sample variance of the vector A1:A10
+       C2      =  POWER(1.5, D2)   ; This is going to be the sample variance of the vector B1:B20
+       D1 and D2 are varied over { -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0 }
+
+       Result of FTEST(A1:A10;B1:B20) in Calc is compared with that from Octave's var_test() function for each value of D1 and D2.
+
+       The minimum variance ratio obtained in this way is 0.017342 and the maximum variance ratio is 57.665039
+    */
+
+    const size_t nNumParams = 11;
+    const double fParameter[nNumParams] = { -5.0, -4.0, -3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0 };
+
+    // Results of var_test() from Octave
+    const double fResults[nNumParams][nNumParams] = {
+        { 0.9451191535603041,0.5429768686792684,0.213130093422756,0.06607644828558357,0.0169804365506927,0.003790723514148109,
+          0.0007645345628801703,0.0001435746909905777,2.566562398786942e-05,4.436218417280813e-06,7.495090956766148e-07 },
+        { 0.4360331979746912,0.9451191535603054,0.5429768686792684,0.2131300934227565,0.06607644828558357,0.0169804365506927,
+          0.003790723514148109,0.0007645345628801703,0.0001435746909905777,2.566562398786942e-05,4.436218417280813e-06 },
+        { 0.1309752286653509,0.4360331979746914,0.9451191535603058,0.5429768686792684,0.2131300934227565,0.06607644828558357,
+          0.0169804365506927,0.003790723514148109,0.0007645345628801703,0.0001435746909905777,2.566562398786942e-05 },
+        { 0.02453502500565108,0.1309752286653514,0.4360331979746914,0.9451191535603058,0.5429768686792689,0.2131300934227565,
+          0.06607644828558357,0.0169804365506927,0.003790723514148109,0.0007645345628801703,0.0001435746909905777 },
+        { 0.002886791075972228,0.02453502500565108,0.1309752286653514,0.4360331979746914,0.9451191535603041,0.5429768686792689,
+          0.2131300934227565,0.06607644828558357,0.0169804365506927,0.003790723514148109,0.0007645345628801703 },
+        { 0.0002237196492846927,0.002886791075972228,0.02453502500565108,0.1309752286653509,0.4360331979746912,0.9451191535603036,
+          0.5429768686792689,0.2131300934227565,0.06607644828558357,0.0169804365506927,0.003790723514148109 },
+        { 1.224926820153627e-05,0.0002237196492846927,0.002886791075972228,0.02453502500565108,0.1309752286653509,0.4360331979746914,
+          0.9451191535603054,0.5429768686792684,0.2131300934227565,0.06607644828558357,0.0169804365506927 },
+        { 5.109390206481379e-07,1.224926820153627e-05,0.0002237196492846927,0.002886791075972228,0.02453502500565108,
+          0.1309752286653509,0.4360331979746914,0.9451191535603058,0.5429768686792684,0.213130093422756,0.06607644828558357 },
+        { 1.739106880727093e-08,5.109390206481379e-07,1.224926820153627e-05,0.0002237196492846927,0.002886791075972228,
+          0.02453502500565086,0.1309752286653509,0.4360331979746914,0.9451191535603041,0.5429768686792684,0.2131300934227565 },
+        { 5.111255862999542e-10,1.739106880727093e-08,5.109390206481379e-07,1.224926820153627e-05,0.0002237196492846927,
+          0.002886791075972228,0.02453502500565108,0.1309752286653516,0.4360331979746914,0.9451191535603058,0.5429768686792684 },
+        { 1.354649725726631e-11,5.111255862999542e-10,1.739106880727093e-08,5.109390206481379e-07,1.224926820153627e-05,
+          0.0002237196492846927,0.002886791075972228,0.02453502500565108,0.1309752286653509,0.4360331979746914,0.9451191535603054 }
+    };
+
+    m_pDoc->SetValue(3, 0, 0, fParameter[0]); // D1
+    m_pDoc->SetValue(3, 1, 0, fParameter[0]); // D2
+    aPos.Set(2,0,0); // C1
+    m_pDoc->SetString(aPos, "=POWER(1.5;D1)" ); // C1
+    aPos.Set(2, 1, 0);     // C2
+    m_pDoc->SetString(aPos, "=POWER(1.5;D2)" ); // C2
+    for ( SCROW nRow = 0; nRow < 5; ++nRow )    // Set A1:A5  = SQRT(C1*9/10), and A6:A10 = -SQRT(C1*9/10)
+    {
+        aPos.Set(0, nRow, 0);
+        m_pDoc->SetString(aPos, "=SQRT(C1*9/10)");
+        aPos.Set(0, nRow + 5, 0);
+        m_pDoc->SetString(aPos, "=-SQRT(C1*9/10)");
+    }
+
+    for ( SCROW nRow = 0; nRow < 10; ++nRow )    // Set B1:B10  = SQRT(C2*19/20), and B11:B20 = -SQRT(C2*19/20)
+    {
+        aPos.Set(1, nRow, 0);
+        m_pDoc->SetString(aPos, "=SQRT(C2*19/20)");
+        aPos.Set(1, nRow + 10, 0);
+        m_pDoc->SetString(aPos, "=-SQRT(C2*19/20)");
+    }
+
+    aPos.Set(4, 0, 0); // E1
+    m_pDoc->SetString(aPos, "=FTEST(A1:A10;B1:B20)");
+    aPos.Set(4, 1, 0); // E2
+    m_pDoc->SetString(aPos, "=FTEST(B1:B20;A1:A10)");
+
+    ScAddress aPosRev(4, 1, 0); // E2
+    aPos.Set(4, 0, 0);  // E1
+
+    for ( size_t nFirstIdx = 0; nFirstIdx < nNumParams; ++nFirstIdx )
+    {
+        m_pDoc->SetValue(3, 0, 0, fParameter[nFirstIdx]); // Set D1
+        for ( size_t nSecondIdx = 0; nSecondIdx < nNumParams; ++nSecondIdx )
+        {
+            m_pDoc->SetValue(3, 1, 0, fParameter[nSecondIdx]); // Set D2
+            double fExpected = fResults[nFirstIdx][nSecondIdx];
+            // Here a dynamic error limit is used. This is to handle correctly when the expected value is lower than the fixed error limit of 10e-5
+            CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE("Calculation of FTEST failed", fExpected, m_pDoc->GetValue(aPos),    std::min(10e-5, fExpected*0.0001) );
+            CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE("Calculation of FTEST failed", fExpected, m_pDoc->GetValue(aPosRev), std::min(10e-5, fExpected*0.0001) );
+        }
+    }
+    m_pDoc->DeleteTab(0);
 }
 
 void Test::testFuncFTESTBug()
@@ -6286,7 +6482,7 @@ void Test::testFuncFTESTBug()
     m_pDoc->SetValue(7, 2, 0, 6.0); // H3
     m_pDoc->SetValue(8, 0, 0, 5.0); // I1
     m_pDoc->SetValue(8, 1, 0, 7.0); // I2
-    // FTest returns a wrong value: 1.09544512
+    // tdf#93329
     CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE("Calculation of FTEST failed", 0.9046, m_pDoc->GetValue(aPos), 10e-4);
 
     m_pDoc->DeleteTab(0);
@@ -7054,7 +7250,7 @@ public:
     {}
 
     void operator() ( SCCOL nColumn, const OUString& rFormula,
-                      std::function<double(SCROW )> lExpected ) const
+                      std::function<double(SCROW )> const & lExpected ) const
     {
         ScDocument aClipDoc(SCDOCMODE_CLIP);
         ScMarkData aMark;
@@ -7229,6 +7425,40 @@ void Test::testMatConcat()
             CPPUNIT_ASSERT_EQUAL(OUString(OUString::number(nCol * (nRow - 12)) + OUString::number(nCol * (nRow - 12))), aStr);
         }
     }
+
+    {   // Data in A12:B16
+        const char* aData[][2] = {
+            { "q", "w" },
+            { "a",  "" },
+            {  "", "x" },
+            {  "",  "" },
+            { "e", "r" },
+        };
+
+        ScAddress aPos(0,11,0);
+        ScRange aRange = insertRangeData(m_pDoc, aPos, aData, SAL_N_ELEMENTS(aData));
+        CPPUNIT_ASSERT_EQUAL(aPos, aRange.aStart);
+    }
+    // Matrix formula in C17:C21
+    m_pDoc->InsertMatrixFormula(2, 16, 2, 20, aMark, "=A12:A16&B12:B16");
+    // Check proper concatenation including empty cells.
+    OUString aStr;
+    ScAddress aPos(2,16,0);
+    aStr = m_pDoc->GetString(aPos);
+    CPPUNIT_ASSERT_EQUAL(OUString("qw"),aStr);
+    aPos.IncRow();
+    aStr = m_pDoc->GetString(aPos);
+    CPPUNIT_ASSERT_EQUAL(OUString("a"),aStr);
+    aPos.IncRow();
+    aStr = m_pDoc->GetString(aPos);
+    CPPUNIT_ASSERT_EQUAL(OUString("x"),aStr);
+    aPos.IncRow();
+    aStr = m_pDoc->GetString(aPos);
+    CPPUNIT_ASSERT_EQUAL(OUString(""),aStr);
+    aPos.IncRow();
+    aStr = m_pDoc->GetString(aPos);
+    CPPUNIT_ASSERT_EQUAL(OUString("er"),aStr);
+
     m_pDoc->DeleteTab(0);
 }
 

@@ -92,7 +92,7 @@ class SvtCommandOptions_Impl : public ConfigItem
     public:
 
          SvtCommandOptions_Impl();
-        virtual ~SvtCommandOptions_Impl();
+        virtual ~SvtCommandOptions_Impl() override;
 
         /*-****************************************************************************************************
             @short      called for notify of configmanager
@@ -115,14 +115,14 @@ class SvtCommandOptions_Impl : public ConfigItem
 
         bool                HasEntries  (   SvtCommandOptions::CmdOption    eOption     ) const;
         bool                Lookup      (   SvtCommandOptions::CmdOption    eCmdOption, const OUString& ) const;
-        void EstablisFrameCallback(const css::uno::Reference< css::frame::XFrame >& xFrame);
+        void EstablishFrameCallback(const css::uno::Reference< css::frame::XFrame >& xFrame);
 
     private:
 
         virtual void ImplCommit() override;
 
         /*-****************************************************************************************************
-            @short      return list of key names of our configuration management which represent oue module tree
+            @short      return list of key names of our configuration management which represent our module tree
             @descr      These methods return the current list of key names! We need it to get needed values from our
                         configuration management and support dynamical menu item lists!
             @param      "nDisabledCount"    ,   returns count of menu entries for "new"
@@ -211,13 +211,16 @@ void SvtCommandOptions_Impl::Notify( const Sequence< OUString >& )
 
     // don't forget to update all existing frames and her might cached dispatch objects!
     // But look for already killed frames. We hold weak references instead of hard ones ...
-    for (SvtFrameVector::const_iterator pIt  = m_lFrames.begin();
-                                        pIt != m_lFrames.end();
-                                      ++pIt                     )
+    for (SvtFrameVector::iterator pIt  = m_lFrames.begin(); pIt != m_lFrames.end(); )
     {
         css::uno::Reference< css::frame::XFrame > xFrame(pIt->get(), css::uno::UNO_QUERY);
         if (xFrame.is())
+        {
             xFrame->contextChanged();
+            ++pIt;
+        }
+        else
+            pIt = m_lFrames.erase(pIt);
     }
 }
 
@@ -249,7 +252,7 @@ bool SvtCommandOptions_Impl::Lookup( SvtCommandOptions::CmdOption eCmdOption, co
             return m_aDisabledCommands.Lookup( aCommand );
         }
         default:
-            DBG_ASSERT( false, "SvtCommandOptions_Impl::Lookup()\nUnknown option type given!\n" );
+            SAL_WARN( "unotools.config", "SvtCommandOptions_Impl::Lookup()\nUnknown option type given!\n" );
     }
 
     return false;
@@ -257,7 +260,7 @@ bool SvtCommandOptions_Impl::Lookup( SvtCommandOptions::CmdOption eCmdOption, co
 
 //  public method
 
-void SvtCommandOptions_Impl::EstablisFrameCallback(const css::uno::Reference< css::frame::XFrame >& xFrame)
+void SvtCommandOptions_Impl::EstablishFrameCallback(const css::uno::Reference< css::frame::XFrame >& xFrame)
 {
     // check if frame already exists inside list
     // ignore double registrations
@@ -286,44 +289,32 @@ Sequence< OUString > SvtCommandOptions_Impl::impl_GetPropertyNames()
     return lDisabledItems;
 }
 
-//  initialize static member
-//  DON'T DO IT IN YOUR HEADER!
-//  see definition for further information
+namespace {
 
-SvtCommandOptions_Impl*     SvtCommandOptions::m_pDataContainer = nullptr;
-sal_Int32                   SvtCommandOptions::m_nRefCount      = 0;
+std::weak_ptr<SvtCommandOptions_Impl> g_pCommandOptions;
 
-//  constructor
+}
 
 SvtCommandOptions::SvtCommandOptions()
 {
     // Global access, must be guarded (multithreading!).
     MutexGuard aGuard( GetOwnStaticMutex() );
-    // Increase our refcount ...
-    ++m_nRefCount;
-    // ... and initialize our data container only if it not already exist!
-    if( m_pDataContainer == nullptr )
+
+    m_pImpl = g_pCommandOptions.lock();
+    if( !m_pImpl )
     {
-        m_pDataContainer = new SvtCommandOptions_Impl;
+        m_pImpl = std::make_shared<SvtCommandOptions_Impl>();
+        g_pCommandOptions = m_pImpl;
         ItemHolder1::holdConfigItem(E_CMDOPTIONS);
     }
 }
-
-//  destructor
 
 SvtCommandOptions::~SvtCommandOptions()
 {
     // Global access, must be guarded (multithreading!)
     MutexGuard aGuard( GetOwnStaticMutex() );
-    // Decrease our refcount.
-    --m_nRefCount;
-    // If last instance was deleted ...
-    // we must destroy our static data container!
-    if( m_nRefCount <= 0 )
-    {
-        delete m_pDataContainer;
-        m_pDataContainer = nullptr;
-    }
+
+    m_pImpl.reset();
 }
 
 //  public method
@@ -331,7 +322,7 @@ SvtCommandOptions::~SvtCommandOptions()
 bool SvtCommandOptions::HasEntries( CmdOption eOption ) const
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
-    return m_pDataContainer->HasEntries( eOption );
+    return m_pImpl->HasEntries( eOption );
 }
 
 //  public method
@@ -339,15 +330,15 @@ bool SvtCommandOptions::HasEntries( CmdOption eOption ) const
 bool SvtCommandOptions::Lookup( CmdOption eCmdOption, const OUString& aCommandURL ) const
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
-    return m_pDataContainer->Lookup( eCmdOption, aCommandURL );
+    return m_pImpl->Lookup( eCmdOption, aCommandURL );
 }
 
 //  public method
 
-void SvtCommandOptions::EstablisFrameCallback(const css::uno::Reference< css::frame::XFrame >& xFrame)
+void SvtCommandOptions::EstablishFrameCallback(const css::uno::Reference< css::frame::XFrame >& xFrame)
 {
     MutexGuard aGuard( GetOwnStaticMutex() );
-    m_pDataContainer->EstablisFrameCallback(xFrame);
+    m_pImpl->EstablishFrameCallback(xFrame);
 }
 
 namespace

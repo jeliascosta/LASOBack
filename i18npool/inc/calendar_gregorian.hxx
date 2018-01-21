@@ -23,6 +23,7 @@
 #include "nativenumbersupplier.hxx"
 
 #include <unicode/calendar.h>
+#include <rtl/ref.hxx>
 
 
 //  class Calendar_gregorian
@@ -53,7 +54,7 @@ public:
     /**
     * Destructor
     */
-    virtual ~Calendar_gregorian();
+    virtual ~Calendar_gregorian() override;
 
     // Methods in XCalendar
     virtual void SAL_CALL loadCalendar(const OUString& uniqueID, const css::lang::Locale& rLocale) throw(css::uno::RuntimeException, std::exception) override;
@@ -97,7 +98,7 @@ public:
 protected:
     const Era *eraArray;
     icu::Calendar *body;
-    css::uno::Reference<NativeNumberSupplierService> mxNatNum;
+    rtl::Reference<NativeNumberSupplierService> mxNatNum;
     const sal_Char* cCalendar;
     css::lang::Locale aLocale;
     sal_uInt32 fieldSet;

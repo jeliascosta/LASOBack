@@ -312,16 +312,21 @@ bool ScViewFunctionSet::SetCursorAtPoint( const Point& rPointPixel, bool /* bDon
 
     //  Scrolling
     Size aWinSize = pEngine->GetWindow()->GetOutputSizePixel();
-    bool bRightScroll  = ( aEffPos.X() >= aWinSize.Width() );
     bool bLeftScroll  = ( aEffPos.X() < 0 );
-    bool bBottomScroll = ( aEffPos.Y() >= aWinSize.Height() );
     bool bTopScroll = ( aEffPos.Y() < 0 );
-    bool bScroll = bRightScroll || bBottomScroll || bLeftScroll || bTopScroll;
 
     SCsCOL  nPosX;
     SCsROW  nPosY;
     pViewData->GetPosFromPixel( aEffPos.X(), aEffPos.Y(), GetWhich(),
                                 nPosX, nPosY, true, true );     // with Repair
+
+    Rectangle aEditArea = pViewData->GetEditArea(GetWhich(), nPosX, nPosY,
+                                                 pEngine->GetWindow(),
+                                                 nullptr, false);
+
+    bool bBottomScroll = ( aEditArea.Bottom() >= aWinSize.Height() );
+    bool bRightScroll  = ( aEditArea.Right() >= aWinSize.Width() );
+    bool bScroll = bRightScroll || bBottomScroll || bLeftScroll || bTopScroll;
 
     // for Autofill switch in the center of cell
     // thereby don't prevent scrolling to bottom/right
@@ -422,7 +427,7 @@ bool ScViewFunctionSet::SetCursorAtCell( SCsCOL nPosX, SCsROW nPosY, bool bScrol
         if ( bSkipProtected && bSkipUnprotected )
             return false;
 
-        bool bCellProtected = pDoc->HasAttrib(nPosX, nPosY, nTab, nPosX, nPosY, nTab, HASATTR_PROTECTED);
+        bool bCellProtected = pDoc->HasAttrib(nPosX, nPosY, nTab, nPosX, nPosY, nTab, HasAttrFlags::Protected);
         if ( (bCellProtected && bSkipProtected) || (!bCellProtected && bSkipUnprotected) )
             // Don't select this cell!
             return false;
@@ -752,7 +757,7 @@ ScViewSelectionEngine::ScViewSelectionEngine( vcl::Window* pWindow, ScTabView* p
         SelectionEngine( pWindow, &pView->GetFunctionSet() ),
         eWhich( eSplitPos )
 {
-    SetSelectionMode( MULTIPLE_SELECTION );
+    SetSelectionMode( SelectionMode::Multiple );
     EnableDrag( true );
 }
 
@@ -946,7 +951,7 @@ void ScHeaderFunctionSet::DeselectAll()
 ScHeaderSelectionEngine::ScHeaderSelectionEngine( vcl::Window* pWindow, ScHeaderFunctionSet* pFuncSet ) :
         SelectionEngine( pWindow, pFuncSet )
 {
-    SetSelectionMode( MULTIPLE_SELECTION );
+    SetSelectionMode( SelectionMode::Multiple );
     EnableDrag( false );
 }
 

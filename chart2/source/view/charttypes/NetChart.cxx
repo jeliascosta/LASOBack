@@ -116,11 +116,6 @@ drawing::Direction3D NetChart::getPreferredDiagramAspectRatio() const
     return drawing::Direction3D(1,1,1);
 }
 
-void NetChart::addSeries( VDataSeries* pSeries, sal_Int32 zSlot, sal_Int32 xSlot, sal_Int32 ySlot )
-{
-    VSeriesPlotter::addSeries( pSeries, zSlot, xSlot, ySlot );
-}
-
 bool NetChart::impl_createLine( VDataSeries* pSeries
                 , drawing::PolyPolygonShape3D* pSeriesPoly
                 , PlottingPositionHelper* pPosHelper )
@@ -480,7 +475,7 @@ void NetChart::createShapes()
                         }
                     }
 
-                    if( pPosHelper->isPercentY() && !::rtl::math::approxEqual( aLogicYSumMap[nAttachedAxisIndex], 0.0 ) )
+                    if( pPosHelper->isPercentY() && aLogicYSumMap[nAttachedAxisIndex] != 0.0 )
                     {
                         fLogicY = fabs( fLogicY )/aLogicYSumMap[nAttachedAxisIndex];
                     }

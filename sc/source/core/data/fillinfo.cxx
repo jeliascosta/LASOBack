@@ -46,16 +46,6 @@
 #include <memory>
 #include <o3tl/make_unique.hxx>
 
-const sal_uInt16 ROWINFO_MAX = 1024;
-
-enum FillInfoLinePos
-    {
-        FILP_TOP,
-        FILP_BOTTOM,
-        FILP_LEFT,
-        FILP_RIGHT
-    };
-
 // Similar as in output.cxx
 
 static void lcl_GetMergeRange( SCsCOL nX, SCsROW nY, SCSIZE nArrY,
@@ -209,7 +199,7 @@ bool isRotateItemUsed(ScDocumentPool *pPool)
     return false;
 }
 
-void initRowInfo(ScDocument* pDoc, RowInfo* pRowInfo,
+void initRowInfo(ScDocument* pDoc, RowInfo* pRowInfo, const SCSIZE nMaxRow,
         double fRowScale, SCROW nRow1, SCTAB nTab, SCROW& rYExtra, SCSIZE& rArrRow, SCROW& rRow2)
 {
     sal_uInt16 nDocHeight = ScGlobal::nStdRowHeight;
@@ -249,7 +239,7 @@ void initRowInfo(ScDocument* pDoc, RowInfo* pRowInfo,
             pThisRowInfo->nRotMaxCol    = SC_ROTMAX_NONE;
 
             ++rArrRow;
-            if (rArrRow >= ROWINFO_MAX)
+            if (rArrRow >= nMaxRow)
             {
                 OSL_FAIL("FillInfo: Range too big" );
                 rYExtra = nSignedY;                         // End
@@ -434,7 +424,7 @@ void ScDocument::FillInfo(
 
     nArrRow=0;
     SCROW nYExtra = nRow2+1;
-    initRowInfo(this, pRowInfo, fRowScale, nRow1,
+    initRowInfo(this, pRowInfo, rTabInfo.mnArrCapacity, fRowScale, nRow1,
             nTab, nYExtra, nArrRow, nRow2);
     nArrCount = nArrRow;                                      // incl. Dummys
 
@@ -445,9 +435,9 @@ void ScDocument::FillInfo(
 
     SCCOL nRotMax = nCol2;
     if ( bAnyItem && HasAttrib( 0, nRow1, nTab, MAXCOL, nRow2+1, nTab,
-                                HASATTR_ROTATE | HASATTR_CONDITIONAL ) )
+                                HasAttrFlags::Rotate | HasAttrFlags::Conditional ) )
     {
-        //TODO: check Conditionals also for HASATTR_ROTATE ????
+        //TODO: check Conditionals also for HasAttrFlags::Rotate ????
 
         OSL_ENSURE( nArrCount>2, "nArrCount too small" );
         FindMaxRotCol( nTab, &pRowInfo[1], nArrCount-1, nCol1, nCol2 );
@@ -509,12 +499,24 @@ void ScDocument::FillInfo(
 
                     SCROW nThisRow;
                     SCSIZE nIndex;
-                    (void) pThisAttrArr->Search( nCurRow, nIndex );
+                    if ( pThisAttrArr->nCount )
+                        (void) pThisAttrArr->Search( nCurRow, nIndex );
+                    else
+                        nIndex = 0;
 
                     do
                     {
-                        nThisRow=pThisAttrArr->pData[nIndex].nRow;              // End of range
-                        const ScPatternAttr* pPattern=pThisAttrArr->pData[nIndex].pPattern;
+                        const ScPatternAttr* pPattern = nullptr;
+                        if ( pThisAttrArr->nCount )
+                        {
+                            nThisRow = pThisAttrArr->pData[nIndex].nRow;              // End of range
+                            pPattern = pThisAttrArr->pData[nIndex].pPattern;
+                        }
+                        else
+                        {
+                            nThisRow = MAXROW;
+                            pPattern = GetDefPattern();
+                        }
 
                         const SvxBrushItem* pBackground = static_cast<const SvxBrushItem*>(
                                                         &pPattern->GetItem(ATTR_BACKGROUND));
@@ -1124,17 +1126,18 @@ void ScDocument::FillInfo(
         rArray.MirrorSelfX();
 }
 
-ScTableInfo::ScTableInfo()
-    : mpRowInfo(new RowInfo[ROWINFO_MAX])
+ScTableInfo::ScTableInfo(const SCSIZE capacity)
+    : mpRowInfo(new RowInfo[capacity])
     , mnArrCount(0)
+    , mnArrCapacity(capacity)
     , mbPageMode(false)
 {
-    memset(mpRowInfo, 0, ROWINFO_MAX*sizeof(RowInfo));
+    memset(mpRowInfo, 0, mnArrCapacity * sizeof(RowInfo));
 }
 
 ScTableInfo::~ScTableInfo()
 {
-    for( sal_uInt16 nIdx = 0; nIdx < ROWINFO_MAX; ++nIdx )
+    for( SCSIZE nIdx = 0; nIdx < mnArrCapacity; ++nIdx )
         delete [] mpRowInfo[ nIdx ].pCellInfo;
     delete [] mpRowInfo;
 }

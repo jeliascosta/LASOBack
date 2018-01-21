@@ -58,7 +58,7 @@ namespace drawingml {
 
 namespace {
 
-Reference< XGraphic > lclCheckAndApplyDuotoneTransform( const BlipFillProperties& aBlipProps, Reference< XGraphic > xGraphic,
+Reference< XGraphic > lclCheckAndApplyDuotoneTransform( const BlipFillProperties& aBlipProps, Reference< XGraphic > const & xGraphic,
                                                         const GraphicHelper& rGraphicHelper, const sal_Int32 nPhClr )
 {
     if( aBlipProps.maDuotoneColors[0].isUsed() && aBlipProps.maDuotoneColors[1].isUsed() )
@@ -68,7 +68,7 @@ Reference< XGraphic > lclCheckAndApplyDuotoneTransform( const BlipFillProperties
         try
         {
             Reference< XGraphicTransformer > xTransformer( aBlipProps.mxGraphic, UNO_QUERY_THROW );
-            xGraphic = xTransformer->applyDuotone( xGraphic, nColor1, nColor2 );
+            return xTransformer->applyDuotone( xGraphic, nColor1, nColor2 );
         }
         catch( Exception& )
         {
@@ -77,7 +77,7 @@ Reference< XGraphic > lclCheckAndApplyDuotoneTransform( const BlipFillProperties
     return xGraphic;
 }
 
-Reference< XGraphic > lclCheckAndApplyChangeColorTransform( const BlipFillProperties &aBlipProps, Reference< XGraphic > xGraphic,
+Reference< XGraphic > lclCheckAndApplyChangeColorTransform( const BlipFillProperties &aBlipProps, Reference< XGraphic >  const & xGraphic,
                                                             const GraphicHelper& rGraphicHelper, const sal_Int32 nPhClr )
 {
     if( aBlipProps.maColorChangeFrom.isUsed() && aBlipProps.maColorChangeTo.isUsed() )
@@ -89,7 +89,7 @@ Reference< XGraphic > lclCheckAndApplyChangeColorTransform( const BlipFillProper
             sal_Int16 nToTransparence = aBlipProps.maColorChangeTo.getTransparency();
             sal_Int8 nToAlpha = static_cast< sal_Int8 >( (100 - nToTransparence) * 2.55 );
             Reference< XGraphicTransformer > xTransformer( aBlipProps.mxGraphic, UNO_QUERY_THROW );
-            xGraphic = xTransformer->colorChange( xGraphic, nFromColor, 9, nToColor, nToAlpha );
+            return xTransformer->colorChange( xGraphic, nFromColor, 9, nToColor, nToAlpha );
         }
         catch( Exception& )
         {
@@ -98,12 +98,12 @@ Reference< XGraphic > lclCheckAndApplyChangeColorTransform( const BlipFillProper
     return xGraphic;
 }
 
-Reference< XGraphic > applyBrightnessContrast( Reference< XGraphic > xGraphic, sal_Int32 brightness, sal_Int32 contrast )
+Reference< XGraphic > applyBrightnessContrast( Reference< XGraphic > const & xGraphic, sal_Int32 brightness, sal_Int32 contrast )
 {
     try
         {
             Reference< XGraphicTransformer > xTransformer( xGraphic, UNO_QUERY_THROW );
-            xGraphic = xTransformer->applyBrightnessContrast( xGraphic, brightness, contrast, true );
+            return xTransformer->applyBrightnessContrast( xGraphic, brightness, contrast, true );
         }
         catch( Exception& )
         {
@@ -327,16 +327,16 @@ void FillProperties::pushToPropMap( ShapePropertyMap& rPropMap,
             case XML_solidFill:
                 if( maFillColor.isUsed() )
                 {
-                    rPropMap.setProperty( SHAPEPROP_FillColor, maFillColor.getColor( rGraphicHelper, nPhClr ) );
+                    rPropMap.setProperty( ShapeProperty::FillColor, maFillColor.getColor( rGraphicHelper, nPhClr ) );
                     if( maFillColor.hasTransparency() )
-                        rPropMap.setProperty( SHAPEPROP_FillTransparency, maFillColor.getTransparency() );
+                        rPropMap.setProperty( ShapeProperty::FillTransparency, maFillColor.getTransparency() );
                     eFillStyle = FillStyle_SOLID;
                 }
             break;
 
             case XML_gradFill:
                 // do not create gradient struct if property is not supported...
-                if( rPropMap.supportsProperty( SHAPEPROP_FillGradient ) )
+                if( rPropMap.supportsProperty( ShapeProperty::FillGradient ) )
                 {
                     sal_Int32 nEndTrans     = 0;
                     sal_Int32 nStartTrans   = 0;
@@ -571,7 +571,7 @@ void FillProperties::pushToPropMap( ShapePropertyMap& rPropMap,
                     }
 
                     // push gradient or named gradient to property map
-                    if( rPropMap.setProperty( SHAPEPROP_FillGradient, aGradient ) )
+                    if( rPropMap.setProperty( ShapeProperty::FillGradient, aGradient ) )
                         eFillStyle = FillStyle_GRADIENT;
 
                     // push gradient transparency to property map
@@ -582,7 +582,7 @@ void FillProperties::pushToPropMap( ShapePropertyMap& rPropMap,
                         aGrad.EndColor = (sal_Int32)( nEndTrans | nEndTrans << 8 | nEndTrans << 16 );
                         aGrad.StartColor = (sal_Int32)( nStartTrans | nStartTrans << 8 | nStartTrans << 16 );
                         aVal <<= aGrad;
-                        rPropMap.setProperty( SHAPEPROP_GradientTransparency, aGrad );
+                        rPropMap.setProperty( ShapeProperty::GradientTransparency, aGrad );
                     }
 
                 }
@@ -590,16 +590,16 @@ void FillProperties::pushToPropMap( ShapePropertyMap& rPropMap,
 
             case XML_blipFill:
                 // do not start complex graphic transformation if property is not supported...
-                if( maBlipProps.mxGraphic.is() && rPropMap.supportsProperty( SHAPEPROP_FillBitmapUrl ) )
+                if( maBlipProps.mxGraphic.is() && rPropMap.supportsProperty( ShapeProperty::FillBitmapUrl ) )
                 {
                     Reference< XGraphic > xGraphic = lclCheckAndApplyDuotoneTransform( maBlipProps, maBlipProps.mxGraphic, rGraphicHelper, nPhClr );
                     // TODO: "rotate with shape" is not possible with our current core
 
                     OUString aGraphicUrl = rGraphicHelper.createGraphicObject( xGraphic );
                     // push bitmap or named bitmap to property map
-                    if( !aGraphicUrl.isEmpty() && rPropMap.supportsProperty( SHAPEPROP_FillBitmapNameFromUrl ) && rPropMap.setProperty( SHAPEPROP_FillBitmapNameFromUrl, aGraphicUrl ) )
+                    if( !aGraphicUrl.isEmpty() && rPropMap.supportsProperty( ShapeProperty::FillBitmapNameFromUrl ) && rPropMap.setProperty( ShapeProperty::FillBitmapNameFromUrl, aGraphicUrl ) )
                         eFillStyle = FillStyle_BITMAP;
-                    else if( !aGraphicUrl.isEmpty() && rPropMap.setProperty( SHAPEPROP_FillBitmapUrl, aGraphicUrl ) )
+                    else if( !aGraphicUrl.isEmpty() && rPropMap.setProperty( ShapeProperty::FillBitmapUrl, aGraphicUrl ) )
                         eFillStyle = FillStyle_BITMAP;
 
                     // set other bitmap properties, if bitmap has been inserted into the map
@@ -607,14 +607,14 @@ void FillProperties::pushToPropMap( ShapePropertyMap& rPropMap,
                     {
                         // bitmap mode (single, repeat, stretch)
                         BitmapMode eBitmapMode = lclGetBitmapMode( maBlipProps.moBitmapMode.get( XML_TOKEN_INVALID ) );
-                        rPropMap.setProperty( SHAPEPROP_FillBitmapMode, eBitmapMode );
+                        rPropMap.setProperty( ShapeProperty::FillBitmapMode, eBitmapMode );
 
                         // additional settings for repeated bitmap
                         if( eBitmapMode == BitmapMode_REPEAT )
                         {
                             // anchor position inside bitmap
                             RectanglePoint eRectPoint = lclGetRectanglePoint( maBlipProps.moTileAlign.get( XML_tl ) );
-                            rPropMap.setProperty( SHAPEPROP_FillBitmapRectanglePoint, eRectPoint );
+                            rPropMap.setProperty( ShapeProperty::FillBitmapRectanglePoint, eRectPoint );
 
                             awt::Size aOriginalSize = lclGetOriginalSize( rGraphicHelper, maBlipProps.mxGraphic );
                             if( (aOriginalSize.Width > 0) && (aOriginalSize.Height > 0) )
@@ -622,16 +622,16 @@ void FillProperties::pushToPropMap( ShapePropertyMap& rPropMap,
                                 // size of one bitmap tile (given as 1/1000 percent of bitmap size), convert to 1/100 mm
                                 double fScaleX = maBlipProps.moTileScaleX.get( MAX_PERCENT ) / static_cast< double >( MAX_PERCENT );
                                 sal_Int32 nFillBmpSizeX = getLimitedValue< sal_Int32, double >( aOriginalSize.Width * fScaleX, 1, SAL_MAX_INT32 );
-                                rPropMap.setProperty( SHAPEPROP_FillBitmapSizeX, nFillBmpSizeX );
+                                rPropMap.setProperty( ShapeProperty::FillBitmapSizeX, nFillBmpSizeX );
                                 double fScaleY = maBlipProps.moTileScaleY.get( MAX_PERCENT ) / static_cast< double >( MAX_PERCENT );
                                 sal_Int32 nFillBmpSizeY = getLimitedValue< sal_Int32, double >( aOriginalSize.Height * fScaleY, 1, SAL_MAX_INT32 );
-                                rPropMap.setProperty( SHAPEPROP_FillBitmapSizeY, nFillBmpSizeY );
+                                rPropMap.setProperty( ShapeProperty::FillBitmapSizeY, nFillBmpSizeY );
 
                                 // offset of the first bitmap tile (given as EMUs), convert to percent
                                 sal_Int16 nTileOffsetX = getDoubleIntervalValue< sal_Int16 >( maBlipProps.moTileOffsetX.get( 0 ) / 3.6 / aOriginalSize.Width, 0, 100 );
-                                rPropMap.setProperty( SHAPEPROP_FillBitmapOffsetX, nTileOffsetX );
+                                rPropMap.setProperty( ShapeProperty::FillBitmapOffsetX, nTileOffsetX );
                                 sal_Int16 nTileOffsetY = getDoubleIntervalValue< sal_Int16 >( maBlipProps.moTileOffsetY.get( 0 ) / 3.6 / aOriginalSize.Height, 0, 100 );
-                                rPropMap.setProperty( SHAPEPROP_FillBitmapOffsetY, nTileOffsetY );
+                                rPropMap.setProperty( ShapeProperty::FillBitmapOffsetY, nTileOffsetY );
                             }
                         }
                         else if ( eBitmapMode == BitmapMode_STRETCH && maBlipProps.moFillRect.has() )
@@ -655,13 +655,13 @@ void FillProperties::pushToPropMap( ShapePropertyMap& rPropMap,
                     }
 
                     if (maBlipProps.moAlphaModFix.has())
-                        rPropMap.setProperty(SHAPEPROP_FillTransparency, static_cast<sal_Int16>(100 - (maBlipProps.moAlphaModFix.get() / PER_PERCENT)));
+                        rPropMap.setProperty(ShapeProperty::FillTransparency, static_cast<sal_Int16>(100 - (maBlipProps.moAlphaModFix.get() / PER_PERCENT)));
                 }
             break;
 
             case XML_pattFill:
             {
-                if( rPropMap.supportsProperty( SHAPEPROP_FillHatch ) )
+                if( rPropMap.supportsProperty( ShapeProperty::FillHatch ) )
                 {
                     Color aColor( maPatternProps.maPattFgColor );
                     if( aColor.isUsed() && maPatternProps.moPattPreset.has() )
@@ -669,14 +669,14 @@ void FillProperties::pushToPropMap( ShapePropertyMap& rPropMap,
                         // we do not support hatches that have background
                         // color too, so all this is some best-effort approach
                         eFillStyle = FillStyle_HATCH;
-                        rPropMap.setProperty( SHAPEPROP_FillHatch, createHatch( maPatternProps.moPattPreset.get(), aColor.getColor( rGraphicHelper, nPhClr ) ) );
+                        rPropMap.setProperty( ShapeProperty::FillHatch, createHatch( maPatternProps.moPattPreset.get(), aColor.getColor( rGraphicHelper, nPhClr ) ) );
                     }
                     else if ( maPatternProps.maPattBgColor.isUsed() )
                     {
                         aColor = maPatternProps.maPattBgColor;
-                        rPropMap.setProperty( SHAPEPROP_FillColor, aColor.getColor( rGraphicHelper, nPhClr ) );
+                        rPropMap.setProperty( ShapeProperty::FillColor, aColor.getColor( rGraphicHelper, nPhClr ) );
                         if( aColor.hasTransparency() )
-                            rPropMap.setProperty( SHAPEPROP_FillTransparency, aColor.getTransparency() );
+                            rPropMap.setProperty( ShapeProperty::FillTransparency, aColor.getTransparency() );
                         eFillStyle = FillStyle_SOLID;
                     }
                 }
@@ -690,7 +690,7 @@ void FillProperties::pushToPropMap( ShapePropertyMap& rPropMap,
         }
 
         // set final fill style property
-        rPropMap.setProperty( SHAPEPROP_FillStyle, eFillStyle );
+        rPropMap.setProperty( ShapeProperty::FillStyle, eFillStyle );
     }
 }
 
@@ -709,8 +709,8 @@ void GraphicProperties::pushToPropMap( PropertyMap& rPropMap, const GraphicHelpe
     if( maBlipProps.mxGraphic.is() )
     {
         // created transformed graphic
-        Reference< XGraphic > xGraphic = lclCheckAndApplyDuotoneTransform( maBlipProps, maBlipProps.mxGraphic, rGraphicHelper, API_RGB_TRANSPARENT );
-        xGraphic = lclCheckAndApplyChangeColorTransform( maBlipProps, xGraphic, rGraphicHelper, API_RGB_TRANSPARENT );
+        Reference< XGraphic > xGraphic = lclCheckAndApplyChangeColorTransform(maBlipProps, maBlipProps.mxGraphic, rGraphicHelper, API_RGB_TRANSPARENT);
+        xGraphic = lclCheckAndApplyDuotoneTransform(maBlipProps, xGraphic, rGraphicHelper, API_RGB_TRANSPARENT);
 
         if (eColorMode == ColorMode_STANDARD && nBrightness == 70 && nContrast == -70)
             // map MSO 'washout' to our Watermark colormode

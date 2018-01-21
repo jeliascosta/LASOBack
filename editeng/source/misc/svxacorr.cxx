@@ -66,6 +66,7 @@
 #include <vcl/help.hxx>
 #include <set>
 #include <unordered_map>
+#include <rtl/character.hxx>
 
 using namespace ::com::sun::star::ucb;
 using namespace ::com::sun::star::uno;
@@ -74,10 +75,15 @@ using namespace ::com::sun::star;
 using namespace ::xmloff::token;
 using namespace ::utl;
 
-static const int C_NONE             = 0x00;
-static const int C_FULL_STOP        = 0x01;
-static const int C_EXCLAMATION_MARK = 0x02;
-static const int C_QUESTION_MARK    = 0x04;
+enum class Flags {
+    NONE            = 0x00,
+    FullStop        = 0x01,
+    ExclamationMark = 0x02,
+    QuestionMark    = 0x04,
+};
+namespace o3tl {
+    template<> struct typed_flags<Flags> : is_typed_flags<Flags, 0x07> {};
+}
 static const sal_Unicode cNonBreakingSpace = 0xA0;
 
 static const sal_Char pXMLImplWrdStt_ExcptLstStr[] = "WordExceptList.xml";
@@ -90,15 +96,18 @@ static const sal_Char
     /* also at these ends - Brackets and all kinds of begin characters */
     sImplEndSkipChars[] = "\"\')]}\x83\x84\x89\x91\x92\x93\x94";
 
-// These characters are allowed in words: (for FnCapitalStartSentence)
-static const sal_Char sImplWordChars[] = "-'";
-
 OUString EncryptBlockName_Imp(const OUString& rName);
 
 static inline bool IsWordDelim( const sal_Unicode c )
 {
     return ' ' == c || '\t' == c || 0x0a == c ||
             cNonBreakingSpace == c || 0x2011 == c || 0x1 == c;
+}
+
+static inline bool IsAutoCapitalizeWordDelim( const sal_Unicode c )
+{
+    return ' ' == c || '\t' == c || 0x0a == c ||
+            cNonBreakingSpace == c || 0x2011 == c;
 }
 
 static inline bool IsLowerLetter( sal_Int32 nCharType )
@@ -411,7 +420,7 @@ bool SvxAutoCorrect::FnCapitalStartWord( SvxAutoCorrDoc& rDoc, const OUString& r
             {
                 // Check that word isn't correctly spelled before correcting:
                 css::uno::Reference< css::linguistic2::XSpellChecker1 > xSpeller =
-                    SvxGetSpellChecker();
+                    LinguMgr::GetSpellChecker();
                 if( xSpeller->hasLanguage(eLang) )
                 {
                     Sequence< css::beans::PropertyValue > aEmptySeq;
@@ -821,7 +830,7 @@ bool SvxAutoCorrect::FnCapitalStartSentence( SvxAutoCorrDoc& rDoc,
         }
         else if (pWordStt && !rCC.isDigit(aText, pStr - pStart))
         {
-            if( lcl_IsInAsciiArr( sImplWordChars, *pStr ) &&
+            if( lcl_IsInAsciiArr( "-'", *pStr ) && // These characters are allowed in words
                 pWordStt - 1 == pStr &&
                 // Installation at beginning of paragraph. Replaced < by <= (#i38971#)
                 (pStart + 1) <= pStr &&
@@ -861,9 +870,9 @@ bool SvxAutoCorrect::FnCapitalStartSentence( SvxAutoCorrDoc& rDoc,
 
     if( !bAtStart ) // Still no beginning of a paragraph?
     {
-        if ( IsWordDelim( *pStr ) )
+        if (IsAutoCapitalizeWordDelim(*pStr))
         {
-            while( ! ( bAtStart = (pStart == pStr--) ) && IsWordDelim( *pStr ) )
+            while (!(bAtStart = (pStart == pStr--)) && IsAutoCapitalizeWordDelim(*pStr))
                 ;
         }
         // Asian full stop, full width full stop, full width exclamation mark
@@ -894,7 +903,7 @@ bool SvxAutoCorrect::FnCapitalStartSentence( SvxAutoCorrDoc& rDoc,
 
         do {            // overwrite all blanks
             --pStr;
-            if( !IsWordDelim( *pStr ))
+            if (!IsAutoCapitalizeWordDelim(*pStr))
                 break;
         } while( ! ( bAtStart = (pStart == pStr) ) );
 
@@ -908,7 +917,7 @@ bool SvxAutoCorrect::FnCapitalStartSentence( SvxAutoCorrDoc& rDoc,
     if( !bAtStart )
     {
         bool bContinue = true;
-        int nFlag = C_NONE;
+        Flags nFlag = Flags::NONE;
         do {
             switch( *pStr )
             {
@@ -926,30 +935,30 @@ bool SvxAutoCorrect::FnCapitalStartSentence( SvxAutoCorrDoc& rDoc,
                         //previous sentence, so don't autocapitalize this word
                         return false;
                     }
-                    if( nFlag & C_FULL_STOP )
+                    if( nFlag & Flags::FullStop )
                         return false;  // no valid separator -> no replacement
-                    nFlag |= C_FULL_STOP;
+                    nFlag |= Flags::FullStop;
                     pExceptStt = pStr;
                 }
                 break;
             case '!':
             case 0xFF01 :
                 {
-                    if( nFlag & C_EXCLAMATION_MARK )
+                    if( nFlag & Flags::ExclamationMark )
                         return false;   // no valid separator -> no replacement
-                    nFlag |= C_EXCLAMATION_MARK;
+                    nFlag |= Flags::ExclamationMark;
                 }
                 break;
             case '?':
             case 0xFF1F :
                 {
-                    if( nFlag & C_QUESTION_MARK)
+                    if( nFlag & Flags::QuestionMark)
                         return false;   // no valid separator -> no replacement
-                    nFlag |= C_QUESTION_MARK;
+                    nFlag |= Flags::QuestionMark;
                 }
                 break;
             default:
-                if( !nFlag )
+                if( nFlag == Flags::NONE )
                     return false;       // no valid separator -> no replacement
                 else
                     bContinue = false;
@@ -961,7 +970,7 @@ bool SvxAutoCorrect::FnCapitalStartSentence( SvxAutoCorrDoc& rDoc,
                 return false;       // no valid separator -> no replacement
             }
         } while( bContinue );
-        if( C_FULL_STOP != nFlag )
+        if( Flags::FullStop != nFlag )
             pExceptStt = nullptr;
     }
 
@@ -989,7 +998,7 @@ bool SvxAutoCorrect::FnCapitalStartSentence( SvxAutoCorrDoc& rDoc,
                 else
                     bAlphaFnd = true;
             }
-            else if( bAlphaFnd || IsWordDelim( *pTmpStr ) )
+            else if (bAlphaFnd || IsAutoCapitalizeWordDelim(*pTmpStr))
                 break;
 
             if( pTmpStr == pStart )
@@ -1005,7 +1014,7 @@ bool SvxAutoCorrect::FnCapitalStartSentence( SvxAutoCorrDoc& rDoc,
     bool bNumericOnly = '0' <= *(pStr+1) && *(pStr+1) <= '9';
 
     // Search for the beginning of the word
-    while( !IsWordDelim( *pStr ))
+    while (!IsAutoCapitalizeWordDelim(*pStr))
     {
         if( bNumericOnly && rCC.isLetter( aText, pStr - pStart ) )
             bNumericOnly = false;
@@ -1019,7 +1028,7 @@ bool SvxAutoCorrect::FnCapitalStartSentence( SvxAutoCorrDoc& rDoc,
     if( bNumericOnly )      // consists of only numbers, then not
         return false;
 
-    if( IsWordDelim( *pStr ))
+    if (IsAutoCapitalizeWordDelim(*pStr))
         ++pStr;
 
     OUString sWord;
@@ -1100,7 +1109,7 @@ bool SvxAutoCorrect::FnCorrectCapsLock( SvxAutoCorrDoc& rDoc, const OUString& rT
             aConverted += rCC.lowercase(OUString(rTxt[i]));
         else
             // This is not an alphabetic letter.  Leave it as-is.
-            aConverted += OUString( rTxt[i] );
+            aConverted += OUStringLiteral1( rTxt[i] );
     }
 
     // Replace the word.
@@ -1377,7 +1386,7 @@ void SvxAutoCorrect::DoAutoCorrect( SvxAutoCorrDoc& rDoc, const OUString& rTxt,
 
         if( ( IsAutoCorrFlag( ChgOrdinalNumber ) &&
                 (nInsPos >= 2 ) &&       // fdo#69762 avoid autocorrect for 2e-3
-                ( '-' != cChar || 'E' != toupper(rTxt[nInsPos-1]) || '0' > rTxt[nInsPos-2] || '9' < rTxt[nInsPos-2] ) &&
+                ( '-' != cChar || 'E' != rtl::toAsciiUpperCase(rTxt[nInsPos-1]) || '0' > rTxt[nInsPos-2] || '9' < rTxt[nInsPos-2] ) &&
                 FnChgOrdinalNumber( rDoc, rTxt, nCapLttrPos, nInsPos, eLang ) ) ||
             ( IsAutoCorrFlag( SetINetAttr ) &&
                 ( ' ' == cChar || '\t' == cChar || 0x0a == cChar || !cChar ) &&
@@ -1555,7 +1564,7 @@ bool SvxAutoCorrect::CreateLanguageFile( const LanguageTag& rLanguageTag, bool b
 
     tools::Time nMinTime( 0, 2 ), nAktTime( tools::Time::SYSTEM ), nLastCheckTime( tools::Time::EMPTY );
 
-    std::map<LanguageTag, long>::iterator nFndPos = aLastFileTable.find(rLanguageTag);
+    auto nFndPos = aLastFileTable.find(rLanguageTag);
     if(nFndPos != aLastFileTable.end() &&
        (nLastCheckTime.SetTime(nFndPos->second), nLastCheckTime < nAktTime) &&
        nAktTime - nLastCheckTime < nMinTime)
@@ -2063,7 +2072,7 @@ void SvxAutoCorrectLanguageLists::SaveExceptList_Imp(
                 xWriter->setOutputStream(xOut);
 
                 uno::Reference < xml::sax::XDocumentHandler > xHandler(xWriter, UNO_QUERY_THROW);
-                uno::Reference< SvXMLExceptionListExport > xExp( new SvXMLExceptionListExport( xContext, rLst, sStrmName, xHandler ) );
+                rtl::Reference< SvXMLExceptionListExport > xExp( new SvXMLExceptionListExport( xContext, rLst, sStrmName, xHandler ) );
 
                 xExp->exportDoc( XML_BLOCK_LIST );
 
@@ -2163,7 +2172,7 @@ bool SvxAutoCorrectLanguageLists::AddToCplSttExceptList(const OUString& rNew)
     if( !rNew.isEmpty() && GetCplSttExceptList()->insert( rNew ).second )
     {
         MakeUserStorage_Impl();
-        tools::SvRef<SotStorage> xStg = new SotStorage( sUserAutoCorrFile, STREAM_READWRITE );
+        tools::SvRef<SotStorage> xStg = new SotStorage( sUserAutoCorrFile, StreamMode::READWRITE );
 
         SaveExceptList_Imp( *pCplStt_ExcptLst, pXMLImplCplStt_ExcptLstStr, xStg );
 
@@ -2184,7 +2193,7 @@ bool SvxAutoCorrectLanguageLists::AddToWrdSttExceptList(const OUString& rNew)
     if( !rNew.isEmpty() && pExceptList && pExceptList->insert( rNew ).second )
     {
         MakeUserStorage_Impl();
-        tools::SvRef<SotStorage> xStg = new SotStorage( sUserAutoCorrFile, STREAM_READWRITE );
+        tools::SvRef<SotStorage> xStg = new SotStorage( sUserAutoCorrFile, StreamMode::READWRITE );
 
         SaveExceptList_Imp( *pWrdStt_ExcptLst, pXMLImplWrdStt_ExcptLstStr, xStg );
 
@@ -2216,7 +2225,7 @@ SvStringsISortDtor* SvxAutoCorrectLanguageLists::LoadCplSttExceptList()
 void SvxAutoCorrectLanguageLists::SaveCplSttExceptList()
 {
     MakeUserStorage_Impl();
-    tools::SvRef<SotStorage> xStg = new SotStorage( sUserAutoCorrFile, STREAM_READWRITE );
+    tools::SvRef<SotStorage> xStg = new SotStorage( sUserAutoCorrFile, StreamMode::READWRITE );
 
     SaveExceptList_Imp( *pCplStt_ExcptLst, pXMLImplCplStt_ExcptLstStr, xStg );
 
@@ -2261,7 +2270,7 @@ SvStringsISortDtor* SvxAutoCorrectLanguageLists::LoadWrdSttExceptList()
 void SvxAutoCorrectLanguageLists::SaveWrdSttExceptList()
 {
     MakeUserStorage_Impl();
-    tools::SvRef<SotStorage> xStg = new SotStorage( sUserAutoCorrFile, STREAM_READWRITE );
+    tools::SvRef<SotStorage> xStg = new SotStorage( sUserAutoCorrFile, StreamMode::READWRITE );
 
     SaveExceptList_Imp( *pWrdStt_ExcptLst, pXMLImplWrdStt_ExcptLstStr, xStg );
 
@@ -2296,7 +2305,7 @@ void SvxAutoCorrectLanguageLists::RemoveStream_Imp( const OUString& rName )
 {
     if( sShareAutoCorrFile != sUserAutoCorrFile )
     {
-        tools::SvRef<SotStorage> xStg = new SotStorage( sUserAutoCorrFile, STREAM_READWRITE );
+        tools::SvRef<SotStorage> xStg = new SotStorage( sUserAutoCorrFile, StreamMode::READWRITE );
         if( xStg.Is() && SVSTREAM_OK == xStg->GetError() &&
             xStg->IsStream( rName ) )
         {
@@ -2430,7 +2439,7 @@ bool SvxAutoCorrectLanguageLists::MakeBlocklist_Imp( SotStorage& rStg )
             xWriter->setOutputStream(xOut);
 
             uno::Reference<xml::sax::XDocumentHandler> xHandler(xWriter, uno::UNO_QUERY);
-            uno::Reference< SvXMLAutoCorrectExport > xExp( new SvXMLAutoCorrectExport( xContext, pAutocorr_List, sStrmName, xHandler ) );
+            rtl::Reference< SvXMLAutoCorrectExport > xExp( new SvXMLAutoCorrectExport( xContext, pAutocorr_List, sStrmName, xHandler ) );
 
             xExp->exportDoc( XML_BLOCK_LIST );
 
@@ -2466,7 +2475,7 @@ bool SvxAutoCorrectLanguageLists::MakeCombinedChanges( std::vector<SvxAutocorrWo
     GetAutocorrWordList();
 
     MakeUserStorage_Impl();
-    tools::SvRef<SotStorage> xStorage = new SotStorage( sUserAutoCorrFile, STREAM_READWRITE );
+    tools::SvRef<SotStorage> xStorage = new SotStorage( sUserAutoCorrFile, StreamMode::READWRITE );
 
     bool bRet = xStorage.Is() && SVSTREAM_OK == xStorage->GetError();
 
@@ -2538,7 +2547,7 @@ bool SvxAutoCorrectLanguageLists::PutText( const OUString& rShort, const OUStrin
     GetAutocorrWordList();
 
     MakeUserStorage_Impl();
-    tools::SvRef<SotStorage> xStg = new SotStorage( sUserAutoCorrFile, STREAM_READWRITE );
+    tools::SvRef<SotStorage> xStg = new SotStorage( sUserAutoCorrFile, StreamMode::READWRITE );
 
     bool bRet = xStg.Is() && SVSTREAM_OK == xStg->GetError();
 
@@ -2600,7 +2609,7 @@ bool SvxAutoCorrectLanguageLists::PutText( const OUString& rShort,
             SvxAutocorrWord* pNew = new SvxAutocorrWord( rShort, sLong, false );
             if( pAutocorr_List->Insert( pNew ) )
             {
-                tools::SvRef<SotStorage> xStor = new SotStorage( sUserAutoCorrFile, STREAM_READWRITE );
+                tools::SvRef<SotStorage> xStor = new SotStorage( sUserAutoCorrFile, StreamMode::READWRITE );
                 MakeBlocklist_Imp( *xStor );
             }
             else

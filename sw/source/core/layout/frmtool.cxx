@@ -84,8 +84,7 @@ SwFrameNotify::SwFrameNotify( SwFrame *pF ) :
     maFrame( pF->Frame() ),
     maPrt( pF->Prt() ),
     mbInvaKeep( false ),
-    mbValidSize( pF->GetValidSizeFlag() ),
-    mbFrameDeleted( false )     // #i49383#
+    mbValidSize( pF->GetValidSizeFlag() )
 {
     if ( pF->IsTextFrame() )
     {
@@ -103,18 +102,12 @@ SwFrameNotify::SwFrameNotify( SwFrame *pF ) :
 
 SwFrameNotify::~SwFrameNotify()
 {
-    // #i49383#
-    if ( mbFrameDeleted )
-    {
-        return;
-    }
-
-    SWRECTFN( mpFrame )
-    const bool bAbsP = POS_DIFF( maFrame, mpFrame->Frame() );
+    SwRectFnSet aRectFnSet(mpFrame);
+    const bool bAbsP = aRectFnSet.PosDiff(maFrame, mpFrame->Frame());
     const bool bChgWidth =
-            (maFrame.*fnRect->fnGetWidth)() != (mpFrame->Frame().*fnRect->fnGetWidth)();
+            (maFrame.*aRectFnSet->fnGetWidth)() != (mpFrame->Frame().*aRectFnSet->fnGetWidth)();
     const bool bChgHeight =
-            (maFrame.*fnRect->fnGetHeight)()!=(mpFrame->Frame().*fnRect->fnGetHeight)();
+            (maFrame.*aRectFnSet->fnGetHeight)()!=(mpFrame->Frame().*aRectFnSet->fnGetHeight)();
     const bool bChgFlyBasePos = mpFrame->IsTextFrame() &&
        ( ( mnFlyAnchorOfst != static_cast<SwTextFrame*>(mpFrame)->GetBaseOfstForFly( true ) ) ||
          ( mnFlyAnchorOfstNoWrap != static_cast<SwTextFrame*>(mpFrame)->GetBaseOfstForFly( false ) ) );
@@ -154,8 +147,8 @@ SwFrameNotify::~SwFrameNotify()
             }
             else if ( !pFlow->HasFollow() )
             {
-                long nOldHeight = (maFrame.*fnRect->fnGetHeight)();
-                long nNewHeight = (mpFrame->Frame().*fnRect->fnGetHeight)();
+                long nOldHeight = (maFrame.*aRectFnSet->fnGetHeight)();
+                long nNewHeight = (mpFrame->Frame().*aRectFnSet->fnGetHeight)();
                 if( (nOldHeight > nNewHeight) || (!nOldHeight && nNewHeight) )
                     pFlow->CheckKeep();
             }
@@ -181,7 +174,7 @@ SwFrameNotify::~SwFrameNotify()
             // #104100# - correct condition for setting retouche
             // flag for vertical layout.
             if( mpFrame->IsRetoucheFrame() &&
-                (maFrame.*fnRect->fnTopDist)( (mpFrame->Frame().*fnRect->fnGetTop)() ) > 0 )
+                (maFrame.*aRectFnSet->fnTopDist)( (mpFrame->Frame().*aRectFnSet->fnGetTop)() ) > 0 )
             {
                 mpFrame->SetRetouche();
             }
@@ -198,9 +191,9 @@ SwFrameNotify::~SwFrameNotify()
 
     //For each resize of the background graphics is a repaint necessary.
     const bool bPrtWidth =
-            (maPrt.*fnRect->fnGetWidth)() != (mpFrame->Prt().*fnRect->fnGetWidth)();
+            (maPrt.*aRectFnSet->fnGetWidth)() != (mpFrame->Prt().*aRectFnSet->fnGetWidth)();
     const bool bPrtHeight =
-            (maPrt.*fnRect->fnGetHeight)()!=(mpFrame->Prt().*fnRect->fnGetHeight)();
+            (maPrt.*aRectFnSet->fnGetHeight)()!=(mpFrame->Prt().*aRectFnSet->fnGetHeight)();
     if ( bPrtWidth || bPrtHeight )
     {
         //UUUU
@@ -236,7 +229,7 @@ SwFrameNotify::~SwFrameNotify()
         }
     }
 
-    const bool bPrtP = POS_DIFF( maPrt, mpFrame->Prt() );
+    const bool bPrtP = aRectFnSet.PosDiff( maPrt, mpFrame->Prt() );
     if ( bAbsP || bPrtP || bChgWidth || bChgHeight ||
          bPrtWidth || bPrtHeight || bChgFlyBasePos )
     {
@@ -394,7 +387,7 @@ SwFrameNotify::~SwFrameNotify()
 
             // This could be optimized. Basically the fly frame only has to
             // be invalidated, if the first line of pFrame (if pFrame is a content
-            // frame, for other frame types its the print area) has changed its
+            // frame, for other frame types it's the print area) has changed its
             // size and pFrame was responsible for the current width of pFly. On
             // the other hand, this is only rarely used and re-calculation of
             // the fly frame does not cause too much trouble. So we keep it this
@@ -451,14 +444,8 @@ static void lcl_InvalidatePosOfLowers( SwLayoutFrame& _rLayoutFrame )
 
 SwLayNotify::~SwLayNotify()
 {
-    // #i49383#
-    if ( mbFrameDeleted )
-    {
-        return;
-    }
-
-    SwLayoutFrame *pLay = GetLay();
-    SWRECTFN( pLay )
+    SwLayoutFrame *pLay = static_cast<SwLayoutFrame*>(mpFrame);
+    SwRectFnSet aRectFnSet(pLay);
     bool bNotify = false;
     if ( pLay->Prt().SSize() != maPrt.SSize() )
     {
@@ -469,11 +456,11 @@ SwLayNotify::~SwLayNotify()
             if ( pLay->IsRowFrame() )
             {
                 bInvaPercent = true;
-                long nNew = (pLay->Prt().*fnRect->fnGetHeight)();
-                if( nNew != (maPrt.*fnRect->fnGetHeight)() )
+                long nNew = (pLay->Prt().*aRectFnSet->fnGetHeight)();
+                if( nNew != (maPrt.*aRectFnSet->fnGetHeight)() )
                      static_cast<SwRowFrame*>(pLay)->AdjustCells( nNew, true);
-                if( (pLay->Prt().*fnRect->fnGetWidth)()
-                    != (maPrt.*fnRect->fnGetWidth)() )
+                if( (pLay->Prt().*aRectFnSet->fnGetWidth)()
+                    != (maPrt.*aRectFnSet->fnGetWidth)() )
                      static_cast<SwRowFrame*>(pLay)->AdjustCells( 0, false );
             }
             else
@@ -491,8 +478,8 @@ SwLayNotify::~SwLayNotify()
                     if ( pLay->Lower() )
                     {
                         bLow = !pLay->Lower()->IsColumnFrame() ||
-                            (pLay->Lower()->Frame().*fnRect->fnGetHeight)()
-                             != (pLay->Prt().*fnRect->fnGetHeight)();
+                            (pLay->Lower()->Frame().*aRectFnSet->fnGetHeight)()
+                             != (pLay->Prt().*aRectFnSet->fnGetHeight)();
                     }
                     else
                         bLow = false;
@@ -555,8 +542,8 @@ SwLayNotify::~SwLayNotify()
         }
     }
     //Notify Lower if the position has changed.
-    const bool bPrtPos = POS_DIFF( maPrt, pLay->Prt() );
-    const bool bPos = bPrtPos || POS_DIFF( maFrame, pLay->Frame() );
+    const bool bPrtPos = aRectFnSet.PosDiff( maPrt, pLay->Prt() );
+    const bool bPos = bPrtPos || aRectFnSet.PosDiff( maFrame, pLay->Frame() );
     const bool bSize = pLay->Frame().SSize() != maFrame.SSize();
 
     if ( bPos && pLay->Lower() && !IsLowersComplete() )
@@ -636,13 +623,7 @@ SwFlyNotify::SwFlyNotify( SwFlyFrame *pFlyFrame ) :
 
 SwFlyNotify::~SwFlyNotify()
 {
-    // #i49383#
-    if ( mbFrameDeleted )
-    {
-        return;
-    }
-
-    SwFlyFrame *pFly = GetFly();
+    SwFlyFrame *pFly = static_cast<SwFlyFrame*>(mpFrame);
     if ( pFly->IsNotifyBack() )
     {
         SwViewShell *pSh = pFly->getRootFrame()->GetCurrShell();
@@ -665,8 +646,8 @@ SwFlyNotify::~SwFlyNotify()
 
     //Have the size or the position changed,
     //so should the view know this.
-    SWRECTFN( pFly )
-    const bool bPosChgd = POS_DIFF( maFrame, pFly->Frame() );
+    SwRectFnSet aRectFnSet(pFly);
+    const bool bPosChgd = aRectFnSet.PosDiff( maFrame, pFly->Frame() );
     const bool bFrameChgd = pFly->Frame().SSize() != maFrame.SSize();
     const bool bPrtChgd = maPrt != pFly->Prt();
     if ( bPosChgd || bFrameChgd || bPrtChgd )
@@ -736,11 +717,6 @@ SwFlyNotify::~SwFlyNotify()
     }
 }
 
-SwContentFrame *SwContentNotify::GetCnt()
-{
-    return static_cast<SwContentFrame*>(mpFrame);
-}
-
 SwContentNotify::SwContentNotify( SwContentFrame *pContentFrame ) :
     SwFrameNotify( pContentFrame ),
     // OD 08.01.2004 #i11859#
@@ -758,7 +734,7 @@ SwContentNotify::SwContentNotify( SwContentFrame *pContentFrame ) :
         {
             const SwAttrSet* pSet = pTextFrame->GetAttrSet();
             const SvxLineSpacingItem &rSpace = pSet->GetLineSpacing();
-            if ( rSpace.GetInterLineSpaceRule() == SVX_INTER_LINE_SPACE_PROP )
+            if ( rSpace.GetInterLineSpaceRule() == SvxInterLineSpaceRule::Prop )
             {
                 mbChkHeightOfLastLine = true;
                 mnHeightOfLastLine = pTextFrame->GetHeightOfLastLine();
@@ -769,18 +745,12 @@ SwContentNotify::SwContentNotify( SwContentFrame *pContentFrame ) :
 
 SwContentNotify::~SwContentNotify()
 {
-    // #i49383#
-    if ( mbFrameDeleted )
-    {
-        return;
-    }
-
-    SwContentFrame *pCnt = GetCnt();
+    SwContentFrame *pCnt = static_cast<SwContentFrame*>(mpFrame);
     if ( bSetCompletePaintOnInvalidate )
         pCnt->SetCompletePaint();
 
-    SWRECTFN( pCnt )
-    if ( pCnt->IsInTab() && ( POS_DIFF( pCnt->Frame(), maFrame ) ||
+    SwRectFnSet aRectFnSet(pCnt);
+    if ( pCnt->IsInTab() && ( aRectFnSet.PosDiff( pCnt->Frame(), maFrame ) ||
                              pCnt->Frame().SSize() != maFrame.SSize()))
     {
         SwLayoutFrame* pCell = pCnt->GetUpper();
@@ -838,7 +808,7 @@ SwContentNotify::~SwContentNotify()
         }
     }
 
-    const bool bFirst = (maFrame.*fnRect->fnGetWidth)() == 0;
+    const bool bFirst = (maFrame.*aRectFnSet->fnGetWidth)() == 0;
 
     if ( pCnt->IsNoTextFrame() )
     {
@@ -968,7 +938,7 @@ SwContentNotify::~SwContentNotify()
     }
 
     // #i44049#
-    if ( pCnt->IsTextFrame() && POS_DIFF( maFrame, pCnt->Frame() ) )
+    if ( pCnt->IsTextFrame() && aRectFnSet.PosDiff( maFrame, pCnt->Frame() ) )
     {
         pCnt->InvalidateObjs();
     }
@@ -1207,11 +1177,11 @@ void AppendAllObjs( const SwFrameFormats *pTable, const SwFrame* pSib )
 static void lcl_SetPos( SwFrame&             _rNewFrame,
                  const SwLayoutFrame& _rLayFrame )
 {
-    SWRECTFN( (&_rLayFrame) )
-    (_rNewFrame.Frame().*fnRect->fnSetPos)( (_rLayFrame.Frame().*fnRect->fnGetPos)() );
+    SwRectFnSet aRectFnSet(&_rLayFrame);
+    (_rNewFrame.Frame().*aRectFnSet->fnSetPos)( (_rLayFrame.Frame().*aRectFnSet->fnGetPos)() );
     // move position by one SwTwip in text flow direction in order to get
     // notifications for a new calculated position after its formatting.
-    if ( bVert )
+    if ( aRectFnSet.bVert )
         _rNewFrame.Frame().Pos().X() -= 1;
     else
         _rNewFrame.Frame().Pos().Y() += 1;
@@ -1246,7 +1216,6 @@ void InsertCnt_( SwLayoutFrame *pLay, SwDoc *pDoc,
     SwPageFrame *pPage = pLay->FindPageFrame();
     const SwFrameFormats *pTable = pDoc->GetSpzFrameFormats();
     SwFrame       *pFrame = nullptr;
-    bool bBreakAfter = false;
     SwActualSection *pActualSection = nullptr;
     SwLayHelper *pPageMaker;
 
@@ -1258,7 +1227,7 @@ void InsertCnt_( SwLayoutFrame *pLay, SwDoc *pDoc,
         // Attention: the SwLayHelper class uses references to the content-,
         // page-, layout-frame etc. and may change them!
         pPageMaker = new SwLayHelper( pDoc, pFrame, pPrv, pPage, pLay,
-                pActualSection, bBreakAfter, nIndex, 0 == nEndIndex );
+                pActualSection, nIndex, 0 == nEndIndex );
         if( bStartPercent )
         {
             const sal_uLong nPageCount = pPageMaker->CalcPageCount();
@@ -1860,7 +1829,8 @@ SwBorderAttrs::SwBorderAttrs(const SwModify *pMod, const SwFrame *pConstructor)
     m_bCachedJoinedWithPrev = false;
     m_bCachedJoinedWithNext = false;
 
-    m_bBorderDist = bool(pConstructor->GetType() & SwFrameType::Cell);
+    bool bAllowPaddingWithoutBorders = true;
+    m_bBorderDist = bool(pConstructor->GetType() & SwFrameType::Cell) || bAllowPaddingWithoutBorders;
 }
 
 SwBorderAttrs::~SwBorderAttrs()
@@ -1985,36 +1955,28 @@ long SwBorderAttrs::CalcLeft( const SwFrame *pCaller ) const
 
 void SwBorderAttrs::CalcTopLine_()
 {
-    m_nTopLine = (m_bBorderDist && !m_rBox.GetTop())
-                            ? m_rBox.GetDistance  (SvxBoxItemLine::TOP)
-                            : m_rBox.CalcLineSpace(SvxBoxItemLine::TOP);
+    m_nTopLine = m_rBox.CalcLineSpace( SvxBoxItemLine::TOP, /*bEvenIfNoLine*/m_bBorderDist );
     m_nTopLine = m_nTopLine + m_rShadow.CalcShadowSpace(SvxShadowItemSide::TOP);
     m_bTopLine = false;
 }
 
 void SwBorderAttrs::CalcBottomLine_()
 {
-    m_nBottomLine = (m_bBorderDist && !m_rBox.GetBottom())
-                            ? m_rBox.GetDistance  (SvxBoxItemLine::BOTTOM)
-                            : m_rBox.CalcLineSpace(SvxBoxItemLine::BOTTOM);
+    m_nBottomLine = m_rBox.CalcLineSpace( SvxBoxItemLine::BOTTOM, m_bBorderDist );
     m_nBottomLine = m_nBottomLine + m_rShadow.CalcShadowSpace(SvxShadowItemSide::BOTTOM);
     m_bBottomLine = false;
 }
 
 void SwBorderAttrs::CalcLeftLine_()
 {
-    m_nLeftLine = (m_bBorderDist && !m_rBox.GetLeft())
-                            ? m_rBox.GetDistance  (SvxBoxItemLine::LEFT)
-                            : m_rBox.CalcLineSpace(SvxBoxItemLine::LEFT);
+    m_nLeftLine = m_rBox.CalcLineSpace( SvxBoxItemLine::LEFT, m_bBorderDist );
     m_nLeftLine = m_nLeftLine + m_rShadow.CalcShadowSpace(SvxShadowItemSide::LEFT);
     m_bLeftLine = false;
 }
 
 void SwBorderAttrs::CalcRightLine_()
 {
-    m_nRightLine = (m_bBorderDist && !m_rBox.GetRight())
-                            ? m_rBox.GetDistance  (SvxBoxItemLine::RIGHT)
-                            : m_rBox.CalcLineSpace(SvxBoxItemLine::RIGHT);
+    m_nRightLine = m_rBox.CalcLineSpace( SvxBoxItemLine::RIGHT, m_bBorderDist );
     m_nRightLine = m_nRightLine + m_rShadow.CalcShadowSpace(SvxShadowItemSide::RIGHT);
     m_bRightLine = false;
 }
@@ -2214,8 +2176,8 @@ SwBorderAttrAccess::SwBorderAttrAccess( SwCache &rCach, const SwFrame *pFrame ) 
 
 SwCacheObj *SwBorderAttrAccess::NewObj()
 {
-    const_cast<SwModify *>(static_cast<SwModify const *>(pOwner))->SetInCache( true );
-    return new SwBorderAttrs( static_cast<SwModify const *>(pOwner), pConstructor );
+    const_cast<SwModify *>(static_cast<SwModify const *>(m_pOwner))->SetInCache( true );
+    return new SwBorderAttrs( static_cast<SwModify const *>(m_pOwner), pConstructor );
 }
 
 SwBorderAttrs *SwBorderAttrAccess::Get()
@@ -2560,10 +2522,10 @@ static void lcl_AddObjsToPage( SwFrame* _pFrame, SwPageFrame* _pPage )
     }
 }
 
-void RestoreContent( SwFrame *pSav, SwLayoutFrame *pParent, SwFrame *pSibling, bool bGrow )
+void RestoreContent( SwFrame *pSav, SwLayoutFrame *pParent, SwFrame *pSibling )
 {
     OSL_ENSURE( pSav && pParent, "no Save or Parent provided for RestoreContent." );
-    SWRECTFN( pParent )
+    SwRectFnSet aRectFnSet(pParent);
 
     // If there are already FlowFrames below the new parent, so add the chain (starting with pSav)
     // after the last one. The parts are inserted and invalidated if needed.
@@ -2607,7 +2569,7 @@ void RestoreContent( SwFrame *pSav, SwLayoutFrame *pParent, SwFrame *pSibling, b
     SwFrame* pLast;
     do
     {   pSav->mpUpper = pParent;
-        nGrowVal += (pSav->Frame().*fnRect->fnGetHeight)();
+        nGrowVal += (pSav->Frame().*aRectFnSet->fnGetHeight)();
         pSav->InvalidateAll_();
 
         // register Flys, if TextFrames than also invalidate appropriately
@@ -2645,8 +2607,7 @@ void RestoreContent( SwFrame *pSav, SwLayoutFrame *pParent, SwFrame *pSibling, b
         pNxt->mpPrev = pLast;
     }
 
-    if ( bGrow )
-        pParent->Grow( nGrowVal );
+    pParent->Grow( nGrowVal );
 }
 
 SwPageFrame * InsertNewPage( SwPageDesc &rDesc, SwFrame *pUpper,
@@ -2689,10 +2650,12 @@ SwPageFrame * InsertNewPage( SwPageDesc &rDesc, SwFrame *pUpper,
         SwPageDesc *pTmpDesc = pSibling && pSibling->GetPrev() ?
                 static_cast<SwPageFrame*>(pSibling->GetPrev())->GetPageDesc() : &rDesc;
         pRet = new SwPageFrame( pDoc->GetEmptyPageFormat(), pUpper, pTmpDesc );
+        SAL_INFO( "sw.pageframe", "InsertNewPage - insert empty p: " << pRet << " d: " << pTmpDesc );
         pRet->Paste( pUpper, pSibling );
         pRet->PreparePage( bFootnote );
     }
     pRet = new SwPageFrame( pFormat, pUpper, &rDesc );
+    SAL_INFO( "sw.pageframe", "InsertNewPage p: " << pRet << " d: " << &rDesc << " f: " << pFormat );
     pRet->Paste( pUpper, pSibling );
     pRet->PreparePage( bFootnote );
     if ( pRet->GetNext() )
@@ -3279,8 +3242,7 @@ void SwFrameHolder::Reset()
 
 void SwFrameHolder::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING && &rBC == pFrame )
+    if ( rHint.GetId() == SFX_HINT_DYING && &rBC == pFrame )
     {
         pFrame = nullptr;
     }
@@ -3318,6 +3280,8 @@ SwFrame* GetFrameOfModify( const SwRootFrame* pLayout, SwModify const& rMod, SwF
 
                     if( bCalcFrame )
                     {
+                        // tdf#108118 prevent recursion
+                        DisableCallbackAction a(*pTmpFrame->getRootFrame());
                         // - format parent Writer
                         // fly frame, if it isn't been formatted yet.
                         // Note: The Writer fly frame could be the frame itself.

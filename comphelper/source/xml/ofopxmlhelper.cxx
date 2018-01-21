@@ -67,10 +67,10 @@ class OFOPXMLHelper_Impl
 
 
 public:
-    css::uno::Sequence< css::uno::Sequence< css::beans::StringPair > > GetParsingResult();
+    css::uno::Sequence< css::uno::Sequence< css::beans::StringPair > > const & GetParsingResult();
 
     explicit OFOPXMLHelper_Impl( sal_uInt16 nFormat ); // must not be created directly
-    virtual ~OFOPXMLHelper_Impl();
+    virtual ~OFOPXMLHelper_Impl() override;
 
     // XDocumentHandler
     virtual void SAL_CALL startDocument() throw (css::xml::sax::SAXException, css::uno::RuntimeException, std::exception) override;
@@ -98,8 +98,7 @@ uno::Sequence< uno::Sequence< beans::StringPair > > ReadRelationsInfoSequence(
         const uno::Reference< uno::XComponentContext >& rContext )
     throw( uno::Exception )
 {
-    OUString aStringID = "_rels/";
-    aStringID += aStreamName;
+    OUString aStringID = "_rels/" + aStreamName;
     return ReadSequence_Impl( xInStream, aStringID, RELATIONINFO_FORMAT, rContext );
 }
 
@@ -284,7 +283,7 @@ OFOPXMLHelper_Impl::~OFOPXMLHelper_Impl()
 }
 
 
-uno::Sequence< uno::Sequence< beans::StringPair > > OFOPXMLHelper_Impl::GetParsingResult()
+uno::Sequence< uno::Sequence< beans::StringPair > > const & OFOPXMLHelper_Impl::GetParsingResult()
 {
     if ( m_aElementsSeq.size() )
         throw uno::RuntimeException(); // the parsing has still not finished!

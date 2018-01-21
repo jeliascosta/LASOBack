@@ -31,9 +31,8 @@
 namespace sfx2
 {
     //= TitledDockingWindow
-    TitledDockingWindow::TitledDockingWindow( SfxBindings* i_pBindings, SfxChildWindow* i_pChildWindow, vcl::Window* i_pParent,
-            WinBits i_nStyle )
-        :SfxDockingWindow( i_pBindings, i_pChildWindow, i_pParent, i_nStyle )
+    TitledDockingWindow::TitledDockingWindow( SfxBindings* i_pBindings, SfxChildWindow* i_pChildWindow, vcl::Window* i_pParent )
+        :SfxDockingWindow( i_pBindings, i_pChildWindow, i_pParent, WB_MOVEABLE|WB_CLOSEABLE|WB_DOCKABLE|WB_HIDE|WB_3DLOOK )
         ,m_sTitle()
         ,m_aToolbox( VclPtr<ToolBox>::Create(this) )
         ,m_aContentWindow( VclPtr<vcl::Window>::Create(this, WB_DIALOGCONTROL) )
@@ -201,17 +200,12 @@ namespace sfx2
         // Paint title bar text.
         rRenderContext.SetLineColor(rStyleSettings.GetActiveTextColor());
         aTitleBarBox.Left() += 3;
-        rRenderContext.DrawText(aTitleBarBox, impl_getTitle(),
-                               DrawTextFlags::Left | DrawTextFlags::VCenter | DrawTextFlags::MultiLine | DrawTextFlags::WordBreak);
+        rRenderContext.DrawText(aTitleBarBox,
+                                !m_sTitle.isEmpty() ? m_sTitle : GetText(),
+                                DrawTextFlags::Left | DrawTextFlags::VCenter | DrawTextFlags::MultiLine | DrawTextFlags::WordBreak);
 
         // Restore original values of the output device.
         rRenderContext.Pop();
-    }
-
-
-    OUString TitledDockingWindow::impl_getTitle() const
-    {
-        return !m_sTitle.isEmpty() ? m_sTitle : GetText();
     }
 
 
@@ -226,7 +220,7 @@ namespace sfx2
     }
 
 
-    IMPL_LINK_TYPED( TitledDockingWindow, OnToolboxItemSelected, ToolBox*, pToolBox, void )
+    IMPL_LINK( TitledDockingWindow, OnToolboxItemSelected, ToolBox*, pToolBox, void )
     {
         const sal_uInt16 nId = pToolBox->GetCurItemId();
 

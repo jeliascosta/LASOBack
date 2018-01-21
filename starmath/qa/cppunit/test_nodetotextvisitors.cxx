@@ -230,6 +230,7 @@ void Test::SimpleOperators()
     ParseAndCheck("int csup {r_0} csub {r_t} a", "int csup { r _ 0 } csub { r _ t } a ", "Upper and lower bounds shown with integral (csub & csup)");
 //FIXME    ParseAndCheck("sum csup { size 8 { x - 1 } } csub { size 8 a } b ", "sum csup { size 8 { x - 1 } } csub { size 8 a } b ", "Sum with sized upper and lower bounds");
     parseandparseagain("int{a}", "Integral");
+    parseandparseagain("intd_{1}^{2}{x dx}", "Dynamically-sized integral");
     parseandparseagain("iint{a}", "Double integral");
     parseandparseagain("iiint{a}", "Triple integral");
     parseandparseagain("sum from{3}b", "Lower bound shown with summation symbol");
@@ -520,7 +521,7 @@ void Test::testBinomInBinHor()
     pTree = SmParser().Parse(sInput);
     pTree->Prepare(xDocShRef->GetFormat(), *xDocShRef);
 
-    SmCursor aCursor(pTree, xDocShRef);
+    SmCursor aCursor(pTree, xDocShRef.get());
     ScopedVclPtrInstance< VirtualDevice > pOutputDevice;
 
     // move forward (more than) enough places to be at the end
@@ -548,7 +549,7 @@ void Test::testBinVerInUnary()
     pTree = SmParser().Parse(sInput);
     pTree->Prepare(xDocShRef->GetFormat(), *xDocShRef);
 
-    SmCursor aCursor(pTree, xDocShRef);
+    SmCursor aCursor(pTree, xDocShRef.get());
     ScopedVclPtrInstance< VirtualDevice > pOutputDevice;
 
     // move forward (more than) enough places to be at the end
@@ -577,7 +578,7 @@ void Test::testBinHorInSubSup()
     SmNode* pTree = SmParser().Parse(sInput);
     pTree->Prepare(xDocShRef->GetFormat(), *xDocShRef);
 
-    SmCursor aCursor(pTree, xDocShRef);
+    SmCursor aCursor(pTree, xDocShRef.get());
     ScopedVclPtrInstance< VirtualDevice > pOutputDevice;
 
     // Insert an RSup expression with a BinHor for the exponent
@@ -605,7 +606,7 @@ void Test::testUnaryInMixedNumberAsNumerator()
     SmNode* pTree = SmParser().Parse(sInput);
     pTree->Prepare(xDocShRef->GetFormat(), *xDocShRef);
 
-    SmCursor aCursor(pTree, xDocShRef);
+    SmCursor aCursor(pTree, xDocShRef.get());
     ScopedVclPtrInstance< VirtualDevice > pOutputDevice;
 
     // move forward (more than) enough places to be at the end

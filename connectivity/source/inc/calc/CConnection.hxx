@@ -21,7 +21,10 @@
 #define INCLUDED_CONNECTIVITY_SOURCE_INC_CALC_CCONNECTION_HXX
 
 #include "file/FConnection.hxx"
+#include <com/sun/star/frame/XDesktop2.hpp>
+#include <com/sun/star/frame/XTerminateListener.hpp>
 #include <com/sun/star/uno/DeploymentException.hpp>
+#include <unotools/closeveto.hxx>
 
 namespace com { namespace sun { namespace star {
     namespace sheet { class XSpreadsheetDocument; }
@@ -38,19 +41,78 @@ namespace connectivity
         class OCalcConnection : public file::OConnection
         {
             // the spreadsheet document:
-            ::com::sun::star::uno::Reference< ::com::sun::star::sheet::XSpreadsheetDocument > m_xDoc;
-            /// close listener that vetoes so nobody disposes m_xDoc
-            ::std::unique_ptr< ::utl::CloseVeto> m_pCloseListener;
+            css::uno::Reference< css::sheet::XSpreadsheetDocument > m_xDoc;
             OUString m_sPassword;
             OUString m_aFileName;
             oslInterlockedCount m_nDocCount;
 
+            class CloseVetoButTerminateListener : public cppu::WeakComponentImplHelper<css::frame::XTerminateListener>
+            {
+            private:
+                /// close listener that vetoes so nobody else disposes m_xDoc
+                std::unique_ptr<utl::CloseVeto> m_pCloseListener;
+                /// but also listen to XDesktop and if app is terminating anyway, dispose m_xDoc while
+                /// its still possible to do so properly
+                css::uno::Reference<css::frame::XDesktop2> m_xDesktop;
+                osl::Mutex m_aMutex;
+            public:
+                CloseVetoButTerminateListener()
+                    : cppu::WeakComponentImplHelper<css::frame::XTerminateListener>(m_aMutex)
+                {
+                }
+
+                void start(const css::uno::Reference<css::uno::XInterface>& rCloseable,
+                           const css::uno::Reference<css::frame::XDesktop2>& rDesktop)
+                {
+                    m_xDesktop = rDesktop;
+                    m_xDesktop->addTerminateListener(this);
+                    m_pCloseListener.reset(new utl::CloseVeto(rCloseable, true));
+                }
+
+                void stop()
+                {
+                    m_pCloseListener.reset();
+                    if (!m_xDesktop.is())
+                        return;
+                    m_xDesktop->removeTerminateListener(this);
+                    m_xDesktop.clear();
+                }
+
+                // XTerminateListener
+                virtual void SAL_CALL queryTermination(const css::lang::EventObject& /*rEvent*/)
+                    throw(css::frame::TerminationVetoException, css::uno::RuntimeException, std::exception) override
+                {
+                }
+
+                virtual void SAL_CALL notifyTermination(const css::lang::EventObject& /*rEvent*/)
+                    throw(css::uno::RuntimeException, std::exception) override
+                {
+                    stop();
+                }
+
+                virtual void SAL_CALL disposing() override
+                {
+                    stop();
+                    cppu::WeakComponentImplHelperBase::disposing();
+                }
+
+                virtual void SAL_CALL disposing(const css::lang::EventObject& rEvent)
+                    throw(css::uno::RuntimeException, std::exception) override
+                {
+                    const bool bShutDown = (rEvent.Source == m_xDesktop);
+                    if (bShutDown)
+                        stop();
+                }
+            };
+
+            rtl::Reference<CloseVetoButTerminateListener> m_xCloseVetoButTerminateListener;
+
         public:
             OCalcConnection(ODriver* _pDriver);
-            virtual ~OCalcConnection();
+            virtual ~OCalcConnection() override;
 
             virtual void construct(const OUString& _rUrl,
-                                   const ::com::sun::star::uno::Sequence< ::com::sun::star::beans::PropertyValue >& _rInfo )
+                                   const css::uno::Sequence< css::beans::PropertyValue >& _rInfo )
                 throw( css::sdbc::SQLException,
                        css::uno::RuntimeException,
                        css::uno::DeploymentException,
@@ -63,20 +125,20 @@ namespace connectivity
             virtual void SAL_CALL disposing() override;
 
             // XConnection
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XDatabaseMetaData > SAL_CALL getMetaData(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbcx::XTablesSupplier > createCatalog() override;
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XStatement > SAL_CALL createStatement(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XPreparedStatement > SAL_CALL prepareStatement( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
-            virtual ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XPreparedStatement > SAL_CALL prepareCall( const OUString& sql ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Reference< css::sdbc::XDatabaseMetaData > SAL_CALL getMetaData(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Reference< css::sdbcx::XTablesSupplier > createCatalog() override;
+            virtual css::uno::Reference< css::sdbc::XStatement > SAL_CALL createStatement(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Reference< css::sdbc::XPreparedStatement > SAL_CALL prepareStatement( const OUString& sql ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
+            virtual css::uno::Reference< css::sdbc::XPreparedStatement > SAL_CALL prepareCall( const OUString& sql ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception) override;
 
             // no interface methods
-            ::com::sun::star::uno::Reference< ::com::sun::star::sheet::XSpreadsheetDocument> acquireDoc();
+            css::uno::Reference< css::sheet::XSpreadsheetDocument> const & acquireDoc();
             void releaseDoc();
 
             class ODocHolder
             {
                 OCalcConnection* m_pConnection;
-                ::com::sun::star::uno::Reference< ::com::sun::star::sheet::XSpreadsheetDocument> m_xDoc;
+                css::uno::Reference< css::sheet::XSpreadsheetDocument> m_xDoc;
             public:
                 ODocHolder(OCalcConnection* _pConnection) : m_pConnection(_pConnection)
                 {
@@ -84,10 +146,10 @@ namespace connectivity
                 }
                 ~ODocHolder()
                 {
-                   m_xDoc.clear();
+                    m_xDoc.clear();
                     m_pConnection->releaseDoc();
                 }
-                const ::com::sun::star::uno::Reference< ::com::sun::star::sheet::XSpreadsheetDocument>& getDoc() const { return m_xDoc; }
+                const css::uno::Reference< css::sheet::XSpreadsheetDocument>& getDoc() const { return m_xDoc; }
             };
         };
     }

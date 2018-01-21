@@ -73,7 +73,7 @@ Point SwGetChartDialogPos( const vcl::Window *pParentWin, const Size& rDialogSiz
                            pParentWin->OutputToAbsoluteScreenPixel( aObjPixel.BottomRight() ) );
 
         Rectangle aDesktop = pParentWin->GetDesktopRectPixel();
-        Size aSpace = pParentWin->LogicToPixel( Size( 8, 12 ), MAP_APPFONT );
+        Size aSpace = pParentWin->LogicToPixel( Size( 8, 12 ), MapUnit::MapAppFont );
 
         bool bLayoutRTL = ::GetActiveView()->GetWrtShell().IsTableRightToLeft();
         bool bCenterHor = false;
@@ -186,12 +186,12 @@ void SwInsertChart(vcl::Window* pParent, SfxBindings* pBindings )
                 uno::Any* pArray = aSeq.getArray();
                 beans::PropertyValue aParam1;
                 aParam1.Name = "ParentWindow";
-                aParam1.Value <<= uno::makeAny(xDialogParentWindow);
+                aParam1.Value = uno::makeAny(xDialogParentWindow);
                 beans::PropertyValue aParam2;
                 aParam2.Name = "ChartModel";
-                aParam2.Value <<= uno::makeAny(xChartModel);
-                pArray[0] <<= uno::makeAny(aParam1);
-                pArray[1] <<= uno::makeAny(aParam2);
+                aParam2.Value = uno::makeAny(xChartModel);
+                pArray[0] = uno::makeAny(aParam1);
+                pArray[1] = uno::makeAny(aParam2);
                 xInit->initialize( aSeq );
 
                 // try to set the dialog's position so it doesn't hide the chart

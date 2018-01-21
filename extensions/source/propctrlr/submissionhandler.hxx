@@ -68,7 +68,6 @@ namespace pcr
     class SubmissionPropertyHandler : public EditPropertyHandler_Base, public ::comphelper::OPropertyChangeListener
     {
     private:
-        ::osl::Mutex                                m_aMutex;
         ::std::unique_ptr< SubmissionHelper >       m_pHelper;
         ::comphelper::OPropertyChangeMultiplexer*   m_pPropChangeMultiplexer;
 
@@ -80,7 +79,7 @@ namespace pcr
         static OUString SAL_CALL getImplementationName_static(  ) throw (css::uno::RuntimeException);
         static css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames_static(  ) throw (css::uno::RuntimeException);
 
-        virtual ~SubmissionPropertyHandler();
+        virtual ~SubmissionPropertyHandler() override;
 
     protected:
         // XPropertyHandler overriables

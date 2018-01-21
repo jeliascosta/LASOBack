@@ -39,7 +39,7 @@ private:
     bool                ImplGetURLObject( const OUString& rPath, const OUString& rBase, INetURLObject& aURLObject ) const;
     void                FillDocumentList ();
 
-    DECL_LINK_TYPED (ClickNewHdl_Impl, Button*, void );
+    DECL_LINK (ClickNewHdl_Impl, Button*, void );
 
 protected:
     void FillDlgFields(const OUString& rStrURL) override;
@@ -49,7 +49,7 @@ protected:
 
 public:
     SvxHyperlinkNewDocTp ( vcl::Window *pParent, IconChoiceDialog* pDlg, const SfxItemSet& rItemSet);
-    virtual ~SvxHyperlinkNewDocTp ();
+    virtual ~SvxHyperlinkNewDocTp () override;
     virtual void dispose() override;
 
     static  VclPtr<IconChoicePage> Create( vcl::Window* pWindow, IconChoiceDialog* pDlg, const SfxItemSet& rItemSet );

@@ -20,6 +20,7 @@
 #ifndef INCLUDED_SC_SOURCE_UI_INC_TABVWSH_HXX
 #define INCLUDED_SC_SOURCE_UI_INC_TABVWSH_HXX
 
+#include <formula/errorcodes.hxx>
 #include <svx/fmshell.hxx>
 #include <svtools/htmlcfg.hxx>
 #include <sfx2/viewsh.hxx>
@@ -152,8 +153,10 @@ private:
 
     bool                    bIsActive;
 
-    bool                    bChartAreaValid; // if chart is drawn
     bool                    bForceFocusOnCurCell; // #i123629#
+
+    bool                    bInPrepareClose;
+    bool                    bInDispose;
 
     ScRangeListRef          aChartSource;
     Rectangle               aChartPos;
@@ -169,18 +172,18 @@ private:
     OUString   maScope;
 
 private:
-    void    Construct( TriState nForceDesignMode = TRISTATE_INDET );
+    void    Construct( TriState nForceDesignMode );
 
     SfxShell*       GetMySubShell() const;
 
     void            DoReadUserData( const OUString& rData );
     void            DoReadUserDataSequence( const css::uno::Sequence< css::beans::PropertyValue >& rSettings );
 
-    DECL_LINK_TYPED( SimpleRefClose, const OUString*, void );
-    DECL_LINK_TYPED( SimpleRefDone, const OUString&, void );
-    DECL_LINK_TYPED( SimpleRefAborted, const OUString&, void );
-    DECL_LINK_TYPED( SimpleRefChange, const OUString&, void );
-    DECL_LINK_TYPED( FormControlActivated, LinkParamNone*, void );
+    DECL_LINK( SimpleRefClose, const OUString*, void );
+    DECL_LINK( SimpleRefDone, const OUString&, void );
+    DECL_LINK( SimpleRefAborted, const OUString&, void );
+    DECL_LINK( SimpleRefChange, const OUString&, void );
+    DECL_LINK( FormControlActivated, LinkParamNone*, void );
 
 protected:
     virtual void    Activate(bool bMDI) override;
@@ -193,14 +196,14 @@ protected:
 
     virtual void    AdjustPosSizePixel( const Point &rPos, const Size &rSize ) override;     // alt
 
-    virtual void    InnerResizePixel( const Point &rOfs, const Size &rSize ) override;       // neu
+    virtual void    InnerResizePixel( const Point &rOfs, const Size &rSize, bool inplaceEditModeChange ) override; // neu
     virtual void    OuterResizePixel( const Point &rOfs, const Size &rSize ) override;
     virtual void    SetZoomFactor( const Fraction &rZoomX, const Fraction &rZoomY ) override;
 
     virtual void    QueryObjAreaPixel( Rectangle& rRect ) const override;
 
-    virtual OUString GetSelectionText( bool bWholeWord ) override;
-    virtual bool     HasSelection( bool bText ) const override;
+    virtual OUString GetSelectionText( bool bWholeWord = false ) override;
+    virtual bool     HasSelection( bool bText = true ) const override;
 
     virtual void    WriteUserData(OUString &, bool bBrowse = false) override;
     virtual void    ReadUserData(const OUString &, bool bBrowse = false) override;
@@ -226,7 +229,7 @@ public:
                     ScTabViewShell( SfxViewFrame*           pViewFrame,
                                     SfxViewShell*           pOldSh );
 
-    virtual         ~ScTabViewShell();
+    virtual         ~ScTabViewShell() override;
 
     vcl::Window* GetDialogParent();
 
@@ -345,7 +348,7 @@ public:
     void    InsertURL( const OUString& rName, const OUString& rURL, const OUString& rTarget,
                             sal_uInt16 nMode );
     void    InsertURLButton( const OUString& rName, const OUString& rURL, const OUString& rTarget,
-                            const Point* pInsPos = nullptr );
+                            const Point* pInsPos );
     void    InsertURLField( const OUString& rName, const OUString& rURL, const OUString& rTarget );
 
     bool    SelectObject( const OUString& rName );
@@ -358,9 +361,9 @@ public:
 
     static void UpdateNumberFormatter( const SvxNumberInfoItem&  rInfoItem );
 
-    void    ExecuteCellFormatDlg( SfxRequest& rReq, const OString &rTabPage = OString());
+    void    ExecuteCellFormatDlg( SfxRequest& rReq, const OString &rTabPage);
 
-    bool    GetFunction( OUString& rFuncStr, sal_uInt16 nErrCode = 0 );
+    bool    GetFunction( OUString& rFuncStr, FormulaError nErrCode );
 
     void    StartSimpleRefDialog( const OUString& rTitle, const OUString& rInitVal,
                                     bool bCloseOnButtonUp, bool bSingleCell, bool bMultiSelection );
@@ -379,12 +382,19 @@ public:
 
     bool IsActive() const { return bIsActive; }
     OUString GetFormula(ScAddress& rAddress);
+    bool    UseSubTotal(ScRangeList* pRangeList);
+    const   OUString DoAutoSum(bool& rRangeFinder, bool& rSubTotal);
 
     // ugly hack to call Define Names from Manage Names
     void    SwitchBetweenRefDialogs(SfxModelessDialog* pDialog);
     // #i123629#
     bool    GetForceFocusOnCurCell() const { return bForceFocusOnCurCell; }
     void SetForceFocusOnCurCell(bool bFlag) { bForceFocusOnCurCell=bFlag; }
+    /// See SfxViewShell::getPart().
+    int getPart() const override;
+    /// See SfxViewShell::NotifyCursor().
+    void NotifyCursor(SfxViewShell* pViewShell) const override;
+    css::uno::Reference<css::drawing::XShapes> getSelectedXShapes();
 };
 
 #endif

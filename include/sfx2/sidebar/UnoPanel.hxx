@@ -16,8 +16,7 @@
 #include <com/sun/star/awt/XWindow.hpp>
 
 
-#include <cppuhelper/compbase1.hxx>
-#include <cppuhelper/weakref.hxx>
+#include <cppuhelper/compbase.hxx>
 
 #include <sfx2/sidebar/SidebarController.hxx>
 #include <sfx2/sidebar/Panel.hxx>
@@ -27,13 +26,13 @@
 
 /** get the Panel
 */
-class SfxUnoPanel : public ::cppu::WeakImplHelper1< css::ui::XPanel >
+class SfxUnoPanel : public cppu::WeakImplHelper<css::ui::XPanel>
 {
 
 public:
 
     SfxUnoPanel(const css::uno::Reference<css::frame::XFrame>& , const OUString&, const OUString&);
-    virtual ~SfxUnoPanel() {};
+    virtual ~SfxUnoPanel() override {};
 
     virtual OUString SAL_CALL getId()
                                 throw(css::uno::RuntimeException, std::exception) override;

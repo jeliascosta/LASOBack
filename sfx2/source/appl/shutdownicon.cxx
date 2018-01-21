@@ -55,6 +55,7 @@
 #include <sfx2/dispatch.hxx>
 #include <comphelper/extract.hxx>
 #include <tools/urlobj.hxx>
+#include <tools/rcid.h>
 #include <osl/security.hxx>
 #include <osl/file.hxx>
 #include <rtl/bootstrap.hxx>
@@ -305,7 +306,6 @@ void ShutdownIcon::FromTemplate()
 }
 
 
-#include <tools/rcid.h>
 OUString ShutdownIcon::GetResString( int id )
 {
     ::SolarMutexGuard aGuard;
@@ -351,7 +351,7 @@ void ShutdownIcon::StartFileDialog()
 }
 
 
-IMPL_LINK_TYPED( ShutdownIcon, DialogClosedHdl_Impl, FileDialogHelper*, /*unused*/, void )
+IMPL_LINK( ShutdownIcon, DialogClosedHdl_Impl, FileDialogHelper*, /*unused*/, void )
 {
     DBG_ASSERT( m_pFileDlg, "ShutdownIcon, DialogClosedHdl_Impl(): no file dialog" );
 
@@ -485,7 +485,7 @@ IMPL_LINK_TYPED( ShutdownIcon, DialogClosedHdl_Impl, FileDialogHelper*, /*unused
     if ( SvtMiscOptions().UseSystemFileDialog() )
     {
         delete m_pFileDlg;
-        m_pFileDlg = NULL;
+        m_pFileDlg = nullptr;
     }
 #endif
 
@@ -694,7 +694,7 @@ bool ShutdownIcon::IsQuickstarterInstalled()
 * @param bCreate Create the directory if it does not exist yet.
 * @return OUString containing the autostart directory path.
 */
-static OUString getAutostartDir( bool bCreate = false )
+static OUString getAutostartDir( bool bCreate )
 {
     OUString aShortcut;
     const char *pConfigHome;
@@ -739,7 +739,7 @@ OUString ShutdownIcon::getShortcutName()
     aShortcut += "\\";
     aShortcut += aShortcutName;
 #else // UNX
-    OUString aShortcut = getAutostartDir();
+    OUString aShortcut = getAutostartDir(false);
     aShortcut += "/qstart.desktop";
 #endif // UNX
     return aShortcut;

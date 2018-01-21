@@ -27,6 +27,7 @@
 #include <com/sun/star/script/XInvocation.hpp>
 #include <com/sun/star/lang/WrappedTargetException.hpp>
 #include <com/sun/star/lang/WrappedTargetRuntimeException.hpp>
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 
 #include "vbacontrols.hxx"
 #include "vbacontrol.hxx"
@@ -49,7 +50,7 @@ class ControlArrayWrapper : public ::cppu::WeakImplHelper< container::XNameAcces
     ControlIndexMap mIndices;
 
 private:
-    void SetArrayElementTo( const uno::Reference< awt::XControl >& xCtrl, sal_Int32 nIndex = -1 )
+    void SetArrayElementTo( const uno::Reference< awt::XControl >& xCtrl, sal_Int32 nIndex )
     {
         // initialize the element with specified index to the control
         if ( xCtrl.is() )

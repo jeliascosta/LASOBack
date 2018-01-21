@@ -21,6 +21,7 @@
 #define INCLUDED_VCL_INC_SALPRN_HXX
 
 #include <vcl/prntypes.hxx>
+#include <vcl/dllapi.h>
 
 #include "salptype.hxx"
 
@@ -28,7 +29,7 @@
 
 class SalGraphics;
 class SalFrame;
-struct ImplJobSetup;
+class ImplJobSetup;
 namespace vcl { class PrinterController; }
 
 struct VCL_PLUGIN_PUBLIC SalPrinterQueueInfo

@@ -53,7 +53,7 @@ class SwScannerEventListener : public ::cppu::WeakImplHelper<
 public:
 
     SwScannerEventListener( SwView& rView ) : pView( &rView )  {}
-    virtual ~SwScannerEventListener();
+    virtual ~SwScannerEventListener() override;
 
     // XEventListener
     virtual void SAL_CALL disposing(
@@ -79,7 +79,7 @@ class SwClipboardChangeListener : public ::cppu::WeakImplHelper<
 
 public:
     SwClipboardChangeListener( SwView& rView ) : pView( &rView ) {}
-    virtual ~SwClipboardChangeListener();
+    virtual ~SwClipboardChangeListener() override;
 
     void ViewDestroyed() { pView = nullptr; }
 
@@ -94,7 +94,7 @@ class SwView_Impl
     css::uno::Reference< css::lang::XEventListener >  xClipEvtLstnr;
     css::uno::Reference< css::frame::XDispatchProviderInterceptor >   xDisProvInterceptor;
     css::uno::Reference< css::view::XSelectionSupplier >              mxXTextView;       // UNO object
-    css::uno::WeakReference< css::lang::XUnoTunnel > xTransferable;
+    std::vector< css::uno::WeakReference< css::lang::XUnoTunnel > > mxTransferables;
 
     // temporary document for printing text of selection / multi selection
     // in PDF export.
@@ -106,9 +106,8 @@ class SwView_Impl
     ShellModes                  eShellMode;
 
 #if HAVE_FEATURE_DBCONNECTIVITY
-    SwMailMergeConfigItem*      pConfigItem;
-    sal_uInt16                  nMailMergeRestartPage;
-    bool                    bMailMergeSourceView;
+    std::shared_ptr<SwMailMergeConfigItem> xConfigItem;
+    sal_uInt16              nMailMergeRestartPage;
 #endif
 
     sfx2::DocumentInserter*     m_pDocInserter;
@@ -120,6 +119,9 @@ class SwView_Impl
     bool                        m_bEditingPositionSet;
 
 public:
+    /// Redline author that's specific to this view.
+    OUString m_sRedlineAuthor;
+
     SwView_Impl(SwView* pShell);
     ~SwView_Impl();
 
@@ -139,15 +141,12 @@ public:
     void                            AddTransferable(SwTransferable& rTransferable);
 
 #if HAVE_FEATURE_DBCONNECTIVITY
-    void   SetMailMergeConfigItem(SwMailMergeConfigItem*  pItem,
-                                                sal_uInt16 nRestart, bool bIsSource)
-                            {   pConfigItem = pItem;
-                                nMailMergeRestartPage = nRestart;
-                                bMailMergeSourceView = bIsSource;
-                            }
-    SwMailMergeConfigItem*  GetMailMergeConfigItem() {return pConfigItem;}
-    sal_uInt16              GetMailMergeRestartPage() const {return nMailMergeRestartPage;}
-    bool                IsMailMergeSourceView() const { return bMailMergeSourceView;  }
+    void SetMailMergeConfigItem(std::shared_ptr<SwMailMergeConfigItem>& rItem, sal_uInt16 nRestart)
+    {
+        xConfigItem = rItem;
+        nMailMergeRestartPage = nRestart;
+    }
+    std::shared_ptr<SwMailMergeConfigItem>  GetMailMergeConfigItem() {return xConfigItem;}
 #endif
 
     //#i33307# restore editing position

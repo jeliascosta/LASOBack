@@ -61,7 +61,7 @@ class SelectionManager;
 class SlotManager;
 class VisibleAreaManager;
 
-class SlideSorterController
+class SlideSorterController final
 {
 public:
     /** Create a new controller for the slide sorter.
@@ -76,7 +76,7 @@ public:
     */
     void Init();
 
-    virtual ~SlideSorterController();
+    ~SlideSorterController();
 
     void Dispose();
 
@@ -94,7 +94,7 @@ public:
             size does not change (the size does change when the visibility
             of scroll bars changes.)
     */
-    void Rearrange (bool bForce = false);
+    void Rearrange (bool bForce);
 
     /** Return the descriptor of the page that is rendered under the
         given position.  This takes the IsOnlyPreviewTriggersMouseOver
@@ -116,10 +116,10 @@ public:
     */
     ScrollBarManager& GetScrollBarManager();
 
-    std::shared_ptr<CurrentSlideManager> GetCurrentSlideManager() const;
-    std::shared_ptr<SlotManager> GetSlotManager() const;
-    std::shared_ptr<SelectionManager> GetSelectionManager() const;
-    std::shared_ptr<InsertionIndicatorHandler> GetInsertionIndicatorHandler() const;
+    std::shared_ptr<CurrentSlideManager> const & GetCurrentSlideManager() const;
+    std::shared_ptr<SlotManager> const & GetSlotManager() const;
+    std::shared_ptr<SelectionManager> const & GetSelectionManager() const;
+    std::shared_ptr<InsertionIndicatorHandler> const & GetInsertionIndicatorHandler() const;
 
     /** This method forwards the call to the SlideSorterView and executes
         pending operations like moving selected pages into the visible area.
@@ -160,8 +160,8 @@ public:
     */
     void HandleModelChange();
 
-    DECL_LINK_TYPED(WindowEventHandler, VclWindowEvent&, void);
-    DECL_LINK_TYPED(ApplicationEventHandler, VclSimpleEvent&, void);
+    DECL_LINK(WindowEventHandler, VclWindowEvent&, void);
+    DECL_LINK(ApplicationEventHandler, VclSimpleEvent&, void);
 
     /** Update the display of all pages.  This involves a redraw and
         releasing previews and caches.
@@ -240,16 +240,17 @@ private:
 
     int mnModelChangeLockCount;
     bool mbIsForcedRearrangePending;
+    bool mbContextMenuOpen;
 
     bool mbPreModelChangeDone;
     bool mbPostModelChangePending;
 
     /** This array stores the indices of the  selected page descriptors at
-        the time when the edit mode is switched to EM_MASTERPAGE.  With this
-        we can restore the selection when switching back to EM_PAGE mode.
+        the time when the edit mode is switched to EditMode::MasterPage.  With this
+        we can restore the selection when switching back to EditMode::Page mode.
     */
     ::std::vector<SdPage*> maSelectionBeforeSwitch;
-    /// The current page before the edit mode is switched to EM_MASTERPAGE.
+    /// The current page before the edit mode is switched to EditMode::MasterPage.
     int mnCurrentPageBeforeSwitch;
 
     /** The master page to select after the edit mode is changed.  This

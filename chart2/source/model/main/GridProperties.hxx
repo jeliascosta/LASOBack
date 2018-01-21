@@ -53,7 +53,7 @@ class GridProperties :
 public:
     explicit GridProperties( css::uno::Reference< css::uno::XComponentContext > const & xContext );
     explicit GridProperties();
-    virtual ~GridProperties();
+    virtual ~GridProperties() override;
 
     /// XServiceInfo declarations
     virtual OUString SAL_CALL getImplementationName()
@@ -62,9 +62,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     /// merge XInterface implementations
      DECLARE_XINTERFACE()
@@ -110,8 +107,6 @@ protected:
     // ____ OPropertySet ____
     virtual void firePropertyChangeEvent() override;
     using OPropertySet::disposing;
-
-    void fireModifyEvent();
 
 private:
     css::uno::Reference< css::util::XModifyListener > m_xModifyEventForwarder;

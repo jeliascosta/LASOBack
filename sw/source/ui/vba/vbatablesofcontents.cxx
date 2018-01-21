@@ -19,6 +19,7 @@
 #include "vbatablesofcontents.hxx"
 #include "vbatableofcontents.hxx"
 #include "vbarange.hxx"
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/text/XDocumentIndexesSupplier.hpp>
 #include <cppuhelper/implbase.hxx>
 
@@ -74,7 +75,7 @@ public:
         }
     }
 
-    virtual ~TableOfContentsCollectionHelper() {}
+    virtual ~TableOfContentsCollectionHelper() override {}
 
     virtual sal_Int32 SAL_CALL getCount(  ) throw (uno::RuntimeException, std::exception) override
     {

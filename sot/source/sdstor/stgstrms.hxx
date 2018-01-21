@@ -71,7 +71,7 @@ protected:
     short m_nOffset;                      // offset into current page
     short m_nPageSize;                    // logical page size
     std::vector<sal_Int32> m_aPagesCache;
-    void scanBuildPageChainCache(sal_Int32 *pOptionalCalcSize = nullptr);
+    void scanBuildPageChainCache(sal_Int32 *pOptionalCalcSize);
     bool  Copy( sal_Int32 nFrom, sal_Int32 nBytes );
     explicit StgStrm( StgIo& );
 public:
@@ -100,7 +100,7 @@ class StgFATStrm : public StgStrm {     // the master FAT stream
     bool  SetPage( short, sal_Int32 );
 public:
     explicit StgFATStrm( StgIo& );
-    virtual ~StgFATStrm() {}
+    virtual ~StgFATStrm() override {}
     using StgStrm::GetPage;
     sal_Int32 GetPage( short, bool, sal_uInt16 *pnMasterAlloc = nullptr);
     virtual bool SetSize( sal_Int32 ) override;
@@ -145,14 +145,14 @@ class StgTmpStrm : public SvMemoryStream
     OUString m_aName;
     SvFileStream* m_pStrm;
     using SvMemoryStream::GetData;
-    virtual sal_Size GetData( void* pData, sal_Size nSize ) override;
-    virtual sal_Size PutData( const void* pData, sal_Size nSize ) override;
+    virtual std::size_t GetData( void* pData, std::size_t nSize ) override;
+    virtual std::size_t PutData( const void* pData, std::size_t nSize ) override;
     virtual sal_uInt64 SeekPos( sal_uInt64 nPos ) override;
     virtual void FlushData() override;
 
 public:
     explicit StgTmpStrm( sal_uInt64=16 );
-    virtual ~StgTmpStrm();
+    virtual ~StgTmpStrm() override;
     bool Copy( StgTmpStrm& );
     virtual void SetSize( sal_uInt64 ) override;
     sal_uInt64 GetSize() const;

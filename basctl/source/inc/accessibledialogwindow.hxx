@@ -95,7 +95,7 @@ protected:
     void                    UpdateChildren();
     void                    SortChildren();
 
-    DECL_LINK_TYPED( WindowEventListener, VclWindowEvent&, void );
+    DECL_LINK( WindowEventListener, VclWindowEvent&, void );
 
     void            ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent );
     void            FillAccessibleStateSet( utl::AccessibleStateSetHelper& rStateSet );
@@ -108,7 +108,7 @@ protected:
 
 public:
     AccessibleDialogWindow (basctl::DialogWindow*);
-    virtual ~AccessibleDialogWindow();
+    virtual ~AccessibleDialogWindow() override;
 
     // SfxListener
     virtual void Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;

@@ -48,7 +48,7 @@ class SvtFontOptions_Impl : public ConfigItem
     public:
 
          SvtFontOptions_Impl();
-        virtual ~SvtFontOptions_Impl();
+        virtual ~SvtFontOptions_Impl() override;
 
         /*-****************************************************************************************************
             @short      called for notify of configmanager
@@ -79,7 +79,7 @@ class SvtFontOptions_Impl : public ConfigItem
         virtual void ImplCommit() override;
 
         /*-****************************************************************************************************
-            @short      return list of key names of our configuration management which represent oue module tree
+            @short      return list of key names of our configuration management which represent our module tree
             @descr      These methods return a static const list of key names. We need it to get needed values from our
                         configuration management.
             @return     A list of needed configuration keys is returned.
@@ -243,45 +243,32 @@ Sequence< OUString > SvtFontOptions_Impl::impl_GetPropertyNames()
     return seqPropertyNames;
 }
 
-//  initialize static member
-//  DON'T DO IT IN YOUR HEADER!
-//  see definition for further information
+namespace {
 
-SvtFontOptions_Impl*    SvtFontOptions::m_pDataContainer    = nullptr;
-sal_Int32               SvtFontOptions::m_nRefCount         = 0;
+std::weak_ptr<SvtFontOptions_Impl> g_pFontOptions;
 
-//  constructor
+}
 
 SvtFontOptions::SvtFontOptions()
 {
     // Global access, must be guarded (multithreading!).
     MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    // Increase our refcount ...
-    ++m_nRefCount;
-    // ... and initialize our data container only if it not already exist!
-    if( m_pDataContainer == nullptr )
-    {
-        m_pDataContainer = new SvtFontOptions_Impl;
 
+    m_pImpl = g_pFontOptions.lock();
+    if( !m_pImpl )
+    {
+        m_pImpl = std::make_shared<SvtFontOptions_Impl>();
+        g_pFontOptions = m_pImpl;
         ItemHolder1::holdConfigItem(E_FONTOPTIONS);
     }
 }
-
-//  destructor
 
 SvtFontOptions::~SvtFontOptions()
 {
     // Global access, must be guarded (multithreading!)
     MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    // Decrease our refcount.
-    --m_nRefCount;
-    // If last instance was deleted ...
-    // we must destroy our static data container!
-    if( m_nRefCount <= 0 )
-    {
-        delete m_pDataContainer;
-        m_pDataContainer = nullptr;
-    }
+
+    m_pImpl.reset();
 }
 
 //  public method
@@ -289,7 +276,7 @@ SvtFontOptions::~SvtFontOptions()
 bool SvtFontOptions::IsFontHistoryEnabled() const
 {
     MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    return m_pDataContainer->IsFontHistoryEnabled();
+    return m_pImpl->IsFontHistoryEnabled();
 }
 
 //  public method
@@ -297,7 +284,7 @@ bool SvtFontOptions::IsFontHistoryEnabled() const
 bool SvtFontOptions::IsFontWYSIWYGEnabled() const
 {
     MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    return m_pDataContainer->IsFontWYSIWYGEnabled();
+    return m_pImpl->IsFontWYSIWYGEnabled();
 }
 
 //  public method
@@ -305,7 +292,7 @@ bool SvtFontOptions::IsFontWYSIWYGEnabled() const
 void SvtFontOptions::EnableFontWYSIWYG( bool bState )
 {
     MutexGuard aGuard( impl_GetOwnStaticMutex() );
-    m_pDataContainer->EnableFontWYSIWYG( bState );
+    m_pImpl->EnableFontWYSIWYG( bState );
 }
 
 namespace

@@ -44,14 +44,14 @@ class SwAccessibleNoTextFrame : public  SwAccessibleFrameBase,
     OUString msDesc;
 
 protected:
-    virtual ~SwAccessibleNoTextFrame();
+    virtual ~SwAccessibleNoTextFrame() override;
 
     const SwNoTextNode *GetNoTextNode() const;
 
     virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew) override;
 
 public:
-    SwAccessibleNoTextFrame( SwAccessibleMap* pInitMap,
+    SwAccessibleNoTextFrame( std::shared_ptr<SwAccessibleMap> const& pInitMap,
                              sal_Int16 nInitRole,
                              const SwFlyFrame *pFlyFrame );
 
@@ -98,7 +98,7 @@ public:
         throw ( css::uno::RuntimeException, std::exception ) override;
 
     // The object is not visible an longer and should be destroyed
-    virtual void Dispose( bool bRecursive = false ) override;
+    virtual void Dispose(bool bRecursive, bool bCanSkipInvisible = true) override;
 
     virtual sal_Int32 SAL_CALL getCaretPosition(  ) throw (css::uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL setCaretPosition( sal_Int32 nIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;

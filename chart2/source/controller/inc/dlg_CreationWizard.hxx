@@ -22,7 +22,6 @@
 
 #include "TimerTriggeredControllerLock.hxx"
 #include "TabPageNotifiable.hxx"
-#include "../dialogs/DialogModel.hxx"
 
 #include <com/sun/star/chart2/XChartDocument.hpp>
 #include <svtools/roadmapwizard.hxx>
@@ -35,6 +34,7 @@ namespace chart
 
 class RangeChooserTabPage;
 class DataSourceTabPage;
+class DialogModel;
 class ChartTypeTemplateProvider;
 
 class CreationWizard : public svt::RoadmapWizard, public TabPageNotifiable
@@ -45,8 +45,7 @@ public:
         , const css::uno::Reference< css::uno::XComponentContext >& xContext );
 
     CreationWizard() = delete;
-
-    bool isClosable() { /*@todo*/ return m_bIsClosable;}
+    virtual ~CreationWizard() override;
 
     // TabPageNotifiable
     virtual void setInvalidPage( TabPage * pTabPage ) override;
@@ -64,11 +63,9 @@ private:
 
     css::uno::Reference< css::chart2::XChartDocument >   m_xChartModel;
     css::uno::Reference< css::uno::XComponentContext>    m_xCC;
-    bool m_bIsClosable;
     ChartTypeTemplateProvider*   m_pTemplateProvider;
     std::unique_ptr<DialogModel> m_pDialogModel;
 
-    WizardState m_nFirstState;
     WizardState m_nLastState;
 
     TimerTriggeredControllerLock   m_aTimerTriggeredControllerLock;

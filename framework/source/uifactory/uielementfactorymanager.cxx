@@ -352,7 +352,7 @@ class UIElementFactoryManager : private cppu::BaseMutex,
     virtual void SAL_CALL disposing() override;
 public:
     explicit UIElementFactoryManager( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual ~UIElementFactoryManager();
+    virtual ~UIElementFactoryManager() override;
 
     virtual OUString SAL_CALL getImplementationName()
         throw (css::uno::RuntimeException, std::exception) override
@@ -369,8 +369,7 @@ public:
     virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
         throw (css::uno::RuntimeException, std::exception) override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.ui.UIElementFactoryManager" };
-        return aSeq;
+        return {"com.sun.star.ui.UIElementFactoryManager"};
     }
 
     // XUIElementFactory

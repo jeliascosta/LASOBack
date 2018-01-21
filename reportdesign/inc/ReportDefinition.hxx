@@ -166,7 +166,7 @@ namespace reportdesign
         );
 
     protected:
-        virtual ~OReportDefinition();
+        virtual ~OReportDefinition() override;
 
         /** this function is called upon disposing the component
         */
@@ -183,12 +183,6 @@ namespace reportdesign
             create(css::uno::Reference< css::uno::XComponentContext > const & xContext);
 
         css::uno::Reference< css::uno::XComponentContext > getContext();
-
-        /** return the SdrModel of the real model
-        *
-        * \return
-        */
-        std::shared_ptr<rptui::OReportModel> getSdrModel() const;
 
         static std::shared_ptr<rptui::OReportModel> getSdrModel(const css::uno::Reference< css::report::XReportDefinition >& _xReportDefinition);
     private:

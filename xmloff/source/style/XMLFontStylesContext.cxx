@@ -377,14 +377,7 @@ XMLFontStylesContext::XMLFontStylesContext( SvXMLImport& rImport,
 {
 }
 
-XMLFontStylesContext::~XMLFontStylesContext()
-{
-    delete pFamilyNameHdl;
-    delete pFamilyHdl;
-    delete pPitchHdl;
-    delete pEncHdl;
-    delete pFontStyleAttrTokenMap;
-}
+XMLFontStylesContext::~XMLFontStylesContext() {}
 
 bool XMLFontStylesContext::FillProperties( const OUString& rName,
                          ::std::vector< XMLPropertyState > &rProps,

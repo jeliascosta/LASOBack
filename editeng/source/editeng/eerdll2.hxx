@@ -42,9 +42,9 @@ public:
 
     SfxPoolItem**   GetDefItems();
 
-    rtl::Reference<SvxForbiddenCharactersTable> GetForbiddenCharsTable();
-    void            SetForbiddenCharsTable( rtl::Reference<SvxForbiddenCharactersTable> xForbiddenChars ) { xForbiddenCharsTable = xForbiddenChars; }
-    css::uno::Reference< css::linguistic2::XLanguageGuessing > GetLanguageGuesser();
+    rtl::Reference<SvxForbiddenCharactersTable> const & GetForbiddenCharsTable();
+    void            SetForbiddenCharsTable( rtl::Reference<SvxForbiddenCharactersTable> const & xForbiddenChars ) { xForbiddenCharsTable = xForbiddenChars; }
+    css::uno::Reference< css::linguistic2::XLanguageGuessing > const & GetLanguageGuesser();
 
     VclPtr<VirtualDevice> GetStdVirtualDevice();
 };

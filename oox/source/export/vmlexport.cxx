@@ -35,6 +35,8 @@
 #include <filter/msfilter/util.hxx>
 #include <filter/msfilter/escherex.hxx>
 
+#include <com/sun/star/beans/XPropertySet.hpp>
+#include <com/sun/star/beans/XPropertySetInfo.hpp>
 #include <com/sun/star/drawing/XShape.hpp>
 #include <com/sun/star/text/HoriOrientation.hpp>
 #include <com/sun/star/text/VertOrientation.hpp>
@@ -49,7 +51,7 @@ using namespace com::sun::star;
 static const sal_Int32 Tag_Container = 44444;
 static const sal_Int32 Tag_Commit = 44445;
 
-VMLExport::VMLExport( ::sax_fastparser::FSHelperPtr pSerializer, VMLTextExport* pTextExport )
+VMLExport::VMLExport( ::sax_fastparser::FSHelperPtr const & pSerializer, VMLTextExport* pTextExport )
     : EscherEx( std::make_shared<EscherExGlobal>(0), nullptr, /*bOOXML=*/true )
     , m_pSerializer( pSerializer )
     , m_pTextExport( pTextExport )
@@ -586,7 +588,7 @@ void VMLExport::Commit( EscherPropertyContainer& rProps, const Rectangle& rRect 
                     {
                         SvMemoryStream aStream;
                         int nHeaderSize = 25; // The first bytes are WW8-specific, we're only interested in the PNG
-                        aStream.Write(aStruct.pBuf + nHeaderSize, aStruct.nPropSize - nHeaderSize);
+                        aStream.WriteBytes(aStruct.pBuf + nHeaderSize, aStruct.nPropSize - nHeaderSize);
                         aStream.Seek(0);
                         Graphic aGraphic;
                         GraphicConverter::Import(aStream, aGraphic);
@@ -796,7 +798,7 @@ void VMLExport::Commit( EscherPropertyContainer& rProps, const Rectangle& rRect 
                     if (rProps.GetOpt(ESCHER_Prop_gtextUNICODE, aUnicode))
                     {
                         SvMemoryStream aStream;
-                        aStream.Write(it->pBuf, it->nPropSize);
+                        aStream.WriteBytes(it->pBuf, it->nPropSize);
                         aStream.Seek(0);
                         OUString aTextPathString = SvxMSDffManager::MSDFFReadZString(aStream, it->nPropSize, true);
                         aStream.Seek(0);
@@ -813,7 +815,7 @@ void VMLExport::Commit( EscherPropertyContainer& rProps, const Rectangle& rRect 
                         OUString aStyle;
                         if (rProps.GetOpt(ESCHER_Prop_gtextFont, aFont))
                         {
-                            aStream.Write(aFont.pBuf, aFont.nPropSize);
+                            aStream.WriteBytes(aFont.pBuf, aFont.nPropSize);
                             aStream.Seek(0);
                             OUString aTextPathFont = SvxMSDffManager::MSDFFReadZString(aStream, aFont.nPropSize, true);
                             aStyle += "font-family:\"" + aTextPathFont + "\"";
@@ -844,7 +846,7 @@ void VMLExport::Commit( EscherPropertyContainer& rProps, const Rectangle& rRect 
             case ESCHER_Prop_wzName:
                 {
                     SvMemoryStream aStream;
-                    aStream.Write(it->pBuf, it->nPropSize);
+                    aStream.WriteBytes(it->pBuf, it->nPropSize);
                     aStream.Seek(0);
                     OUString idStr = SvxMSDffManager::MSDFFReadZString(aStream, it->nPropSize, true);
                     aStream.Seek(0);

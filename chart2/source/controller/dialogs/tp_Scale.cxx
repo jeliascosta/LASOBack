@@ -157,16 +157,11 @@ void ScaleTabPage::dispose()
     SfxTabPage::dispose();
 }
 
-IMPL_STATIC_LINK_TYPED(
+IMPL_STATIC_LINK(
     ScaleTabPage, FmtFieldModifiedHdl, Edit&, rEdit, void )
 {
     FormattedField& rFmtField = static_cast<FormattedField&>(rEdit);
     rFmtField.SetDefaultValue( rFmtField.GetValue() );
-}
-
-void ScaleTabPage::StateChanged( StateChangedType nType )
-{
-    TabPage::StateChanged( nType );
 }
 
 void ScaleTabPage::EnableControls()
@@ -217,7 +212,7 @@ void ScaleTabPage::EnableControls()
     EnableValueHdl(m_pCbx_AutoTimeResolution);
 }
 
-IMPL_LINK_TYPED( ScaleTabPage, EnableValueHdl, Button *, pButton, void )
+IMPL_LINK( ScaleTabPage, EnableValueHdl, Button *, pButton, void )
 {
     CheckBox * pCbx = static_cast<CheckBox*>(pButton);
     bool bEnable = pCbx && !pCbx->IsChecked() && pCbx->IsEnabled();
@@ -257,7 +252,7 @@ enum AxisTypeListBoxEntry
     TYPE_DATE=2
 };
 
-IMPL_LINK_NOARG_TYPED(ScaleTabPage, SelectAxisTypeHdl, ListBox&, void)
+IMPL_LINK_NOARG(ScaleTabPage, SelectAxisTypeHdl, ListBox&, void)
 {
     const sal_Int32 nPos = m_pLB_AxisType->GetSelectEntryPos();
     if( nPos==TYPE_DATE )
@@ -416,12 +411,12 @@ void ScaleTabPage::Reset(const SfxItemSet* rInAttrs)
     SetNumFormat();
 }
 
-SfxTabPage::sfxpg ScaleTabPage::DeactivatePage(SfxItemSet* pItemSet)
+DeactivateRC ScaleTabPage::DeactivatePage(SfxItemSet* pItemSet)
 {
     if( !pNumFormatter )
     {
         OSL_FAIL( "No NumberFormatter available" );
-        return LEAVE_PAGE;
+        return DeactivateRC::LeavePage;
     }
 
     bool bDateAxis = chart2::AxisType::DATE == m_nAxisType;
@@ -527,12 +522,12 @@ SfxTabPage::sfxpg ScaleTabPage::DeactivatePage(SfxItemSet* pItemSet)
     }
 
     if( ShowWarning( nErrStrId, pControl ) )
-        return KEEP_PAGE;
+        return DeactivateRC::KeepPage;
 
     if( pItemSet )
         FillItemSet( pItemSet );
 
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 void ScaleTabPage::SetNumFormatter( SvNumberFormatter* pFormatter )

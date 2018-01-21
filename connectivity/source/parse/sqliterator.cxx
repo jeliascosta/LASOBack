@@ -135,12 +135,11 @@ namespace connectivity
 
 OSQLParseTreeIterator::OSQLParseTreeIterator(const Reference< XConnection >& _rxConnection,
                                              const Reference< XNameAccess >& _rxTables,
-                                             const OSQLParser& _rParser,
-                                             const OSQLParseNode* pRoot )
+                                             const OSQLParser& _rParser )
     :m_rParser( _rParser )
     ,m_pImpl( new OSQLParseTreeIteratorImpl( _rxConnection, _rxTables ) )
 {
-    setParseTree(pRoot);
+    setParseTree(nullptr);
 }
 
 
@@ -261,14 +260,12 @@ namespace
     {
         OUString sComposedName;
 
-        static const char s_sTableTypeView[] = "VIEW";
-        static const char s_sTableTypeTable[] = "TABLE";
         static const char s_sWildcard[] = "%" ;
 
         // we want all catalogues, all schemas, all tables
         Sequence< OUString > sTableTypes(3);
-        sTableTypes[0] = s_sTableTypeView;
-        sTableTypes[1] = s_sTableTypeTable;
+        sTableTypes[0] = "VIEW";
+        sTableTypes[1] = "TABLE";
         sTableTypes[2] = s_sWildcard;   // just to be sure to include anything else ....
 
         if ( _rxDBMeta.is() )
@@ -336,7 +333,7 @@ void OSQLParseTreeIterator::impl_getQueryParameterColumns( const OSQLTable& _rQu
         break;
 
     OSQLParseTreeIterator aSubQueryIterator( *this, m_rParser, pSubQueryNode.get() );
-    aSubQueryIterator.traverseSome( TraversalParts::Parameters | TraversalParts::SelectColumns );
+    aSubQueryIterator.impl_traverse( TraversalParts::Parameters | TraversalParts::SelectColumns );
         // SelectColumns might also contain parameters
         // #i77635# - 2007-07-23 / frank.schoenheit@sun.com
     pSubQueryParameterColumns = aSubQueryIterator.getParameters();
@@ -1540,12 +1537,6 @@ void OSQLParseTreeIterator::traverseOnePredicate(
 }
 
 
-void OSQLParseTreeIterator::traverseSome( TraversalParts _nIncludeMask )
-{
-    impl_traverse( _nIncludeMask );
-}
-
-
 void OSQLParseTreeIterator::traverseAll()
 {
     impl_traverse( TraversalParts::All );
@@ -1554,7 +1545,9 @@ void OSQLParseTreeIterator::traverseAll()
 
 void OSQLParseTreeIterator::impl_traverse( TraversalParts _nIncludeMask )
 {
-    impl_resetErrors();
+    // resets our errors
+    m_aErrors = css::sdbc::SQLException();
+
     m_pImpl->m_nIncludeMask = _nIncludeMask;
 
     if ( !traverseTableNames( *m_pImpl->m_pTables ) )

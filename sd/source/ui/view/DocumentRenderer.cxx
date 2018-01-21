@@ -165,7 +165,7 @@ namespace {
 
         bool IsPrinterPreferred(DocumentType eDocType) const
         {
-            bool bIsDraw = eDocType == DOCUMENT_TYPE_DRAW;
+            bool bIsDraw = eDocType == DocumentType::Draw;
             return IsTilePage() || IsPageSize() || IsBooklet() || (!bIsDraw && !IsNotes());
         }
 
@@ -266,7 +266,7 @@ namespace {
               msPageString(),
               maPrintSize(0,0),
               maPageSize(0,0),
-              meOrientation(ORIENTATION_PORTRAIT),
+              meOrientation(Orientation::Portrait),
               maMap(),
               mbPrintMarkedOnly(bPrintMarkedOnly)
         {}
@@ -740,7 +740,7 @@ namespace {
         {
         }
 
-        virtual ~RegularPrinterPage() {}
+        virtual ~RegularPrinterPage() override {}
 
         virtual void Print (
             Printer& rPrinter,
@@ -781,7 +781,6 @@ namespace {
         TiledPrinterPage (
             const sal_uInt16 nPageIndex,
             const PageKind ePageKind,
-            const sal_Int32 nGap,
             const bool bPrintMarkedOnly,
             const OUString& rsPageString,
             const Point& rPageStringOffset,
@@ -790,12 +789,11 @@ namespace {
             const sal_uInt16 nPaperTray)
             : PrinterPage(ePageKind, MapMode(), bPrintMarkedOnly, rsPageString,
                 rPageStringOffset, nDrawMode, eOrientation, nPaperTray),
-              mnPageIndex(nPageIndex),
-              mnGap(nGap)
+              mnPageIndex(nPageIndex)
         {
         }
 
-        virtual ~TiledPrinterPage() {}
+        virtual ~TiledPrinterPage() override {}
 
         virtual void Print (
             Printer& rPrinter,
@@ -851,7 +849,7 @@ namespace {
 
     private:
         const sal_uInt16 mnPageIndex;
-        const sal_Int32 mnGap;
+        static const sal_Int32 mnGap = 500;
     };
 
     /** Print two slides to one printer page so that the resulting pages
@@ -880,7 +878,7 @@ namespace {
         {
         }
 
-        virtual ~BookletPrinterPage() {}
+        virtual ~BookletPrinterPage() override {}
 
         virtual void Print (
             Printer& rPrinter,
@@ -945,7 +943,7 @@ namespace {
             const DrawModeFlags nDrawMode,
             const Orientation eOrientation,
             const sal_uInt16 nPaperTray)
-            : PrinterPage(PK_HANDOUT, rMapMode, false, rsPageString,
+            : PrinterPage(PageKind::Handout, rMapMode, false, rsPageString,
                 rPageStringOffset, nDrawMode, eOrientation, nPaperTray),
               mnHandoutPageIndex(nHandoutPageIndex),
               maPageIndices(rPageIndices)
@@ -961,7 +959,7 @@ namespace {
             const SetOfByte& rVisibleLayers,
             const SetOfByte& rPrintableLayers) const override
         {
-            SdPage& rHandoutPage (*rDocument.GetSdPage(0, PK_HANDOUT));
+            SdPage& rHandoutPage (*rDocument.GetSdPage(0, PageKind::Handout));
 
             Reference< css::beans::XPropertySet > xHandoutPage( rHandoutPage.getUnoPage(), UNO_QUERY );
             const OUString sPageNumber( "Number" );
@@ -987,11 +985,11 @@ namespace {
                  ++iPageIndex)
             {
                 // Check if the page still exists.
-                if (*iPageIndex >= rDocument.GetSdPageCount(PK_STANDARD))
+                if (*iPageIndex >= rDocument.GetSdPageCount(PageKind::Standard))
                     continue;
 
                 SdrPageObj* pPageObj = (*aPageObjIter++);
-                pPageObj->SetReferencedPage(rDocument.GetSdPage(*iPageIndex, PK_STANDARD));
+                pPageObj->SetReferencedPage(rDocument.GetSdPage(*iPageIndex, PageKind::Standard));
             }
 
             // if there are more page objects than pages left, set the rest to invisible
@@ -1087,13 +1085,13 @@ namespace {
             const DrawModeFlags nDrawMode,
             const Orientation eOrientation,
             const sal_uInt16 nPaperTray)
-            : PrinterPage(PK_HANDOUT, rMapMode, false, rsPageString,
+            : PrinterPage(PageKind::Handout, rMapMode, false, rsPageString,
                 rPageStringOffset, nDrawMode, eOrientation, nPaperTray),
               mpParaObject(pParaObject)
         {
         }
 
-        virtual ~OutlinerPrinterPage()
+        virtual ~OutlinerPrinterPage() override
         {
             mpParaObject.reset();
         }
@@ -1165,14 +1163,14 @@ public:
         , mpPrintView()
         , mbHasOrientationWarningBeenShown(false)
     {
-        DialogCreator aCreator( mrBase, mrBase.GetDocShell()->GetDocumentType() == DOCUMENT_TYPE_IMPRESS, GetCurrentPageIndex() );
+        DialogCreator aCreator( mrBase, mrBase.GetDocShell()->GetDocumentType() == DocumentType::Impress, GetCurrentPageIndex() );
         m_aUIProperties = aCreator.GetDialogControls();
         maSlidesPerPage = aCreator.GetSlidesPerPage();
 
         StartListening(mrBase);
     }
 
-    virtual ~Implementation()
+    virtual ~Implementation() override
     {
         EndListening(mrBase);
     }
@@ -1182,10 +1180,9 @@ public:
         if (&rBroadcaster != &static_cast<SfxBroadcaster&>(mrBase))
             return;
 
-        const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-        if (pSimpleHint != nullptr && pSimpleHint->GetId() == SFX_HINT_DYING)
+        if (rHint.GetId() == SFX_HINT_DYING)
         {
-            Dispose();
+            mbIsDisposed = true;
         }
     }
 
@@ -1355,11 +1352,6 @@ private:
     std::vector<sal_Int32> maSlidesPerPage;
     awt::Size maPrintSize;
 
-    void Dispose()
-    {
-        mbIsDisposed = true;
-    }
-
     sal_Int32 GetCurrentPageIndex() const
     {
         const ViewShell *pShell = mrBase.GetMainViewShell().get();
@@ -1374,14 +1366,14 @@ private:
         PrintInfo& rInfo)
     {
         SdDrawDocument* pDocument = mrBase.GetMainViewShell()->GetDoc();
-        rInfo.meOrientation = ORIENTATION_PORTRAIT;
+        rInfo.meOrientation = Orientation::Portrait;
 
         if( ! mpOptions->IsBooklet())
         {
             rInfo.meOrientation = pDocument->GetSdPage(0, ePageKind)->GetOrientation();
         }
         else if (rInfo.maPageSize.Width() < rInfo.maPageSize.Height())
-            rInfo.meOrientation = ORIENTATION_LANDSCAPE;
+            rInfo.meOrientation = Orientation::Landscape;
 
         // Draw and Notes should usually abide by their specified paper size
         Size aPaperSize;
@@ -1400,10 +1392,10 @@ private:
 
         if (mpOptions->IsPrinterPreferred(pDocument->GetDocumentType()))
         {
-            if( (rInfo.meOrientation == ORIENTATION_LANDSCAPE &&
+            if( (rInfo.meOrientation == Orientation::Landscape &&
                   (aPaperSize.Width() < aPaperSize.Height()))
                ||
-                (rInfo.meOrientation == ORIENTATION_PORTRAIT &&
+                (rInfo.meOrientation == Orientation::Portrait &&
                   (aPaperSize.Width() > aPaperSize.Height()))
               )
             {
@@ -1435,7 +1427,7 @@ private:
         {
 
             MapMode aMap (aInfo.mpPrinter->GetMapMode());
-            aMap.SetMapUnit(MAP_100TH_MM);
+            aMap.SetMapUnit(MapUnit::Map100thMM);
             aInfo.maMap = aMap;
             mpPrinter->SetMapMode(aMap);
 
@@ -1463,7 +1455,7 @@ private:
             // Draw and Notes should usually use specified paper size when printing
             if (!mpOptions->IsPrinterPreferred(mrBase.GetDocShell()->GetDocumentType()))
             {
-                aInfo.maPrintSize = mrBase.GetDocument()->GetSdPage(0, PK_STANDARD)->GetSize();
+                aInfo.maPrintSize = mrBase.GetDocument()->GetSdPage(0, PageKind::Standard)->GetSize();
                 maPrintSize = awt::Size(aInfo.maPrintSize.Width(),
                                         aInfo.maPrintSize.Height());
             }
@@ -1494,9 +1486,9 @@ private:
             }
 
             if (mpOptions->IsDraw())
-                PrepareStdOrNotes(PK_STANDARD, aInfo);
+                PrepareStdOrNotes(PageKind::Standard, aInfo);
             if (mpOptions->IsNotes())
-                PrepareStdOrNotes(PK_NOTES, aInfo);
+                PrepareStdOrNotes(PageKind::Notes, aInfo);
             if (mpOptions->IsHandout())
             {
                 InitHandoutTemplate();
@@ -1538,7 +1530,7 @@ private:
 
         // first, prepare handout page (not handout master)
 
-        SdPage* pHandout = rModel.GetSdPage(0, PK_HANDOUT);
+        SdPage* pHandout = rModel.GetSdPage(0, PageKind::Handout);
         if( !pHandout )
             return;
 
@@ -1626,7 +1618,7 @@ private:
         Rectangle aOutRect(aPageOfs, rInfo.mpPrinter->GetOutputSize());
         if( aOutRect.GetWidth() > aOutRect.GetHeight() )
         {
-            Size aPaperSize( rInfo.mpPrinter->PixelToLogic( rInfo.mpPrinter->GetPaperSizePixel(), MapMode( MAP_100TH_MM ) ) );
+            Size aPaperSize( rInfo.mpPrinter->PixelToLogic( rInfo.mpPrinter->GetPaperSizePixel(), MapMode( MapUnit::Map100thMM ) ) );
             maPrintSize.Width  = aPaperSize.Height();
             maPrintSize.Height = aPaperSize.Width();
             const long nRotatedWidth = aOutRect.GetHeight();
@@ -1647,7 +1639,7 @@ private:
         long nPageH = aOutRect.GetHeight();
 
         std::vector< sal_Int32 > aPages;
-        sal_Int32 nPageCount = mrBase.GetDocument()->GetSdPageCount(PK_STANDARD);
+        sal_Int32 nPageCount = mrBase.GetDocument()->GetSdPageCount(PageKind::Standard);
         StringRangeEnumerator::getRangesFromString(
             mpOptions->GetPrinterSelection(nPageCount, GetCurrentPageIndex()),
             aPages, 0, nPageCount-1);
@@ -1661,7 +1653,7 @@ private:
             sal_Int32 nH (0);
             while (nH < nPageH && nIndex<nCount)
             {
-                SdPage* pPage = GetFilteredPage(aPages[nIndex], PK_STANDARD);
+                SdPage* pPage = GetFilteredPage(aPages[nIndex], PageKind::Standard);
                 ++nIndex;
                 if (pPage == nullptr)
                     continue;
@@ -1672,7 +1664,7 @@ private:
                 while (pTextObj==nullptr && nObj < pPage->GetObjCount())
                 {
                     SdrObject* pObj = pPage->GetObj(nObj++);
-                    if (pObj->GetObjInventor() == SdrInventor
+                    if (pObj->GetObjInventor() == SdrInventor::Default
                         && pObj->GetObjIdentifier() == OBJ_TITLETEXT)
                     {
                         pTextObj = dynamic_cast<SdrTextObj*>(pObj);
@@ -1696,7 +1688,7 @@ private:
                 while (pTextObj==nullptr && nObj<pPage->GetObjCount())
                 {
                     SdrObject* pObj = pPage->GetObj(nObj++);
-                    if (pObj->GetObjInventor() == SdrInventor
+                    if (pObj->GetObjInventor() == SdrInventor::Default
                         && pObj->GetObjIdentifier() == OBJ_OUTLINETEXT)
                     {
                         pTextObj = dynamic_cast<SdrTextObj*>(pObj);
@@ -1773,7 +1765,7 @@ private:
     {
         SdDrawDocument* pDocument = mrBase.GetDocument();
         OSL_ASSERT(pDocument != nullptr);
-        SdPage& rHandoutPage (*pDocument->GetSdPage(0, PK_HANDOUT));
+        SdPage& rHandoutPage (*pDocument->GetSdPage(0, PageKind::Handout));
 
         const bool bScalePage (mpOptions->IsPageSize());
 
@@ -1788,10 +1780,10 @@ private:
         rInfo.meOrientation = rMaster.GetOrientation();
 
         const Size aPaperSize (rInfo.mpPrinter->GetPaperSize());
-        if( (rInfo.meOrientation == ORIENTATION_LANDSCAPE &&
+        if( (rInfo.meOrientation == Orientation::Landscape &&
               (aPaperSize.Width() < aPaperSize.Height()))
            ||
-            (rInfo.meOrientation == ORIENTATION_PORTRAIT &&
+            (rInfo.meOrientation == Orientation::Portrait &&
               (aPaperSize.Width() > aPaperSize.Height()))
           )
         {
@@ -1837,7 +1829,7 @@ private:
                 ++nShapeCount;
         }
 
-        const sal_uInt16 nPageCount = mrBase.GetDocument()->GetSdPageCount(PK_STANDARD);
+        const sal_uInt16 nPageCount = mrBase.GetDocument()->GetSdPageCount(PageKind::Standard);
         const sal_uInt16 nHandoutPageCount = nShapeCount ? (nPageCount + nShapeCount - 1) / nShapeCount : 0;
         pViewShell->SetPrintedHandoutPageCount( nHandoutPageCount );
         mrBase.GetDocument()->setHandoutPageCount( nHandoutPageCount );
@@ -1856,7 +1848,7 @@ private:
             ++it;
             bLastLoop = (it == itEnd);
 
-            if (GetFilteredPage(nPageIndex, PK_STANDARD))
+            if (GetFilteredPage(nPageIndex, PageKind::Standard))
                 aPageIndices.push_back(nPageIndex);
             else if (!bLastLoop)
                 continue;
@@ -1918,7 +1910,7 @@ private:
         std::shared_ptr<ViewShell> pViewShell (mrBase.GetMainViewShell());
         pViewShell->WriteFrameViewData();
 
-        sal_Int32 nPageCount = mrBase.GetDocument()->GetSdPageCount(PK_STANDARD);
+        sal_Int32 nPageCount = mrBase.GetDocument()->GetSdPageCount(PageKind::Standard);
         StringRangeEnumerator aRangeEnum(
             mpOptions->GetPrinterSelection(nPageCount, GetCurrentPageIndex()),
             0, nPageCount-1);
@@ -2003,7 +1995,7 @@ private:
         Size aPrintSize_2 (rInfo.maPrintSize);
         Size aPageSize_2 (rInfo.maPageSize);
 
-        if (rInfo.meOrientation == ORIENTATION_LANDSCAPE)
+        if (rInfo.meOrientation == Orientation::Landscape)
             aPrintSize_2.Width() >>= 1;
         else
             aPrintSize_2.Height() >>= 1;
@@ -2032,7 +2024,7 @@ private:
             aStdMap,
             aMap));
 
-        if (rInfo.meOrientation == ORIENTATION_LANDSCAPE)
+        if (rInfo.meOrientation == Orientation::Landscape)
         {
             aOffset.X() = ( ( aAdjustedPrintSize.Width() >> 1 ) - rInfo.maPageSize.Width() ) >> 1;
             aOffset.Y() = ( aAdjustedPrintSize.Height() - rInfo.maPageSize.Height() ) >> 1;
@@ -2093,7 +2085,7 @@ private:
             {
                 const std::pair<sal_uInt16, sal_uInt16> aPair (aPairVector[nIndex]);
                 Point aSecondOffset (aOffset);
-                if (rInfo.meOrientation == ORIENTATION_LANDSCAPE)
+                if (rInfo.meOrientation == Orientation::Landscape)
                     aSecondOffset.X() += aAdjustedPrintSize.Width() / 2;
                 else
                     aSecondOffset.Y() += aAdjustedPrintSize.Height() / 2;
@@ -2135,7 +2127,6 @@ private:
                 new TiledPrinterPage(
                     sal::static_int_cast<sal_uInt16>(nPageIndex),
                     ePageKind,
-                    500,
                     rInfo.mbPrintMarkedOnly,
                     rInfo.msPageString,
                     rInfo.mpPrinter->GetPageOffset(),

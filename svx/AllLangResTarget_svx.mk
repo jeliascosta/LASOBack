@@ -44,9 +44,14 @@ $(eval $(call gb_SrsTarget_add_files,svx/res,\
     svx/source/dialog/frmsel.src \
     svx/source/dialog/imapdlg.src \
     svx/source/dialog/language.src \
+    svx/source/dialog/page.src \
+    svx/source/dialog/pagenumbering.src \
     svx/source/dialog/passwd.src \
     svx/source/dialog/prtqry.src \
     svx/source/dialog/ruler.src \
+    svx/source/dialog/spacing.src \
+    svx/source/dialog/SafeMode.src \
+    svx/source/dialog/samecontent.src \
     svx/source/dialog/sdstring.src \
     svx/source/dialog/srchdlg.src \
     svx/source/dialog/svxbmpnumvalueset.src \
@@ -62,7 +67,6 @@ $(eval $(call gb_SrsTarget_add_files,svx/res,\
     svx/source/form/fmstring.src \
     svx/source/items/svxerr.src \
     svx/source/items/svxitems.src \
-    svx/source/sidebar/EmptyPanel.src \
     svx/source/sidebar/area/AreaPropertyPanel.src \
     svx/source/sidebar/line/LinePropertyPanel.src \
     svx/source/sidebar/paragraph/ParaPropertyPanel.src \

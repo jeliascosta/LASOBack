@@ -3,8 +3,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2016-12-10 23:39+0100\n"
-"PO-Revision-Date: 2017-03-25 22:05+0000\n"
+"POT-Creation-Date: 2017-04-11 22:26+0200\n"
+"PO-Revision-Date: 2017-10-20 03:35+0000\n"
 "Last-Translator: Adolfo Jayme Barrientos <fito@libreoffice.org>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: es\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Accelerator-Marker: ~\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1490479541.000000\n"
+"X-POOTLE-MTIME: 1508470533.000000\n"
 
 #: 01120000.xhp
 msgctxt ""
@@ -1624,7 +1624,7 @@ msgctxt ""
 "40\n"
 "help.text"
 msgid "The term \"increment\" denotes the amount by which a given value increases.<ahelp hid=\"modules/scalc/ui/filldlg/increment\"> Determines the value by which the series of the selected type increases by each step.</ahelp> Entries can only be made if the linear, growth or date series types have been selected."
-msgstr "El término \"incremento\" se refiere a la cantidad en la que aumenta un valor determinado.<ahelp hid=\"modules/scalc/ui/filldlg/increment\"> Determina el valor en el que se incrementa con cada paso la serie del tipo seleccionado.</ahelp> Sólo se pueden generar entradas si se ha seleccionado uno de los tipos de serie siguientes: aritmético, geométrico o fecha."
+msgstr "El término «incremento» se refiere a la cantidad con la que aumenta un valor determinado.<ahelp hid=\"modules/scalc/ui/filldlg/increment\"> Determina el valor en el que se incrementa con cada paso la serie del tipo seleccionado.</ahelp> Solo se pueden generar entradas si se ha seleccionado uno de los tipos de serie siguientes: aritmético, geométrico o fecha."
 
 #: 02140700.xhp
 msgctxt ""
@@ -2778,7 +2778,7 @@ msgctxt ""
 "par_id3156441\n"
 "help.text"
 msgid "You can also set the view of the column and row headers in <switchinline select=\"sys\"><caseinline select=\"MAC\"><item type=\"menuitem\">%PRODUCTNAME - Preferences</item></caseinline><defaultinline><item type=\"menuitem\">Tools - Options</item></defaultinline></switchinline> - <link href=\"text/shared/optionen/01060100.xhp\" name=\"Spreadsheet - View\"><emph>%PRODUCTNAME Calc - View</emph></link>."
-msgstr "Asimismo, es posible establecer la visualización de los encabezamientos de filas y columnas en <switchinline select=\"sys\"><caseinline select=\"MAC\"><item type=\"menuitem\">%PRODUCTNAME ▸ Preferencias</item></caseinline><defaultinline><item type=\"menuitem\">Herramientas ▸ Opciones</item></defaultinline></switchinline> ▸ <link href=\"text/shared/optionen/01060100.xhp\" name=\"Spreadsheet - View\"><emph>%PRODUCTNAME Calc ▸ Ver</emph></link>."
+msgstr "Asimismo, es posible establecer la visualización de las cabeceras de filas y columnas en <switchinline select=\"sys\"><caseinline select=\"MAC\"><item type=\"menuitem\">%PRODUCTNAME ▸ Preferencias</item></caseinline><defaultinline><item type=\"menuitem\">Herramientas ▸ Opciones</item></defaultinline></switchinline> ▸ <link href=\"text/shared/optionen/01060100.xhp\" name=\"Spreadsheet - View\"><emph>%PRODUCTNAME Calc ▸ Ver</emph></link>."
 
 #: 03080000.xhp
 msgctxt ""
@@ -3685,7 +3685,7 @@ msgctxt ""
 "37\n"
 "help.text"
 msgid "<variable id=\"kategorienliste\"><ahelp hid=\"SC:LISTBOX:RID_SCTAB_FUNCTION:LB_CATEGORY\">Lists all the categories to which the different functions are assigned. Select a category to view the appropriate functions in the list field below.</ahelp> Select \"All\" to view all functions in alphabetical order, irrespective of category. \"Last Used\" lists the functions you have most recently used. </variable>"
-msgstr "<variable id=\"kategorienliste\"><ahelp hid=\"SC:LISTBOX:RID_SCTAB_FUNCTION:LB_CATEGORY\">Lista todos los categorias al cual los funciones diferentes estan asignado. Seleccione una categoria para ver los funciones apropriadas en el campo de listado, abajo. </ahelp> Seleccione \"Todo\" para ver los funciones en orden alfabetica, sin importar la categoria. \"Última usado\" lista las funciones más recientemente usado. </variable>"
+msgstr "<variable id=\"kategorienliste\"><ahelp hid=\"SC:LISTBOX:RID_SCTAB_FUNCTION:LB_CATEGORY\">Enumera todas las categorías a las que pueden pertenecer cada una de las funciones. Seleccione una categoría para ver las funciones correspondientes en el campo de lista situado debajo.</ahelp> Seleccione «Todas» para ver todas las funciones en orden alfabético, independientemente de su categoría. «Usadas recientemente» muestra las funciones que ha utilizado más recientemente.</variable>"
 
 #: 04060000.xhp
 msgctxt ""
@@ -4711,7 +4711,7 @@ msgctxt ""
 "105\n"
 "help.text"
 msgid "<ahelp hid=\"HID_FUNC_DBAUSZUG\">DGET returns the contents of the referenced cell in a database which matches the specified search criteria.</ahelp> In case of an error, the function returns either #VALUE! for no row found, or Err502 for more than one cell found."
-msgstr "<ahelp hid=\"HID_FUNC_DBAUSZUG\">BDEXTRAER devuelve el contenido de la celda a la que se hace referencia en una base de datos que coincide con los criterios de búsqueda especificados.</ahelp> Si se detecta un error, la función devuelve #VALOR! si no se encuentra ninguna fila, o Err502 si se encuentra más de una celda."
+msgstr "<ahelp hid=\"HID_FUNC_DBAUSZUG\">BDEXTRAER devuelve el contenido de la celda a la que se hace referencia en una base de datos que coincide con los criterios de búsqueda especificados.</ahelp> Si se detecta un error, la función devuelve #¡VALOR! si no se encuentra ninguna fila, o Err502 si se encuentra más de una celda."
 
 #: 04060101.xhp
 msgctxt ""
@@ -5662,7 +5662,7 @@ msgctxt ""
 "par_id3150654\n"
 "help.text"
 msgid "When entering dates as part of formulas, slashes or dashes used as date separators are interpreted as arithmetic operators. Therefore, dates entered in this format are not recognized as dates and result in erroneous calculations. To keep dates from being interpreted as parts of formulas use the DATE function, for example, DATE(1954;7;20), or place the date in quotation marks and use the ISO 8601 notation, for example, \"1954-07-20\". Avoid using locale dependent date formats such as \"07/20/54\", the calculation may produce errors if the document is loaded under different locale settings."
-msgstr ""
+msgstr "Cuando escriba fechas como parte de las fórmulas, las barras y los guiones que se usen como separadores de fechas se interpretarán como operadores aritméticos. Por este motivo, las fechas formateadas de este modo no se reconocen como tales y producen cálculos erróneos. Para evitar que las fechas se interpreten como parte de las fórmulas, utilice la fórmula FECHA —p. ej., FECHA(1954;7;20)—, o bien, entrecomíllela y ordene sus componentes según la notación ISO 8601 —p. ej., \"1954-07-20\"—. Evite utilizar formatos regionales de fechas, como «07/20/54», porque estos pueden conllevar a errores de cálculo si abre el documento en sistemas con una configuración regional distinta."
 
 #: 04060102.xhp
 msgctxt ""
@@ -5677,16 +5677,16 @@ msgctxt ""
 "04060102.xhp\n"
 "par_id231020162315043955\n"
 "help.text"
-msgid "<embed href=\"text/scalc/01/func_networkdays.intl.xhp#networkdaysintl\"/>"
-msgstr ""
+msgid "<embedvar href=\"text/scalc/01/func_networkdays.intl.xhp#networkdaysintl\"/>"
+msgstr "<embedvar href=\"text/scalc/01/func_networkdays.intl.xhp#networkdaysintl\"/>"
 
 #: 04060102.xhp
 msgctxt ""
 "04060102.xhp\n"
 "par_id231020163315043955\n"
 "help.text"
-msgid "<embed href=\"text/scalc/01/func_workdays.intl.xhp#workdaysintl\"/>"
-msgstr ""
+msgid "<embedvar href=\"text/scalc/01/func_workdays.intl.xhp#workdaysintl\"/>"
+msgstr "<embedvar href=\"text/scalc/01/func_workdays.intl.xhp#workdaysintl\"/>"
 
 #: 04060103.xhp
 msgctxt ""
@@ -8673,7 +8673,7 @@ msgctxt ""
 "par_id3156316\n"
 "help.text"
 msgid "<ahelp hid=\"HID_FUNC_ISTFEHLER\">Tests for error conditions, including the #N/A error value, and returns TRUE or FALSE.</ahelp>"
-msgstr "<ahelp hid=\"HID_FUNC_ISTFEHLER\">Comprueba condiciones de error, incluido el valor de error #N/A, y devuelve VERDADERO o FALSO.</ahelp>"
+msgstr "<ahelp hid=\"HID_FUNC_ISTFEHLER\">Comprueba condiciones de error, incluido el valor de error #N/D, y devuelve VERDADERO o FALSO.</ahelp>"
 
 #: 04060104.xhp
 msgctxt ""
@@ -9825,7 +9825,7 @@ msgctxt ""
 "par_id3519089\n"
 "help.text"
 msgid "=N(1/0) returns #DIV/0!"
-msgstr "=N(1/0) devuelve #DIV/0!"
+msgstr "=N(1/0) devuelve #¡DIV/0!"
 
 #: 04060104.xhp
 msgctxt ""
@@ -10129,7 +10129,7 @@ msgctxt ""
 "par_id3150245\n"
 "help.text"
 msgid "<item type=\"input\">=CELL(\"ADDRESS\";'X:\\dr\\test.ods'#$Sheet1.D2)</item> returns 'file:///X:/dr/test.ods'#$Sheet1.$D$2."
-msgstr ""
+msgstr "<item type=\"input\">=CELDA(\"DIRECCION\";'X:\\dr\\prueba.ods'#$Hoja1.D2)</item> devuelve 'file:///X:/dr/prueba.ods'#$Hoja1.$D$2."
 
 #: 04060104.xhp
 msgctxt ""
@@ -10153,7 +10153,7 @@ msgctxt ""
 "par_id3148896\n"
 "help.text"
 msgid "<item type=\"input\">=CELL(\"FILENAME\";D2)</item> returns 'file:///X:/dr/own.ods'#$Sheet1, if the formula in the current document X:\\dr\\own.ods is located in Sheet1."
-msgstr ""
+msgstr "<item type=\"input\">=CELDA(\"NOMBREDEARCHIVO\";D2)</item> devuelve 'file:///X:/dr/own.ods'#$Hoja1, si la fórmula del documento X:\\dr\\own.ods se ubica en la Hoja1."
 
 #: 04060104.xhp
 msgctxt ""
@@ -10161,7 +10161,7 @@ msgctxt ""
 "par_id3155144\n"
 "help.text"
 msgid "<item type=\"input\">=CELL(\"FILENAME\";'X:\\dr\\test.ods'#$Sheet1.D2)</item> returns 'file:///X:/dr/test.ods'#$Sheet1."
-msgstr ""
+msgstr "<item type=\"input\">=CELDA(\"NOMBREDEARCHIVO\";'X:\\dr\\prueba.ods'#$Hoja1.D2)</item> devuelve 'file:///X:/dr/prueba.ods'#$Hoja1."
 
 #: 04060104.xhp
 msgctxt ""
@@ -10217,7 +10217,7 @@ msgctxt ""
 "par_id3151069\n"
 "help.text"
 msgid "TYPE"
-msgstr "TIPO"
+msgstr "TYPE"
 
 #: 04060104.xhp
 msgctxt ""
@@ -13655,7 +13655,7 @@ msgctxt ""
 "par_id3163792\n"
 "help.text"
 msgid "If the spreadsheet is exported to MS Excel, the CEILING function is exported as the equivalent CEILING.MATH function that exists since Excel 2013. If you plan to use the spreadsheet with earlier Excel versions, use either CEILING.PRECISE that exists since Excel 2010, or CEILING.XCL that is exported as the CEILING function compatible with all Excel versions. Note that CEILING.XCL always rounds away from zero."
-msgstr ""
+msgstr "Si el libro se exporta a Microsoft Excel, la función MULTIPLO.SUPERIOR se exportará como la función equivalente MULTIPLO.SUPERIOR.MAT, la cual existe desde Excel 2013. Si tiene pensado utilizar el libro con versiones anteriores de Excel, elija entre emplear MÚLTIPLO.SUPERIOR.EXACTO, disponible desde Excel 2010, o MULTIPLO.SUPERIOR.XCL, la cual se exporta como MULTIPLO.SUPERIOR, compatible con todas las versiones de Excel. Observe que MULTIPLO.SUPERIOR.XCL siempre redondea alejándose de cero."
 
 #: 04060106.xhp
 msgctxt ""
@@ -16103,7 +16103,7 @@ msgctxt ""
 "par_id3157517\n"
 "help.text"
 msgid "<emph>Mode</emph> is an optional value. If the Mode value is given and not equal to zero, and if Number and Significance are negative, then rounding is done based on the absolute value of Number, i.e. negative numbers are rounded towards zero. If the Mode value is equal to zero or is not given, negative numbers are rounded away from zero."
-msgstr ""
+msgstr "<emph>Modo</emph> es un valor opcional. Si se proporciona el valor de Modo y este difiere de cero, y si los valores de Número y Precisión son negativos, el redondeo se efectúa según el valor absoluto de Número; esto es, los números negativos se redondean aproximándose a cero. Si el valor de Modo es cero o se omite, los números negativos se redondean alejándose de cero."
 
 #: 04060106.xhp
 msgctxt ""
@@ -16503,7 +16503,7 @@ msgctxt ""
 "par_id2855616\n"
 "help.text"
 msgid "This function produces a new random number each time Calc recalculates. To force Calc to recalculate manually press Shift+<switchinline select=\"sys\"><caseinline select=\"MAC\">Command</caseinline><defaultinline>Ctrl</defaultinline></switchinline>+F9."
-msgstr "Esta función genera un número aleatorio nuevo cada vez que Calc vuelve a calcular. Para forzar a Calc a que vuelva a calcular manualmente, oprima Mayús + <switchinline select=\"sys\"><caseinline select=\"MAC\">⌘</caseinline><defaultinline>Ctrl</defaultinline></switchinline> + F9."
+msgstr "Esta función genera un número aleatorio nuevo cada vez que Calc vuelve a calcular. Para forzar a Calc a que vuelva a calcular manualmente, oprima <switchinline select=\"sys\"><caseinline select=\"MAC\">⇧⌘F9</caseinline><defaultinline>Mayús + Ctrl + F9</defaultinline></switchinline>."
 
 #: 04060106.xhp
 msgctxt ""
@@ -16863,7 +16863,7 @@ msgctxt ""
 "par_id3152876\n"
 "help.text"
 msgid "You can also create a \"normal\" formula in which the reference range, such as parameters, indicate an array formula. The result is obtained from the intersection of the reference range and the rows or columns in which the formula is found. If there is no intersection or if the range at the intersection covers several rows or columns, a #VALUE! error message appears. The following example illustrates this concept:"
-msgstr "También se puede crear una fórmula «normal» cuyo intervalo de referencia, como los parámetros, indique una fórmula matricial. El resultado se obtiene a partir de la intersección del intervalo de referencia y de las filas o columnas en las que se encuentra la fórmula. Si no hay intersección o si el intervalo de la intersección abarca varias filas o columnas se mostrará un mensaje de error #VALOR! En el ejemplo siguiente se ilustra este concepto:"
+msgstr "También se puede crear una fórmula «normal» cuyo intervalo de referencia, como los parámetros, indique una fórmula matricial. El resultado se obtiene a partir de la intersección del intervalo de referencia y de las filas o columnas en las que se encuentra la fórmula. Si no hay intersección o si el intervalo de la intersección abarca varias filas o columnas se mostrará un mensaje de error #¡VALOR! En el ejemplo siguiente se ilustra este concepto:"
 
 #: 04060107.xhp
 msgctxt ""
@@ -17463,7 +17463,7 @@ msgctxt ""
 "par_idN10E6A\n"
 "help.text"
 msgid "#VALUE!"
-msgstr "#VALOR!"
+msgstr "#¡VALOR!"
 
 #: 04060107.xhp
 msgctxt ""
@@ -18223,7 +18223,7 @@ msgctxt ""
 "par_id3159366\n"
 "help.text"
 msgid "In the spreadsheet, select the range in which the transposed array can appear. If the original array has n rows and m columns, your selected range must have at least m rows and n columns. Then enter the formula directly, select the original array and press <switchinline select=\"sys\"><caseinline select=\"MAC\">Shift+Command+Enter</caseinline><defaultinline>Shift+Ctrl+Enter</defaultinline></switchinline>. Or, if you are using the <emph>Function Wizard</emph>, mark the <emph>Array</emph> check box. The transposed array appears in the selected target range and is protected automatically against changes."
-msgstr "Seleccione el área de la hoja en la que debe aparecer la matriz transpuesta. Si la matriz original tiene n filas y m columnas, el área seleccionada deberá tener como mínimo m filas y n columnas. Escriba la fórmula directamente, seleccione la matriz original y pulse <switchinline select=\"sys\"><caseinline select=\"MAC\">Shift+Command+Intro</caseinline><defaultinline>Shift+Control+Intro</defaultinline></switchinline>. Si utiliza el <emph>Asistente para funciones</emph>, marque la casilla de verificación <emph>Matriz</emph>. La matriz transpuesta aparece en el área de destino seleccionada y queda automáticamente protegida contra cambios."
+msgstr "Seleccione el intervalo de la hoja en el que debe aparecer la matriz transpuesta. Si la matriz original tiene n filas y m columnas, el intervalo seleccionado deberá tener como mínimo m filas y n columnas. Escriba la fórmula directamente, seleccione la matriz original y oprima <switchinline select=\"sys\"><caseinline select=\"MAC\">⇧⌘↵</caseinline><defaultinline>Mayús + Ctrl + Intro</defaultinline></switchinline>. Si utiliza el <emph>Asistente de funciones</emph>, marque la casilla de verificación <emph>Matriz</emph>. La matriz transpuesta aparece en el intervalo de destino seleccionado y queda automáticamente protegida contra cambios."
 
 #: 04060107.xhp
 msgctxt ""
@@ -18231,7 +18231,7 @@ msgctxt ""
 "par_id3168518\n"
 "help.text"
 msgid "The above table is 2 rows, 4 columns. In order to transpose it, you must select 4 rows, 2 columns. Assuming you want to transpose the above table to the range A7:B10 (4 rows, 2 columns) you must select the entire range and then enter the following:"
-msgstr ""
+msgstr "La tabla anterior posee dos filas y cuatro columnas. Para transponerla, debe seleccionar cuatro filas y dos columnas. Suponiendo que quiere transponer la tabla anterior en el intervalo A7:B10 (cuatro filas y dos columnas), debe seleccionar todo el intervalo y, a continuación, escribir lo siguiente:"
 
 #: 04060107.xhp
 msgctxt ""
@@ -18239,7 +18239,7 @@ msgctxt ""
 "par_id3166145\n"
 "help.text"
 msgid "TRANSPOSE(A1:D2)"
-msgstr ""
+msgstr "TRANSPONER(A1:D2)"
 
 #: 04060107.xhp
 msgctxt ""
@@ -18247,7 +18247,7 @@ msgctxt ""
 "par_id3178518\n"
 "help.text"
 msgid "Then <emph>make sure to enter it as matrix formula with <switchinline select=\"sys\"><caseinline select=\"MAC\">Shift+Command+Enter</caseinline><defaultinline>Shift+Ctrl+Enter</defaultinline></switchinline></emph>. The result will be as follows:"
-msgstr ""
+msgstr "Luego, asegúrese de marcarlo como <emph>fórmula matricial</emph> oprimiendo <switchinline select=\"sys\"><caseinline select=\"MAC\"><emph>⇧⌘↵</emph></caseinline><defaultinline><emph>Mayús + Ctrl + Intro</emph></defaultinline></switchinline>. El resultado será el siguiente:"
 
 #: 04060107.xhp
 msgctxt ""
@@ -18319,7 +18319,7 @@ msgctxt ""
 "par_id3154448\n"
 "help.text"
 msgid "If <emph>linearType</emph> is FALSE the straight line found is forced to pass through the origin (the constant a is zero; y = bx). If omitted, <emph>linearType</emph> defaults to TRUE (the line is not forced through the origin)."
-msgstr ""
+msgstr "Si el parámetro <emph>tipo_lineal</emph> es FALSO, la recta encontrada es forzada a pasar por el origen, dado que la constante «a» será cero (y = bx). Si se omite, <emph>tipo_lineal</emph> se predetermina a VERDADERO (la recta no necesariamente pasará por el origen)."
 
 #: 04060107.xhp
 msgctxt ""
@@ -18327,7 +18327,7 @@ msgctxt ""
 "par_id3154142\n"
 "help.text"
 msgid "If <emph>stats</emph> is omitted or FALSE only the top line of the statistics table is returned. If TRUE the entire table is returned."
-msgstr ""
+msgstr "Si se omite <emph>estadísticas</emph> o es FALSO, solamente se devuelve la fila superior de la tabla de estadísticas. Si este parámetro es VERDADERO, se devuelve la tabla entera."
 
 #: 04060107.xhp
 msgctxt ""
@@ -19680,7 +19680,7 @@ msgctxt ""
 "1\n"
 "help.text"
 msgid "<variable id=\"head_statistic\"><link href=\"text/scalc/01/04060108.xhp\" name=\"Statistics Functions\">Statistics Functions</link></variable>"
-msgstr ""
+msgstr "<variable id=\"head_statistic\"><link href=\"text/scalc/01/04060108.xhp\" name=\"Funciones estadísticas\">Funciones estadísticas</link></variable>"
 
 #: 04060108.xhp
 msgctxt ""
@@ -20456,7 +20456,7 @@ msgctxt ""
 "36\n"
 "help.text"
 msgid "<item type=\"input\">=DDE(\"soffice\";\"c:\\office\\document\\data1.ods\";\"sheet1.A1\")</item> reads the contents of cell A1 in sheet1 of the <item type=\"productname\">%PRODUCTNAME</item> Calc spreadsheet data1.ods."
-msgstr ""
+msgstr "<item type=\"input\">=DDE(\"soffice\";\"c:\\office\\document\\datos1.ods\";\"hoja1.A1\")</item> lee el contenido de la celda A1 de la hoja1 del libro de <item type=\"productname\">%PRODUCTNAME</item> Calc «datos1.ods»."
 
 #: 04060109.xhp
 msgctxt ""
@@ -20465,7 +20465,7 @@ msgctxt ""
 "37\n"
 "help.text"
 msgid "<item type=\"input\">=DDE(\"soffice\";\"c:\\office\\document\\motto.odt\";\"Today's motto\")</item> returns a motto in the cell containing this formula. First, you must enter a line in the motto.odt document containing the motto text and define it as the first line of a section named <item type=\"literal\">Today's Motto</item> (in <item type=\"productname\">%PRODUCTNAME</item> Writer under <emph>Insert - Section</emph>). If the motto is modified (and saved) in the <item type=\"productname\">%PRODUCTNAME</item> Writer document, the motto is updated in all <item type=\"productname\">%PRODUCTNAME</item> Calc cells in which this DDE link is defined."
-msgstr ""
+msgstr "<item type=\"input\">=DDE(\"soffice\";\"c:\\office\\document\\máxima.odt\";\"Máxima del día\")</item> devuelve una máxima en la celda que contiene la fórmula. Primero, debe introducir un renglón en el documento «máxima.odt» que contenga el texto de la máxima y definirlo como el primer renglón de una sección que se llame <item type=\"literal\">Máxima del día</item> (en <item type=\"productname\">%PRODUCTNAME</item> Writer vaya a <emph>Insertar ▸ Sección</emph>). Si se modifica la máxima (y se guarda) en el documento de <item type=\"productname\">%PRODUCTNAME</item> Writer, la máxima se actualiza en todas las celdas de <item type=\"productname\">%PRODUCTNAME</item> Calc en las que se defina este enlace DDE."
 
 #: 04060109.xhp
 msgctxt ""
@@ -20473,7 +20473,7 @@ msgctxt ""
 "bm_id3153114\n"
 "help.text"
 msgid "<bookmark_value>ERRORTYPE function</bookmark_value>"
-msgstr "<bookmark_value>Función TIPO.DE.ERROR</bookmark_value>"
+msgstr "<bookmark_value>Función TIPO.DE.ERROR.OOO</bookmark_value>"
 
 #: 04060109.xhp
 msgctxt ""
@@ -20482,7 +20482,7 @@ msgctxt ""
 "38\n"
 "help.text"
 msgid "ERRORTYPE"
-msgstr "TIPO.DE.ERROR"
+msgstr "TIPO.DE.ERROR.OOO"
 
 #: 04060109.xhp
 msgctxt ""
@@ -20518,7 +20518,7 @@ msgctxt ""
 "42\n"
 "help.text"
 msgid "ERRORTYPE(Reference)"
-msgstr "TIPO.DE.ERROR(referencia)"
+msgstr "TIPO.DE.ERROR.OOO(Referencia)"
 
 #: 04060109.xhp
 msgctxt ""
@@ -20545,7 +20545,7 @@ msgctxt ""
 "45\n"
 "help.text"
 msgid "If cell A1 displays Err:518, the function <item type=\"input\">=ERRORTYPE(A1)</item> returns the number 518."
-msgstr "Si la celda A1 muestra el Error:518, la función <item type=\"input\">=TIPO.DE.ERROR(A1)</item> devuelve el número 518."
+msgstr "Si la celda A1 muestra el Error:518, la función <item type=\"input\">=TIPO.DE.ERROR.OOO(A1)</item> devuelve el número 518."
 
 #: 04060109.xhp
 msgctxt ""
@@ -20677,7 +20677,7 @@ msgctxt ""
 "58\n"
 "help.text"
 msgid "<item type=\"input\">=INDEX((multi);4;1)</item> indicates the value contained in row 4 and column 1 of the (multiple) range, which you named under <emph>Sheet - Named Ranges and Expressions - Define</emph> as <emph>multi</emph>. The multiple range may consist of several rectangular ranges, each with a row 4 and column 1. If you now want to call the second block of this multiple range enter the number <item type=\"input\">2</item> as the <emph>range</emph> parameter."
-msgstr ""
+msgstr "<item type=\"input\">=INDICE((multi);4;1)</item> indica el valor contenido en la fila 4 y columna 1 del intervalo (múltiple) al cual se asignó el nombre <emph>multi</emph> a través de <emph>Insertar ▸ Intervalos y expresiones con nombre ▸ Definir</emph>. El intervalo múltiple puede consistir de varios intervalos rectangulares, cada uno de los cuales con una fila 4 y columna 1. Después, si desea acceder al segundo bloque de este intervalo múltiple, ingrese el número <item type=\"input\">2</item> como parámetro <emph>intervalo</emph>."
 
 #: 04060109.xhp
 msgctxt ""
@@ -21030,7 +21030,7 @@ msgctxt ""
 "88\n"
 "help.text"
 msgid "<ahelp hid=\"HID_FUNC_SVERWEIS\">Vertical search with reference to adjacent cells to the right.</ahelp> This function checks if a specific value is contained in the first column of an array. The function then returns the value in the same row of the column named by <item type=\"literal\">Index</item>. If the <item type=\"literal\">Sorted</item> parameter is omitted or set to TRUE or one, it is assumed that the data is sorted in ascending order. In this case, if the exact <item type=\"literal\">SearchCriterion</item> is not found, the last value that is smaller than the criterion will be returned. If <item type=\"literal\">Sorted</item> is set to FALSE or zero, an exact match must be found, otherwise the error <emph>Error: Value Not Available</emph> will be the result. Thus with a value of zero the data does not need to be sorted in ascending order."
-msgstr ""
+msgstr "<ahelp hid=\"HID_FUNC_SVERWEIS\">Búsqueda vertical con referencia a las celdas adyacentes a la derecha</ahelp>. Esta función comprueba si un valor específico está contenido en la primera columna de una matriz. La función devuelve el valor en la misma fila de la columna llamada por el <item type=\"literal\">Índice</item>. Si el parámetro <item type=\"literal\">Orden</item> se omite o se establece como VERDADERO o uno, se asume que los datos están ordenados de manera ascendente. En este caso, si el <item type=\"literal\">Criterio de búsqueda</item> no se encuentra, se devolverá el último valor que sea más pequeño que el criterio. Si <item type=\"literal\">Orden</item> se establece como FALSO o cero, se debe encontrar una concordancia exacta, o de otro modo el resultado será <emph>Error: valor no disponible</emph>. Así, con el valor cero, los datos no tienen que ordenarse de manera ascendente."
 
 #: 04060109.xhp
 msgctxt ""
@@ -21048,7 +21048,7 @@ msgctxt ""
 "90\n"
 "help.text"
 msgid "=VLOOKUP(SearchCriterion; Array; Index; Sorted)"
-msgstr ""
+msgstr "=BUSCARV(CriteriodeBúsqueda; Matriz; Índice; Orden)"
 
 #: 04060109.xhp
 msgctxt ""
@@ -21084,7 +21084,7 @@ msgctxt ""
 "94\n"
 "help.text"
 msgid "<emph>Sorted</emph> is an optional parameter that indicates whether the first column in the array is sorted in ascending order. Enter the Boolean value FALSE or zero if the first column is not sorted in ascending order. Sorted columns can be searched much faster and the function always returns a value, even if the search value was not matched exactly, if it is between the lowest and highest value of the sorted list. In unsorted lists, the search value must be matched exactly. Otherwise the function will return this message: <emph>Error: Value Not Available</emph>."
-msgstr ""
+msgstr "<emph>Orden</emph> es un parámetro opcional que indica si la primera columna de la matriz se ordena en orden ascendente. Especifique el valor booleano FALSO o cero si la primera columna no está ordenada en orden ascendente. Las columnas ordenadas se pueden buscar más deprisa y la función siempre devuelve un valor, incluso si el valor de búsqueda no coincide exactamente, si se encuentra entre el valor más alto y el más bajo de la lista ordenada. En las listas sin ordenar, el valor de búsqueda debe coincidir exactamente. De lo contrario, la función devuelve este mensaje: <emph>Error: valor no disponible</emph>."
 
 #: 04060109.xhp
 msgctxt ""
@@ -21102,7 +21102,7 @@ msgctxt ""
 "96\n"
 "help.text"
 msgid "You want to enter the number of a dish on the menu in cell A1, and the name of the dish is to appear as text in the neighboring cell (B1) immediately. The Number to Name assignment is contained in the D1:E100 array. D1 contains <item type=\"input\">100</item>, E1 contains the name <item type=\"input\">Vegetable Soup</item>, and so forth, for 100 menu items. The numbers in column D are sorted in ascending order; thus, the optional <item type=\"literal\">Sorted</item> parameter is not necessary."
-msgstr ""
+msgstr "Desea escribir el número de un plato en el menú en la celda A1, de modo que el nombre del plato aparezca como texto en la celda vecina (B1). La asignación entre números y nombres está en la matriz D1:E100. D1 contiene <item type=\"input\">100</item>, E1 contiene el nombre <item type=\"input\">Sopa de vegetales</item>, y así sucesivamente para 100 elementos del menú. Los números en la columna D son ordenados de manera ascendente; por lo tanto, el parámetro opcional <item type=\"literal\">Orden</item> no es necesario."
 
 #: 04060109.xhp
 msgctxt ""
@@ -21576,7 +21576,7 @@ msgctxt ""
 "124\n"
 "help.text"
 msgid "<ahelp hid=\"HID_FUNC_VERWEIS\">Returns the contents of a cell either from a one-row or one-column range.</ahelp> Optionally, the assigned value (of the same index) is returned in a different column and row. As opposed to <link href=\"text/scalc/01/04060109.xhp#Section9\" name=\"VLOOKUP\">VLOOKUP</link> and <link href=\"text/scalc/01/04060109.xhp#Section17\" name=\"HLOOKUP\">HLOOKUP</link>, search and result vector may be at different positions; they do not have to be adjacent. Additionally, the search vector for the LOOKUP must be sorted ascending, otherwise the search will not return any usable results."
-msgstr ""
+msgstr "<ahelp hid=\"HID_FUNC_VERWEIS\">Devuelve el contenido de una celda proveniente bien de un intervalo de una sola columna o bien de uno de una sola fila.</ahelp> Facultativamente, el valor asignado (del mismo índice) se puede devolver en una columna o una fila distinta. A diferencia de <link href=\"text/scalc/01/04060109.xhp#Section9\" name=\"BUSCARV\">BUSCARV</link> y <link href=\"text/scalc/01/04060109.xhp#Section17\" name=\"BUSCARH\">BUSCARH</link>, el vector de búsqueda y de resultados puede situarse en posiciones desiguales; no tienen que ser adyacentes. Asimismo, el vector de búsquedas de BUSCAR ha de ordenarse ascendentemente, o de lo contrario la búsqueda no producirá resultados aprovechables."
 
 #: 04060109.xhp
 msgctxt ""
@@ -21884,7 +21884,7 @@ msgctxt ""
 "154\n"
 "help.text"
 msgid "HLOOKUP(SearchCriterion; Array; Index; Sorted)"
-msgstr ""
+msgstr "BUSCARH(CriteriodeBúsqueda; Matriz; Índice; Orden)"
 
 #: 04060109.xhp
 msgctxt ""
@@ -21893,7 +21893,7 @@ msgctxt ""
 "155\n"
 "help.text"
 msgid "See also: <link href=\"text/scalc/01/04060109.xhp#Section9\" name=\"VLOOKUP\">VLOOKUP</link> (columns and rows are exchanged)"
-msgstr ""
+msgstr "Consulte también: <link href=\"text/scalc/01/04060109.xhp#Section9\" name=\"BUSCARV\">BUSCARV</link> (se intercambian filas y columnas)"
 
 #: 04060109.xhp
 msgctxt ""
@@ -28253,7 +28253,7 @@ msgctxt ""
 "1\n"
 "help.text"
 msgid "<variable id=\"head_addin_analysis_one\"><link href=\"text/scalc/01/04060115.xhp\" name=\"Add-in Functions, List of Analysis Functions Part One\">Add-in Functions, List of Analysis Functions Part One</link></variable>"
-msgstr ""
+msgstr "<variable id=\"head_addin_analysis_one\"><link href=\"text/scalc/01/04060115.xhp\" name=\"Funciones de complemento. Lista de funciones de análisis, parte 1\">Funciones de complemento. Lista de funciones de análisis, parte 1</link></variable>"
 
 #: 04060115.xhp
 msgctxt ""
@@ -29133,7 +29133,7 @@ msgctxt ""
 "138\n"
 "help.text"
 msgid "ERF.PRECISE(LowerLimit)"
-msgstr ""
+msgstr "FUN.ERROR.EXACTO(LímiteInferior)"
 
 #: 04060115.xhp
 msgctxt ""
@@ -29141,7 +29141,7 @@ msgctxt ""
 "par_id2949715\n"
 "help.text"
 msgid "<emph>LowerLimit</emph> is the limit of the integral. The calculation takes places between 0 and this limit."
-msgstr ""
+msgstr "<emph>LímiteInferior</emph> es el límite de la integral. El cálculo se efectúa entre 0 y este límite."
 
 #: 04060115.xhp
 msgctxt ""
@@ -29158,7 +29158,7 @@ msgctxt ""
 "par_id2952974\n"
 "help.text"
 msgid "<item type=\"input\">=ERF.PRECISE(1)</item> returns 0.842701."
-msgstr ""
+msgstr "<item type=\"input\">=FUN.ERROR.EXACTO(1)</item> devuelve 0,842701."
 
 #: 04060115.xhp
 msgctxt ""
@@ -29618,7 +29618,7 @@ msgctxt ""
 "1\n"
 "help.text"
 msgid "<variable id=\"head_addin_analysis_two\"><link href=\"text/scalc/01/04060116.xhp\" name=\"Add-in Functions, List of Analysis Functions Part Two\">Add-in Functions, List of Analysis Functions Part Two</link></variable>"
-msgstr ""
+msgstr "<variable id=\"head_addin_analysis_two\"><link href=\"text/scalc/01/04060116.xhp\" name=\"Funciones de complemento. Lista de funciones de análisis, parte 2\">Funciones de complemento. Lista de funciones de análisis, parte 2</link></variable>"
 
 #: 04060116.xhp
 msgctxt ""
@@ -32422,7 +32422,7 @@ msgctxt ""
 "par_idN10E62\n"
 "help.text"
 msgid "If the payments take place at regular intervals, use the <link href=\"text/scalc/01/04060103.xhp#irr\" name=\"IRR\">IRR</link> function."
-msgstr ""
+msgstr "Si los pagos ocurren en intervalos regulares, utilice la función <link href=\"text/scalc/01/04060103.xhp#irr\" name=\"TIR\">TIR</link>."
 
 #: 04060118.xhp
 msgctxt ""
@@ -32662,7 +32662,7 @@ msgctxt ""
 "par_id3153904\n"
 "help.text"
 msgid "<ahelp hid=\"HID_AAI_FUNC_XNPV\">Calculates the capital value (net present value) for a list of payments which take place on different dates.</ahelp> The calculation is based on a 365 days per year basis, ignoring leap years."
-msgstr ""
+msgstr "<ahelp hid=\"HID_AAI_FUNC_XNPV\">Calcula el valor del capital (valor neto actual) de una serie de pagos que ocurren en fechas distintas.</ahelp> El cálculo se basa en un esquema de 365 días por año, omitiendo los años bisiestos."
 
 #: 04060118.xhp
 msgctxt ""
@@ -32670,7 +32670,7 @@ msgctxt ""
 "par_idN11138\n"
 "help.text"
 msgid "If the payments take place at regular intervals, use the <link href=\"text/scalc/01/04060119.xhp#npv\" name=\"NPV\">NPV</link> function."
-msgstr ""
+msgstr "Si los pagos ocurren en intervalos regulares, utilice la función <link href=\"text/scalc/01/04060119.xhp#npv\" name=\"VNA\">VNA</link>."
 
 #: 04060118.xhp
 msgctxt ""
@@ -32934,7 +32934,7 @@ msgctxt ""
 "par_id3155586\n"
 "help.text"
 msgid "<item type=\"input\">=RATE(3;-10;900)</item> = -75.63% The interest rate is therefore 75.63%."
-msgstr ""
+msgstr "<item type=\"input\">=TASA(3;-10;900)</item> = −75,63 %. La tasa de interés es, por tanto, del 75,63 %."
 
 #: 04060118.xhp
 msgctxt ""
@@ -35399,7 +35399,7 @@ msgctxt ""
 "par_idN111381\n"
 "help.text"
 msgid "If the payments take place at irregular intervals, use the <link href=\"text/scalc/01/04060118.xhp#xnpv\" name=\"XNPV\">XNPV</link> function."
-msgstr ""
+msgstr "Si los pagos ocurren en intervalos irregulares, utilice la función <link href=\"text/scalc/01/04060118.xhp#xnpv\" name=\"VNA.NO.PER\">VNA.NO.PER</link>."
 
 #: 04060119.xhp
 msgctxt ""
@@ -36948,7 +36948,7 @@ msgctxt ""
 "266\n"
 "help.text"
 msgid "BITLSHIFT"
-msgstr "BITLSHIFT"
+msgstr "BIT.DESPLIZQDA"
 
 #: 04060120.xhp
 msgctxt ""
@@ -36975,7 +36975,7 @@ msgctxt ""
 "269\n"
 "help.text"
 msgid "BITLSHIFT(number; shift)"
-msgstr "BITLSHIFT( número ; desplazamiento )"
+msgstr "BIT.DESPLIZQDA(número; desplazamiento)"
 
 #: 04060120.xhp
 msgctxt ""
@@ -36993,7 +36993,7 @@ msgctxt ""
 "271\n"
 "help.text"
 msgid "<emph>Shift</emph> is the number of positions the bits will be moved to the left. If shift is negative, it is synonymous with BITRSHIFT (number; -shift)."
-msgstr "<emph>Desplazamiento</emph> es la cantidad de posiciones que los bits se desplazarán hacia la izquierda. Si el desplazamiento es negativo, es equivalente a BITRSHIFT (número; -desplazamiento)."
+msgstr "<emph>Desplazamiento</emph> es la cantidad de posiciones que los bits se desplazarán hacia la izquierda. Si el desplazamiento es negativo, es equivalente a BIT.DESPLDCHA (número; -desplazamiento)."
 
 #: 04060120.xhp
 msgctxt ""
@@ -37011,7 +37011,7 @@ msgctxt ""
 "278\n"
 "help.text"
 msgid "<item type=\"input\">=BITLSHIFT(6;1)</item> returns 12 (0110 << 1 = 1100)."
-msgstr "<item type=\"input\">=BITLSHIFT(6;1)</item> devuelve 12 (0110 << 1 = 1100)."
+msgstr "<item type=\"input\">=BIT.DESPLIZQDA(6;1)</item> devuelve 12 (0110 << 1 = 1100)."
 
 #: 04060120.xhp
 msgctxt ""
@@ -37019,7 +37019,7 @@ msgctxt ""
 "bm_id4083280\n"
 "help.text"
 msgid "<bookmark_value>BITRSHIFT function</bookmark_value>"
-msgstr "<bookmark_value>DISTR.BINOM</bookmark_value>"
+msgstr "<bookmark_value>función BIT.DESPLDCHA</bookmark_value>"
 
 #: 04060120.xhp
 msgctxt ""
@@ -37028,7 +37028,7 @@ msgctxt ""
 "165\n"
 "help.text"
 msgid "BITRSHIFT"
-msgstr "BITRSHIFT"
+msgstr "BIT.DESPLDCHA"
 
 #: 04060120.xhp
 msgctxt ""
@@ -37037,7 +37037,7 @@ msgctxt ""
 "166\n"
 "help.text"
 msgid "<ahelp hid=\"HID_FUNC_BITRSHIFT\">Shifts a number right by n bits.</ahelp>"
-msgstr "<ahelp hid=\"HID_FUNC_BITRSHIFT\">Desplaza un número n bits a la derecha.</ahelp>"
+msgstr "<ahelp hid=\"HID_FUNC_BITRSHIFT\">Desplaza un número a la derecha n bits.</ahelp>"
 
 #: 04060120.xhp
 msgctxt ""
@@ -37055,7 +37055,7 @@ msgctxt ""
 "168\n"
 "help.text"
 msgid "BITRSHIFT(number; shift)"
-msgstr "BITRSHIFT(número; desplazamiento)"
+msgstr "BIT.DESPLDCHA(número; desplazamiento)"
 
 #: 04060120.xhp
 msgctxt ""
@@ -37073,7 +37073,7 @@ msgctxt ""
 "170\n"
 "help.text"
 msgid "<emph>Shift</emph> is the number of positions the bits will be moved to the right. If shift is negative, it is synonymous with BITLSHIFT (number; -shift)."
-msgstr "<emph>Desplazamiento</emph> es la cantidad de posiciones que los bits se desplazarán hacia la derecha. Si el desplazamiento es negativo, es equivalente a BITLSHIFT (número; -desplazamiento)."
+msgstr "<emph>Desplazamiento</emph> es la cantidad de posiciones que los bits se desplazarán hacia la derecha. Si el desplazamiento es negativo, es equivalente a BIT.DESPLIZQDA (número; -desplazamiento)."
 
 #: 04060120.xhp
 msgctxt ""
@@ -37091,7 +37091,7 @@ msgctxt ""
 "179\n"
 "help.text"
 msgid "<item type=\"input\">=BITRSHIFT(6;1)</item> returns 3 (0110 >> 1 = 0011)."
-msgstr "<item type=\"input\">=BITRSHIFT(6;1)</item> devuelve 3 (0110 >> 1 = 0011)."
+msgstr "<item type=\"input\">=BIT.DESPLDCHA(6;1)</item> devuelve 3 (0110 >> 1 = 0011)."
 
 #: 04060181.xhp
 msgctxt ""
@@ -38339,7 +38339,7 @@ msgctxt ""
 "par_id2847492\n"
 "help.text"
 msgid "<emph>Trials</emph> The total number of trials."
-msgstr "<emph>Ensayos</emph> es la cantidad de intentos."
+msgstr "<emph>Intentos</emph>: el número total de intentos."
 
 #: 04060181.xhp
 msgctxt ""
@@ -38355,7 +38355,7 @@ msgctxt ""
 "par_id289760\n"
 "help.text"
 msgid "<emph>Alpha</emph>The border probability that is attained or exceeded."
-msgstr "<emph>Alfa</emph> es la probabilidad límite que se obtiene o supera."
+msgstr "<emph>Alfa</emph>: la probabilidad límite que se obtiene o supera."
 
 #: 04060181.xhp
 msgctxt ""
@@ -42641,7 +42641,7 @@ msgctxt ""
 "52\n"
 "help.text"
 msgid "<emph>Trials</emph> is the total number of trials."
-msgstr "<emph>ensayos</emph> es el total de intentos."
+msgstr "<emph>Intentos</emph>: el número total de intentos."
 
 #: 04060183.xhp
 msgctxt ""
@@ -43692,7 +43692,7 @@ msgctxt ""
 "39\n"
 "help.text"
 msgid "<emph>Number1; Number2;...Number30</emph> are numerical values or ranges."
-msgstr ""
+msgstr "<emph>Número1; Número2;… Número30</emph> son los valores o intervalos numéricos."
 
 #: 04060184.xhp
 msgctxt ""
@@ -43914,7 +43914,7 @@ msgctxt ""
 "629\n"
 "help.text"
 msgid "If the data set contains no duplicate data points, MODE.SNGL returns the #VALUE! error value."
-msgstr "Si el conjunto de datos no contiene ningún duplicado, MODA.UNO devuelve el valor de error #VALOR!"
+msgstr "Si el conjunto de datos no contiene ningún duplicado, MODA.UNO devuelve el valor de error #¡VALOR!"
 
 #: 04060184.xhp
 msgctxt ""
@@ -46292,7 +46292,7 @@ msgctxt ""
 "par_id3147405\n"
 "help.text"
 msgid "FORECAST.LINEAR(Value; DataY; DataX)"
-msgstr ""
+msgstr "PRONOSTICO.LINEAL(Valor; DatosY; DatosX)"
 
 #: 04060185.xhp
 msgctxt ""
@@ -47073,7 +47073,7 @@ msgctxt ""
 "70\n"
 "help.text"
 msgid "<item type=\"input\">=NORMSDIST(1)</item> returns 0.84. The area below the standard normal distribution curve to the left of X value 1 is 84% of the total area."
-msgstr "<item type=\"input\">=DISTR.NORM.ESTAND(1)</item> devuelve 0,84. El área por debajo de la curva de distribución normal estándar a la izquierda del valor X 1 es el 84% del área total."
+msgstr "<item type=\"input\">=DISTR.NORM.ESTAND(1)</item> devuelve 0,84. El área por debajo de la curva de distribución normal estándar a la izquierda del valor X 1 es el 84 % del área total."
 
 #: 04060185.xhp
 msgctxt ""
@@ -47162,7 +47162,7 @@ msgctxt ""
 "70\n"
 "help.text"
 msgid "<item type=\"input\">=NORM.S.DIST(1;1)</item> returns 0.8413447461. The area below the standard normal distribution curve to the left of X value 1 is 84% of the total area."
-msgstr "<item type=\"input\">=DISTR.NORM.ESTAND.N(1)</item> devuelve 0.8413447461. El área por debajo de la curva de distribución normal estándar a la izquierda del valor X 1 es el 84% del área total."
+msgstr "<item type=\"input\">=DISTR.NORM.ESTAND.N(1)</item> devuelve 0,8413447461. El área por debajo de la curva de distribución normal estándar a la izquierda del valor X 1 es el 84 % del área total."
 
 #: 04060185.xhp
 msgctxt ""
@@ -48193,7 +48193,7 @@ msgctxt ""
 "129\n"
 "help.text"
 msgid "<ahelp hid=\"HID_FUNC_VARIANZ\">Estimates the variance based on a sample.</ahelp>"
-msgstr "<ahelp hid=\"HID_FUNC_VARIANZ\">Realiza una estimación de la varianza a partir de una muestra.</ahelp>"
+msgstr "<ahelp hid=\"HID_FUNC_VARIANZ\">Estima la varianza a partir de una muestra.</ahelp>"
 
 #: 04060185.xhp
 msgctxt ""
@@ -48264,7 +48264,7 @@ msgctxt ""
 "129\n"
 "help.text"
 msgid "<ahelp hid=\"HID_FUNC_VAR_S\">Estimates the variance based on a sample.</ahelp>"
-msgstr "<ahelp hid=\"HID_FUNC_VAR_S\">Realiza una estimación de la varianza a partir de una muestra.</ahelp>"
+msgstr "<ahelp hid=\"HID_FUNC_VAR_S\">Estima la varianza a partir de una muestra.</ahelp>"
 
 #: 04060185.xhp
 msgctxt ""
@@ -48877,7 +48877,7 @@ msgctxt ""
 "bm_id3150941\n"
 "help.text"
 msgid "<bookmark_value>WEIBULL function</bookmark_value>"
-msgstr "<bookmark_value>DIST.WEIBULL</bookmark_value>"
+msgstr "<bookmark_value>función DIST.WEIBULL</bookmark_value>"
 
 #: 04060185.xhp
 msgctxt ""
@@ -48919,7 +48919,7 @@ msgctxt ""
 "par_id0305200911372743\n"
 "help.text"
 msgid "If C is 1, WEIBULL calculates the cumulative distribution function."
-msgstr "Si C es 1, DIST.WEIBULL calcula la función de distribución acumulativa."
+msgstr "Si C es 1, DIST.WEIBULL calcula la función de distribución acumulada."
 
 #: 04060185.xhp
 msgctxt ""
@@ -48937,7 +48937,7 @@ msgctxt ""
 "178\n"
 "help.text"
 msgid "WEIBULL(Number; Alpha; Beta; C)"
-msgstr "DIST.WEIBULL(x; alfa ; beta ; acumulado)"
+msgstr "DIST.WEIBULL(Número; Alfa; Beta; C)"
 
 #: 04060185.xhp
 msgctxt ""
@@ -50544,7 +50544,7 @@ msgctxt ""
 "par_id3149412\n"
 "help.text"
 msgid "<ahelp hid=\"modules/scalc/ui/functionpanel/funclist\">Displays the available functions.</ahelp> When you select a function, the area below the list box displays a short description. To insert the selected function double-click it or click the <emph>Insert Function into calculation sheet</emph> icon."
-msgstr ""
+msgstr "<ahelp hid=\"modules/scalc/ui/functionpanel/funclist\">Muestra las funciones disponibles.</ahelp> Al seleccionar una función se muestra una breve descripción en el área situada debajo del listado. Para insertar la función seleccionada, pulse dos veces en ella o en el icono <emph>Insertar función en la hoja de cálculo</emph>."
 
 #: 04080000.xhp
 msgctxt ""
@@ -50568,7 +50568,7 @@ msgctxt ""
 "par_id3147345\n"
 "help.text"
 msgid "<ahelp hid=\"modules/scalc/ui/functionpanel/insert\">Inserts the selected function into the document.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"modules/scalc/ui/functionpanel/insert\">Inserta la función seleccionada en el documento.</ahelp>"
 
 #: 04090000.xhp
 msgctxt ""
@@ -50788,7 +50788,7 @@ msgctxt ""
 "par_id3156283\n"
 "help.text"
 msgid "This cell protection only takes effect if you also protect the sheet (<emph>Tools - Protect Sheet</emph>)."
-msgstr ""
+msgstr "Esta protección de celdas surte efecto únicamente si también protege la hoja (<emph>Herramientas ▸ Proteger hoja</emph>)."
 
 #: 05020600.xhp
 msgctxt ""
@@ -51094,7 +51094,7 @@ msgctxt ""
 "4\n"
 "help.text"
 msgid "For example, to show the column B, click on the header of the column A, expand the selection to the column C, then chose <emph>Format - Column - Show</emph>. To show the column A previously hidden, click on the header of the column B, keep the mouse button pressed and drag on the left. The selected range displayed in the name area changes from B1:B1048576 to A1:B1048576. Choose <emph>Format - Column - Show</emph>. Proceed the same way with rows."
-msgstr "Por ejemplo, para mostrar la columna B, pulse en el encabezamiento de la columna A, expanda la selección a la columna C y elija <emph>Formato - Columna - Mostrar</emph>. Para mostrar la columna A ocultada anteriormente, pulse en el encabezamiento de la columna B, mantenga oprimido el botón del ratón y arrastre hacia la izquierda. El intervalo seleccionado mostrado en el área de nombres cambiará de B1:B1048576 a A1:B1048576. Elija <emph>Formato - Columna - Mostrar</emph>. Proceda de la misma manera con las filas."
+msgstr "Por ejemplo, para mostrar la columna B, pulse en la cabecera de la columna A, expanda la selección a la columna C y vaya a <emph>Formato ▸ Columna ▸ Mostrar</emph>. Para mostrar la columna A ocultada anteriormente, pulse en la cabecera de la columna B, mantenga oprimido el botón del ratón y arrastre hacia la izquierda. El intervalo seleccionado mostrado en el área de nombres cambiará de B1:B1048576 a A1:B1048576. Vaya a <emph>Formato ▸ Columna ▸ Mostrar</emph>. Proceda de la misma manera con las filas."
 
 #: 05030400.xhp
 msgctxt ""
@@ -51475,7 +51475,7 @@ msgctxt ""
 "par_id1001240\n"
 "help.text"
 msgid "<ahelp hid=\"modules/scalc/ui/mergecellsdialog/MergeCellsDialog\">Three options are available:</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"modules/scalc/ui/mergecellsdialog/MergeCellsDialog\">Existen tres opciones:</ahelp>"
 
 #: 05060000.xhp
 msgctxt ""
@@ -53415,7 +53415,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "Remove Precedents"
-msgstr "Eliminar rastro al precedente"
+msgstr "Quitar precedentes"
 
 #: 06030200.xhp
 msgctxt ""
@@ -54073,7 +54073,7 @@ msgctxt ""
 "par_id3153362\n"
 "help.text"
 msgid "The <emph>Protect Sheet</emph> or <emph>Protect Spreadsheet</emph> commands prevent changes from being made to cells in the sheets or to sheets in a document. As an option, you can define a password. If a password is defined, removal of the protection is only possible if the user enters the correct password."
-msgstr ""
+msgstr "Las opciones <emph>Proteger hoja</emph> y <emph>Proteger libro</emph> impiden realizar cambios en las celdas de las hojas o en las hojas de un documento. De forma opcional, puede definir una contraseña. Si se define una contraseña, solo es posible eliminar la protección tras escribir la contraseña correcta."
 
 #: 06060000.xhp
 msgctxt ""
@@ -54116,7 +54116,7 @@ msgctxt ""
 "par_id3148664\n"
 "help.text"
 msgid "<variable id=\"tabelletext\"><ahelp hid=\".uno:Protect\">Protects the cells in the current sheet from being modified.</ahelp></variable> Choose <emph>Tools - Protect Sheet</emph> to open the <emph>Protect Sheet</emph> dialog in which you then specify sheet protection with or without a password."
-msgstr ""
+msgstr "<variable id=\"tabelletext\"><ahelp hid=\".uno:Protect\">Protege las celdas de la hoja actual contra posibles modificaciones.</ahelp></variable> Diríjase a <emph>Herramientas ▸ Proteger hoja</emph> para abrir el cuadro de diálogo <emph>Proteger hoja</emph>, que permite especificar la protección de la hoja con o sin contraseña."
 
 #: 06060100.xhp
 msgctxt ""
@@ -54133,7 +54133,7 @@ msgctxt ""
 "par_id3154490\n"
 "help.text"
 msgid "Unprotected cells or cell ranges can be set up on a protected sheet by using the <emph>Tools - Protect Sheet</emph> and <emph>Format - Cells - Cell Protection</emph> menus:"
-msgstr ""
+msgstr "Es posible definir celdas o intervalos de celdas carentes de protección en una hoja protegida mediante los menús <emph>Herramientas ▸ Proteger hoja</emph> y <emph>Formato ▸ Celdas ▸ Protección de celdas</emph>:"
 
 #: 06060100.xhp
 msgctxt ""
@@ -54159,7 +54159,7 @@ msgctxt ""
 "par_id3156384\n"
 "help.text"
 msgid "On the <emph>Tools - Protect Sheet</emph> menu, activate protection for the sheet. Effective immediately, only the cell range you selected in step 1 can be edited."
-msgstr ""
+msgstr "Active la protección de la hoja en el menú <emph>Herramientas ▸ Proteger hoja</emph>. De forma inmediata, únicamente podrá editar el intervalo seleccionado en el paso 1."
 
 #: 06060100.xhp
 msgctxt ""
@@ -54167,7 +54167,7 @@ msgctxt ""
 "par_id3149566\n"
 "help.text"
 msgid "To later change an unprotected area to a protected area, select the range. Next, on the <emph>Format - Cells - Cell Protection</emph> tab page, check the <emph>Protected</emph> box. Finally, choose the <emph>Tools - Protect Sheet</emph> menu. The previously editable range is now protected."
-msgstr ""
+msgstr "Para convertir un intervalo de celdas no protegido en uno protegido, selecciónelo. A continuación, marque la casilla de verificación <emph>Protegido</emph> de la pestaña <emph>Formato ▸ Celda ▸ Protección de celdas</emph>. Para terminar, elija la opción <emph>Herramientas ▸ Proteger hoja</emph>. El intervalo que anteriormente podía editarse está ahora protegido."
 
 #: 06060100.xhp
 msgctxt ""
@@ -54193,7 +54193,7 @@ msgctxt ""
 "par_id3154656\n"
 "help.text"
 msgid "A protected sheet or cell range can no longer be modified until this protection is disabled. To disable the protection, choose the <emph>Tools - Protect Sheet</emph> command. If no password was set, the sheet protection is immediately disabled. If the sheet was password protected, the <emph>Remove Protection</emph> dialog opens, where you must enter the password."
-msgstr ""
+msgstr "No es posible modificar una hoja o un intervalo con protección a menos que la desactive. Para desactivar la protección, utilice la orden <emph>Herramientas ▸ Proteger hoja</emph>. Si no se ha definido una contraseña, la protección de la hoja se desactiva de forma inmediata. De lo contrario, se abre el cuadro de diálogo <emph>Quitar protección</emph>, en el que se debe escribir la contraseña."
 
 #: 06060100.xhp
 msgctxt ""
@@ -54228,7 +54228,7 @@ msgctxt ""
 "par_id3148700\n"
 "help.text"
 msgid "Complete protection of your work can be achieved by combining the options <emph>Tools - Protect Sheet</emph> and <emph>Tools - Protect Spreadsheet</emph>, including password protection. To prohibit opening the document altogether, in the <emph>Save</emph> dialog mark the <emph>Save with password</emph> box before you click the <emph>Save</emph> button."
-msgstr ""
+msgstr "Se puede proteger totalmente el trabajo mediante la combinación de las opciones <emph>Herramientas ▸ Proteger hoja</emph> y <emph>Herramientas ▸ Proteger libro</emph>, con contraseña inclusive. Para impedir totalmente que se abra el documento, seleccione la casilla de verificación <emph>Guardar con contraseña</emph> en el diálogo <emph>Guardar como</emph> antes de pulsar el botón <emph>Guardar</emph>."
 
 #: 06060200.xhp
 msgctxt ""
@@ -54253,7 +54253,7 @@ msgctxt ""
 "par_id3145172\n"
 "help.text"
 msgid "<variable id=\"dokumenttext\"><ahelp hid=\".uno:ToolProtectionDocument\">Protects the sheet structure of your document from modifications. It is impossible to insert, delete, rename, move or copy sheets.</ahelp></variable> Open the <emph>Protect document</emph> dialog with <emph>Tools - Protect Spreadsheet</emph>. Optionally enter a password and click OK."
-msgstr ""
+msgstr "<variable id=\"dokumenttext\"><ahelp hid=\".uno:ToolProtectionDocument\">Protege la estructura de la hoja del documento contra posibles modificaciones. Impide insertar, eliminar, desplazar, copiar o cambiar el nombre de las hojas.</ahelp></variable> Abra el cuadro de diálogo <emph>Proteger documento</emph> en <emph>Herramientas ▸ Proteger libro</emph>. Opcionalmente puede escribir una contraseña y pulsar en «Aceptar»."
 
 #: 06060200.xhp
 msgctxt ""
@@ -54261,7 +54261,7 @@ msgctxt ""
 "par_id3153188\n"
 "help.text"
 msgid "The structure of protected spreadsheet documents can be changed only if the <emph>Protect</emph> option is disabled. On the context menus for the spreadsheet tabs at the lower graphic border, only the menu item <emph>Select All Sheets</emph> can be activated. All other menu items are deactivated. To remove the protection, call up the command <emph>Tools - Protect Spreadsheet</emph> again. If no password is assigned, protection is immediately removed. If you were assigned a password, the <emph>Remove Spreadsheet Protection</emph> dialog appears, in which you must enter the password. Only then can you remove the check mark specifying that protection is active."
-msgstr ""
+msgstr "La estructura de los documentos de hoja de cálculo protegidos solo se puede modificar si se desactiva la opción <emph>Proteger</emph>. En los menús contextuales de las pestañas de hoja situadas en el borde inferior, solo se puede activar la opción <emph>Seleccionar todas las hojas</emph>. El resto de los elementos del menú están desactivados. Para eliminar la protección vuelva a ejecutar la orden <emph>Herramientas ▸ Proteger libro</emph>. Si no se ha asignado una contraseña, la protección queda inmediatamente desactivada. Si se ha asignado una contraseña se mostrará el cuadro de diálogo <emph>Desproteger hoja</emph>, en el que deberá escribir dicha contraseña. A continuación podrá borrar la marca que indica que la protección está activada."
 
 #: 06060200.xhp
 msgctxt ""
@@ -54288,7 +54288,7 @@ msgctxt ""
 "5\n"
 "help.text"
 msgid "You can create a password to protect your document against unauthorized or accidental modifications."
-msgstr "Se puede crear una contraseña para proteger un documento contra modificaciones no autorizados o accidentales."
+msgstr "Se puede crear una contraseña para proteger un documento contra modificaciones no autorizadas o accidentales."
 
 #: 06060200.xhp
 msgctxt ""
@@ -54296,7 +54296,7 @@ msgctxt ""
 "par_id3150717\n"
 "help.text"
 msgid "You can completely protect your work by combining the options <emph>Tools - Protect Sheet</emph> and <emph>Tools - Protect Spreadsheet</emph>, including password entry. If you want to prevent the document from being opened by other users, select <emph>Save With Password </emph>and click the <emph>Save</emph> button. The <emph>Enter Password</emph> dialog appears. Consider carefully when choosing a password; if you forget it after you close a document you will be unable to access the document."
-msgstr ""
+msgstr "Se puede proteger totalmente el trabajo mediante la combinación de las opciones <emph>Herramientas ▸ Proteger hoja</emph> y <emph>Herramientas ▸ Proteger libro</emph>, con contraseña inclusive. Para impedir que otros usuarios abran el documento, seleccione <emph>Guardar con contraseña</emph> y pulse el botón <emph>Guardar</emph>. Aparece el cuadro de diálogo <emph>Introduzca la contraseña</emph>. Elija cuidadosamente su contraseña: si la olvida después de cerrar el documento, no podrá acceder a él."
 
 #: 06070000.xhp
 msgctxt ""
@@ -56168,7 +56168,7 @@ msgctxt ""
 "5\n"
 "help.text"
 msgid "The <emph>Row</emph> or <emph>Column</emph> box must contain a reference to the first cell of the selected range."
-msgstr "Los cuadros <emph>Fila</emph> o <emph>Columna</emph> deben contener una referencia a la primera celda del área seleccionada."
+msgstr "El cuadro <emph>Fila</emph> o <emph>Columna</emph> debe contener una referencia a la primera celda del intervalo seleccionado."
 
 #: 12060000.xhp
 msgctxt ""
@@ -58739,7 +58739,7 @@ msgctxt ""
 "par_idN105C8\n"
 "help.text"
 msgid "<ahelp hid=\"1495387657\">Select the hierarchy that you want to use. The pivot table must be based on an external source data that contains data hierarchies.</ahelp>"
-msgstr "<ahelp hid=\"1495387657\">Seleccione la jerarquía que desee utilizar. El Piloto de datos debe basarse en datos de origen externo que contengan jerarquías de datos.</ahelp>"
+msgstr "<ahelp hid=\"1495387657\">Seleccione la jerarquía que desee utilizar. La tabla dinámica debe basarse en datos de origen externo que contengan jerarquías de datos.</ahelp>"
 
 #: 12090200.xhp
 msgctxt ""
@@ -58800,7 +58800,7 @@ msgctxt ""
 "2\n"
 "help.text"
 msgid "<ahelp hid=\".uno:DeletePivotTable\" visibility=\"visible\">Deletes the selected pivot table.</ahelp>"
-msgstr "<ahelp hid=\".uno:DeletePivotTable\" visibility=\"visible\">Borra las tabla seleccionada del Piloto de datos.</ahelp>"
+msgstr "<ahelp hid=\".uno:DeletePivotTable\" visibility=\"visible\">Elimina la tabla dinámica seleccionada.</ahelp>"
 
 #: 12090400.xhp
 msgctxt ""
@@ -59860,7 +59860,7 @@ msgctxt ""
 "par_id231020162249559739\n"
 "help.text"
 msgid "<emph>Holidays</emph> is an optional list of dates that must be counted as non-working days. The list can be given in a cell range."
-msgstr ""
+msgstr "<emph>Feriados</emph> es una lista opcional de fechas que deben contarse como días no laborables. La lista puede proporcionarse en forma de intervalo de celdas."
 
 #: ex_data_stat_func.xhp
 msgctxt ""
@@ -60028,7 +60028,7 @@ msgctxt ""
 "par_id040320161859450\n"
 "help.text"
 msgid "The time line doesn't have to to be sorted, the functions will sort it for calculations. <br/>The time line values must have a consistent step between them. <br/>If a constant step can't be identified in the sorted time line, the functions will return the #NUM! error. <br/>If the ranges of the time line and historical values aren't of same size, the functions will return the #N/A error.<br/>If the time line contains less than 2 periods of data, the functions will return the #VALUE! Error."
-msgstr "No es necesario que el plazo esté ordenado, ya que las funciones lo ordenarán para realizar los cálculos.<br/>Los avances entre los valores del plazo deben ser uniformes.<br/>Si no se puede identificar un avance constante en el plazo ordenado, las funciones devolverán el error #NUM!<br/>Si los intervalos del plazo y los valores históricos no tienen el mismo tamaño, las funciones devolverán el error #N/A.<br/>Si el plazo contiene menos de dos períodos de datos, las funciones devolverán el error #VALOR!"
+msgstr "No es necesario que el plazo esté ordenado, ya que las funciones lo ordenarán para realizar los cálculos.<br/>Los avances entre los valores del plazo deben ser uniformes.<br/>Si no se puede identificar un avance constante en el plazo ordenado, las funciones devolverán el error #¡NUM!<br/>Si los intervalos del plazo y los valores históricos no tienen el mismo tamaño, las funciones devolverán el error #N/D.<br/>Si el plazo contiene menos de dos períodos de datos, las funciones devolverán el error #¡VALOR!"
 
 #: exponsmooth_embd.xhp
 msgctxt ""
@@ -60052,7 +60052,7 @@ msgctxt ""
 "par_id0403201618594650\n"
 "help.text"
 msgid "<emph>aggregation (optional):</emph> A numeric value from 1 to 7, with default 1. The aggregation parameter indicates which method will be used to aggregate identical time values:"
-msgstr ""
+msgstr "<emph>totalización (opcional):</emph> un valor numérico entre 1 y 7; 1 es el predeterminado. El parámetro de totalización indica qué método se utilizará para totalizar valores de tiempo idénticos:"
 
 #: exponsmooth_embd.xhp
 msgctxt ""
@@ -60252,7 +60252,7 @@ msgctxt ""
 "par_id0503201619582644\n"
 "help.text"
 msgid "With values <= 0 or >= 1, the functions will return the #NUM! Error."
-msgstr "Con valores menores o iguales que 0 o mayores o iguales que 1, las funciones devolverán el error #NUM!"
+msgstr "Con valores menores o iguales que 0 o mayores o iguales que 1, las funciones devolverán el error #¡NUM!"
 
 #: exponsmooth_embd.xhp
 msgctxt ""
@@ -60268,7 +60268,7 @@ msgctxt ""
 "par_id0603201609412399\n"
 "help.text"
 msgid "A value of 1 indicates that Calc is to determine the number of samples in a period automatically. <br/>A value of 0 indicates no periodic effects, a forecast is calculated with EDS algorithms. <br/>For all other positive values, forecasts are calculated with ETS algorithms.<br/>For values that not being a positive whole number, the functions will return the #NUM! Error."
-msgstr "Un valor de 1 indica que Calc determina el número de muestras en un periodo automáticamente. <br/>Un valor 0 indica que no tiene efectos periodicos, se calcula una previsión con algoritmos EDS.<br/>Para todos los demás valores positivos las previsiones se calculan con algoritmos ETS.<br/>Para valores que no sean un número positivo las funciones devuelven el error #NUM!."
+msgstr "Un valor de 1 indica que Calc determinará el número de muestras del período automáticamente.<br/>Un valor de 0 indica que no existen efectos periódicos y que cualquier previsión se habrá de calcular con el algoritmo EDS.<br/>Para el resto de los valores positivos, las previsiones se calcularán con el algoritmo ETS.<br/>Para valores que no sean enteros positivos, la función devuelve el error #¡NUM!"
 
 #: exponsmooth_embd.xhp
 msgctxt ""
@@ -60860,7 +60860,7 @@ msgctxt ""
 "par_id27530261624700\n"
 "help.text"
 msgid "#DIV/0!"
-msgstr "#DIV/0!"
+msgstr "#¡DIV/0!"
 
 #: func_aggregate.xhp
 msgctxt ""
@@ -60876,7 +60876,7 @@ msgctxt ""
 "id_par29987248418152\n"
 "help.text"
 msgid "#VALUE!"
-msgstr "#VALOR!"
+msgstr "#¡VALOR!"
 
 #: func_aggregate.xhp
 msgctxt ""
@@ -61036,7 +61036,7 @@ msgctxt ""
 "par_id278275053653\n"
 "help.text"
 msgid "If a cell in a range of values for calculating the mean is empty or contains text, function AVERAGEIF ignores this cell.<br/>If the whole range is empty, contains only text or all values of the range do not satisfy the condition (or any combination of those), the function returns the #DIV/0! error."
-msgstr "Si en el intervalo de valores para calcular la media hay una celda vacía o que contiene texto, la función PROMEDIO.SI la ignorará.<br/>Si todo el intervalo está vacío, contiene solo texto o ninguno de los valores satisfacen la condición (o cualquier combinación de estas circunstancias), la función devolverá el error #DIV/0!."
+msgstr "Si en el intervalo de valores para calcular la media hay una celda vacía o que contiene texto, la función PROMEDIO.SI la ignorará.<br/>Si todo el intervalo está vacío, contiene solo texto o ninguno de los valores satisfacen la condición (o cualquier combinación de estas circunstancias), la función devolverá el error #¡DIV/0!"
 
 #: func_averageif.xhp
 msgctxt ""
@@ -61372,7 +61372,7 @@ msgctxt ""
 "par_id51531273215056\n"
 "help.text"
 msgid "If a cell in a range of values for calculating the mean is empty or contains text, the function AVERAGEIFS ignores this cell.<br/>If a cell contains TRUE, it is treated as 1, if a cell contains FALSE – as 0 (zero).<br/>If the whole range is empty, contains only text or all values of the range do not satisfy the condition (or any combination of those), the function returns the #DIV/0! error.<br/>If the range of values for calculating the mean and any range for finding criterion have unequal sizes, the function returns err:502."
-msgstr "Si una celda en un intervalo de valores para calcular el promedio está vacío o contiene texto, la función PROMEDIO.SI.CONJUNTO ignora esa celda.<br/>Si una celda contiene Verdadero se trata como 1; si contiene Falso se trata como 0 (cero).<br/>Si el intervalo completo está vacío, contiene solo texto o ninguno de sus valores (o alguna combinación de lo anterior) satisface la condición, la función devuelve el error #DIV/0!<br/>Si el intervalo o los valores para el cálculo del promedio y cualquier intervalo para encontrar el criterio tienen tamaños diferentes, la función devuelve err:502."
+msgstr "Si una celda en un intervalo de valores para calcular el promedio está vacío o contiene texto, la función PROMEDIO.SI.CONJUNTO ignora esa celda.<br/>Si una celda contiene Verdadero se trata como 1; si contiene Falso se trata como 0 (cero).<br/>Si el intervalo completo está vacío, contiene solo texto o ninguno de sus valores (o alguna combinación de lo anterior) satisface la condición, la función devuelve el error #¡DIV/0!<br/>Si el intervalo o los valores para el cálculo del promedio y cualquier intervalo para encontrar el criterio tienen tamaños diferentes, la función devuelve err:502."
 
 #: func_averageifs.xhp
 msgctxt ""
@@ -61500,7 +61500,7 @@ msgctxt ""
 "par_id1279148769260\n"
 "help.text"
 msgid "<link href=\"text/scalc/01/04060184.xhp#average\">AVERAGE</link>, <link href=\"text/scalc/01/04060184.xhp#averagea\">AVERAGEA</link>, <embedvar href=\"text/scalc/01/func_averageif.xhp#averageif_head\"/>, <embedvar href=\"text/scalc/01/func_sumifs.xhp#sumifs_head\"/>, <embedvar href=\"text/scalc/01/func_countifs.xhp#countifs_head\"/>, <link href=\"text/scalc/01/04060184.xhp#max\">MAX</link>, <link href=\"text/scalc/01/04060184.xhp#min\">MIN</link>"
-msgstr ""
+msgstr "<link href=\"text/scalc/01/04060184.xhp#average\">PROMEDIO</link>, <link href=\"text/scalc/01/04060184.xhp#averagea\">PROMEDIOA</link>, <embedvar href=\"text/scalc/01/func_averageif.xhp#averageif_head\"/>, <embedvar href=\"text/scalc/01/func_sumifs.xhp#sumifs_head\"/>, <embedvar href=\"text/scalc/01/func_countifs.xhp#countifs_head\"/>, <link href=\"text/scalc/01/04060184.xhp#max\">MAX</link>, <link href=\"text/scalc/01/04060184.xhp#min\">MIN</link>"
 
 #: func_color.xhp
 msgctxt ""
@@ -61516,7 +61516,7 @@ msgctxt ""
 "bm_id1102201617201921\n"
 "help.text"
 msgid "<bookmark_value>colors;numerical values</bookmark_value>  <bookmark_value>colors;calculating in spreadsheets</bookmark_value>  <bookmark_value>COLOR function</bookmark_value>"
-msgstr ""
+msgstr "<bookmark_value>colores;valores numéricos</bookmark_value><bookmark_value>colores;calcular en libros</bookmark_value><bookmark_value>función COLOR</bookmark_value>"
 
 #: func_color.xhp
 msgctxt ""
@@ -61620,7 +61620,7 @@ msgctxt ""
 "par_id462646264626\n"
 "help.text"
 msgid "<ahelp hid=\".\"><variable id=\"countifs_des\">Returns the count of rows or columns that meet criteria in multiple ranges.</variable></ahelp>"
-msgstr "<ahelp hid=\".\"><variable id=\"countifs_des\">Devuelve el número de filas o columnas que cumplen el criterio en múltiples rangos</variable></ahelp>"
+msgstr "<ahelp hid=\".\"><variable id=\"countifs_des\">Devuelve el número de filas o columnas que cumplen con criterios en varios intervalos.</variable></ahelp>"
 
 #: func_countifs.xhp
 msgctxt ""
@@ -61660,7 +61660,7 @@ msgctxt ""
 "par_id190621657742\n"
 "help.text"
 msgid "<emph>Range2</emph> – Optional. Range2 and all the following mean the same as Range1."
-msgstr ""
+msgstr "<emph>Intervalo2</emph>: opcional. Intervalo2 y todos los argumentos siguientes tienen el mismo significado que Intervalo1."
 
 #: func_countifs.xhp
 msgctxt ""
@@ -62868,7 +62868,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "ERROR.TYPE function"
-msgstr "TIPO.DE.ERROR"
+msgstr "Función TIPO.DE.ERROR"
 
 #: func_error_type.xhp
 msgctxt ""
@@ -62892,7 +62892,7 @@ msgctxt ""
 "par_id350283502835028\n"
 "help.text"
 msgid "<ahelp hid=\".\"><variable id=\"error_type_des\">Returns a number representing a specific Error type, or the error value #N/A, if there is no error. </variable></ahelp>"
-msgstr "<ahelp hid=\".\"><variable id=\"error_type_des\">Devuelve un número que representa un tipo específico de error o el valor de error #N/A si no hay error.</variable></ahelp>"
+msgstr "<ahelp hid=\".\"><variable id=\"error_type_des\">Devuelve un número que representa un tipo específico de error o el valor de error #N/D si no hay error.</variable></ahelp>"
 
 #: func_error_type.xhp
 msgctxt ""
@@ -62908,7 +62908,7 @@ msgctxt ""
 "par_id1861223540440\n"
 "help.text"
 msgid "ERROR.TYPE(Error_value)"
-msgstr "TIPO.DE.ERROR (Valor_error)"
+msgstr "TIPO.DE.ERROR(Valor_error)"
 
 #: func_error_type.xhp
 msgctxt ""
@@ -62948,7 +62948,7 @@ msgctxt ""
 "par_id121020152053148760\n"
 "help.text"
 msgid "#DIV/0!"
-msgstr "#DIV/0!"
+msgstr "#¡DIV/0!"
 
 #: func_error_type.xhp
 msgctxt ""
@@ -62956,7 +62956,7 @@ msgctxt ""
 "par_id121020152053296785\n"
 "help.text"
 msgid "#VALUE!"
-msgstr "#VALOR!"
+msgstr "#¡VALOR!"
 
 #: func_error_type.xhp
 msgctxt ""
@@ -62964,7 +62964,7 @@ msgctxt ""
 "par_id121020152053329868\n"
 "help.text"
 msgid "#REF!"
-msgstr "#REF!"
+msgstr "#¡REF!"
 
 #: func_error_type.xhp
 msgctxt ""
@@ -62972,7 +62972,7 @@ msgctxt ""
 "par_id121020152053353976\n"
 "help.text"
 msgid "#NAME?"
-msgstr "#NOMBRE?"
+msgstr "#¿NOMBRE?"
 
 #: func_error_type.xhp
 msgctxt ""
@@ -62980,7 +62980,7 @@ msgctxt ""
 "par_id121020152053408216\n"
 "help.text"
 msgid "#NUM!"
-msgstr "#NUM!"
+msgstr "#¡NUM!"
 
 #: func_error_type.xhp
 msgctxt ""
@@ -63028,7 +63028,7 @@ msgctxt ""
 "par_id15812966716957\n"
 "help.text"
 msgid "<item type=\"input\">=ERROR.TYPE(#N/A)</item>"
-msgstr "<item type=\"input\">=TIPO.DE.ERROR (#N/A)</item>"
+msgstr "<item type=\"input\">=TIPO.DE.ERROR(#N/D)</item>"
 
 #: func_error_type.xhp
 msgctxt ""
@@ -63036,7 +63036,7 @@ msgctxt ""
 "par_id280533214928308\n"
 "help.text"
 msgid "Returns 7, because 7 is the index number of the error value #N/A."
-msgstr "Devuelve 7, porque 7 es el número de índice de valor del error #N/A."
+msgstr "Devuelve 7, porque 7 es el número de índice de valor del error #N/D."
 
 #: func_error_type.xhp
 msgctxt ""
@@ -63044,7 +63044,7 @@ msgctxt ""
 "par_id1047088636291\n"
 "help.text"
 msgid "<item type=\"input\">=ERROR.TYPE(A3)</item>"
-msgstr "<item type=\"input\">=TIPO.DE.ERROR (A3)</item>"
+msgstr "<item type=\"input\">=TIPO.DE.ERROR(A3)</item>"
 
 #: func_error_type.xhp
 msgctxt ""
@@ -63052,7 +63052,7 @@ msgctxt ""
 "par_id24308515918391\n"
 "help.text"
 msgid "If A3 contains an expression equivalent to the division by zero, the function returns 2, because 2 is the index number of the error value #DIV/0!"
-msgstr "Si A3 contiene una expresión equivalente a la división por cero, la función devuelve 2 porque 2 es el número del índice del valor del error #DIV/0!"
+msgstr "Si A3 contiene una expresión equivalente a la división por cero, la función devuelve 2 porque 2 es el número del índice del valor del error #¡DIV/0!"
 
 #: func_error_type.xhp
 msgctxt ""
@@ -63092,7 +63092,7 @@ msgctxt ""
 "par_id26251175451270\n"
 "help.text"
 msgid "If the ERROR.TYPE function is used as condition of the IF function and the ERROR.TYPE returns #N/A, the IF function returns #N/A as well. Use ISERROR to avoid it as shown in the example above."
-msgstr "Si se usa la función TIPO.DE.ERROR como condición de la función SI y el TIPO.DE.ERROR  devuelve #N/A, la función SI devuelve #N/A también. Se debe utilizar ESERROR para evitarlo, como se muestra en el ejemplo anterior."
+msgstr "Si se usa la función TIPO.DE.ERROR como condición de la función SI y el TIPO.DE.ERROR devuelve #N/D, la función SI devuelve #N/D también. Se debe utilizar ESERROR para evitarlo, como se muestra en el ejemplo anterior."
 
 #: func_error_type.xhp
 msgctxt ""
@@ -63108,7 +63108,7 @@ msgctxt ""
 "par_id312932390024933\n"
 "help.text"
 msgid "<link href=\"text/scalc/05/02140000.xhp\" name=\"Error codes\">Error codes</link>"
-msgstr ""
+msgstr "<link href=\"text/scalc/05/02140000.xhp\" name=\"Códigos de error\">Códigos de error</link>"
 
 #: func_forecastetsadd.xhp
 msgctxt ""
@@ -63140,7 +63140,7 @@ msgctxt ""
 "par_id0603201610023949\n"
 "help.text"
 msgid "<ahelp hid=\"HID_FUNC_FORECAST_ETS_ADD\">Calculates the additive forecast(s) (future values) based on the historical data using ETS or EDS algorithms</ahelp>. EDS is used when argument <emph>period_length</emph> is 0, otherwise ETS is used."
-msgstr ""
+msgstr "<ahelp hid=\"HID_FUNC_FORECAST_ETS_ADD\">Calcula pronósticos aditivos (valores futuros) según los datos históricos mediante los algoritmos ETS o EDS</ahelp>. EDS se utiliza cuando el argumento <emph>longitud_período</emph> es 0; de lo contrario se emplea ETS."
 
 #: func_forecastetsadd.xhp
 msgctxt ""
@@ -63356,7 +63356,7 @@ msgctxt ""
 "par_id0603201610010044\n"
 "help.text"
 msgid "FORECAST.ETS.PI.ADD(target, values, timeline, [confidence_level], [period_length], [data_completion], [aggregation])"
-msgstr ""
+msgstr "PRONOSTICO.ETS.PI.SUM(objetivo, valores, plazo, [nivel_confianza], [longitud_período], [compleción_datos], [totalización])"
 
 #: func_forecastetspiadd.xhp
 msgctxt ""
@@ -63372,7 +63372,7 @@ msgctxt ""
 "par_id0403201618595143\n"
 "help.text"
 msgid "Note on prediction intervals: there is no exact mathematical way to calculate this for forecasts, there are various approximations. Prediction intervals tend to be increasingly 'over-optimistic' when increasing distance of the forecast-X from the observation data set."
-msgstr ""
+msgstr "Nota sobre los intervalos de predicción: no existe una manera matemática exacta de calcularlos en los pronósticos, pero hay varias aproximaciones. Los intervalos de predicción tienden a ser demasiado «optimistas» a medida que se incrementa la distancia entre el pronóstico X y el conjunto de datos de observación."
 
 #: func_forecastetspiadd.xhp
 msgctxt ""
@@ -63388,7 +63388,7 @@ msgctxt ""
 "hd_id04032016185123\n"
 "help.text"
 msgid "=FORECAST.ETS.PI.ADD(DATE(2014;1;1);Values;Timeline;0.9;1;TRUE();1)"
-msgstr ""
+msgstr "=PRONOSTICO.ETS.PI.SUM(FECHA(2014;1;1);Valores;Plazo;0.9;1;VERDADERO();1)"
 
 #: func_forecastetspiadd.xhp
 msgctxt ""
@@ -63396,7 +63396,7 @@ msgctxt ""
 "hd_id04032016112394554\n"
 "help.text"
 msgid "Returns 18.8061295551355, the prediction interval for additive forecast for January 2014 based on <emph>Values</emph> and <emph>Timeline</emph> named ranges above, 90% (=0.9) confidence level, with one sample per period, no missing data, and AVERAGE as aggregation."
-msgstr ""
+msgstr "Devuelve 18,8061295551355, el intervalo de predicciones del pronóstico aditivo para enero de 2014 basado en los intervalos nombrados <emph>Valores</emph> y <emph>Plazo</emph> anteriores, con un nivel de confianza del 90 % (=0,9), una muestra por período, sin datos faltantes y PROMEDIO como fórmula de totalización."
 
 #: func_forecastetspiadd.xhp
 msgctxt ""
@@ -63412,7 +63412,7 @@ msgctxt ""
 "hd_id040312316112394554\n"
 "help.text"
 msgid "Returns 23.4416821953741, the prediction interval for additive forecast for January 2014 based on <emph>Values</emph> and <emph>Timeline</emph> named ranges above, with confidence level of 0.8, period length of 4, no missing data, and SUM as aggregation."
-msgstr ""
+msgstr "Devuelve 23,4416821953741, el intervalo de predicciones del pronóstico aditivo para enero de 2014 basado en los intervalos nombrados <emph>Valores</emph> y <emph>Plazo</emph> anteriores, con un nivel de confianza de 0,8, una longitud de período de 4, sin datos faltantes y SUMA como fórmula de totalización."
 
 #: func_forecastetspiadd.xhp
 msgctxt ""
@@ -63476,7 +63476,7 @@ msgctxt ""
 "par_id0603201610010044\n"
 "help.text"
 msgid "FORECAST.ETS.PI.MULT(target, values, timeline, [confidence_level], [period_length], [data_completion], [aggregation])"
-msgstr ""
+msgstr "PRONOSTICO.ETS.PI.MULT(objetivo, valores, plazo, [nivel_confianza], [longitud_período], [compleción_datos], [totalización])"
 
 #: func_forecastetspimult.xhp
 msgctxt ""
@@ -63492,7 +63492,7 @@ msgctxt ""
 "par_id0403201618595143\n"
 "help.text"
 msgid "Note on prediction intervals: there is no exact mathematical way to calculate this for forecasts, there are various approximations. Prediction intervals tend to be increasingly 'over-optimistic' when increasing distance of the forecast-X from the observation data set."
-msgstr ""
+msgstr "Nota sobre los intervalos de predicción: no existe una manera matemática exacta de calcularlos en los pronósticos, pero hay varias aproximaciones. Los intervalos de predicción tienden a ser demasiado «optimistas» a medida que se incrementa la distancia entre el pronóstico X y el conjunto de datos de observación."
 
 #: func_forecastetspimult.xhp
 msgctxt ""
@@ -63508,7 +63508,7 @@ msgctxt ""
 "hd_id04032016185123\n"
 "help.text"
 msgid "=FORECAST.ETS.PI.MULT(DATE(2014;1;1);Values;Timeline;0.9;1;TRUE();1)"
-msgstr ""
+msgstr "=PRONOSTICO.ETS.PI.MULT(FECHA(2014;1;1);Valores;Plazo;0.9;1;VERDADERO();1)"
 
 #: func_forecastetspimult.xhp
 msgctxt ""
@@ -64910,7 +64910,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "NETWORKDAYS.INTL"
-msgstr ""
+msgstr "DIAS.LAB.INTL"
 
 #: func_networkdays.intl.xhp
 msgctxt ""
@@ -64918,7 +64918,7 @@ msgctxt ""
 "bm_id231020162321219565\n"
 "help.text"
 msgid "<bookmark_value>NETWORKDAYS.INTL function</bookmark_value>"
-msgstr ""
+msgstr "<bookmark_value>función DIAS.LAB.INTL</bookmark_value>"
 
 #: func_networkdays.intl.xhp
 msgctxt ""
@@ -64926,7 +64926,7 @@ msgctxt ""
 "hd_id231020162211573602\n"
 "help.text"
 msgid "<variable id=\"networkdaysintl\"><link href=\"text/scalc/01/func_networkdays.intl.xhp\">NETWORKDAYS.INTL</link></variable>"
-msgstr ""
+msgstr "<variable id=\"networkdaysintl\"><link href=\"text/scalc/01/func_networkdays.intl.xhp\">DIAS.LAB.INTL</link></variable>"
 
 #: func_networkdays.intl.xhp
 msgctxt ""
@@ -64934,7 +64934,7 @@ msgctxt ""
 "par_id231020162213393086\n"
 "help.text"
 msgid "<ahelp hid=\".\">Returns the number of workdays between a start date and an end date. There are options to define weekend days and holidays. The optional weekend parameter (or a string) can be used to define the weekend days (or the non-working days in each week). Also, optionally, the user can define a holiday list. The weekend days and user-defined holidays are not counted as working days.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\".\">Devuelve el número de días laborables que hay entre una fecha inicial y una final. Existen opciones para definir los días feriados y los correspondientes a los fines de semana. Se puede utilizar el parámetro (o cadena) opcional de fin de semana para definir los días de fin de semana (o los días no laborables de cada semana). Asimismo, de manera opcional, puede definirse una lista de feriados. Los días de fin de semana y los feriados definidos por el usuario no se cuentan como días laborables.</ahelp>"
 
 #: func_networkdays.intl.xhp
 msgctxt ""
@@ -64950,7 +64950,7 @@ msgctxt ""
 "par_id231020162249539143\n"
 "help.text"
 msgid "<item type=\"literal\">NETWORKDAYS.INTL(StartDate; EndDate; Weekend; Holidays)</item>"
-msgstr ""
+msgstr "<item type=\"literal\">DIAS.LAB.INTL(FechaInicial; FechaFinal; FinDeSemana; Feriados)</item>"
 
 #: func_networkdays.intl.xhp
 msgctxt ""
@@ -64958,7 +64958,7 @@ msgctxt ""
 "par_id231020162249533010\n"
 "help.text"
 msgid "<emph>StartDate</emph> is the date from when the calculation is carried out. If the start date is a workday, the day is included in the calculation."
-msgstr ""
+msgstr "<emph>FechaInicial</emph> es la fecha a partir de la cual el cálculo se lleva a cabo. Si la fecha inicial es una día laborable, el día se incluye en el cálculo."
 
 #: func_networkdays.intl.xhp
 msgctxt ""
@@ -64966,7 +64966,7 @@ msgctxt ""
 "par_id231020162249536398\n"
 "help.text"
 msgid "<emph>EndDate</emph> is the date up until when the calculation is carried out. If the end date is a workday, the day is included in the calculation."
-msgstr ""
+msgstr "<emph>FechaFinal</emph> es la fecha de término del cálculo. Si la fecha final es un día laborable, el día se incluye en el cálculo."
 
 #: func_networkdays.intl.xhp
 msgctxt ""
@@ -65006,7 +65006,7 @@ msgctxt ""
 "par_id231020162249557786\n"
 "help.text"
 msgid "Alternatively, use the weekend string “0000001” to define Sunday as the non-working day of every week."
-msgstr ""
+msgstr "Como alternativa, utilice la cadena «0000001» para definir solo el domingo como el día no laborable de cada semana."
 
 #: func_networkdays.intl.xhp
 msgctxt ""
@@ -65022,7 +65022,7 @@ msgctxt ""
 "par_id231020162249556946\n"
 "help.text"
 msgid "The function can be used without the two optional parameters – weekday and holidays – by leaving them out:"
-msgstr ""
+msgstr "Es posible pasar por alto los dos parámetros opcionales —Fin de semana y Feriados— y utilizar la función sin ellos:"
 
 #: func_networkdays.intl.xhp
 msgctxt ""
@@ -65030,7 +65030,7 @@ msgctxt ""
 "par_id23102016224955931\n"
 "help.text"
 msgid "<item type=\"literal\">=NETWORKDAYS.INTL(C3;D3)</item> gives 22 working days."
-msgstr ""
+msgstr "<item type=\"literal\">=DIAS.LAB.INTL(C3;D3)</item> devuelve 22 días laborables."
 
 #: func_networkdays.intl.xhp
 msgctxt ""
@@ -65038,7 +65038,7 @@ msgctxt ""
 "par_id231020162253594361\n"
 "help.text"
 msgid "<link href=\"text/scalc/01/func_networkdays.xhp\">NETWORKDAYS</link>"
-msgstr ""
+msgstr "<link href=\"text/scalc/01/func_networkdays.xhp\">DIAS.LAB</link>"
 
 #: func_networkdays.intl.xhp
 msgctxt ""
@@ -65054,7 +65054,7 @@ msgctxt ""
 "par_id241030160012187036\n"
 "help.text"
 msgid "<link href=\"text/scalc/01/func_workday.xhp\">WORKDAYS</link>"
-msgstr ""
+msgstr "<link href=\"text/scalc/01/func_workday.xhp\">DIA.LAB</link>"
 
 #: func_networkdays.intl.xhp
 msgctxt ""
@@ -65086,7 +65086,7 @@ msgctxt ""
 "hd_id3151254\n"
 "help.text"
 msgid "<variable id=\"networkdays\"><link href=\"text/scalc/01/func_networkdays.xhp\">NETWORKDAYS</link></variable>"
-msgstr ""
+msgstr "<variable id=\"networkdays\"><link href=\"text/scalc/01/func_networkdays.xhp\">DIAS.LAB</link></variable>"
 
 #: func_networkdays.xhp
 msgctxt ""
@@ -65094,7 +65094,7 @@ msgctxt ""
 "par_id3153788\n"
 "help.text"
 msgid "<ahelp hid=\"HID_AAI_FUNC_NETWORKDAYS\">Returns the number of workdays between a <emph>start date and an end date</emph>. Holidays can be deducted.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"HID_AAI_FUNC_NETWORKDAYS\">Devuelve el número de días laborales entre una <emph>fecha inicial y una final</emph>. Se pueden deducir los feriados.</ahelp>"
 
 #: func_networkdays.xhp
 msgctxt ""
@@ -65110,7 +65110,7 @@ msgctxt ""
 "par_id3145775\n"
 "help.text"
 msgid "NETWORKDAYS(StartDate; EndDate; Holidays; Workdays)"
-msgstr ""
+msgstr "DIAS.LAB(FechaInicial; FechaFinal; Feriados; DíasLaborables)"
 
 #: func_networkdays.xhp
 msgctxt ""
@@ -65118,7 +65118,7 @@ msgctxt ""
 "par_id3153885\n"
 "help.text"
 msgid "<emph>StartDate</emph> is the date from when the calculation is carried out. If the start date is a workday, the day is included in the calculation."
-msgstr ""
+msgstr "<emph>FechaInicial</emph> es la fecha a partir de la cual el cálculo se lleva a cabo. Si la fecha inicial es una día laborable, el día se incluye en el cálculo."
 
 #: func_networkdays.xhp
 msgctxt ""
@@ -65126,7 +65126,7 @@ msgctxt ""
 "par_id3151110\n"
 "help.text"
 msgid "<emph>EndDate</emph> is the date up until when the calculation is carried out. If the end date is a workday, the day is included in the calculation."
-msgstr ""
+msgstr "<emph>FechaFinal</emph> es la fecha de término del cálculo. Si la fecha final es un día laborable, el día se incluye en el cálculo."
 
 #: func_networkdays.xhp
 msgctxt ""
@@ -65134,7 +65134,7 @@ msgctxt ""
 "par_id3154115\n"
 "help.text"
 msgid "<emph>Holidays</emph> is an optional list of holidays. These are non-working days. Enter a cell range in which the holidays are listed individually."
-msgstr ""
+msgstr "<emph>Feriados</emph> es una lista de feriados opcional. Estos son días no laborables. Proporcione un intervalo de celdas en el que los feriados estén enumerados individualmente."
 
 #: func_networkdays.xhp
 msgctxt ""
@@ -65158,7 +65158,7 @@ msgctxt ""
 "par_id3154661\n"
 "help.text"
 msgid "How many workdays fall between 2001-12-15 and 2002-01-15? The start date is located in C3 and the end date in D3. Cells F3 to J3 contain the following Christmas and New Year holidays: \"2001-12-24\", \"2001-12-25\", \"2001-12-26\", \"2001-12-31\", \"2002-01-01\"."
-msgstr ""
+msgstr "¿Cuántos días laborables hay entre el 15 de diciembre de 2001 y el 15 de enero de 2002? La fecha inicial está situada en C3 y la fecha final en D3. Las celdas entre F3 y J3 contienen los siguientes feriados de Navidad y Año Nuevo: «24/12/2001», «25/12/2001», «26/12/2001», «31/12/2001» y «01/01/2002»."
 
 #: func_networkdays.xhp
 msgctxt ""
@@ -65174,7 +65174,7 @@ msgctxt ""
 "par_id160920161751233621\n"
 "help.text"
 msgid "How many workdays fall between September 12nd and 25th in 2016 if only Mondays, Tuesdays and Wednesdays are considered as workdays?"
-msgstr ""
+msgstr "¿Cuántos días laborables existen entre el 12 y el 25 de septiembre de 2016 si se consideran como tales solo los lunes, los martes y los miércoles?"
 
 #: func_networkdays.xhp
 msgctxt ""
@@ -65206,7 +65206,7 @@ msgctxt ""
 "par_id241030160012187036\n"
 "help.text"
 msgid "<link href=\"text/scalc/01/func_workday.xhp\">WORKDAYS</link>"
-msgstr ""
+msgstr "<link href=\"text/scalc/01/func_workday.xhp\">DIA.LAB</link>"
 
 #: func_networkdays.xhp
 msgctxt ""
@@ -65274,7 +65274,7 @@ msgctxt ""
 "par_id4598529\n"
 "help.text"
 msgid "NOW is a function without arguments."
-msgstr "NOW es una función sin argumentos."
+msgstr "AHORA es una función sin argumentos."
 
 #: func_now.xhp
 msgctxt ""
@@ -65822,7 +65822,7 @@ msgctxt ""
 "par_id11921178730928\n"
 "help.text"
 msgid "<link href=\"text/scalc/01/04060106.xhp#Section16\">SUM</link>, <link href=\"text/scalc/01/04060106.xhp#Section15\">SUMIF</link>, <embedvar href=\"text/scalc/01/func_countifs.xhp#countifs_head\"/>, <embedvar href=\"text/scalc/01/func_averageifs.xhp#averageifs_head\"/>, <link href=\"text/scalc/01/04060184.xhp#max\">MAX</link>, <link href=\"text/scalc/01/04060184.xhp#min\">MIN</link>"
-msgstr ""
+msgstr "<link href=\"text/scalc/01/04060106.xhp#Section16\">SUMA</link>, <link href=\"text/scalc/01/04060106.xhp#Section15\">SUMAR.SI</link>, <embedvar href=\"text/scalc/01/func_countifs.xhp#countifs_head\"/> <embedvar href=\"text/scalc/01/func_averageifs.xhp#averageifs_head\"/>, <link href=\"text/scalc/01/04060184.xhp#max\">MAX</link>, <link href=\"text/scalc/01/04060184.xhp#min\">MIN</link>"
 
 #: func_time.xhp
 msgctxt ""
@@ -66947,7 +66947,7 @@ msgctxt ""
 "190\n"
 "help.text"
 msgid "<emph>StartDate</emph> is the date from when the calculation is carried out. If the start date is a workday, the day is included in the calculation."
-msgstr "<emph>InicioFecha</emph> es la fecha a partir de cuando el cálculo se lleva a cabo. Si la fecha de inicio es una día laboral, el día se incluye en el cálculo."
+msgstr "<emph>FechaInicial</emph> es la fecha a partir de la cual el cálculo se lleva a cabo. Si la fecha inicial es una día laborable, el día se incluye en el cálculo."
 
 #: func_workday.xhp
 msgctxt ""
@@ -67000,7 +67000,7 @@ msgctxt ""
 "par_id231020162253594361\n"
 "help.text"
 msgid "<link href=\"text/scalc/01/func_networkdays.xhp\">NETWORKDAYS</link>"
-msgstr ""
+msgstr "<link href=\"text/scalc/01/func_networkdays.xhp\">DIAS.LAB</link>"
 
 #: func_workday.xhp
 msgctxt ""
@@ -67080,7 +67080,7 @@ msgctxt ""
 "par_id241020160008308885\n"
 "help.text"
 msgid "<emph>StartDate</emph> is the date from when the calculation is carried out. If the start date is a workday, the day is included in the calculation. This is required."
-msgstr ""
+msgstr "<emph>FechaInicial</emph> es la fecha a partir de la cual el cálculo se lleva a cabo. Si la fecha inicial es una día laborable, el día se incluye en el cálculo. Obligatorio."
 
 #: func_workdays.intl.xhp
 msgctxt ""
@@ -67168,7 +67168,7 @@ msgctxt ""
 "par_id24102016001218469\n"
 "help.text"
 msgid "Alternatively, use the weekend string “0000001” for Sunday only weekend."
-msgstr ""
+msgstr "Alternativamente, puede emplear la cadena «0000001» para definir el domingo como único día del fin de semana."
 
 #: func_workdays.intl.xhp
 msgctxt ""
@@ -69134,7 +69134,7 @@ msgctxt ""
 "par_id1003080\n"
 "help.text"
 msgid "Observed Mean Difference"
-msgstr "Diferencia media observada"
+msgstr "Diferencia de media observada"
 
 #: statistics.xhp
 msgctxt ""
@@ -69566,7 +69566,7 @@ msgctxt ""
 "par_id1003870\n"
 "help.text"
 msgid "Observed Mean Difference"
-msgstr "Diferencia media observada"
+msgstr "Diferencia de media observada"
 
 #: statistics.xhp
 msgctxt ""
@@ -69582,7 +69582,7 @@ msgctxt ""
 "par_id1003900\n"
 "help.text"
 msgid "#DIV/0!"
-msgstr "#DIV/0!"
+msgstr "#¡DIV/0!"
 
 #: statistics.xhp
 msgctxt ""
@@ -69598,7 +69598,7 @@ msgctxt ""
 "par_id1003920\n"
 "help.text"
 msgid "#DIV/0!"
-msgstr "#DIV/0!"
+msgstr "#¡DIV/0!"
 
 #: statistics.xhp
 msgctxt ""
@@ -69622,7 +69622,7 @@ msgctxt ""
 "par_id1003960\n"
 "help.text"
 msgid "#DIV/0!"
-msgstr "#DIV/0!"
+msgstr "#¡DIV/0!"
 
 #: statistics.xhp
 msgctxt ""
@@ -69902,7 +69902,7 @@ msgctxt ""
 "par_id1701201618090553\n"
 "help.text"
 msgid "R^2"
-msgstr "R^2"
+msgstr "R²"
 
 #: statistics_regression.xhp
 msgctxt ""

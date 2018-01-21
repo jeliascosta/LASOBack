@@ -36,11 +36,11 @@ private:
 
     void    FillObjects();
 
-    DECL_LINK_TYPED( SelectHdl, ListBox&, void );
+    DECL_LINK( SelectHdl, ListBox&, void );
 
 public:
     ScDataPilotDatabaseDlg(vcl::Window* pParent);
-    virtual ~ScDataPilotDatabaseDlg();
+    virtual ~ScDataPilotDatabaseDlg() override;
     virtual void dispose() override;
 
     void    GetValues( ScImportSourceDesc& rDesc );

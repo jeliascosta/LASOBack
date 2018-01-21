@@ -143,7 +143,7 @@ void lcl_ChartInit( const uno::Reference < embed::XEmbeddedObject >& xObj, ScVie
 
             // use ScChartPositioner to auto-detect column/row headers (like ScChartArray in old version)
             ScRangeListRef aRangeListRef( new ScRangeList );
-            aRangeListRef->Parse( aRangeString, &rScDoc, ScRefFlags::VALID, rScDoc.GetAddressConvention() );
+            aRangeListRef->Parse( aRangeString, &rScDoc, rScDoc.GetAddressConvention() );
             if ( !aRangeListRef->empty() )
             {
                 rScDoc.LimitChartIfAll( aRangeListRef );               // limit whole columns/rows to used area
@@ -254,7 +254,7 @@ FuInsertOLE::FuInsertOLE(ScTabViewShell* pViewSh, vcl::Window* pWin, ScDrawView*
             case SID_INSERT_FLOATINGFRAME :
             {
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-                std::unique_ptr<SfxAbstractInsertObjectDialog> pDlg(
+                ScopedVclPtr<SfxAbstractInsertObjectDialog> pDlg(
                         pFact->CreateInsertObjectDialog( pViewShell->GetWindow(), SC_MOD()->GetSlotPool()->GetSlot(nSlot)->GetCommandString(),
                         xStorage, &aServerLst ));
                 if ( pDlg )
@@ -286,8 +286,8 @@ FuInsertOLE::FuInsertOLE(ScTabViewShell* pViewSh, vcl::Window* pWin, ScDrawView*
         {
             ::svt::EmbeddedObjectRef aObjRef( xObj, nAspect );
             Size aSize;
-            MapMode aMap100( MAP_100TH_MM );
-            MapUnit aMapUnit = MAP_100TH_MM;
+            MapMode aMap100( MapUnit::Map100thMM );
+            MapUnit aMapUnit = MapUnit::Map100thMM;
 
             if ( nAspect == embed::Aspects::MSOLE_ICON )
             {
@@ -314,7 +314,7 @@ FuInsertOLE::FuInsertOLE(ScTabViewShell* pViewSh, vcl::Window* pWin, ScDrawView*
                     // Rechteck mit ausgewogenem Kantenverhaeltnis
                     aSize.Width() = 5000;
                     aSize.Height() = 5000;
-                    Size aTmp = OutputDevice::LogicToLogic( aSize, MAP_100TH_MM, aMapUnit );
+                    Size aTmp = OutputDevice::LogicToLogic( aSize, MapUnit::Map100thMM, aMapUnit );
                     aSz.Width = aTmp.Width();
                     aSz.Height = aTmp.Height();
                     xObj->setVisualAreaSize( nAspect, aSz );
@@ -353,7 +353,7 @@ FuInsertOLE::FuInsertOLE(ScTabViewShell* pViewSh, vcl::Window* pWin, ScDrawView*
                     awt::Size aSz = xObj->getVisualAreaSize( nAspect );
 
                     Size aNewSize( aSz.Width, aSz.Height );
-                    aNewSize = OutputDevice::LogicToLogic( aNewSize, aMapUnit, MAP_100TH_MM );
+                    aNewSize = OutputDevice::LogicToLogic( aNewSize, aMapUnit, MapUnit::Map100thMM );
 
                     if ( aNewSize != aSize )
                     {
@@ -388,16 +388,6 @@ FuInsertOLE::FuInsertOLE(ScTabViewShell* pViewSh, vcl::Window* pWin, ScDrawView*
     }
     else
         rReq.Ignore();
-}
-
-void FuInsertOLE::Activate()
-{
-    FuPoor::Activate();
-}
-
-void FuInsertOLE::Deactivate()
-{
-    FuPoor::Deactivate();
 }
 
 FuInsertChart::FuInsertChart(ScTabViewShell* pViewSh, vcl::Window* pWin, ScDrawView* pViewP,
@@ -507,7 +497,7 @@ FuInsertChart::FuInsertChart(ScTabViewShell* pViewSh, vcl::Window* pWin, ScDrawV
     }
     if (bSizeCh)
     {
-        aSize = vcl::Window::LogicToLogic( aSize, MapMode( MAP_100TH_MM ), MapMode( aMapUnit ) );
+        aSize = vcl::Window::LogicToLogic( aSize, MapMode( MapUnit::Map100thMM ), MapMode( aMapUnit ) );
         aSz.Width = aSize.Width();
         aSz.Height = aSize.Height();
         xObj->setVisualAreaSize( nAspect, aSz );
@@ -643,12 +633,12 @@ FuInsertChart::FuInsertChart(ScTabViewShell* pViewSh, vcl::Window* pWin, ScDrawV
                     uno::Any* pArray = aSeq.getArray();
                     beans::PropertyValue aParam1;
                     aParam1.Name = "ParentWindow";
-                    aParam1.Value <<= uno::makeAny(xDialogParentWindow);
+                    aParam1.Value = uno::makeAny(xDialogParentWindow);
                     beans::PropertyValue aParam2;
                     aParam2.Name = "ChartModel";
-                    aParam2.Value <<= uno::makeAny(xChartModel);
-                    pArray[0] <<= uno::makeAny(aParam1);
-                    pArray[1] <<= uno::makeAny(aParam2);
+                    aParam2.Value = uno::makeAny(xChartModel);
+                    pArray[0] = uno::makeAny(aParam1);
+                    pArray[1] = uno::makeAny(aParam2);
                     xInit->initialize( aSeq );
 
                     // try to set the dialog's position so it doesn't hide the chart
@@ -739,16 +729,6 @@ FuInsertChart::FuInsertChart(ScTabViewShell* pViewSh, vcl::Window* pWin, ScDrawV
     // BM/IHA --
 }
 
-void FuInsertChart::Activate()
-{
-    FuPoor::Activate();
-}
-
-void FuInsertChart::Deactivate()
-{
-    FuPoor::Deactivate();
-}
-
 FuInsertChartFromFile::FuInsertChartFromFile( ScTabViewShell* pViewSh, vcl::Window* pWin, ScDrawView* pViewP,
            SdrModel* pDoc, SfxRequest& rReq, const OUString& rURL):
     FuPoor(pViewSh, pWin, pViewP, pDoc, rReq)
@@ -780,16 +760,6 @@ FuInsertChartFromFile::FuInsertChartFromFile( ScTabViewShell* pViewSh, vcl::Wind
     pView->MarkObj( pObj, pPV );
 
     pViewShell->ActivateObject(pObj, embed::EmbedVerbs::MS_OLEVERB_SHOW);
-}
-
-void FuInsertChartFromFile::Activate()
-{
-    FuPoor::Activate();
-}
-
-void FuInsertChartFromFile::Deactivate()
-{
-    FuPoor::Deactivate();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

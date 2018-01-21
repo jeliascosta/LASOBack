@@ -25,6 +25,7 @@
 #include <comphelper/streamsection.hxx>
 #include <comphelper/basicio.hxx>
 #include <comphelper/processfactory.hxx>
+#include <o3tl/any.hxx>
 #include <tools/diagnose_ex.h>
 #include <tools/debug.hxx>
 #include <tools/urlobj.hxx>
@@ -278,7 +279,7 @@ void SAL_CALL OButtonModel::setFastPropertyValue_NoBroadcast( sal_Int32 _nHandle
 }
 
 
-sal_Bool SAL_CALL OButtonModel::convertFastPropertyValue( Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue ) throw (IllegalArgumentException)
+sal_Bool SAL_CALL OButtonModel::convertFastPropertyValue( Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue ) throw (IllegalArgumentException, RuntimeException, std::exception)
 {
     bool bModified = false;
     switch ( _nHandle )
@@ -423,7 +424,7 @@ void OButtonControl::actionPerformed(const ActionEvent& /*rEvent*/) throw ( css:
 }
 
 
-IMPL_LINK_NOARG_TYPED(OButtonControl, OnClick, void*, void)
+IMPL_LINK_NOARG(OButtonControl, OnClick, void*, void)
 {
     ::osl::ClearableMutexGuard aGuard( m_aMutex );
     m_nClickEvent = nullptr;
@@ -445,7 +446,7 @@ IMPL_LINK_NOARG_TYPED(OButtonControl, OnClick, void*, void)
         if (!xSet.is())
             return;
 
-        if (FormButtonType_PUSH == *static_cast<FormButtonType const *>(xSet->getPropertyValue(PROPERTY_BUTTONTYPE).getValue()))
+        if (FormButtonType_PUSH == *o3tl::doAccess<FormButtonType>(xSet->getPropertyValue(PROPERTY_BUTTONTYPE)))
         {
             // notify the action listeners for a push button
             ::comphelper::OInterfaceIteratorHelper2 aIter(m_aActionListeners);

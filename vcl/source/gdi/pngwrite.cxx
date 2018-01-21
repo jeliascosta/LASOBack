@@ -48,7 +48,7 @@ class PNGWriterImpl
 public:
 
     PNGWriterImpl(const BitmapEx& BmpEx,
-                  const css::uno::Sequence<css::beans::PropertyValue>* pFilterData = nullptr);
+                  const css::uno::Sequence<css::beans::PropertyValue>* pFilterData);
 
     bool Write(SvStream& rOutStream);
 
@@ -279,7 +279,7 @@ bool PNGWriterImpl::Write(SvStream& rOStm)
         rOStm.WriteUInt32(nDataSize);
         rOStm.WriteUInt32(aBeg->nType);
         if (nDataSize)
-            rOStm.Write(&aBeg->aData[0], nDataSize);
+            rOStm.WriteBytes(&aBeg->aData[0], nDataSize);
         rOStm.WriteUInt32(nCRC);
         ++aBeg;
     }
@@ -358,7 +358,7 @@ void PNGWriterImpl::ImplWriteTransparent()
 
 void PNGWriterImpl::ImplWritepHYs(const BitmapEx& rBmpEx)
 {
-    if (rBmpEx.GetPrefMapMode() == MAP_100TH_MM)
+    if (rBmpEx.GetPrefMapMode() == MapUnit::Map100thMM)
     {
         Size aPrefSize(rBmpEx.GetPrefSize());
 

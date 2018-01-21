@@ -84,9 +84,6 @@ ChartTypeParameter::ChartTypeParameter( sal_Int32 SubTypeIndex, bool HasXAxisWit
                     , mbRoundedEdge(false)
 {
 }
-ChartTypeParameter::~ChartTypeParameter()
-{
-}
 
 bool ChartTypeParameter::mapsToSameService( const ChartTypeParameter& rParameter ) const
 {
@@ -1208,7 +1205,7 @@ void CombiColumnLineChartDialogController::setTemplateProperties( const uno::Ref
     }
 }
 
-IMPL_LINK_NOARG_TYPED(CombiColumnLineChartDialogController, ChangeLineCountHdl, Edit&, void)
+IMPL_LINK_NOARG(CombiColumnLineChartDialogController, ChangeLineCountHdl, Edit&, void)
 {
     if( m_pChangeListener )
         m_pChangeListener->stateChanged(this);

@@ -340,7 +340,7 @@ void OutputDevice::ImplDrawSpecialText( SalLayout& rSalLayout )
     FontRelief  eRelief             = maFont.GetRelief();
 
     Point aOrigPos = rSalLayout.DrawBase();
-    if ( eRelief != RELIEF_NONE )
+    if ( eRelief != FontRelief::NONE )
     {
         Color   aReliefColor( COL_LIGHTGRAY );
         Color   aTextColor( aOldColor );
@@ -370,7 +370,7 @@ void OutputDevice::ImplDrawSpecialText( SalLayout& rSalLayout )
         long nOff = 1;
         nOff += mnDPIX/300;
 
-        if ( eRelief == RELIEF_ENGRAVED )
+        if ( eRelief == FontRelief::Engraved )
             nOff = -nOff;
         rSalLayout.DrawOffset() += Point( nOff, nOff);
         ImplDrawTextDirect( rSalLayout, mbTextLines );
@@ -524,7 +524,7 @@ long OutputDevice::ImplGetTextLines( ImplMultiTextLineInfo& rLineInfo,
                     {
                         nSoftBreak = nPos;
                     }
-                    DBG_ASSERT( nSoftBreak < nBreakPos, "Break?!" );
+                    SAL_WARN_IF( nSoftBreak >= nBreakPos, "vcl", "Break?!" );
                     css::i18n::LineBreakHyphenationOptions aHyphOptions( xHyph, css::uno::Sequence <css::beans::PropertyValue>(), 1 );
                     css::i18n::LineBreakUserOptions aUserOptions;
                     css::i18n::LineBreakResults aLBR = xBI->getLineBreak( rStr, nSoftBreak, rDefLocale, nPos, aHyphOptions, aUserOptions );
@@ -547,13 +547,13 @@ long OutputDevice::ImplGetTextLines( ImplMultiTextLineInfo& rLineInfo,
                             css::i18n::Boundary aBoundary = xBI->getWordBoundary( rStr, nBreakPos, rDefLocale, css::i18n::WordType::DICTIONARY_WORD, true );
                             sal_Int32 nWordStart = nPos;
                             sal_Int32 nWordEnd = aBoundary.endPos;
-                            DBG_ASSERT( nWordEnd > nWordStart, "ImpBreakLine: Start >= End?" );
+                            SAL_WARN_IF( nWordEnd <= nWordStart, "vcl", "ImpBreakLine: Start >= End?" );
 
                             sal_Int32 nWordLen = nWordEnd - nWordStart;
                             if ( ( nWordEnd >= nSoftBreak ) && ( nWordLen > 3 ) )
                             {
                                 // #104415# May happen, because getLineBreak may differ from getWordBoudary with DICTIONARY_WORD
-                                // DBG_ASSERT( nWordEnd >= nMaxBreakPos, "Hyph: Break?" );
+                                // SAL_WARN_IF( nWordEnd < nMaxBreakPos, "vcl", "Hyph: Break?" );
                                 OUString aWord = rStr.copy( nWordStart, nWordLen );
                                 sal_Int32 nMinTrail = nWordEnd-nSoftBreak+1;  //+1: Before the "broken off" char
                                 css::uno::Reference< css::linguistic2::XHyphenatedWord > xHyphWord;
@@ -611,7 +611,7 @@ long OutputDevice::ImplGetTextLines( ImplMultiTextLineInfo& rLineInfo,
                                                 ++nTxtEnd;
                                             }
 
-                                            DBG_ASSERT( ( nAltEnd - nAltStart ) == 1, "Alternate: Wrong assumption!" );
+                                            SAL_WARN_IF( ( nAltEnd - nAltStart ) != 1, "vcl", "Alternate: Wrong assumption!" );
 
                                             if ( nTxtEnd > nTxtStart )
                                                 cAlternateReplChar = aAlt[ nAltStart ];
@@ -676,8 +676,8 @@ long OutputDevice::ImplGetTextLines( ImplMultiTextLineInfo& rLineInfo,
     {
         ImplTextLineInfo* pLine = rLineInfo.GetLine( nL );
         OUString aLine = rStr.copy( pLine->GetIndex(), pLine->GetLen() );
-        DBG_ASSERT( aLine.indexOf( '\r' ) == -1, "ImplGetTextLines - Found CR!" );
-        DBG_ASSERT( aLine.indexOf( '\n' ) == -1, "ImplGetTextLines - Found LF!" );
+        SAL_WARN_IF( aLine.indexOf( '\r' ) != -1, "vcl", "ImplGetTextLines - Found CR!" );
+        SAL_WARN_IF( aLine.indexOf( '\n' ) != -1, "vcl", "ImplGetTextLines - Found LF!" );
     }
 #endif
 
@@ -840,8 +840,9 @@ void OutputDevice::DrawText( const Point& rStartPt, const OUString& rStr,
     }
 
 #if OSL_DEBUG_LEVEL > 2
-    fprintf( stderr, "   OutputDevice::DrawText(\"%s\")\n",
-         OUStringToOString( rStr, RTL_TEXTENCODING_UTF8 ).getStr() );
+    SAL_INFO("vcl.gdi", "OutputDevice::DrawText(\""
+             << OUStringToOString( rStr, RTL_TEXTENCODING_UTF8 ).getStr()
+             << "\")");
 #endif
 
     if ( mpMetaFile )
@@ -880,7 +881,7 @@ void OutputDevice::DrawText( const Point& rStartPt, const OUString& rStr,
                 {
                     pVector->push_back( *it );
                     if( pDisplayText )
-                        *pDisplayText += OUString(rStr[ nIndex ]);
+                        *pDisplayText += OUStringLiteral1(rStr[ nIndex ]);
                     bInserted = true;
                 }
             }
@@ -1198,11 +1199,11 @@ ImplLayoutArgs OutputDevice::ImplPrepareLayoutArgs( OUString& rStr,
     if( nEndIndex < nMinIndex )
         nEndIndex = nMinIndex;
 
-    if( mnTextLayoutMode & TEXT_LAYOUT_BIDI_RTL )
+    if( mnTextLayoutMode & ComplexTextLayoutFlags::BiDiRtl )
         nLayoutFlags |= SalLayoutFlags::BiDiRtl;
-    if( mnTextLayoutMode & TEXT_LAYOUT_BIDI_STRONG )
+    if( mnTextLayoutMode & ComplexTextLayoutFlags::BiDiStrong )
         nLayoutFlags |= SalLayoutFlags::BiDiStrong;
-    else if( !(mnTextLayoutMode & TEXT_LAYOUT_BIDI_RTL) )
+    else if( !(mnTextLayoutMode & ComplexTextLayoutFlags::BiDiRtl) )
     {
         // disable Bidi if no RTL hint and no RTL codes used
         const sal_Unicode* pStr = rStr.getStr() + nMinIndex;
@@ -1223,31 +1224,54 @@ ImplLayoutArgs OutputDevice::ImplPrepareLayoutArgs( OUString& rStr,
     if( maFont.IsVertical() )
         nLayoutFlags |= SalLayoutFlags::Vertical;
 
-    if( mnTextLayoutMode & TEXT_LAYOUT_ENABLE_LIGATURES )
+    if( mnTextLayoutMode & ComplexTextLayoutFlags::LigaturesEnabled )
         nLayoutFlags |= SalLayoutFlags::EnableLigatures;
-    else if( mnTextLayoutMode & TEXT_LAYOUT_COMPLEX_DISABLED )
+    else if( mnTextLayoutMode & ComplexTextLayoutFlags::ComplexDisabled )
         nLayoutFlags |= SalLayoutFlags::ComplexDisabled;
     else
     {
         // disable CTL for non-CTL text
         const sal_Unicode* pStr = rStr.getStr() + nMinIndex;
         const sal_Unicode* pEnd = rStr.getStr() + nEndIndex;
+        bool bIsCJKIdeograph = false;
         for( ; pStr < pEnd; ++pStr )
+        {
+            if (pStr + 1 < pEnd && rtl::isHighSurrogate(pStr[0]) && rtl::isLowSurrogate(pStr[1]))
+            {
+                sal_uInt32 nCode = rtl::combineSurrogates( pStr[0] , pStr[1] );
+                if ( !bIsCJKIdeograph && nCode >= 0xE0100 && nCode < 0xE01F0 ) // Variation Selector Supplements
+                    break;
+
+                if ( nCode >= 0x20000 && nCode <= 0x2CEB0 )// CJK Unified Ideographs Extension B-E
+                    bIsCJKIdeograph = true;
+                ++pStr;
+                continue;
+            }
+
+            if ( ((*pStr >= 0xF900) && (*pStr < 0xFB00))  // CJK Compatibility Ideographs
+            ||   ((*pStr >= 0x3400) && (*pStr < 0xA000))  // CJK Unified Ideographs and Extension A
+            )
+            {
+                bIsCJKIdeograph = true;
+                continue;
+            }
+
             if( ((*pStr >= 0x0300) && (*pStr < 0x0370))   // diacritical marks
             ||  ((*pStr >= 0x0590) && (*pStr < 0x10A0))   // many CTL scripts
             ||  ((*pStr >= 0x1100) && (*pStr < 0x1200))   // hangul jamo
             ||  ((*pStr >= 0x1700) && (*pStr < 0x1900))   // many CTL scripts
             ||  ((*pStr >= 0xFB1D) && (*pStr < 0xFE00))   // middle east presentation
             ||  ((*pStr >= 0xFE70) && (*pStr < 0xFEFF))   // arabic presentation B
-            ||  ((*pStr >= 0xFE00) && (*pStr < 0xFE10))   // variation selectors in BMP
-            ||  ((pStr + 1 < pEnd) && (pStr[0] == 0xDB40) && (0xDD00 <= pStr[1]) && (pStr[1] < 0xDEF0)) // variation selector supplement
+            ||  (!bIsCJKIdeograph && (*pStr >= 0xFE00) && (*pStr < 0xFE10))   // variation selectors in BMP
             )
                 break;
+            bIsCJKIdeograph = false;
+        }
         if( pStr >= pEnd )
             nLayoutFlags |= SalLayoutFlags::ComplexDisabled;
     }
 
-    if( meTextLanguage ) //TODO: (mnTextLayoutMode & TEXT_LAYOUT_SUBSTITUTE_DIGITS)
+    if( meTextLanguage ) //TODO: (mnTextLayoutMode & ComplexTextLayoutFlags::SubstituteDigits)
     {
         // disable character localization when no digits used
         const sal_Unicode* pBase = rStr.getStr();
@@ -1270,10 +1294,10 @@ ImplLayoutArgs OutputDevice::ImplPrepareLayoutArgs( OUString& rStr,
     }
 
     // right align for RTL text, DRAWPOS_REVERSED, RTL window style
-    bool bRightAlign = bool(mnTextLayoutMode & TEXT_LAYOUT_BIDI_RTL);
-    if( mnTextLayoutMode & TEXT_LAYOUT_TEXTORIGIN_LEFT )
+    bool bRightAlign = bool(mnTextLayoutMode & ComplexTextLayoutFlags::BiDiRtl);
+    if( mnTextLayoutMode & ComplexTextLayoutFlags::TextOriginLeft )
         bRightAlign = false;
-    else if ( mnTextLayoutMode & TEXT_LAYOUT_TEXTORIGIN_RIGHT )
+    else if ( mnTextLayoutMode & ComplexTextLayoutFlags::TextOriginRight )
         bRightAlign = true;
     // SSA: hack for western office, ie text get right aligned
     //      for debugging purposes of mirrored UI
@@ -2042,7 +2066,7 @@ OUString OutputDevice::ImplGetEllipsisString( const OutputDevice& rTargetDevice,
             }
 
             if ( aStr.isEmpty() && (nStyle & DrawTextFlags::Clip) )
-                aStr += OUString(rOrigStr[ 0 ]);
+                aStr += OUStringLiteral1(rOrigStr[ 0 ]);
         }
         else if ( nStyle & DrawTextFlags::PathEllipsis )
         {
@@ -2186,7 +2210,7 @@ void OutputDevice::DrawCtrlText( const Point& rPos, const OUString& rStr,
             {
                 if( nMnemonicPos < (nIndex+nLen) )
                     --nLen;
-                DBG_ASSERT( nMnemonicPos < (nIndex+nLen), "Mnemonic underline marker after last character" );
+                SAL_WARN_IF( nMnemonicPos >= (nIndex+nLen), "vcl", "Mnemonic underline marker after last character" );
             }
             bool bInvalidPos = false;
 
@@ -2482,7 +2506,7 @@ bool OutputDevice::GetTextBoundRect( Rectangle& rRect,
     vcl::Font aFont( GetFont() );
     aFont.SetShadow( false );
     aFont.SetOutline( false );
-    aFont.SetRelief( RELIEF_NONE );
+    aFont.SetRelief( FontRelief::NONE );
     aFont.SetOrientation( 0 );
     aFont.SetFontSize( Size( mpFontInstance->maFontSelData.mnWidth, mpFontInstance->maFontSelData.mnHeight ) );
     aVDev->SetFont( aFont );
@@ -2707,12 +2731,12 @@ bool OutputDevice::GetTextOutlines( basegfx::B2DPolyPolygonVector& rVector,
     vcl::Font aFont(GetFont());
     aFont.SetShadow(false);
     aFont.SetOutline(false);
-    aFont.SetRelief(RELIEF_NONE);
+    aFont.SetRelief(FontRelief::NONE);
     aFont.SetOrientation(0);
     if( bOptimize )
     {
         aFont.SetFontSize( Size( 0, GLYPH_FONT_HEIGHT ) );
-        aVDev->SetMapMode( MAP_PIXEL );
+        aVDev->SetMapMode( MapUnit::MapPixel );
     }
     aVDev->SetFont( aFont );
     aVDev->SetTextAlign( ALIGN_TOP );
@@ -2781,7 +2805,7 @@ bool OutputDevice::GetTextOutlines( basegfx::B2DPolyPolygonVector& rVector,
             Bitmap aBmp( aVDev->GetBitmap(Point(0, 0), aSize));
 
             tools::PolyPolygon aPolyPoly;
-            bool bVectorized = aBmp.Vectorize(aPolyPoly, BmpVectorizeFlags::Outer | BmpVectorizeFlags::ReduceEdges);
+            bool bVectorized = aBmp.Vectorize(aPolyPoly);
             if( !bVectorized )
                 bSuccess = false;
             else
@@ -2877,6 +2901,11 @@ bool OutputDevice::GetTextOutline( tools::PolyPolygon& rPolyPoly, const OUString
             rPolyPoly.Insert(tools::Polygon((*aIt).getB2DPolygon( i ))); // #i76339#
 
     return true;
+}
+
+bool OutputDevice::UseCommonLayout()
+{
+    return SalLayout::UseCommonLayout();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

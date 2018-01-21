@@ -62,7 +62,7 @@ private:
     void                ImplDrawWheel(vcl::RenderContext& rRenderContext);
     void                ImplRecalcScrollValues();
 
-                        DECL_LINK_TYPED(ImplScrollHdl, Timer *, void);
+                        DECL_LINK(ImplScrollHdl, Timer *, void);
 
 protected:
 
@@ -73,7 +73,7 @@ protected:
 public:
 
     explicit ImplWheelWindow( vcl::Window* pParent );
-    virtual             ~ImplWheelWindow();
+    virtual             ~ImplWheelWindow() override;
     virtual void        dispose() override;
 
     void                ImplStop();

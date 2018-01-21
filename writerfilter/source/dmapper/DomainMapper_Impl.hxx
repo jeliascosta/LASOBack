@@ -335,7 +335,7 @@ struct SymbolData
 };
 
 class DomainMapper;
-class DomainMapper_Impl
+class DomainMapper_Impl final
 {
 public:
     typedef std::map < OUString, BookmarkInsertPosition > BookmarkMap_t;
@@ -343,6 +343,7 @@ public:
 private:
     SourceDocumentType                                                              m_eDocumentType;
     DomainMapper&                                                                   m_rDMapper;
+    OUString m_aBaseUrl;
     css::uno::Reference<css::text::XTextDocument> m_xTextDocument;
     css::uno::Reference<css::beans::XPropertySet> m_xDocumentSettings;
     css::uno::Reference<css::lang::XMultiServiceFactory> m_xTextFactory;
@@ -404,7 +405,6 @@ private:
     PropertyMapPtr           m_pLastCharacterContext;
 
     ::std::vector<DeletableTabStop> m_aCurrentTabStops;
-    sal_uInt32                      m_nCurrentTabStopIndex;
     OUString                 m_sCurrentParaStyleId;
     bool                            m_bInStyleSheetImport; //in import of fonts, styles, lists or lfos
     bool                            m_bInAnyTableImport; //in import of fonts, styles, lists or lfos
@@ -436,6 +436,7 @@ private:
     bool                            m_bIsFirstParaInSection;
     bool                            m_bDummyParaAddedForTableInSection;
     bool                            m_bTextFrameInserted;
+    bool                            m_bIsPreviousParagraphFramed;
     bool                            m_bIsLastParaInSection;
     bool                            m_bIsLastSectionGroup;
     bool                            m_bIsInComments;
@@ -458,7 +459,7 @@ private:
     void GetCurrentLocale(css::lang::Locale& rLocale);
     void SetNumberFormat(const OUString& rCommand, css::uno::Reference<css::beans::XPropertySet> const& xPropertySet, bool bDetectFormat = false);
     css::uno::Reference<css::beans::XPropertySet> FindOrCreateFieldMaster(const sal_Char* pFieldMasterService, const OUString& rFieldMasterName) throw(css::uno::Exception);
-    css::uno::Reference<css::beans::XPropertySet> GetDocumentSettings();
+    css::uno::Reference<css::beans::XPropertySet> const & GetDocumentSettings();
 
     std::map<sal_Int32, css::uno::Any> deferredCharacterProperties;
     SmartTagHandler m_aSmartTagHandler;
@@ -474,15 +475,15 @@ public:
             css::uno::Reference< css::lang::XComponent > const& xModel,
             SourceDocumentType eDocumentType,
             utl::MediaDescriptor& rMediaDesc);
-    virtual ~DomainMapper_Impl();
+    ~DomainMapper_Impl();
 
     SectionPropertyMap* GetLastSectionContext( )
     {
         return dynamic_cast< SectionPropertyMap* >( m_pLastSectionContext.get( ) );
     }
 
-    css::uno::Reference<css::container::XNameContainer> GetPageStyles();
-    css::uno::Reference<css::text::XText> GetBodyText();
+    css::uno::Reference<css::container::XNameContainer> const & GetPageStyles();
+    css::uno::Reference<css::text::XText> const & GetBodyText();
     const css::uno::Reference<css::lang::XMultiServiceFactory>& GetTextFactory() const
     {
         return m_xTextFactory;
@@ -524,6 +525,8 @@ public:
     bool GetIsDummyParaAddedForTableInSection() { return m_bDummyParaAddedForTableInSection;}
     void SetIsTextFrameInserted( bool bIsInserted );
     bool GetIsTextFrameInserted() { return m_bTextFrameInserted;}
+    void SetIsPreviousParagraphFramed( bool bIsFramed ) { m_bIsPreviousParagraphFramed = bIsFramed; }
+    bool GetIsPreviousParagraphFramed() { return m_bIsPreviousParagraphFramed; }
     void SetParaSectpr(bool bParaSectpr);
     bool GetParaSectpr() { return m_bParaSectpr;}
 
@@ -570,34 +573,34 @@ public:
     css::uno::Reference<css::text::XTextAppend> GetTopTextAppend();
     FieldContextPtr GetTopFieldContext();
 
-    FontTablePtr GetFontTable()
+    FontTablePtr const & GetFontTable()
     {
         if(!m_pFontTable)
             m_pFontTable.reset(new FontTable());
          return m_pFontTable;
     }
-    StyleSheetTablePtr GetStyleSheetTable()
+    StyleSheetTablePtr const & GetStyleSheetTable()
     {
         if(!m_pStyleSheetTable)
             m_pStyleSheetTable.reset(new StyleSheetTable( m_rDMapper, m_xTextDocument, m_bIsNewDoc ));
         return m_pStyleSheetTable;
     }
-    ListsManager::Pointer GetListTable();
-    ThemeTablePtr GetThemeTable()
+    ListsManager::Pointer const & GetListTable();
+    ThemeTablePtr const & GetThemeTable()
     {
         if(!m_pThemeTable)
             m_pThemeTable.reset( new ThemeTable );
         return m_pThemeTable;
     }
 
-    SettingsTablePtr GetSettingsTable()
+    SettingsTablePtr const & GetSettingsTable()
     {
         if( !m_pSettingsTable )
-            m_pSettingsTable.reset( new SettingsTable );
+            m_pSettingsTable.reset(new SettingsTable(m_rDMapper));
         return m_pSettingsTable;
     }
 
-    GraphicImportPtr GetGraphicImport( GraphicImportType eGraphicImportType );
+    GraphicImportPtr const & GetGraphicImport( GraphicImportType eGraphicImportType );
     void            ResetGraphicImport();
     // this method deletes the current m_pGraphicImport after import
     void    ImportGraphic(const writerfilter::Reference< Properties>::Pointer_t&, GraphicImportType eGraphicImportType );
@@ -770,7 +773,6 @@ public:
     void SetCurrentRedlineRevertProperties( const css::uno::Sequence<css::beans::PropertyValue>& aProperties );
     void SetCurrentRedlineIsRead();
     void RemoveTopRedline( );
-    void ResetParaMarkerRedline( );
     void SetCurrentRedlineInitials( const OUString& sInitials );
     bool IsFirstRun() { return m_bIsFirstRun;}
     void SetIsFirstRun(bool bval) { m_bIsFirstRun = bval;}
@@ -823,7 +825,9 @@ public:
     /// Table cell depth of the last finished paragraph.
     sal_Int32 m_nLastTableCellParagraphDepth;
 
-    /// If the document has a footnote separator.
+    /// If the current section has footnotes.
+    bool m_bHasFtn;
+    /// If the current section has a footnote separator.
     bool m_bHasFtnSep;
 
     /// If the next newline should be ignored, used by the special footnote separator paragraph.
@@ -872,11 +876,16 @@ public:
 
     bool IsDiscardHeaderFooter();
 
+    void SetParaAutoBefore(bool bParaAutoBefore) { m_bParaAutoBefore = bParaAutoBefore; }
+
 private:
     void PushPageHeaderFooter(bool bHeader, SectionPropertyMap::PageType eType);
     std::vector<css::uno::Reference< css::drawing::XShape > > m_vTextFramesForChaining ;
     /// Current paragraph had at least one field in it.
     bool m_bParaHadField;
+    css::uno::Reference<css::beans::XPropertySet> m_xPreviousParagraph;
+    /// Current paragraph has automatic before spacing.
+    bool m_bParaAutoBefore;
 };
 
 } //namespace dmapper

@@ -27,14 +27,8 @@
 
 class ScTokenArray;
 
-namespace com { namespace sun { namespace star {
-    namespace sheet { class XNamedRange; }
-} } }
-
 namespace oox {
 namespace xls {
-
-class BiffInputStreamPos;
 
 // codes for built-in names
 const sal_Unicode BIFF_DEFNAME_CONSOLIDATEAREA  = '\x00';
@@ -127,14 +121,12 @@ public:
 
 private:
     typedef ::std::unique_ptr< StreamDataSequence >   StreamDataSeqPtr;
-    typedef ::std::unique_ptr< BiffInputStreamPos >   BiffStreamPosPtr;
 
     ScRangeData*        mpScRangeData;       /// ScRangeData of the defined name.
     sal_Int32           mnTokenIndex;       /// Name index used in API token array.
     sal_Int16           mnCalcSheet;        /// Calc sheet index for sheet-local names.
     sal_Unicode         mcBuiltinId;        /// Identifier for built-in defined names.
     StreamDataSeqPtr    mxFormula;          /// Formula data for BIFF12 import.
-    BiffStreamPosPtr    mxBiffStrm;         /// Cached BIFF stream for formula import.
 };
 
 typedef std::shared_ptr< DefinedName > DefinedNameRef;

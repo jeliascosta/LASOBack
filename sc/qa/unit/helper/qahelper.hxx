@@ -49,7 +49,7 @@
 #define CSV_FORMAT_TYPE      (SfxFilterFlags::IMPORT | SfxFilterFlags::EXPORT | SfxFilterFlags::ALIEN )
 #define HTML_FORMAT_TYPE     (SfxFilterFlags::IMPORT | SfxFilterFlags::EXPORT | SfxFilterFlags::ALIEN )
 #define DIF_FORMAT_TYPE      (SfxFilterFlags::IMPORT | SfxFilterFlags::EXPORT | SfxFilterFlags::ALIEN )
-#define XLS_XML_FORMAT_TYPE  (SfxFilterFlags::IMPORT | SfxFilterFlags::EXPORT | SfxFilterFlags::ALIEN)
+#define XLS_XML_FORMAT_TYPE  (SfxFilterFlags::IMPORT | SfxFilterFlags::EXPORT | SfxFilterFlags::ALIEN | SfxFilterFlags::STARONEFILTER)
 #define XLSB_XML_FORMAT_TYPE (SfxFilterFlags::IMPORT |                          SfxFilterFlags::ALIEN | SfxFilterFlags::STARONEFILTER | SfxFilterFlags::PREFERED)
 #define FODS_FORMAT_TYPE     (SfxFilterFlags::IMPORT | SfxFilterFlags::EXPORT | SfxFilterFlags::OWN | SfxFilterFlags::STARONEFILTER )
 
@@ -190,7 +190,7 @@ SCQAHELPER_DLLPUBLIC bool isFormulaWithoutError(ScDocument& rDoc, const ScAddres
  */
 SCQAHELPER_DLLPUBLIC OUString toString(
     ScDocument& rDoc, const ScAddress& rPos, ScTokenArray& rArray,
-    formula::FormulaGrammar::Grammar eGram = formula::FormulaGrammar::GRAM_NATIVE);
+    formula::FormulaGrammar::Grammar eGram);
 
 inline std::string print(const ScAddress& rAddr)
 {
@@ -223,7 +223,7 @@ public:
     static const FileFormat* getFileFormats() { return aFileFormats; }
 
     explicit ScBootstrapFixture( const OUString& rsBaseString );
-    virtual ~ScBootstrapFixture();
+    virtual ~ScBootstrapFixture() override;
 
     void createFileURL(const OUString& aFileBase, const OUString& aFileExtension, OUString& rFilePath);
 
@@ -249,7 +249,7 @@ public:
     CPPUNIT_ASSERT_EQUAL( static_cast<type>(expected), static_cast<type>(result) );
 
 SCQAHELPER_DLLPUBLIC void checkFormula(ScDocument& rDoc, const ScAddress& rPos,
-        const char* expected, const char* msg, CppUnit::SourceLine sourceLine);
+        const char* expected, const char* msg, CppUnit::SourceLine const & sourceLine);
 
 #define ASSERT_FORMULA_EQUAL(doc, pos, expected, msg) \
     checkFormula(doc, pos, expected, msg, CPPUNIT_SOURCELINE())

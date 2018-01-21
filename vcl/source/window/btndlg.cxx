@@ -31,6 +31,8 @@ struct ImplBtnDlgItem
     bool                    mbOwnButton;
     long                    mnSepSize;
     VclPtr<PushButton>      mpPushButton;
+
+    ImplBtnDlgItem() : mnId(0), mbOwnButton(false), mnSepSize(0) {}
 };
 
 void ButtonDialog::ImplInitButtonDialogData()
@@ -211,14 +213,15 @@ void ButtonDialog::ImplPosControls()
     mbFormat = false;
 }
 
-IMPL_LINK_TYPED( ButtonDialog, ImplClickHdl, Button*, pBtn, void )
+IMPL_LINK( ButtonDialog, ImplClickHdl, Button*, pBtn, void )
 {
     for (auto & it : m_ItemList)
     {
         if ( it->mpPushButton == pBtn )
         {
             mnCurButtonId = it->mnId;
-            Click();
+            if ( IsInExecute() )
+                EndDialog( mnCurButtonId );
             break;
         }
     }
@@ -256,12 +259,6 @@ void ButtonDialog::StateChanged( StateChangedType nType )
     }
 
     Dialog::StateChanged( nType );
-}
-
-void ButtonDialog::Click()
-{
-    if ( IsInExecute() )
-        EndDialog( GetCurButtonId() );
 }
 
 void ButtonDialog::AddButton( const OUString& rText, sal_uInt16 nId,

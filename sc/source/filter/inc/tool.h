@@ -53,7 +53,7 @@ public:
                     FormIdent( void )
                     {
                         nStamp = 0;
-                        pAttr = NULL;
+                        pAttr = nullptr;
                     }
 
                     FormIdent( sal_uInt8 nFormat, sal_uInt8 nSt, SfxUInt32Item& rAttr )
@@ -88,14 +88,13 @@ private:
     FormIdent           aIdents[ nSize_ ]; //gepufferte Formate
     bool                bValid[ nSize_ ];
     FormIdent           aCompareIdent;      // zum Vergleichen
-    sal_uInt8               nDefaultFormat;     // Defaultformat der Datei
     SvNumberFormatter*  pFormTable;         // Value-Format-Table-Anker
     StampTyp            nIndex;
     LanguageType        eLanguage;          // Systemsprache
 
     SfxUInt32Item*      NewAttr( sal_uInt8 nFormat, sal_uInt8 nSt );
 public:
-                        FormCache( ScDocument*, sal_uInt8 nNewDefaultFormat = 0xFF );
+                        FormCache( ScDocument* );
                         ~FormCache();
 
     inline const SfxUInt32Item* GetAttr( sal_uInt8 nFormat, sal_uInt8 nSt );

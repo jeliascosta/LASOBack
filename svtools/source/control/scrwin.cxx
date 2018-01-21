@@ -38,14 +38,13 @@ void ScrollableWindow::ImpInitialize( ScrollableWindowFlags nFlags )
 }
 
 
-ScrollableWindow::ScrollableWindow( vcl::Window* pParent,
-                                    ScrollableWindowFlags nFlags ) :
+ScrollableWindow::ScrollableWindow( vcl::Window* pParent ) :
     Window( pParent, WB_CLIPCHILDREN ),
     aVScroll( VclPtr<ScrollBar>::Create(this, WinBits(WB_VSCROLL | WB_DRAG)) ),
     aHScroll( VclPtr<ScrollBar>::Create(this, WinBits(WB_HSCROLL | WB_DRAG)) ),
     aCornerWin( VclPtr<ScrollBarBox>::Create(this) )
 {
-    ImpInitialize( nFlags );
+    ImpInitialize( ScrollableWindowFlags::DEFAULT );
 }
 
 
@@ -113,7 +112,7 @@ Size ScrollableWindow::GetOutputSizePixel() const
 }
 
 
-IMPL_LINK_TYPED( ScrollableWindow, EndScrollHdl, ScrollBar *, pScroll, void )
+IMPL_LINK( ScrollableWindow, EndScrollHdl, ScrollBar *, pScroll, void )
 {
     // notify the start of scrolling, if not already scrolling
     if ( !bScrolling )
@@ -136,7 +135,7 @@ IMPL_LINK_TYPED( ScrollableWindow, EndScrollHdl, ScrollBar *, pScroll, void )
 }
 
 
-IMPL_LINK_TYPED( ScrollableWindow, ScrollHdl, ScrollBar *, pScroll, void )
+IMPL_LINK( ScrollableWindow, ScrollHdl, ScrollBar *, pScroll, void )
 {
     // notify the start of scrolling, if not already scrolling
     if ( !bScrolling )
@@ -231,7 +230,7 @@ void ScrollableWindow::Resize()
     // select the shifted map-mode
     if ( aPixOffset != aOldPixOffset )
     {
-        Window::SetMapMode( MapMode( MAP_PIXEL ) );
+        Window::SetMapMode( MapMode( MapUnit::MapPixel ) );
         Window::Scroll(
             aPixOffset.X() - aOldPixOffset.X(),
             aPixOffset.Y() - aOldPixOffset.Y() );

@@ -17,9 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/standard/vclxaccessiblelistitem.hxx>
+#include <standard/vclxaccessiblelistitem.hxx>
 #include <toolkit/helper/convert.hxx>
-#include <accessibility/helper/listboxhelper.hxx>
+#include <helper/listboxhelper.hxx>
 #include <com/sun/star/awt/Point.hpp>
 #include <com/sun/star/awt/Rectangle.hpp>
 #include <com/sun/star/awt/Size.hpp>
@@ -69,13 +69,11 @@ VCLXAccessibleListItem::VCLXAccessibleListItem(sal_Int32 _nIndexInParent, const 
     , m_nClientId(0)
     , m_xParent(_xParent)
 {
-    if (m_xParent.is())
-    {
-        m_xParentContext = m_xParent->getAccessibleContext();
-        ::accessibility::IComboListBoxHelper* pListBoxHelper = m_xParent->getListBoxHelper();
-        if (pListBoxHelper)
-            m_sEntryText = pListBoxHelper->GetEntry((sal_uInt16)_nIndexInParent);
-    }
+    assert(m_xParent.is());
+    m_xParentContext = m_xParent->getAccessibleContext();
+    ::accessibility::IComboListBoxHelper* pListBoxHelper = m_xParent->getListBoxHelper();
+    if (pListBoxHelper)
+        m_sEntryText = pListBoxHelper->GetEntry((sal_uInt16)_nIndexInParent);
 }
 
 VCLXAccessibleListItem::~VCLXAccessibleListItem()
@@ -142,29 +140,7 @@ void VCLXAccessibleListItem::implGetSelection( sal_Int32& nStartIndex, sal_Int32
     nEndIndex = 0;
 }
 
-// XInterface
-
-Any SAL_CALL VCLXAccessibleListItem::queryInterface( Type const & rType ) throw (RuntimeException, std::exception)
-{
-    return VCLXAccessibleListItem_BASE::queryInterface( rType );
-}
-
-void SAL_CALL VCLXAccessibleListItem::acquire() throw ()
-{
-    VCLXAccessibleListItem_BASE::acquire();
-}
-
-void SAL_CALL VCLXAccessibleListItem::release() throw ()
-{
-    VCLXAccessibleListItem_BASE::release();
-}
-
 // XTypeProvider
-
-Sequence< Type > SAL_CALL VCLXAccessibleListItem::getTypes(  ) throw (RuntimeException, std::exception)
-{
-    return VCLXAccessibleListItem_BASE::getTypes();
-}
 
 Sequence< sal_Int8 > VCLXAccessibleListItem::getImplementationId() throw (RuntimeException, std::exception)
 {
@@ -210,11 +186,9 @@ sal_Bool VCLXAccessibleListItem::supportsService( const OUString& rServiceName )
 
 Sequence< OUString > VCLXAccessibleListItem::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    Sequence< OUString > aNames(3);
-    aNames[0] = "com.sun.star.accessibility.AccessibleContext";
-    aNames[1] = "com.sun.star.accessibility.AccessibleComponent";
-    aNames[2] = "com.sun.star.accessibility.AccessibleListItem";
-    return aNames;
+    return {"com.sun.star.accessibility.AccessibleContext",
+            "com.sun.star.accessibility.AccessibleComponent",
+            "com.sun.star.accessibility.AccessibleListItem"};
 }
 
 // XAccessible

@@ -66,11 +66,11 @@ namespace DOM
     public:
         CElementListImpl(::rtl::Reference<CElement> const& pElement,
                 ::osl::Mutex & rMutex,
-                OUString const& rName, OUString const*const pURI = nullptr);
+                OUString const& rName, OUString const*const pURI);
 
         void registerListener(CElement & rElement);
 
-        virtual ~CElementListImpl();
+        virtual ~CElementListImpl() override;
 
         /**
         The number of nodes in the list.

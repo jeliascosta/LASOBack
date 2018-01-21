@@ -306,6 +306,7 @@
 #define UNO_NAME_SURROUND_CONTOUR "SurroundContour"
 #define UNO_NAME_SURROUND_ANCHORONLY "SurroundAnchorOnly"
 #define UNO_NAME_TABLE_NAME "TableName"
+#define UNO_NAME_TABLE_TEMPLATE_NAME "TableTemplateName"
 #define UNO_NAME_TABSTOPS "ParaTabStops"
 #define UNO_NAME_TITLE "Title"
 #define UNO_NAME_TOP_MARGIN "TopMargin"
@@ -536,6 +537,7 @@
 #define UNO_NAME_REDLINE_AUTHOR "RedlineAuthor"
 #define UNO_NAME_REDLINE_DATE_TIME "RedlineDateTime"
 #define UNO_NAME_REDLINE_COMMENT "RedlineComment"
+#define UNO_NAME_REDLINE_DESCRIPTION "RedlineDescription"
 #define UNO_NAME_REDLINE_TYPE "RedlineType"
 #define UNO_NAME_REDLINE_SUCCESSOR_DATA "RedlineSuccessorData"
 #define UNO_NAME_REDLINE_IDENTIFIER "RedlineIdentifier"
@@ -842,6 +844,10 @@
 #define UNO_NAME_ROW_INTEROP_GRAB_BAG "RowInteropGrabBag"
 #define UNO_NAME_TABLE_INTEROP_GRAB_BAG "TableInteropGrabBag"
 
+#define UNO_NAME_TABLE_FIRST_ROW_END_COLUMN "FirstRowEndColumn"
+#define UNO_NAME_TABLE_FIRST_ROW_START_COLUMN "FirstRowStartColumn"
+#define UNO_NAME_TABLE_LAST_ROW_END_COLUMN "LastRowEndColumn"
+#define UNO_NAME_TABLE_LAST_ROW_START_COLUMN "LastRowStartColumn"
 #endif
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

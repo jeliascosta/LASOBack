@@ -220,7 +220,6 @@ namespace utl
 
     OConfigurationValueContainer::~OConfigurationValueContainer()
     {
-        delete m_pImpl;
     }
 
     void OConfigurationValueContainer::implConstruct( const OUString& _rConfigLocation,
@@ -272,21 +271,14 @@ namespace utl
         );
     }
 
-    void OConfigurationValueContainer::write()
+    void OConfigurationValueContainer::commit()
     {
-        // collect the current values in the exchange locations
+        // write the current values in the exchange locations
         std::for_each(
             m_pImpl->aAccessors.begin(),
             m_pImpl->aAccessors.end(),
             UpdateToConfig( m_pImpl->aConfigRoot, m_pImpl->rMutex )
         );
-    }
-
-    void OConfigurationValueContainer::commit( bool _bWrite )
-    {
-        // write the current values in the exchange locations (if requested)
-        if ( _bWrite )
-            write();
 
         // commit the changes done
         m_pImpl->aConfigRoot.commit( );

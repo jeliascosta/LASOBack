@@ -338,7 +338,7 @@ void ScFormulaReferenceHelper::Init()
     }
 }
 
-IMPL_LINK_TYPED( ScFormulaReferenceHelper, AccelSelectHdl, Accelerator&, rSelAccel, void )
+IMPL_LINK( ScFormulaReferenceHelper, AccelSelectHdl, Accelerator&, rSelAccel, void )
 {
     switch ( rSelAccel.GetCurKeyCode().GetCode() )
     {
@@ -642,7 +642,7 @@ void ScFormulaReferenceHelper::DoClose( sal_uInt16 nId )
     }
     SC_MOD()->SetRefDialog( nId, false, pMyViewFrm );
 
-    pSfxApp->Broadcast( SfxSimpleHint( FID_KILLEDITVIEW ) );
+    pSfxApp->Broadcast( SfxHint( FID_KILLEDITVIEW ) );
 
     ScTabViewShell* pScViewShell = ScTabViewShell::GetActiveViewShell();
     if ( pScViewShell )
@@ -840,7 +840,7 @@ bool ScRefHandler::LeaveRefMode()
 
     lcl_HideAllReferences();
 
-    if( Dialog *pDlg = dynamic_cast<Dialog*>( static_cast<vcl::Window*>(*this) ) )
+    if( Dialog *pDlg = dynamic_cast<Dialog*>( m_rWindow.get() ) )
         pDlg->SetModalInputMode(false);
     SetDispatcherLock( false );         //! here and in DoClose ?
 
@@ -938,7 +938,7 @@ void ScRefHandler::ToggleCollapsed( formula::RefEdit* pEdit, formula::RefButton*
     m_aHelper.ToggleCollapsed( pEdit, pButton );
 }
 
-IMPL_LINK_NOARG_TYPED(ScRefHandler, UpdateFocusHdl, Idle *, void)
+IMPL_LINK_NOARG(ScRefHandler, UpdateFocusHdl, Idle *, void)
 {
     if (pActiveWin)
     {

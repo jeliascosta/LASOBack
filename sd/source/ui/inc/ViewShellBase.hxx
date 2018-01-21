@@ -76,7 +76,7 @@ public:
         SfxViewFrame *pFrame,
         SfxViewShell* pOldShell);
 
-    virtual ~ViewShellBase();
+    virtual ~ViewShellBase() override;
 
     /** This method is part of the object construction.  It HAS to be called
         after the constructor has created a new object.
@@ -114,11 +114,11 @@ public:
     void GetState (SfxItemSet& rSet);
 
     /* override these from SfxViewShell */
-    virtual OUString GetSelectionText(bool) override;
-    virtual bool HasSelection(bool) const override;
+    virtual OUString GetSelectionText(bool = false) override;
+    virtual bool HasSelection(bool = true ) const override;
 
     SvBorder GetBorder (bool bOuterResize);
-    virtual void InnerResizePixel (const Point& rOrigin, const Size& rSize) override;
+    virtual void InnerResizePixel (const Point& rOrigin, const Size& rSize, bool inplaceEditModeChange) override;
     virtual void OuterResizePixel (const Point& rOrigin, const Size& rSize) override;
 
     /** This call is forwarded to the main sub-shell.
@@ -152,7 +152,7 @@ public:
     virtual void UIActivating( SfxInPlaceClient* ) override;
     virtual void UIDeactivated( SfxInPlaceClient* ) override;
     virtual void Activate (bool IsMDIActivate) override;
-    virtual void Deactivate (bool IsMDIActivate) override;
+    using SfxViewShell::Deactivate;
     virtual void SetZoomFactor (
         const Fraction &rZoomX,
         const Fraction &rZoomY) override;
@@ -160,7 +160,6 @@ public:
     virtual void WriteUserData (OUString&, bool bBrowse = false) override;
     virtual void ReadUserData (const OUString&, bool bBrowse = false) override;
     virtual SdrView* GetDrawView() const override;
-    virtual void AdjustPosSizePixel (const Point &rOfs, const Size &rSize) override;
 
     /** When <TRUE/> is given, then the mouse shape is set to hour glass (or
         whatever the busy shape looks like on the system.)
@@ -218,6 +217,10 @@ public:
     /** returns the ui descriptive name for the given uno slot. The result is taken from the configuration
         and not cached, so do not use it excessive (f.e. in status updates) */
     OUString RetrieveLabelFromCommand( const OUString& aCmdURL ) const;
+    /// See SfxViewShell::getPart().
+    int getPart() const override;
+    /// See SfxViewShell::NotifyCursor().
+    void NotifyCursor(SfxViewShell* pViewShell) const override;
 
 protected:
 
@@ -239,9 +242,6 @@ private:
     */
     OUString GetInitialViewShellType();
 };
-
-OUString ImplRetrieveLabelFromCommand( const css::uno::Reference< css::frame::XFrame >& xFrame, const OUString& aCmdURL );
-
 
 } // end of namespace sd
 

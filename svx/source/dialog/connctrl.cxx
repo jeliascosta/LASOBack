@@ -42,18 +42,11 @@ SvxXConnectionPreview::SvxXConnectionPreview( vcl::Window* pParent, WinBits nSty
     , pObjList(nullptr)
     , pView(nullptr)
 {
-    SetMapMode( MAP_100TH_MM );
+    SetMapMode( MapUnit::Map100thMM );
     SetStyles();
 }
 
-VCL_BUILDER_DECL_FACTORY(SvxXConnectionPreview)
-{
-    WinBits nWinStyle = 0;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinStyle |= WB_BORDER;
-    rRet = VclPtr<SvxXConnectionPreview>::Create(pParent, nWinStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(SvxXConnectionPreview, 0)
 
 SvxXConnectionPreview::~SvxXConnectionPreview()
 {
@@ -77,7 +70,7 @@ void SvxXConnectionPreview::Resize()
 
 Size SvxXConnectionPreview::GetOptimalSize() const
 {
-    return LogicToPixel(Size(118 , 121), MapMode(MAP_APPFONT));
+    return LogicToPixel(Size(118 , 121), MapMode(MapUnit::MapAppFont));
 }
 
 void SvxXConnectionPreview::AdaptSize()
@@ -85,7 +78,7 @@ void SvxXConnectionPreview::AdaptSize()
     // Adapt size
     if( pObjList )
     {
-        SetMapMode( MAP_100TH_MM );
+        SetMapMode( MapUnit::Map100thMM );
 
         OutputDevice* pOD = pView->GetFirstOutputDevice(); // GetWin( 0 );
         Rectangle aRect = pObjList->GetAllObjBoundRect();
@@ -160,9 +153,9 @@ void SvxXConnectionPreview::Construct()
         for( size_t i = 0; i < nMarkCount && !bFound; ++i )
         {
             const SdrObject* pObj = rMarkList.GetMark( i )->GetMarkedSdrObj();
-            sal_uInt32 nInv = pObj->GetObjInventor();
+            SdrInventor nInv = pObj->GetObjInventor();
             sal_uInt16 nId = pObj->GetObjIdentifier();
-            if( nInv == SdrInventor && nId == OBJ_EDGE )
+            if( nInv == SdrInventor::Default && nId == OBJ_EDGE )
             {
                 bFound = true;
                 const SdrEdgeObj* pTmpEdgeObj = static_cast<const SdrEdgeObj*>(pObj);

@@ -380,6 +380,13 @@ void SvxCharacterMap::SetCharFont( const vcl::Font& rFont )
     // like "Times New Roman;Times" resolved
     vcl::Font aTmp( GetFontMetric( rFont ) );
 
+    if (aTmp.GetFamilyName() == "StarSymbol" && m_pFontLB->GetEntryPos(aTmp.GetFamilyName()) == LISTBOX_ENTRY_NOTFOUND)
+    {
+        //if for some reason, like font in an old document, StarSymbol is requested and its not available, then
+        //try OpenSymbol instead
+        aTmp.SetFamilyName("OpenSymbol");
+    }
+
     if ( m_pFontLB->GetEntryPos( aTmp.GetFamilyName() ) == LISTBOX_ENTRY_NOTFOUND )
         return;
 
@@ -392,7 +399,7 @@ void SvxCharacterMap::SetCharFont( const vcl::Font& rFont )
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxCharacterMap, OKHdl, Button*, void)
+IMPL_LINK_NOARG(SvxCharacterMap, OKHdl, Button*, void)
 {
     OUString aStr = m_pShowText->GetText();
 
@@ -419,7 +426,7 @@ void SvxCharacterMap::fillAllSubsets(ListBox &rListBox)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxCharacterMap, FontSelectHdl, ListBox&, void)
+IMPL_LINK_NOARG(SvxCharacterMap, FontSelectHdl, ListBox&, void)
 {
     const sal_Int32 nPos = m_pFontLB->GetSelectEntryPos();
     const sal_uInt16 nFont = (sal_uInt16)reinterpret_cast<sal_uLong>(m_pFontLB->GetEntryData( nPos ));
@@ -433,7 +440,7 @@ IMPL_LINK_NOARG_TYPED(SvxCharacterMap, FontSelectHdl, ListBox&, void)
     // notify children using this font
     m_pShowSet->SetFont( aFont );
     m_pShowChar->SetFont( aFont );
-    m_pShowText->SetFont( aFont );
+    m_pShowText->SetControlFont( aFont );
 
     // setup unicode subset listbar with font specific subsets,
     // hide unicode subset listbar for symbol fonts
@@ -445,7 +452,7 @@ IMPL_LINK_NOARG_TYPED(SvxCharacterMap, FontSelectHdl, ListBox&, void)
     bool bNeedSubset = (aFont.GetCharSet() != RTL_TEXTENCODING_SYMBOL);
     if( bNeedSubset )
     {
-        FontCharMapPtr xFontCharMap( new FontCharMap() );
+        FontCharMapRef xFontCharMap( new FontCharMap() );
         m_pShowSet->GetFontCharMap( xFontCharMap );
         pSubsetMap = new SubsetMap( xFontCharMap );
 
@@ -471,7 +478,7 @@ IMPL_LINK_NOARG_TYPED(SvxCharacterMap, FontSelectHdl, ListBox&, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxCharacterMap, SubsetSelectHdl, ListBox&, void)
+IMPL_LINK_NOARG(SvxCharacterMap, SubsetSelectHdl, ListBox&, void)
 {
     const sal_Int32 nPos = m_pSubsetLB->GetSelectEntryPos();
     const Subset* pSubset = static_cast<const Subset*> (m_pSubsetLB->GetEntryData(nPos));
@@ -484,7 +491,7 @@ IMPL_LINK_NOARG_TYPED(SvxCharacterMap, SubsetSelectHdl, ListBox&, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxCharacterMap, CharDoubleClickHdl, SvxShowCharSet*, void)
+IMPL_LINK_NOARG(SvxCharacterMap, CharDoubleClickHdl, SvxShowCharSet*, void)
 {
     if (bOne)
     {
@@ -495,7 +502,7 @@ IMPL_LINK_NOARG_TYPED(SvxCharacterMap, CharDoubleClickHdl, SvxShowCharSet*, void
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxCharacterMap, CharSelectHdl, SvxShowCharSet*, void)
+IMPL_LINK_NOARG(SvxCharacterMap, CharSelectHdl, SvxShowCharSet*, void)
 {
     if ( !bOne )
     {
@@ -526,7 +533,7 @@ IMPL_LINK_NOARG_TYPED(SvxCharacterMap, CharSelectHdl, SvxShowCharSet*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxCharacterMap, CharHighlightHdl, SvxShowCharSet*, void)
+IMPL_LINK_NOARG(SvxCharacterMap, CharHighlightHdl, SvxShowCharSet*, void)
 {
     OUString aText;
     OUString aHexText;
@@ -586,24 +593,24 @@ void SvxCharacterMap::selectCharByCode(Radix radix)
     // Convert the code back to a character using the appropriate radix
     sal_UCS4 cChar = aCodeString.toUInt32(static_cast<sal_Int16> (radix));
     // Use FontCharMap::HasChar(sal_UCS4 cChar) to see if the desired character is in the font
-    FontCharMapPtr xFontCharMap(new FontCharMap());
+    FontCharMapRef xFontCharMap(new FontCharMap());
     m_pShowSet->GetFontCharMap(xFontCharMap);
     if (xFontCharMap->HasChar(cChar))
         // Select the corresponding character
         SetChar(cChar);
 }
 
-IMPL_LINK_NOARG_TYPED(SvxCharacterMap, DecimalCodeChangeHdl, Edit&, void)
+IMPL_LINK_NOARG(SvxCharacterMap, DecimalCodeChangeHdl, Edit&, void)
 {
     selectCharByCode(Radix::decimal);
 }
 
-IMPL_LINK_NOARG_TYPED(SvxCharacterMap, HexCodeChangeHdl, Edit&, void)
+IMPL_LINK_NOARG(SvxCharacterMap, HexCodeChangeHdl, Edit&, void)
 {
     selectCharByCode(Radix::hexadecimal);
 }
 
-IMPL_LINK_NOARG_TYPED(SvxCharacterMap, CharPreSelectHdl, SvxShowCharSet*, void)
+IMPL_LINK_NOARG(SvxCharacterMap, CharPreSelectHdl, SvxShowCharSet*, void)
 {
     // adjust subset selection
     if( pSubsetMap )

@@ -58,7 +58,7 @@ class SimpleRegistry:
 public:
     SimpleRegistry() {}
 
-    virtual ~SimpleRegistry() {}
+    virtual ~SimpleRegistry() override {}
 
     osl::Mutex mutex_;
 
@@ -920,54 +920,28 @@ css::uno::Sequence< OUString > Key::getKeyNames()
 }
 
 sal_Bool Key::createLink(
-    OUString const & aLinkName, OUString const & aLinkTarget)
+    OUString const & /*aLinkName*/, OUString const & /*aLinkTarget*/)
     throw (css::registry::InvalidRegistryException, css::uno::RuntimeException, std::exception)
 {
-    osl::MutexGuard guard(registry_->mutex_);
-    RegError err = key_.createLink(aLinkName, aLinkTarget);
-    switch (err) {
-    case RegError::NO_ERROR:
-        return true;
-    case RegError::INVALID_KEY:
-    case RegError::DETECT_RECURSION:
-        throw css::registry::InvalidRegistryException(
-            (("com.sun.star.registry.SimpleRegistry key createLink:"
-                      " underlying RegistryKey::createLink() = ") +
-             OUString::number(static_cast<int>(err))),
+    throw css::registry::InvalidRegistryException(
+            "com.sun.star.registry.SimpleRegistry key createLink: links are no longer supported",
             static_cast< OWeakObject * >(this));
-    default:
-        return false;
-    }
 }
 
-void Key::deleteLink(OUString const & rLinkName)
+void Key::deleteLink(OUString const & /*rLinkName*/)
     throw (css::registry::InvalidRegistryException, css::uno::RuntimeException, std::exception)
 {
-    osl::MutexGuard guard(registry_->mutex_);
-    RegError err = key_.deleteLink(rLinkName);
-    if (err != RegError::NO_ERROR) {
-        throw css::registry::InvalidRegistryException(
-            (("com.sun.star.registry.SimpleRegistry key deleteLink:"
-                      " underlying RegistryKey::deleteLink() = ") +
-             OUString::number(static_cast<int>(err))),
-            static_cast< OWeakObject * >(this));
-    }
+    throw css::registry::InvalidRegistryException(
+        "com.sun.star.registry.SimpleRegistry key deleteLink: links are no longer supported",
+        static_cast< OWeakObject * >(this));
 }
 
-OUString Key::getLinkTarget(OUString const & rLinkName)
+OUString Key::getLinkTarget(OUString const & /*rLinkName*/)
     throw (css::registry::InvalidRegistryException, css::uno::RuntimeException, std::exception)
 {
-    osl::MutexGuard guard(registry_->mutex_);
-    OUString target;
-    RegError err = key_.getLinkTarget(rLinkName, target);
-    if (err != RegError::NO_ERROR) {
-        throw css::registry::InvalidRegistryException(
-            (("com.sun.star.registry.SimpleRegistry key getLinkTarget:"
-                      " underlying RegistryKey::getLinkTarget() = ") +
-             OUString::number(static_cast<int>(err))),
-            static_cast< OWeakObject * >(this));
-    }
-    return target;
+    throw css::registry::InvalidRegistryException(
+        "com.sun.star.registry.SimpleRegistry key getLinkTarget: links are no longer supported",
+        static_cast< OWeakObject * >(this));
 }
 
 OUString Key::getResolvedName(OUString const & aKeyName)
@@ -1078,7 +1052,7 @@ void SimpleRegistry::mergeKey(
     RegistryKey root;
     RegError err = registry_.openRootKey(root);
     if (err == RegError::NO_ERROR) {
-        err = registry_.mergeKey(root, aKeyName, aUrl);
+        err = registry_.mergeKey(root, aKeyName, aUrl, false);
     }
     switch (err) {
     case RegError::NO_ERROR:

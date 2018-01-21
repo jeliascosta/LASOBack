@@ -221,6 +221,7 @@ bool TxtBox::Read(HWPFile & hwpf)
     hwpf.AddBox(this);
     hwpf.Read2b(&style.cap_len, 1);
     hwpf.Read2b(&dummy1, 1);
+    unsigned short next;
     hwpf.Read2b(&next, 1);
     hwpf.Read2b(&dummy2, 1);
 
@@ -281,7 +282,7 @@ bool TxtBox::Read(HWPFile & hwpf)
 
     UpdateBBox(this);
 
-    ncell = NCell();
+    ncell = nCell;
     if (!(ncell > 0)){
         return hwpf.SetState(HWP_InvalidFileFormat);
      }
@@ -430,6 +431,13 @@ bool Picture::Read(HWPFile & hwpf)
     UpdateBBox(this);
     if( pictype != PICTYPE_DRAW )
         style.cell = reserved3;
+    else
+    {
+        //picinfo.picun read above is unioned with
+        //picinfo.picdraw and so wrote to the hdo pointer
+        //value, which is definitely not useful to us
+        picinfo.picdraw.hdo = nullptr;
+    }
 
     if (follow_block_size != 0)
     {

@@ -124,12 +124,6 @@ enum SchXMLPlotAreaAttrTokenMap
     XML_TOK_PA_LIGHTING_MODE
 };
 
-enum SchXMLAutoStyleAttrMap
-{
-    XML_TOK_AS_FAMILY,
-    XML_TOK_AS_NAME
-};
-
 enum SchXMLCellAttrMap
 {
     XML_TOK_CELL_VAL_TYPE,
@@ -173,7 +167,7 @@ public:
         const css::uno::Reference< css::uno::XComponentContext >& xContext,
         OUString const & implementationName, SvXMLImportFlags nImportFlags );
 
-    virtual ~SchXMLImport() throw ();
+    virtual ~SchXMLImport() throw () override;
 
     SvXMLImportContext* CreateStylesContext( const OUString& rLocalName,
         const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList );

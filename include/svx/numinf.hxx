@@ -45,7 +45,7 @@ public:
     SvxNumberInfoItem( SvNumberFormatter* pNumFormatter, const double& rVal,
                        const OUString& rValueStr, const sal_uInt16 nId );
     SvxNumberInfoItem( const SvxNumberInfoItem& );
-    virtual ~SvxNumberInfoItem();
+    virtual ~SvxNumberInfoItem() override;
 
     virtual bool             operator==( const SfxPoolItem& ) const override;
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const override;
@@ -53,9 +53,9 @@ public:
     virtual SvStream&        Store( SvStream& , sal_uInt16 nItemVersion ) const override;
 
     virtual bool GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText, const IntlWrapper * = nullptr ) const override;
+                                  MapUnit eCoreMetric,
+                                  MapUnit ePresMetric,
+                                  OUString &rText, const IntlWrapper * = nullptr ) const override;
 
     SvNumberFormatter*      GetNumberFormatter() const { return pFormatter; }
     const OUString&         GetValueString() const { return aStringVal; }

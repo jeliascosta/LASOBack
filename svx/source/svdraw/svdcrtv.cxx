@@ -70,8 +70,8 @@ ImplConnectMarkerOverlay::ImplConnectMarkerOverlay(const SdrCreateView& rView, S
 
         if(xTargetOverlay.is())
         {
-            sal_Int32 nScalingFactor = xTargetOverlay->getOutputDevice().GetDPIScaleFactor();
-            Size aHalfLogicSize(xTargetOverlay->getOutputDevice().PixelToLogic(Size(4 * nScalingFactor, 4 * nScalingFactor)));
+            float fScalingFactor = xTargetOverlay->getOutputDevice().GetDPIScaleFactor();
+            Size aHalfLogicSize(xTargetOverlay->getOutputDevice().PixelToLogic(Size(4 * fScalingFactor, 4 * fScalingFactor)));
 
             // object
             sdr::overlay::OverlayPolyPolygonStripedAndFilled* pNew = new sdr::overlay::OverlayPolyPolygonStripedAndFilled(
@@ -80,31 +80,28 @@ ImplConnectMarkerOverlay::ImplConnectMarkerOverlay(const SdrCreateView& rView, S
             maObjects.append(*pNew);
 
             // glue points
-            if(rView.IsAutoVertexConnectors())
+            for(sal_uInt16 i(0); i < 4; i++)
             {
-                for(sal_uInt16 i(0); i < 4; i++)
-                {
-                    SdrGluePoint aGluePoint(rObject.GetVertexGluePoint(i));
-                    const Point& rPosition = aGluePoint.GetAbsolutePos(rObject);
+                SdrGluePoint aGluePoint(rObject.GetVertexGluePoint(i));
+                const Point& rPosition = aGluePoint.GetAbsolutePos(rObject);
 
-                    basegfx::B2DPoint aTopLeft(rPosition.X() - aHalfLogicSize.Width(), rPosition.Y() - aHalfLogicSize.Height());
-                    basegfx::B2DPoint aBottomRight(rPosition.X() + aHalfLogicSize.Width(), rPosition.Y() + aHalfLogicSize.Height());
+                basegfx::B2DPoint aTopLeft(rPosition.X() - aHalfLogicSize.Width(), rPosition.Y() - aHalfLogicSize.Height());
+                basegfx::B2DPoint aBottomRight(rPosition.X() + aHalfLogicSize.Width(), rPosition.Y() + aHalfLogicSize.Height());
 
-                    basegfx::B2DPolygon aTempPoly;
-                    aTempPoly.append(aTopLeft);
-                    aTempPoly.append(basegfx::B2DPoint(aBottomRight.getX(), aTopLeft.getY()));
-                    aTempPoly.append(aBottomRight);
-                    aTempPoly.append(basegfx::B2DPoint(aTopLeft.getX(), aBottomRight.getY()));
-                    aTempPoly.setClosed(true);
+                basegfx::B2DPolygon aTempPoly;
+                aTempPoly.append(aTopLeft);
+                aTempPoly.append(basegfx::B2DPoint(aBottomRight.getX(), aTopLeft.getY()));
+                aTempPoly.append(aBottomRight);
+                aTempPoly.append(basegfx::B2DPoint(aTopLeft.getX(), aBottomRight.getY()));
+                aTempPoly.setClosed(true);
 
-                    basegfx::B2DPolyPolygon aTempPolyPoly;
-                    aTempPolyPoly.append(aTempPoly);
+                basegfx::B2DPolyPolygon aTempPolyPoly;
+                aTempPolyPoly.append(aTempPoly);
 
-                    pNew = new sdr::overlay::OverlayPolyPolygonStripedAndFilled(
-                        aTempPolyPoly);
-                    xTargetOverlay->add(*pNew);
-                    maObjects.append(*pNew);
-                }
+                pNew = new sdr::overlay::OverlayPolyPolygonStripedAndFilled(
+                    aTempPolyPoly);
+                xTargetOverlay->add(*pNew);
+                maObjects.append(*pNew);
             }
         }
     }
@@ -192,15 +189,13 @@ void SdrCreateView::ImpClearConnectMarker()
 
 void SdrCreateView::ImpClearVars()
 {
-    nAktInvent=SdrInventor;
+    nAktInvent=SdrInventor::Default;
     nAktIdent=OBJ_NONE;
     pAktCreate=nullptr;
     pCreatePV=nullptr;
-    bAutoTextEdit=false;
     b1stPointAsCenter=false;
     aAktCreatePointer=Pointer(PointerStyle::Cross);
     bUseIncompatiblePathCreateInterface=false;
-    bAutoClosePolys=true;
     nAutoCloseDistPix=5;
     nFreeHandMinDistPix=10;
 
@@ -237,7 +232,7 @@ void SdrCreateView::MovAction(const Point& rPnt)
 
 void SdrCreateView::EndAction()
 {
-    if (pAktCreate!=nullptr) EndCreateObj(SDRCREATE_FORCEEND);
+    if (pAktCreate!=nullptr) EndCreateObj(SdrCreateCmd::ForceEnd);
     SdrDragView::EndAction();
 }
 
@@ -274,10 +269,10 @@ bool SdrCreateView::CheckEdgeMode()
     if (pAktCreate!=nullptr)
     {
         // is managed by EdgeObj
-        if (nAktInvent==SdrInventor && nAktIdent==OBJ_EDGE) return false;
+        if (nAktInvent==SdrInventor::Default && nAktIdent==OBJ_EDGE) return false;
     }
 
-    if (!IsCreateMode() || nAktInvent!=SdrInventor || nAktIdent!=OBJ_EDGE)
+    if (!IsCreateMode() || nAktInvent!=SdrInventor::Default || nAktIdent!=OBJ_EDGE)
     {
         ImpClearConnectMarker();
         return false;
@@ -338,20 +333,20 @@ bool SdrCreateView::MouseMove(const MouseEvent& rMEvt, vcl::Window* pWin)
 
 bool SdrCreateView::IsTextTool() const
 {
-    return meEditMode==SDREDITMODE_CREATE && nAktInvent==SdrInventor && (nAktIdent==OBJ_TEXT || nAktIdent==OBJ_TEXTEXT || nAktIdent==OBJ_TITLETEXT || nAktIdent==OBJ_OUTLINETEXT);
+    return meEditMode==SdrViewEditMode::Create && nAktInvent==SdrInventor::Default && (nAktIdent==OBJ_TEXT || nAktIdent==OBJ_TEXTEXT || nAktIdent==OBJ_TITLETEXT || nAktIdent==OBJ_OUTLINETEXT);
 }
 
 bool SdrCreateView::IsEdgeTool() const
 {
-    return meEditMode==SDREDITMODE_CREATE && nAktInvent==SdrInventor && (nAktIdent==OBJ_EDGE);
+    return meEditMode==SdrViewEditMode::Create && nAktInvent==SdrInventor::Default && (nAktIdent==OBJ_EDGE);
 }
 
 bool SdrCreateView::IsMeasureTool() const
 {
-    return meEditMode==SDREDITMODE_CREATE && nAktInvent==SdrInventor && (nAktIdent==OBJ_MEASURE);
+    return meEditMode==SdrViewEditMode::Create && nAktInvent==SdrInventor::Default && (nAktIdent==OBJ_MEASURE);
 }
 
-void SdrCreateView::SetCurrentObj(sal_uInt16 nIdent, sal_uInt32 nInvent)
+void SdrCreateView::SetCurrentObj(sal_uInt16 nIdent, SdrInventor nInvent)
 {
     if (nAktInvent!=nInvent || nAktIdent!=nIdent)
     {
@@ -385,8 +380,8 @@ void SdrCreateView::SetCurrentObj(sal_uInt16 nIdent, sal_uInt32 nInvent)
     ImpSetGlueVisible3(IsEdgeTool());
 }
 
-bool SdrCreateView::ImpBegCreateObj(sal_uInt32 nInvent, sal_uInt16 nIdent, const Point& rPnt, OutputDevice* pOut,
-    short nMinMov, SdrPageView* pPV, const Rectangle& rLogRect, SdrObject* pPreparedFactoryObject)
+bool SdrCreateView::ImpBegCreateObj(SdrInventor nInvent, sal_uInt16 nIdent, const Point& rPnt, OutputDevice* pOut,
+    short nMinMov, const Rectangle& rLogRect, SdrObject* pPreparedFactoryObject)
 {
     bool bRet=false;
     UnmarkAllObj();
@@ -394,19 +389,13 @@ bool SdrCreateView::ImpBegCreateObj(sal_uInt32 nInvent, sal_uInt16 nIdent, const
 
     ImpClearConnectMarker();
 
-    if (pPV!=nullptr)
-    {
-        pCreatePV=pPV;
-    }
-    else
-    {
-        pCreatePV = GetSdrPageView();
-    }
+    pCreatePV = GetSdrPageView();
+
     if (pCreatePV!=nullptr)
     { // otherwise no side registered!
         OUString aLay(maActualLayer);
 
-        if(nInvent == SdrInventor && nIdent == OBJ_MEASURE && !maMeasureLayer.isEmpty())
+        if(nInvent == SdrInventor::Default && nIdent == OBJ_MEASURE && !maMeasureLayer.isEmpty())
         {
             aLay = maMeasureLayer;
         }
@@ -434,7 +423,7 @@ bool SdrCreateView::ImpBegCreateObj(sal_uInt32 nInvent, sal_uInt16 nIdent, const
             }
 
             Point aPnt(rPnt);
-            if (nAktInvent!=SdrInventor || (nAktIdent!=sal_uInt16(OBJ_EDGE) &&
+            if (nAktInvent!=SdrInventor::Default || (nAktIdent!=sal_uInt16(OBJ_EDGE) &&
                                             nAktIdent!=sal_uInt16(OBJ_FREELINE) &&
                                             nAktIdent!=sal_uInt16(OBJ_FREEFILL) )) { // no snapping for Edge and Freehand
                 aPnt=GetSnapPos(aPnt,pCreatePV);
@@ -447,7 +436,7 @@ bool SdrCreateView::ImpBegCreateObj(sal_uInt32 nInvent, sal_uInt16 nIdent, const
                 // object should not be created. Since it is possible to use it as a helper
                 // object (e.g. in letting the user define an area with the interactive
                 // construction) at least no items should be set at that object.
-                if(nInvent != SdrInventor || nIdent != OBJ_NONE)
+                if(nInvent != SdrInventor::Default || nIdent != OBJ_NONE)
                 {
                     pAktCreate->SetMergedItemSet(maDefaultAttr);
                 }
@@ -460,7 +449,7 @@ bool SdrCreateView::ImpBegCreateObj(sal_uInt32 nInvent, sal_uInt16 nIdent, const
 
                     pAktCreate->SetMergedItemSet(aSet);
                 }
-                if (mpModel && nInvent==SdrInventor && (nIdent==OBJ_TEXT || nIdent==OBJ_TEXTEXT ||
+                if (mpModel && nInvent==SdrInventor::Default && (nIdent==OBJ_TEXT || nIdent==OBJ_TEXTEXT ||
                     nIdent==OBJ_TITLETEXT || nIdent==OBJ_OUTLINETEXT))
                 {
                     // default for all text frames: no background, no border
@@ -522,14 +511,14 @@ bool SdrCreateView::ImpBegCreateObj(sal_uInt32 nInvent, sal_uInt16 nIdent, const
     return bRet;
 }
 
-bool SdrCreateView::BegCreateObj(const Point& rPnt, OutputDevice* pOut, short nMinMov, SdrPageView* pPV)
+bool SdrCreateView::BegCreateObj(const Point& rPnt, OutputDevice* pOut, short nMinMov)
 {
-    return ImpBegCreateObj(nAktInvent,nAktIdent,rPnt,pOut,nMinMov,pPV,Rectangle(), nullptr);
+    return ImpBegCreateObj(nAktInvent,nAktIdent,rPnt,pOut,nMinMov,Rectangle(), nullptr);
 }
 
 bool SdrCreateView::BegCreatePreparedObject(const Point& rPnt, sal_Int16 nMinMov, SdrObject* pPreparedFactoryObject)
 {
-    sal_uInt32 nInvent(nAktInvent);
+    SdrInventor nInvent(nAktInvent);
     sal_uInt16 nIdent(nAktIdent);
 
     if(pPreparedFactoryObject)
@@ -538,13 +527,13 @@ bool SdrCreateView::BegCreatePreparedObject(const Point& rPnt, sal_Int16 nMinMov
         nIdent = pPreparedFactoryObject->GetObjIdentifier();
     }
 
-    return ImpBegCreateObj(nInvent, nIdent, rPnt, nullptr, nMinMov, nullptr, Rectangle(), pPreparedFactoryObject);
+    return ImpBegCreateObj(nInvent, nIdent, rPnt, nullptr, nMinMov, Rectangle(), pPreparedFactoryObject);
 }
 
 bool SdrCreateView::BegCreateCaptionObj(const Point& rPnt, const Size& rObjSiz,
-    OutputDevice* pOut, short nMinMov, SdrPageView* pPV)
+    OutputDevice* pOut, short nMinMov)
 {
-    return ImpBegCreateObj(SdrInventor,OBJ_CAPTION,rPnt,pOut,nMinMov,pPV,
+    return ImpBegCreateObj(SdrInventor::Default,OBJ_CAPTION,rPnt,pOut,nMinMov,
         Rectangle(rPnt,Size(rObjSiz.Width()+1,rObjSiz.Height()+1)), nullptr);
 }
 
@@ -595,13 +584,12 @@ bool SdrCreateView::EndCreateObj(SdrCreateCmd eCmd)
 {
     bool bRet=false;
     SdrObject* pObjMerk=pAktCreate;
-    SdrPageView* pPVMerk=pCreatePV;
 
     if (pAktCreate!=nullptr)
     {
         sal_uIntPtr nCount=maDragStat.GetPointCount();
 
-        if (nCount<=1 && eCmd==SDRCREATE_FORCEEND)
+        if (nCount<=1 && eCmd==SdrCreateCmd::ForceEnd)
         {
             BrkCreateObj(); // objects with only a single point don't exist (at least today)
             return false; // sal_False = event not interpreted
@@ -678,7 +666,7 @@ bool SdrCreateView::EndCreateObj(SdrCreateCmd eCmd)
         }
         else
         { // more points
-            if (eCmd==SDRCREATE_FORCEEND || // nothing there -- force ending
+            if (eCmd==SdrCreateCmd::ForceEnd || // nothing there -- force ending
                 nCount==0 ||                             // no existing points (should never happen)
                 (nCount<=1 && !maDragStat.IsMinMoved())) { // MinMove not met
                 BrkCreateObj();
@@ -690,14 +678,6 @@ bool SdrCreateView::EndCreateObj(SdrCreateCmd eCmd)
                 ShowCreateObj();
                 maDragStat.ResetMinMoved(); // NextPoint is at MovCreateObj()
                 bRet=true;
-            }
-        }
-        if (bRet && pObjMerk!=nullptr && IsTextEditAfterCreate())
-        {
-            SdrTextObj* pText=dynamic_cast<SdrTextObj*>( pObjMerk );
-            if (pText!=nullptr && pText->IsTextFrame())
-            {
-                SdrBeginTextEdit(pText, pPVMerk, nullptr, true);
             }
         }
     }

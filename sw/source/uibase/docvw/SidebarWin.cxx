@@ -96,7 +96,7 @@ void lcl_translateTwips(vcl::Window& rParent, vcl::Window& rChild, MouseEvent* p
     if (!rChild.IsMapModeEnabled())
     {
         MapMode aMapMode(rChild.GetMapMode());
-        aMapMode.SetMapUnit(MAP_TWIP);
+        aMapMode.SetMapUnit(MapUnit::MapTwip);
         aMapMode.SetScaleX(rParent.GetMapMode().GetScaleX());
         aMapMode.SetScaleY(rParent.GetMapMode().GetScaleY());
         rChild.SetMapMode(aMapMode);
@@ -614,8 +614,7 @@ void SwSidebarWin::InitControls()
     if (comphelper::LibreOfficeKit::isActive())
     {
         // If there is a callback already registered, inform the new outliner view about it.
-        SwDrawModel* pDrawModel = mrView.GetWrtShellPtr()->getIDocumentDrawModelAccess().GetDrawModel();
-        mpOutlinerView->registerLibreOfficeKitCallback(pDrawModel);
+        mpOutlinerView->RegisterViewShell(&mrView);
     }
 
     //create Scrollbars
@@ -678,17 +677,8 @@ void SwSidebarWin::CheckMetaText()
         mpMetadataAuthor->SetText(sMeta);
     }
 
-    Date aSysDate( Date::SYSTEM );
     Date aDate = GetDate();
-    if (aDate==aSysDate)
-    {
-        sMeta = SW_RESSTR(STR_POSTIT_TODAY);
-    }
-    else if (aDate == Date(aSysDate-1))
-    {
-        sMeta = SW_RESSTR(STR_POSTIT_YESTERDAY);
-    }
-    else if (aDate.IsValidAndGregorian() )
+    if (aDate.IsValidAndGregorian() )
     {
         sMeta = rLocalData.getDate(aDate);
     }
@@ -1188,11 +1178,6 @@ void SwSidebarWin::SetLanguage(const SvxLanguageItem& rNewItem)
     Invalidate();
 }
 
-void SwSidebarWin::DataChanged( const DataChangedEvent& aEvent)
-{
-    Window::DataChanged( aEvent );
-}
-
 void SwSidebarWin::GetFocus()
 {
     if (mpSidebarTextControl)
@@ -1212,6 +1197,12 @@ void SwSidebarWin::ShowNote()
         mpShadow->setVisible(true);
     if (mpAnchor && !mpAnchor->isVisible())
         mpAnchor->setVisible(true);
+
+    // Invalidate.
+    mpSidebarTextControl->Push(PushFlags::MAPMODE);
+    lcl_translateTwips(EditWin(), *mpSidebarTextControl, nullptr);
+    mpSidebarTextControl->Invalidate();
+    mpSidebarTextControl->Pop();
 }
 
 void SwSidebarWin::HideNote()
@@ -1260,8 +1251,14 @@ void SwSidebarWin::DeactivatePostIt()
     mpOutliner->CompleteOnlineSpelling();
 
     SetViewState(ViewState::NORMAL);
+    // Make sure this view doesn't emit LOK callbacks during the update, as the
+    // sidebar window's SidebarTextControl doesn't have a valid twip offset
+    // (map mode origin) during that operation.
+    bool bTiledPainting = comphelper::LibreOfficeKit::isTiledPainting();
+    comphelper::LibreOfficeKit::setTiledPainting(true);
     // write the visible text back into the SwField
     UpdateData();
+    comphelper::LibreOfficeKit::setTiledPainting(bTiledPainting);
 
     if ( !Application::GetSettings().GetStyleSettings().GetHighContrastMode() )
         GetOutlinerView()->SetBackgroundColor(COL_TRANSPARENT);
@@ -1354,7 +1351,7 @@ void SwSidebarWin::SwitchToPostIt(sal_uInt16 aDirection)
         pPostIt->GrabFocus();
 }
 
-IMPL_LINK_TYPED( SwSidebarWin, WindowEventListener, VclWindowEvent&, rEvent, void )
+IMPL_LINK( SwSidebarWin, WindowEventListener, VclWindowEvent&, rEvent, void )
 {
     if ( rEvent.GetId() == VCLEVENT_WINDOW_MOUSEMOVE )
     {
@@ -1411,18 +1408,18 @@ void SwSidebarWin::Delete()
     }
 }
 
-IMPL_LINK_TYPED(SwSidebarWin, ScrollHdl, ScrollBar*, pScroll, void)
+IMPL_LINK(SwSidebarWin, ScrollHdl, ScrollBar*, pScroll, void)
 {
     long nDiff = GetOutlinerView()->GetEditView().GetVisArea().Top() - pScroll->GetThumbPos();
     GetOutlinerView()->Scroll( 0, nDiff );
 }
 
-IMPL_LINK_NOARG_TYPED(SwSidebarWin, ModifyHdl, LinkParamNone*, void)
+IMPL_LINK_NOARG(SwSidebarWin, ModifyHdl, LinkParamNone*, void)
 {
     mrView.GetDocShell()->SetModified();
 }
 
-IMPL_LINK_NOARG_TYPED(SwSidebarWin, DeleteHdl, void*, void)
+IMPL_LINK_NOARG(SwSidebarWin, DeleteHdl, void*, void)
 {
     mnEventId = nullptr;
     Delete();

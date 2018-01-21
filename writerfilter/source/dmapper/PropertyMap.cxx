@@ -54,9 +54,7 @@ namespace writerfilter {
 namespace dmapper{
 
 
-PropertyMap::PropertyMap() :
-    m_cFootnoteSymbol( 0 ),
-    m_nFootnoteFontId( -1 )
+PropertyMap::PropertyMap()
 {
 }
 
@@ -400,6 +398,7 @@ SectionPropertyMap::SectionPropertyMap(bool bIsFirstSection) :
     ,m_bTitlePage( false )
     ,m_nColumnCount( 0 )
     ,m_nColumnDistance( 1249 )
+    ,m_xColumnContainer( nullptr )
     ,m_bSeparatorLineIsOn( false )
     ,m_bEvenlySpaced( false )
     ,m_bIsLandscape( false )
@@ -416,7 +415,6 @@ SectionPropertyMap::SectionPropertyMap(bool bIsFirstSection) :
     ,m_nHeaderTop( 1270 ) //720 twip
     ,m_nHeaderBottom( 1270 )//720 twip
     ,m_nDzaGutter( 0 )
-    ,m_bGutterRTL( false )
     ,m_nGridType(0)
     ,m_nGridLinePitch( 1 )
     ,m_nDxtCharSpace( 0 )
@@ -701,6 +699,18 @@ void SectionPropertyMap::SetBorderDistance( uno::Reference< beans::XPropertySet 
         xStyle->setPropertyValue( sBorderDistanceName, uno::makeAny( nDist ));
 }
 
+void SectionPropertyMap::DontBalanceTextColumns()
+{
+    try
+    {
+        if( m_xColumnContainer.is() )
+            m_xColumnContainer->setPropertyValue("DontBalanceTextColumns", uno::makeAny(true));
+    }
+    catch( const uno::Exception& )
+    {
+        OSL_FAIL( "Exception in SectionPropertyMap::DontBalanceTextColumns");
+    }
+}
 
 uno::Reference< text::XTextColumns > SectionPropertyMap::ApplyColumnProperties(
                             uno::Reference< beans::XPropertySet > const& xColumnContainer, DomainMapper_Impl& rDM_Impl )
@@ -760,8 +770,9 @@ uno::Reference< text::XTextColumns > SectionPropertyMap::ApplyColumnProperties(
         }
         xColumnContainer->setPropertyValue( sTextColumns, uno::makeAny( xColumns ) );
         // Set the columns to be unbalanced if that compatibility option is set or this is the last section.
+        m_xColumnContainer = xColumnContainer;
         if (rDM_Impl.GetSettingsTable()->GetNoColumnBalance() || rDM_Impl.GetIsLastSectionGroup())
-            xColumnContainer->setPropertyValue("DontBalanceTextColumns", uno::makeAny(true));
+            DontBalanceTextColumns();
     }
     catch( const uno::Exception& )
     {
@@ -1014,30 +1025,31 @@ uno::Reference<beans::XPropertySet> lcl_GetRangeProperties(bool bIsFirstSection,
     return xRangeProperties;
 }
 
-void SectionPropertyMap::HandleMarginsHeaderFooter(DomainMapper_Impl& rDM_Impl)
+void SectionPropertyMap::HandleMarginsHeaderFooter(bool bFirstPage, DomainMapper_Impl& rDM_Impl)
 {
     if( m_nDzaGutter > 0 )
     {
         //todo: iGutterPos from DocProperties are missing
-        if( m_bGutterRTL )
-            m_nRightMargin += m_nDzaGutter;
-        else
-            m_nLeftMargin += m_nDzaGutter;
+        m_nLeftMargin += m_nDzaGutter;
     }
     Insert(PROP_LEFT_MARGIN, uno::makeAny( m_nLeftMargin  ));
     Insert(PROP_RIGHT_MARGIN, uno::makeAny( m_nRightMargin ));
 
     if (rDM_Impl.m_oBackgroundColor)
         Insert(PROP_BACK_COLOR, uno::makeAny(*rDM_Impl.m_oBackgroundColor));
-    if (!rDM_Impl.m_bHasFtnSep)
+    // Check for missing footnote separator only in case there is at least
+    // one footnote.
+    if (rDM_Impl.m_bHasFtn && !rDM_Impl.m_bHasFtnSep)
+    {
         // Set footnote line width to zero, document has no footnote separator.
         Insert(PROP_FOOTNOTE_LINE_RELATIVE_WIDTH, uno::makeAny(sal_Int32(0)));
+    }
 
     /*** if headers/footers are available then the top/bottom margins of the
       header/footer are copied to the top/bottom margin of the page
       */
-    CopyLastHeaderFooter( false, rDM_Impl );
-    PrepareHeaderFooterProperties( false );
+    CopyLastHeaderFooter( bFirstPage, rDM_Impl );
+    PrepareHeaderFooterProperties( bFirstPage );
 }
 
 bool SectionPropertyMap::FloatingTableConversion(FloatingTableInfo& rInfo)
@@ -1077,16 +1089,27 @@ bool SectionPropertyMap::FloatingTableConversion(FloatingTableInfo& rInfo)
         }
     }
 
-    // If the table is wider than the text area, then don't create a fly
-    // for the table: no wrapping will be performed anyway, but multi-page
-    // tables will be broken.
-    if (nTableWidth < nTextAreaWidth)
+    // It seems Word has a limit here, so that in case the table width is quite
+    // close to the text area width, then it won't perform a wrapping, even in
+    // case the content (e.g. an empty paragraph) would fit. The magic constant
+    // here represents this limit.
+    const sal_Int32 nMagicNumber = 469;
+
+    // If the table's with is smaller than the text area width, text might
+    // be next to the table and so it should behave as a floating table.
+    if ( nTableWidth < nTextAreaWidth )
         return true;
 
-    // If the position is relative to the edge of the page, then we always
-    // create the fly.
-    if (rInfo.getPropertyValue("HoriOrientRelation") == text::RelOrientation::PAGE_FRAME)
-        return true;
+    // If the position is relative to the edge of the page, then we need to check the whole
+    // page width to see whether text can fit next to the table.
+    if ( rInfo.getPropertyValue( "HoriOrientRelation" ) == text::RelOrientation::PAGE_FRAME )
+    {
+        // If the table is wide enough to that no text fits next to it, then don't create a fly
+        // for the table: no wrapping will be performed anyway, but multi-page
+        // tables will be broken.
+        if ((nTableWidth + nMagicNumber) < (nPageWidth - std::min(GetLeftMargin(), GetRightMargin())))
+            return true;
+    }
 
     // If there are columns, always create the fly, otherwise the columns would
     // restrict geometry of the table.
@@ -1094,6 +1117,45 @@ bool SectionPropertyMap::FloatingTableConversion(FloatingTableInfo& rInfo)
         return true;
 
     return false;
+}
+
+void SectionPropertyMap::InheritOrFinalizePageStyles( DomainMapper_Impl& rDM_Impl )
+throw ( css::beans::UnknownPropertyException,
+        css::beans::PropertyVetoException,
+        css::lang::IllegalArgumentException,
+        css::lang::WrappedTargetException,
+        css::uno::RuntimeException, std::exception )
+{
+    const uno::Reference< container::XNameContainer >& xPageStyles = rDM_Impl.GetPageStyles();
+    const uno::Reference < lang::XMultiServiceFactory >& xTextFactory = rDM_Impl.GetTextFactory();
+
+    // if no new styles have been created for this section, inherit from the previous section,
+    // otherwise apply this section's settings to the new style.
+    // Ensure that FollowPage is inherited first - otherwise GetPageStyle may auto-create a follow when checking FirstPage.
+    SectionPropertyMap* pLastContext = rDM_Impl.GetLastSectionContext();
+    if( pLastContext && m_sFollowPageStyleName.isEmpty() )
+        m_sFollowPageStyleName = pLastContext->GetPageStyleName();
+    else
+    {
+        HandleMarginsHeaderFooter( /*bFirst=*/false, rDM_Impl );
+        GetPageStyle( xPageStyles, xTextFactory, /*bFirst=*/false );
+        if( rDM_Impl.IsNewDoc() && m_aFollowPageStyle.is() )
+            ApplyProperties_( m_aFollowPageStyle );
+    }
+
+    // FirstPageStyle may only be inherited if it will not be used or re-linked to a different follow
+    if( !m_bTitlePage && pLastContext && m_sFirstPageStyleName.isEmpty()  )
+        m_sFirstPageStyleName = pLastContext->GetPageStyleName( /*bFirst=*/true );
+    else
+    {
+        HandleMarginsHeaderFooter( /*bFirst=*/true, rDM_Impl );
+        GetPageStyle( xPageStyles, xTextFactory, /*bFirst=*/true );
+        if( rDM_Impl.IsNewDoc() && m_aFirstPageStyle.is() )
+            ApplyProperties_( m_aFirstPageStyle );
+
+        // Chain m_aFollowPageStyle to be after m_aFirstPageStyle
+        m_aFirstPageStyle->setPropertyValue( "FollowStyle", uno::makeAny(m_sFollowPageStyleName) );
+    }
 }
 
 void SectionPropertyMap::CloseSectionGroup( DomainMapper_Impl& rDM_Impl )
@@ -1147,29 +1209,20 @@ void SectionPropertyMap::CloseSectionGroup( DomainMapper_Impl& rDM_Impl )
         //todo: insert a section or access the already inserted section
         uno::Reference< beans::XPropertySet > xSection =
                                     rDM_Impl.appendTextSectionAfter( m_xStartingRange );
-        if( m_nColumnCount > 0 && xSection.is())
+        if( m_nColumnCount > 0 && xSection.is() )
             ApplyColumnProperties( xSection, rDM_Impl );
-        uno::Reference<beans::XPropertySet> xRangeProperties(lcl_GetRangeProperties(m_bIsFirstSection, rDM_Impl, m_xStartingRange));
-        if (xRangeProperties.is())
-        {
-            OUString aName = m_bTitlePage ? m_sFirstPageStyleName : m_sFollowPageStyleName;
-            if (!aName.isEmpty())
-            {
-                try
-                {
-                    if( m_bIsFirstSection )
-                        xRangeProperties->setPropertyValue(getPropertyName(PROP_PAGE_DESC_NAME), uno::makeAny(aName));
 
-                    uno::Reference<beans::XPropertySet> xPageStyle (rDM_Impl.GetPageStyles()->getByName(aName), uno::UNO_QUERY_THROW);
-                    HandleMarginsHeaderFooter(rDM_Impl);
-                    if (rDM_Impl.IsNewDoc())
-                        ApplyProperties_(xPageStyle);
-                }
-                catch( const uno::Exception& )
-                {
-                    SAL_WARN("writerfilter", "failed to set PageDescName!");
-                }
-            }
+        try
+        {
+            InheritOrFinalizePageStyles( rDM_Impl );
+            OUString aName = m_bTitlePage ? m_sFirstPageStyleName : m_sFollowPageStyleName;
+            uno::Reference<beans::XPropertySet> xRangeProperties( lcl_GetRangeProperties(m_bIsFirstSection, rDM_Impl, m_xStartingRange) );
+            if ( m_bIsFirstSection && !aName.isEmpty() && xRangeProperties.is() )
+                xRangeProperties->setPropertyValue( getPropertyName(PROP_PAGE_DESC_NAME), uno::makeAny(aName) );
+        }
+        catch( const uno::Exception& )
+        {
+            SAL_WARN("writerfilter", "failed to set PageDescName!");
         }
     }
     // If the section is of type "New column" (0x01), then simply insert a column break.
@@ -1177,24 +1230,29 @@ void SectionPropertyMap::CloseSectionGroup( DomainMapper_Impl& rDM_Impl )
     // seems to be handled like a page break by MSO.
     else if(m_nBreakType == static_cast<sal_Int32>(NS_ooxml::LN_Value_ST_SectionMark_nextColumn) && m_nColumnCount > 0 )
     {
-        uno::Reference< beans::XPropertySet > xRangeProperties;
-        if( m_xStartingRange.is() )
+        try
         {
-            xRangeProperties.set( m_xStartingRange, uno::UNO_QUERY_THROW );
+            InheritOrFinalizePageStyles( rDM_Impl );
+            uno::Reference< beans::XPropertySet > xRangeProperties;
+            if( m_xStartingRange.is() )
+            {
+                xRangeProperties.set( m_xStartingRange, uno::UNO_QUERY_THROW );
+            }
+            else
+            {
+                //set the start value at the beginning of the document
+                xRangeProperties.set( rDM_Impl.GetTextDocument()->getText()->getStart(), uno::UNO_QUERY_THROW );
+            }
+            xRangeProperties->setPropertyValue( getPropertyName(PROP_BREAK_TYPE), uno::makeAny(style::BreakType_COLUMN_BEFORE) );
         }
-        else
-        {
-            //set the start value at the beginning of the document
-            xRangeProperties.set( rDM_Impl.GetTextDocument()->getText()->getStart(), uno::UNO_QUERY_THROW );
-        }
-        xRangeProperties->setPropertyValue(getPropertyName(PROP_BREAK_TYPE), uno::makeAny(style::BreakType_COLUMN_BEFORE));
+        catch( const uno::Exception& ) {}
     }
     else
     {
         //get the properties and create appropriate page styles
         uno::Reference< beans::XPropertySet > xFollowPageStyle = GetPageStyle( rDM_Impl.GetPageStyles(), rDM_Impl.GetTextFactory(), false );
 
-        HandleMarginsHeaderFooter(rDM_Impl);
+        HandleMarginsHeaderFooter(/*bFirstPage=*/false, rDM_Impl);
 
         const OUString sTrayIndex = getPropertyName( PROP_PRINTER_PAPER_TRAY_INDEX );
         if( m_nPaperBin >= 0 )
@@ -1206,6 +1264,11 @@ void SectionPropertyMap::CloseSectionGroup( DomainMapper_Impl& rDM_Impl )
         uno::Reference< text::XTextColumns > xColumns;
         if( m_nColumnCount > 0 )
             xColumns = ApplyColumnProperties( xFollowPageStyle, rDM_Impl );
+
+        // these BreakTypes are effectively page-breaks: don't evenly distribute text in columns before a page break;
+        SectionPropertyMap* pLastContext = rDM_Impl.GetLastSectionContext();
+        if( pLastContext && pLastContext->ColumnCount() )
+            pLastContext->DontBalanceTextColumns();
 
         //prepare text grid properties
         sal_Int32 nHeight = 1;
@@ -1235,7 +1298,9 @@ void SectionPropertyMap::CloseSectionGroup( DomainMapper_Impl& rDM_Impl )
             nGridLinePitch = 1;
         }
 
-        Insert(PROP_GRID_LINES, uno::makeAny( static_cast<sal_Int16>(nTextAreaHeight/nGridLinePitch)));
+        const sal_Int16 nGridLines = nTextAreaHeight/nGridLinePitch;
+        if( nGridLines >= 0 )
+            Insert(PROP_GRID_LINES, uno::makeAny( nGridLines ));
 
         // PROP_GRID_MODE
         Insert( PROP_GRID_MODE, uno::makeAny( static_cast<sal_Int16> (m_nGridType) ));
@@ -1357,16 +1422,18 @@ void SectionPropertyMap::CloseSectionGroup( DomainMapper_Impl& rDM_Impl )
                 }
 
                 if (xRangeProperties.is() && rDM_Impl.IsNewDoc())
+                {
                     xRangeProperties->setPropertyValue(
                         getPropertyName( PROP_PAGE_DESC_NAME ),
                         uno::makeAny( m_bTitlePage ?  m_sFirstPageStyleName
                                       : m_sFollowPageStyleName ));
 
-                if(m_bPageNoRestart || m_nPageNumber >= 0)
-                {
-                    sal_Int16 nPageNumber = m_nPageNumber >= 0 ? static_cast< sal_Int16 >(m_nPageNumber) : 1;
-                    xRangeProperties->setPropertyValue(getPropertyName( PROP_PAGE_NUMBER_OFFSET ),
-                        uno::makeAny( nPageNumber ));
+                    if (m_bPageNoRestart || 0 <= m_nPageNumber)
+                    {
+                        sal_Int16 nPageNumber = m_nPageNumber >= 0 ? static_cast< sal_Int16 >(m_nPageNumber) : 1;
+                        xRangeProperties->setPropertyValue(getPropertyName(PROP_PAGE_NUMBER_OFFSET),
+                            uno::makeAny(nPageNumber));
+                    }
                 }
             }
         }
@@ -1377,6 +1444,12 @@ void SectionPropertyMap::CloseSectionGroup( DomainMapper_Impl& rDM_Impl )
     }
     rDM_Impl.SetIsLastSectionGroup(false);
     rDM_Impl.SetIsFirstParagraphInSection(true);
+
+    if ( !rDM_Impl.IsInFootOrEndnote() )
+    {
+        rDM_Impl.m_bHasFtn = false;
+        rDM_Impl.m_bHasFtnSep = false;
+    }
 }
 
 // Clear the flag that says we should take the header/footer content from
@@ -1510,7 +1583,7 @@ ParagraphProperties::ParagraphProperties() :
     m_h(-1),
     m_nWrap(-1),
     m_hAnchor(-1),
-    m_vAnchor(text::RelOrientation::FRAME),
+    m_vAnchor(-1),
     m_x(-1),
     m_bxValid( false ),
     m_y(-1),
@@ -1590,7 +1663,7 @@ void ParagraphProperties::ResetFrameProperties()
     m_h = -1;
     m_nWrap = -1;
     m_hAnchor = -1;
-    m_vAnchor = text::RelOrientation::FRAME;
+    m_vAnchor = -1;
     m_x = -1;
     m_bxValid = false;
     m_y = -1;

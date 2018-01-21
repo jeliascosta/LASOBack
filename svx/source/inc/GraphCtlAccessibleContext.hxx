@@ -36,7 +36,7 @@
 #include <com/sun/star/lang/XServiceName.hpp>
 #include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
 #include <osl/mutex.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <svl/lstner.hxx>
 
 #include <set>
@@ -78,7 +78,7 @@ typedef ::cppu::WeakAggComponentImplHelper7<
                 SvxGraphCtrlAccessibleContext_Base;
 
 class SvxGraphCtrlAccessibleContext:
-    private comphelper::OBaseMutex, public SvxGraphCtrlAccessibleContext_Base,
+    private cppu::BaseMutex, public SvxGraphCtrlAccessibleContext_Base,
     public SfxListener, public accessibility::IAccessibleViewForwarder
 {
 public:
@@ -87,14 +87,12 @@ public:
     // internal
     SvxGraphCtrlAccessibleContext(
         const css::uno::Reference< css::accessibility::XAccessible>& rxParent,
-        GraphCtrl&              rRepresentation,
-        const OUString*  pName = nullptr,
-        const OUString*  pDescription = nullptr );
+        GraphCtrl&              rRepresentation );
 
     void Notify( SfxBroadcaster& aBC, const SfxHint& aHint ) override;
 
 protected:
-    virtual ~SvxGraphCtrlAccessibleContext();
+    virtual ~SvxGraphCtrlAccessibleContext() override;
 public:
     // XAccessible
     /// Return the XAccessibleContext.
@@ -176,7 +174,7 @@ protected:
         @return
             The returned rectangle is a bounding box of the object given in
             absolute screen coordinates.
-        @raise DisposedException
+        @throws DisposedException
             When the object is already disposed then a
             <type>DisposedException</type> is thrown.
     */
@@ -185,14 +183,13 @@ protected:
     /// Return the object's current bounding box relative to the parent object.
     Rectangle GetBoundingBox() throw (css::uno::RuntimeException);
 
-    virtual void SAL_CALL disposing() override;
+    virtual void SAL_CALL disposing() final override;
 
 private:
     SdrObject* getSdrObject( sal_Int32 nIndex )
         throw( css::uno::RuntimeException, css::lang::IndexOutOfBoundsException );
 
     void CommitChange (sal_Int16 aEventId, const css::uno::Any& rNewValue, const css::uno::Any& rOldValue);
-    void FireEvent (const css::accessibility::AccessibleEventObject& aEvent);
 
     css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getAccessible( const SdrObject* pObj );
 
@@ -211,14 +208,7 @@ private:
     OUString msName;
 
     /// map of accessible shapes
-    struct SdrObjectCompareLess
-    {
-        bool operator()(const SdrObject* p1, const SdrObject* p2) const
-        {
-            return p1 < p2;
-        }
-    };
-    typedef ::std::map< const SdrObject*, rtl::Reference<accessibility::AccessibleShape>, SdrObjectCompareLess > ShapesMapType;
+    typedef ::std::map< const SdrObject*, rtl::Reference<accessibility::AccessibleShape> > ShapesMapType;
     ShapesMapType mxShapes;
 
     VclPtr<GraphCtrl>  mpControl;

@@ -70,7 +70,7 @@ Sequence< sal_Int8 > BitmapTransporter::getDIB() throw(std::exception)
     m_aStream.Seek( 0 );
 
     Sequence< sal_Int8 > aValue( nBytes );
-    m_aStream.Read( aValue.getArray(), nBytes );
+    m_aStream.ReadBytes( aValue.getArray(), nBytes );
     m_aStream.Seek( nPreviousPos );
 
     return aValue;
@@ -132,17 +132,16 @@ public:
     virtual void run() override;
     virtual void onTerminated() override { delete this; }
 public:
-    ScannerThread( std::shared_ptr<SaneHolder> pHolder,
+    ScannerThread( const std::shared_ptr<SaneHolder>& pHolder,
                    const Reference< css::lang::XEventListener >& listener,
                    ScannerManager* pManager );
-    virtual ~ScannerThread();
+    virtual ~ScannerThread() override;
 };
 
 
-ScannerThread::ScannerThread(
-                             std::shared_ptr<SaneHolder> pHolder,
+ScannerThread::ScannerThread(const std::shared_ptr<SaneHolder>& pHolder,
                              const Reference< css::lang::XEventListener >& listener,
-                             ScannerManager* pManager )
+                             ScannerManager* pManager)
         : m_pHolder( pHolder ), m_xListener( listener ), m_pManager( pManager )
 {
     SAL_INFO("extensions.scanner", "ScannerThread");

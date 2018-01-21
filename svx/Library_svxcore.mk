@@ -86,7 +86,7 @@ $(eval $(call gb_Library_use_externals,svxcore,\
 	icu_headers \
 	libxml2 \
 ))
-ifeq ($(ENABLE_OPENGL),TRUE)
+ifeq ($(ENABLE_HEADLESS),)
 $(eval $(call gb_Library_use_externals,svxcore,\
      glew \
  ))
@@ -115,10 +115,16 @@ $(eval $(call gb_Library_add_exception_objects,svxcore,\
     svx/source/dialog/checklbx \
     svx/source/dialog/dialmgr \
     svx/source/dialog/dlgutil \
+    svx/source/dialog/hexcolorcontrol \
     svx/source/dialog/framelink \
     svx/source/dialog/langbox \
+    svx/source/dialog/pagenumberlistbox \
+    svx/source/dialog/papersizelistbox \
+    svx/source/dialog/samecontentlistbox \
+    svx/source/dialog/spacinglistbox \
     svx/source/dialog/stddlg \
     svx/source/dialog/svxdlg \
+    svx/source/dialog/SvxNumOptionsTabPageHelper \
     svx/source/engine3d/camera3d \
     svx/source/engine3d/cube3d \
     svx/source/engine3d/deflt3d \
@@ -370,6 +376,7 @@ $(eval $(call gb_Library_add_exception_objects,svxcore,\
     svx/source/tbxctrls/tbcontrl \
     svx/source/tbxctrls/tbxcolorupdate \
     svx/source/tbxctrls/SvxColorValueSet \
+    svx/source/tbxctrls/SvxPresetListBox \
     svx/source/toolbars/extrusionbar \
     svx/source/toolbars/fontworkbar \
     svx/source/unodraw/gluepts \
@@ -412,6 +419,7 @@ $(eval $(call gb_Library_add_exception_objects,svxcore,\
     svx/source/xoutdev/xtabgrdt \
     svx/source/xoutdev/xtabhtch \
     svx/source/xoutdev/xtable \
+    svx/source/xoutdev/xtabptrn \
     svx/source/xoutdev/XPropertyEntry \
     svx/source/xoutdev/xtablend \
 ))
@@ -463,9 +471,9 @@ $(eval $(call gb_Library_add_exception_objects,svxcore,\
     svx/source/form/ParseContext \
     svx/source/form/sdbdatacolumn \
     svx/source/form/sqlparserclient \
-    svx/source/form/stringlistresource \
     svx/source/form/typemap \
     svx/source/form/xfm_addcondition \
+    svx/source/uitest/sdrobject \
 ))
 
 $(eval $(call gb_SdiTarget_SdiTarget,svx/sdi/svxslots,svx/sdi/svx))

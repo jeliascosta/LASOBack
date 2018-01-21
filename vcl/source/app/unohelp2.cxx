@@ -41,7 +41,7 @@ namespace vcl { namespace unohelper {
     void TextDataObject::CopyStringTo( const OUString& rContent,
         const uno::Reference< datatransfer::clipboard::XClipboard >& rxClipboard )
     {
-        DBG_ASSERT( rxClipboard.is(), "TextDataObject::CopyStringTo: invalid clipboard!" );
+        SAL_WARN_IF( !rxClipboard.is(), "vcl", "TextDataObject::CopyStringTo: invalid clipboard!" );
         if ( !rxClipboard.is() )
             return;
 
@@ -76,7 +76,7 @@ namespace vcl { namespace unohelper {
         SotClipboardFormatId nT = SotExchange::GetFormat( rFlavor );
         if ( nT == SotClipboardFormatId::STRING )
         {
-            aAny <<= GetString();
+            aAny <<= maText;
         }
         else
         {

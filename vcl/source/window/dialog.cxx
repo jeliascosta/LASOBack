@@ -21,6 +21,7 @@
 
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/util/thePathSettings.hpp>
+#include <com/sun/star/frame/theGlobalEventBroadcaster.hpp>
 #include <comphelper/processfactory.hxx>
 #include <osl/file.hxx>
 
@@ -48,6 +49,7 @@
 #include <vcl/msgbox.hxx>
 #include <vcl/unowrap.hxx>
 #include <vcl/settings.hxx>
+#include <vcl/uitest/uiobject.hxx>
 #include <salframe.hxx>
 
 #include <iostream>
@@ -94,7 +96,7 @@ static bool ImplIsMnemonicCtrl( vcl::Window* pWindow )
             return true;
         //This is the legacy pre-layout logic which we retain
         //until we can be sure we can remove it
-        if ( pWindow->GetStyle() & (WB_INFO | WB_NOLABEL) )
+        if (pWindow->GetStyle() & WB_NOLABEL)
             return false;
         vcl::Window* pNextWindow = pWindow->GetWindow( GetWindowType::Next );
         if ( !pNextWindow )
@@ -187,7 +189,7 @@ vcl::Window * firstLogicalChildOfParent(vcl::Window *pTopLevel)
     return pChild;
 }
 
-void ImplWindowAutoMnemonic( vcl::Window* pWindow )
+void Accelerator::GenerateAutoMnemonicsOnHierarchy(vcl::Window* pWindow)
 {
     MnemonicGenerator   aMnemonicGenerator;
     vcl::Window*                 pGetChild;
@@ -235,16 +237,6 @@ void ImplWindowAutoMnemonic( vcl::Window* pWindow )
         }
 
         pGetChild = nextLogicalChildOfParent(pWindow, pGetChild);
-    }
-}
-
-void ImplHandleControlAccelerator( vcl::Window* pWindow, bool bShow )
-{
-    Control *pControl = dynamic_cast<Control*>(pWindow->ImplGetWindow());
-    if (pControl && pControl->GetText().indexOf('~') != -1)
-    {
-        pControl->SetShowAccelerator( bShow );
-        pControl->Invalidate(InvalidateFlags::Update);
     }
 }
 
@@ -359,10 +351,11 @@ void Dialog::ImplInitDialogData()
     mbInExecute             = false;
     mbInClose               = false;
     mbModalMode             = false;
+    mbPaintComplete         = false;
     mpContentArea.clear();
     mpActionArea.clear();
     mnMousePositioned       = 0;
-    mpDialogImpl            = new DialogImpl;
+    mpDialogImpl.reset(new DialogImpl);
 }
 
 void Dialog::ImplInit( vcl::Window* pParent, WinBits nStyle, InitFlag eFlag )
@@ -583,50 +576,24 @@ Dialog::~Dialog()
 
 void Dialog::dispose()
 {
-    delete mpDialogImpl;
-    mpDialogImpl = nullptr;
+    mpDialogImpl.reset();
     mpPrevExecuteDlg.clear();
     mpActionArea.clear();
     mpContentArea.clear();
+
+    css::uno::Reference< css::uno::XComponentContext > xContext(
+            comphelper::getProcessComponentContext() );
+    css::uno::Reference<css::frame::XGlobalEventBroadcaster> xEventBroadcaster(css::frame::theGlobalEventBroadcaster::get(xContext), css::uno::UNO_QUERY_THROW);
+    css::document::DocumentEvent aObject;
+    aObject.EventName = "DialogClosed";
+    xEventBroadcaster->documentEventOccured(aObject);
+
     SystemWindow::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(Dialog, ImplAsyncCloseHdl, void*, void)
+IMPL_LINK_NOARG(Dialog, ImplAsyncCloseHdl, void*, void)
 {
     Close();
-}
-
-bool Dialog::ImplHandleCmdEvent( const CommandEvent& rCEvent )
-{
-    if (rCEvent.GetCommand() == CommandEventId::ModKeyChange && ImplGetSVData()->maNWFData.mbAutoAccel)
-    {
-        const CommandModKeyData *pCData = rCEvent.GetModKeyData ();
-        bool bShowAccel =  pCData && pCData->IsMod2();
-
-        Window *pGetChild = firstLogicalChildOfParent(this);
-        while (pGetChild)
-        {
-            if ( pGetChild->GetType() == WINDOW_TABCONTROL )
-            {
-                 // find currently shown tab page
-                 TabControl* pTabControl = static_cast<TabControl*>( pGetChild );
-                 TabPage* pTabPage = pTabControl->GetTabPage( pTabControl->GetCurPageId() );
-                 vcl::Window* pTabPageChild =  firstLogicalChildOfParent( pTabPage );
-
-                 // and go through its children
-                 while ( pTabPageChild )
-                 {
-                     ImplHandleControlAccelerator(pTabPageChild, bShowAccel);
-                     pTabPageChild = nextLogicalChildOfParent(pTabPage, pTabPageChild);
-                 }
-            }
-
-            ImplHandleControlAccelerator( pGetChild, bShowAccel );
-            pGetChild = nextLogicalChildOfParent(this, pGetChild);
-        }
-        return true;
-    }
-    return false;
 }
 
 bool Dialog::Notify( NotifyEvent& rNEvt )
@@ -671,11 +638,6 @@ bool Dialog::Notify( NotifyEvent& rNEvt )
 
             }
         }
-        else if (rNEvt.GetType() == MouseNotifyEvent::COMMAND)
-        {
-            if (ImplHandleCmdEvent( *rNEvt.GetCommandEvent()))
-                return true;
-        }
     }
 
     return bRet;
@@ -700,7 +662,8 @@ Size bestmaxFrameSizeForScreenSize(const Size &rScreenSize)
     else
         h -= 100;
 
-    return Size(w, h);
+    return Size(std::max<long>(w, 640 - 15),
+                std::max<long>(h, 480 - 50));
 }
 
 void Dialog::StateChanged( StateChangedType nType )
@@ -729,6 +692,16 @@ void Dialog::StateChanged( StateChangedType nType )
     {
         ImplInitSettings();
         Invalidate();
+    }
+
+    if (!mbModalMode && nType == StateChangedType::Visible)
+    {
+        css::uno::Reference< css::uno::XComponentContext > xContext(
+                            comphelper::getProcessComponentContext() );
+        css::uno::Reference<css::frame::XGlobalEventBroadcaster> xEventBroadcaster(css::frame::theGlobalEventBroadcaster::get(xContext), css::uno::UNO_QUERY_THROW);
+        css::document::DocumentEvent aObject;
+        aObject.EventName = "ModelessDialogVisible";
+        xEventBroadcaster->documentEventOccured(aObject);
     }
 }
 
@@ -803,16 +776,16 @@ bool Dialog::ImplStartExecuteModal()
 
     switch ( Application::GetDialogCancelMode() )
     {
-    case Application::DIALOG_CANCEL_OFF:
+    case Application::DialogCancelMode::Off:
         break;
-    case Application::DIALOG_CANCEL_SILENT:
+    case Application::DialogCancelMode::Silent:
         SAL_INFO(
             "vcl",
             "Dialog \"" << ImplGetDialogText(this).getStr()
                 << "\"cancelled in silent mode");
         return false;
     default: // default cannot happen
-    case Application::DIALOG_CANCEL_FATAL:
+    case Application::DialogCancelMode::Fatal:
         std::abort();
     }
 
@@ -821,11 +794,11 @@ bool Dialog::ImplStartExecuteModal()
     if ( pParent )
     {
         pParent = pParent->ImplGetFirstOverlapWindow();
-        DBG_ASSERT( pParent->IsReallyVisible(),
+        SAL_WARN_IF( !pParent->IsReallyVisible(), "vcl",
                     "Dialog::StartExecuteModal() - Parent not visible" );
-        DBG_ASSERT( pParent->IsInputEnabled(),
+        SAL_WARN_IF( !pParent->IsInputEnabled(), "vcl",
                     "Dialog::StartExecuteModal() - Parent input disabled, use another parent to ensure modality!" );
-        DBG_ASSERT( ! pParent->IsInModalMode(),
+        SAL_WARN_IF(  pParent->IsInModalMode(), "vcl",
                     "Dialog::StartExecuteModal() - Parent already modally disabled, use another parent to ensure modality!" );
 
     }
@@ -867,6 +840,54 @@ void Dialog::ImplEndExecuteModal()
     pSVData->maAppData.mnModalMode--;
 }
 
+void Dialog::PrePaint(vcl::RenderContext& rRenderContext)
+{
+    SystemWindow::PrePaint(rRenderContext);
+    mbPaintComplete = false;
+}
+
+void Dialog::PostPaint(vcl::RenderContext& rRenderContext)
+{
+    SystemWindow::PostPaint(rRenderContext);
+    mbPaintComplete = true;
+}
+
+std::vector<OString> Dialog::getAllPageUIXMLDescriptions() const
+{
+    // default has no pages
+    return std::vector<OString>();
+}
+
+bool Dialog::selectPageByUIXMLDescription(const OString& /*rUIXMLDescription*/)
+{
+    // default cannot select anything (which is okay, return true)
+    return true;
+}
+
+void Dialog::ensureRepaint()
+{
+    // ensure repaint
+    Invalidate();
+    mbPaintComplete = false;
+
+    while (!mbPaintComplete)
+    {
+        Application::Yield();
+    }
+}
+
+Bitmap Dialog::createScreenshot()
+{
+    // same prerequisites as in Execute()
+    setDeferredProperties();
+    ImplAdjustNWFSizes();
+    Show();
+    ToTop();
+    ensureRepaint();
+
+    return GetBitmap(Point(), GetOutputSizePixel());
+}
+
 short Dialog::Execute()
 {
 #if HAVE_FEATURE_DESKTOP
@@ -878,6 +899,14 @@ short Dialog::Execute()
 
     VclPtr<vcl::Window> xWindow = this;
 
+
+
+    css::uno::Reference< css::uno::XComponentContext > xContext(
+            comphelper::getProcessComponentContext() );
+    css::uno::Reference<css::frame::XGlobalEventBroadcaster> xEventBroadcaster(css::frame::theGlobalEventBroadcaster::get(xContext), css::uno::UNO_QUERY_THROW);
+    css::document::DocumentEvent aObject;
+    aObject.EventName = "DialogExecute";
+    xEventBroadcaster->documentEventOccured(aObject);
     // Yield util EndDialog is called or dialog gets destroyed
     // (the latter should not happen, but better safe than sorry
     while ( !xWindow->IsDisposed() && mbInExecute )
@@ -1162,6 +1191,11 @@ bool Dialog::set_property(const OString &rKey, const OString &rValue)
     else
         return SystemWindow::set_property(rKey, rValue);
     return true;
+}
+
+FactoryFunction Dialog::GetUITestFactory() const
+{
+    return DialogUIObject::create;
 }
 
 VclBuilderContainer::VclBuilderContainer()

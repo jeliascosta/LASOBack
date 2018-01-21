@@ -21,8 +21,8 @@
 
 #include <com/sun/star/report/XGroups.hpp>
 #include <cppuhelper/compbase.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <comphelper/interfacecontainer2.hxx>
-#include <comphelper/broadcasthelper.hxx>
 #include <com/sun/star/uno/XComponentContext.hpp>
 #include <list>
 
@@ -34,7 +34,7 @@ namespace reportdesign
      * \ingroup reportdesign_api
      *
      */
-    class OGroups : public comphelper::OBaseMutex,
+    class OGroups : public cppu::BaseMutex,
                     public GroupsBase
     {
         typedef ::std::list< css::uno::Reference< css::report::XGroup > > TGroups;
@@ -49,7 +49,7 @@ namespace reportdesign
     protected:
         // TODO: VirtualFunctionFinder: This is virtual function!
 
-        virtual ~OGroups();
+        virtual ~OGroups() override;
 
         /** this function is called upon disposing the component
         */

@@ -40,7 +40,7 @@ namespace dxcanvas
     CanvasCustomSprite::CanvasCustomSprite( const css::geometry::RealSize2D&   rSpriteSize,
                                             const SpriteCanvasRef&                          rRefDevice,
                                             const IDXRenderModuleSharedPtr&                 rRenderModule,
-                                            const ::canvas::ISurfaceProxyManagerSharedPtr&  rSurfaceProxy,
+                                            const ::std::shared_ptr<canvas::ISurfaceProxyManager>&  rSurfaceProxy,
                                             bool                                            bShowSpriteBounds ) :
         mpSpriteCanvas( rRefDevice ),
         mpSurface()
@@ -93,9 +93,7 @@ namespace dxcanvas
 
     uno::Sequence< OUString > SAL_CALL CanvasCustomSprite::getSupportedServiceNames()  throw( uno::RuntimeException )
     {
-        uno::Sequence< OUString > aRet { "com.sun.star.rendering.CanvasCustomSprite" };
-
-        return aRet;
+        return { "com.sun.star.rendering.CanvasCustomSprite" };
     }
 
     void CanvasCustomSprite::redraw() const

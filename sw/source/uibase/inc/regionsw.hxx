@@ -104,32 +104,32 @@ class SwEditRegionDlg : public SfxModalDialog
     void    RecurseList( const SwSectionFormat* pFormat, SvTreeListEntry* pEntry);
     size_t  FindArrPos(const SwSectionFormat* pFormat);
 
-    DECL_LINK_TYPED( GetFirstEntryHdl, SvTreeListBox *, void );
-    DECL_LINK_TYPED( DeselectHdl, SvTreeListBox *, void );
+    DECL_LINK( GetFirstEntryHdl, SvTreeListBox *, void );
+    DECL_LINK( DeselectHdl, SvTreeListBox *, void );
 
-    DECL_LINK_TYPED( OkHdl, Button*, void );
-    DECL_LINK_TYPED( NameEditHdl, Edit&, void );
-    DECL_LINK_TYPED( ConditionEditHdl, Edit&, void );
+    DECL_LINK( OkHdl, Button*, void );
+    DECL_LINK( NameEditHdl, Edit&, void );
+    DECL_LINK( ConditionEditHdl, Edit&, void );
 
-    DECL_LINK_TYPED( ChangePasswdHdl, Button *, void );
-    DECL_LINK_TYPED( ChangeProtectHdl, Button *, void );
-    DECL_LINK_TYPED( ChangeHideHdl, Button *, void );
+    DECL_LINK( ChangePasswdHdl, Button *, void );
+    DECL_LINK( ChangeProtectHdl, Button *, void );
+    DECL_LINK( ChangeHideHdl, Button *, void );
     // #114856# edit in readonly sections
-    DECL_LINK_TYPED( ChangeEditInReadonlyHdl, Button *, void );
-    DECL_LINK_TYPED( ChangeDismissHdl, Button*, void);
-    DECL_LINK_TYPED( UseFileHdl, Button*, void );
-    DECL_LINK_TYPED( FileSearchHdl, Button*, void );
-    DECL_LINK_TYPED( OptionsHdl, Button*, void );
-    DECL_LINK_TYPED( FileNameHdl, Edit&, void );
-    DECL_LINK_TYPED( DDEHdl, Button*, void );
-    DECL_LINK_TYPED( DlgClosedHdl, sfx2::FileDialogHelper*, void );
-    DECL_LINK_TYPED( SubRegionEventHdl, VclWindowEvent&, void );
+    DECL_LINK( ChangeEditInReadonlyHdl, Button *, void );
+    DECL_LINK( ChangeDismissHdl, Button*, void);
+    DECL_LINK( UseFileHdl, Button*, void );
+    DECL_LINK( FileSearchHdl, Button*, void );
+    DECL_LINK( OptionsHdl, Button*, void );
+    DECL_LINK( FileNameHdl, Edit&, void );
+    DECL_LINK( DDEHdl, Button*, void );
+    DECL_LINK( DlgClosedHdl, sfx2::FileDialogHelper*, void );
+    DECL_LINK( SubRegionEventHdl, VclWindowEvent&, void );
 
     bool CheckPasswd(CheckBox* pBox = nullptr);
 
 public:
     SwEditRegionDlg( vcl::Window* pParent, SwWrtShell& rWrtSh );
-    virtual ~SwEditRegionDlg();
+    virtual ~SwEditRegionDlg() override;
     virtual void dispose() override;
 
     void    SelectSection(const OUString& rSectionName);
@@ -169,18 +169,18 @@ class SwInsertSectionTabPage : public SfxTabPage
     SwWrtShell*             m_pWrtSh;
     sfx2::DocumentInserter* m_pDocInserter;
 
-    DECL_LINK_TYPED( ChangeHideHdl, Button *, void );
-    DECL_LINK_TYPED( ChangeProtectHdl, Button *, void );
-    DECL_LINK_TYPED( ChangePasswdHdl, Button *, void );
-    DECL_LINK_TYPED( NameEditHdl, Edit&, void );
-    DECL_LINK_TYPED( UseFileHdl, Button*, void );
-    DECL_LINK_TYPED( FileSearchHdl, Button*, void );
-    DECL_LINK_TYPED( DDEHdl, Button*, void );
-    DECL_LINK_TYPED( DlgClosedHdl, sfx2::FileDialogHelper*, void );
+    DECL_LINK( ChangeHideHdl, Button *, void );
+    DECL_LINK( ChangeProtectHdl, Button *, void );
+    DECL_LINK( ChangePasswdHdl, Button *, void );
+    DECL_LINK( NameEditHdl, Edit&, void );
+    DECL_LINK( UseFileHdl, Button*, void );
+    DECL_LINK( FileSearchHdl, Button*, void );
+    DECL_LINK( DDEHdl, Button*, void );
+    DECL_LINK( DlgClosedHdl, sfx2::FileDialogHelper*, void );
 
 public:
     SwInsertSectionTabPage(vcl::Window *pParent, const SfxItemSet &rAttrSet);
-    virtual ~SwInsertSectionTabPage();
+    virtual ~SwInsertSectionTabPage() override;
     virtual void dispose() override;
 
     void    SetWrtShell(SwWrtShell& rSh);
@@ -220,12 +220,12 @@ class SwSectionFootnoteEndTabPage : public SfxTabPage
     VclPtr<FixedText>       m_pEndSuffixFT;
     VclPtr<Edit>            m_pEndSuffixED;
 
-    DECL_LINK_TYPED( FootEndHdl, Button*, void );
+    DECL_LINK( FootEndHdl, Button*, void );
     void ResetState( bool bFootnote, const SwFormatFootnoteEndAtTextEnd& );
 
 public:
     SwSectionFootnoteEndTabPage( vcl::Window *pParent, const SfxItemSet &rAttrSet );
-    virtual ~SwSectionFootnoteEndTabPage();
+    virtual ~SwSectionFootnoteEndTabPage() override;
     virtual void dispose() override;
 
     virtual bool        FillItemSet( SfxItemSet* ) override;
@@ -241,10 +241,10 @@ class SwSectionIndentTabPage : public SfxTabPage
     VclPtr<MetricField>       m_pAfterMF;
     VclPtr<SvxParaPrevWindow> m_pPreviewWin;
 
-    DECL_LINK_TYPED(IndentModifyHdl, Edit&, void);
+    DECL_LINK(IndentModifyHdl, Edit&, void);
 public:
     SwSectionIndentTabPage( vcl::Window *pParent, const SfxItemSet &rAttrSet );
-    virtual ~SwSectionIndentTabPage();
+    virtual ~SwSectionIndentTabPage() override;
     virtual void dispose() override;
 
     virtual bool        FillItemSet( SfxItemSet* ) override;
@@ -259,7 +259,7 @@ public:
 class SwInsertSectionTabDialog : public SfxTabDialog
 {
     SwWrtShell&     rWrtSh;
-    ::std::unique_ptr<SwSectionData> m_pSectionData;
+    std::unique_ptr<SwSectionData> m_pSectionData;
 
     sal_uInt16 m_nSectionPageId;
     sal_uInt16 m_nColumnPageId;
@@ -272,7 +272,7 @@ protected:
     virtual short   Ok() override;
 public:
     SwInsertSectionTabDialog(vcl::Window* pParent, const SfxItemSet& rSet, SwWrtShell& rSh);
-    virtual ~SwInsertSectionTabDialog();
+    virtual ~SwInsertSectionTabDialog() override;
 
     void        SetSectionData(SwSectionData const& rSect);
     SwSectionData * GetSectionData() { return m_pSectionData.get(); }
@@ -291,7 +291,7 @@ protected:
     virtual void    PageCreated( sal_uInt16 nId, SfxTabPage &rPage ) override;
 public:
     SwSectionPropertyTabDialog(vcl::Window* pParent, const SfxItemSet& rSet, SwWrtShell& rSh);
-    virtual ~SwSectionPropertyTabDialog();
+    virtual ~SwSectionPropertyTabDialog() override;
 };
 
 #endif

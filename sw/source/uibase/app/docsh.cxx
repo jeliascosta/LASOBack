@@ -1073,7 +1073,9 @@ void SwDocShell::GetState(SfxItemSet& rSet)
         case SID_NOTEBOOKBAR:
         {
             SfxViewShell* pViewShell = GetView()? GetView(): SfxViewShell::Current();
-            sfx2::SfxNotebookBar::StateMethod(pViewShell->GetViewFrame()->GetBindings(), "modules/swriter/ui/notebookbar.ui");
+            bool bVisible = sfx2::SfxNotebookBar::StateMethod(pViewShell->GetViewFrame()->GetBindings(),
+                                                              "modules/swriter/ui/");
+            rSet.Put( SfxBoolItem( SID_NOTEBOOKBAR, bVisible ) );
         }
         break;
 
@@ -1085,7 +1087,7 @@ void SwDocShell::GetState(SfxItemSet& rSet)
 }
 
 // OLE-Hdls
-IMPL_LINK_TYPED( SwDocShell, Ole2ModifiedHdl, bool, bNewStatus, void )
+IMPL_LINK( SwDocShell, Ole2ModifiedHdl, bool, bNewStatus, void )
 {
     if( IsEnableSetModified() )
         SetModified( bNewStatus );
@@ -1107,7 +1109,14 @@ void SwDocShell::SetView(SwView* pVw)
     SetViewShell_Impl(pVw);
     m_pView = pVw;
     if (m_pView)
+    {
         m_pWrtShell = &m_pView->GetWrtShell();
+
+        // Set view-specific redline author.
+        const OUString& rRedlineAuthor = m_pView->GetRedlineAuthor();
+        if (!rRedlineAuthor.isEmpty())
+            SW_MOD()->SetRedlineAuthor(m_pView->GetRedlineAuthor());
+    }
     else
         m_pWrtShell = nullptr;
 }
@@ -1274,7 +1283,7 @@ bool SwDocShell::IsChangeRecording() const
 {
     if (!m_pWrtShell)
         return false;
-    return (m_pWrtShell->GetRedlineMode() & nsRedlineMode_t::REDLINE_ON) != 0;
+    return bool(m_pWrtShell->GetRedlineFlags() & RedlineFlags::On);
 }
 
 bool SwDocShell::HasChangeRecordProtection() const
@@ -1286,20 +1295,19 @@ bool SwDocShell::HasChangeRecordProtection() const
 
 void SwDocShell::SetChangeRecording( bool bActivate )
 {
-    sal_uInt16 nOn = bActivate ? nsRedlineMode_t::REDLINE_ON : 0;
-    sal_uInt16 nMode = m_pWrtShell->GetRedlineMode();
-    m_pWrtShell->SetRedlineModeAndCheckInsMode( (nMode & ~nsRedlineMode_t::REDLINE_ON) | nOn);
+    RedlineFlags nOn = bActivate ? RedlineFlags::On : RedlineFlags::NONE;
+    RedlineFlags nMode = m_pWrtShell->GetRedlineFlags();
+    m_pWrtShell->SetRedlineFlagsAndCheckInsMode( (nMode & ~RedlineFlags::On) | nOn );
 }
 
 void SwDocShell::SetProtectionPassword( const OUString &rNewPassword )
 {
     const SfxAllItemSet aSet( GetPool() );
-    const SfxItemSet*   pArgs = &aSet;
     const SfxPoolItem*  pItem = nullptr;
 
     IDocumentRedlineAccess& rIDRA = m_pWrtShell->getIDocumentRedlineAccess();
     Sequence< sal_Int8 > aPasswd = rIDRA.GetRedlinePassword();
-    if (pArgs && SfxItemState::SET == pArgs->GetItemState( FN_REDLINE_PROTECT, false, &pItem )
+    if (SfxItemState::SET == aSet.GetItemState(FN_REDLINE_PROTECT, false, &pItem)
         && static_cast<const SfxBoolItem*>(pItem)->GetValue() == (aPasswd.getLength() > 0))
         return;
 
@@ -1335,15 +1343,6 @@ bool SwDocShell::GetProtectionHash( /*out*/ css::uno::Sequence< sal_Int8 > &rPas
     bRes = true;
 
     return bRes;
-}
-
-void SwDocShell::libreOfficeKitCallback(int nType, const char* pPayload) const
-{
-    if (!m_pDoc)
-        return;
-
-    SwDrawModel* pDrawModel = m_pDoc->getIDocumentDrawModelAccess().GetDrawModel();
-    pDrawModel->libreOfficeKitCallback(nType, pPayload);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

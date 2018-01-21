@@ -21,10 +21,6 @@
 #include <vcl/pngwrite.hxx>
 #include <unx/gtk/gtkinst.hxx>
 
-#if GTK_CHECK_VERSION(3,0,0)
-#  include <gdk/gdkkeysyms-compat.h>
-#endif
-
 #include <sal/log.hxx>
 #include <window.h>
 #include <svids.hrc>
@@ -34,12 +30,18 @@ static bool bUnityMode = false;
 /*
  * This function generates a unique command name for each menu item
  */
-static gchar* GetCommandForItem(GtkSalMenuItem* pSalMenuItem)
+static gchar* GetCommandForItem(GtkSalMenu* pParentMenu, sal_uInt16 nItemId)
 {
     OString aCommand("window-");
-    aCommand = aCommand + OString::number(reinterpret_cast<unsigned long>(pSalMenuItem->mpParentMenu));
-    aCommand = aCommand + "-" + OString::number(pSalMenuItem->mnId);
+    aCommand = aCommand + OString::number(reinterpret_cast<unsigned long>(pParentMenu));
+    aCommand = aCommand + "-" + OString::number(nItemId);
     return g_strdup(aCommand.getStr());
+}
+
+static gchar* GetCommandForItem(GtkSalMenuItem* pSalMenuItem)
+{
+    return GetCommandForItem(pSalMenuItem->mpParentMenu,
+                             pSalMenuItem->mnId);
 }
 
 bool GtkSalMenu::PrepUpdate()
@@ -72,6 +74,28 @@ void RemoveSpareItemsFromNativeMenu( GLOMenu* pMenu, GList** pOldCommandList, un
     }
 }
 
+typedef std::pair<GtkSalMenu*, sal_uInt16> MenuAndId;
+
+namespace
+{
+    MenuAndId decode_command(const gchar *action_name)
+    {
+        OString sCommand(action_name);
+
+        sal_Int32 nIndex = 0;
+        OString sWindow = sCommand.getToken(0, '-', nIndex);
+        OString sGtkSalMenu = sCommand.getToken(0, '-', nIndex);
+        OString sItemId = sCommand.getToken(0, '-', nIndex);
+
+        GtkSalMenu* pSalSubMenu = reinterpret_cast<GtkSalMenu*>(sGtkSalMenu.toInt64());
+
+        assert(sWindow == "window" && pSalSubMenu);
+        (void) sWindow;
+
+        return MenuAndId(pSalSubMenu, sItemId.toInt32());
+    }
+}
+
 void RemoveDisabledItemsFromNativeMenu(GLOMenu* pMenu, GList** pOldCommandList,
                                        sal_Int32 nSection, GActionGroup* pActionGroup)
 {
@@ -90,8 +114,23 @@ void RemoveDisabledItemsFromNativeMenu(GLOMenu* pMenu, GList** pOldCommandList,
                 if (pSubMenuModel)
                 {
                     gint nSubMenuSections = g_menu_model_get_n_items(G_MENU_MODEL(pSubMenuModel));
-                    bRemove = (nSubMenuSections == 0 ||
-                              (nSubMenuSections == 1 && g_lo_menu_get_n_items_from_section(pSubMenuModel, 0) == 0));
+                    if (nSubMenuSections == 0)
+                        bRemove = true;
+                    else if (nSubMenuSections == 1)
+                    {
+                        gint nItems = g_lo_menu_get_n_items_from_section(pSubMenuModel, 0);
+                        if (nItems == 0)
+                            bRemove = true;
+                        else if (nItems == 1)
+                        {
+                            //If the only entry is the "No Selection Possible" entry, then we are allowed
+                            //to removed it
+                            gchar* pSubCommand = g_lo_menu_get_command_from_item_in_section(pSubMenuModel, 0, 0);
+                            MenuAndId aMenuAndId(decode_command(pSubCommand));
+                            bRemove = aMenuAndId.second == 0xFFFF;
+                            g_free(pSubCommand);
+                        }
+                    }
                 }
             }
 
@@ -214,6 +253,11 @@ void GtkSalMenu::ImplUpdate(bool bRecurse, bool bRemoveDisabledEntries)
         GtkSalMenuItem *pSalMenuItem = GetItemAtPos( nItem );
         sal_uInt16 nId = pSalMenuItem->mnId;
 
+        // PopupMenu::ImplExecute might add <No Selection Possible> entry to top-level
+        // popup menu, but we have our own implementation below, so skip that one.
+        if ( nId == 0xFFFF )
+            continue;
+
         if ( pSalMenuItem->mnType == MenuItemType::SEPARATOR )
         {
             // Delete extra items from current section.
@@ -254,8 +298,7 @@ void GtkSalMenu::ImplUpdate(bool bRecurse, bool bRemoveDisabledEntries)
 
         // Force updating of native menu labels.
         NativeSetItemText( nSection, nItemPos, aText );
-        if (!!aImage)
-            NativeSetItemIcon( nSection, nItemPos, aImage );
+        NativeSetItemIcon( nSection, nItemPos, aImage );
         NativeSetAccelerator( nSection, nItemPos, nAccelKey, nAccelKey.GetName( GetFrame()->GetWindow() ) );
 
         if ( g_strcmp0( aNativeCommand, "" ) != 0 && pSalMenuItem->mpSubMenu == nullptr )
@@ -313,11 +356,32 @@ void GtkSalMenu::ImplUpdate(bool bRecurse, bool bRemoveDisabledEntries)
 
     // Delete unused commands.
     RemoveUnusedCommands( pActionGroup, pOldCommandList, pNewCommandList );
+
+    // Resolves: tdf#103166 if the menu is empty, add a disabled
+    // <No Selection Possible> placeholder.
+    sal_Int32 nSectionsCount = g_menu_model_get_n_items(G_MENU_MODEL(pLOMenu));
+    gint nItemsCount = 0;
+    for (nSection = 0; nSection < nSectionsCount; ++nSection)
+    {
+        nItemsCount += g_lo_menu_get_n_items_from_section(pLOMenu, nSection);
+        if (nItemsCount)
+            break;
+    }
+    if (!nItemsCount)
+    {
+        gchar* aNativeCommand = GetCommandForItem(this, 0xFFFF);
+        OUString aPlaceholderText(VclResId(SV_RESID_STRING_NOSELECTIONPOSSIBLE));
+        g_lo_menu_insert_in_section(pLOMenu, nSection-1, 0,
+                                    OUStringToOString(aPlaceholderText, RTL_TEXTENCODING_UTF8).getStr());
+        NativeSetItemCommand(nSection-1, 0, 0xFFFF, aNativeCommand, MenuItemBits::NONE, false, false);
+        NativeSetEnableItem(aNativeCommand, false);
+        g_free(aNativeCommand);
+    }
 }
 
 void GtkSalMenu::Update()
 {
-    //find out if top level is a menubar or not, if not, then its a popup menu
+    //find out if top level is a menubar or not, if not, then it's a popup menu
     //hierarchy and in those we hide (most) disabled entries
     const GtkSalMenu* pMenu = this;
     while (pMenu->mpParentSalMenu)
@@ -399,6 +463,8 @@ bool GtkSalMenu::ShowNativePopupMenu(FloatingWindow* pWin, const Rectangle& rRec
     }
     g_main_loop_unref(pLoop);
 
+    mpVCLMenu->Deactivate();
+
     gtk_widget_insert_action_group(mpFrame->getMouseEventWidget(), "win", nullptr);
 
     gtk_widget_destroy(pWidget);
@@ -420,6 +486,7 @@ bool GtkSalMenu::ShowNativePopupMenu(FloatingWindow* pWin, const Rectangle& rRec
  */
 
 GtkSalMenu::GtkSalMenu( bool bMenuBar ) :
+    mbInActivateCallback( false ),
     mbMenuBar( bMenuBar ),
     mbNeedsUpdate( false ),
     mbReturnFocusToDocument( false ),
@@ -441,7 +508,7 @@ GtkSalMenu::GtkSalMenu( bool bMenuBar ) :
     maUpdateMenuBarIdle.SetDebugName("Native Gtk Menu Update Idle");
 }
 
-IMPL_LINK_NOARG_TYPED(GtkSalMenu, MenuBarHierarchyChangeHandler, Idle *, void)
+IMPL_LINK_NOARG(GtkSalMenu, MenuBarHierarchyChangeHandler, Idle *, void)
 {
     SAL_WARN_IF(!mpFrame, "vcl.gtk", "MenuBar layout changed, but no frame for some reason!");
     if (!mpFrame)
@@ -545,7 +612,7 @@ void GtkSalMenu::ShowCloseButton(bool bShow)
         return;
     }
 
-    MenuBar *pVclMenuBar = static_cast<MenuBar*>(mpVCLMenu);
+    MenuBar *pVclMenuBar = static_cast<MenuBar*>(mpVCLMenu.get());
     mpCloseButton = gtk_button_new();
     g_signal_connect(mpCloseButton, "clicked", G_CALLBACK(CloseMenuBar), pVclMenuBar);
 
@@ -556,14 +623,19 @@ void GtkSalMenu::ShowCloseButton(bool bShow)
     GtkStyleContext *pButtonContext = gtk_widget_get_style_context(GTK_WIDGET(mpCloseButton));
 
     GtkCssProvider *pProvider = gtk_css_provider_new();
-    const gchar data[] = "* { "
+    static const gchar data[] = "* { "
       "padding: 0;"
       "margin-left: 8px;"
       "margin-right: 8px;"
       "min-width: 18px;"
       "min-height: 18px;"
       "}";
-    gtk_css_provider_load_from_data(pProvider, data, -1, nullptr);
+    const gchar olddata[] = "* { "
+      "padding: 0;"
+      "margin-left: 8px;"
+      "margin-right: 8px;"
+      "}";
+    gtk_css_provider_load_from_data(pProvider, gtk_check_version(3, 20, 0) == nullptr ? data : olddata, -1, nullptr);
     gtk_style_context_add_provider(pButtonContext,
                                    GTK_STYLE_PROVIDER(pProvider),
                                    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
@@ -616,7 +688,7 @@ void GtkSalMenu::ReturnFocus()
 
 gboolean GtkSalMenu::SignalKey(GdkEventKey* pEvent)
 {
-    if (pEvent->keyval == GDK_F6)
+    if (pEvent->keyval == GDK_KEY_F6)
     {
         mbReturnFocusToDocument = false;
         gtk_menu_shell_cancel(GTK_MENU_SHELL(mpMenuBarWidget));
@@ -713,7 +785,7 @@ void GtkSalMenu::CreateMenuBarWidget()
 
     gtk_widget_show_all(mpMenuBarContainerWidget);
 
-    ShowCloseButton( static_cast<MenuBar*>(mpVCLMenu)->HasCloseButton() );
+    ShowCloseButton( static_cast<MenuBar*>(mpVCLMenu.get())->HasCloseButton() );
 #else
     (void)mpMenuBarContainerWidget;
 #endif
@@ -769,12 +841,13 @@ void GtkSalMenu::SetFrame(const SalFrame* pFrame)
     }
 
     // Generate the main menu structure.
-    UpdateFull();
+    if ( PrepUpdate() )
+        UpdateFull();
 
     g_lo_menu_insert_section( pMenuModel, 0, nullptr, mpMenuModel );
 
 #if GTK_CHECK_VERSION(3,0,0)
-    if (!bUnityMode)
+    if (!bUnityMode && static_cast<MenuBar*>(mpVCLMenu.get())->IsDisplayable())
     {
         DestroyMenuBarWidget();
         CreateMenuBarWidget();
@@ -876,19 +949,25 @@ void GtkSalMenu::NativeSetItemIcon( unsigned nSection, unsigned nItemPos, const 
 #if GLIB_CHECK_VERSION(2,38,0)
     SolarMutexGuard aGuard;
 
-    SvMemoryStream* pMemStm = new SvMemoryStream;
-    vcl::PNGWriter aWriter(rImage.GetBitmapEx());
-    aWriter.Write(*pMemStm);
+    if (!!rImage)
+    {
+        SvMemoryStream* pMemStm = new SvMemoryStream;
+        vcl::PNGWriter aWriter(rImage.GetBitmapEx());
+        aWriter.Write(*pMemStm);
 
-    GBytes *pBytes = g_bytes_new_with_free_func(pMemStm->GetData(),
-                                                pMemStm->Seek(STREAM_SEEK_TO_END),
-                                                DestroyMemoryStream,
-                                                pMemStm);
+        GBytes *pBytes = g_bytes_new_with_free_func(pMemStm->GetData(),
+                                                    pMemStm->Seek(STREAM_SEEK_TO_END),
+                                                    DestroyMemoryStream,
+                                                    pMemStm);
 
-    GIcon *pIcon = g_bytes_icon_new(pBytes);
-    g_lo_menu_set_icon_to_item_in_section( G_LO_MENU( mpMenuModel ), nSection, nItemPos, pIcon );
-    g_object_unref(pIcon);
-    g_bytes_unref(pBytes);
+        GIcon *pIcon = g_bytes_icon_new(pBytes);
+
+        g_lo_menu_set_icon_to_item_in_section( G_LO_MENU( mpMenuModel ), nSection, nItemPos, pIcon );
+        g_object_unref(pIcon);
+        g_bytes_unref(pBytes);
+    }
+    else
+        g_lo_menu_set_icon_to_item_in_section( G_LO_MENU( mpMenuModel ), nSection, nItemPos, nullptr );
 #else
     (void)nSection;
     (void)nItemPos;
@@ -971,12 +1050,13 @@ bool GtkSalMenu::NativeSetItemCommand( unsigned nSection,
         bSubMenuAddedOrRemoved = bOldHasSubmenu != bIsSubmenu;
         if (bSubMenuAddedOrRemoved)
         {
-            //tdf#98636 its not good enough to unset the "submenu-action" attribute to change something
+            //tdf#98636 it's not good enough to unset the "submenu-action" attribute to change something
             //from a submenu to a non-submenu item, so remove the old one entirely and re-add it to
             //support achieving that
             gchar* pLabel = g_lo_menu_get_label_from_item_in_section(pMenu, nSection, nItemPos);
             g_lo_menu_remove_from_section(pMenu, nSection, nItemPos);
             g_lo_menu_insert_in_section(pMenu, nSection, nItemPos, pLabel);
+            g_free(pLabel);
         }
 
         g_lo_menu_set_command_to_item_in_section( pMenu, nSection, nItemPos, aCommand );
@@ -1011,28 +1091,6 @@ GtkSalMenu* GtkSalMenu::GetTopLevel()
     return pMenu;
 }
 
-typedef std::pair<GtkSalMenu*, sal_uInt16> MenuAndId;
-
-namespace
-{
-    MenuAndId decode_command(const gchar *action_name)
-    {
-        OString sCommand(action_name);
-
-        sal_Int32 nIndex = 0;
-        OString sWindow = sCommand.getToken(0, '-', nIndex);
-        OString sGtkSalMenu = sCommand.getToken(0, '-', nIndex);
-        OString sItemId = sCommand.getToken(0, '-', nIndex);
-
-        GtkSalMenu* pSalSubMenu = reinterpret_cast<GtkSalMenu*>(sGtkSalMenu.toInt64());
-
-        assert(sWindow == "window" && pSalSubMenu);
-        (void) sWindow;
-
-        return MenuAndId(pSalSubMenu, sItemId.toInt32());
-    }
-}
-
 void GtkSalMenu::DispatchCommand(const gchar *pCommand)
 {
     SolarMutexGuard aGuard;
@@ -1048,7 +1106,9 @@ void GtkSalMenu::ActivateAllSubmenus(Menu* pMenuBar)
     {
         if ( pSalItem->mpSubMenu != nullptr )
         {
+            pSalItem->mpSubMenu->mbInActivateCallback = true;
             pMenuBar->HandleMenuActivateEvent(pSalItem->mpSubMenu->GetMenu());
+            pSalItem->mpSubMenu->mbInActivateCallback = false;
             pSalItem->mpSubMenu->ActivateAllSubmenus(pMenuBar);
             pSalItem->mpSubMenu->Update();
             pMenuBar->HandleMenuDeActivateEvent(pSalItem->mpSubMenu->GetMenu());
@@ -1076,7 +1136,11 @@ void GtkSalMenu::Activate(const gchar* pCommand)
     GtkSalMenu* pTopLevel = pSalMenu->GetTopLevel();
     Menu* pVclMenu = pSalMenu->GetMenu();
     Menu* pVclSubMenu = pVclMenu->GetPopupMenu(aMenuAndId.second);
+    GtkSalMenu* pSubMenu = pSalMenu->GetItemAtPos(pVclMenu->GetItemPos(aMenuAndId.second))->mpSubMenu;
+
+    pSubMenu->mbInActivateCallback = true;
     pTopLevel->GetMenu()->HandleMenuActivateEvent(pVclSubMenu);
+    pSubMenu->mbInActivateCallback = false;
     pVclSubMenu->UpdateNativeMenu();
 }
 
@@ -1094,7 +1158,7 @@ void GtkSalMenu::EnableUnity(bool bEnable)
 {
     bUnityMode = bEnable;
 
-    MenuBar* pMenuBar(static_cast<MenuBar*>(mpVCLMenu));
+    MenuBar* pMenuBar(static_cast<MenuBar*>(mpVCLMenu.get()));
     bool bDisplayable(pMenuBar->IsDisplayable());
 
     if (bEnable)
@@ -1144,19 +1208,57 @@ void GtkSalMenu::CheckItem( unsigned, bool )
 {
 }
 
-void GtkSalMenu::EnableItem( unsigned, bool )
+void GtkSalMenu::EnableItem( unsigned nPos, bool bEnable )
 {
+    SolarMutexGuard aGuard;
+    if ( bUnityMode && !mbInActivateCallback && !mbNeedsUpdate && GetTopLevel()->mbMenuBar && ( nPos < maItems.size() ) )
+    {
+        gchar* pCommand = GetCommandForItem( GetItemAtPos( nPos ) );
+        NativeSetEnableItem( pCommand, bEnable );
+        g_free( pCommand );
+    }
 }
 
 void GtkSalMenu::ShowItem( unsigned nPos, bool bShow )
 {
     SolarMutexGuard aGuard;
     if ( nPos < maItems.size() )
+    {
         maItems[ nPos ]->mbVisible = bShow;
+        if ( bUnityMode && !mbInActivateCallback && !mbNeedsUpdate && GetTopLevel()->mbMenuBar )
+            Update();
+    }
 }
 
-void GtkSalMenu::SetItemText( unsigned, SalMenuItem*, const OUString& )
+void GtkSalMenu::SetItemText( unsigned nPos, SalMenuItem* pSalMenuItem, const OUString& rText )
 {
+    SolarMutexGuard aGuard;
+    if ( bUnityMode && !mbInActivateCallback && !mbNeedsUpdate && GetTopLevel()->mbMenuBar && ( nPos < maItems.size() ) )
+    {
+        gchar* pCommand = GetCommandForItem( static_cast< GtkSalMenuItem* >( pSalMenuItem ) );
+
+        gint nSectionsCount = g_menu_model_get_n_items( mpMenuModel );
+        for ( gint nSection = 0; nSection < nSectionsCount; ++nSection )
+        {
+            gint nItemsCount = g_lo_menu_get_n_items_from_section( G_LO_MENU( mpMenuModel ), nSection );
+            for ( gint nItem = 0; nItem < nItemsCount; ++nItem )
+            {
+                gchar* pCommandFromModel = g_lo_menu_get_command_from_item_in_section( G_LO_MENU( mpMenuModel ), nSection, nItem );
+
+                if ( !g_strcmp0( pCommandFromModel, pCommand ) )
+                {
+                    NativeSetItemText( nSection, nItem, rText );
+                    g_free( pCommandFromModel );
+                    g_free( pCommand );
+                    return;
+                }
+
+                g_free( pCommandFromModel );
+            }
+        }
+
+        g_free( pCommand );
+    }
 }
 
 void GtkSalMenu::SetItemImage( unsigned, SalMenuItem*, const Image& )
@@ -1179,7 +1281,6 @@ GtkSalMenuItem::GtkSalMenuItem( const SalItemParams* pItemData ) :
     mnId( pItemData->nId ),
     mnType( pItemData->eType ),
     mbVisible( true ),
-    mpVCLMenu( pItemData->pMenu ),
     mpParentMenu( nullptr ),
     mpSubMenu( nullptr )
 {

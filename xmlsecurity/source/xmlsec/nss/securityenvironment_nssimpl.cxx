@@ -29,12 +29,12 @@
 #include "x509certificate_nssimpl.hxx"
 #include <comphelper/servicehelper.hxx>
 
-#include "xmlsecurity/xmlsec-wrapper.h"
+#include "xmlsec-wrapper.h"
 
 #include <rtl/ustrbuf.hxx>
 #include <comphelper/processfactory.hxx>
 #include <comphelper/docpasswordrequest.hxx>
-#include <xmlsecurity/biginteger.hxx>
+#include <biginteger.hxx>
 #include <sal/log.hxx>
 #include <com/sun/star/task/InteractionHandler.hpp>
 #include <vector>
@@ -218,10 +218,6 @@ void SecurityEnvironment_NssImpl::addCryptoSlot( PK11SlotInfo* aSlot) throw( Exc
 {
     PK11_ReferenceSlot(aSlot);
     m_Slots.push_back(aSlot);
-}
-
-CERTCertDBHandle* SecurityEnvironment_NssImpl::getCertDb() throw( Exception , RuntimeException ) {
-    return m_pHandler ;
 }
 
 //Could we have multiple cert dbs?
@@ -909,7 +905,7 @@ xmlSecKeysMngrPtr SecurityEnvironment_NssImpl::createKeysManager() throw( Except
     SECKEYPrivateKey* priKey = nullptr ;
     xmlSecKeysMngrPtr pKeysMngr = nullptr ;
 
-    handler = this->getCertDb() ;
+    handler = m_pHandler;
 
     /*-
      * The following lines is based on the private version of xmlSec-NSS

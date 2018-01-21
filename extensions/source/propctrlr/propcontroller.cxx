@@ -187,18 +187,6 @@ namespace pcr
     }
 
 
-    void OPropertyBrowserController::impl_updateReadOnlyView_nothrow()
-    {
-        // this is a huge cudgel, admitted.
-        // The problem is that in case we were previously read-only, all our controls
-        // were created read-only, too. We cannot simply switch them to not-read-only.
-        // Even if they had an API for this, we do not know whether they were
-        // originally created read-only, or if they are read-only just because
-        // the model was.
-        impl_rebindToInspectee_nothrow( m_aInspectedObjects );
-    }
-
-
     bool OPropertyBrowserController::impl_isReadOnlyModel_throw() const
     {
         if ( !m_xModel.is() )
@@ -320,7 +308,7 @@ namespace pcr
         StlSyntaxSequence< Any > arguments( _arguments );
         if ( arguments.empty() )
         {   // constructor: "createDefault()"
-            createDefault();
+            m_bConstructed = true;
             return;
         }
 
@@ -334,12 +322,6 @@ namespace pcr
         }
 
         throw IllegalArgumentException( OUString(), *this, 0 );
-    }
-
-
-    void OPropertyBrowserController::createDefault()
-    {
-        m_bConstructed = true;
     }
 
 
@@ -637,7 +619,7 @@ namespace pcr
     }
 
 
-    IMPL_LINK_NOARG_TYPED(OPropertyBrowserController, OnPageActivation, LinkParamNone*, void)
+    IMPL_LINK_NOARG(OPropertyBrowserController, OnPageActivation, LinkParamNone*, void)
     {
         updateViewDataFromActivePage();
     }
@@ -727,7 +709,13 @@ namespace pcr
         if ( _rEvent.Source == m_xModel )
         {
             if ( _rEvent.PropertyName == "IsReadOnly" )
-                impl_updateReadOnlyView_nothrow();
+               // this is a huge cudgel, admitted.
+                // The problem is that in case we were previously read-only, all our controls
+                // were created read-only, too. We cannot simply switch them to not-read-only.
+                // Even if they had an API for this, we do not know whether they were
+                // originally created read-only, or if they are read-only just because
+                // the model was.
+                impl_rebindToInspectee_nothrow( m_aInspectedObjects );
             return;
         }
 

@@ -26,6 +26,7 @@
 #include <com/sun/star/uno/RuntimeException.hpp>
 #include <com/sun/star/xforms/XFormsSupplier.hpp>
 
+#include <o3tl/any.hxx>
 #include <sax/tools/converter.hxx>
 #include <svx/svdmodel.hxx>
 #include <svx/svdpage.hxx>
@@ -87,20 +88,14 @@ SwXMLExport::SwXMLExport(
     OUString const & implementationName, SvXMLExportFlags nExportFlags)
 :   SvXMLExport( util::MeasureUnit::INCH, rContext, implementationName, XML_TEXT,
         nExportFlags ),
-    pTableItemMapper( nullptr ),
-    pTableLines( nullptr ),
-    bBlock( false ),
-    bShowProgress( true ),
-    bSavedShowChanges( false ),
-    doc( nullptr )
+    m_pTableItemMapper( nullptr ),
+    m_pTableLines( nullptr ),
+    m_bBlock( false ),
+    m_bShowProgress( true ),
+    m_bSavedShowChanges( false ),
+    m_pDoc( nullptr )
 {
     InitItemExport();
-}
-
-void SwXMLExport::setBlockMode()
-{
-    bBlock = true;
-
 }
 
 sal_uInt32 SwXMLExport::exportDoc( enum XMLTokenEnum eClass )
@@ -122,9 +117,11 @@ sal_uInt32 SwXMLExport::exportDoc( enum XMLTokenEnum eClass )
                         sAutoTextMode ) )
             {
                 Any aAny = rInfoSet->getPropertyValue(sAutoTextMode);
-                if( aAny.getValueType() == cppu::UnoType<bool>::get() &&
-                    *static_cast<const sal_Bool*>(aAny.getValue()) )
-                    setBlockMode();
+                if( auto b = o3tl::tryAccess<bool>(aAny) )
+                {
+                    if( *b )
+                        m_bBlock = true;
+                }
             }
         }
     }
@@ -142,7 +139,7 @@ sal_uInt32 SwXMLExport::exportDoc( enum XMLTokenEnum eClass )
                 XML_NAMESPACE_OFFICE_EXT);
         }
 
-        GetTextParagraphExport()->SetBlockMode( bBlock );
+        GetTextParagraphExport()->SetBlockMode( m_bBlock );
 
         const SfxItemPool& rPool = pDoc->GetAttrPool();
         sal_uInt16 aWhichIds[5] = { RES_UNKNOWNATR_CONTAINER,
@@ -184,7 +181,7 @@ sal_uInt32 SwXMLExport::exportDoc( enum XMLTokenEnum eClass )
     if (GetMM100UnitConverter().GetXMLMeasureUnit() != eUnit )
     {
         GetMM100UnitConverter().SetXMLMeasureUnit( eUnit );
-        pTwipUnitConv->SetXMLMeasureUnit( eUnit );
+        m_pTwipUnitConverter->SetXMLMeasureUnit( eUnit );
     }
 
     if( getExportFlags() & SvXMLExportFlags::META)
@@ -193,7 +190,7 @@ sal_uInt32 SwXMLExport::exportDoc( enum XMLTokenEnum eClass )
         // the progress works correctly.
         pDoc->getIDocumentStatistics().UpdateDocStat( false, true );
     }
-    if( bShowProgress )
+    if( m_bShowProgress )
     {
         ProgressBarHelper *pProgress = GetProgressBarHelper();
         if( -1 == pProgress->GetReference() )
@@ -246,7 +243,7 @@ sal_uInt32 SwXMLExport::exportDoc( enum XMLTokenEnum eClass )
     SvXMLGraphicHelper *pGraphicResolver = nullptr;
     if( !GetGraphicResolver().is() )
     {
-        pGraphicResolver = SvXMLGraphicHelper::Create( GRAPHICHELPER_MODE_WRITE );
+        pGraphicResolver = SvXMLGraphicHelper::Create( SvXMLGraphicHelperMode::Write );
         Reference< XGraphicObjectResolver > xGraphicResolver( pGraphicResolver );
         SetGraphicResolver( xGraphicResolver );
     }
@@ -259,7 +256,7 @@ sal_uInt32 SwXMLExport::exportDoc( enum XMLTokenEnum eClass )
         {
             pEmbeddedResolver = SvXMLEmbeddedObjectHelper::Create(
                                             *pPersist,
-                                            EMBEDDEDOBJECTHELPER_MODE_WRITE );
+                                            SvXMLEmbeddedObjectHelperMode::Write );
             Reference< XEmbeddedObjectResolver > xEmbeddedResolver( pEmbeddedResolver );
             SetEmbeddedResolver( xEmbeddedResolver );
         }
@@ -281,14 +278,14 @@ sal_uInt32 SwXMLExport::exportDoc( enum XMLTokenEnum eClass )
                                                                 "ShowChanges" );
         }
     }
-    sal_uInt16 nRedlineMode = 0;
-    bSavedShowChanges = IDocumentRedlineAccess::IsShowChanges( pDoc->getIDocumentRedlineAccess().GetRedlineMode() );
+    RedlineFlags nRedlineFlags = RedlineFlags::NONE;
+    m_bSavedShowChanges = IDocumentRedlineAccess::IsShowChanges( pDoc->getIDocumentRedlineAccess().GetRedlineFlags() );
     if( bSaveRedline )
     {
         // now save and switch redline mode
-        nRedlineMode = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode(
-                 (RedlineMode_t)(( nRedlineMode & nsRedlineMode_t::REDLINE_SHOW_MASK ) | nsRedlineType_t::REDLINE_INSERT ));
+        nRedlineFlags = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags(
+                 ( nRedlineFlags & RedlineFlags::ShowMask ) | RedlineFlags::ShowInsert );
     }
 
     sal_uInt32 nRet = SvXMLExport::exportDoc( eClass );
@@ -296,7 +293,7 @@ sal_uInt32 SwXMLExport::exportDoc( enum XMLTokenEnum eClass )
     // now we can restore the redline mode (if we changed it previously)
     if( bSaveRedline )
     {
-      pDoc->getIDocumentRedlineAccess().SetRedlineMode( (RedlineMode_t)(nRedlineMode ));
+      pDoc->getIDocumentRedlineAccess().SetRedlineFlags( nRedlineFlags );
     }
 
     if( pGraphicResolver )
@@ -304,7 +301,7 @@ sal_uInt32 SwXMLExport::exportDoc( enum XMLTokenEnum eClass )
     if( pEmbeddedResolver )
         SvXMLEmbeddedObjectHelper::Destroy( pEmbeddedResolver );
 
-    OSL_ENSURE( !pTableLines, "there are table columns infos left" );
+    OSL_ENSURE( !m_pTableLines, "there are table columns infos left" );
 
     return nRet;
 }
@@ -354,7 +351,7 @@ void SwXMLExport::GetViewSettings(Sequence<PropertyValue>& aProps)
     SwDoc *pDoc = getDoc();
     const Rectangle rRect =
         pDoc->GetDocShell()->GetVisArea( ASPECT_CONTENT );
-    bool bTwip = pDoc->GetDocShell()->GetMapUnit ( ) == MAP_TWIP;
+    bool bTwip = pDoc->GetDocShell()->GetMapUnit ( ) == MapUnit::MapTwip;
 
    OSL_ENSURE( bTwip, "Map unit for visible area is not in TWIPS!" );
 
@@ -373,15 +370,15 @@ void SwXMLExport::GetViewSettings(Sequence<PropertyValue>& aProps)
     // "show redline mode" cannot simply be read from the document
     // since it gets changed during execution. If it's in the info
     // XPropertySet, we take it from there.
-    bool bShowRedlineChanges = bSavedShowChanges;
+    bool bShowRedlineChanges = m_bSavedShowChanges;
     Reference<XPropertySet> xInfoSet( getExportInfo() );
     if ( xInfoSet.is() )
     {
         const OUString sShowChanges( "ShowChanges" );
         if( xInfoSet->getPropertySetInfo()->hasPropertyByName( sShowChanges ) )
         {
-            bShowRedlineChanges = *static_cast<sal_Bool const *>(xInfoSet->
-                                   getPropertyValue( sShowChanges ).getValue());
+            bShowRedlineChanges = *o3tl::doAccess<bool>(xInfoSet->
+                                   getPropertyValue( sShowChanges ));
         }
     }
 
@@ -407,7 +404,7 @@ void SwXMLExport::GetConfigurationSettings( Sequence < PropertyValue >& rProps)
     }
 }
 
-sal_Int32 SwXMLExport::GetDocumentSpecificSettings( ::std::list< SettingsGroup >& _out_rSettings )
+sal_Int32 SwXMLExport::GetDocumentSpecificSettings( std::list< SettingsGroup >& _out_rSettings )
 {
     // the only doc-specific settings group we know so far are the XForms settings
     uno::Sequence<beans::PropertyValue> aXFormsSettings;
@@ -488,8 +485,8 @@ void SwXMLExport::ExportContent_()
     Reference < XTextDocument > xTextDoc( GetModel(), UNO_QUERY );
     Reference < XText > xText = xTextDoc->getText();
 
-    GetTextParagraphExport()->exportFramesBoundToPage( bShowProgress );
-    GetTextParagraphExport()->exportText( xText, bShowProgress );
+    GetTextParagraphExport()->exportFramesBoundToPage( m_bShowProgress );
+    GetTextParagraphExport()->exportText( xText, m_bShowProgress );
 }
 
 namespace
@@ -516,8 +513,8 @@ sal_Int64 SAL_CALL SwXMLExport::getSomething( const Sequence< sal_Int8 >& rId )
 
 SwDoc* SwXMLExport::getDoc()
 {
-    if( doc != nullptr )
-        return doc;
+    if( m_pDoc != nullptr )
+        return m_pDoc;
     Reference < XTextDocument > xTextDoc( GetModel(), UNO_QUERY );
     Reference < XText > xText = xTextDoc->getText();
     Reference<XUnoTunnel> xTextTunnel( xText, UNO_QUERY);
@@ -525,9 +522,9 @@ SwDoc* SwXMLExport::getDoc()
     SwXText *pText = reinterpret_cast< SwXText *>(
             sal::static_int_cast< sal_IntPtr >( xTextTunnel->getSomething( SwXText::getUnoTunnelId() )));
     assert( pText != nullptr );
-    doc = pText->GetDoc();
-    assert( doc != nullptr );
-    return doc;
+    m_pDoc = pText->GetDoc();
+    assert( m_pDoc != nullptr );
+    return m_pDoc;
 }
 
 const SwDoc* SwXMLExport::getDoc() const

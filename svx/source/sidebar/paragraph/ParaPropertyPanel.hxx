@@ -43,7 +43,7 @@ class ParaPropertyPanel
       public ::sfx2::sidebar::ControllerItem::ItemUpdateReceiverInterface
 {
 public:
-    virtual ~ParaPropertyPanel();
+    virtual ~ParaPropertyPanel() override;
     virtual void dispose() override;
 
     static VclPtr<vcl::Window> Create (
@@ -56,7 +56,7 @@ public:
     SfxBindings* GetBindings() { return mpBindings;}
 
     virtual void HandleContextChange (
-        const ::sfx2::sidebar::EnumContext& rContext) override;
+        const vcl::EnumContext& rContext) override;
 
     virtual void NotifyItemUpdate(
         const sal_uInt16 nSId,
@@ -98,8 +98,8 @@ private:
 
     FieldUnit                       m_eMetricUnit;
     FieldUnit                       m_last_eMetricUnit;
-    SfxMapUnit                      m_eLRSpaceUnit;
-    SfxMapUnit                      m_eULSpaceUnit;
+    MapUnit                         m_eLRSpaceUnit;
+    MapUnit                         m_eULSpaceUnit;
     // Control Items
     ::sfx2::sidebar::ControllerItem  maLRSpaceControl;
     ::sfx2::sidebar::ControllerItem  maULSpaceControl;
@@ -107,13 +107,13 @@ private:
     ::sfx2::sidebar::ControllerItem  maIncIndentControl;
     ::sfx2::sidebar::ControllerItem  m_aMetricCtl;
 
-    ::sfx2::sidebar::EnumContext maContext;
+    vcl::EnumContext maContext;
     SfxBindings* mpBindings;
     css::uno::Reference<css::ui::XSidebar> mxSidebar;
 
-    DECL_LINK_TYPED(ModifyIndentHdl_Impl, Edit&, void);
-    DECL_LINK_TYPED(ClickIndent_IncDec_Hdl_Impl, ToolBox*, void);
-    DECL_LINK_TYPED(ULSpaceHdl_Impl, Edit&, void);
+    DECL_LINK(ModifyIndentHdl_Impl, Edit&, void);
+    DECL_LINK(ClickIndent_IncDec_Hdl_Impl, ToolBox*, void);
+    DECL_LINK(ULSpaceHdl_Impl, Edit&, void);
 
     void StateChangedIndentImpl( sal_uInt16 nSID, SfxItemState eState, const SfxPoolItem* pState );
     void StateChangedULImpl( sal_uInt16 nSID, SfxItemState eState, const SfxPoolItem* pState );

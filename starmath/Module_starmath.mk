@@ -21,12 +21,18 @@ $(eval $(call gb_Module_add_l10n_targets,starmath,\
 ))
 
 $(eval $(call gb_Module_add_check_targets,starmath,\
+    CppunitTest_starmath_export \
     CppunitTest_starmath_import \
     CppunitTest_starmath_qa_cppunit \
 ))
 
 $(eval $(call gb_Module_add_subsequentcheck_targets,starmath,\
     JunitTest_starmath_unoapi \
+))
+
+# screenshots
+$(eval $(call gb_Module_add_screenshot_targets,starmath,\
+    CppunitTest_starmath_dialogs_test \
 ))
 
 # vim: set noet sw=4 ts=4:

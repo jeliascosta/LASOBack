@@ -20,6 +20,8 @@
 #include "scitems.hxx"
 #include <editeng/eeitem.hxx>
 
+#include <com/sun/star/style/NumberingType.hpp>
+#include <formula/errorcodes.hxx>
 #include <svx/algitem.hxx>
 #include <editeng/boxitem.hxx>
 #include <editeng/brushitem.hxx>
@@ -86,7 +88,7 @@ static void lcl_ReadFixedString( SvStream& rStream, void* pData, size_t nLen )
         pBuf[0] = 0;
     else
     {
-        rStream.Read( pBuf, nLen);
+        rStream.ReadBytes(pBuf, nLen);
         pBuf[nLen-1] = 0;
     }
 }
@@ -95,7 +97,7 @@ static void lcl_ReadFileHeader(SvStream& rStream, Sc10FileHeader& rFileHeader)
 {
     lcl_ReadFixedString( rStream, &rFileHeader.CopyRight, sizeof(rFileHeader.CopyRight));
     rStream.ReadUInt16( rFileHeader.Version );
-    rStream.Read(&rFileHeader.Reserved, sizeof(rFileHeader.Reserved));
+    rStream.ReadBytes(&rFileHeader.Reserved, sizeof(rFileHeader.Reserved));
 }
 
 static void lcl_ReadTabProtect(SvStream& rStream, Sc10TableProtect& rProtect)
@@ -196,13 +198,13 @@ static void lcl_ReadPageFormat(SvStream& rStream, Sc10PageFormat& rFormat)
     rStream.ReadUChar( rFormat.TopBottomDir );
     lcl_ReadFixedString( rStream, &rFormat.PrintAreaName, sizeof(rFormat.PrintAreaName));
     lcl_ReadBlockRect(rStream, rFormat.PrintArea);
-    rStream.Read(&rFormat.PrnZoom, sizeof(rFormat.PrnZoom));
+    rStream.ReadBytes(&rFormat.PrnZoom, sizeof(rFormat.PrnZoom));
     rStream.ReadInt16( rFormat.FirstPageNo );
     rStream.ReadInt16( rFormat.RowRepeatStart );
     rStream.ReadInt16( rFormat.RowRepeatEnd );
     rStream.ReadInt16( rFormat.ColRepeatStart );
     rStream.ReadInt16( rFormat.ColRepeatEnd );
-    rStream.Read(&rFormat.Reserved, sizeof(rFormat.Reserved));
+    rStream.ReadBytes(&rFormat.Reserved, sizeof(rFormat.Reserved));
 }
 
 static void lcl_ReadGraphHeader(SvStream& rStream, Sc10GraphHeader& rHeader)
@@ -221,7 +223,7 @@ static void lcl_ReadGraphHeader(SvStream& rStream, Sc10GraphHeader& rHeader)
     rStream.ReadUChar( rHeader.IsTransparent );
     lcl_ReadRGB(rStream, rHeader.FrameColor);
     lcl_ReadRGB(rStream, rHeader.BackColor);
-    rStream.Read(&rHeader.Reserved, sizeof(rHeader.Reserved));
+    rStream.ReadBytes(&rHeader.Reserved, sizeof(rHeader.Reserved));
 }
 
 static void lcl_ReadImageHeaer(SvStream& rStream, Sc10ImageHeader& rHeader)
@@ -269,7 +271,7 @@ static void lcl_ReadChartSheetData(SvStream& rStream, Sc10ChartSheetData& rSheet
     rStream.ReadInt16( rSheetData.DataY1 );
     rStream.ReadInt16( rSheetData.DataX2 );
     rStream.ReadInt16( rSheetData.DataY2 );
-    rStream.Read(&rSheetData.Reserved, sizeof(rSheetData.Reserved));
+    rStream.ReadBytes(&rSheetData.Reserved, sizeof(rSheetData.Reserved));
 }
 
 static void lcl_ReadChartTypeData(SvStream& rStream, Sc10ChartTypeData& rTypeData)
@@ -311,7 +313,7 @@ static void lcl_ReadChartTypeData(SvStream& rStream, Sc10ChartTypeData& rTypeDat
     for (i = 0; i < 50; i++)
         lcl_ReadFixedString( rStream, &rTypeData.LabelText[i], sizeof(Sc10ChartText));
     lcl_ReadFixedString( rStream, &rTypeData.LeftTitle, sizeof(rTypeData.LeftTitle));
-    rStream.Read(&rTypeData.Reserved, sizeof(rTypeData.Reserved));
+    rStream.ReadBytes(&rTypeData.Reserved, sizeof(rTypeData.Reserved));
 }
 
 static double lcl_PascalToDouble(sal_Char* tp6)
@@ -394,7 +396,7 @@ Sc10FontData::Sc10FontData(SvStream& rStream)
     sal_uInt16 nLen(0);
     rStream.ReadUInt16( nLen );
     if (nLen < sizeof(FaceName))
-        rStream.Read(FaceName, nLen);
+        rStream.ReadBytes(FaceName, nLen);
     else
         rStream.SetError(ERRCODE_IO_WRONGFORMAT);
 }
@@ -427,22 +429,22 @@ Sc10NameData::Sc10NameData(SvStream& rStream)
 {
     sal_uInt8 nLen;
     rStream.ReadUChar( nLen );
-    rStream.Read(Name, sizeof(Name) - 1);
+    rStream.ReadBytes(Name, sizeof(Name) - 1);
     if (nLen >= sizeof(Name))
         nLen = sizeof(Name) - 1;
     Name[nLen] = 0;
 
     rStream.ReadUChar( nLen );
-    rStream.Read(Reference, sizeof(Reference) - 1);
+    rStream.ReadBytes(Reference, sizeof(Reference) - 1);
     if (nLen >= sizeof(Reference))
         nLen = sizeof(Reference) - 1;
     Reference[nLen] = 0;
-    rStream.Read(Reserved, sizeof(Reserved));
+    rStream.ReadBytes(Reserved, sizeof(Reserved));
 }
 
 Sc10NameCollection::Sc10NameCollection(SvStream& rStream) :
     ScCollection (4, 4),
-    nError     (0)
+    nError       (0)
 {
     sal_uInt16 ID;
     rStream.ReadUInt16( ID );
@@ -487,7 +489,7 @@ Sc10PatternData::Sc10PatternData(SvStream& rStream)
     rStream.ReadUInt16( FrameColor );
     rStream.ReadUInt16( Flags );
     rStream.ReadUInt16( FormatFlags );
-    rStream.Read(Reserved, sizeof(Reserved));
+    rStream.ReadBytes(Reserved, sizeof(Reserved));
 }
 
 Sc10PatternCollection::Sc10PatternCollection(SvStream& rStream)
@@ -715,23 +717,21 @@ void Sc10PageCollection::PutToDoc( ScDocument* pDoc )
             aEditAttribs.Put(   SvxFontItem(
                                     eFam,
                                     SC10TOSTRING( pHeadFootLine->LogFont.lfFaceName ), EMPTY_OUSTRING,
-                                    PITCH_DONTKNOW, RTL_TEXTENCODING_DONTKNOW, EE_CHAR_FONTINFO ),
-                                EE_CHAR_FONTINFO );
-            aEditAttribs.Put(   SvxFontHeightItem( std::abs( pHeadFootLine->LogFont.lfHeight ), 100, EE_CHAR_FONTHEIGHT ),
-                                EE_CHAR_FONTHEIGHT);
+                                    PITCH_DONTKNOW, RTL_TEXTENCODING_DONTKNOW, EE_CHAR_FONTINFO ) );
+            aEditAttribs.Put(   SvxFontHeightItem( std::abs( pHeadFootLine->LogFont.lfHeight ), 100, EE_CHAR_FONTHEIGHT ) );
 
             Sc10Color nColor = pHeadFootLine->TextColor;
             Color TextColor( nColor.Red, nColor.Green, nColor.Blue );
-            aEditAttribs.Put(SvxColorItem(TextColor, EE_CHAR_COLOR), EE_CHAR_COLOR);
+            aEditAttribs.Put(SvxColorItem(TextColor, EE_CHAR_COLOR));
             // FontAttr
             if (pHeadFootLine->LogFont.lfWeight != fwNormal)
-                aEditAttribs.Put(SvxWeightItem(WEIGHT_BOLD, EE_CHAR_WEIGHT), EE_CHAR_WEIGHT);
+                aEditAttribs.Put(SvxWeightItem(WEIGHT_BOLD, EE_CHAR_WEIGHT));
             if (pHeadFootLine->LogFont.lfItalic != 0)
-                aEditAttribs.Put(SvxPostureItem(ITALIC_NORMAL, EE_CHAR_ITALIC), EE_CHAR_ITALIC);
+                aEditAttribs.Put(SvxPostureItem(ITALIC_NORMAL, EE_CHAR_ITALIC));
             if (pHeadFootLine->LogFont.lfUnderline != 0)
-                aEditAttribs.Put(SvxUnderlineItem(LINESTYLE_SINGLE, EE_CHAR_UNDERLINE), EE_CHAR_UNDERLINE);
+                aEditAttribs.Put(SvxUnderlineItem(LINESTYLE_SINGLE, EE_CHAR_UNDERLINE));
             if (pHeadFootLine->LogFont.lfStrikeOut != 0)
-                aEditAttribs.Put(SvxCrossedOutItem(STRIKEOUT_SINGLE, EE_CHAR_STRIKEOUT), EE_CHAR_STRIKEOUT);
+                aEditAttribs.Put(SvxCrossedOutItem(STRIKEOUT_SINGLE, EE_CHAR_STRIKEOUT));
             OUString aText( pHeadFootLine->Title, strlen(pHeadFootLine->Title), DEFCHARSET );
             aEditEngine.SetText( aText );
             aEditEngine.QuickSetAttribs( aEditAttribs, ESelection( 0, 0, 0, aText.getLength() ) );
@@ -859,9 +859,9 @@ void Sc10PageCollection::PutToDoc( ScDocument* pDoc )
         }
 
         SvxPageItem aPageItem(ATTR_PAGE);
-        aPageItem.SetPageUsage( SVX_PAGE_ALL );
+        aPageItem.SetPageUsage( SvxPageUsage::All );
         aPageItem.SetLandscape( pPage->Orientation != 1 );
-        aPageItem.SetNumType( SVX_ARABIC );
+        aPageItem.SetNumType( css::style::NumberingType::ARABIC );
         pSet->Put(aPageItem);
 
         pSet->Put(SvxLRSpaceItem( pPage->Left, pPage->Right, 0,0, ATTR_LRSPACE ));
@@ -1014,10 +1014,10 @@ void Sc10Import::LoadFileHeader()
 void Sc10Import::LoadFileInfo()
 {
     Sc10FileInfo FileInfo;
-    rStream.Read(&FileInfo, sizeof(FileInfo));
+    rStream.ReadBytes(&FileInfo, sizeof(FileInfo));
 
     nError = rStream.GetError();
-    // TODO: ? copy info
+    // TODO: ? copy info, byte swapping
 }
 
 void Sc10Import::LoadEditStateInfo()
@@ -1035,7 +1035,7 @@ void Sc10Import::LoadEditStateInfo()
     rStream.ReadUInt16(EditStateInfo.DeltaY);
     rStream.ReadUInt16(EditStateInfo.DeltaZ);
     rStream.ReadUChar(EditStateInfo.DataBaseMode);
-    rStream.Read(EditStateInfo.Reserved, sizeof(EditStateInfo.Reserved));
+    rStream.ReadBytes(EditStateInfo.Reserved, sizeof(EditStateInfo.Reserved));
 
     assert(rStream.GetError() || rStream.Tell() == nOldPos + sizeof(Sc10EditStateInfo));
 
@@ -1068,7 +1068,7 @@ void Sc10Import::LoadScrZoom()
 {
     // TODO: unfortunately Zoom is a 6-byte TP real number (don't know how to translate that)
     sal_Char cZoom[6];
-    rStream.Read(cZoom, sizeof(cZoom));
+    rStream.ReadBytes(cZoom, sizeof(cZoom));
     nError = rStream.GetError();
 }
 
@@ -1427,7 +1427,7 @@ void Sc10Import::LoadTables()
 
         sal_uInt8 nLen;
         rStream.ReadUChar( nLen );
-        rStream.Read(TabName, sizeof(TabName) - 1);
+        rStream.ReadBytes(TabName, sizeof(TabName) - 1);
         if (nLen >= sizeof(TabName))
             nLen = sizeof(TabName) - 1;
         TabName[nLen] = 0;
@@ -1639,7 +1639,7 @@ void Sc10Import::LoadCol(SCCOL Col, SCTAB Tab)
                     sal_uInt8 Len;
                     sal_Char s[256];
                     rStream.ReadUChar( Len );
-                    rStream.Read(s, Len);
+                    rStream.ReadBytes(s, Len);
                     s[Len] = 0;
 
                     pDoc->SetString( Col, static_cast<SCROW> (Row), Tab, SC10TOSTRING( s ) );
@@ -1651,7 +1651,7 @@ void Sc10Import::LoadCol(SCCOL Col, SCTAB Tab)
                     sal_uInt8 Len;
                     sal_Char s[256+1];
                     rStream.ReadUChar( Len );
-                    rStream.Read(&s[1], Len);
+                    rStream.ReadBytes(&s[1], Len);
                     s[0] = '=';
                     s[Len + 1] = 0;
                     ScFormulaCell* pCell = new ScFormulaCell( pDoc, ScAddress( Col, static_cast<SCROW> (Row), Tab ) );
@@ -1674,7 +1674,7 @@ void Sc10Import::LoadCol(SCCOL Col, SCTAB Tab)
             if (nNoteLen != 0)
             {
                 std::unique_ptr<sal_Char[]> xNote(new sal_Char[nNoteLen+1]);
-                nNoteLen = rStream.Read(xNote.get(), nNoteLen);
+                nNoteLen = rStream.ReadBytes(xNote.get(), nNoteLen);
                 xNote[nNoteLen] = 0;
                 OUString aNoteText( SC10TOSTRING(xNote.get()));
                 xNote.reset();
@@ -2310,7 +2310,7 @@ void Sc10Import::LoadObjects()
         sal_uInt16 nAnz;
         rStream.ReadUInt16( nAnz );
         sal_Char Reserved[32];
-        rStream.Read(Reserved, sizeof(Reserved));
+        rStream.ReadBytes(Reserved, sizeof(Reserved));
         nError = rStream.GetError();
         if ((nAnz > 0) && (nError == 0))
         {

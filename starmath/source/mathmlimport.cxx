@@ -63,6 +63,7 @@ one go*/
 
 #include <memory>
 
+#include "mathmlattr.hxx"
 #include "mathmlimport.hxx"
 #include "register.hxx"
 #include <starmath.hrc>
@@ -484,8 +485,8 @@ void SmXMLImport::endDocument()
     throw(xml::sax::SAXException, uno::RuntimeException, std::exception)
 {
     //Set the resulted tree into the SmDocShell where it belongs
-    SmNode *pTree;
-    if (nullptr != (pTree = GetTree()))
+    SmNode *pTree = popOrZero(aNodeStack);
+    if (pTree && pTree->GetType() == NTABLE)
     {
         uno::Reference <frame::XModel> xModel = GetModel();
         uno::Reference <lang::XUnoTunnel> xTunnel(xModel,uno::UNO_QUERY);
@@ -496,7 +497,7 @@ void SmXMLImport::endDocument()
         {
             SmDocShell *pDocShell =
                 static_cast<SmDocShell*>(pModel->GetObjectShell());
-            pDocShell->SetFormulaTree(pTree);
+            pDocShell->SetFormulaTree(static_cast<SmTableNode *>(pTree));
             if (aText.isEmpty())  //If we picked up no annotation text
             {
                 // Get text from imported formula
@@ -1333,17 +1334,80 @@ public:
     void StartElement(const uno::Reference< xml::sax::XAttributeList >& xAttrList ) override;
 };
 
-void SmXMLSpaceContext_Impl::StartElement(
-    const uno::Reference<xml::sax::XAttributeList > & /*xAttrList*/ )
+namespace {
+
+bool lcl_CountBlanks(const MathMLAttributeLengthValue &rLV,
+                     sal_Int32 *pWide, sal_Int32 *pNarrow)
 {
-    // There is not any syntax in Math to specify blank nodes of arbitrary
-    // size. Hence we always interpret an <mspace> as a large gap "~".
+    assert(pWide);
+    assert(pNarrow);
+    if (rLV.aNumber.GetNumerator() == 0)
+    {
+        *pWide = *pNarrow = 0;
+        return true;
+    }
+    // TODO: honor other units than em
+    if (rLV.eUnit != MathMLLengthUnit::Em)
+        return false;
+    if (rLV.aNumber.GetNumerator() < 0)
+        return false;
+    const Fraction aTwo(2, 1);
+    auto aWide = rLV.aNumber / aTwo;
+    auto nWide = static_cast<sal_Int32>(static_cast<long>(aWide));
+    if (nWide < 0)
+        return false;
+    const Fraction aPointFive(1, 2);
+    auto aNarrow = (rLV.aNumber - Fraction(nWide, 1) * aTwo) / aPointFive;
+    auto nNarrow = static_cast<sal_Int32>(static_cast<long>(aNarrow));
+    if (nNarrow < 0)
+        return false;
+    *pWide = nWide;
+    *pNarrow = nNarrow;
+    return true;
+}
+
+}
+
+void SmXMLSpaceContext_Impl::StartElement(
+    const uno::Reference<xml::sax::XAttributeList > & xAttrList )
+{
+    // There is no syntax in Math to specify blank nodes of arbitrary size yet.
+    MathMLAttributeLengthValue aLV;
+    sal_Int32 nWide = 0, nNarrow = 0;
+
+    sal_Int16 nAttrCount = xAttrList.is() ? xAttrList->getLength() : 0;
+    for (sal_Int16 i=0;i<nAttrCount;i++)
+    {
+        OUString sAttrName = xAttrList->getNameByIndex(i);
+        OUString aLocalName;
+        sal_uInt16 nPrefix = GetImport().GetNamespaceMap().GetKeyByAttrName(sAttrName, &aLocalName);
+        OUString sValue = xAttrList->getValueByIndex(i);
+        const SvXMLTokenMap &rAttrTokenMap = GetSmImport().GetMspaceAttrTokenMap();
+        switch (rAttrTokenMap.Get(nPrefix, aLocalName))
+        {
+            case XML_TOK_WIDTH:
+                if ( ParseMathMLAttributeLengthValue(sValue.trim(), &aLV) <= 0 ||
+                     !lcl_CountBlanks(aLV, &nWide, &nNarrow) )
+                    SAL_WARN("starmath", "ignore mspace's width: " << sValue);
+                break;
+            default:
+                break;
+        }
+    }
     SmToken aToken;
-    aToken.cMathChar = '\0';
     aToken.eType = TBLANK;
+    aToken.cMathChar = '\0';
+    aToken.nGroup = TG::Blank;
     aToken.nLevel = 5;
     std::unique_ptr<SmBlankNode> pBlank(new SmBlankNode(aToken));
-    pBlank->IncreaseBy(aToken);
+    for (sal_Int32 i = 0; i < nWide; i++)
+        pBlank->IncreaseBy(aToken);
+    if (nNarrow > 0)
+    {
+        aToken.eType = TSBLANK;
+        for (sal_Int32 i = 0; i < nNarrow; i++)
+            pBlank->IncreaseBy(aToken);
+    }
     GetSmImport().GetNodeStack().push_front(std::move(pBlank));
 }
 
@@ -1488,21 +1552,18 @@ void SmXMLUnderContext_Impl::HandleAccent()
     aToken.cMathChar = '\0';
     aToken.eType = TUNDERLINE;
 
-
-    SmNodeArray aSubNodes;
-    aSubNodes.resize(2);
-
+    SmNode *pFirst;
     std::unique_ptr<SmStructureNode> pNode(new SmAttributNode(aToken));
     if ((pTest->GetToken().cMathChar & 0x0FFF) == 0x0332)
     {
-        aSubNodes[0] = new SmRectangleNode(aToken);
+        pFirst = new SmRectangleNode(aToken);
         delete pTest;
     }
     else
-        aSubNodes[0] = pTest;
+        pFirst = pTest;
 
-    aSubNodes[1] = popOrZero(rNodeStack);
-    pNode->SetSubNodes(aSubNodes);
+    SmNode *pSecond = popOrZero(rNodeStack);
+    pNode->SetSubNodes(pFirst, pSecond);
     pNode->SetScaleMode(SCALE_WIDTH);
     rNodeStack.push_front(std::move(pNode));
 }
@@ -1563,11 +1624,9 @@ void SmXMLOverContext_Impl::HandleAccent()
     std::unique_ptr<SmAttributNode> pNode(new SmAttributNode(aToken));
     SmNodeStack &rNodeStack = GetSmImport().GetNodeStack();
 
-    SmNodeArray aSubNodes;
-    aSubNodes.resize(2);
-    aSubNodes[0] = popOrZero(rNodeStack);
-    aSubNodes[1] = popOrZero(rNodeStack);
-    pNode->SetSubNodes(aSubNodes);
+    SmNode *pFirst = popOrZero(rNodeStack);
+    SmNode *pSecond = popOrZero(rNodeStack);
+    pNode->SetSubNodes(pFirst, pSecond);
     pNode->SetScaleMode(SCALE_WIDTH);
     rNodeStack.push_front(std::move(pNode));
 
@@ -1754,7 +1813,7 @@ public:
         sal_uInt16 i_nPrefix, const OUString & i_rLName,
         const uno::Reference<document::XDocumentProperties>& i_xDocProps);
 
-    virtual ~SmXMLFlatDocContext_Impl();
+    virtual ~SmXMLFlatDocContext_Impl() override;
 
     virtual SvXMLImportContext *CreateChildContext(sal_uInt16 i_nPrefix, const OUString& i_rLocalName, const uno::Reference<xml::sax::XAttributeList>& i_xAttrList) override;
 };
@@ -1903,6 +1962,12 @@ static const SvXMLTokenMapEntry aActionAttrTokenMap[] =
     XML_TOKEN_MAP_END
 };
 
+static const SvXMLTokenMapEntry aMspaceAttrTokenMap[] =
+{
+    { XML_NAMESPACE_MATH,   XML_WIDTH,      XML_TOK_WIDTH },
+    XML_TOKEN_MAP_END
+};
+
 
 const SvXMLTokenMap& SmXMLImport::GetPresLayoutElemTokenMap()
 {
@@ -1974,6 +2039,13 @@ const SvXMLTokenMap& SmXMLImport::GetActionAttrTokenMap()
     if (!pActionAttrTokenMap)
         pActionAttrTokenMap.reset(new SvXMLTokenMap(aActionAttrTokenMap));
     return *pActionAttrTokenMap;
+}
+
+const SvXMLTokenMap& SmXMLImport::GetMspaceAttrTokenMap()
+{
+    if (!pMspaceAttrTokenMap)
+        pMspaceAttrTokenMap.reset(new SvXMLTokenMap(aMspaceAttrTokenMap));
+    return *pMspaceAttrTokenMap;
 }
 
 
@@ -2075,10 +2147,10 @@ SvXMLImportContext *SmXMLDocContext_Impl::CreateChildContext(
             /*Basically theres an implicit mrow around certain bare
              *elements, use a RowContext to see if this is one of
              *those ones*/
-            SmXMLRowContext_Impl aTempContext(GetSmImport(),nPrefix,
-                GetXMLToken(XML_MROW));
+            rtl::Reference<SmXMLRowContext_Impl> aTempContext(new SmXMLRowContext_Impl(GetSmImport(),nPrefix,
+                GetXMLToken(XML_MROW)));
 
-            pContext = aTempContext.StrictCreateChildContext(nPrefix,
+            pContext = aTempContext->StrictCreateChildContext(nPrefix,
                 rLocalName, xAttrList);
             break;
     }
@@ -2087,15 +2159,13 @@ SvXMLImportContext *SmXMLDocContext_Impl::CreateChildContext(
 
 void SmXMLDocContext_Impl::EndElement()
 {
-    SmNodeArray ContextArray;
-    ContextArray.resize(1);
     SmNodeStack &rNodeStack = GetSmImport().GetNodeStack();
 
-    ContextArray[0] = popOrZero(rNodeStack);
+    SmNode *pContextNode = popOrZero(rNodeStack);
 
     SmToken aDummy;
     std::unique_ptr<SmStructureNode> pSNode(new SmLineNode(aDummy));
-    pSNode->SetSubNodes(ContextArray);
+    pSNode->SetSubNodes(pContextNode, nullptr);
     rNodeStack.push_front(std::move(pSNode));
 
     SmNodeArray  LineArray;

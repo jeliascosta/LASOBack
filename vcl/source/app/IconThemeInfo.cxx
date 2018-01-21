@@ -16,13 +16,15 @@
 // constants for theme ids and display names. Only the theme id for hicontrast is used
 // outside of this class and hence made public.
 
-const OUString vcl::IconThemeInfo::HIGH_CONTRAST_ID = "hicontrast";
+const OUStringLiteral vcl::IconThemeInfo::HIGH_CONTRAST_ID("hicontrast");
 
 namespace {
 
-static const OUString HIGH_CONTRAST_DISPLAY_NAME = "High Contrast";
-static const OUString TANGO_TESTING_ID = "tango_testing";
-static const OUString TANGO_TESTING_DISPLAY_NAME = "Tango Testing";
+static const OUStringLiteral HIGH_CONTRAST_DISPLAY_NAME("High Contrast");
+static const OUStringLiteral TANGO_TESTING_ID("tango_testing");
+static const OUStringLiteral TANGO_TESTING_DISPLAY_NAME("Tango Testing");
+static const OUStringLiteral BREEZE_DARK_ID("breeze_dark");
+static const OUStringLiteral BREEZE_DARK_DISPLAY_NAME("Breeze Dark");
 
 OUString
 filename_from_url(const OUString& url)
@@ -126,6 +128,9 @@ IconThemeInfo::ThemeIdToDisplayName(const OUString& themeId)
     }
     else if (themeId.equalsIgnoreAsciiCase(TANGO_TESTING_ID)) {
         return TANGO_TESTING_DISPLAY_NAME;
+    }
+    else if (themeId.equalsIgnoreAsciiCase(BREEZE_DARK_ID)) {
+        return BREEZE_DARK_DISPLAY_NAME;
     }
 
     // make the first letter uppercase

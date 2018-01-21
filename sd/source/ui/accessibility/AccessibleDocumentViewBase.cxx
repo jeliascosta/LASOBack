@@ -63,7 +63,7 @@ AccessibleDocumentViewBase::AccessibleDocumentViewBase (
     const uno::Reference<frame::XController>& rxController,
     const uno::Reference<XAccessible>& rxParent)
     : AccessibleContextBase (rxParent,
-                             pViewShell->GetDoc()->GetDocumentType() == DOCUMENT_TYPE_IMPRESS ?
+                             pViewShell->GetDoc()->GetDocumentType() == DocumentType::Impress ?
                                      AccessibleRole::DOCUMENT_PRESENTATION :
                                      AccessibleRole::DOCUMENT),
       mpWindow (pSdWindow),
@@ -159,7 +159,7 @@ void AccessibleDocumentViewBase::Init()
         SetState(AccessibleStateType::EDITABLE);
 }
 
-IMPL_LINK_TYPED(AccessibleDocumentViewBase, WindowChildEventListener,
+IMPL_LINK(AccessibleDocumentViewBase, WindowChildEventListener,
     VclWindowEvent&, rEvent, void)
 {
         //      DBG_ASSERT( pVclEvent->GetWindow(), "Window???" );
@@ -170,8 +170,7 @@ IMPL_LINK_TYPED(AccessibleDocumentViewBase, WindowChildEventListener,
                 // Window is dying.  Unregister from VCL Window.
                 // This is also attempted in the disposing() method.
                 vcl::Window* pWindow = maShapeTreeInfo.GetWindow();
-                vcl::Window* pDyingWindow = static_cast<vcl::Window*>(
-                    rEvent.GetWindow());
+                vcl::Window* pDyingWindow = rEvent.GetWindow();
                 if (pWindow==pDyingWindow && pWindow!=nullptr && maWindowLink.IsSet())
                 {
                     pWindow->RemoveChildEventListener (maWindowLink);
@@ -213,7 +212,7 @@ IMPL_LINK_TYPED(AccessibleDocumentViewBase, WindowChildEventListener,
 
 //=====  IAccessibleViewForwarderListener  ====================================
 
-void AccessibleDocumentViewBase::ViewForwarderChanged(ChangeType, const IAccessibleViewForwarder* )
+void AccessibleDocumentViewBase::ViewForwarderChanged()
 {
     // Empty
 }
@@ -559,9 +558,7 @@ void SAL_CALL
     if( IsDisposed() )
         return;
 
-    ViewForwarderChanged (
-        IAccessibleViewForwarderListener::VISIBLE_AREA,
-        &maViewForwarder);
+    ViewForwarderChanged();
 }
 
 void SAL_CALL
@@ -571,9 +568,7 @@ void SAL_CALL
     if( IsDisposed() )
         return;
 
-    ViewForwarderChanged (
-        IAccessibleViewForwarderListener::VISIBLE_AREA,
-        &maViewForwarder);
+    ViewForwarderChanged();
 }
 
 void SAL_CALL
@@ -583,9 +578,7 @@ void SAL_CALL
     if( IsDisposed() )
         return;
 
-    ViewForwarderChanged (
-        IAccessibleViewForwarderListener::VISIBLE_AREA,
-        &maViewForwarder);
+    ViewForwarderChanged();
 }
 
 void SAL_CALL
@@ -595,9 +588,7 @@ void SAL_CALL
     if( IsDisposed() )
         return;
 
-    ViewForwarderChanged (
-        IAccessibleViewForwarderListener::VISIBLE_AREA,
-        &maViewForwarder);
+    ViewForwarderChanged();
 }
 
 //=====  XFocusListener  ==================================================
@@ -800,7 +791,7 @@ uno::Any SAL_CALL AccessibleDocumentViewBase::getExtendedAttributes()
         ::sd::PresentationViewShell* pPresViewSh = static_cast< ::sd::PresentationViewShell*>(mpViewShell);
         SdPage* pCurrPge = pPresViewSh->getCurrentPage();
         SdDrawDocument* pDoc = pPresViewSh->GetDoc();
-        SdPage* pNotesPge = pDoc->GetSdPage((pCurrPge->GetPageNum()-1)>>1, PK_NOTES);
+        SdPage* pNotesPge = pDoc->GetSdPage((pCurrPge->GetPageNum()-1)>>1, PageKind::Notes);
         if (pNotesPge)
         {
             SdrObject* pNotesObj = pNotesPge->GetPresObj(PRESOBJ_NOTES);
@@ -846,7 +837,7 @@ uno::Any SAL_CALL AccessibleDocumentViewBase::getExtendedAttributes()
             sValue += OUString::number((sal_Int16)((sal_uInt16)((pCurrPge->GetPageNum()-1)>>1) + 1)) ;
             sName = ";total-pages:";
             sValue += sName;
-            sValue += OUString::number(pDoc->GetSdPageCount(PK_STANDARD)) ;
+            sValue += OUString::number(pDoc->GetSdPageCount(PageKind::Standard)) ;
             sValue += ";";
         }
     }

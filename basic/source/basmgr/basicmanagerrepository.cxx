@@ -30,7 +30,7 @@
 #include <svtools/ehdl.hxx>
 #include <svtools/sfxecode.hxx>
 #include <unotools/pathoptions.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <vcl/svapp.hxx>
 #include <tools/debug.hxx>
 #include <tools/diagnose_ex.h>
@@ -113,7 +113,7 @@ namespace basic
             @precond
                 our mutex is locked
         */
-        bool impl_hasLocationForModel( const Reference< XModel >& _rxDocumentModel );
+        bool impl_hasLocationForModel( const Reference< XModel >& _rxDocumentModel ) const;
 
         /** creates a new BasicManager instance for the given model
 
@@ -372,7 +372,7 @@ namespace basic
         return location;
     }
 
-    bool ImplRepository::impl_hasLocationForModel( const Reference< XModel >& _rxDocumentModel )
+    bool ImplRepository::impl_hasLocationForModel( const Reference< XModel >& _rxDocumentModel ) const
     {
         Reference< XInterface > xNormalized( _rxDocumentModel, UNO_QUERY );
         DBG_ASSERT( _rxDocumentModel.is(), "ImplRepository::impl_getLocationForModel: invalid model!" );
@@ -577,8 +577,7 @@ namespace basic
 
     void ImplRepository::Notify( SfxBroadcaster& _rBC, const SfxHint& _rHint )
     {
-        const SfxSimpleHint* pSimpleHint = dynamic_cast< const SfxSimpleHint* >( &_rHint );
-        if ( !pSimpleHint || ( pSimpleHint->GetId() != SFX_HINT_DYING ) )
+        if ( _rHint.GetId() != SFX_HINT_DYING )
             // not interested in
             return;
 

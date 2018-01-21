@@ -674,6 +674,984 @@ function configureDetectionTools()
  *  @source http://svn.dojotoolkit.org/src/dojox/trunk/_base/sniff.js
  */
 
+/*****
+ * @licstart
+ *
+ * The following is the license notice for the part of JavaScript code of this
+ * file included between the '@svgpathstart' and the '@svgpathend' notes.
+ */
+
+/*****  **********************************************************************
+ *
+ *   Copyright 2015 The Chromium Authors. All rights reserved.
+ *
+ *   The Chromium Authors can be found at
+ *   http://src.chromium.org/svn/trunk/src/AUTHORS
+ *
+ *   Redistribution and use in source and binary forms, with or without
+ *   modification, are permitted provided that the following conditions are
+ *   met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *   copyright notice, this list of conditions and the following disclaimer
+ *   in the documentation and/or other materials provided with the
+ *   distribution.
+ *   * Neither the name of Google Inc. nor the names of its
+ *   contributors may be used to endorse or promote products derived from
+ *   this software without specific prior written permission.
+ *
+ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *   'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ *   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ *   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ ****************************************************************************/
+
+/*****
+ * @licend
+ *
+ * The above is the license notice for the part of JavaScript code of this
+ * file included between the '@svgpathstart' and the '@svgpathend' notes.
+ */
+
+
+/*****
+ * @svgpathstart
+ *
+ *  The following code is a derivative work of some part of the SVGPathSeg API.
+ *
+ *  This API is a drop-in replacement for the SVGPathSeg and SVGPathSegList APIs that were removed from
+ *  SVG2 (https://lists.w3.org/Archives/Public/www-svg/2015Jun/0044.html), including the latest spec
+ *  changes which were implemented in Firefox 43 and Chrome 46.
+ *
+ *  @source https://github.com/progers/pathseg
+ */
+
+(function() { 'use strict';
+    if (!('SVGPathSeg' in window)) {
+        // Spec: http://www.w3.org/TR/SVG11/single-page.html#paths-InterfaceSVGPathSeg
+        window.SVGPathSeg = function(type, typeAsLetter, owningPathSegList) {
+            this.pathSegType = type;
+            this.pathSegTypeAsLetter = typeAsLetter;
+            this._owningPathSegList = owningPathSegList;
+        };
+
+        SVGPathSeg.prototype.classname = 'SVGPathSeg';
+
+        SVGPathSeg.PATHSEG_UNKNOWN = 0;
+        SVGPathSeg.PATHSEG_CLOSEPATH = 1;
+        SVGPathSeg.PATHSEG_MOVETO_ABS = 2;
+        SVGPathSeg.PATHSEG_MOVETO_REL = 3;
+        SVGPathSeg.PATHSEG_LINETO_ABS = 4;
+        SVGPathSeg.PATHSEG_LINETO_REL = 5;
+        SVGPathSeg.PATHSEG_CURVETO_CUBIC_ABS = 6;
+        SVGPathSeg.PATHSEG_CURVETO_CUBIC_REL = 7;
+        SVGPathSeg.PATHSEG_CURVETO_QUADRATIC_ABS = 8;
+        SVGPathSeg.PATHSEG_CURVETO_QUADRATIC_REL = 9;
+        SVGPathSeg.PATHSEG_ARC_ABS = 10;
+        SVGPathSeg.PATHSEG_ARC_REL = 11;
+        SVGPathSeg.PATHSEG_LINETO_HORIZONTAL_ABS = 12;
+        SVGPathSeg.PATHSEG_LINETO_HORIZONTAL_REL = 13;
+        SVGPathSeg.PATHSEG_LINETO_VERTICAL_ABS = 14;
+        SVGPathSeg.PATHSEG_LINETO_VERTICAL_REL = 15;
+        SVGPathSeg.PATHSEG_CURVETO_CUBIC_SMOOTH_ABS = 16;
+        SVGPathSeg.PATHSEG_CURVETO_CUBIC_SMOOTH_REL = 17;
+        SVGPathSeg.PATHSEG_CURVETO_QUADRATIC_SMOOTH_ABS = 18;
+        SVGPathSeg.PATHSEG_CURVETO_QUADRATIC_SMOOTH_REL = 19;
+
+        // Notify owning PathSegList on any changes so they can be synchronized back to the path element.
+        SVGPathSeg.prototype._segmentChanged = function() {
+            if (this._owningPathSegList)
+                this._owningPathSegList.segmentChanged(this);
+        };
+
+        window.SVGPathSegClosePath = function(owningPathSegList) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_CLOSEPATH, 'z', owningPathSegList);
+        };
+        SVGPathSegClosePath.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegClosePath.prototype.toString = function() { return '[object SVGPathSegClosePath]'; };
+        SVGPathSegClosePath.prototype._asPathString = function() { return this.pathSegTypeAsLetter; };
+        SVGPathSegClosePath.prototype.clone = function() { return new SVGPathSegClosePath(undefined); };
+
+        window.SVGPathSegMovetoAbs = function(owningPathSegList, x, y) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_MOVETO_ABS, 'M', owningPathSegList);
+            this._x = x;
+            this._y = y;
+        };
+        SVGPathSegMovetoAbs.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegMovetoAbs.prototype.toString = function() { return '[object SVGPathSegMovetoAbs]'; };
+        SVGPathSegMovetoAbs.prototype._asPathString = function() { return this.pathSegTypeAsLetter + ' ' + this._x + ' ' + this._y; };
+        SVGPathSegMovetoAbs.prototype.clone = function() { return new SVGPathSegMovetoAbs(undefined, this._x, this._y); };
+        Object.defineProperty(SVGPathSegMovetoAbs.prototype, 'x', { get: function() { return this._x; }, set: function(x) { this._x = x; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegMovetoAbs.prototype, 'y', { get: function() { return this._y; }, set: function(y) { this._y = y; this._segmentChanged(); }, enumerable: true });
+
+        window.SVGPathSegMovetoRel = function(owningPathSegList, x, y) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_MOVETO_REL, 'm', owningPathSegList);
+            this._x = x;
+            this._y = y;
+        };
+        SVGPathSegMovetoRel.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegMovetoRel.prototype.toString = function() { return '[object SVGPathSegMovetoRel]'; };
+        SVGPathSegMovetoRel.prototype._asPathString = function() { return this.pathSegTypeAsLetter + ' ' + this._x + ' ' + this._y; };
+        SVGPathSegMovetoRel.prototype.clone = function() { return new SVGPathSegMovetoRel(undefined, this._x, this._y); };
+        Object.defineProperty(SVGPathSegMovetoRel.prototype, 'x', { get: function() { return this._x; }, set: function(x) { this._x = x; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegMovetoRel.prototype, 'y', { get: function() { return this._y; }, set: function(y) { this._y = y; this._segmentChanged(); }, enumerable: true });
+
+        window.SVGPathSegLinetoAbs = function(owningPathSegList, x, y) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_LINETO_ABS, 'L', owningPathSegList);
+            this._x = x;
+            this._y = y;
+        };
+        SVGPathSegLinetoAbs.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegLinetoAbs.prototype.toString = function() { return '[object SVGPathSegLinetoAbs]'; };
+        SVGPathSegLinetoAbs.prototype._asPathString = function() { return this.pathSegTypeAsLetter + ' ' + this._x + ' ' + this._y; };
+        SVGPathSegLinetoAbs.prototype.clone = function() { return new SVGPathSegLinetoAbs(undefined, this._x, this._y); };
+        Object.defineProperty(SVGPathSegLinetoAbs.prototype, 'x', { get: function() { return this._x; }, set: function(x) { this._x = x; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegLinetoAbs.prototype, 'y', { get: function() { return this._y; }, set: function(y) { this._y = y; this._segmentChanged(); }, enumerable: true });
+
+        window.SVGPathSegLinetoRel = function(owningPathSegList, x, y) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_LINETO_REL, 'l', owningPathSegList);
+            this._x = x;
+            this._y = y;
+        };
+        SVGPathSegLinetoRel.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegLinetoRel.prototype.toString = function() { return '[object SVGPathSegLinetoRel]'; };
+        SVGPathSegLinetoRel.prototype._asPathString = function() { return this.pathSegTypeAsLetter + ' ' + this._x + ' ' + this._y; };
+        SVGPathSegLinetoRel.prototype.clone = function() { return new SVGPathSegLinetoRel(undefined, this._x, this._y); };
+        Object.defineProperty(SVGPathSegLinetoRel.prototype, 'x', { get: function() { return this._x; }, set: function(x) { this._x = x; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegLinetoRel.prototype, 'y', { get: function() { return this._y; }, set: function(y) { this._y = y; this._segmentChanged(); }, enumerable: true });
+
+        window.SVGPathSegCurvetoCubicAbs = function(owningPathSegList, x, y, x1, y1, x2, y2) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_CURVETO_CUBIC_ABS, 'C', owningPathSegList);
+            this._x = x;
+            this._y = y;
+            this._x1 = x1;
+            this._y1 = y1;
+            this._x2 = x2;
+            this._y2 = y2;
+        };
+        SVGPathSegCurvetoCubicAbs.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegCurvetoCubicAbs.prototype.toString = function() { return '[object SVGPathSegCurvetoCubicAbs]'; };
+        SVGPathSegCurvetoCubicAbs.prototype._asPathString = function() { return this.pathSegTypeAsLetter + ' ' + this._x1 + ' ' + this._y1 + ' ' + this._x2 + ' ' + this._y2 + ' ' + this._x + ' ' + this._y; };
+        SVGPathSegCurvetoCubicAbs.prototype.clone = function() { return new SVGPathSegCurvetoCubicAbs(undefined, this._x, this._y, this._x1, this._y1, this._x2, this._y2); };
+        Object.defineProperty(SVGPathSegCurvetoCubicAbs.prototype, 'x', { get: function() { return this._x; }, set: function(x) { this._x = x; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoCubicAbs.prototype, 'y', { get: function() { return this._y; }, set: function(y) { this._y = y; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoCubicAbs.prototype, 'x1', { get: function() { return this._x1; }, set: function(x1) { this._x1 = x1; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoCubicAbs.prototype, 'y1', { get: function() { return this._y1; }, set: function(y1) { this._y1 = y1; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoCubicAbs.prototype, 'x2', { get: function() { return this._x2; }, set: function(x2) { this._x2 = x2; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoCubicAbs.prototype, 'y2', { get: function() { return this._y2; }, set: function(y2) { this._y2 = y2; this._segmentChanged(); }, enumerable: true });
+
+        window.SVGPathSegCurvetoCubicRel = function(owningPathSegList, x, y, x1, y1, x2, y2) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_CURVETO_CUBIC_REL, 'c', owningPathSegList);
+            this._x = x;
+            this._y = y;
+            this._x1 = x1;
+            this._y1 = y1;
+            this._x2 = x2;
+            this._y2 = y2;
+        };
+        SVGPathSegCurvetoCubicRel.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegCurvetoCubicRel.prototype.toString = function() { return '[object SVGPathSegCurvetoCubicRel]'; };
+        SVGPathSegCurvetoCubicRel.prototype._asPathString = function() { return this.pathSegTypeAsLetter + ' ' + this._x1 + ' ' + this._y1 + ' ' + this._x2 + ' ' + this._y2 + ' ' + this._x + ' ' + this._y; };
+        SVGPathSegCurvetoCubicRel.prototype.clone = function() { return new SVGPathSegCurvetoCubicRel(undefined, this._x, this._y, this._x1, this._y1, this._x2, this._y2); };
+        Object.defineProperty(SVGPathSegCurvetoCubicRel.prototype, 'x', { get: function() { return this._x; }, set: function(x) { this._x = x; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoCubicRel.prototype, 'y', { get: function() { return this._y; }, set: function(y) { this._y = y; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoCubicRel.prototype, 'x1', { get: function() { return this._x1; }, set: function(x1) { this._x1 = x1; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoCubicRel.prototype, 'y1', { get: function() { return this._y1; }, set: function(y1) { this._y1 = y1; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoCubicRel.prototype, 'x2', { get: function() { return this._x2; }, set: function(x2) { this._x2 = x2; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoCubicRel.prototype, 'y2', { get: function() { return this._y2; }, set: function(y2) { this._y2 = y2; this._segmentChanged(); }, enumerable: true });
+
+        window.SVGPathSegCurvetoQuadraticAbs = function(owningPathSegList, x, y, x1, y1) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_CURVETO_QUADRATIC_ABS, 'Q', owningPathSegList);
+            this._x = x;
+            this._y = y;
+            this._x1 = x1;
+            this._y1 = y1;
+        };
+        SVGPathSegCurvetoQuadraticAbs.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegCurvetoQuadraticAbs.prototype.toString = function() { return '[object SVGPathSegCurvetoQuadraticAbs]'; };
+        SVGPathSegCurvetoQuadraticAbs.prototype._asPathString = function() { return this.pathSegTypeAsLetter + ' ' + this._x1 + ' ' + this._y1 + ' ' + this._x + ' ' + this._y; };
+        SVGPathSegCurvetoQuadraticAbs.prototype.clone = function() { return new SVGPathSegCurvetoQuadraticAbs(undefined, this._x, this._y, this._x1, this._y1); };
+        Object.defineProperty(SVGPathSegCurvetoQuadraticAbs.prototype, 'x', { get: function() { return this._x; }, set: function(x) { this._x = x; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoQuadraticAbs.prototype, 'y', { get: function() { return this._y; }, set: function(y) { this._y = y; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoQuadraticAbs.prototype, 'x1', { get: function() { return this._x1; }, set: function(x1) { this._x1 = x1; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoQuadraticAbs.prototype, 'y1', { get: function() { return this._y1; }, set: function(y1) { this._y1 = y1; this._segmentChanged(); }, enumerable: true });
+
+        window.SVGPathSegCurvetoQuadraticRel = function(owningPathSegList, x, y, x1, y1) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_CURVETO_QUADRATIC_REL, 'q', owningPathSegList);
+            this._x = x;
+            this._y = y;
+            this._x1 = x1;
+            this._y1 = y1;
+        };
+        SVGPathSegCurvetoQuadraticRel.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegCurvetoQuadraticRel.prototype.toString = function() { return '[object SVGPathSegCurvetoQuadraticRel]'; };
+        SVGPathSegCurvetoQuadraticRel.prototype._asPathString = function() { return this.pathSegTypeAsLetter + ' ' + this._x1 + ' ' + this._y1 + ' ' + this._x + ' ' + this._y; };
+        SVGPathSegCurvetoQuadraticRel.prototype.clone = function() { return new SVGPathSegCurvetoQuadraticRel(undefined, this._x, this._y, this._x1, this._y1); };
+        Object.defineProperty(SVGPathSegCurvetoQuadraticRel.prototype, 'x', { get: function() { return this._x; }, set: function(x) { this._x = x; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoQuadraticRel.prototype, 'y', { get: function() { return this._y; }, set: function(y) { this._y = y; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoQuadraticRel.prototype, 'x1', { get: function() { return this._x1; }, set: function(x1) { this._x1 = x1; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoQuadraticRel.prototype, 'y1', { get: function() { return this._y1; }, set: function(y1) { this._y1 = y1; this._segmentChanged(); }, enumerable: true });
+
+        window.SVGPathSegArcAbs = function(owningPathSegList, x, y, r1, r2, angle, largeArcFlag, sweepFlag) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_ARC_ABS, 'A', owningPathSegList);
+            this._x = x;
+            this._y = y;
+            this._r1 = r1;
+            this._r2 = r2;
+            this._angle = angle;
+            this._largeArcFlag = largeArcFlag;
+            this._sweepFlag = sweepFlag;
+        };
+        SVGPathSegArcAbs.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegArcAbs.prototype.toString = function() { return '[object SVGPathSegArcAbs]'; };
+        SVGPathSegArcAbs.prototype._asPathString = function() { return this.pathSegTypeAsLetter + ' ' + this._r1 + ' ' + this._r2 + ' ' + this._angle + ' ' + (this._largeArcFlag ? '1' : '0') + ' ' + (this._sweepFlag ? '1' : '0') + ' ' + this._x + ' ' + this._y; };
+        SVGPathSegArcAbs.prototype.clone = function() { return new SVGPathSegArcAbs(undefined, this._x, this._y, this._r1, this._r2, this._angle, this._largeArcFlag, this._sweepFlag); };
+        Object.defineProperty(SVGPathSegArcAbs.prototype, 'x', { get: function() { return this._x; }, set: function(x) { this._x = x; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegArcAbs.prototype, 'y', { get: function() { return this._y; }, set: function(y) { this._y = y; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegArcAbs.prototype, 'r1', { get: function() { return this._r1; }, set: function(r1) { this._r1 = r1; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegArcAbs.prototype, 'r2', { get: function() { return this._r2; }, set: function(r2) { this._r2 = r2; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegArcAbs.prototype, 'angle', { get: function() { return this._angle; }, set: function(angle) { this._angle = angle; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegArcAbs.prototype, 'largeArcFlag', { get: function() { return this._largeArcFlag; }, set: function(largeArcFlag) { this._largeArcFlag = largeArcFlag; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegArcAbs.prototype, 'sweepFlag', { get: function() { return this._sweepFlag; }, set: function(sweepFlag) { this._sweepFlag = sweepFlag; this._segmentChanged(); }, enumerable: true });
+
+        window.SVGPathSegArcRel = function(owningPathSegList, x, y, r1, r2, angle, largeArcFlag, sweepFlag) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_ARC_REL, 'a', owningPathSegList);
+            this._x = x;
+            this._y = y;
+            this._r1 = r1;
+            this._r2 = r2;
+            this._angle = angle;
+            this._largeArcFlag = largeArcFlag;
+            this._sweepFlag = sweepFlag;
+        };
+        SVGPathSegArcRel.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegArcRel.prototype.toString = function() { return '[object SVGPathSegArcRel]'; };
+        SVGPathSegArcRel.prototype._asPathString = function() { return this.pathSegTypeAsLetter + ' ' + this._r1 + ' ' + this._r2 + ' ' + this._angle + ' ' + (this._largeArcFlag ? '1' : '0') + ' ' + (this._sweepFlag ? '1' : '0') + ' ' + this._x + ' ' + this._y; };
+        SVGPathSegArcRel.prototype.clone = function() { return new SVGPathSegArcRel(undefined, this._x, this._y, this._r1, this._r2, this._angle, this._largeArcFlag, this._sweepFlag); };
+        Object.defineProperty(SVGPathSegArcRel.prototype, 'x', { get: function() { return this._x; }, set: function(x) { this._x = x; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegArcRel.prototype, 'y', { get: function() { return this._y; }, set: function(y) { this._y = y; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegArcRel.prototype, 'r1', { get: function() { return this._r1; }, set: function(r1) { this._r1 = r1; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegArcRel.prototype, 'r2', { get: function() { return this._r2; }, set: function(r2) { this._r2 = r2; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegArcRel.prototype, 'angle', { get: function() { return this._angle; }, set: function(angle) { this._angle = angle; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegArcRel.prototype, 'largeArcFlag', { get: function() { return this._largeArcFlag; }, set: function(largeArcFlag) { this._largeArcFlag = largeArcFlag; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegArcRel.prototype, 'sweepFlag', { get: function() { return this._sweepFlag; }, set: function(sweepFlag) { this._sweepFlag = sweepFlag; this._segmentChanged(); }, enumerable: true });
+
+        window.SVGPathSegLinetoHorizontalAbs = function(owningPathSegList, x) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_LINETO_HORIZONTAL_ABS, 'H', owningPathSegList);
+            this._x = x;
+        };
+        SVGPathSegLinetoHorizontalAbs.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegLinetoHorizontalAbs.prototype.toString = function() { return '[object SVGPathSegLinetoHorizontalAbs]'; };
+        SVGPathSegLinetoHorizontalAbs.prototype._asPathString = function() { return this.pathSegTypeAsLetter + ' ' + this._x; };
+        SVGPathSegLinetoHorizontalAbs.prototype.clone = function() { return new SVGPathSegLinetoHorizontalAbs(undefined, this._x); };
+        Object.defineProperty(SVGPathSegLinetoHorizontalAbs.prototype, 'x', { get: function() { return this._x; }, set: function(x) { this._x = x; this._segmentChanged(); }, enumerable: true });
+
+        window.SVGPathSegLinetoHorizontalRel = function(owningPathSegList, x) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_LINETO_HORIZONTAL_REL, 'h', owningPathSegList);
+            this._x = x;
+        };
+        SVGPathSegLinetoHorizontalRel.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegLinetoHorizontalRel.prototype.toString = function() { return '[object SVGPathSegLinetoHorizontalRel]'; };
+        SVGPathSegLinetoHorizontalRel.prototype._asPathString = function() { return this.pathSegTypeAsLetter + ' ' + this._x; };
+        SVGPathSegLinetoHorizontalRel.prototype.clone = function() { return new SVGPathSegLinetoHorizontalRel(undefined, this._x); };
+        Object.defineProperty(SVGPathSegLinetoHorizontalRel.prototype, 'x', { get: function() { return this._x; }, set: function(x) { this._x = x; this._segmentChanged(); }, enumerable: true });
+
+        window.SVGPathSegLinetoVerticalAbs = function(owningPathSegList, y) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_LINETO_VERTICAL_ABS, 'V', owningPathSegList);
+            this._y = y;
+        };
+        SVGPathSegLinetoVerticalAbs.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegLinetoVerticalAbs.prototype.toString = function() { return '[object SVGPathSegLinetoVerticalAbs]'; };
+        SVGPathSegLinetoVerticalAbs.prototype._asPathString = function() { return this.pathSegTypeAsLetter + ' ' + this._y; };
+        SVGPathSegLinetoVerticalAbs.prototype.clone = function() { return new SVGPathSegLinetoVerticalAbs(undefined, this._y); };
+        Object.defineProperty(SVGPathSegLinetoVerticalAbs.prototype, 'y', { get: function() { return this._y; }, set: function(y) { this._y = y; this._segmentChanged(); }, enumerable: true });
+
+        window.SVGPathSegLinetoVerticalRel = function(owningPathSegList, y) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_LINETO_VERTICAL_REL, 'v', owningPathSegList);
+            this._y = y;
+        };
+        SVGPathSegLinetoVerticalRel.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegLinetoVerticalRel.prototype.toString = function() { return '[object SVGPathSegLinetoVerticalRel]'; };
+        SVGPathSegLinetoVerticalRel.prototype._asPathString = function() { return this.pathSegTypeAsLetter + ' ' + this._y; };
+        SVGPathSegLinetoVerticalRel.prototype.clone = function() { return new SVGPathSegLinetoVerticalRel(undefined, this._y); };
+        Object.defineProperty(SVGPathSegLinetoVerticalRel.prototype, 'y', { get: function() { return this._y; }, set: function(y) { this._y = y; this._segmentChanged(); }, enumerable: true });
+
+        window.SVGPathSegCurvetoCubicSmoothAbs = function(owningPathSegList, x, y, x2, y2) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_CURVETO_CUBIC_SMOOTH_ABS, 'S', owningPathSegList);
+            this._x = x;
+            this._y = y;
+            this._x2 = x2;
+            this._y2 = y2;
+        };
+        SVGPathSegCurvetoCubicSmoothAbs.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegCurvetoCubicSmoothAbs.prototype.toString = function() { return '[object SVGPathSegCurvetoCubicSmoothAbs]'; };
+        SVGPathSegCurvetoCubicSmoothAbs.prototype._asPathString = function() { return this.pathSegTypeAsLetter + ' ' + this._x2 + ' ' + this._y2 + ' ' + this._x + ' ' + this._y; };
+        SVGPathSegCurvetoCubicSmoothAbs.prototype.clone = function() { return new SVGPathSegCurvetoCubicSmoothAbs(undefined, this._x, this._y, this._x2, this._y2); };
+        Object.defineProperty(SVGPathSegCurvetoCubicSmoothAbs.prototype, 'x', { get: function() { return this._x; }, set: function(x) { this._x = x; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoCubicSmoothAbs.prototype, 'y', { get: function() { return this._y; }, set: function(y) { this._y = y; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoCubicSmoothAbs.prototype, 'x2', { get: function() { return this._x2; }, set: function(x2) { this._x2 = x2; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoCubicSmoothAbs.prototype, 'y2', { get: function() { return this._y2; }, set: function(y2) { this._y2 = y2; this._segmentChanged(); }, enumerable: true });
+
+        window.SVGPathSegCurvetoCubicSmoothRel = function(owningPathSegList, x, y, x2, y2) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_CURVETO_CUBIC_SMOOTH_REL, 's', owningPathSegList);
+            this._x = x;
+            this._y = y;
+            this._x2 = x2;
+            this._y2 = y2;
+        };
+        SVGPathSegCurvetoCubicSmoothRel.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegCurvetoCubicSmoothRel.prototype.toString = function() { return '[object SVGPathSegCurvetoCubicSmoothRel]'; };
+        SVGPathSegCurvetoCubicSmoothRel.prototype._asPathString = function() { return this.pathSegTypeAsLetter + ' ' + this._x2 + ' ' + this._y2 + ' ' + this._x + ' ' + this._y; };
+        SVGPathSegCurvetoCubicSmoothRel.prototype.clone = function() { return new SVGPathSegCurvetoCubicSmoothRel(undefined, this._x, this._y, this._x2, this._y2); };
+        Object.defineProperty(SVGPathSegCurvetoCubicSmoothRel.prototype, 'x', { get: function() { return this._x; }, set: function(x) { this._x = x; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoCubicSmoothRel.prototype, 'y', { get: function() { return this._y; }, set: function(y) { this._y = y; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoCubicSmoothRel.prototype, 'x2', { get: function() { return this._x2; }, set: function(x2) { this._x2 = x2; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoCubicSmoothRel.prototype, 'y2', { get: function() { return this._y2; }, set: function(y2) { this._y2 = y2; this._segmentChanged(); }, enumerable: true });
+
+        window.SVGPathSegCurvetoQuadraticSmoothAbs = function(owningPathSegList, x, y) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_CURVETO_QUADRATIC_SMOOTH_ABS, 'T', owningPathSegList);
+            this._x = x;
+            this._y = y;
+        };
+        SVGPathSegCurvetoQuadraticSmoothAbs.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegCurvetoQuadraticSmoothAbs.prototype.toString = function() { return '[object SVGPathSegCurvetoQuadraticSmoothAbs]'; };
+        SVGPathSegCurvetoQuadraticSmoothAbs.prototype._asPathString = function() { return this.pathSegTypeAsLetter + ' ' + this._x + ' ' + this._y; };
+        SVGPathSegCurvetoQuadraticSmoothAbs.prototype.clone = function() { return new SVGPathSegCurvetoQuadraticSmoothAbs(undefined, this._x, this._y); };
+        Object.defineProperty(SVGPathSegCurvetoQuadraticSmoothAbs.prototype, 'x', { get: function() { return this._x; }, set: function(x) { this._x = x; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoQuadraticSmoothAbs.prototype, 'y', { get: function() { return this._y; }, set: function(y) { this._y = y; this._segmentChanged(); }, enumerable: true });
+
+        window.SVGPathSegCurvetoQuadraticSmoothRel = function(owningPathSegList, x, y) {
+            SVGPathSeg.call(this, SVGPathSeg.PATHSEG_CURVETO_QUADRATIC_SMOOTH_REL, 't', owningPathSegList);
+            this._x = x;
+            this._y = y;
+        };
+        SVGPathSegCurvetoQuadraticSmoothRel.prototype = Object.create(SVGPathSeg.prototype);
+        SVGPathSegCurvetoQuadraticSmoothRel.prototype.toString = function() { return '[object SVGPathSegCurvetoQuadraticSmoothRel]'; };
+        SVGPathSegCurvetoQuadraticSmoothRel.prototype._asPathString = function() { return this.pathSegTypeAsLetter + ' ' + this._x + ' ' + this._y; };
+        SVGPathSegCurvetoQuadraticSmoothRel.prototype.clone = function() { return new SVGPathSegCurvetoQuadraticSmoothRel(undefined, this._x, this._y); };
+        Object.defineProperty(SVGPathSegCurvetoQuadraticSmoothRel.prototype, 'x', { get: function() { return this._x; }, set: function(x) { this._x = x; this._segmentChanged(); }, enumerable: true });
+        Object.defineProperty(SVGPathSegCurvetoQuadraticSmoothRel.prototype, 'y', { get: function() { return this._y; }, set: function(y) { this._y = y; this._segmentChanged(); }, enumerable: true });
+
+        // Add createSVGPathSeg* functions to SVGPathElement.
+        // Spec: http://www.w3.org/TR/SVG11/single-page.html#paths-InterfaceSVGPathElement.
+        SVGPathElement.prototype.createSVGPathSegClosePath = function() { return new SVGPathSegClosePath(undefined); };
+        SVGPathElement.prototype.createSVGPathSegMovetoAbs = function(x, y) { return new SVGPathSegMovetoAbs(undefined, x, y); };
+        SVGPathElement.prototype.createSVGPathSegMovetoRel = function(x, y) { return new SVGPathSegMovetoRel(undefined, x, y); };
+        SVGPathElement.prototype.createSVGPathSegLinetoAbs = function(x, y) { return new SVGPathSegLinetoAbs(undefined, x, y); };
+        SVGPathElement.prototype.createSVGPathSegLinetoRel = function(x, y) { return new SVGPathSegLinetoRel(undefined, x, y); };
+        SVGPathElement.prototype.createSVGPathSegCurvetoCubicAbs = function(x, y, x1, y1, x2, y2) { return new SVGPathSegCurvetoCubicAbs(undefined, x, y, x1, y1, x2, y2); };
+        SVGPathElement.prototype.createSVGPathSegCurvetoCubicRel = function(x, y, x1, y1, x2, y2) { return new SVGPathSegCurvetoCubicRel(undefined, x, y, x1, y1, x2, y2); };
+        SVGPathElement.prototype.createSVGPathSegCurvetoQuadraticAbs = function(x, y, x1, y1) { return new SVGPathSegCurvetoQuadraticAbs(undefined, x, y, x1, y1); };
+        SVGPathElement.prototype.createSVGPathSegCurvetoQuadraticRel = function(x, y, x1, y1) { return new SVGPathSegCurvetoQuadraticRel(undefined, x, y, x1, y1); };
+        SVGPathElement.prototype.createSVGPathSegArcAbs = function(x, y, r1, r2, angle, largeArcFlag, sweepFlag) { return new SVGPathSegArcAbs(undefined, x, y, r1, r2, angle, largeArcFlag, sweepFlag); }
+        SVGPathElement.prototype.createSVGPathSegArcRel = function(x, y, r1, r2, angle, largeArcFlag, sweepFlag) { return new SVGPathSegArcRel(undefined, x, y, r1, r2, angle, largeArcFlag, sweepFlag); }
+        SVGPathElement.prototype.createSVGPathSegLinetoHorizontalAbs = function(x) { return new SVGPathSegLinetoHorizontalAbs(undefined, x); };
+        SVGPathElement.prototype.createSVGPathSegLinetoHorizontalRel = function(x) { return new SVGPathSegLinetoHorizontalRel(undefined, x); };
+        SVGPathElement.prototype.createSVGPathSegLinetoVerticalAbs = function(y) { return new SVGPathSegLinetoVerticalAbs(undefined, y); };
+        SVGPathElement.prototype.createSVGPathSegLinetoVerticalRel = function(y) { return new SVGPathSegLinetoVerticalRel(undefined, y); };
+        SVGPathElement.prototype.createSVGPathSegCurvetoCubicSmoothAbs = function(x, y, x2, y2) { return new SVGPathSegCurvetoCubicSmoothAbs(undefined, x, y, x2, y2); };
+        SVGPathElement.prototype.createSVGPathSegCurvetoCubicSmoothRel = function(x, y, x2, y2) { return new SVGPathSegCurvetoCubicSmoothRel(undefined, x, y, x2, y2); };
+        SVGPathElement.prototype.createSVGPathSegCurvetoQuadraticSmoothAbs = function(x, y) { return new SVGPathSegCurvetoQuadraticSmoothAbs(undefined, x, y); };
+        SVGPathElement.prototype.createSVGPathSegCurvetoQuadraticSmoothRel = function(x, y) { return new SVGPathSegCurvetoQuadraticSmoothRel(undefined, x, y); };
+    }
+
+    if (!('SVGPathSegList' in window)) {
+        // Spec: http://www.w3.org/TR/SVG11/single-page.html#paths-InterfaceSVGPathSegList
+        window.SVGPathSegList = function(pathElement) {
+            this._pathElement = pathElement;
+            this._list = this._parsePath(this._pathElement.getAttribute('d'));
+
+            // Use a MutationObserver to catch changes to the path's 'd' attribute.
+            this._mutationObserverConfig = { 'attributes': true, 'attributeFilter': ['d'] };
+            this._pathElementMutationObserver = new MutationObserver(this._updateListFromPathMutations.bind(this));
+            this._pathElementMutationObserver.observe(this._pathElement, this._mutationObserverConfig);
+        };
+
+        SVGPathSegList.prototype.classname = 'SVGPathSegList';
+
+        Object.defineProperty(SVGPathSegList.prototype, 'numberOfItems', {
+            get: function() {
+                this._checkPathSynchronizedToList();
+                return this._list.length;
+            },
+            enumerable: true
+        });
+
+        // Add the pathSegList accessors to SVGPathElement.
+        // Spec: http://www.w3.org/TR/SVG11/single-page.html#paths-InterfaceSVGAnimatedPathData
+        Object.defineProperty(SVGPathElement.prototype, 'pathSegList', {
+            get: function() {
+                if (!this._pathSegList)
+                    this._pathSegList = new SVGPathSegList(this);
+                return this._pathSegList;
+            },
+            enumerable: true
+        });
+        // FIXME: The following are not implemented and simply return SVGPathElement.pathSegList.
+        Object.defineProperty(SVGPathElement.prototype, 'normalizedPathSegList', { get: function() { return this.pathSegList; }, enumerable: true });
+        Object.defineProperty(SVGPathElement.prototype, 'animatedPathSegList', { get: function() { return this.pathSegList; }, enumerable: true });
+        Object.defineProperty(SVGPathElement.prototype, 'animatedNormalizedPathSegList', { get: function() { return this.pathSegList; }, enumerable: true });
+
+        // Process any pending mutations to the path element and update the list as needed.
+        // This should be the first call of all public functions and is needed because
+        // MutationObservers are not synchronous so we can have pending asynchronous mutations.
+        SVGPathSegList.prototype._checkPathSynchronizedToList = function() {
+            this._updateListFromPathMutations(this._pathElementMutationObserver.takeRecords());
+        };
+
+        SVGPathSegList.prototype._updateListFromPathMutations = function(mutationRecords) {
+            if (!this._pathElement)
+                return;
+            var hasPathMutations = false;
+            mutationRecords.forEach(function(record) {
+                if (record.attributeName == 'd')
+                    hasPathMutations = true;
+            });
+            if (hasPathMutations)
+                this._list = this._parsePath(this._pathElement.getAttribute('d'));
+        };
+
+        // Serialize the list and update the path's 'd' attribute.
+        SVGPathSegList.prototype._writeListToPath = function() {
+            this._pathElementMutationObserver.disconnect();
+            this._pathElement.setAttribute('d', SVGPathSegList._pathSegArrayAsString(this._list));
+            this._pathElementMutationObserver.observe(this._pathElement, this._mutationObserverConfig);
+        };
+
+        // When a path segment changes the list needs to be synchronized back to the path element.
+        SVGPathSegList.prototype.segmentChanged = function(pathSeg) {
+            this._writeListToPath();
+        };
+
+        SVGPathSegList.prototype.clear = function() {
+            this._checkPathSynchronizedToList();
+
+            this._list.forEach(function(pathSeg) {
+                pathSeg._owningPathSegList = null;
+            });
+            this._list = [];
+            this._writeListToPath();
+        };
+
+        SVGPathSegList.prototype.initialize = function(newItem) {
+            this._checkPathSynchronizedToList();
+
+            this._list = [newItem];
+            newItem._owningPathSegList = this;
+            this._writeListToPath();
+            return newItem;
+        };
+
+        SVGPathSegList.prototype._checkValidIndex = function(index) {
+            if (isNaN(index) || index < 0 || index >= this.numberOfItems)
+                throw 'INDEX_SIZE_ERR';
+        };
+
+        SVGPathSegList.prototype.getItem = function(index) {
+            this._checkPathSynchronizedToList();
+
+            this._checkValidIndex(index);
+            return this._list[index];
+        };
+
+        SVGPathSegList.prototype.insertItemBefore = function(newItem, index) {
+            this._checkPathSynchronizedToList();
+
+            // Spec: If the index is greater than or equal to numberOfItems, then the new item is appended to the end of the list.
+            if (index > this.numberOfItems)
+                index = this.numberOfItems;
+            if (newItem._owningPathSegList) {
+                // SVG2 spec says to make a copy.
+                newItem = newItem.clone();
+            }
+            this._list.splice(index, 0, newItem);
+            newItem._owningPathSegList = this;
+            this._writeListToPath();
+            return newItem;
+        };
+
+        SVGPathSegList.prototype.replaceItem = function(newItem, index) {
+            this._checkPathSynchronizedToList();
+
+            if (newItem._owningPathSegList) {
+                // SVG2 spec says to make a copy.
+                newItem = newItem.clone();
+            }
+            this._checkValidIndex(index);
+            this._list[index] = newItem;
+            newItem._owningPathSegList = this;
+            this._writeListToPath();
+            return newItem;
+        };
+
+        SVGPathSegList.prototype.removeItem = function(index) {
+            this._checkPathSynchronizedToList();
+
+            this._checkValidIndex(index);
+            var item = this._list[index];
+            this._list.splice(index, 1);
+            this._writeListToPath();
+            return item;
+        };
+
+        SVGPathSegList.prototype.appendItem = function(newItem) {
+            this._checkPathSynchronizedToList();
+
+            if (newItem._owningPathSegList) {
+                // SVG2 spec says to make a copy.
+                newItem = newItem.clone();
+            }
+            this._list.push(newItem);
+            newItem._owningPathSegList = this;
+            // TODO: Optimize this to just append to the existing attribute.
+            this._writeListToPath();
+            return newItem;
+        };
+
+        SVGPathSegList.prototype.matrixTransform = function(aSVGMatrix) {
+            this._checkPathSynchronizedToList();
+
+            var nLength = this._list.length;
+            for( var i = 0; i < nLength; ++i )
+            {
+                var nX;
+                var aPathSeg = this._list[i];
+                switch( aPathSeg.pathSegTypeAsLetter )
+                {
+                    case 'C':
+                        nX = aPathSeg._x2;
+                        aPathSeg._x2 = aSVGMatrix.a * nX + aSVGMatrix.c * aPathSeg._y2 + aSVGMatrix.e;
+                        aPathSeg._y2 = aSVGMatrix.b * nX + aSVGMatrix.d * aPathSeg._y2 + aSVGMatrix.f;
+                    // fall through intended
+                    case 'Q':
+                        nX = aPathSeg._x1;
+                        aPathSeg._x1 = aSVGMatrix.a * nX + aSVGMatrix.c * aPathSeg._y1 + aSVGMatrix.e;
+                        aPathSeg._y1 = aSVGMatrix.b * nX + aSVGMatrix.d * aPathSeg._y1 + aSVGMatrix.f;
+                    // fall through intended
+                    case 'M':
+                    case 'L':
+                        nX = aPathSeg._x;
+                        aPathSeg._x = aSVGMatrix.a * nX + aSVGMatrix.c * aPathSeg._y + aSVGMatrix.e;
+                        aPathSeg._y = aSVGMatrix.b * nX + aSVGMatrix.d * aPathSeg._y + aSVGMatrix.f;
+                        break;
+                    default:
+                        log( 'SVGPathSeg.matrixTransform: unexpected path segment type: '
+                            + aPathSeg.pathSegTypeAsLetter );
+                }
+            }
+
+            this._writeListToPath();
+        };
+
+        SVGPathSegList.prototype.changeOrientation = function() {
+            this._checkPathSynchronizedToList();
+
+            var aPathSegList = this._list;
+            var nLength = aPathSegList.length;
+            if( nLength == 0 ) return;
+
+            var nCurrentX = 0;
+            var nCurrentY = 0;
+
+            var aPathSeg = aPathSegList[0];
+            if( aPathSeg.pathSegTypeAsLetter == 'M' )
+            {
+                nCurrentX = aPathSeg.x;
+                nCurrentY = aPathSeg.y;
+                aPathSegList.shift();
+                --nLength;
+            }
+
+            var i;
+            for( i = 0; i < nLength; ++i )
+            {
+                aPathSeg = aPathSegList[i];
+                switch( aPathSeg.pathSegTypeAsLetter )
+                {
+                    case 'C':
+                        var nX = aPathSeg._x1;
+                        aPathSeg._x1 = aPathSeg._x2;
+                        aPathSeg._x2 = nX;
+                        var nY = aPathSeg._y1;
+                        aPathSeg._y1 = aPathSeg._y2;
+                        aPathSeg._y2 = nY;
+                    // fall through intended
+                    case 'M':
+                    case 'L':
+                    case 'Q':
+                        var aPoint = { x: aPathSeg._x, y: aPathSeg._y };
+                        aPathSeg._x = nCurrentX;
+                        aPathSeg._y = nCurrentY;
+                        nCurrentX = aPoint.x;
+                        nCurrentY = aPoint.y;
+                        break;
+                    default:
+                        log( 'SVGPathSegList.changeOrientation: unexpected path segment type: '
+                            + aPathSeg.pathSegTypeAsLetter );
+                }
+
+            }
+
+            aPathSegList.reverse();
+
+            var aMovePathSeg = new SVGPathSegMovetoAbs( this, nCurrentX, nCurrentY );
+            aPathSegList.unshift( aMovePathSeg );
+
+            this._writeListToPath();
+        };
+
+        SVGPathSegList._pathSegArrayAsString = function(pathSegArray) {
+            var string = '';
+            var first = true;
+            pathSegArray.forEach(function(pathSeg) {
+                if (first) {
+                    first = false;
+                    string += pathSeg._asPathString();
+                } else {
+                    string += ' ' + pathSeg._asPathString();
+                }
+            });
+            return string;
+        };
+
+        // This closely follows SVGPathParser::parsePath from Source/core/svg/SVGPathParser.cpp.
+        SVGPathSegList.prototype._parsePath = function(string) {
+            if (!string || string.length == 0)
+                return [];
+
+            var owningPathSegList = this;
+
+            var Builder = function() {
+                this.pathSegList = [];
+            };
+
+            Builder.prototype.appendSegment = function(pathSeg) {
+                this.pathSegList.push(pathSeg);
+            };
+
+            var Source = function(string) {
+                this._string = string;
+                this._currentIndex = 0;
+                this._endIndex = this._string.length;
+                this._previousCommand = SVGPathSeg.PATHSEG_UNKNOWN;
+
+                this._skipOptionalSpaces();
+            };
+
+            Source.prototype._isCurrentSpace = function() {
+                var character = this._string[this._currentIndex];
+                return character <= ' ' && (character == ' ' || character == '\n' || character == '\t' || character == '\r' || character == '\f');
+            };
+
+            Source.prototype._skipOptionalSpaces = function() {
+                while (this._currentIndex < this._endIndex && this._isCurrentSpace())
+                    this._currentIndex++;
+                return this._currentIndex < this._endIndex;
+            };
+
+            Source.prototype._skipOptionalSpacesOrDelimiter = function() {
+                if (this._currentIndex < this._endIndex && !this._isCurrentSpace() && this._string.charAt(this._currentIndex) != ',')
+                    return false;
+                if (this._skipOptionalSpaces()) {
+                    if (this._currentIndex < this._endIndex && this._string.charAt(this._currentIndex) == ',') {
+                        this._currentIndex++;
+                        this._skipOptionalSpaces();
+                    }
+                }
+                return this._currentIndex < this._endIndex;
+            };
+
+            Source.prototype.hasMoreData = function() {
+                return this._currentIndex < this._endIndex;
+            };
+
+            Source.prototype.peekSegmentType = function() {
+                var lookahead = this._string[this._currentIndex];
+                return this._pathSegTypeFromChar(lookahead);
+            };
+
+            Source.prototype._pathSegTypeFromChar = function(lookahead) {
+                switch (lookahead) {
+                    case 'Z':
+                    case 'z':
+                        return SVGPathSeg.PATHSEG_CLOSEPATH;
+                    case 'M':
+                        return SVGPathSeg.PATHSEG_MOVETO_ABS;
+                    case 'm':
+                        return SVGPathSeg.PATHSEG_MOVETO_REL;
+                    case 'L':
+                        return SVGPathSeg.PATHSEG_LINETO_ABS;
+                    case 'l':
+                        return SVGPathSeg.PATHSEG_LINETO_REL;
+                    case 'C':
+                        return SVGPathSeg.PATHSEG_CURVETO_CUBIC_ABS;
+                    case 'c':
+                        return SVGPathSeg.PATHSEG_CURVETO_CUBIC_REL;
+                    case 'Q':
+                        return SVGPathSeg.PATHSEG_CURVETO_QUADRATIC_ABS;
+                    case 'q':
+                        return SVGPathSeg.PATHSEG_CURVETO_QUADRATIC_REL;
+                    case 'A':
+                        return SVGPathSeg.PATHSEG_ARC_ABS;
+                    case 'a':
+                        return SVGPathSeg.PATHSEG_ARC_REL;
+                    case 'H':
+                        return SVGPathSeg.PATHSEG_LINETO_HORIZONTAL_ABS;
+                    case 'h':
+                        return SVGPathSeg.PATHSEG_LINETO_HORIZONTAL_REL;
+                    case 'V':
+                        return SVGPathSeg.PATHSEG_LINETO_VERTICAL_ABS;
+                    case 'v':
+                        return SVGPathSeg.PATHSEG_LINETO_VERTICAL_REL;
+                    case 'S':
+                        return SVGPathSeg.PATHSEG_CURVETO_CUBIC_SMOOTH_ABS;
+                    case 's':
+                        return SVGPathSeg.PATHSEG_CURVETO_CUBIC_SMOOTH_REL;
+                    case 'T':
+                        return SVGPathSeg.PATHSEG_CURVETO_QUADRATIC_SMOOTH_ABS;
+                    case 't':
+                        return SVGPathSeg.PATHSEG_CURVETO_QUADRATIC_SMOOTH_REL;
+                    default:
+                        return SVGPathSeg.PATHSEG_UNKNOWN;
+                }
+            };
+
+            Source.prototype._nextCommandHelper = function(lookahead, previousCommand) {
+                // Check for remaining coordinates in the current command.
+                if ((lookahead == '+' || lookahead == '-' || lookahead == '.' || (lookahead >= '0' && lookahead <= '9')) && previousCommand != SVGPathSeg.PATHSEG_CLOSEPATH) {
+                    if (previousCommand == SVGPathSeg.PATHSEG_MOVETO_ABS)
+                        return SVGPathSeg.PATHSEG_LINETO_ABS;
+                    if (previousCommand == SVGPathSeg.PATHSEG_MOVETO_REL)
+                        return SVGPathSeg.PATHSEG_LINETO_REL;
+                    return previousCommand;
+                }
+                return SVGPathSeg.PATHSEG_UNKNOWN;
+            };
+
+            Source.prototype.initialCommandIsMoveTo = function() {
+                // If the path is empty it is still valid, so return true.
+                if (!this.hasMoreData())
+                    return true;
+                var command = this.peekSegmentType();
+                // Path must start with moveTo.
+                return command == SVGPathSeg.PATHSEG_MOVETO_ABS || command == SVGPathSeg.PATHSEG_MOVETO_REL;
+            };
+
+            // Parse a number from an SVG path. This very closely follows genericParseNumber(...) from Source/core/svg/SVGParserUtilities.cpp.
+            // Spec: http://www.w3.org/TR/SVG11/single-page.html#paths-PathDataBNF
+            Source.prototype._parseNumber = function() {
+                var exponent = 0;
+                var integer = 0;
+                var frac = 1;
+                var decimal = 0;
+                var sign = 1;
+                var expsign = 1;
+
+                var startIndex = this._currentIndex;
+
+                this._skipOptionalSpaces();
+
+                // Read the sign.
+                if (this._currentIndex < this._endIndex && this._string.charAt(this._currentIndex) == '+')
+                    this._currentIndex++;
+                else if (this._currentIndex < this._endIndex && this._string.charAt(this._currentIndex) == '-') {
+                    this._currentIndex++;
+                    sign = -1;
+                }
+
+                if (this._currentIndex == this._endIndex || ((this._string.charAt(this._currentIndex) < '0' || this._string.charAt(this._currentIndex) > '9') && this._string.charAt(this._currentIndex) != '.'))
+                // The first character of a number must be one of [0-9+-.].
+                    return undefined;
+
+                // Read the integer part, build right-to-left.
+                var startIntPartIndex = this._currentIndex;
+                while (this._currentIndex < this._endIndex && this._string.charAt(this._currentIndex) >= '0' && this._string.charAt(this._currentIndex) <= '9')
+                    this._currentIndex++; // Advance to first non-digit.
+
+                if (this._currentIndex != startIntPartIndex) {
+                    var scanIntPartIndex = this._currentIndex - 1;
+                    var multiplier = 1;
+                    while (scanIntPartIndex >= startIntPartIndex) {
+                        integer += multiplier * (this._string.charAt(scanIntPartIndex--) - '0');
+                        multiplier *= 10;
+                    }
+                }
+
+                // Read the decimals.
+                if (this._currentIndex < this._endIndex && this._string.charAt(this._currentIndex) == '.') {
+                    this._currentIndex++;
+
+                    // There must be a least one digit following the .
+                    if (this._currentIndex >= this._endIndex || this._string.charAt(this._currentIndex) < '0' || this._string.charAt(this._currentIndex) > '9')
+                        return undefined;
+                    while (this._currentIndex < this._endIndex && this._string.charAt(this._currentIndex) >= '0' && this._string.charAt(this._currentIndex) <= '9') {
+                        frac *= 10;
+                        decimal += (this._string.charAt(this._currentIndex) - '0') / frac;
+                        this._currentIndex += 1;
+                    }
+                }
+
+                // Read the exponent part.
+                if (this._currentIndex != startIndex && this._currentIndex + 1 < this._endIndex && (this._string.charAt(this._currentIndex) == 'e' || this._string.charAt(this._currentIndex) == 'E') && (this._string.charAt(this._currentIndex + 1) != 'x' && this._string.charAt(this._currentIndex + 1) != 'm')) {
+                    this._currentIndex++;
+
+                    // Read the sign of the exponent.
+                    if (this._string.charAt(this._currentIndex) == '+') {
+                        this._currentIndex++;
+                    } else if (this._string.charAt(this._currentIndex) == '-') {
+                        this._currentIndex++;
+                        expsign = -1;
+                    }
+
+                    // There must be an exponent.
+                    if (this._currentIndex >= this._endIndex || this._string.charAt(this._currentIndex) < '0' || this._string.charAt(this._currentIndex) > '9')
+                        return undefined;
+
+                    while (this._currentIndex < this._endIndex && this._string.charAt(this._currentIndex) >= '0' && this._string.charAt(this._currentIndex) <= '9') {
+                        exponent *= 10;
+                        exponent += (this._string.charAt(this._currentIndex) - '0');
+                        this._currentIndex++;
+                    }
+                }
+
+                var number = integer + decimal;
+                number *= sign;
+
+                if (exponent)
+                    number *= Math.pow(10, expsign * exponent);
+
+                if (startIndex == this._currentIndex)
+                    return undefined;
+
+                this._skipOptionalSpacesOrDelimiter();
+
+                return number;
+            };
+
+            Source.prototype._parseArcFlag = function() {
+                if (this._currentIndex >= this._endIndex)
+                    return undefined;
+                var flag = false;
+                var flagChar = this._string.charAt(this._currentIndex++);
+                if (flagChar == '0')
+                    flag = false;
+                else if (flagChar == '1')
+                    flag = true;
+                else
+                    return undefined;
+
+                this._skipOptionalSpacesOrDelimiter();
+                return flag;
+            };
+
+            Source.prototype.parseSegment = function() {
+                var lookahead = this._string[this._currentIndex];
+                var command = this._pathSegTypeFromChar(lookahead);
+                if (command == SVGPathSeg.PATHSEG_UNKNOWN) {
+                    // Possibly an implicit command. Not allowed if this is the first command.
+                    if (this._previousCommand == SVGPathSeg.PATHSEG_UNKNOWN)
+                        return null;
+                    command = this._nextCommandHelper(lookahead, this._previousCommand);
+                    if (command == SVGPathSeg.PATHSEG_UNKNOWN)
+                        return null;
+                } else {
+                    this._currentIndex++;
+                }
+
+                this._previousCommand = command;
+
+                switch (command) {
+                    case SVGPathSeg.PATHSEG_MOVETO_REL:
+                        return new SVGPathSegMovetoRel(owningPathSegList, this._parseNumber(), this._parseNumber());
+                    case SVGPathSeg.PATHSEG_MOVETO_ABS:
+                        return new SVGPathSegMovetoAbs(owningPathSegList, this._parseNumber(), this._parseNumber());
+                    case SVGPathSeg.PATHSEG_LINETO_REL:
+                        return new SVGPathSegLinetoRel(owningPathSegList, this._parseNumber(), this._parseNumber());
+                    case SVGPathSeg.PATHSEG_LINETO_ABS:
+                        return new SVGPathSegLinetoAbs(owningPathSegList, this._parseNumber(), this._parseNumber());
+                    case SVGPathSeg.PATHSEG_LINETO_HORIZONTAL_REL:
+                        return new SVGPathSegLinetoHorizontalRel(owningPathSegList, this._parseNumber());
+                    case SVGPathSeg.PATHSEG_LINETO_HORIZONTAL_ABS:
+                        return new SVGPathSegLinetoHorizontalAbs(owningPathSegList, this._parseNumber());
+                    case SVGPathSeg.PATHSEG_LINETO_VERTICAL_REL:
+                        return new SVGPathSegLinetoVerticalRel(owningPathSegList, this._parseNumber());
+                    case SVGPathSeg.PATHSEG_LINETO_VERTICAL_ABS:
+                        return new SVGPathSegLinetoVerticalAbs(owningPathSegList, this._parseNumber());
+                    case SVGPathSeg.PATHSEG_CLOSEPATH:
+                        this._skipOptionalSpaces();
+                        return new SVGPathSegClosePath(owningPathSegList);
+                    case SVGPathSeg.PATHSEG_CURVETO_CUBIC_REL:
+                        var points = {x1: this._parseNumber(), y1: this._parseNumber(), x2: this._parseNumber(), y2: this._parseNumber(), x: this._parseNumber(), y: this._parseNumber()};
+                        return new SVGPathSegCurvetoCubicRel(owningPathSegList, points.x, points.y, points.x1, points.y1, points.x2, points.y2);
+                    case SVGPathSeg.PATHSEG_CURVETO_CUBIC_ABS:
+                        var points = {x1: this._parseNumber(), y1: this._parseNumber(), x2: this._parseNumber(), y2: this._parseNumber(), x: this._parseNumber(), y: this._parseNumber()};
+                        return new SVGPathSegCurvetoCubicAbs(owningPathSegList, points.x, points.y, points.x1, points.y1, points.x2, points.y2);
+                    case SVGPathSeg.PATHSEG_CURVETO_CUBIC_SMOOTH_REL:
+                        var points = {x2: this._parseNumber(), y2: this._parseNumber(), x: this._parseNumber(), y: this._parseNumber()};
+                        return new SVGPathSegCurvetoCubicSmoothRel(owningPathSegList, points.x, points.y, points.x2, points.y2);
+                    case SVGPathSeg.PATHSEG_CURVETO_CUBIC_SMOOTH_ABS:
+                        var points = {x2: this._parseNumber(), y2: this._parseNumber(), x: this._parseNumber(), y: this._parseNumber()};
+                        return new SVGPathSegCurvetoCubicSmoothAbs(owningPathSegList, points.x, points.y, points.x2, points.y2);
+                    case SVGPathSeg.PATHSEG_CURVETO_QUADRATIC_REL:
+                        var points = {x1: this._parseNumber(), y1: this._parseNumber(), x: this._parseNumber(), y: this._parseNumber()};
+                        return new SVGPathSegCurvetoQuadraticRel(owningPathSegList, points.x, points.y, points.x1, points.y1);
+                    case SVGPathSeg.PATHSEG_CURVETO_QUADRATIC_ABS:
+                        var points = {x1: this._parseNumber(), y1: this._parseNumber(), x: this._parseNumber(), y: this._parseNumber()};
+                        return new SVGPathSegCurvetoQuadraticAbs(owningPathSegList, points.x, points.y, points.x1, points.y1);
+                    case SVGPathSeg.PATHSEG_CURVETO_QUADRATIC_SMOOTH_REL:
+                        return new SVGPathSegCurvetoQuadraticSmoothRel(owningPathSegList, this._parseNumber(), this._parseNumber());
+                    case SVGPathSeg.PATHSEG_CURVETO_QUADRATIC_SMOOTH_ABS:
+                        return new SVGPathSegCurvetoQuadraticSmoothAbs(owningPathSegList, this._parseNumber(), this._parseNumber());
+                    case SVGPathSeg.PATHSEG_ARC_REL:
+                        var points = {x1: this._parseNumber(), y1: this._parseNumber(), arcAngle: this._parseNumber(), arcLarge: this._parseArcFlag(), arcSweep: this._parseArcFlag(), x: this._parseNumber(), y: this._parseNumber()};
+                        return new SVGPathSegArcRel(owningPathSegList, points.x, points.y, points.x1, points.y1, points.arcAngle, points.arcLarge, points.arcSweep);
+                    case SVGPathSeg.PATHSEG_ARC_ABS:
+                        var points = {x1: this._parseNumber(), y1: this._parseNumber(), arcAngle: this._parseNumber(), arcLarge: this._parseArcFlag(), arcSweep: this._parseArcFlag(), x: this._parseNumber(), y: this._parseNumber()};
+                        return new SVGPathSegArcAbs(owningPathSegList, points.x, points.y, points.x1, points.y1, points.arcAngle, points.arcLarge, points.arcSweep);
+                    default:
+                        throw 'Unknown path seg type.'
+                }
+            };
+
+            var builder = new Builder();
+            var source = new Source(string);
+
+            if (!source.initialCommandIsMoveTo())
+                return [];
+            while (source.hasMoreData()) {
+                var pathSeg = source.parseSegment();
+                if (!pathSeg)
+                    return [];
+                builder.appendSegment(pathSeg);
+            }
+
+            return builder.pathSegList;
+        }
+    }
+}());
+
+/*****
+ * @svgpathend
+ *
+ *  The above code is a derivative work of some part of the SVGPathSeg API.
+ *
+ *  This API is a drop-in replacement for the SVGPathSeg and SVGPathSegList APIs that were removed from
+ *  SVG2 (https://lists.w3.org/Archives/Public/www-svg/2015Jun/0044.html), including the latest spec
+ *  changes which were implemented in Firefox 43 and Chrome 46.
+ *
+ *  @source https://github.com/progers/pathseg
+ */
+
 
 /*****
  * @licstart
@@ -710,7 +1688,6 @@ function configureDetectionTools()
  * this page included between the '@libreofficestart' and the '@libreofficeend'
  * notes.
  */
-
 
 
 /*****
@@ -3592,6 +4569,12 @@ SVGPathElement.prototype.appendPath = function( aPath )
  */
 SVGPathElement.prototype.matrixTransform = function( aSVGMatrix )
 {
+    if( SVGPathSegList.prototype.matrixTransform )
+    {
+        this.pathSegList.matrixTransform( aSVGMatrix );
+        return;
+    }
+
     var aPathSegList = this.pathSegList;
     var nLength = aPathSegList.numberOfItems;
     var i;
@@ -3610,6 +4593,12 @@ SVGPathElement.prototype.changeOrientation = function()
     var aPathSegList = this.pathSegList;
     var nLength = aPathSegList.numberOfItems;
     if( nLength == 0 ) return;
+
+    if( SVGPathSegList.prototype.changeOrientation )
+    {
+        aPathSegList.changeOrientation();
+        return;
+    }
 
     var nCurrentX = 0;
     var nCurrentY = 0;
@@ -3652,7 +4641,6 @@ SVGPathElement.prototype.changeOrientation = function()
  *  We exploit this fact for providing a different implementation.
  */
 
-var SVGPathSeg = typeof SVGPathSeg === 'undefined' ? function() {} : SVGPathSeg;
 
 try
 {   // Firefox, Google Chrome, Internet Explorer, Safari.
@@ -4000,11 +4988,12 @@ aFillModeOutMap = [ 'inherit', 'remove', 'freeze', 'hold', 'transition', 'auto' 
 
 
 // Additive Modes
-var ADDITIVE_MODE_BASE          = 0;
-var ADDITIVE_MODE_SUM           = 1;
-var ADDITIVE_MODE_REPLACE       = 2;
-var ADDITIVE_MODE_MULTIPLY      = 3;
-var ADDITIVE_MODE_NONE          = 4;
+var ADDITIVE_MODE_UNKNOWN       = 0;
+var ADDITIVE_MODE_BASE          = 1;
+var ADDITIVE_MODE_SUM           = 2;
+var ADDITIVE_MODE_REPLACE       = 3;
+var ADDITIVE_MODE_MULTIPLY      = 4;
+var ADDITIVE_MODE_NONE          = 5;
 
 aAddittiveModeInMap = {
     'base'          : ADDITIVE_MODE_BASE,
@@ -4014,7 +5003,7 @@ aAddittiveModeInMap = {
     'none'          : ADDITIVE_MODE_NONE
 };
 
-aAddittiveModeOutMap = [ 'base', 'sum', 'replace', 'multiply', 'none' ];
+aAddittiveModeOutMap = [ 'unknown', 'base', 'sum', 'replace', 'multiply', 'none' ];
 
 
 // Accumulate Modes
@@ -4024,10 +5013,11 @@ var ACCUMULATE_MODE_SUM         = 1;
 aAccumulateModeOutMap = [ 'none', 'sum' ];
 
 // Calculation Modes
-var CALC_MODE_DISCRETE          = 0;
-var CALC_MODE_LINEAR            = 1;
-var CALC_MODE_PACED             = 2;
-var CALC_MODE_SPLINE            = 3;
+var CALC_MODE_UNKNOWN           = 0
+var CALC_MODE_DISCRETE          = 1;
+var CALC_MODE_LINEAR            = 2;
+var CALC_MODE_PACED             = 3;
+var CALC_MODE_SPLINE            = 4;
 
 aCalcModeInMap = {
     'discrete'      : CALC_MODE_DISCRETE,
@@ -4036,7 +5026,7 @@ aCalcModeInMap = {
     'spline'        : CALC_MODE_SPLINE
 };
 
-aCalcModeOutMap = [ 'discrete', 'linear', 'paced', 'spline' ];
+aCalcModeOutMap = [ 'unknown', 'discrete', 'linear', 'paced', 'spline' ];
 
 
 // Color Spaces
@@ -4080,6 +5070,10 @@ var aAttributeMap =
         'opacity':          {   'type':         NUMBER_PROPERTY,
                                 'get':          'getOpacity',
                                 'set':          'setOpacity'                    },
+
+        'rotate':           {   'type':         NUMBER_PROPERTY,
+                                'get':          'getRotationAngle',
+                                'set':          'setRotationAngle'              },
 
         'width':            {   'type':         NUMBER_PROPERTY,
                                 'get':          'getWidth',
@@ -6190,6 +7184,11 @@ BaseContainerNode.prototype.appendChildNode = function( aAnimationNode )
         this.aChildrenArray.push( aAnimationNode );
 };
 
+BaseContainerNode.prototype.removeAllChildrenNodes = function()
+{
+    this.aChildrenArray = [];
+};
+
 BaseContainerNode.prototype.init_st = function()
 {
     this.nLeftIterations = this.getRepeatCount();
@@ -7210,7 +8209,8 @@ function createAnimationNode( aElement, aParentNode, aNodeContext )
             {
                 if( !createChildNode( aChildrenArray[i], aCreatedContainer, aNodeContext ) )
                 {
-                    return null;
+                    aCreatedContainer.removeAllChildrenNodes();
+                    break;
                 }
             }
         }
@@ -8801,6 +9801,7 @@ AnimatedElement.prototype.initElement = function()
     this.nCenterY = this.nBaseCenterY;
     this.nScaleFactorX = 1.0;
     this.nScaleFactorY = 1.0;
+    this.nRotationAngle = 0.0;
 
     // add a transform attribute of type matrix
     this.aActiveElement.setAttribute( 'transform', makeMatrixString( 1, 0, 0, 1, 0, 0 ) );
@@ -8944,6 +9945,7 @@ AnimatedElement.prototype.saveState = function( nAnimationNodeId )
     aState.nCenterY = this.nCenterY;
     aState.nScaleFactorX = this.nScaleFactorX;
     aState.nScaleFactorY = this.nScaleFactorY;
+    aState.nRotationAngle = this.nRotationAngle;
 
 };
 
@@ -8975,6 +9977,7 @@ AnimatedElement.prototype.restoreState = function( nAnimationNodeId )
         this.nCenterY = aState.nCenterY;
         this.nScaleFactorX = aState.nScaleFactorX;
         this.nScaleFactorY = aState.nScaleFactorY;
+        this.nRotationAngle = aState.nRotationAngle;
     }
     return bRet;
 };
@@ -9136,6 +10139,7 @@ AnimatedElement.prototype.setWidth = function( nNewWidth )
 
     this.aTMatrix = document.documentElement.createSVGMatrix()
         .translate( this.nCenterX, this.nCenterY )
+        .rotate(this.nRotationAngle)
         .scaleNonUniform( nScaleFactorX, this.nScaleFactorY )
         .translate( -this.nBaseCenterX, -this.nBaseCenterY );
     this.updateTransformAttribute();
@@ -9160,6 +10164,7 @@ AnimatedElement.prototype.setHeight = function( nNewHeight )
 
     this.aTMatrix = document.documentElement.createSVGMatrix()
         .translate( this.nCenterX, this.nCenterY )
+        .rotate(this.nRotationAngle)
         .scaleNonUniform( this.nScaleFactorX, nScaleFactorY )
         .translate( -this.nBaseCenterX, -this.nBaseCenterY );
     this.updateTransformAttribute();
@@ -9175,6 +10180,23 @@ AnimatedElement.prototype.getOpacity = function()
 AnimatedElement.prototype.setOpacity = function( nValue )
 {
     this.aActiveElement.setAttribute( 'opacity', nValue );
+};
+
+AnimatedElement.prototype.getRotationAngle = function()
+{
+    return this.nRotationAngle;
+};
+
+AnimatedElement.prototype.setRotationAngle = function( nNewRotAngle )
+{
+    this.aTMatrix = document.documentElement.createSVGMatrix()
+        .translate( this.nCenterX, this.nCenterY )
+        .rotate(nNewRotAngle)
+        .scaleNonUniform( this.nScaleFactorX, this.nScaleFactorY )
+        .translate( -this.nBaseCenterX, -this.nBaseCenterY );
+    this.updateTransformAttribute();
+
+    this.nRotationAngle = nNewRotAngle;
 };
 
 AnimatedElement.prototype.getVisibility = function()
@@ -10102,6 +11124,70 @@ DelayEvent.prototype.charge = function()
 
 
 
+function WakeupEvent( aTimer, aActivityQueue )
+{
+    WakeupEvent.superclass.constructor.call( this );
+
+    this.aTimer = new ElapsedTime( aTimer );;
+    this.nNextTime = 0.0;
+    this.aActivity = null;
+    this.aActivityQueue = aActivityQueue;
+}
+extend( WakeupEvent, Event );
+
+
+WakeupEvent.prototype.clone = function()
+{
+    var aWakeupEvent = new WakeupEvent( this.aTimer.getTimeBase(), this.aActivityQueue );
+    aWakeupEvent.nNextTime = this.nNextTime;
+    aWakeupEvent.aActivity = this.aActivity;
+    return aWakeupEvent;
+};
+
+WakeupEvent.prototype.dispose = function()
+{
+    this.aActivity = null;
+};
+
+WakeupEvent.prototype.fire = function()
+{
+    if( !this.aActivity )
+        return false;
+
+    return this.aActivityQueue.addActivity( this.aActivity );
+};
+
+WakeupEvent.prototype.isCharged = function()
+{
+    // this event won't expire, we fire every time we're
+    // re-inserted into the event queue.
+    return true;
+};
+
+WakeupEvent.prototype.getActivationTime = function( nCurrentTime )
+{
+    var nElapsedTime = this.aTimer.getElapsedTime();
+
+    return Math.max( nCurrentTime, nCurrentTime - nElapsedTime + this.nNextTime );
+};
+
+WakeupEvent.prototype.start = function()
+{
+    this.aTimer.reset();
+};
+
+WakeupEvent.prototype.setNextTimeout = function( nNextTime )
+{
+    this.nNextTime = nNextTime;
+};
+
+WakeupEvent.prototype.setActivity = function( aActivity )
+{
+    this.aActivity = aActivity;
+};
+
+
+
 function makeEvent( aFunctor )
 {
     return new DelayEvent( aFunctor, 0.0 );
@@ -10775,7 +11861,7 @@ aInterpolatorHandler.getInterpolator = function( eCalcMode, eValueType, eValueSu
     else
     {
         log( 'aInterpolatorHandler.getInterpolator: not found any valid interpolator for calc mode '
-             + aCalcModeOutMap[eCalcMode]  + 'and value type ' + aValueTypeOutMap[eValueType]  );
+             + aCalcModeOutMap[eCalcMode]  + ' and value type ' + aValueTypeOutMap[eValueType]  );
         return null;
     }
 };
@@ -10955,6 +12041,31 @@ aOperatorSetMap[ COLOR_PROPERTY ].scale = function( k, v )
     return r;
 };
 
+// enum operators
+aOperatorSetMap[ ENUM_PROPERTY ] = {};
+
+aOperatorSetMap[ ENUM_PROPERTY ].equal = function( a, b )
+{
+    return ( a === b );
+};
+
+aOperatorSetMap[ ENUM_PROPERTY ].add = function( a, b )
+{
+    return a;
+};
+
+aOperatorSetMap[ ENUM_PROPERTY ].scale = function( k, v )
+{
+    return v;
+};
+
+// string operators
+aOperatorSetMap[ STRING_PROPERTY ] = aOperatorSetMap[ ENUM_PROPERTY ];
+
+// bool operators
+aOperatorSetMap[ BOOL_PROPERTY ] = aOperatorSetMap[ ENUM_PROPERTY ];
+
+
 
 
 /**********************************************************************************************
@@ -10965,6 +12076,7 @@ aOperatorSetMap[ COLOR_PROPERTY ].scale = function( k, v )
 function ActivityParamSet()
 {
     this.aEndEvent = null;
+    this.aWakeupEvent = null;
     this.aTimerEventQueue = null;
     this.aActivityQueue = null;
     this.nMinDuration = undefined;
@@ -11286,6 +12398,148 @@ ActivityBase.prototype.performEnd = function()
 
 
 
+function DiscreteActivityBase( aCommonParamSet )
+{
+    DiscreteActivityBase.superclass.constructor.call( this, aCommonParamSet );
+
+    this.aOriginalWakeupEvent = aCommonParamSet.aWakeupEvent;
+    this.aOriginalWakeupEvent.setActivity( this );
+    this.aWakeupEvent = this.aOriginalWakeupEvent;
+    this.aWakeupEvent = aCommonParamSet.aWakeupEvent;
+    this.aDiscreteTimes = aCommonParamSet.aDiscreteTimes;
+    // Simple duration of activity
+    this.nMinSimpleDuration = aCommonParamSet.nMinDuration;
+    // Actual number of frames shown until now.
+    this.nCurrPerformCalls = 0;
+}
+extend( DiscreteActivityBase, ActivityBase );
+
+
+DiscreteActivityBase.prototype.activate = function( aEndElement )
+{
+    DiscreteActivityBase.superclass.activate.call( this, aEndElement );
+
+    this.aWakeupEvent = this.aOriginalWakeupEvent;
+    this.aWakeupEvent.setNextTimeout( 0 );
+    this.nCurrPerformCalls = 0;
+};
+
+DiscreteActivityBase.prototype.startAnimation = function()
+{
+    this.aWakeupEvent.start();
+};
+
+DiscreteActivityBase.prototype.calcFrameIndex = function( nCurrCalls, nVectorSize )
+{
+    if( this.isAutoReverse() )
+    {
+        // every full repeat run consists of one
+        // forward and one backward traversal.
+        var nFrameIndex = nCurrCalls % (2 * nVectorSize);
+
+        // nFrameIndex values >= nVectorSize belong to
+        // the backward traversal
+        if( nFrameIndex >= nVectorSize )
+            nFrameIndex = 2*nVectorSize - nFrameIndex; // invert sweep
+
+        return nFrameIndex;
+    }
+    else
+    {
+        return nCurrCalls % nVectorSize;
+    }
+};
+
+DiscreteActivityBase.prototype.calcRepeatCount = function( nCurrCalls, nVectorSize )
+{
+    if( this.isAutoReverse() )
+    {
+        return Math.floor( nCurrCalls / (2*nVectorSize) ); // we've got 2 cycles per repeat
+    }
+    else
+    {
+        return Math.floor( nCurrCalls / nVectorSize );
+    }
+};
+
+DiscreteActivityBase.prototype.performDiscreteHook = function( nFrame, nRepeatCount )
+{
+    throw ( 'DiscreteActivityBase.performDiscreteHook: abstract method invoked' );
+};
+
+DiscreteActivityBase.prototype.perform = function()
+{
+    // call base class, for start() calls and end handling
+    if( !SimpleContinuousActivityBase.superclass.perform.call( this ) )
+        return false; // done, we're ended
+
+    var nVectorSize = this.aDiscreteTimes.length;
+
+    var nFrameIndex = this.calcFrameIndex(this.nCurrPerformCalls, nVectorSize);
+    var nRepeatCount = this.calcRepeatCount( this.nCurrPerformCalls, nVectorSize );
+    this.performDiscreteHook( nFrameIndex, nRepeatCount );
+
+    // one more frame successfully performed
+    ++this.nCurrPerformCalls;
+
+    // calc currently reached repeat count
+    var nCurrRepeat = this.nCurrPerformCalls / nVectorSize;
+
+    // if auto-reverse is specified, halve the
+    // effective repeat count, since we pass every
+    // repeat run twice: once forward, once backward.
+    if( this.isAutoReverse() )
+        nCurrRepeat /= 2;
+
+    // schedule next frame, if either repeat is indefinite
+    // (repeat forever), or we've not yet reached the requested
+    // repeat count
+    if( !this.isRepeatCountValid() || nCurrRepeat < this.getRepeatCount() )
+    {
+        // add wake-up event to queue (modulo vector size, to cope with repeats).
+
+        // repeat is handled locally, only apply acceleration/deceleration.
+        // Scale time vector with simple duration, offset with full repeat
+        // times.
+
+        // Note that calcAcceleratedTime() is only applied to the current repeat's value,
+        // not to the total resulting time. This is in accordance with the SMIL spec.
+
+        nFrameIndex = this.calcFrameIndex(this.nCurrPerformCalls, nVectorSize);
+        var nCurrentRepeatTime = this.aDiscreteTimes[nFrameIndex];
+        nRepeatCount = this.calcRepeatCount( this.nCurrPerformCalls, nVectorSize );
+        var nNextTimeout = this.nMinSimpleDuration * ( nRepeatCount + this.calcAcceleratedTime( nCurrentRepeatTime ) );
+        this.aWakeupEvent.setNextTimeout( nNextTimeout );
+
+        this.getEventQueue().addEvent( this.aWakeupEvent );
+    }
+    else
+    {
+        // release event reference (relation to wake up event is circular!)
+        this.aWakeupEvent = null;
+
+        // done with this activity
+        this.endActivity();
+    }
+
+    return false; // remove from queue, will be added back by the wakeup event.
+};
+
+DiscreteActivityBase.prototype.dispose = function()
+{
+    // dispose event
+    if( this.aWakeupEvent )
+        this.aWakeupEvent.dispose();
+
+    // release references
+    this.aWakeupEvent = null;
+
+    DiscreteActivityBase.superclass.dispose.call(this);
+};
+
+
+
+
 function SimpleContinuousActivityBase( aCommonParamSet )
 {
     SimpleContinuousActivityBase.superclass.constructor.call( this, aCommonParamSet );
@@ -11517,9 +12771,9 @@ ContinuousKeyTimeActivityBase.prototype.activate = function( aEndElement )
     this.aLerper.reset();
 };
 
-ContinuousKeyTimeActivityBase.prototype.performHook = function( nIndex, nFractionalIndex, nRepeatCount )
+ContinuousKeyTimeActivityBase.prototype.performContinuousHook = function( nIndex, nFractionalIndex, nRepeatCount )
 {
-    throw ( 'ContinuousKeyTimeActivityBase.performHook: abstract method invoked' );
+    throw ( 'ContinuousKeyTimeActivityBase.performContinuousHook: abstract method invoked' );
 };
 
 ContinuousKeyTimeActivityBase.prototype.simplePerform = function( nSimpleTime, nRepeatCount )
@@ -11528,7 +12782,7 @@ ContinuousKeyTimeActivityBase.prototype.simplePerform = function( nSimpleTime, n
 
     var aLerpResult = this.aLerper.lerp( nAlpha );
 
-    this.performHook( aLerpResult.nIndex, aLerpResult.nLerp, nRepeatCount );
+    this.performContinuousHook( aLerpResult.nIndex, aLerpResult.nLerp, nRepeatCount );
 };
 
 
@@ -11542,14 +12796,14 @@ function ContinuousActivityBase( aCommonParamSet )
 extend( ContinuousActivityBase, SimpleContinuousActivityBase );
 
 
-ContinuousActivityBase.prototype.performHook = function( nModifiedTime, nRepeatCount )
+ContinuousActivityBase.prototype.performContinuousHook = function( nModifiedTime, nRepeatCount )
 {
-    throw ( 'ContinuousActivityBase.performHook: abstract method invoked' );
+    throw ( 'ContinuousActivityBase.performContinuousHook: abstract method invoked' );
 };
 
 ContinuousActivityBase.prototype.simplePerform = function( nSimpleTime, nRepeatCount )
 {
-    this.performHook( this.calcAcceleratedTime( nSimpleTime ), nRepeatCount );
+    this.performContinuousHook( this.calcAcceleratedTime( nSimpleTime ), nRepeatCount );
 };
 
 
@@ -11589,7 +12843,7 @@ SimpleActivity.prototype.endAnimation = function()
 
 };
 
-SimpleActivity.prototype.performHook = function( nModifiedTime, nRepeatCount )
+SimpleActivity.prototype.performContinuousHook = function( nModifiedTime, nRepeatCount )
 {
     // nRepeatCount is not used
 
@@ -11597,7 +12851,7 @@ SimpleActivity.prototype.performHook = function( nModifiedTime, nRepeatCount )
         return;
 
     var nT = 1.0 - this.nDirection + nModifiedTime * ( 2.0*this.nDirection - 1.0 );
-    //ANIMDBG.print( 'SimpleActivity.performHook: nT = ' + nT );
+    //ANIMDBG.print( 'SimpleActivity.performContinuousHook: nT = ' + nT );
     this.aAnimation.perform( nT );
 };
 
@@ -11736,12 +12990,12 @@ function FromToByActivityTemplate( BaseType ) // template parameter
             this.aAnimation.end();
     };
 
-    // performHook override for ContinuousActivityBase
-    FromToByActivity.prototype.performHook = function( nModifiedTime, nRepeatCount )
+    // perform hook override for ContinuousActivityBase
+    FromToByActivity.prototype.performContinuousHook = function( nModifiedTime, nRepeatCount )
     {
         if( this.isDisposed() || !this.aAnimation  )
         {
-            log( 'FromToByActivity.performHook: activity disposed or not valid animation' );
+            log( 'FromToByActivity.performContinuousHook: activity disposed or not valid animation' );
             return;
         }
 
@@ -11803,6 +13057,18 @@ function FromToByActivityTemplate( BaseType ) // template parameter
 
     };
 
+    // perform hook override for DiscreteActivityBase
+    FromToByActivity.prototype.performDiscreteHook = function( nFrame, nRepeatCount )
+    {
+        if (this.isDisposed() || !this.aAnimation) {
+            log('FromToByActivity.performDiscreteHook: activity disposed or not valid animation');
+            return;
+        }
+
+
+
+    };
+
     FromToByActivity.prototype.performEnd = function()
     {
         if( this.aAnimation )
@@ -11825,6 +13091,8 @@ function FromToByActivityTemplate( BaseType ) // template parameter
 
 // FromToByActivity< ContinuousActivityBase > instantiation
 var LinearFromToByActivity = instantiate( FromToByActivityTemplate, ContinuousActivityBase );
+// FromToByActivity< DiscreteActivityBase > instantiation
+var DiscreteFromToByActivity = instantiate( FromToByActivityTemplate, DiscreteActivityBase );
 
 
 
@@ -11897,17 +13165,17 @@ function  ValueListActivityTemplate( BaseType ) // template parameter
             this.aAnimation.end();
     };
 
-    // performHook override for ContinuousKeyTimeActivityBase base
-    ValueListActivity.prototype.performHook = function( nIndex, nFractionalIndex, nRepeatCount )
+    // perform hook override for ContinuousKeyTimeActivityBase base
+    ValueListActivity.prototype.performContinuousHook = function( nIndex, nFractionalIndex, nRepeatCount )
     {
         if( this.isDisposed() || !this.aAnimation  )
         {
-            log( 'ValueListActivity.performHook: activity disposed or not valid animation' );
+            log( 'ValueListActivity.performContinuousHook: activity disposed or not valid animation' );
             return;
         }
 
         assert( ( nIndex + 1 ) < this.aValueList.length,
-                'ValueListActivity.performHook: assertion (nIndex + 1 < this.aValueList.length) failed' );
+                'ValueListActivity.performContinuousHook: assertion (nIndex + 1 < this.aValueList.length) failed' );
 
         // interpolate between nIndex and nIndex+1 values
 
@@ -11919,6 +13187,32 @@ function  ValueListActivityTemplate( BaseType ) // template parameter
         {
             aValue = this.add( aValue, this.scale( nRepeatCount, this.aLastValue ) );
             //aValue = aValue + nRepeatCount * this.aLastValue;
+        }
+
+        aValue = this.aFormula ? this.aFormula( aValue ) : aValue;
+        this.aAnimation.perform( aValue );
+    };
+
+    // perform hook override for DiscreteActivityBase base
+    ValueListActivity.prototype.performDiscreteHook = function( nFrame, nRepeatCount )
+    {
+        if( this.isDisposed() || !this.aAnimation  )
+        {
+            log( 'ValueListActivity.performDiscreteHook: activity disposed or not valid animation' );
+            return;
+        }
+
+        assert( nFrame < this.aValueList.length,
+               'ValueListActivity.performDiscreteHook: assertion ( nFrame < this.aValueList.length) failed' );
+
+        // this is discrete, thus no lerp here.
+        var aValue = this.aValueList[nFrame];
+
+        if( this.bCumulative )
+        {
+            aValue = this.add( aValue, this.scale( nRepeatCount, this.aLastValue ) );
+            // for numbers:   aValue = aValue + nRepeatCount * this.aLastValue;
+            // for enums, bools or strings:   aValue = aValue;
         }
 
         aValue = this.aFormula ? this.aFormula( aValue ) : aValue;
@@ -11946,6 +13240,8 @@ function  ValueListActivityTemplate( BaseType ) // template parameter
 
 //  ValueListActivity< ContinuousKeyTimeActivityBase > instantiation
 var LinearValueListActivity = instantiate( ValueListActivityTemplate, ContinuousKeyTimeActivityBase );
+//  ValueListActivity< DiscreteActivityBase > instantiation
+var DiscreteValueListActivity = instantiate( ValueListActivityTemplate, DiscreteActivityBase );
 
 
 
@@ -12019,8 +13315,17 @@ function createActivity( aActivityParamSet, aAnimationNode, aAnimation, aInterpo
         switch( eCalcMode )
         {
             case CALC_MODE_DISCRETE:
-                log( 'createActivity: discrete calculation case not yet implemented' );
-                break;
+                aActivityParamSet.aWakeupEvent =
+                        new WakeupEvent( aActivityParamSet.aTimerEventQueue.getTimer(),
+                                         aActivityParamSet.aActivityQueue );
+
+                return createValueListActivity( aActivityParamSet,
+                                                aAnimationNode,
+                                                aAnimation,
+                                                aInterpolator,
+                                                DiscreteValueListActivity,
+                                                bAccumulate,
+                                                eValueType );
 
             default:
                 log( 'createActivity: unexpected calculation mode: ' + eCalcMode );
@@ -12046,6 +13351,16 @@ function createActivity( aActivityParamSet, aAnimationNode, aAnimation, aInterpo
         {
             case CALC_MODE_DISCRETE:
                 log( 'createActivity: discrete calculation case not yet implemented' );
+                aActivityParamSet.aWakeupEvent =
+                        new WakeupEvent( aActivityParamSet.aTimerEventQueue.getTimer(),
+                                         aActivityParamSet.aActivityQueue );
+                return createFromToByActivity(  aActivityParamSet,
+                                                aAnimationNode,
+                                                aAnimation,
+                                                aInterpolator,
+                                                DiscreteFromToByActivity,
+                                                bAccumulate,
+                                                eValueType );
                 break;
 
             default:
@@ -12075,7 +13390,7 @@ function createValueListActivity( aActivityParamSet, aAnimationNode, aAnimation,
 {
     var aAnimatedElement = aAnimationNode.getAnimatedElement();
     var aOperatorSet = aOperatorSetMap[ eValueType ];
-    assert( aOperatorSet, 'createFromToByActivity: no operator set found' );
+    assert( aOperatorSet, 'createValueListActivity: no operator set found' );
 
     var aValueSet = aAnimationNode.getValues();
 
@@ -13381,7 +14696,7 @@ function ElapsedTime( aTimeBase )
 {
     this.aTimeBase = aTimeBase;
     this.nLastQueriedTime = 0.0;
-    this.nStartTime = this.getSystemTime();
+    this.nStartTime = this.getCurrentTime();
     this.nFrozenTime = 0.0;
     this.bInPauseMode = false;
     this.bInHoldMode = false;
@@ -13396,7 +14711,7 @@ ElapsedTime.prototype.getTimeBase = function()
 ElapsedTime.prototype.reset = function()
 {
     this.nLastQueriedTime = 0.0;
-    this.nStartTime = this.getSystemTime();
+    this.nStartTime = this.getCurrentTime();
     this.nFrozenTime = 0.0;
     this.bInPauseMode = false;
     this.bInHoldMode = false;

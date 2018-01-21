@@ -69,7 +69,7 @@ public:
         AccessibleSlideSorterView& rAccessibleSlideSorter,
         ::sd::slidesorter::SlideSorter& rSlideSorter,
         vcl::Window* pWindow);
-    virtual ~Implementation();
+    virtual ~Implementation() override;
 
     void RequestUpdateChildren();
     void Clear();
@@ -80,12 +80,12 @@ public:
     void ConnectListeners();
     void ReleaseListeners();
     void Notify (SfxBroadcaster& rBroadcaster, const SfxHint& rHint) override;
-    DECL_LINK_TYPED(WindowEventListener, VclWindowEvent&, void);
-    DECL_LINK_TYPED(SelectionChangeListener, LinkParamNone*, void);
-    DECL_LINK_TYPED(BroadcastSelectionChange, void*, void);
-    DECL_LINK_TYPED(FocusChangeListener, LinkParamNone*, void);
-    DECL_LINK_TYPED(VisibilityChangeListener, LinkParamNone*, void);
-    DECL_LINK_TYPED(UpdateChildrenCallback, void*, void);
+    DECL_LINK(WindowEventListener, VclWindowEvent&, void);
+    DECL_LINK(SelectionChangeListener, LinkParamNone*, void);
+    DECL_LINK(BroadcastSelectionChange, void*, void);
+    DECL_LINK(FocusChangeListener, LinkParamNone*, void);
+    DECL_LINK(VisibilityChangeListener, LinkParamNone*, void);
+    DECL_LINK(UpdateChildrenCallback, void*, void);
 
     void Activated();
 private:
@@ -336,7 +336,7 @@ void SAL_CALL AccessibleSlideSorterView::addAccessibleEventListener(
     {
         const osl::MutexGuard aGuard(maMutex);
 
-        if (IsDisposed())
+        if (rBHelper.bDisposed || rBHelper.bInDispose)
         {
             uno::Reference<uno::XInterface> x (static_cast<lang::XComponent *>(this), uno::UNO_QUERY);
             rxListener->disposing (lang::EventObject (x));
@@ -636,12 +636,11 @@ uno::Sequence< OUString> SAL_CALL
 {
     ThrowIfDisposed ();
 
-    static const OUString sServiceNames[3] = {
+    return uno::Sequence<OUString> {
             OUString("com.sun.star.accessibility.Accessible"),
             OUString("com.sun.star.accessibility.AccessibleContext"),
             OUString("com.sun.star.drawing.AccessibleSlideSorterView")
     };
-    return uno::Sequence<OUString> (sServiceNames, 3);
 }
 
 void AccessibleSlideSorterView::ThrowIfDisposed()
@@ -653,11 +652,6 @@ void AccessibleSlideSorterView::ThrowIfDisposed()
         throw lang::DisposedException ("object has been already disposed",
             static_cast<uno::XWeak*>(this));
     }
-}
-
-bool AccessibleSlideSorterView::IsDisposed()
-{
-    return (rBHelper.bDisposed || rBHelper.bInDispose);
 }
 
 //===== AccessibleSlideSorterView::Implementation =============================
@@ -854,7 +848,7 @@ void AccessibleSlideSorterView::Implementation::Notify (
     {
         switch (pSdrHint->GetKind())
         {
-            case HINT_PAGEORDERCHG:
+            case SdrHintKind::PageOrderChange:
                 RequestUpdateChildren();
                 break;
             default:
@@ -896,7 +890,7 @@ void AccessibleSlideSorterView::Implementation::Activated()
 
 }
 
-IMPL_LINK_TYPED(AccessibleSlideSorterView::Implementation, WindowEventListener, VclWindowEvent&, rEvent, void)
+IMPL_LINK(AccessibleSlideSorterView::Implementation, WindowEventListener, VclWindowEvent&, rEvent, void)
 {
     switch (rEvent.GetId())
     {
@@ -917,14 +911,14 @@ IMPL_LINK_TYPED(AccessibleSlideSorterView::Implementation, WindowEventListener, 
     }
 }
 
-IMPL_LINK_NOARG_TYPED(AccessibleSlideSorterView::Implementation, SelectionChangeListener, LinkParamNone*, void)
+IMPL_LINK_NOARG(AccessibleSlideSorterView::Implementation, SelectionChangeListener, LinkParamNone*, void)
 {
     if (mnSelectionChangeUserEventId == nullptr)
         mnSelectionChangeUserEventId = Application::PostUserEvent(
             LINK(this, AccessibleSlideSorterView::Implementation, BroadcastSelectionChange));
 }
 
-IMPL_LINK_NOARG_TYPED(AccessibleSlideSorterView::Implementation, BroadcastSelectionChange, void*, void)
+IMPL_LINK_NOARG(AccessibleSlideSorterView::Implementation, BroadcastSelectionChange, void*, void)
 {
     mnSelectionChangeUserEventId = nullptr;
     mrAccessibleSlideSorter.FireAccessibleEvent(
@@ -933,7 +927,7 @@ IMPL_LINK_NOARG_TYPED(AccessibleSlideSorterView::Implementation, BroadcastSelect
         Any());
 }
 
-IMPL_LINK_NOARG_TYPED(AccessibleSlideSorterView::Implementation, FocusChangeListener, LinkParamNone*, void)
+IMPL_LINK_NOARG(AccessibleSlideSorterView::Implementation, FocusChangeListener, LinkParamNone*, void)
 {
     sal_Int32 nNewFocusedIndex (
         mrSlideSorter.GetController().GetFocusManager().GetFocusedPageIndex());
@@ -975,13 +969,13 @@ IMPL_LINK_NOARG_TYPED(AccessibleSlideSorterView::Implementation, FocusChangeList
     }
 }
 
-IMPL_LINK_NOARG_TYPED(AccessibleSlideSorterView::Implementation, UpdateChildrenCallback, void*, void)
+IMPL_LINK_NOARG(AccessibleSlideSorterView::Implementation, UpdateChildrenCallback, void*, void)
 {
     mnUpdateChildrenUserEventId = nullptr;
     UpdateChildren();
 }
 
-IMPL_LINK_NOARG_TYPED(AccessibleSlideSorterView::Implementation, VisibilityChangeListener, LinkParamNone*, void)
+IMPL_LINK_NOARG(AccessibleSlideSorterView::Implementation, VisibilityChangeListener, LinkParamNone*, void)
 {
     UpdateChildren();
 }

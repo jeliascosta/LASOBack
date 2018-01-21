@@ -60,7 +60,6 @@ namespace drawinglayer
              */
             animation::AnimationEntry*                      mpAnimationEntry;
 
-            /// bitfield
             /** flag if this is a text or graphic animation. Necessary since SdrViews need to differentiate
                 between both types if they are on/off
              */
@@ -83,7 +82,7 @@ namespace drawinglayer
                 bool bIsTextAnimation);
 
             /// destructor - needed due to mpAnimationEntry
-            virtual ~AnimatedSwitchPrimitive2D();
+            virtual ~AnimatedSwitchPrimitive2D() override;
 
             /// data read access
             const animation::AnimationEntry& getAnimationEntry() const { return *mpAnimationEntry; }
@@ -100,7 +99,7 @@ namespace drawinglayer
                 depends on the point in time, so the default implementation is
                 not useful here, it needs to be handled locally
              */
-            virtual Primitive2DContainer get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void get2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
         };
     } // end of namespace primitive2d
 } // end of namespace drawinglayer
@@ -123,11 +122,10 @@ namespace drawinglayer
             /// constructor
             AnimatedBlinkPrimitive2D(
                 const animation::AnimationEntry& rAnimationEntry,
-                const Primitive2DContainer& rChildren,
-                bool bIsTextAnimation);
+                const Primitive2DContainer& rChildren);
 
             /// create local decomposition
-            virtual Primitive2DContainer get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void get2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
 
             /// provide unique ID
             DeclPrimitive2DIDBlock()
@@ -159,11 +157,10 @@ namespace drawinglayer
             AnimatedInterpolatePrimitive2D(
                 const std::vector< basegfx::B2DHomMatrix >& rmMatrixStack,
                 const animation::AnimationEntry& rAnimationEntry,
-                const Primitive2DContainer& rChildren,
-                bool bIsTextAnimation);
+                const Primitive2DContainer& rChildren);
 
             /// create local decomposition
-            virtual Primitive2DContainer get2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void get2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
 
             /// provide unique ID
             DeclPrimitive2DIDBlock()

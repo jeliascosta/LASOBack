@@ -58,7 +58,7 @@ namespace dbaui
 
     public:
         SbaXGridControl(const css::uno::Reference< css::uno::XComponentContext >&);
-        virtual ~SbaXGridControl();
+        virtual ~SbaXGridControl() override;
 
         // UNO
         DECLARE_UNO3_DEFAULTS(SbaXGridControl, FmXGridControl)
@@ -102,7 +102,7 @@ namespace dbaui
 
     public:
         SbaXGridPeer(const css::uno::Reference< css::uno::XComponentContext >&);
-        virtual ~SbaXGridPeer();
+        virtual ~SbaXGridPeer() override;
 
         // UNO
         virtual void SAL_CALL  acquire() throw() override { FmXGridPeer::acquire(); }
@@ -133,7 +133,7 @@ namespace dbaui
         typedef css::uno::Reference< xstlist_type > xlistener_type;
         void NotifyStatusChanged(const css::util::URL& aUrl, const xlistener_type & xControl = xlistener_type() );
 #else
-        void NotifyStatusChanged(const css::util::URL& aUrl, const css::uno::Reference< css::frame::XStatusListener > & xControl = css::uno::Reference< css::frame::XStatusListener > ());
+        void NotifyStatusChanged(const css::util::URL& aUrl, const css::uno::Reference< css::frame::XStatusListener > & xControl);
 #endif // # _MSC_VER
 
     private:
@@ -144,7 +144,7 @@ namespace dbaui
             css::uno::Sequence< css::beans::PropertyValue >   aArgs;
         };
         ::std::queue< DispatchArgs >    m_aDispatchArgs;
-        DECL_LINK_TYPED( OnDispatchEvent, void*, void );
+        DECL_LINK( OnDispatchEvent, void*, void );
 
         // for dynamic states of our 4 dispatchable URLs
         enum DispatchType
@@ -169,8 +169,9 @@ namespace dbaui
                 ,public DragSourceHelper
     {
     public:
-        SbaGridHeader(BrowseBox* pParent, WinBits nWinBits = WB_STDHEADERBAR | WB_DRAG);
-
+        SbaGridHeader(BrowseBox* pParent);
+        virtual void dispose() override;
+        virtual ~SbaGridHeader() override;
     protected:
 
         // FmGridHeader overridables
@@ -185,9 +186,6 @@ namespace dbaui
         virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
 
         void ImplStartColumnDrag(sal_Int8 _nAction, const Point& _rMousePos);
-
-    private:
-        using FmGridHeader::StartDrag;
     };
 
     // interfaces for communication between the vcl grid control and a controller
@@ -222,18 +220,17 @@ namespace dbaui
         bool                          m_bActivatingForDrop;
 
     public:
-        SbaGridControl(css::uno::Reference< css::uno::XComponentContext >,Window* pParent, FmXGridPeer* _pPeer, WinBits nBits = WB_TABSTOP);
-        virtual ~SbaGridControl();
+        SbaGridControl(css::uno::Reference< css::uno::XComponentContext > const & _rM, Window* pParent, FmXGridPeer* _pPeer, WinBits nBits = WB_TABSTOP);
+        virtual ~SbaGridControl() override;
         virtual void dispose() override;
 
-        virtual void Command( const CommandEvent& rCEvt ) override;
         virtual void Select() override;
 
         void SetMasterListener(SbaGridListener* pListener)  { m_pMasterListener = pListener; }
 
         virtual void ActivateCell(long nRow, sal_uInt16 nCol, bool bSetCellFocus = true) override;
         virtual void DeactivateCell(bool bUpdate = true) override;
-        void ActivateCell() { FmGridControl::ActivateCell(); }
+        using FmGridControl::ActivateCell;
 
         bool IsAllSelected() const { return (GetSelectRowCount() == GetRowCount()) && (GetRowCount() > 0); }
 
@@ -249,7 +246,7 @@ namespace dbaui
         */
         virtual OUString GetAccessibleObjectDescription( ::svt::AccessibleBrowseBoxObjType eObjType,sal_Int32 _nPosition = -1) const override;
 
-        virtual void DeleteSelectedRows() override;
+        using FmGridControl::DeleteSelectedRows;
         /** copies the currently selected rows to the clipboard
             @precond
                 at least one row is selected
@@ -261,7 +258,6 @@ namespace dbaui
         virtual void StartDrag( sal_Int8 _nAction, const Point& _rPosPixel ) override;
 
         // BrowseBox overridables
-        virtual void    CursorMoved() override;
         virtual sal_Int8 AcceptDrop( const BrowserAcceptDropEvent& rEvt ) override;
         virtual sal_Int8 ExecuteDrop( const BrowserExecuteDropEvent& rEvt ) override;
         virtual void    MouseButtonDown( const BrowserMouseEvent& rMEvt) override;
@@ -278,10 +274,6 @@ namespace dbaui
         virtual void onRowChange() override;
         virtual void onColumnChange() override;
 
-        // my own overridables
-        void BeforeDrop();
-        void AfterDrop();
-
         // get a fields property set from a model pos
         css::uno::Reference< css::beans::XPropertySet >  getField(sal_uInt16 nModelPos);
 
@@ -290,7 +282,6 @@ namespace dbaui
 
         // drag events
         void DoColumnDrag(sal_uInt16 nColumnPos);
-        void DoRowDrag(sal_Int16 nRowPos);
         void DoFieldDrag(sal_uInt16 nColumnPos, sal_Int16 nRowPos);
 
         void SetBrowserAttrs();
@@ -300,7 +291,7 @@ namespace dbaui
 
         SvNumberFormatter* GetDatasourceFormatter();
 
-        DECL_LINK_TYPED(AsynchDropEvent, void*, void);
+        DECL_LINK(AsynchDropEvent, void*, void);
 
     private:
         bool IsReadOnlyDB() const;

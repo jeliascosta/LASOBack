@@ -39,7 +39,7 @@ void WrappedSceneProperty::addWrappedProperties( std::vector< WrappedProperty* >
 }
 
 WrappedD3DTransformMatrixProperty::WrappedD3DTransformMatrixProperty(
-            std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
+            const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact )
             : WrappedProperty("D3DTransformMatrix","D3DTransformMatrix")
             , m_spChart2ModelContact( spChart2ModelContact )
 {
@@ -99,12 +99,6 @@ Any WrappedD3DTransformMatrixProperty::getPropertyValue( const Reference< beans:
     }
 
     return WrappedProperty::getPropertyValue( xInnerPropertySet );
-}
-
-Any WrappedD3DTransformMatrixProperty::getPropertyDefault( const Reference< beans::XPropertyState >& xInnerPropertyState ) const
-                        throw (beans::UnknownPropertyException, lang::WrappedTargetException, uno::RuntimeException)
-{
-    return WrappedProperty::getPropertyDefault( xInnerPropertyState );
 }
 
 } //namespace wrapper

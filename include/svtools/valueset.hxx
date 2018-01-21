@@ -225,7 +225,6 @@ private:
     Link<ValueSet*,void>  maSelectHdl;
     Link<ValueSet*,void>  maHighlightHdl;
 
-    // bitfield
     bool            mbFormat : 1;
     bool            mbHighlight : 1;
     bool            mbSelection : 1;
@@ -236,15 +235,12 @@ private:
     bool            mbScroll : 1;
     bool            mbFullMode : 1;
     bool            mbEdgeBlending : 1;
-    bool            mbIsTransientChildrenDisabled : 1;
     bool            mbHasVisibleItems : 1;
 
     friend class ValueSetAcc;
     friend class ValueItemAcc;
 
     using Control::ImplInitSettings;
-    using Window::ImplInit;
-    SVT_DLLPRIVATE void         ImplInit();
     SVT_DLLPRIVATE void         ImplInitSettings( bool bFont, bool bForeground, bool bBackground );
 
     virtual void ApplySettings(vcl::RenderContext& rRenderContext) override;
@@ -270,8 +266,8 @@ private:
     SVT_DLLPRIVATE bool         ImplHasAccessibleListeners();
     SVT_DLLPRIVATE void         ImplTracking( const Point& rPos, bool bRepeat );
     SVT_DLLPRIVATE void         ImplEndTracking( const Point& rPos, bool bCancel );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplScrollHdl, ScrollBar*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplTimerHdl, Timer*, void );
+    DECL_DLLPRIVATE_LINK( ImplScrollHdl, ScrollBar*, void );
+    DECL_DLLPRIVATE_LINK( ImplTimerHdl, Timer*, void );
 
     ValueSet (const ValueSet &) = delete;
     ValueSet & operator= (const ValueSet &) = delete;
@@ -283,8 +279,7 @@ protected:
 
 public:
                     ValueSet( vcl::Window* pParent, WinBits nWinStyle );
-                    ValueSet( vcl::Window* pParent, const ResId& rResId );
-    virtual         ~ValueSet();
+    virtual         ~ValueSet() override;
     virtual void    dispose() override;
 
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
@@ -303,7 +298,6 @@ public:
     virtual void    DataChanged( const DataChangedEvent& rDCEvt ) override;
 
     virtual void    Select();
-    void            DoubleClick();
     virtual void    UserDraw( const UserDrawEvent& rUDEvt );
 
     /// Insert @rImage item.
@@ -317,7 +311,7 @@ public:
     /// Insert an User Drawn item.
     void            InsertItem(sal_uInt16 nItemId, size_t nPos = VALUESET_APPEND);
     /// Insert an User Drawn item with @rStr tooltip.
-    void            InsertItem(sal_uInt16 nItemId, const OUString& rStr, size_t nPos = VALUESET_APPEND);
+    void            InsertItem(sal_uInt16 nItemId, const OUString& rStr, size_t nPos);
     void            RemoveItem(sal_uInt16 nItemId);
 
     void            Clear();
@@ -327,7 +321,7 @@ public:
     sal_uInt16      GetItemId( size_t nPos ) const;
     sal_uInt16      GetItemId( const Point& rPos ) const;
     Rectangle       GetItemRect( sal_uInt16 nItemId ) const;
-    void            EnableFullItemMode( bool bFullMode = true );
+    void            EnableFullItemMode( bool bFullMode );
 
     void            SetColCount( sal_uInt16 nNewCols = 1 );
     sal_uInt16      GetColCount() const
@@ -339,8 +333,8 @@ public:
     {
         return mnUserVisLines;
     }
-    void           SetItemWidth( long nItemWidth = 0 );
-    void           SetItemHeight( long nLineHeight = 0 );
+    void           SetItemWidth( long nItemWidth );
+    void           SetItemHeight( long nLineHeight );
     Size           GetLargestItemSize();
     void           RecalculateItemSizes();
 
@@ -348,6 +342,10 @@ public:
     sal_uInt16     GetSelectItemId() const
     {
         return mnSelItemId;
+    }
+    size_t         GetSelectItemPos() const
+    {
+        return GetItemPos( mnSelItemId );
     }
     void                SaveValue() { mnSavedItemId = GetSelectItemId(); }
     sal_Int32           GetSavedValue() const { return mnSavedItemId; }

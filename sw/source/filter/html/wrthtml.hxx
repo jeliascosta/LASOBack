@@ -395,7 +395,7 @@ public:
     // 25
 
     explicit SwHTMLWriter( const OUString& rBaseURL );
-    virtual ~SwHTMLWriter();
+    virtual ~SwHTMLWriter() override;
 
     void Out_SwDoc( SwPaM* );       // schreibe den makierten Bereich
 
@@ -464,7 +464,7 @@ public:
     // Frame-Formats ausgeben und ggf. ein <BR CLEAR=...> vorne an
     // rEndTags anhaengen
     OString OutFrameFormatOptions( const SwFrameFormat& rFrameFormat, const OUString& rAltText,
-        sal_uInt32 nFrameOpts, const OString& rEndTags = OString() );
+        sal_uInt32 nFrameOpts );
 
     void writeFrameFormatOptions(HtmlWriter& aHtml, const SwFrameFormat& rFrameFormat, const OUString& rAltText, sal_uInt32 nFrameOpts);
 
@@ -647,7 +647,7 @@ Writer& OutHTML_Image( Writer&, const SwFrameFormat& rFormat,
                        const OUString& rGraphicURL,
                        Graphic& rGraphic, const OUString& rAlternateText,
                        const Size& rRealSize, sal_uInt32 nFrameOpts,
-                       const sal_Char *pMarkType = nullptr,
+                       const sal_Char *pMarkType,
                        const ImageMap *pGenImgMap = nullptr );
 
 Writer& OutHTML_BulletImage( Writer& rWrt, const sal_Char *pTag,

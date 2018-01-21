@@ -40,7 +40,7 @@
 #include <comphelper/proparrhlp.hxx>
 #include <osl/diagnose.h>
 #include <cppuhelper/compbase.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 
 namespace dbaccess
 {
@@ -58,7 +58,7 @@ namespace dbaccess
 
     //  OResultSet
 
-    class OResultSet :  public comphelper::OBaseMutex,
+    class OResultSet :  public cppu::BaseMutex,
                         public OResultSetBase,
                         public ::cppu::OPropertySetHelper,
                         public ::comphelper::OPropertyArrayUsageHelper < OResultSet >
@@ -81,7 +81,7 @@ namespace dbaccess
         OResultSet(const css::uno::Reference< css::sdbc::XResultSet >& _xResultSet,
                    const css::uno::Reference< css::uno::XInterface >& _xStatement,
                    bool _bCaseSensitive);
-        virtual ~OResultSet();
+        virtual ~OResultSet() override;
 
     // css::lang::XTypeProvider
         virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() throw (css::uno::RuntimeException, std::exception) override;

@@ -62,10 +62,10 @@ class OLESimpleStorage : public cppu::WeakImplHelper<css::embed::XOLESimpleStora
 
 public:
 
-    OLESimpleStorage(css::uno::Reference<css::uno::XComponentContext> xContext,
+    OLESimpleStorage(css::uno::Reference<css::uno::XComponentContext> const & xContext,
             css::uno::Sequence<css::uno::Any> const &arguments);
 
-    virtual ~OLESimpleStorage();
+    virtual ~OLESimpleStorage() override;
 
     //  XNameContainer
 
@@ -106,7 +106,7 @@ public:
     //  XComponent
 
     virtual void SAL_CALL dispose()
-        throw ( css::uno::RuntimeException, std::exception ) override;
+        throw ( css::uno::RuntimeException, std::exception ) final override;
 
     virtual void SAL_CALL addEventListener(
             const css::uno::Reference< css::lang::XEventListener >& xListener )

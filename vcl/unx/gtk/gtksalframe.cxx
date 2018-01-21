@@ -50,11 +50,8 @@
 #endif
 
 #include <gtk/gtk.h>
-
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/Xatom.h>
 #include <gdk/gdkx.h>
+#include <X11/Xatom.h>
 
 #include <dlfcn.h>
 #include <vcl/salbtype.hxx>
@@ -130,38 +127,43 @@ static sal_uInt16 GetMouseModCode( guint state )
 static sal_uInt16 GetKeyCode( guint keyval )
 {
     sal_uInt16 nCode = 0;
-    if( keyval >= GDK_0 && keyval <= GDK_9 )
-        nCode = KEY_0 + (keyval-GDK_0);
-    else if( keyval >= GDK_KP_0 && keyval <= GDK_KP_9 )
-        nCode = KEY_0 + (keyval-GDK_KP_0);
-    else if( keyval >= GDK_A && keyval <= GDK_Z )
-        nCode = KEY_A + (keyval-GDK_A );
-    else if( keyval >= GDK_a && keyval <= GDK_z )
-        nCode = KEY_A + (keyval-GDK_a );
-    else if( keyval >= GDK_F1 && keyval <= GDK_F26 )
+    if( keyval >= GDK_KEY_0 && keyval <= GDK_KEY_9 )
+        nCode = KEY_0 + (keyval-GDK_KEY_0);
+    else if( keyval >= GDK_KEY_KP_0 && keyval <= GDK_KEY_KP_9 )
+        nCode = KEY_0 + (keyval-GDK_KEY_KP_0);
+    else if( keyval >= GDK_KEY_A && keyval <= GDK_KEY_Z )
+        nCode = KEY_A + (keyval-GDK_KEY_A );
+    else if( keyval >= GDK_KEY_a && keyval <= GDK_KEY_z )
+        nCode = KEY_A + (keyval-GDK_KEY_a );
+    else if( keyval >= GDK_KEY_F1 && keyval <= GDK_KEY_F26 )
+    // KEY_F26 is the last function key known to keycodes.hxx
     {
         if( GetGtkSalData()->GetGtkDisplay()->IsNumLockFromXS() )
         {
-            nCode = KEY_F1 + (keyval-GDK_F1);
+            nCode = KEY_F1 + (keyval-GDK_KEY_F1);
         }
         else
         {
             switch( keyval )
             {
                 // - - - - - Sun keyboard, see vcl/unx/source/app/saldisp.cxx
-                case GDK_L2:
+                // althopugh GDK_KEY_F1 ... GDK_KEY_L10 are known to
+                // gdk/gdkkeysyms.h, they are unlikely to be generated
+                // except possibly by Solaris systems
+                // this whole section needs review
+                case GDK_KEY_L2:
                     if( GetGtkSalData()->GetGtkDisplay()->GetServerVendor() == vendor_sun )
                         nCode = KEY_REPEAT;
                     else
                         nCode = KEY_F12;
                     break;
-                case GDK_L3:            nCode = KEY_PROPERTIES; break;
-                case GDK_L4:            nCode = KEY_UNDO;       break;
-                case GDK_L6:            nCode = KEY_COPY;       break; // KEY_F16
-                case GDK_L8:            nCode = KEY_PASTE;      break; // KEY_F18
-                case GDK_L10:           nCode = KEY_CUT;        break; // KEY_F20
+                case GDK_KEY_L3:            nCode = KEY_PROPERTIES; break;
+                case GDK_KEY_L4:            nCode = KEY_UNDO;       break;
+                case GDK_KEY_L6:            nCode = KEY_COPY;       break; // KEY_F16
+                case GDK_KEY_L8:            nCode = KEY_PASTE;      break; // KEY_F18
+                case GDK_KEY_L10:           nCode = KEY_CUT;        break; // KEY_F20
                 default:
-                    nCode = KEY_F1 + (keyval-GDK_F1);           break;
+                    nCode = KEY_F1 + (keyval-GDK_KEY_F1);           break;
             }
         }
     }
@@ -169,68 +171,72 @@ static sal_uInt16 GetKeyCode( guint keyval )
     {
         switch( keyval )
         {
-            case GDK_KP_Down:
-            case GDK_Down:          nCode = KEY_DOWN;       break;
-            case GDK_KP_Up:
-            case GDK_Up:            nCode = KEY_UP;         break;
-            case GDK_KP_Left:
-            case GDK_Left:          nCode = KEY_LEFT;       break;
-            case GDK_KP_Right:
-            case GDK_Right:         nCode = KEY_RIGHT;      break;
-            case GDK_KP_Begin:
-            case GDK_KP_Home:
-            case GDK_Begin:
-            case GDK_Home:          nCode = KEY_HOME;       break;
-            case GDK_KP_End:
-            case GDK_End:           nCode = KEY_END;        break;
-            case GDK_KP_Page_Up:
-            case GDK_Page_Up:       nCode = KEY_PAGEUP;     break;
-            case GDK_KP_Page_Down:
-            case GDK_Page_Down:     nCode = KEY_PAGEDOWN;   break;
-            case GDK_KP_Enter:
-            case GDK_Return:        nCode = KEY_RETURN;     break;
-            case GDK_Escape:        nCode = KEY_ESCAPE;     break;
-            case GDK_ISO_Left_Tab:
-            case GDK_KP_Tab:
-            case GDK_Tab:           nCode = KEY_TAB;        break;
-            case GDK_BackSpace:     nCode = KEY_BACKSPACE;  break;
-            case GDK_KP_Space:
-            case GDK_space:         nCode = KEY_SPACE;      break;
-            case GDK_KP_Insert:
-            case GDK_Insert:        nCode = KEY_INSERT;     break;
-            case GDK_KP_Delete:
-            case GDK_Delete:        nCode = KEY_DELETE;     break;
-            case GDK_plus:
-            case GDK_KP_Add:        nCode = KEY_ADD;        break;
-            case GDK_minus:
-            case GDK_KP_Subtract:   nCode = KEY_SUBTRACT;   break;
-            case GDK_asterisk:
-            case GDK_KP_Multiply:   nCode = KEY_MULTIPLY;   break;
-            case GDK_slash:
-            case GDK_KP_Divide:     nCode = KEY_DIVIDE;     break;
-            case GDK_period:        nCode = KEY_POINT;      break;
-            case GDK_decimalpoint:  nCode = KEY_POINT;      break;
-            case GDK_comma:         nCode = KEY_COMMA;      break;
-            case GDK_less:          nCode = KEY_LESS;       break;
-            case GDK_greater:       nCode = KEY_GREATER;    break;
-            case GDK_KP_Equal:
-            case GDK_equal:         nCode = KEY_EQUAL;      break;
-            case GDK_Find:          nCode = KEY_FIND;       break;
-            case GDK_Menu:          nCode = KEY_CONTEXTMENU;break;
-            case GDK_Help:          nCode = KEY_HELP;       break;
-            case GDK_Undo:          nCode = KEY_UNDO;       break;
-            case GDK_Redo:          nCode = KEY_REPEAT;     break;
-            case GDK_KP_Decimal:
-            case GDK_KP_Separator:  nCode = KEY_DECIMAL;    break;
-            case GDK_asciitilde:    nCode = KEY_TILDE;      break;
-            case GDK_leftsinglequotemark:
-            case GDK_quoteleft: nCode = KEY_QUOTELEFT;      break;
-            case GDK_bracketleft:  nCode = KEY_BRACKETLEFT;  break;
-            case GDK_bracketright: nCode = KEY_BRACKETRIGHT; break;
-            case GDK_semicolon:    nCode = KEY_SEMICOLON;   break;
-            case GDK_quoteright:   nCode = KEY_QUOTERIGHT;  break;
+            case GDK_KEY_KP_Down:
+            case GDK_KEY_Down:          nCode = KEY_DOWN;       break;
+            case GDK_KEY_KP_Up:
+            case GDK_KEY_Up:            nCode = KEY_UP;         break;
+            case GDK_KEY_KP_Left:
+            case GDK_KEY_Left:          nCode = KEY_LEFT;       break;
+            case GDK_KEY_KP_Right:
+            case GDK_KEY_Right:         nCode = KEY_RIGHT;      break;
+            case GDK_KEY_KP_Begin:
+            case GDK_KEY_KP_Home:
+            case GDK_KEY_Begin:
+            case GDK_KEY_Home:          nCode = KEY_HOME;       break;
+            case GDK_KEY_KP_End:
+            case GDK_KEY_End:           nCode = KEY_END;        break;
+            case GDK_KEY_KP_Page_Up:
+            case GDK_KEY_Page_Up:       nCode = KEY_PAGEUP;     break;
+            case GDK_KEY_KP_Page_Down:
+            case GDK_KEY_Page_Down:     nCode = KEY_PAGEDOWN;   break;
+            case GDK_KEY_KP_Enter:
+            case GDK_KEY_Return:        nCode = KEY_RETURN;     break;
+            case GDK_KEY_Escape:        nCode = KEY_ESCAPE;     break;
+            case GDK_KEY_ISO_Left_Tab:
+            case GDK_KEY_KP_Tab:
+            case GDK_KEY_Tab:           nCode = KEY_TAB;        break;
+            case GDK_KEY_BackSpace:     nCode = KEY_BACKSPACE;  break;
+            case GDK_KEY_KP_Space:
+            case GDK_KEY_space:         nCode = KEY_SPACE;      break;
+            case GDK_KEY_KP_Insert:
+            case GDK_KEY_Insert:        nCode = KEY_INSERT;     break;
+            case GDK_KEY_KP_Delete:
+            case GDK_KEY_Delete:        nCode = KEY_DELETE;     break;
+            case GDK_KEY_plus:
+            case GDK_KEY_KP_Add:        nCode = KEY_ADD;        break;
+            case GDK_KEY_minus:
+            case GDK_KEY_KP_Subtract:   nCode = KEY_SUBTRACT;   break;
+            case GDK_KEY_asterisk:
+            case GDK_KEY_KP_Multiply:   nCode = KEY_MULTIPLY;   break;
+            case GDK_KEY_slash:
+            case GDK_KEY_KP_Divide:     nCode = KEY_DIVIDE;     break;
+            case GDK_KEY_period:        nCode = KEY_POINT;      break;
+            case GDK_KEY_decimalpoint:  nCode = KEY_POINT;      break;
+            case GDK_KEY_comma:         nCode = KEY_COMMA;      break;
+            case GDK_KEY_less:          nCode = KEY_LESS;       break;
+            case GDK_KEY_greater:       nCode = KEY_GREATER;    break;
+            case GDK_KEY_KP_Equal:
+            case GDK_KEY_equal:         nCode = KEY_EQUAL;      break;
+            case GDK_KEY_Find:          nCode = KEY_FIND;       break;
+            case GDK_KEY_Menu:          nCode = KEY_CONTEXTMENU;break;
+            case GDK_KEY_Help:          nCode = KEY_HELP;       break;
+            case GDK_KEY_Undo:          nCode = KEY_UNDO;       break;
+            case GDK_KEY_Redo:          nCode = KEY_REPEAT;     break;
+            // on a sun keyboard this actually is usually SunXK_Stop = 0x0000FF69 (XK_Cancel),
+            // but VCL doesn't have a key definition for that
+            case GDK_KEY_Cancel:        nCode = KEY_F11;        break;
+            case GDK_KEY_KP_Decimal:
+            case GDK_KEY_KP_Separator:  nCode = KEY_DECIMAL;    break;
+            case GDK_KEY_asciitilde:    nCode = KEY_TILDE;      break;
+            case GDK_KEY_leftsinglequotemark:
+            case GDK_KEY_quoteleft:    nCode = KEY_QUOTELEFT;    break;
+            case GDK_KEY_bracketleft:  nCode = KEY_BRACKETLEFT;  break;
+            case GDK_KEY_bracketright: nCode = KEY_BRACKETRIGHT; break;
+            case GDK_KEY_semicolon:    nCode = KEY_SEMICOLON;    break;
+            case GDK_KEY_quoteright:   nCode = KEY_QUOTERIGHT;   break;
             // some special cases, also see saldisp.cxx
             // - - - - - - - - - - - - -  Apollo - - - - - - - - - - - - - 0x1000
+            // These can be found in ap_keysym.h
             case 0x1000FF02: // apXK_Copy
                 nCode = KEY_COPY;
                 break;
@@ -245,10 +251,12 @@ static sal_uInt16 GetKeyCode( guint keyval )
                 break;
             // Exit, Save
             // - - - - - - - - - - - - - - D E C - - - - - - - - - - - - - 0x1000
+            // These can be found in DECkeysym.h
             case 0x1000FF00:
                 nCode = KEY_DELETE;
                 break;
             // - - - - - - - - - - - - - -  H P  - - - - - - - - - - - - - 0x1000
+            // These can be found in HPkeysym.h
             case 0x1000FF73: // hpXK_DeleteChar
                 nCode = KEY_DELETE;
                 break;
@@ -258,6 +266,7 @@ static sal_uInt16 GetKeyCode( guint keyval )
                 break;
             // - - - - - - - - - - - - - - I B M - - - - - - - - - - - - -
             // - - - - - - - - - - - - - - O S F - - - - - - - - - - - - - 0x1004
+            // These also can be found in HPkeysym.h
             case 0x1004FF02: // osfXK_Copy
                 nCode = KEY_COPY;
                 break;
@@ -281,6 +290,7 @@ static sal_uInt16 GetKeyCode( guint keyval )
             // - - - - - - - - - - - - - - S G I - - - - - - - - - - - - - 0x1007
             // - - - - - - - - - - - - - - S N I - - - - - - - - - - - - -
             // - - - - - - - - - - - - - - S U N - - - - - - - - - - - - - 0x1005
+            // These can be found in Sunkeysym.h
             case 0x1005FF10: // SunXK_F36
                 nCode = KEY_F11;
                 break;
@@ -305,6 +315,15 @@ static sal_uInt16 GetKeyCode( guint keyval )
             case 0x1005FF75: // SunXK_Cut
                 nCode = KEY_CUT;
                 break;
+            // - - - - - - - - - - - - - X F 8 6 - - - - - - - - - - - - - 0x1008
+            // These can be found in XF86keysym.h
+            // but more importantly they are also available GTK/Gdk version 3
+            // and hence are already provided in gdk/gdkkeysyms.h, and hence
+            // in gdk/gdk.h
+            case GDK_KEY_Copy:          nCode = KEY_COPY;  break; // 0x1008ff57
+            case GDK_KEY_Cut:           nCode = KEY_CUT;   break; // 0x1008ff58
+            case GDK_KEY_Open:          nCode = KEY_OPEN;  break; // 0x1008ff6b
+            case GDK_KEY_Paste:         nCode = KEY_PASTE; break; // 0x1008ff6d
         }
     }
 
@@ -381,7 +400,7 @@ void GtkSalFrame::doKeyCallback( guint state,
         GdkKeymap* keymap = gdk_keymap_get_default();
         GdkKeymapKey *keys;
         gint n_keys;
-        if (gdk_keymap_get_entries_for_keyval(keymap, GDK_A, &keys, &n_keys))
+        if (gdk_keymap_get_entries_for_keyval(keymap, GDK_KEY_A, &keys, &n_keys))
         {
             // Find the lowest group that supports Latin layout
             for (gint i = 0; i < n_keys; ++i)
@@ -749,7 +768,7 @@ void GtkSalFrame::EnsureAppMenuWatch()
                                                        G_BUS_NAME_WATCHER_FLAGS_NONE,
                                                        on_registrar_available,
                                                        on_registrar_unavailable,
-                                                       static_cast<GtkSalFrame*>(this),
+                                                       this,
                                                        nullptr );
     }
 #else
@@ -781,14 +800,6 @@ GtkSalFrame::~GtkSalFrame()
     if( m_pRegion )
     {
         gdk_region_destroy( m_pRegion );
-    }
-
-    if( m_hBackgroundPixmap )
-    {
-        XSetWindowBackgroundPixmap( getDisplay()->GetDisplay(),
-                                    widget_get_xid(m_pWindow),
-                                    None );
-        XFreePixmap( getDisplay()->GetDisplay(), m_hBackgroundPixmap );
     }
 
     delete m_pIMHandler;
@@ -957,9 +968,7 @@ void GtkSalFrame::InitCommon()
     m_bSpanMonitorsWhenFullscreen = false;
     m_nState            = GDK_WINDOW_STATE_WITHDRAWN;
     m_nVisibility       = GDK_VISIBILITY_FULLY_OBSCURED;
-    m_bSendModChangeOnRelease = false;
     m_pIMHandler        = nullptr;
-    m_hBackgroundPixmap = None;
     m_nExtStyle         = 0;
     m_pRegion           = nullptr;
     m_ePointerStyle     = static_cast<PointerStyle>(0xffff);
@@ -1044,36 +1053,13 @@ void GtkSalFrame::InitCommon()
     */
     XSetWindowBackgroundPixmap( getDisplay()->GetDisplay(),
                                 widget_get_xid(m_pWindow),
-                                m_hBackgroundPixmap );
-}
-
-/*  Sadly gtk_window_set_accept_focus exists only since gtk 2.4
- *  for achieving the same effect we will remove the WM_TAKE_FOCUS
- *  protocol from the window and set the input hint to false.
- *  But gtk_window_set_accept_focus needs to be called before
- *  window realization whereas the removal obviously can only happen
- *  after realization.
- */
-
-extern "C" {
-    typedef void(*setAcceptFn)( GtkWindow*, gboolean );
-    static setAcceptFn p_gtk_window_set_accept_focus = nullptr;
-    static bool bGetAcceptFocusFn = true;
-
-    typedef void(*setUserTimeFn)( GdkWindow*, guint32 );
-    static setUserTimeFn p_gdk_x11_window_set_user_time = nullptr;
-    static bool bGetSetUserTimeFn = true;
+                                None );
 }
 
 static void lcl_set_accept_focus( GtkWindow* pWindow, gboolean bAccept, bool bBeforeRealize )
 {
-    if( bGetAcceptFocusFn )
-    {
-        bGetAcceptFocusFn = false;
-        p_gtk_window_set_accept_focus = reinterpret_cast<setAcceptFn>(osl_getAsciiFunctionSymbol( GetSalData()->m_pPlugin, "gtk_window_set_accept_focus" ));
-    }
-    if( p_gtk_window_set_accept_focus && bBeforeRealize )
-        p_gtk_window_set_accept_focus( pWindow, bAccept );
+    if (bBeforeRealize)
+        gtk_window_set_accept_focus( pWindow, bAccept );
     else if( ! bBeforeRealize )
     {
         Display* pDisplay = GetGtkSalData()->GetGtkDisplay()->GetDisplay();
@@ -1129,22 +1115,10 @@ static void lcl_set_accept_focus( GtkWindow* pWindow, gboolean bAccept, bool bBe
 
 static void lcl_set_user_time( GtkWindow* i_pWindow, guint32 i_nTime )
 {
-    if( bGetSetUserTimeFn )
-    {
-        bGetSetUserTimeFn = false;
-        p_gdk_x11_window_set_user_time = reinterpret_cast<setUserTimeFn>(osl_getAsciiFunctionSymbol( GetSalData()->m_pPlugin, "gdk_x11_window_set_user_time" ));
-    }
-    bool bSet = false;
-    if( p_gdk_x11_window_set_user_time )
-    {
-        GdkWindow* pWin = widget_get_window(GTK_WIDGET(i_pWindow));
-        if( pWin ) // only if the window is realized.
-        {
-            p_gdk_x11_window_set_user_time( pWin, i_nTime );
-            bSet = true;
-        }
-    }
-    if( !bSet )
+    GdkWindow* pWin = widget_get_window(GTK_WIDGET(i_pWindow));
+    if (pWin) // only if the window is realized.
+        gdk_x11_window_set_user_time( pWin, i_nTime );
+    else
     {
         Display* pDisplay = GetGtkSalData()->GetGtkDisplay()->GetDisplay();
         Atom nUserTime = XInternAtom( pDisplay, "_NET_WM_USER_TIME", True );
@@ -2314,19 +2288,6 @@ void GtkSalFrame::Flush()
     XFlush (GDK_DISPLAY_XDISPLAY (getGdkDisplay()));
 }
 
-#ifndef GDK_Open
-#define GDK_Open 0x1008ff6b
-#endif
-#ifndef GDK_Paste
-#define GDK_Paste 0x1008ff6d
-#endif
-#ifndef GDK_Copy
-#define GDK_Copy 0x1008ff57
-#endif
-#ifndef GDK_Cut
-#define GDK_Cut 0x1008ff58
-#endif
-
 void GtkSalFrame::KeyCodeToGdkKey(const vcl::KeyCode& rKeyCode,
     guint* pGdkKeyCode, GdkModifierType *pGdkModifiers)
 {
@@ -2353,57 +2314,57 @@ void GtkSalFrame::KeyCodeToGdkKey(const vcl::KeyCode& rKeyCode,
     guint nCode = rKeyCode.GetCode();
 
     if ( nCode >= KEY_0 && nCode <= KEY_9 )
-        nKeyCode = ( nCode - KEY_0 ) + GDK_0;
+        nKeyCode = ( nCode - KEY_0 ) + GDK_KEY_0;
     else if ( nCode >= KEY_A && nCode <= KEY_Z )
-        nKeyCode = ( nCode - KEY_A ) + GDK_A;
+        nKeyCode = ( nCode - KEY_A ) + GDK_KEY_A;
     else if ( nCode >= KEY_F1 && nCode <= KEY_F26 )
-        nKeyCode = ( nCode - KEY_F1 ) + GDK_F1;
+        nKeyCode = ( nCode - KEY_F1 ) + GDK_KEY_F1;
     else
     {
-        switch( nCode )
+        switch (nCode)
         {
-        case KEY_DOWN:          nKeyCode = GDK_Down;            break;
-        case KEY_UP:            nKeyCode = GDK_Up;              break;
-        case KEY_LEFT:          nKeyCode = GDK_Left;            break;
-        case KEY_RIGHT:         nKeyCode = GDK_Right;           break;
-        case KEY_HOME:          nKeyCode = GDK_Home;            break;
-        case KEY_END:           nKeyCode = GDK_End;             break;
-        case KEY_PAGEUP:        nKeyCode = GDK_Page_Up;         break;
-        case KEY_PAGEDOWN:      nKeyCode = GDK_Page_Down;       break;
-        case KEY_RETURN:        nKeyCode = GDK_Return;          break;
-        case KEY_ESCAPE:        nKeyCode = GDK_Escape;          break;
-        case KEY_TAB:           nKeyCode = GDK_Tab;             break;
-        case KEY_BACKSPACE:     nKeyCode = GDK_BackSpace;       break;
-        case KEY_SPACE:         nKeyCode = GDK_space;           break;
-        case KEY_INSERT:        nKeyCode = GDK_Insert;          break;
-        case KEY_DELETE:        nKeyCode = GDK_Delete;          break;
-        case KEY_ADD:           nKeyCode = GDK_plus;            break;
-        case KEY_SUBTRACT:      nKeyCode = GDK_minus;           break;
-        case KEY_MULTIPLY:      nKeyCode = GDK_asterisk;        break;
-        case KEY_DIVIDE:        nKeyCode = GDK_slash;           break;
-        case KEY_POINT:         nKeyCode = GDK_period;          break;
-        case KEY_COMMA:         nKeyCode = GDK_comma;           break;
-        case KEY_LESS:          nKeyCode = GDK_less;            break;
-        case KEY_GREATER:       nKeyCode = GDK_greater;         break;
-        case KEY_EQUAL:         nKeyCode = GDK_equal;           break;
-        case KEY_FIND:          nKeyCode = GDK_Find;            break;
-        case KEY_CONTEXTMENU:   nKeyCode = GDK_Menu;            break;
-        case KEY_HELP:          nKeyCode = GDK_Help;            break;
-        case KEY_UNDO:          nKeyCode = GDK_Undo;            break;
-        case KEY_REPEAT:        nKeyCode = GDK_Redo;            break;
-        case KEY_DECIMAL:       nKeyCode = GDK_KP_Decimal;      break;
-        case KEY_TILDE:         nKeyCode = GDK_asciitilde;      break;
-        case KEY_QUOTELEFT:     nKeyCode = GDK_quoteleft;       break;
-        case KEY_BRACKETLEFT:   nKeyCode = GDK_bracketleft;     break;
-        case KEY_BRACKETRIGHT:  nKeyCode = GDK_bracketright;    break;
-        case KEY_SEMICOLON:     nKeyCode = GDK_semicolon;       break;
-        case KEY_QUOTERIGHT:    nKeyCode = GDK_quoteright;      break;
+            case KEY_DOWN:          nKeyCode = GDK_KEY_Down;            break;
+            case KEY_UP:            nKeyCode = GDK_KEY_Up;              break;
+            case KEY_LEFT:          nKeyCode = GDK_KEY_Left;            break;
+            case KEY_RIGHT:         nKeyCode = GDK_KEY_Right;           break;
+            case KEY_HOME:          nKeyCode = GDK_KEY_Home;            break;
+            case KEY_END:           nKeyCode = GDK_KEY_End;             break;
+            case KEY_PAGEUP:        nKeyCode = GDK_KEY_Page_Up;         break;
+            case KEY_PAGEDOWN:      nKeyCode = GDK_KEY_Page_Down;       break;
+            case KEY_RETURN:        nKeyCode = GDK_KEY_Return;          break;
+            case KEY_ESCAPE:        nKeyCode = GDK_KEY_Escape;          break;
+            case KEY_TAB:           nKeyCode = GDK_KEY_Tab;             break;
+            case KEY_BACKSPACE:     nKeyCode = GDK_KEY_BackSpace;       break;
+            case KEY_SPACE:         nKeyCode = GDK_KEY_space;           break;
+            case KEY_INSERT:        nKeyCode = GDK_KEY_Insert;          break;
+            case KEY_DELETE:        nKeyCode = GDK_KEY_Delete;          break;
+            case KEY_ADD:           nKeyCode = GDK_KEY_plus;            break;
+            case KEY_SUBTRACT:      nKeyCode = GDK_KEY_minus;           break;
+            case KEY_MULTIPLY:      nKeyCode = GDK_KEY_asterisk;        break;
+            case KEY_DIVIDE:        nKeyCode = GDK_KEY_slash;           break;
+            case KEY_POINT:         nKeyCode = GDK_KEY_period;          break;
+            case KEY_COMMA:         nKeyCode = GDK_KEY_comma;           break;
+            case KEY_LESS:          nKeyCode = GDK_KEY_less;            break;
+            case KEY_GREATER:       nKeyCode = GDK_KEY_greater;         break;
+            case KEY_EQUAL:         nKeyCode = GDK_KEY_equal;           break;
+            case KEY_FIND:          nKeyCode = GDK_KEY_Find;            break;
+            case KEY_CONTEXTMENU:   nKeyCode = GDK_KEY_Menu;            break;
+            case KEY_HELP:          nKeyCode = GDK_KEY_Help;            break;
+            case KEY_UNDO:          nKeyCode = GDK_KEY_Undo;            break;
+            case KEY_REPEAT:        nKeyCode = GDK_KEY_Redo;            break;
+            case KEY_DECIMAL:       nKeyCode = GDK_KEY_KP_Decimal;      break;
+            case KEY_TILDE:         nKeyCode = GDK_KEY_asciitilde;      break;
+            case KEY_QUOTELEFT:     nKeyCode = GDK_KEY_quoteleft;       break;
+            case KEY_BRACKETLEFT:   nKeyCode = GDK_KEY_bracketleft;     break;
+            case KEY_BRACKETRIGHT:  nKeyCode = GDK_KEY_bracketright;    break;
+            case KEY_SEMICOLON:     nKeyCode = GDK_KEY_semicolon;       break;
+            case KEY_QUOTERIGHT:    nKeyCode = GDK_KEY_quoteright;      break;
 
-        // Special cases
-        case KEY_COPY:          nKeyCode = GDK_Copy;            break;
-        case KEY_CUT:           nKeyCode = GDK_Cut;             break;
-        case KEY_PASTE:         nKeyCode = GDK_Paste;           break;
-        case KEY_OPEN:          nKeyCode = GDK_Open;            break;
+            // Special cases
+            case KEY_COPY:          nKeyCode = GDK_KEY_Copy;            break;
+            case KEY_CUT:           nKeyCode = GDK_KEY_Cut;             break;
+            case KEY_PASTE:         nKeyCode = GDK_KEY_Paste;           break;
+            case KEY_OPEN:          nKeyCode = GDK_KEY_Open;            break;
         }
     }
 
@@ -2805,8 +2766,7 @@ gboolean GtkSalFrame::signalButton( GtkWidget*, GdkEventButton* pEvent, gpointer
             ImplSVData* pSVData = ImplGetSVData();
             if ( pSVData->maWinData.mpFirstFloat )
             {
-                static const char* pEnv = getenv( "SAL_FLOATWIN_NOAPPFOCUSCLOSE" );
-                if ( !(pSVData->maWinData.mpFirstFloat->GetPopupModeFlags() & FloatWinPopupFlags::NoAppFocusClose) && !(pEnv && *pEnv) )
+                if (!(pSVData->maWinData.mpFirstFloat->GetPopupModeFlags() & FloatWinPopupFlags::NoAppFocusClose))
                     pSVData->maWinData.mpFirstFloat->EndPopupMode( FloatWinPopupEndFlags::Cancel | FloatWinPopupEndFlags::CloseAll );
             }
         }
@@ -2827,8 +2787,9 @@ gboolean GtkSalFrame::signalButton( GtkWidget*, GdkEventButton* pEvent, gpointer
     return true;
 }
 
-gboolean GtkSalFrame::signalScroll( GtkWidget*, GdkEventScroll* pEvent, gpointer frame )
+gboolean GtkSalFrame::signalScroll(GtkWidget*, GdkEvent* pInEvent, gpointer frame)
 {
+    GdkEventScroll& rEvent = pInEvent->scroll;
     GtkSalFrame* pThis = static_cast<GtkSalFrame*>(frame);
 
     static sal_uLong        nLines = 0;
@@ -2840,16 +2801,16 @@ gboolean GtkSalFrame::signalScroll( GtkWidget*, GdkEventScroll* pEvent, gpointer
             nLines = SAL_WHEELMOUSE_EVENT_PAGESCROLL;
     }
 
-    bool bNeg = (pEvent->direction == GDK_SCROLL_DOWN || pEvent->direction == GDK_SCROLL_RIGHT );
+    bool bNeg = (rEvent.direction == GDK_SCROLL_DOWN || rEvent.direction == GDK_SCROLL_RIGHT );
     SalWheelMouseEvent aEvent;
-    aEvent.mnTime           = pEvent->time;
-    aEvent.mnX              = (sal_uLong)pEvent->x;
-    aEvent.mnY              = (sal_uLong)pEvent->y;
+    aEvent.mnTime           = rEvent.time;
+    aEvent.mnX              = (sal_uLong)rEvent.x;
+    aEvent.mnY              = (sal_uLong)rEvent.y;
     aEvent.mnDelta          = bNeg ? -120 : 120;
     aEvent.mnNotchDelta     = bNeg ? -1 : 1;
     aEvent.mnScrollLines    = nLines;
-    aEvent.mnCode           = GetMouseModCode( pEvent->state );
-    aEvent.mbHorz           = (pEvent->direction == GDK_SCROLL_LEFT || pEvent->direction == GDK_SCROLL_RIGHT);
+    aEvent.mnCode           = GetMouseModCode( rEvent.state );
+    aEvent.mbHorz           = (rEvent.direction == GDK_SCROLL_LEFT || rEvent.direction == GDK_SCROLL_RIGHT);
 
     // --- RTL --- (mirror mouse pos)
     if( AllSettings::GetLayoutRTL() )
@@ -2921,7 +2882,9 @@ gboolean GtkSalFrame::signalExpose( GtkWidget*, GdkEventExpose* pEvent, gpointer
 {
     GtkSalFrame* pThis = static_cast<GtkSalFrame*>(frame);
 
-    struct SalPaintEvent aEvent( pEvent->area.x, pEvent->area.y, pEvent->area.width, pEvent->area.height, OpenGLHelper::isVCLOpenGLEnabled() );
+    const bool bImmediate = OpenGLHelper::isVCLOpenGLEnabled() || pThis->m_bFullscreen;
+
+    struct SalPaintEvent aEvent( pEvent->area.x, pEvent->area.y, pEvent->area.width, pEvent->area.height, bImmediate );
 
     pThis->CallCallback( SalEvent::Paint, &aEvent );
 
@@ -3023,10 +2986,7 @@ gboolean GtkSalFrame::signalFocus( GtkWidget*, GdkEventFocus* pEvent, gpointer f
     pSalInstance->updatePrinterUpdate();
 
     if( !pEvent->in )
-    {
         pThis->m_nKeyModifiers = 0;
-        pThis->m_bSendModChangeOnRelease = false;
-    }
 
     if( pThis->m_pIMHandler )
         pThis->m_pIMHandler->focusChanged( pEvent->in );
@@ -3133,73 +3093,67 @@ gboolean GtkSalFrame::signalKey( GtkWidget*, GdkEventKey* pEvent, gpointer frame
     }
 
     // handle modifiers
-    if( pEvent->keyval == GDK_Shift_L || pEvent->keyval == GDK_Shift_R ||
-        pEvent->keyval == GDK_Control_L || pEvent->keyval == GDK_Control_R ||
-        pEvent->keyval == GDK_Alt_L || pEvent->keyval == GDK_Alt_R ||
-        pEvent->keyval == GDK_Meta_L || pEvent->keyval == GDK_Meta_R ||
-        pEvent->keyval == GDK_Super_L || pEvent->keyval == GDK_Super_R )
+    if( pEvent->keyval == GDK_KEY_Shift_L || pEvent->keyval == GDK_KEY_Shift_R ||
+        pEvent->keyval == GDK_KEY_Control_L || pEvent->keyval == GDK_KEY_Control_R ||
+        pEvent->keyval == GDK_KEY_Alt_L || pEvent->keyval == GDK_KEY_Alt_R ||
+        pEvent->keyval == GDK_KEY_Meta_L || pEvent->keyval == GDK_KEY_Meta_R ||
+        pEvent->keyval == GDK_KEY_Super_L || pEvent->keyval == GDK_KEY_Super_R )
     {
-        SalKeyModEvent aModEvt;
-
         sal_uInt16 nModCode = GetKeyModCode( pEvent->state );
-
-        aModEvt.mnModKeyCode = 0; // emit no MODKEYCHANGE events
-        if( pEvent->type == GDK_KEY_PRESS && !pThis->m_nKeyModifiers )
-            pThis->m_bSendModChangeOnRelease = true;
-
-        else if( pEvent->type == GDK_KEY_RELEASE &&
-                 pThis->m_bSendModChangeOnRelease )
-        {
-            aModEvt.mnModKeyCode = pThis->m_nKeyModifiers;
-        }
-
         sal_uInt16 nExtModMask = 0;
         sal_uInt16 nModMask = 0;
         // pressing just the ctrl key leads to a keysym of XK_Control but
         // the event state does not contain ControlMask. In the release
-        // event its the other way round: it does contain the Control mask.
+        // event it's the other way round: it does contain the Control mask.
         // The modifier mode therefore has to be adapted manually.
         switch( pEvent->keyval )
         {
-            case GDK_Control_L:
+            case GDK_KEY_Control_L:
                 nExtModMask = MODKEY_LMOD1;
                 nModMask = KEY_MOD1;
                 break;
-            case GDK_Control_R:
+            case GDK_KEY_Control_R:
                 nExtModMask = MODKEY_RMOD1;
                 nModMask = KEY_MOD1;
                 break;
-            case GDK_Alt_L:
+            case GDK_KEY_Alt_L:
                 nExtModMask = MODKEY_LMOD2;
                 nModMask = KEY_MOD2;
                 break;
-            case GDK_Alt_R:
+            case GDK_KEY_Alt_R:
                 nExtModMask = MODKEY_RMOD2;
                 nModMask = KEY_MOD2;
                 break;
-            case GDK_Shift_L:
+            case GDK_KEY_Shift_L:
                 nExtModMask = MODKEY_LSHIFT;
                 nModMask = KEY_SHIFT;
                 break;
-            case GDK_Shift_R:
+            case GDK_KEY_Shift_R:
                 nExtModMask = MODKEY_RSHIFT;
                 nModMask = KEY_SHIFT;
                 break;
             // Map Meta/Super to MOD3 modifier on all Unix systems
             // except Mac OS X
-            case GDK_Meta_L:
-            case GDK_Super_L:
+            case GDK_KEY_Meta_L:
+            case GDK_KEY_Super_L:
                 nExtModMask = MODKEY_LMOD3;
                 nModMask = KEY_MOD3;
                 break;
-            case GDK_Meta_R:
-            case GDK_Super_R:
+            case GDK_KEY_Meta_R:
+            case GDK_KEY_Super_R:
                 nExtModMask = MODKEY_RMOD3;
                 nModMask = KEY_MOD3;
                 break;
         }
+
+        SalKeyModEvent aModEvt;
+        aModEvt.mbDown = pEvent->type == GDK_KEY_PRESS;
+        aModEvt.mnTime = pEvent->time;
+        aModEvt.mnCode = nModCode;
+
         if( pEvent->type == GDK_KEY_RELEASE )
         {
+            aModEvt.mnModKeyCode = pThis->m_nKeyModifiers;
             nModCode &= ~nModMask;
             pThis->m_nKeyModifiers &= ~nExtModMask;
         }
@@ -3207,14 +3161,10 @@ gboolean GtkSalFrame::signalKey( GtkWidget*, GdkEventKey* pEvent, gpointer frame
         {
             nModCode |= nModMask;
             pThis->m_nKeyModifiers |= nExtModMask;
+            aModEvt.mnModKeyCode = pThis->m_nKeyModifiers;
         }
 
-        aModEvt.mnCode = nModCode;
-        aModEvt.mnTime = pEvent->time;
-        aModEvt.mnModKeyCode = pThis->m_nKeyModifiers;
-
         pThis->CallCallback( SalEvent::KeyModChange, &aModEvt );
-
     }
     else
     {
@@ -3227,7 +3177,7 @@ gboolean GtkSalFrame::signalKey( GtkWidget*, GdkEventKey* pEvent, gpointer frame
                               (pEvent->type == GDK_KEY_PRESS),
                               false );
         if( ! aDel.isDeleted() )
-            pThis->m_bSendModChangeOnRelease = false;
+            pThis->m_nKeyModifiers = 0;
     }
 
     if( !aDel.isDeleted() && pThis->m_pIMHandler )
@@ -3288,7 +3238,7 @@ void GtkSalFrame::signalStyleSet( GtkWidget*, GtkStyle* pPrevious, gpointer fram
         if( aWin != None )
             XSetWindowBackgroundPixmap( GtkSalFrame::getDisplay()->GetDisplay(),
                                         aWin,
-                                        pThis->m_hBackgroundPixmap );
+                                        None );
     }
     if( ! pThis->m_pParent )
     {
@@ -3432,12 +3382,10 @@ void GtkSalFrame::IMHandler::sendEmptyCommit()
     vcl::DeletionListener aDel( m_pFrame );
 
     SalExtTextInputEvent aEmptyEv;
-    aEmptyEv.mnTime             = 0;
     aEmptyEv.mpTextAttr         = nullptr;
     aEmptyEv.maText.clear();
     aEmptyEv.mnCursorPos        = 0;
     aEmptyEv.mnCursorFlags      = 0;
-    aEmptyEv.mbOnlyCursor       = False;
     m_pFrame->CallCallback( SalEvent::ExtTextInput, static_cast<void*>(&aEmptyEv) );
     if( ! aDel.isDeleted() )
         m_pFrame->CallCallback( SalEvent::EndExtTextInput, nullptr );
@@ -3532,7 +3480,7 @@ bool GtkSalFrame::IMHandler::handleKeyEvent( GdkEventKey* pEvent )
             return true;
         else
         {
-            DBG_ASSERT( m_nPrevKeyPresses > 0, "key press has vanished !" );
+            SAL_WARN_IF( m_nPrevKeyPresses <= 0, "vcl", "key press has vanished !" );
             if( ! m_aPrevKeyPresses.empty() ) // sanity check
             {
                 // event was not swallowed, do not filter a following
@@ -3592,13 +3540,13 @@ static bool checkSingleKeyCommitHack( guint keyval, sal_Unicode cCode )
     bool bRet = true;
     switch( keyval )
     {
-        case GDK_KP_Enter:
-        case GDK_Return:
+        case GDK_KEY_KP_Enter:
+        case GDK_KEY_Return:
             if( cCode != '\n' && cCode != '\r' )
                 bRet = false;
             break;
-        case GDK_space:
-        case GDK_KP_Space:
+        case GDK_KEY_space:
+        case GDK_KEY_KP_Space:
             if( cCode != ' ' )
                 bRet = false;
             break;
@@ -3619,12 +3567,10 @@ void GtkSalFrame::IMHandler::signalIMCommit( GtkIMContext* pContext, gchar* pTex
             (pThis->m_aInputEvent.mpTextAttr != nullptr) ||
             pThis->m_bPreeditJustChanged;
 
-        pThis->m_aInputEvent.mnTime             = 0;
         pThis->m_aInputEvent.mpTextAttr         = nullptr;
         pThis->m_aInputEvent.maText             = OUString( pText, strlen(pText), RTL_TEXTENCODING_UTF8 );
         pThis->m_aInputEvent.mnCursorPos        = pThis->m_aInputEvent.maText.getLength();
         pThis->m_aInputEvent.mnCursorFlags      = 0;
-        pThis->m_aInputEvent.mbOnlyCursor       = False;
 
         pThis->m_aInputFlags.clear();
 
@@ -3708,11 +3654,9 @@ void GtkSalFrame::IMHandler::signalIMPreeditChanged( GtkIMContext*, gpointer im_
     pThis->m_bPreeditJustChanged = true;
 
     bool bEndPreedit = (!pText || !*pText) && pThis->m_aInputEvent.mpTextAttr != nullptr;
-    pThis->m_aInputEvent.mnTime             = 0;
     pThis->m_aInputEvent.maText             = pText ? OUString( pText, strlen(pText), RTL_TEXTENCODING_UTF8 ) : OUString();
     pThis->m_aInputEvent.mnCursorPos        = nCursorPos;
     pThis->m_aInputEvent.mnCursorFlags      = 0;
-    pThis->m_aInputEvent.mbOnlyCursor       = False;
 
     pThis->m_aInputFlags = std::vector<ExtTextInputAttr>( std::max( 1, (int)pThis->m_aInputEvent.maText.getLength() ), ExtTextInputAttr::NONE );
 

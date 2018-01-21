@@ -42,12 +42,9 @@ public:
     inline SwTableBoxNumFormat& operator=( const SwTableBoxNumFormat& rAttr )
     {
         SetValue( rAttr.GetValue() );
-        SetAutoFlag( rAttr.GetAutoFlag() );
+        bAuto = rAttr.bAuto;
         return *this;
     }
-
-    bool GetAutoFlag() const                    { return bAuto; }
-    void SetAutoFlag( bool bFlag = true )       { bAuto = bFlag; }
 };
 
 class SwTableBoxFormula : public SfxPoolItem, public SwTableFormula
@@ -57,7 +54,7 @@ class SwTableBoxFormula : public SfxPoolItem, public SwTableFormula
 
 public:
     SwTableBoxFormula( const OUString& rFormula );
-    virtual ~SwTableBoxFormula() {};
+    virtual ~SwTableBoxFormula() override {};
 
     // "pure virtual methods" of SfxPoolItem
     virtual bool            operator==( const SfxPoolItem& ) const override;

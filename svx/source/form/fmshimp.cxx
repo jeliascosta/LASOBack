@@ -580,14 +580,14 @@ bool isControlList(const SdrMarkList& rMarkList)
                 SdrObjListIter aIter(*pObj->GetSubList());
                 while (aIter.IsMore() && bControlList)
                 {
-                    bControlList = FmFormInventor == aIter.Next()->GetObjInventor();
+                    bControlList = SdrInventor::FmForm == aIter.Next()->GetObjInventor();
                     bHadAnyLeafs = true;
                 }
             }
             else
             {
                 bHadAnyLeafs = true;
-                bControlList = FmFormInventor == pObj->GetObjInventor();
+                bControlList = SdrInventor::FmForm == pObj->GetObjInventor();
             }
         }
     }
@@ -612,17 +612,6 @@ Reference< XForm > GetForm(const Reference< XInterface>& _rxElement)
 FmXFormShell_Base_Disambiguation::FmXFormShell_Base_Disambiguation( ::osl::Mutex& _rMutex )
     :FmXFormShell_BD_BASE( _rMutex )
 {
-}
-
-void SAL_CALL FmXFormShell_Base_Disambiguation::disposing()
-{
-    WeakComponentImplHelperBase::disposing();
-    // Note:
-    // This is a HACK.
-    // Normally it should be sufficient to call the "disposing" of our direct
-    // base class, but SUN PRO 5 does not like this and claims there is a conflict
-    // with the XEventListener::disposing(EventObject) of our various listener
-    // base classes.
 }
 
 FmXFormShell::FmXFormShell( FmFormShell& _rShell, SfxViewFrame* _pViewFrame )
@@ -1002,7 +991,7 @@ void FmXFormShell::LockSlotInvalidation(bool bLock)
 }
 
 
-IMPL_LINK_NOARG_TYPED(FmXFormShell, OnInvalidateSlots, void*,void)
+IMPL_LINK_NOARG(FmXFormShell, OnInvalidateSlots, void*,void)
 {
     if ( impl_checkDisposed() )
         return;
@@ -1040,10 +1029,10 @@ void FmXFormShell::ForceUpdateSelection()
 }
 
 
-PopupMenu* FmXFormShell::GetConversionMenu()
+VclPtr<PopupMenu> FmXFormShell::GetConversionMenu()
 {
 
-    PopupMenu* pNewMenu = new PopupMenu(SVX_RES( RID_FMSHELL_CONVERSIONMENU ));
+    VclPtrInstance<PopupMenu> pNewMenu(SVX_RES( RID_FMSHELL_CONVERSIONMENU ));
 
     ImageList aImageList( SVX_RES( RID_SVXIMGLIST_FMEXPL) );
     for ( size_t i = 0; i < SAL_N_ELEMENTS(nConvertSlots); ++i )
@@ -1561,9 +1550,9 @@ void FmXFormShell::ExecuteSearch()
     // ausgeraeumt sind, sollte hier ein SM_USETHREAD rein, denn die Suche in einem eigenen Thread ist doch etwas fluessiger
     // sollte allerdings irgendwie von dem unterliegenden Cursor abhaengig gemacht werden, DAO zum Beispiel ist nicht thread-sicher
     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-    std::unique_ptr<AbstractFmSearchDialog> pDialog;
+    ScopedVclPtr<AbstractFmSearchDialog> pDialog;
     if ( pFact )
-        pDialog.reset(pFact->CreateFmSearchDialog( &m_pShell->GetViewShell()->GetViewFrame()->GetWindow(), strInitialText, aContextNames, nInitialContext, LINK( this, FmXFormShell, OnSearchContextRequest ) ));
+        pDialog.disposeAndReset(pFact->CreateFmSearchDialog( &m_pShell->GetViewShell()->GetViewFrame()->GetWindow(), strInitialText, aContextNames, nInitialContext, LINK( this, FmXFormShell, OnSearchContextRequest ) ));
     DBG_ASSERT( pDialog, "FmXFormShell::ExecuteSearch: could not create the search dialog!" );
     if ( pDialog )
     {
@@ -1571,7 +1560,7 @@ void FmXFormShell::ExecuteSearch()
         pDialog->SetFoundHandler( LINK( this, FmXFormShell, OnFoundData ) );
         pDialog->SetCanceledNotFoundHdl( LINK( this, FmXFormShell, OnCanceledNotFound ) );
         pDialog->Execute();
-        pDialog.reset();
+        pDialog.disposeAndClear();
     }
 
     // GridControls wieder restaurieren
@@ -2189,7 +2178,7 @@ void FmXFormShell::ShowSelectionProperties( bool bShow )
 }
 
 
-IMPL_LINK_TYPED(FmXFormShell, OnFoundData, FmFoundRecordInformation&, rfriWhere, void)
+IMPL_LINK(FmXFormShell, OnFoundData, FmFoundRecordInformation&, rfriWhere, void)
 {
     if ( impl_checkDisposed() )
         return;
@@ -2271,7 +2260,7 @@ IMPL_LINK_TYPED(FmXFormShell, OnFoundData, FmFoundRecordInformation&, rfriWhere,
 }
 
 
-IMPL_LINK_TYPED(FmXFormShell, OnCanceledNotFound, FmFoundRecordInformation&, rfriWhere, void)
+IMPL_LINK(FmXFormShell, OnCanceledNotFound, FmFoundRecordInformation&, rfriWhere, void)
 {
     if ( impl_checkDisposed() )
         return;
@@ -2300,7 +2289,7 @@ IMPL_LINK_TYPED(FmXFormShell, OnCanceledNotFound, FmFoundRecordInformation&, rfr
 }
 
 
-IMPL_LINK_TYPED(FmXFormShell, OnSearchContextRequest, FmSearchContext&, rfmscContextInfo, sal_uInt32)
+IMPL_LINK(FmXFormShell, OnSearchContextRequest, FmSearchContext&, rfmscContextInfo, sal_uInt32)
 {
     if ( impl_checkDisposed() )
         return 0;
@@ -2668,7 +2657,7 @@ void FmXFormShell::selectionChanged(const lang::EventObject& rEvent) throw(css::
 }
 
 
-IMPL_LINK_NOARG_TYPED(FmXFormShell, OnTimeOut, Timer*, void)
+IMPL_LINK_NOARG(FmXFormShell, OnTimeOut, Timer*, void)
 {
     if ( impl_checkDisposed() )
         return;
@@ -3189,7 +3178,7 @@ void FmXFormShell::CreateExternalView()
             if ( m_xExternalViewController == getActiveController() )
             {
                 Reference< runtime::XFormController > xAsFormController( m_xExternalViewController, UNO_QUERY );
-                ControllerFeatures aHelper( xAsFormController, nullptr );
+                ControllerFeatures aHelper( xAsFormController );
                 (void)aHelper->commitCurrentControl();
             }
 
@@ -3599,7 +3588,7 @@ void FmXFormShell::viewDeactivated( FmFormView& _rCurrentView, bool _bDeactivate
 }
 
 
-IMPL_LINK_NOARG_TYPED( FmXFormShell, OnFirstTimeActivation, void*, void )
+IMPL_LINK_NOARG( FmXFormShell, OnFirstTimeActivation, void*, void )
 {
     if ( impl_checkDisposed() )
         return;
@@ -3619,7 +3608,7 @@ IMPL_LINK_NOARG_TYPED( FmXFormShell, OnFirstTimeActivation, void*, void )
 }
 
 
-IMPL_LINK_NOARG_TYPED( FmXFormShell, OnFormsCreated, FmFormPageImpl&, void )
+IMPL_LINK_NOARG( FmXFormShell, OnFormsCreated, FmFormPageImpl&, void )
 {
     UpdateForms( true );
 }
@@ -3661,10 +3650,10 @@ void FmXFormShell::viewActivated( FmFormView& _rCurrentView, bool _bSyncAction /
 
     UpdateForms( true );
 
-    if ( !hasEverBeenActivated() )
+    if ( m_bFirstActivation )
     {
         m_nActivationEvent = Application::PostUserEvent( LINK( this, FmXFormShell, OnFirstTimeActivation ) );
-        setHasBeenActivated();
+        m_bFirstActivation = false;
     }
 
     // find a default "current form", if there is none, yet
@@ -3762,7 +3751,7 @@ void FmXFormShell::smartControlReset( const Reference< XIndexAccess >& _rxModels
 }
 
 
-IMPL_LINK_NOARG_TYPED( FmXFormShell, OnLoadForms, void*, void )
+IMPL_LINK_NOARG( FmXFormShell, OnLoadForms, void*, void )
 {
     FmLoadAction aAction = m_aLoadingPages.front();
     m_aLoadingPages.pop();
@@ -3926,7 +3915,7 @@ void FmXFormShell::handleMouseButtonDown( const SdrViewEvent& _rViewEvent )
     // catch simple double clicks
     if ( ( _rViewEvent.nMouseClicks == 2 ) && ( _rViewEvent.nMouseCode == MOUSE_LEFT ) )
     {
-        if ( _rViewEvent.eHit == SDRHIT_MARKEDOBJECT )
+        if ( _rViewEvent.eHit == SdrHitKind::MarkedObject )
         {
             if ( onlyControlsAreMarked() )
                 ShowSelectionProperties( true );
@@ -3960,7 +3949,7 @@ bool FmXFormShell::HasControlFocus() const
 }
 
 
-SearchableControlIterator::SearchableControlIterator(Reference< XInterface> xStartingPoint)
+SearchableControlIterator::SearchableControlIterator(Reference< XInterface> const & xStartingPoint)
     :IndexAccessIterator(xStartingPoint)
 {
 }

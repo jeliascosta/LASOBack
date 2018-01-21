@@ -218,7 +218,6 @@ SwForm::SwForm( TOXTypes eTyp ) // #i21237#
     m_bCommaSeparated(false)
 {
     //bHasFirstTabPos =
-    m_bGenerateTabPos = false;
     m_bIsRelTabPos = true;
 
     // The table of contents has a certain number of headlines + headings
@@ -265,7 +264,7 @@ SwForm::SwForm( TOXTypes eTyp ) // #i21237#
 
         // #i36870# right aligned tab for all
         aToken.cTabFillChar = '.';
-        aToken.eTabAlign = SVX_TAB_ADJUST_END;
+        aToken.eTabAlign = SvxTabAdjust::End;
 
         aTokens.push_back(aToken);
         aTokens.push_back(SwFormToken(TOKEN_PAGE_NUMS));
@@ -330,7 +329,6 @@ SwForm& SwForm::operator=(const SwForm& rForm)
     m_nFormMaxLevel = rForm.m_nFormMaxLevel;
 //  nFirstTabPos = rForm.nFirstTabPos;
 //  bHasFirstTabPos = rForm.bHasFirstTabPos;
-    m_bGenerateTabPos = rForm.m_bGenerateTabPos;
     m_bIsRelTabPos = rForm.m_bIsRelTabPos;
     m_bCommaSeparated = rForm.m_bCommaSeparated;
     for(sal_uInt16 i=0; i < m_nFormMaxLevel; ++i)
@@ -387,7 +385,7 @@ void SwForm::AdjustTabStops( SwDoc& rDoc ) // #i21237#
             {
                 const SvxTabStop& rTab = rTabStops[nTab];
 
-                if ( rTab.GetAdjustment() == SVX_TAB_ADJUST_DEFAULT )
+                if ( rTab.GetAdjustment() == SvxTabAdjust::Default )
                     continue; // ignore the default tab stop
 
                 aIt = find_if( aIt, aCurrentPattern.end(), SwFormTokenEqualToFormTokenType(TOKEN_TAB_STOP) );
@@ -397,8 +395,8 @@ void SwForm::AdjustTabStops( SwDoc& rDoc ) // #i21237#
                     aIt->nTabStopPosition = rTab.GetTabPos();
                     aIt->eTabAlign =
                         ( nTab == nTabCount - 1
-                          && rTab.GetAdjustment() == SVX_TAB_ADJUST_RIGHT )
-                        ? SVX_TAB_ADJUST_END
+                          && rTab.GetAdjustment() == SvxTabAdjust::Right )
+                        ? SvxTabAdjust::End
                         : rTab.GetAdjustment();
                     aIt->cTabFillChar = rTab.GetFill();
                     ++aIt;
@@ -500,7 +498,7 @@ void SwTOXBase::CopyTOXBase( SwDoc* pDoc, const SwTOXBase& rSource )
     for( sal_uInt16 i = 0; i < MAXLEVEL; ++i )
         m_aStyleNames[i] = rSource.m_aStyleNames[i];
 
-    // its the same data type!
+    // it's the same data type!
     m_aData.nOptions =  rSource.m_aData.nOptions;
 
     if( !pDoc || pDoc->IsCopyIsMove() )
@@ -612,7 +610,7 @@ OUString SwFormToken::GetString() const
         case TOKEN_TAB_STOP:
             sData += OUString::number( nTabStopPosition ) + ","
                   +  OUString::number( static_cast< sal_Int32 >(eTabAlign) ) + ","
-                  +  OUString(cTabFillChar) + ","
+                  +  OUStringLiteral1(cTabFillChar) + ","
                   +  OUString::number( bWithTab ? 1 : 0 );
             break;
         case TOKEN_CHAPTER_INFO:
@@ -622,9 +620,9 @@ OUString SwFormToken::GetString() const
                   +  OUString::number( nOutlineLevel );
             break;
         case TOKEN_TEXT:
-            sData += OUStringLiteral1<TOX_STYLE_DELIMITER>()
-                  +  sText.replaceAll(OUStringLiteral1<TOX_STYLE_DELIMITER>(), "")
-                  +  OUStringLiteral1<TOX_STYLE_DELIMITER>();
+            sData += OUStringLiteral1(TOX_STYLE_DELIMITER)
+                  +  sText.replaceAll(OUStringLiteral1(TOX_STYLE_DELIMITER), "")
+                  +  OUStringLiteral1(TOX_STYLE_DELIMITER);
             break;
         case TOKEN_AUTHORITY:
             if (nAuthorityField<10)

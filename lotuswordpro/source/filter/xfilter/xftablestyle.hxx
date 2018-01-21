@@ -72,14 +72,14 @@ class XFTableStyle : public XFStyle
 public:
     XFTableStyle();
 
-    virtual ~XFTableStyle();
+    virtual ~XFTableStyle() override;
 
 public:
     void    SetWidth(double width);
 
     void    SetAlign(enumXFAlignType eAlign, double offset = 0);
 
-    void    SetShadow(enumXFShadowPos pos, double offset = 0.18, XFColor color=XFColor(128,128,0) );
+    void    SetShadow(enumXFShadowPos pos, double offset, XFColor color );
 
     void    SetBackColor(XFColor& color);
 

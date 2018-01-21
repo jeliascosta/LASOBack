@@ -180,7 +180,7 @@ void NameContainer::replaceByName( const OUString& aName, const Any& aElement )
         aEvent.Base <<= aEvent.Source;
         aEvent.Changes.realloc( 1 );
         aEvent.Changes[ 0 ].Accessor <<= aName;
-        aEvent.Changes[ 0 ].Element <<= aElement;
+        aEvent.Changes[ 0 ].Element = aElement;
         aEvent.Changes[ 0 ].ReplacedElement = aOldElement;
         maChangesListeners.notifyEach( &XChangesListener::changesOccurred, aEvent );
     }
@@ -233,7 +233,7 @@ void NameContainer::insertNoCheck(const OUString& aName, const Any& aElement)
         aEvent.Base <<= aEvent.Source;
         aEvent.Changes.realloc( 1 );
         aEvent.Changes[ 0 ].Accessor <<= aName;
-        aEvent.Changes[ 0 ].Element <<= aElement;
+        aEvent.Changes[ 0 ].Element = aElement;
         maChangesListeners.notifyEach( &XChangesListener::changesOccurred, aEvent );
     }
 }
@@ -303,7 +303,7 @@ void SAL_CALL NameContainer::addContainerListener( const Reference< XContainerLi
     if( !xListener.is() )
     {
         throw RuntimeException("addContainerListener called with null xListener",
-                               static_cast< cppu::OWeakObject * >(this));
+                                static_cast< cppu::OWeakObject * >(this));
     }
     maContainerListeners.addInterface( Reference<XInterface>(xListener, UNO_QUERY) );
 }
@@ -313,7 +313,8 @@ void SAL_CALL NameContainer::removeContainerListener( const Reference< XContaine
 {
     if( !xListener.is() )
     {
-        throw RuntimeException();
+        throw RuntimeException("removeContainerListener called with null xListener",
+                                static_cast< cppu::OWeakObject * >(this));
     }
     maContainerListeners.removeInterface( Reference<XInterface>(xListener, UNO_QUERY) );
 }
@@ -324,7 +325,8 @@ void SAL_CALL NameContainer::addChangesListener( const Reference< XChangesListen
 {
     if( !xListener.is() )
     {
-        throw RuntimeException();
+        throw RuntimeException("addChangesListener called with null xListener",
+                                static_cast< cppu::OWeakObject * >(this));
     }
     maChangesListeners.addInterface( Reference<XInterface>(xListener, UNO_QUERY) );
 }
@@ -334,7 +336,8 @@ void SAL_CALL NameContainer::removeChangesListener( const Reference< XChangesLis
 {
     if( !xListener.is() )
     {
-        throw RuntimeException();
+        throw RuntimeException("removeChangesListener called with null xListener",
+                                static_cast< cppu::OWeakObject * >(this));
     }
     maChangesListeners.removeInterface( Reference<XInterface>(xListener, UNO_QUERY) );
 }
@@ -401,19 +404,13 @@ SfxLibraryContainer::~SfxLibraryContainer()
     }
 }
 
-void SfxLibraryContainer::checkDisposed() const
-{
-    if ( isDisposed() )
-    {
-        throw DisposedException( OUString(),
-                                 *const_cast< SfxLibraryContainer* >( this ) );
-    }
-}
-
 void SfxLibraryContainer::enterMethod()
 {
     Application::GetSolarMutex().acquire();
-    checkDisposed();
+    if ( rBHelper.bInDispose || rBHelper.bDisposed )
+    {
+        throw DisposedException( OUString(), *this );
+    }
 }
 
 void SfxLibraryContainer::leaveMethod()
@@ -613,10 +610,7 @@ static void createVariableURL( OUString& rStr, const OUString& rLibName,
     {
         rStr = "$(INST)/" LIBO_SHARE_FOLDER "/basic/";
     }
-    rStr += rLibName;
-    rStr += "/";
-    rStr += rInfoFileName;
-    rStr += ".xlb/";
+    rStr += rLibName + "/" + rInfoFileName + ".xlb/";
 }
 
 void SfxLibraryContainer::init( const OUString& rInitialDocumentURL, const uno::Reference< embed::XStorage >& rxInitialStorage )
@@ -730,9 +724,7 @@ void SfxLibraryContainer::init_Impl( const OUString& rInitialDocumentURL,
 
                 if ( xLibrariesStor.is() )
                 {
-                    aFileName = maInfoFileName;
-                    aFileName += "-lc.xml";
-
+                    aFileName = maInfoFileName + "-lc.xml";
                     try
                     {
                         xStream = xLibrariesStor->openStreamElement( aFileName, embed::ElementModes::READ );
@@ -745,9 +737,7 @@ void SfxLibraryContainer::init_Impl( const OUString& rInitialDocumentURL,
                         mbOldInfoFormat = true;
 
                         // Check old version
-                        aFileName = maOldInfoFileName;
-                        aFileName += ".xml";
-
+                        aFileName = maOldInfoFileName + ".xml";
                         try
                         {
                             xStream = xLibrariesStor->openStreamElement( aFileName, embed::ElementModes::READ );
@@ -758,8 +748,7 @@ void SfxLibraryContainer::init_Impl( const OUString& rInitialDocumentURL,
                         if( !xStream.is() )
                         {
                             // Check for EA2 document version with wrong extensions
-                            aFileName = maOldInfoFileName;
-                            aFileName += ".xli";
+                            aFileName = maOldInfoFileName + ".xli";
                             xStream = xLibrariesStor->openStreamElement( aFileName, embed::ElementModes::READ );
                         }
                     }
@@ -1432,8 +1421,7 @@ void SfxLibraryContainer::implStoreLibrary( SfxLibrary* pLib,
         for( sal_Int32 i = 0 ; i < nNameCount ; i++ )
         {
             OUString aElementName = pNames[ i ];
-            OUString aStreamName = aElementName;
-            aStreamName += ".xml";
+            OUString aStreamName = aElementName + ".xml";
 
             if( !isLibraryElementValid( pLib->getByName( aElementName ) ) )
             {
@@ -1586,8 +1574,7 @@ void SfxLibraryContainer::implStoreLibraryIndexFile( SfxLibrary* pLib,
     uno::Reference< io::XStream > xInfoStream;
     if( bStorage )
     {
-        OUString aStreamName( maInfoFileName );
-        aStreamName += "-lb.xml";
+        OUString aStreamName = maInfoFileName + "-lb.xml";
 
         try
         {
@@ -1689,8 +1676,7 @@ bool SfxLibraryContainer::implLoadLibraryIndexFile(  SfxLibrary* pLib,
     OUString aLibInfoPath;
     if( bStorage )
     {
-        aLibInfoPath = maInfoFileName;
-        aLibInfoPath += "-lb.xml";
+        aLibInfoPath = maInfoFileName + "-lb.xml";
 
         try
         {
@@ -2108,8 +2094,7 @@ void SfxLibraryContainer::storeLibraries_Impl( const uno::Reference< embed::XSto
     uno::Reference< io::XStream > xInfoStream;
     if( bStorage )
     {
-        OUString aStreamName( maInfoFileName );
-        aStreamName += "-lc.xml";
+        OUString aStreamName = maInfoFileName + "-lc.xml";
 
         try
         {
@@ -2455,8 +2440,7 @@ void SAL_CALL SfxLibraryContainer::loadLibrary( const OUString& Name )
             {
                 uno::Reference< io::XStream > xElementStream;
 
-                aFile = aElementName;
-                aFile += ".xml";
+                aFile = aElementName + ".xml";
 
                 try
                 {
@@ -2468,9 +2452,7 @@ void SAL_CALL SfxLibraryContainer::loadLibrary( const OUString& Name )
                 if( !xElementStream.is() )
                 {
                     // Check for EA2 document version with wrong extensions
-                    aFile = aElementName;
-                    aFile += ".";
-                    aFile += maLibElementFileExtension;
+                    aFile = aElementName + "." + maLibElementFileExtension;
                     try
                     {
                         xElementStream = xLibraryStor->openStreamElement( aFile, embed::ElementModes::READ );
@@ -2722,7 +2704,7 @@ void SAL_CALL SfxLibraryContainer::initialize( const Sequence< Any >& _rArgument
         Reference< XStorageBasedDocument > xDocument;
         if ( _rArguments[0] >>= sInitialDocumentURL )
         {
-            initializeFromDocumentURL( sInitialDocumentURL );
+            init( sInitialDocumentURL, nullptr );
             return;
         }
 
@@ -2734,11 +2716,6 @@ void SAL_CALL SfxLibraryContainer::initialize( const Sequence< Any >& _rArgument
     }
 
     throw IllegalArgumentException();
-}
-
-void SAL_CALL SfxLibraryContainer::initializeFromDocumentURL( const OUString& _rInitialDocumentURL )
-{
-    init( _rInitialDocumentURL, nullptr );
 }
 
 void SAL_CALL SfxLibraryContainer::initializeFromDocument( const Reference< XStorageBasedDocument >& _rxDocument )
@@ -3355,7 +3332,7 @@ OUString ScriptExtensionIterator::nextBasicOrDialogLibrary( bool& rbPureDialogLi
     return aRetLib;
 }
 
-ScriptSubPackageIterator::ScriptSubPackageIterator( Reference< deployment::XPackage > xMainPackage )
+ScriptSubPackageIterator::ScriptSubPackageIterator( Reference< deployment::XPackage > const & xMainPackage )
     : m_xMainPackage( xMainPackage )
     , m_bIsValid( false )
     , m_bIsBundle( false )

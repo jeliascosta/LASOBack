@@ -49,7 +49,7 @@ class SdLayer : public ::cppu::WeakImplHelper< css::drawing::XLayer,
 {
 public:
     SdLayer( SdLayerManager* pLayerManager_, SdrLayer* pSdrLayer_ ) throw();
-    virtual ~SdLayer() throw();
+    virtual ~SdLayer() throw() override;
 
     // intern
     SdrLayer* GetSdrLayer() const throw() { return pLayer; }
@@ -86,7 +86,7 @@ public:
     virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 
     /** Not implemented.  Always throws an exception.
-        @raises NoSupportException.
+        @throws NoSupportException.
     */
     virtual void SAL_CALL setParent( const css::uno::Reference< css::uno::XInterface >& Parent ) throw (css::lang::NoSupportException, css::uno::RuntimeException, std::exception) override;
 
@@ -116,7 +116,7 @@ class SdLayerManager : public ::cppu::WeakImplHelper< css::drawing::XLayerManage
 
 public:
     explicit SdLayerManager( SdXImpressDocument& rMyModel ) throw();
-    virtual ~SdLayerManager() throw();
+    virtual ~SdLayerManager() throw() override;
 
     // uno helper
     UNO3_GETIMPLEMENTATION_DECL( SdLayerManager )

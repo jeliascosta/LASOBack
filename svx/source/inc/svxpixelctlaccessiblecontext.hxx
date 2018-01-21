@@ -38,7 +38,7 @@
 #include <cppuhelper/interfacecontainer.h>
 #include <cppuhelper/compbase6.hxx>
 #include <cppuhelper/compbase5.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <comphelper/servicehelper.hxx>
 
 #include <svx/rectenum.hxx>
@@ -63,7 +63,7 @@ typedef ::cppu::WeakAggComponentImplHelper5<
             SvxPixelCtlAccessibleChild_BASE;
 
 class SvxPixelCtlAccessibleChild :
-    public ::comphelper::OBaseMutex,
+    public ::cppu::BaseMutex,
     public SvxPixelCtlAccessibleChild_BASE
 {
     SvxPixelCtl& mrParentWindow;
@@ -72,8 +72,6 @@ class SvxPixelCtlAccessibleChild :
     Rectangle*  mpBoundingBox;
     /// index of child in parent
     long                                mnIndexInParent;
-    /// Mutex guarding this object.
-    ::osl::Mutex                        m_aMutex;
 public:
     SvxPixelCtlAccessibleChild(
                 SvxPixelCtl& rWindow,
@@ -81,7 +79,7 @@ public:
                 const Rectangle& rBounds,
                 const css::uno::Reference< css::accessibility::XAccessible >& xParent,
                 long nIndexInParent );
-    virtual ~SvxPixelCtlAccessibleChild();
+    virtual ~SvxPixelCtlAccessibleChild() override;
 
     //XAccessible
     virtual css::uno::Reference< css::accessibility::XAccessibleContext > SAL_CALL getAccessibleContext(  ) throw (css::uno::RuntimeException, std::exception) override;
@@ -127,7 +125,6 @@ public:
         removeAccessibleEventListener(
             const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener )
             throw( css::uno::RuntimeException, std::exception ) override;
-    void CommitChange( const css::accessibility::AccessibleEventObject& rEvent );
 
     //Solution: Add the event handling method
     void FireAccessibleEvent (short nEventId, const css::uno::Any& rOld, const css::uno::Any& rNew);
@@ -135,12 +132,10 @@ public:
 
     Rectangle GetBoundingBoxOnScreen() throw( css::uno::RuntimeException );
 
-    Rectangle GetBoundingBox() throw( css::uno::RuntimeException );
+    Rectangle const & GetBoundingBox() throw( css::uno::RuntimeException );
 
     /// @returns true if it's disposed or in disposing
     inline bool IsAlive() const;
-    /// @returns true if it's not disposed and no in disposing
-    inline bool IsNotAlive() const;
     /// throws the exception DisposedException if it's not alive
     void ThrowExceptionIfNotAlive() throw( css::lang::DisposedException );
 
@@ -162,16 +157,14 @@ typedef ::cppu::WeakAggComponentImplHelper6<
             SvxPixelCtlAccessible_BASE;
 
 class SvxPixelCtlAccessible :
-    public ::comphelper::OBaseMutex,
+    public ::cppu::BaseMutex,
     public SvxPixelCtlAccessible_BASE
 {
     SvxPixelCtl& mrPixelCtl;
 
 public:
     SvxPixelCtlAccessible(SvxPixelCtl& rWindow);
-    virtual ~SvxPixelCtlAccessible();
-
-    void ensureIsAlive() const throw ( css::lang::DisposedException );
+    virtual ~SvxPixelCtlAccessible() override;
 
     //XAccessible
     virtual css::uno::Reference< css::accessibility::XAccessibleContext > SAL_CALL getAccessibleContext(  ) throw (css::uno::RuntimeException, std::exception) override;
@@ -224,7 +217,6 @@ public:
         removeAccessibleEventListener(
             const css::uno::Reference< css::accessibility::XAccessibleEventListener >& xListener )
             throw( css::uno::RuntimeException, std::exception ) override;
-    void CommitChange( const css::accessibility::AccessibleEventObject& rEvent );
     //Solution: Add the event handling method
     void FireAccessibleEvent (short nEventId, const css::uno::Any& rOld, const css::uno::Any& rNew);
     virtual void SAL_CALL disposing() override;
@@ -252,12 +244,6 @@ inline bool SvxPixelCtlAccessibleChild::IsAlive() const
 {
     return !rBHelper.bDisposed && !rBHelper.bInDispose;
 }
-
-inline bool SvxPixelCtlAccessibleChild::IsNotAlive() const
-{
-    return rBHelper.bDisposed || rBHelper.bInDispose;
-}
-
 
 #endif
 

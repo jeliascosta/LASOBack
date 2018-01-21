@@ -47,7 +47,7 @@
 #include <svl/itempool.hxx>
 #include <sfx2/tplpitem.hxx>
 #include <sfx2/sidebar/SidebarChildWindow.hxx>
-#include <sfx2/sidebar/EnumContext.hxx>
+#include <vcl/EnumContext.hxx>
 #include <svx/svdorect.hxx>
 #include <sot/formats.hxx>
 #include <com/sun/star/linguistic2/XThesaurus.hpp>
@@ -190,7 +190,6 @@ OutlineViewShell::OutlineViewShell (
     : ViewShell(pFrame, pParentWindow, rViewShellBase),
       pOlView(nullptr),
       pLastPage( nullptr ),
-      pClipEvtLstnr(nullptr),
       bPastePossible(false),
       mbInitialized(false)
 
@@ -204,7 +203,7 @@ OutlineViewShell::OutlineViewShell (
 
     Construct(GetDocSh());
 
-    SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_OutlineText));
+    SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context_OutlineText));
 
     m_StrOldPageName.clear();
 
@@ -219,11 +218,10 @@ OutlineViewShell::~OutlineViewShell()
 
     mpFrameView->Disconnect();
 
-    if ( pClipEvtLstnr )
+    if ( mxClipEvtLstnr.is() )
     {
-        pClipEvtLstnr->AddRemoveListener( GetActiveWindow(), false );
-        pClipEvtLstnr->ClearCallbackLink();     // prevent callback if another thread is waiting
-        pClipEvtLstnr->release();
+        mxClipEvtLstnr->RemoveListener( GetActiveWindow() );
+        mxClipEvtLstnr->ClearCallbackLink();     // prevent callback if another thread is waiting
     }
 }
 
@@ -704,11 +702,12 @@ void OutlineViewShell::FuPermanent(SfxRequest &rReq)
     }
 }
 
-IMPL_LINK_TYPED( OutlineViewShell, ClipboardChanged, TransferableDataHelper*, pDataHelper, void )
+IMPL_LINK( OutlineViewShell, ClipboardChanged, TransferableDataHelper*, pDataHelper, void )
 {
     bPastePossible = pDataHelper->GetFormatCount() != 0 &&
                      ( pDataHelper->HasFormat( SotClipboardFormatId::STRING ) ||
                        pDataHelper->HasFormat( SotClipboardFormatId::RTF ) ||
+                       pDataHelper->HasFormat( SotClipboardFormatId::RICHTEXT ) ||
                        pDataHelper->HasFormat( SotClipboardFormatId::HTML ) );
 
     SfxBindings& rBindings = GetViewFrame()->GetBindings();
@@ -842,7 +841,6 @@ void OutlineViewShell::GetMenuState( SfxItemSet &rSet )
     if (aTest.isEmpty())
     {
         bUnique = false;
-        rSet.DisableItem(SID_PRESENTATION_TEMPLATES);
     }
 
     if (!bUnique)
@@ -882,18 +880,18 @@ void OutlineViewShell::GetMenuState( SfxItemSet &rSet )
 
     if( SfxItemState::DEFAULT == rSet.GetItemState( SID_PASTE ) )
     {
-        if ( !pClipEvtLstnr )
+        if ( !mxClipEvtLstnr.is() )
         {
             // create listener
-            pClipEvtLstnr = new TransferableClipboardListener( LINK( this, OutlineViewShell, ClipboardChanged ) );
-            pClipEvtLstnr->acquire();
-            pClipEvtLstnr->AddRemoveListener( GetActiveWindow(), true );
+            mxClipEvtLstnr = new TransferableClipboardListener( LINK( this, OutlineViewShell, ClipboardChanged ) );
+            mxClipEvtLstnr->AddListener( GetActiveWindow() );
 
             // get initial state
             TransferableDataHelper aDataHelper( TransferableDataHelper::CreateFromSystemClipboard( GetActiveWindow() ) );
             bPastePossible = ( aDataHelper.GetFormatCount() != 0 &&
                                 ( aDataHelper.HasFormat( SotClipboardFormatId::STRING ) ||
                                   aDataHelper.HasFormat( SotClipboardFormatId::RTF ) ||
+                                  aDataHelper.HasFormat( SotClipboardFormatId::RICHTEXT ) ||
                                   aDataHelper.HasFormat( SotClipboardFormatId::HTML ) ) );
         }
 
@@ -954,12 +952,12 @@ void OutlineViewShell::GetMenuState( SfxItemSet &rSet )
     {
         bool bDisable = true;
         sal_uInt16 i = 0;
-        sal_uInt16 nCount = GetDoc()->GetSdPageCount(PK_STANDARD);
+        sal_uInt16 nCount = GetDoc()->GetSdPageCount(PageKind::Standard);
         pOlView->SetSelectedPages();
 
         while (i < nCount && bDisable)
         {
-            SdPage* pPage = GetDoc()->GetSdPage(i, PK_STANDARD);
+            SdPage* pPage = GetDoc()->GetSdPage(i, PageKind::Standard);
 
             if (pPage->IsSelected())
             {
@@ -1001,12 +999,12 @@ void OutlineViewShell::GetMenuState( SfxItemSet &rSet )
     {
         bool bDisable = true;
         sal_uInt16 i = 0;
-        sal_uInt16 nCount = GetDoc()->GetSdPageCount(PK_STANDARD);
+        sal_uInt16 nCount = GetDoc()->GetSdPageCount(PageKind::Standard);
         pOlView->SetSelectedPages();
 
         while (i < nCount && bDisable)
         {
-            SdPage* pPage = GetDoc()->GetSdPage(i, PK_STANDARD);
+            SdPage* pPage = GetDoc()->GetSdPage(i, PageKind::Standard);
 
             if (pPage->IsSelected())
             {
@@ -1047,11 +1045,11 @@ void OutlineViewShell::GetMenuState( SfxItemSet &rSet )
     if( SfxItemState::DEFAULT == rSet.GetItemState( SID_PRESENTATION ) )
     {
         bool bDisable = true;
-        sal_uInt16 nCount = GetDoc()->GetSdPageCount( PK_STANDARD );
+        sal_uInt16 nCount = GetDoc()->GetSdPageCount( PageKind::Standard );
 
         for( sal_uInt16 i = 0; i < nCount && bDisable; i++ )
         {
-            SdPage* pPage = GetDoc()->GetSdPage(i, PK_STANDARD);
+            SdPage* pPage = GetDoc()->GetSdPage(i, PageKind::Standard);
 
             if( !pPage->IsExcluded() )
                 bDisable = false;
@@ -1231,7 +1229,7 @@ void OutlineViewShell::ReadFrameViewData(FrameView* pView)
         rOutl.SetControlWord(nCntrl & ~EEControlBits::NOCOLORS);
 
     sal_uInt16 nPage = mpFrameView->GetSelectedPage();
-    pLastPage = GetDoc()->GetSdPage( nPage, PK_STANDARD );
+    pLastPage = GetDoc()->GetSdPage( nPage, PageKind::Standard );
     pOlView->SetActualPage(pLastPage);
 }
 
@@ -1297,7 +1295,7 @@ void OutlineViewShell::GetStatusBarState(SfxItemSet& rSet)
 
     // page view and layout
 
-    sal_uInt16  nPageCount = GetDoc()->GetSdPageCount( PK_STANDARD );
+    sal_uInt16  nPageCount = GetDoc()->GetSdPageCount( PageKind::Standard );
     OUString  aPageStr, aLayoutStr;
 
     ::sd::Window*   pWin        = GetActiveWindow();
@@ -1333,10 +1331,10 @@ void OutlineViewShell::GetStatusBarState(SfxItemSet& rSet)
                 nPos++;
         }
 
-        if( nPos >= GetDoc()->GetSdPageCount( PK_STANDARD ) )
+        if( nPos >= GetDoc()->GetSdPageCount( PageKind::Standard ) )
             nPos = 0;
 
-        SdrPage* pPage = GetDoc()->GetSdPage( (sal_uInt16) nPos, PK_STANDARD );
+        SdrPage* pPage = GetDoc()->GetSdPage( (sal_uInt16) nPos, PageKind::Standard );
 
         aPageStr = SD_RESSTR(STR_SD_PAGE_COUNT);
 
@@ -1756,7 +1754,7 @@ void OutlineViewShell::UpdateOutlineObject( SdPage* pPage, Paragraph* pPara )
 /**
  * Fill Outliner from Stream
  */
-sal_uLong OutlineViewShell::Read(SvStream& rInput, const OUString& rBaseURL, sal_uInt16 eFormat)
+sal_uLong OutlineViewShell::ReadRtf(SvStream& rInput, const OUString& rBaseURL)
 {
     sal_uLong bRet = 0;
 
@@ -1765,9 +1763,9 @@ sal_uLong OutlineViewShell::Read(SvStream& rInput, const OUString& rBaseURL, sal
     OutlineViewPageChangesGuard aGuard( pOlView );
     OutlineViewModelChangeGuard aGuard2( *pOlView );
 
-    bRet = rOutl.Read( rInput, rBaseURL, eFormat, GetDocSh()->GetHeaderAttributes() );
+    bRet = rOutl.Read( rInput, rBaseURL, EE_FORMAT_RTF, GetDocSh()->GetHeaderAttributes() );
 
-    SdPage* pPage = GetDoc()->GetSdPage( GetDoc()->GetSdPageCount(PK_STANDARD) - 1, PK_STANDARD );
+    SdPage* pPage = GetDoc()->GetSdPage( GetDoc()->GetSdPageCount(PageKind::Standard) - 1, PageKind::Standard );
     SfxStyleSheet* pTitleSheet = pPage->GetStyleSheetForPresObj( PRESOBJ_TITLE );
     SfxStyleSheet* pOutlSheet = pPage->GetStyleSheetForPresObj( PRESOBJ_OUTLINE );
 
@@ -1886,9 +1884,9 @@ void OutlineViewShell::GetState (SfxItemSet& rSet)
 void OutlineViewShell::SetCurrentPage (SdPage* pPage)
 {
     // Adapt the selection of the model.
-    for (sal_uInt16 i=0; i<GetDoc()->GetSdPageCount(PK_STANDARD); i++)
+    for (sal_uInt16 i=0; i<GetDoc()->GetSdPageCount(PageKind::Standard); i++)
         GetDoc()->SetSelected(
-            GetDoc()->GetSdPage(i, PK_STANDARD),
+            GetDoc()->GetSdPage(i, PageKind::Standard),
             false);
     GetDoc()->SetSelected (pPage, true);
 

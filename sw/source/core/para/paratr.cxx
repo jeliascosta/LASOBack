@@ -34,6 +34,7 @@
 #include <com/sun/star/text/SizeType.hpp>
 #include <com/sun/star/text/VertOrientationFormat.hpp>
 #include <com/sun/star/text/WrapTextMode.hpp>
+#include <o3tl/any.hxx>
 #include <unostyle.hxx>
 #include <SwStyleNameMapper.hxx>
 #include "paratr.hxx"
@@ -53,7 +54,6 @@ SwFormatDrop::SwFormatDrop()
     SwClient( nullptr ),
     pDefinedIn( nullptr ),
     nDistance( 0 ),
-    nReadFormat( USHRT_MAX ),
     nLines( 0 ),
     nChars( 0 ),
     bWholeWord( false )
@@ -65,7 +65,6 @@ SwFormatDrop::SwFormatDrop( const SwFormatDrop &rCpy )
     SwClient( rCpy.GetRegisteredInNonConst() ),
     pDefinedIn( nullptr ),
     nDistance( rCpy.GetDistance() ),
-    nReadFormat( rCpy.nReadFormat ),
     nLines( rCpy.GetLines() ),
     nChars( rCpy.GetChars() ),
     bWholeWord( rCpy.GetWholeWord() )
@@ -78,12 +77,12 @@ SwFormatDrop::~SwFormatDrop()
 
 void SwFormatDrop::SetCharFormat( SwCharFormat *pNew )
 {
+    assert(!pNew || !pNew->IsDefault()); // expose cases that lead to use-after-free
     // Rewire
     if ( GetRegisteredIn() )
         GetRegisteredInNonConst()->Remove( this );
     if(pNew)
         pNew->Add( this );
-    nReadFormat = USHRT_MAX;
 }
 
 void SwFormatDrop::Modify( const SfxPoolItem*, const SfxPoolItem * )
@@ -136,7 +135,7 @@ bool SwFormatDrop::QueryValue( uno::Any& rVal, sal_uInt8 nMemberId ) const
             aDrop.Lines = nLines   ;
             aDrop.Count = nChars   ;
             aDrop.Distance  = convertTwipToMm100(nDistance);
-            rVal.setValue(&aDrop, ::cppu::UnoType<style::DropCapFormat>::get());
+            rVal <<= aDrop;
         }
         break;
         case MID_DROPCAP_WHOLE_WORD:
@@ -147,7 +146,7 @@ bool SwFormatDrop::QueryValue( uno::Any& rVal, sal_uInt8 nMemberId ) const
             OUString sName;
             if(GetCharFormat())
                 sName = SwStyleNameMapper::GetProgName(
-                        GetCharFormat()->GetName(), nsSwGetPoolIdFromName::GET_POOLID_CHRFMT );
+                        GetCharFormat()->GetName(), SwGetPoolIdFromName::ChrFmt );
             rVal <<= sName;
         }
         break;
@@ -188,7 +187,7 @@ bool SwFormatDrop::PutValue( const uno::Any& rVal, sal_uInt8 nMemberId )
         {
             if(rVal.getValueType()  == ::cppu::UnoType<style::DropCapFormat>::get())
             {
-                const style::DropCapFormat* pDrop = static_cast<const style::DropCapFormat*>(rVal.getValue());
+                auto pDrop = o3tl::doAccess<style::DropCapFormat>(rVal);
                 nLines      = pDrop->Lines;
                 nChars      = pDrop->Count;
                 nDistance   = convertMm100ToTwip(pDrop->Distance);
@@ -198,7 +197,7 @@ bool SwFormatDrop::PutValue( const uno::Any& rVal, sal_uInt8 nMemberId )
         }
         break;
         case MID_DROPCAP_WHOLE_WORD:
-            bWholeWord = *static_cast<sal_Bool const *>(rVal.getValue());
+            bWholeWord = *o3tl::doAccess<bool>(rVal);
         break;
         case MID_DROPCAP_CHAR_STYLE_NAME :
             OSL_FAIL("char format cannot be set in PutValue()!");
@@ -225,7 +224,7 @@ bool SwNumRuleItem::operator==( const SfxPoolItem& rAttr ) const
 
 bool    SwNumRuleItem::QueryValue( uno::Any& rVal, sal_uInt8 ) const
 {
-    OUString sRet = SwStyleNameMapper::GetProgName(GetValue(), nsSwGetPoolIdFromName::GET_POOLID_NUMRULE );
+    OUString sRet = SwStyleNameMapper::GetProgName(GetValue(), SwGetPoolIdFromName::NumRule );
     rVal <<= sRet;
     return true;
 }
@@ -234,13 +233,13 @@ bool    SwNumRuleItem::PutValue( const uno::Any& rVal, sal_uInt8 )
 {
     OUString uName;
     rVal >>= uName;
-    SetValue(SwStyleNameMapper::GetUIName(uName, nsSwGetPoolIdFromName::GET_POOLID_NUMRULE));
+    SetValue(SwStyleNameMapper::GetUIName(uName, SwGetPoolIdFromName::NumRule));
     return true;
 }
 
 void SwNumRuleItem::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("swNumRuleItem"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SwNumRuleItem"));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
     xmlTextWriterWriteAttribute(pWriter, BAD_CAST("value"), BAD_CAST(GetValue().toUtf8().getStr()));
     xmlTextWriterEndElement(pWriter);

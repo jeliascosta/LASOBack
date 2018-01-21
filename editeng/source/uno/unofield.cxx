@@ -176,7 +176,7 @@ static SvxFileFormat setFileNameDisplayFormat( sal_Int16 nFormat )
     }
 }
 
-static util::DateTime getDate( sal_uLong nDate )
+static util::DateTime getDate( sal_Int32 nDate )
 {
     util::DateTime aDate;
     memset( &aDate, 0, sizeof( util::DateTime ) );
@@ -291,7 +291,7 @@ SvxUnoTextField::SvxUnoTextField( sal_Int32 nServiceId ) throw()
     }
 }
 
-SvxUnoTextField::SvxUnoTextField( uno::Reference< text::XTextRange > xAnchor, const OUString& rPresentation, const SvxFieldData* pData ) throw()
+SvxUnoTextField::SvxUnoTextField( uno::Reference< text::XTextRange > const & xAnchor, const OUString& rPresentation, const SvxFieldData* pData ) throw()
 :   OComponentHelper( getMutex() )
 ,   mxAnchor( xAnchor )
 ,   mpPropSet(nullptr)

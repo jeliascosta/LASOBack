@@ -68,7 +68,6 @@ $(eval $(call gb_Library_add_exception_objects,utl,\
     unotools/source/config/historyoptions \
     unotools/source/config/itemholder1 \
     unotools/source/config/lingucfg \
-    unotools/source/config/localisationoptions \
     unotools/source/config/misccfg \
     unotools/source/config/moduleoptions \
     unotools/source/config/options \
@@ -88,7 +87,6 @@ $(eval $(call gb_Library_add_exception_objects,utl,\
     unotools/source/i18n/intlwrapper \
     unotools/source/i18n/localedatawrapper \
     unotools/source/i18n/nativenumberwrapper \
-    unotools/source/i18n/numberformatcodewrapper \
     unotools/source/i18n/readwritemutexguard \
     unotools/source/i18n/textsearch \
     unotools/source/i18n/transliterationwrapper \
@@ -104,7 +102,9 @@ $(eval $(call gb_Library_add_exception_objects,utl,\
     unotools/source/misc/sharedunocomponent \
     unotools/source/misc/syslocale \
     unotools/source/misc/unotoolsservices \
+    unotools/source/misc/wincodepage \
     unotools/source/misc/ServiceDocumenter \
+    unotools/source/misc/ZipPackageHelper \
     unotools/source/streaming/streamhelper \
     unotools/source/streaming/streamwrap \
     unotools/source/ucbhelper/localfilehelper \

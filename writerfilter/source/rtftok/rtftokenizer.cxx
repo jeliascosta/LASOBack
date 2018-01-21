@@ -12,6 +12,7 @@
 #include <vcl/svapp.hxx>
 #include <rtl/strbuf.hxx>
 #include <rtfskipdestination.hxx>
+#include <rtl/character.hxx>
 #include <com/sun/star/io/BufferSizeExceededException.hpp>
 
 using namespace com::sun::star;
@@ -58,16 +59,16 @@ RTFError RTFTokenizer::resolveParse()
     RTFError ret;
     // for hex chars
     int b = 0, count = 2;
-    sal_uInt32 nPercentSize = 0;
-    sal_uInt32 nLastPos = 0;
+    std::size_t nPercentSize = 0;
+    sal_uInt64 nLastPos = 0;
 
     if (m_xStatusIndicator.is())
     {
         static ResMgr* pResMgr = ResMgr::CreateResMgr("svx", Application::GetSettings().GetUILanguageTag());
         OUString sDocLoad(ResId(RID_SVXSTR_DOC_LOAD, *pResMgr).toString());
 
-        sal_Size nCurrentPos = Strm().Tell();
-        sal_Size nEndPos = nCurrentPos + Strm().remainingSize();
+        sal_uInt64 const nCurrentPos = Strm().Tell();
+        sal_uInt64 const nEndPos = nCurrentPos + Strm().remainingSize();
         m_xStatusIndicator->start(sDocLoad, nEndPos);
         nPercentSize = nEndPos / 100;
 
@@ -78,7 +79,7 @@ RTFError RTFTokenizer::resolveParse()
     {
         //SAL_INFO("writerfilter", OSL_THIS_FUNC << ": parsing character '" << ch << "'");
 
-        sal_Size nCurrentPos = Strm().Tell();
+        sal_uInt64 const nCurrentPos = Strm().Tell();
         if (m_xStatusIndicator.is() && nCurrentPos > (nLastPos + nPercentSize))
             m_xStatusIndicator->setValue(nLastPos = nCurrentPos);
 
@@ -169,23 +170,16 @@ int RTFTokenizer::asHex(char ch)
         ret = ch - '0';
     else
     {
-        if (islower(ch))
-        {
-            if (ch < 'a' || ch > 'f')
-                return -1;
+        if (ch >= 'a' && ch <= 'f')
             ret = ch - 'a';
-        }
-        else
-        {
-            if (ch < 'A' || ch > 'F')
-                return -1;
+        else if (ch >= 'A' && ch <= 'F')
             ret = ch - 'A';
-        }
+        else
+            return -1;
         ret += 10;
     }
     return ret;
 }
-
 
 void RTFTokenizer::pushGroup()
 {

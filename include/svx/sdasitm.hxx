@@ -55,12 +55,12 @@ private:
             SdrCustomShapeGeometryItem();
             SdrCustomShapeGeometryItem( const css::uno::Sequence< css::beans::PropertyValue >& );
             SdrCustomShapeGeometryItem( SvStream& rIn, sal_uInt16 nVersion );
-            virtual ~SdrCustomShapeGeometryItem();
+            virtual ~SdrCustomShapeGeometryItem() override;
 
             virtual bool                operator==( const SfxPoolItem& ) const override;
             virtual bool GetPresentation(SfxItemPresentation ePresentation,
-                                            SfxMapUnit eCoreMetric, SfxMapUnit ePresentationMetric,
-                                            OUString &rText, const IntlWrapper * = nullptr) const override;
+                                         MapUnit eCoreMetric, MapUnit ePresentationMetric,
+                                         OUString &rText, const IntlWrapper * = nullptr) const override;
 
             virtual SfxPoolItem*        Create( SvStream&, sal_uInt16 nItem ) const override;
             virtual SvStream&           Store( SvStream&, sal_uInt16 nVersion ) const override;
@@ -70,8 +70,6 @@ private:
 
             virtual bool                QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
             virtual bool                PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
-
-            const css::uno::Sequence< css::beans::PropertyValue >& GetGeometry() const { return aPropSeq;}
 
             css::uno::Any* GetPropertyValueByName( const OUString& rPropName );
             const css::uno::Any* GetPropertyValueByName( const OUString& rPropName ) const;
@@ -88,16 +86,12 @@ class SVX_DLLPUBLIC SdrCustomShapeReplacementURLItem : public SfxStringItem
 {
     public:
             SdrCustomShapeReplacementURLItem();
-            virtual ~SdrCustomShapeReplacementURLItem();
+            virtual ~SdrCustomShapeReplacementURLItem() override;
             virtual SfxPoolItem*        Clone( SfxItemPool* pPool = nullptr ) const override;
 };
 
 inline SdrOnOffItem makeSdrTextWordWrapItem( bool bAuto ) {
     return SdrOnOffItem( SDRATTR_TEXT_WORDWRAP, bAuto );
-}
-
-inline SdrOnOffItem makeSdrTextAutoGrowSizeItem( bool bAuto ) {
-    return SdrOnOffItem( SDRATTR_TEXT_AUTOGROWSIZE, bAuto ) ;
 }
 
 // some useful inline methods

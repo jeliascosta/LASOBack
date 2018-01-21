@@ -29,7 +29,7 @@ class CandleStickChartType : public ChartType
 public:
     explicit CandleStickChartType(
         css::uno::Reference< css::uno::XComponentContext > const & xContext );
-    virtual ~CandleStickChartType();
+    virtual ~CandleStickChartType() override;
 
     virtual OUString SAL_CALL
         getImplementationName()
@@ -40,9 +40,6 @@ public:
     virtual css::uno::Sequence< OUString > SAL_CALL
         getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString >
-        getSupportedServiceNames_Static();
 
 protected:
     explicit CandleStickChartType( const CandleStickChartType & rOther );

@@ -156,14 +156,14 @@ public:
 // *** streams and storages *** -----------------------------------------------
 
     /** Tries to open an existing storage with the specified name in the passed storage (read-only). */
-    static tools::SvRef<SotStorage> OpenStorageRead( tools::SvRef<SotStorage> xStrg, const OUString& rStrgName );
+    static tools::SvRef<SotStorage> OpenStorageRead( tools::SvRef<SotStorage> const & xStrg, const OUString& rStrgName );
     /** Creates and opens a storage with the specified name in the passed storage (read/write). */
-    static tools::SvRef<SotStorage> OpenStorageWrite( tools::SvRef<SotStorage> xStrg, const OUString& rStrgName );
+    static tools::SvRef<SotStorage> OpenStorageWrite( tools::SvRef<SotStorage> const & xStrg, const OUString& rStrgName );
 
     /** Tries to open an existing stream with the specified name in the passed storage (read-only). */
-    static tools::SvRef<SotStorageStream> OpenStorageStreamRead( tools::SvRef<SotStorage> xStrg, const OUString& rStrmName );
+    static tools::SvRef<SotStorageStream> OpenStorageStreamRead( tools::SvRef<SotStorage> const & xStrg, const OUString& rStrmName );
     /** Creates and opens a stream with the specified name in the passed storage (read/write). */
-    static tools::SvRef<SotStorageStream> OpenStorageStreamWrite( tools::SvRef<SotStorage> xStrg, const OUString& rStrmName );
+    static tools::SvRef<SotStorageStream> OpenStorageStreamWrite( tools::SvRef<SotStorage> const & xStrg, const OUString& rStrmName );
 
 // *** item handling *** ------------------------------------------------------
 
@@ -267,7 +267,7 @@ public:
     ScFormatFilterPluginImpl();
     virtual ~ScFormatFilterPluginImpl();
     // various import filters
-    virtual FltError ScImportLotus123( SfxMedium&, ScDocument*, rtl_TextEncoding eSrc = RTL_TEXTENCODING_DONTKNOW ) override;
+    virtual FltError ScImportLotus123( SfxMedium&, ScDocument*, rtl_TextEncoding eSrc ) override;
     virtual FltError ScImportQuattroPro( SfxMedium &rMedium, ScDocument *pDoc ) override;
     virtual FltError ScImportExcel( SfxMedium&, ScDocument*, const EXCIMPFORMAT ) override;
         // eFormat == EIF_AUTO  -> passender Filter wird automatisch verwendet
@@ -276,10 +276,10 @@ public:
         // eFormat == EIF_BIFF_LE4 -> nur Nicht-Storage-Dateien _koennen_ zum Erfolg fuehren
     virtual FltError ScImportStarCalc10( SvStream&, ScDocument* ) override;
     virtual FltError ScImportDif( SvStream&, ScDocument*, const ScAddress& rInsPos,
-                 const rtl_TextEncoding eSrc = RTL_TEXTENCODING_DONTKNOW, sal_uInt32 nDifOption = SC_DIFOPT_EXCEL ) override;
+                 const rtl_TextEncoding eSrc ) override;
     virtual FltError ScImportRTF( SvStream&, const OUString& rBaseURL, ScDocument*, ScRange& rRange ) override;
     virtual FltError ScImportHTML( SvStream&, const OUString& rBaseURL, ScDocument*, ScRange& rRange,
-                                   double nOutputFactor = 1.0, bool bCalcWidthHeight = true,
+                                   double nOutputFactor, bool bCalcWidthHeight,
                                    SvNumberFormatter* pFormatter = nullptr, bool bConvertDate = true ) override;
 
     virtual ScEEAbsImport *CreateRTFImport( ScDocument* pDoc, const ScRange& rRange ) override;
@@ -289,7 +289,7 @@ public:
     // various export filters
     virtual FltError ScExportExcel5( SfxMedium&, ScDocument*, ExportFormatExcel eFormat, rtl_TextEncoding eDest ) override;
     virtual void ScExportDif( SvStream&, ScDocument*, const ScAddress& rOutPos, const rtl_TextEncoding eDest ) override;
-    virtual FltError ScExportDif( SvStream&, ScDocument*, const ScRange& rRange, const rtl_TextEncoding eDest ) override;
+    virtual void ScExportDif( SvStream&, ScDocument*, const ScRange& rRange, const rtl_TextEncoding eDest ) override;
     virtual void ScExportHTML( SvStream&, const OUString& rBaseURL, ScDocument*, const ScRange& rRange, const rtl_TextEncoding eDest, bool bAll,
                   const OUString& rStreamPath, OUString& rNonConvertibleChars, const OUString& rFilterOptions ) override;
     virtual void ScExportRTF( SvStream&, ScDocument*, const ScRange& rRange, const rtl_TextEncoding eDest ) override;

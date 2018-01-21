@@ -302,7 +302,7 @@ void ScGridWindow::RequestHelp(const HelpEvent& rHEvt)
             MouseEvent aMEvt( aPosPixel, 1, MouseEventModifiers::NONE, MOUSE_LEFT );
             SdrHitKind eHit = pDrView->PickAnything( aMEvt, SdrMouseEventKind::BUTTONDOWN, aVEvt );
 
-            if ( eHit != SDRHIT_NONE && aVEvt.pObj != nullptr )
+            if ( eHit != SdrHitKind::NONE && aVEvt.pObj != nullptr )
             {
                 // URL for IMapObject below Pointer is help text
                 if ( ScDrawLayer::GetIMapInfo( aVEvt.pObj ) )
@@ -333,22 +333,22 @@ void ScGridWindow::RequestHelp(const HelpEvent& rHEvt)
                 // URL in shape text or at shape itself (URL in text overrides object URL)
                 if ( aHelpText.isEmpty() )
                 {
-                    if( aVEvt.eEvent == SDREVENT_EXECUTEURL )
+                    if( aVEvt.eEvent == SdrEventKind::ExecuteUrl )
                     {
                         aHelpText = aVEvt.pURLField->GetURL();
                         aPixRect = LogicToPixel(aVEvt.pObj->GetLogicRect());
                     }
                     else
                     {
-                        SdrObject* pObj = nullptr;
                         SdrPageView* pPV = nullptr;
                         Point aMDPos = PixelToLogic( aPosPixel );
-                        if ( pDrView->PickObj(aMDPos, pDrView->getHitTolLog(), pObj, pPV, SdrSearchOptions::ALSOONMASTER) )
+                        SdrObject* pObj = pDrView->PickObj(aMDPos, pDrView->getHitTolLog(), pPV, SdrSearchOptions::ALSOONMASTER);
+                        if (pObj)
                         {
                             if ( pObj->IsGroupObject() )
                             {
-                                    SdrObject* pHit = nullptr;
-                                    if ( pDrView->PickObj(aMDPos, pDrView->getHitTolLog(), pHit, pPV, SdrSearchOptions::DEEP ) )
+                                    SdrObject* pHit = pDrView->PickObj(aMDPos, pDrView->getHitTolLog(), pPV, SdrSearchOptions::DEEP);
+                                    if (pHit)
                                         pObj = pHit;
                             }
                             ScMacroInfo* pInfo = ScDrawLayer::GetMacroInfo( pObj );

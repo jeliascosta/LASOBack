@@ -34,6 +34,8 @@
 
 #define MAX_BMP_EXTENT  4096
 
+using namespace com::sun::star;
+
 static const char aHexData[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
 class GraphicID
@@ -69,7 +71,7 @@ GraphicID::GraphicID( const GraphicObject& rObj )
 
     switch( rGraphic.GetType() )
     {
-        case GRAPHIC_BITMAP:
+        case GraphicType::Bitmap:
         {
             if(rGraphic.getSvgData().get())
             {
@@ -102,7 +104,7 @@ GraphicID::GraphicID( const GraphicObject& rObj )
         }
         break;
 
-        case GRAPHIC_GDIMETAFILE:
+        case GraphicType::GdiMetafile:
         {
             const GDIMetaFile& rMtf = rGraphic.GetGDIMetaFile();
 
@@ -144,7 +146,7 @@ class GraphicCacheEntry
 {
 private:
 
-    GraphicObjectList_impl  maGraphicObjectList;
+    std::vector< GraphicObject* >   maGraphicObjectList;
 
     GraphicID           maID;
     GfxLink             maGfxLink;
@@ -155,6 +157,7 @@ private:
 
     // SvgData support
     SvgDataPtr          maSvgData;
+    uno::Sequence<sal_Int8> maPdfData;
 
     bool                ImplInit( const GraphicObject& rObj );
     void                ImplFillSubstitute( Graphic& rSubstitute );
@@ -227,7 +230,7 @@ bool GraphicCacheEntry::ImplInit( const GraphicObject& rObj )
 
         switch( rGraphic.GetType() )
         {
-            case GRAPHIC_BITMAP:
+            case GraphicType::Bitmap:
             {
                 if(rGraphic.getSvgData().get())
                 {
@@ -244,9 +247,11 @@ bool GraphicCacheEntry::ImplInit( const GraphicObject& rObj )
             }
             break;
 
-            case GRAPHIC_GDIMETAFILE:
+            case GraphicType::GdiMetafile:
             {
                 mpMtf = new GDIMetaFile( rGraphic.GetGDIMetaFile() );
+                if (rGraphic.getPdfData().hasElements())
+                    maPdfData = rGraphic.getPdfData();
             }
             break;
 
@@ -273,9 +278,9 @@ void GraphicCacheEntry::ImplFillSubstitute( Graphic& rSubstitute )
     const MapMode       aPrefMapMode( rSubstitute.GetPrefMapMode() );
     const Link<Animation*,void> aAnimationNotifyHdl( rSubstitute.GetAnimationNotifyHdl() );
     const GraphicType   eOldType = rSubstitute.GetType();
-    const bool          bDefaultType = ( rSubstitute.GetType() == GRAPHIC_DEFAULT );
+    const bool          bDefaultType = ( rSubstitute.GetType() == GraphicType::Default );
 
-    if( rSubstitute.IsLink() && ( GFX_LINK_TYPE_NONE == maGfxLink.GetType() ) )
+    if( rSubstitute.IsLink() && ( GfxLinkType::NONE == maGfxLink.GetType() ) )
         maGfxLink = rSubstitute.GetLink();
 
     if(maSvgData.get())
@@ -293,20 +298,22 @@ void GraphicCacheEntry::ImplFillSubstitute( Graphic& rSubstitute )
     else if( mpMtf )
     {
         rSubstitute = *mpMtf;
+        if (maPdfData.hasElements())
+            rSubstitute.setPdfData(maPdfData);
     }
     else
     {
         rSubstitute.Clear();
     }
 
-    if( eOldType != GRAPHIC_NONE )
+    if( eOldType != GraphicType::NONE )
     {
         rSubstitute.SetPrefSize( aPrefSize );
         rSubstitute.SetPrefMapMode( aPrefMapMode );
         rSubstitute.SetAnimationNotifyHdl( aAnimationNotifyHdl );
     }
 
-    if( GFX_LINK_TYPE_NONE != maGfxLink.GetType() )
+    if( GfxLinkType::NONE != maGfxLink.GetType() )
     {
         rSubstitute.SetLink( maGfxLink );
     }
@@ -329,7 +336,7 @@ void GraphicCacheEntry::AddGraphicObjectReference( const GraphicObject& rObj, Gr
 bool GraphicCacheEntry::ReleaseGraphicObjectReference( const GraphicObject& rObj )
 {
     for(
-        GraphicObjectList_impl::iterator it = maGraphicObjectList.begin();
+        auto it = maGraphicObjectList.begin();
         it != maGraphicObjectList.end();
         ++it
     ) {
@@ -379,6 +386,7 @@ void GraphicCacheEntry::GraphicObjectWasSwappedOut( const GraphicObject& /*rObj*
 
         // #119176# also reset SvgData
         maSvgData.reset();
+        maPdfData = uno::Sequence<sal_Int8>();
     }
 }
 
@@ -668,7 +676,7 @@ bool GraphicDisplayCacheEntry::IsCacheableAsBitmap( const GDIMetaFile& rMtf,
                     // these actions actually output something (that's
                     // different from a bitmap)
                 case MetaActionType::RASTEROP:
-                    if( static_cast<MetaRasterOpAction*>(pAct)->GetRasterOp() == ROP_OVERPAINT )
+                    if( static_cast<MetaRasterOpAction*>(pAct)->GetRasterOp() == RasterOp::OverPaint )
                         break;
                     SAL_FALLTHROUGH;
                 case MetaActionType::PIXEL:
@@ -759,9 +767,9 @@ sal_uLong GraphicDisplayCacheEntry::GetNeededSize( OutputDevice* pOut, const Poi
     const GraphicType   eType = rGraphic.GetType();
 
     bool canCacheAsBitmap = false;
-    if( GRAPHIC_BITMAP == eType )
+    if( GraphicType::Bitmap == eType )
         canCacheAsBitmap = true;
-    else if( GRAPHIC_GDIMETAFILE == eType )
+    else if( GraphicType::GdiMetafile == eType )
         canCacheAsBitmap = IsCacheableAsBitmap( rGraphic.GetGDIMetaFile(), pOut, rSz );
     else
         return 0;
@@ -847,9 +855,9 @@ void GraphicCache::AddGraphicObject(
     if(  !rObj.IsSwappedOut()
       && (  pID
          || (    pCopyObj
-            && ( pCopyObj->GetType() != GRAPHIC_NONE )
+            && ( pCopyObj->GetType() != GraphicType::NONE )
             )
-         || ( rObj.GetType() != GRAPHIC_NONE )
+         || ( rObj.GetType() != GraphicType::NONE )
          )
       )
     {
@@ -1251,7 +1259,7 @@ GraphicCacheEntry* GraphicCache::ImplGetCacheEntry( const GraphicObject& rObj )
     return pRet;
 }
 
-IMPL_LINK_TYPED( GraphicCache, ReleaseTimeoutHdl, Timer*, pTimer, void )
+IMPL_LINK( GraphicCache, ReleaseTimeoutHdl, Timer*, pTimer, void )
 {
     pTimer->Stop();
 

@@ -186,7 +186,7 @@ namespace pcr
             const css::uno::Reference< css::uno::XComponentContext >& _rxContext);
 
     protected:
-        virtual ~OPropertyBrowserController();
+        virtual ~OPropertyBrowserController() override;
 
     public:
         // XServiceInfo - static versions
@@ -374,21 +374,15 @@ namespace pcr
         */
         bool    impl_isReadOnlyModel_throw() const;
 
-        /** updates our view so that it is read-only, as indicated by the model property
-            @see impl_isReadOnlyModel_throw
-        */
-        void    impl_updateReadOnlyView_nothrow();
-
         /** starts or stops listening at the model
         */
         void    impl_startOrStopModelListening_nothrow( bool _bDoListen ) const;
 
     private:
-        DECL_LINK_TYPED(OnPageActivation, LinkParamNone*, void);
+        DECL_LINK(OnPageActivation, LinkParamNone*, void);
 
     private:
         // constructors
-        void    createDefault();
         void    createWithModel( const css::uno::Reference< css::inspection::XObjectInspectorModel >& _rxModel );
     };
 

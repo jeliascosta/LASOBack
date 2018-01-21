@@ -63,7 +63,7 @@ public:
     SwEndNoteInfo & operator=(const SwEndNoteInfo&);
     bool operator==( const SwEndNoteInfo &rInf ) const;
 
-    SwEndNoteInfo( SwTextFormatColl *pTextColl = nullptr);
+    SwEndNoteInfo();
     SwEndNoteInfo(const SwEndNoteInfo&);
 
     const OUString& GetPrefix() const  { return sPrefix; }
@@ -100,7 +100,7 @@ public:
 
     bool operator==( const SwFootnoteInfo &rInf ) const;
 
-    SwFootnoteInfo(SwTextFormatColl* pTextColl = nullptr);
+    SwFootnoteInfo();
     SwFootnoteInfo(const SwFootnoteInfo&);
 };
 

@@ -217,16 +217,8 @@ Sequence< OUString > OControl::getAggregateServiceNames()
 
 Sequence<OUString> SAL_CALL OControl::getSupportedServiceNames() throw(RuntimeException, std::exception)
 {
-    return ::comphelper::concatSequences(
-        getAggregateServiceNames(),
-        getSupportedServiceNames_Static()
-   );
-}
-
-Sequence< OUString > SAL_CALL OControl::getSupportedServiceNames_Static() throw( RuntimeException )
-{
     // no own supported service names
-    return Sequence< OUString >();
+    return getAggregateServiceNames();
 }
 
 // XEventListener
@@ -844,12 +836,7 @@ PropertyState OControlModel::getPropertyStateByHandle( sal_Int32 _nHandle )
     Any aCurrentValue = getPropertyDefaultByHandle( _nHandle );
     Any aDefaultValue;  getFastPropertyValue( aDefaultValue, _nHandle );
 
-    bool bEqual = uno_type_equalData(
-            const_cast< void* >( aCurrentValue.getValue() ), aCurrentValue.getValueType().getTypeLibType(),
-            const_cast< void* >( aDefaultValue.getValue() ), aDefaultValue.getValueType().getTypeLibType(),
-            reinterpret_cast< uno_QueryInterfaceFunc >(cpp_queryInterface),
-            reinterpret_cast< uno_ReleaseFunc >(cpp_release)
-        );
+    bool bEqual = aCurrentValue == aDefaultValue;
     return bEqual ? PropertyState_DEFAULT_VALUE : PropertyState_DIRECT_VALUE;
 }
 
@@ -942,7 +929,7 @@ void OControlModel::getFastPropertyValue( Any& _rValue, sal_Int32 _nHandle ) con
 
 sal_Bool OControlModel::convertFastPropertyValue(
                         Any& _rConvertedValue, Any& _rOldValue, sal_Int32 _nHandle, const Any& _rValue)
-                        throw (css::lang::IllegalArgumentException)
+                        throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
 {
     bool bModified(false);
     switch (_nHandle)
@@ -1647,7 +1634,7 @@ sal_Bool OBoundControlModel::convertFastPropertyValue(
                                 Any& _rConvertedValue, Any& _rOldValue,
                 sal_Int32 _nHandle,
                                 const Any& _rValue)
-                throw (css::lang::IllegalArgumentException)
+                throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception)
 {
     bool bModified(false);
     switch (_nHandle)
@@ -1994,7 +1981,17 @@ void OBoundControlModel::initFromField( const Reference< XRowSet >& _rxRowSet )
     // but only if the rowset is positioned on a valid record
     if ( hasField() && _rxRowSet.is() )
     {
-        if ( !_rxRowSet->isBeforeFirst() && !_rxRowSet->isAfterLast() )
+        bool shouldTransfer(!_rxRowSet->isBeforeFirst() && !_rxRowSet->isAfterLast());
+        if (!shouldTransfer)
+        {
+            const Reference< XPropertySet > xPS(_rxRowSet, UNO_QUERY);
+            if (xPS.is())
+            {
+                assert(!shouldTransfer);
+                xPS->getPropertyValue("IsNew") >>= shouldTransfer;
+            }
+        }
+        if ( shouldTransfer )
             transferDbValueToControl();
         else
             // reset the field if the row set is empty

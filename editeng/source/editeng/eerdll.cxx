@@ -88,7 +88,7 @@ GlobalEditData::GlobalEditData() :
     ppDefItems(nullptr),
     mpVirDev(VclPtr<VirtualDevice>::Create())
 {
-    mpVirDev->SetMapMode(MAP_TWIP);
+    mpVirDev->SetMapMode(MapUnit::MapTwip);
 }
 
 GlobalEditData::~GlobalEditData()
@@ -123,8 +123,8 @@ SfxPoolItem** GlobalEditData::GetDefItems()
         ppDefItems[12] = new SvxULSpaceItem( EE_PARA_ULSPACE );
         ppDefItems[13] = new SvxLineSpacingItem( 0, EE_PARA_SBL );
         ppDefItems[14] = new SvxAdjustItem( SVX_ADJUST_LEFT, EE_PARA_JUST );
-        ppDefItems[15] = new SvxTabStopItem( 0, 0, SVX_TAB_ADJUST_LEFT, EE_PARA_TABS );
-        ppDefItems[16] = new SvxJustifyMethodItem( SVX_JUSTIFY_METHOD_AUTO, EE_PARA_JUST_METHOD );
+        ppDefItems[15] = new SvxTabStopItem( 0, 0, SvxTabAdjust::Left, EE_PARA_TABS );
+        ppDefItems[16] = new SvxJustifyMethodItem( SvxCellJustifyMethod::Auto, EE_PARA_JUST_METHOD );
         ppDefItems[17] = new SvxVerJustifyItem( SVX_VER_JUSTIFY_STANDARD, EE_PARA_VER_JUST );
 
         // Character attributes:
@@ -154,7 +154,7 @@ SfxPoolItem** GlobalEditData::GetDefItems()
         ppDefItems[41] = new SvxPostureItem( ITALIC_NONE, EE_CHAR_ITALIC_CJK );
         ppDefItems[42] = new SvxPostureItem( ITALIC_NONE, EE_CHAR_ITALIC_CTL );
         ppDefItems[43] = new SvxEmphasisMarkItem( FontEmphasisMark::NONE, EE_CHAR_EMPHASISMARK );
-        ppDefItems[44] = new SvxCharReliefItem( RELIEF_NONE, EE_CHAR_RELIEF );
+        ppDefItems[44] = new SvxCharReliefItem( FontRelief::NONE, EE_CHAR_RELIEF );
         ppDefItems[45] = new SfxVoidItem( EE_CHAR_RUBI_DUMMY );
         ppDefItems[46] = new SvXMLAttrContainerItem( EE_CHAR_XMLATTRIBS );
         ppDefItems[47] = new SvxOverlineItem( LINESTYLE_NONE, EE_CHAR_OVERLINE );
@@ -178,7 +178,7 @@ SfxPoolItem** GlobalEditData::GetDefItems()
     return ppDefItems;
 }
 
-rtl::Reference<SvxForbiddenCharactersTable> GlobalEditData::GetForbiddenCharsTable()
+rtl::Reference<SvxForbiddenCharactersTable> const & GlobalEditData::GetForbiddenCharsTable()
 {
     if ( !xForbiddenCharsTable.is() )
     {
@@ -187,7 +187,7 @@ rtl::Reference<SvxForbiddenCharactersTable> GlobalEditData::GetForbiddenCharsTab
     return xForbiddenCharsTable;
 }
 
-uno::Reference< linguistic2::XLanguageGuessing > GlobalEditData::GetLanguageGuesser()
+uno::Reference< linguistic2::XLanguageGuessing > const & GlobalEditData::GetLanguageGuesser()
 {
     if (!xLanguageGuesser.is())
     {

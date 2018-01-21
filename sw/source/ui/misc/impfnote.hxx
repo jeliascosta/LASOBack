@@ -62,14 +62,14 @@ class SwEndNoteOptionPage : public SfxTabPage
     inline void SelectNumbering(int eNum);
     int GetNumbering() const;
 
-    DECL_LINK_TYPED(PosPageHdl, Button*, void);
-    DECL_LINK_TYPED(PosChapterHdl, Button*, void);
-    DECL_LINK_TYPED(NumCountHdl, ListBox&, void);
+    DECL_LINK(PosPageHdl, Button*, void);
+    DECL_LINK(PosChapterHdl, Button*, void);
+    DECL_LINK(NumCountHdl, ListBox&, void);
 
 public:
     SwEndNoteOptionPage( vcl::Window *pParent, bool bEndNote,
                          const SfxItemSet &rSet );
-    virtual ~SwEndNoteOptionPage();
+    virtual ~SwEndNoteOptionPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window *pParent, const SfxItemSet *rSet);
@@ -83,7 +83,7 @@ class SwFootNoteOptionPage : public SwEndNoteOptionPage
 {
     friend class VclPtr<SwFootNoteOptionPage>;
     SwFootNoteOptionPage( vcl::Window *pParent, const SfxItemSet &rSet );
-    virtual ~SwFootNoteOptionPage();
+    virtual ~SwFootNoteOptionPage() override;
 
 public:
     static VclPtr<SfxTabPage> Create(vcl::Window *pParent, const SfxItemSet *rSet);

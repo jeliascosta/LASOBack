@@ -98,7 +98,7 @@ class UpDownBarsConverter : public ConverterBase< UpDownBarsModel >
 {
 public:
     explicit            UpDownBarsConverter( const ConverterRoot& rParent, UpDownBarsModel& rModel );
-    virtual             ~UpDownBarsConverter();
+    virtual             ~UpDownBarsConverter() override;
 
     /** Converts the OOXML up/down bars. */
     void                convertFromModel(
@@ -112,7 +112,7 @@ class TypeGroupConverter : public ConverterBase< TypeGroupModel >
 {
 public:
     explicit            TypeGroupConverter( const ConverterRoot& rParent, TypeGroupModel& rModel );
-    virtual             ~TypeGroupConverter();
+    virtual             ~TypeGroupConverter() override;
 
     /** Returns the type info struct that describes this chart type group. */
     const TypeGroupInfo& getTypeInfo() const { return maTypeInfo; }
@@ -133,10 +133,8 @@ public:
     /** Returns the object type for a series depending on the chart type. */
     ObjectType          getSeriesObjectType() const;
 
-    /** Returns true, if this chart type has to reverse its series order. */
-    bool                isReverseSeries() const;
     /** Returns series title, if the chart type group contains only one single series. */
-    OUString     getSingleSeriesTitle() const;
+    OUString            getSingleSeriesTitle() const;
 
     /** Creates a coordinate system according to the contained chart type. */
     css::uno::Reference< css::chart2::XCoordinateSystem >

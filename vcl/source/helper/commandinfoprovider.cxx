@@ -18,6 +18,8 @@
  */
 
 #include <vcl/commandinfoprovider.hxx>
+#include <vcl/mnemonic.hxx>
+#include <comphelper/string.hxx>
 #include <comphelper/processfactory.hxx>
 #include <cppuhelper/compbase.hxx>
 #include <cppuhelper/basemutex.hxx>
@@ -55,7 +57,7 @@ namespace
             if (mxFrame.is())
                 mxFrame->addFrameActionListener(this);
         }
-        virtual ~FrameListener()
+        virtual ~FrameListener() override
         {
         }
         virtual void SAL_CALL frameAction(const css::frame::FrameActionEvent& aEvent)
@@ -163,8 +165,12 @@ OUString CommandInfoProvider::GetTooltipForCommand (
     SetFrame(rxFrame);
 
     OUString sLabel (GetCommandProperty("TooltipLabel", rsCommandName));
-    if (sLabel.isEmpty())
-        sLabel = GetCommandProperty("Name", rsCommandName);
+    if (sLabel.isEmpty()) {
+        sLabel = GetPopupLabelForCommand(rsCommandName, rxFrame);
+        // Remove '...' at the end and mnemonics (we don't want those in tooltips)
+        sLabel = comphelper::string::stripEnd(sLabel, '.');
+        sLabel = MnemonicGenerator::EraseAllMnemonicChars(sLabel);
+    }
 
     // Command can be just an alias to another command,
     // so need to get the shortcut of the "real" command.
@@ -205,8 +211,9 @@ OUString CommandInfoProvider::GetRealCommandForCommand(const OUString& rCommandN
     return GetCommandProperty("TargetURL", rCommandName);
 }
 
-Image CommandInfoProvider::GetImageForCommand(const OUString& rsCommandName, bool bLarge,
-                                              const Reference<frame::XFrame>& rxFrame)
+Image CommandInfoProvider::GetImageForCommand(const OUString& rsCommandName,
+                                              const Reference<frame::XFrame>& rxFrame,
+                                              vcl::ImageType eImageType)
 {
     SetFrame(rxFrame);
 
@@ -214,8 +221,11 @@ Image CommandInfoProvider::GetImageForCommand(const OUString& rsCommandName, boo
         return Image();
 
     sal_Int16 nImageType(ui::ImageType::COLOR_NORMAL | ui::ImageType::SIZE_DEFAULT);
-    if (bLarge)
+
+    if (eImageType == vcl::ImageType::Size26)
         nImageType |= ui::ImageType::SIZE_LARGE;
+    else if (eImageType == vcl::ImageType::Size32)
+        nImageType |= ui::ImageType::SIZE_32;
 
     try
     {
@@ -294,6 +304,35 @@ bool CommandInfoProvider::IsMirrored(const OUString& rsCommandName)
     return ResourceHasKey("private:resource/image/commandmirrorimagelist", rsCommandName);
 }
 
+bool CommandInfoProvider::IsExperimental(const OUString& rsCommandName,
+                                         const OUString& rModuleName)
+{
+    Sequence<beans::PropertyValue> aProperties;
+    try
+    {
+        if( rModuleName.getLength() > 0)
+        {
+            Reference<container::XNameAccess> xNameAccess  = frame::theUICommandDescription::get(mxContext);
+            Reference<container::XNameAccess> xUICommandLabels;
+            if (xNameAccess->getByName( rModuleName ) >>= xUICommandLabels )
+                xUICommandLabels->getByName(rsCommandName) >>= aProperties;
+
+            for (sal_Int32 nIndex=0; nIndex<aProperties.getLength(); ++nIndex)
+            {
+                if (aProperties[nIndex].Name == "IsExperimental")
+                {
+                    bool bValue;
+                    return (aProperties[nIndex].Value >>= bValue) && bValue;
+                }
+            }
+        }
+    }
+    catch (Exception&)
+    {
+    }
+    return false;
+}
+
 void CommandInfoProvider::SetFrame (const Reference<frame::XFrame>& rxFrame)
 {
     if (rxFrame != mxCachedDataFrame)
@@ -317,7 +356,7 @@ void CommandInfoProvider::SetFrame (const Reference<frame::XFrame>& rxFrame)
     }
 }
 
-Reference<ui::XAcceleratorConfiguration> CommandInfoProvider::GetDocumentAcceleratorConfiguration()
+Reference<ui::XAcceleratorConfiguration> const & CommandInfoProvider::GetDocumentAcceleratorConfiguration()
 {
     if ( ! mxCachedDocumentAcceleratorConfiguration.is())
     {
@@ -348,7 +387,7 @@ Reference<ui::XAcceleratorConfiguration> CommandInfoProvider::GetDocumentAcceler
     return mxCachedDocumentAcceleratorConfiguration;
 }
 
-Reference<ui::XAcceleratorConfiguration> CommandInfoProvider::GetModuleAcceleratorConfiguration()
+Reference<ui::XAcceleratorConfiguration> const & CommandInfoProvider::GetModuleAcceleratorConfiguration()
 {
     if ( ! mxCachedModuleAcceleratorConfiguration.is())
     {
@@ -369,7 +408,7 @@ Reference<ui::XAcceleratorConfiguration> CommandInfoProvider::GetModuleAccelerat
     return mxCachedModuleAcceleratorConfiguration;
 }
 
-Reference<ui::XAcceleratorConfiguration> CommandInfoProvider::GetGlobalAcceleratorConfiguration()
+Reference<ui::XAcceleratorConfiguration> const & CommandInfoProvider::GetGlobalAcceleratorConfiguration()
 {
     // Get the global accelerator configuration.
     if ( ! mxCachedGlobalAcceleratorConfiguration.is())
@@ -380,7 +419,7 @@ Reference<ui::XAcceleratorConfiguration> CommandInfoProvider::GetGlobalAccelerat
     return mxCachedGlobalAcceleratorConfiguration;
 }
 
-OUString CommandInfoProvider::GetModuleIdentifier()
+OUString const & CommandInfoProvider::GetModuleIdentifier()
 {
     if (msCachedModuleIdentifier.getLength() == 0)
     {

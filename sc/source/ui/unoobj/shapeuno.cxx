@@ -84,8 +84,8 @@ namespace
 {
     void lcl_initializeNotifier( SdrObject& _rSdrObj, ::cppu::OWeakObject& _rShape )
     {
-        svx::PPropertyValueProvider pProvider( new svx::PropertyValueProvider( _rShape, "Anchor" ) );
-        _rSdrObj.getShapePropertyChangeNotifier().registerProvider( svx::eSpreadsheetAnchor, pProvider );
+        std::shared_ptr<svx::IPropertyValueProvider> pProvider( new svx::PropertyValueProvider( _rShape, "Anchor" ) );
+        _rSdrObj.getShapePropertyChangeNotifier().registerProvider( svx::ShapeProperty::CalcDocAnchor, pProvider );
     }
 }
 
@@ -1361,7 +1361,7 @@ class ShapeUnoEventAccessImpl : public ::cppu::WeakImplHelper< container::XNameR
 private:
     ScShapeObj* mpShape;
 
-    ScMacroInfo* getInfo( bool bCreate = false )
+    ScMacroInfo* getInfo( bool bCreate )
     {
         return ScShapeObj_getShapeHyperMacroInfo( mpShape, bCreate );
     }
@@ -1416,7 +1416,7 @@ public:
                uno::RuntimeException, std::exception) override
     {
         uno::Sequence< beans::PropertyValue > aProperties;
-        ScMacroInfo* pInfo = getInfo();
+        ScMacroInfo* pInfo = getInfo(false);
 
         if ( aName == SC_EVENTACC_ONCLICK )
         {

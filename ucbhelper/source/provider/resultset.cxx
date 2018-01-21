@@ -93,7 +93,7 @@ public:
     PropertySetInfo(
         const PropertyInfo* pProps,
         sal_Int32 nProps );
-    virtual ~PropertySetInfo();
+    virtual ~PropertySetInfo() override;
 
     // XInterface
     virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type & rType )
@@ -270,10 +270,23 @@ XTYPEPROVIDER_IMPL_9( ResultSet,
 
 // XServiceInfo methods.
 
+OUString SAL_CALL ResultSet::getImplementationName()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return OUString( "ResultSet" );
+}
 
-XSERVICEINFO_NOFACTORY_IMPL_1( ResultSet,
-                    OUString("ResultSet"),
-                    RESULTSET_SERVICE_NAME );
+sal_Bool SAL_CALL ResultSet::supportsService( const OUString& ServiceName )
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return cppu::supportsService( this, ServiceName );
+}
+
+css::uno::Sequence< OUString > SAL_CALL ResultSet::getSupportedServiceNames()
+    throw( css::uno::RuntimeException, std::exception )
+{
+    return { RESULTSET_SERVICE_NAME };
+}
 
 
 // XComponent methods.

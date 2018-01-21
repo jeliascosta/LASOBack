@@ -89,7 +89,7 @@ private:
 public:
 
     explicit                        SvXMLGraphicInputStream( const OUString& rGraphicId );
-    virtual                         ~SvXMLGraphicInputStream();
+    virtual                         ~SvXMLGraphicInputStream() override;
                                     SvXMLGraphicInputStream(const SvXMLGraphicInputStream&) = delete;
     SvXMLGraphicInputStream&        operator=(const SvXMLGraphicInputStream&) = delete;
 
@@ -102,7 +102,7 @@ SvXMLGraphicInputStream::SvXMLGraphicInputStream( const OUString& rGraphicId )
 
     maTmp.EnableKillingFile();
 
-    if( aGrfObject.GetType() != GRAPHIC_NONE )
+    if( aGrfObject.GetType() != GraphicType::NONE )
     {
         SvStream* pStm = ::utl::UcbStreamHelper::CreateStream( maTmp.GetURL(), StreamMode::WRITE | StreamMode::TRUNC );
 
@@ -114,12 +114,12 @@ SvXMLGraphicInputStream::SvXMLGraphicInputStream( const OUString& rGraphicId )
 
             if( aGfxLink.GetDataSize() && aGfxLink.GetData() )
             {
-                pStm->Write( aGfxLink.GetData(), aGfxLink.GetDataSize() );
+                pStm->WriteBytes(aGfxLink.GetData(), aGfxLink.GetDataSize());
                 bRet = ( pStm->GetError() == 0 );
             }
             else
             {
-                if( aGraphic.GetType() == GRAPHIC_BITMAP )
+                if( aGraphic.GetType() == GraphicType::Bitmap )
                 {
                     GraphicFilter &rFilter = GraphicFilter::GetGraphicFilter();
                     OUString          aFormat;
@@ -131,7 +131,7 @@ SvXMLGraphicInputStream::SvXMLGraphicInputStream( const OUString& rGraphicId )
 
                     bRet = ( rFilter.ExportGraphic( aGraphic, "", *pStm, rFilter.GetExportFormatNumberForShortName( aFormat ) ) == 0 );
                 }
-                else if( aGraphic.GetType() == GRAPHIC_GDIMETAFILE )
+                else if( aGraphic.GetType() == GraphicType::GdiMetafile )
                 {
                     pStm->SetVersion( SOFFICE_FILEFORMAT_8 );
                     pStm->SetCompressMode( SvStreamCompressFlags::ZBITMAP );
@@ -219,7 +219,7 @@ private:
 public:
 
                                     SvXMLGraphicOutputStream();
-    virtual                         ~SvXMLGraphicOutputStream();
+    virtual                         ~SvXMLGraphicOutputStream() override;
                                     SvXMLGraphicOutputStream(const SvXMLGraphicOutputStream&) = delete;
     SvXMLGraphicOutputStream&       operator=(const SvXMLGraphicOutputStream&) = delete;
 
@@ -277,7 +277,7 @@ void SAL_CALL SvXMLGraphicOutputStream::closeOutput()
 
 const GraphicObject& SvXMLGraphicOutputStream::GetGraphicObject()
 {
-    if( mbClosed && ( maGrfObj.GetType() == GRAPHIC_NONE ) && mpOStm )
+    if( mbClosed && ( maGrfObj.GetType() == GraphicType::NONE ) && mpOStm )
     {
         Graphic aGraphic;
 
@@ -310,7 +310,7 @@ const GraphicObject& SvXMLGraphicOutputStream::GetGraphicObject()
             if( nStreamLen >= 2 )
             {
                 //read two byte
-                mpOStm->Read( sFirstBytes, 2 );
+                mpOStm->ReadBytes(sFirstBytes, 2);
 
                 if( sFirstBytes[0] == 0x1f && sFirstBytes[1] == 0x8b )
                 {
@@ -335,7 +335,7 @@ const GraphicObject& SvXMLGraphicOutputStream::GetGraphicObject()
         }
 
         maGrfObj = aGraphic;
-        if( maGrfObj.GetType() != GRAPHIC_NONE )
+        if( maGrfObj.GetType() != GraphicType::NONE )
         {
             delete mpOStm;
             mpOStm = nullptr;
@@ -359,7 +359,7 @@ SvXMLGraphicHelper::SvXMLGraphicHelper( SvXMLGraphicHelperMode eCreateMode ) :
 SvXMLGraphicHelper::SvXMLGraphicHelper()
     : ::cppu::WeakComponentImplHelper2< css::document::XGraphicObjectResolver,
                                       css::document::XBinaryStreamResolver >( maMutex )
-    , meCreateMode(GRAPHICHELPER_MODE_READ)
+    , meCreateMode(SvXMLGraphicHelperMode::Read)
     , mbDirect(false)
 {
 }
@@ -409,7 +409,7 @@ uno::Reference < embed::XStorage > SvXMLGraphicHelper::ImplGetGraphicStorage( co
         {
             xRetStorage = mxRootStorage->openStorageElement(
                 maCurStorageName = rStorageName,
-                ( GRAPHICHELPER_MODE_WRITE == meCreateMode )
+                ( SvXMLGraphicHelperMode::Write == meCreateMode )
                     ? embed::ElementModes::READWRITE
                     : embed::ElementModes::READ );
         }
@@ -441,13 +441,13 @@ SvxGraphicHelperStream_Impl SvXMLGraphicHelper::ImplGetGraphicStream( const OUSt
     if( aRet.xStorage.is() )
     {
         sal_Int32 nMode = embed::ElementModes::READ;
-        if ( GRAPHICHELPER_MODE_WRITE == meCreateMode )
+        if ( SvXMLGraphicHelperMode::Write == meCreateMode )
         {
             nMode = embed::ElementModes::READWRITE;
         }
 
         aRet.xStream = aRet.xStorage->openStreamElement( rPictureStreamName, nMode );
-        if( aRet.xStream.is() && ( GRAPHICHELPER_MODE_WRITE == meCreateMode ) )
+        if( aRet.xStream.is() && ( SvXMLGraphicHelperMode::Write == meCreateMode ) )
         {
             OUString aPropName( "UseCommonStoragePasswordEncryption" );
             uno::Reference < beans::XPropertySet > xProps( aRet.xStream, uno::UNO_QUERY );
@@ -458,7 +458,7 @@ SvxGraphicHelperStream_Impl SvXMLGraphicHelper::ImplGetGraphicStream( const OUSt
     return aRet;
 }
 
-OUString SvXMLGraphicHelper::ImplGetGraphicMimeType( const OUString& rFileName ) const
+OUString SvXMLGraphicHelper::ImplGetGraphicMimeType( const OUString& rFileName )
 {
     struct XMLGraphicMimeTypeMapper
     {
@@ -473,6 +473,7 @@ OUString SvXMLGraphicHelper::ImplGetGraphicMimeType( const OUString& rFileName )
         { "jpg", "image/jpeg" },
         { "tif", "image/tiff" },
         { "svg", "image/svg+xml" },
+        { "pdf", "application/pdf" },
         { "wmf", "image/x-wmf" },
         { "eps", "image/x-eps" },
         { "bmp", "image/bmp" },
@@ -516,7 +517,7 @@ bool SvXMLGraphicHelper::ImplWriteGraphic( const OUString& rPictureStorageName,
     GraphicObject   aGrfObject( OUStringToOString(rGraphicId, RTL_TEXTENCODING_ASCII_US) );
     bool        bRet = false;
 
-    if( aGrfObject.GetType() != GRAPHIC_NONE )
+    if( aGrfObject.GetType() != GraphicType::NONE )
     {
         SvxGraphicHelperStream_Impl aStream( ImplGetGraphicStream( rPictureStorageName, rPictureStreamName ) );
         if( aStream.xStream.is() )
@@ -563,10 +564,10 @@ bool SvXMLGraphicHelper::ImplWriteGraphic( const OUString& rPictureStorageName,
 
             std::unique_ptr<SvStream> pStream(utl::UcbStreamHelper::CreateStream( aStream.xStream ));
             if( bUseGfxLink && aGfxLink.GetDataSize() && aGfxLink.GetData() )
-                pStream->Write( aGfxLink.GetData(), aGfxLink.GetDataSize() );
+                pStream->WriteBytes(aGfxLink.GetData(), aGfxLink.GetDataSize());
             else
             {
-                if( aGraphic.GetType() == GRAPHIC_BITMAP )
+                if( aGraphic.GetType() == GraphicType::Bitmap )
                 {
                     GraphicFilter &rFilter = GraphicFilter::GetGraphicFilter();
                     OUString          aFormat;
@@ -579,7 +580,7 @@ bool SvXMLGraphicHelper::ImplWriteGraphic( const OUString& rPictureStorageName,
                     bRet = ( rFilter.ExportGraphic( aGraphic, "", *pStream,
                                                      rFilter.GetExportFormatNumberForShortName( aFormat ) ) == 0 );
                 }
-                else if( aGraphic.GetType() == GRAPHIC_GDIMETAFILE )
+                else if( aGraphic.GetType() == GraphicType::GdiMetafile )
                 {
                     pStream->SetVersion( SOFFICE_FILEFORMAT_8 );
                     pStream->SetCompressMode( SvStreamCompressFlags::ZBITMAP );
@@ -592,12 +593,12 @@ bool SvXMLGraphicHelper::ImplWriteGraphic( const OUString& rPictureStorageName,
                         sal_uInt32  nSize = pComment->GetDataSize();
                         const sal_uInt8* pData = pComment->GetData();
                         if ( nSize && pData )
-                            pStream->Write( pData, nSize );
+                            pStream->WriteBytes(pData, nSize);
 
                         const MetaEPSAction* pAct = static_cast<const MetaEPSAction*>(rMtf.FirstAction());
                         const GfxLink&       rLink = pAct->GetLink();
 
-                        pStream->Write( rLink.GetData(), rLink.GetDataSize() );
+                        pStream->WriteBytes(rLink.GetData(), rLink.GetDataSize());
                     }
                     else
                         rMtf.Write( *pStream );
@@ -635,11 +636,11 @@ void SvXMLGraphicHelper::ImplInsertGraphicURL( const OUString& rURLStr, sal_uInt
     {
         URLPair& rURLPair = maGrfURLs[ nInsertPos ];
 
-        if( GRAPHICHELPER_MODE_READ == meCreateMode )
+        if( SvXMLGraphicHelperMode::Read == meCreateMode )
         {
             const GraphicObject aObj( ImplReadGraphic( aPictureStorageName, aPictureStreamName ) );
 
-            if( aObj.GetType() != GRAPHIC_NONE )
+            if( aObj.GetType() != GraphicType::NONE )
             {
                 maGrfObjs.push_back( aObj );
                 OUString aBaseURL(  XML_GRAPHICOBJECT_URL_BASE  );
@@ -655,7 +656,7 @@ void SvXMLGraphicHelper::ImplInsertGraphicURL( const OUString& rURLStr, sal_uInt
         {
             const OString aAsciiObjectID(OUStringToOString(aPictureStreamName, RTL_TEXTENCODING_ASCII_US));
             const GraphicObject aGrfObject( aAsciiObjectID );
-            if( aGrfObject.GetType() != GRAPHIC_NONE )
+            if( aGrfObject.GetType() != GraphicType::NONE )
             {
                 OUString        aStreamName( aPictureStreamName );
                 Graphic         aGraphic( (Graphic&) aGrfObject.GetGraphic() );
@@ -667,17 +668,17 @@ void SvXMLGraphicHelper::ImplInsertGraphicURL( const OUString& rURLStr, sal_uInt
                 {
                     switch( aGfxLink.GetType() )
                     {
-                        case GFX_LINK_TYPE_EPS_BUFFER: aExtension = ".eps"; break;
-                        case GFX_LINK_TYPE_NATIVE_GIF: aExtension = ".gif"; break;
+                        case GfxLinkType::EpsBuffer: aExtension = ".eps"; break;
+                        case GfxLinkType::NativeGif: aExtension = ".gif"; break;
                         // #i15508# added BMP type for better exports (checked, works)
-                        case GFX_LINK_TYPE_NATIVE_BMP: aExtension = ".bmp"; break;
-                        case GFX_LINK_TYPE_NATIVE_JPG: aExtension = ".jpg"; break;
-                        case GFX_LINK_TYPE_NATIVE_PNG: aExtension = ".png"; break;
-                        case GFX_LINK_TYPE_NATIVE_TIF: aExtension = ".tif"; break;
-                        case GFX_LINK_TYPE_NATIVE_WMF: aExtension = ".wmf"; break;
-                        case GFX_LINK_TYPE_NATIVE_MET: aExtension = ".met"; break;
-                        case GFX_LINK_TYPE_NATIVE_PCT: aExtension = ".pct"; break;
-                        case GFX_LINK_TYPE_NATIVE_SVG:
+                        case GfxLinkType::NativeBmp: aExtension = ".bmp"; break;
+                        case GfxLinkType::NativeJpg: aExtension = ".jpg"; break;
+                        case GfxLinkType::NativePng: aExtension = ".png"; break;
+                        case GfxLinkType::NativeTif: aExtension = ".tif"; break;
+                        case GfxLinkType::NativeWmf: aExtension = ".wmf"; break;
+                        case GfxLinkType::NativeMet: aExtension = ".met"; break;
+                        case GfxLinkType::NativePct: aExtension = ".pct"; break;
+                        case GfxLinkType::NativeSvg:
                             // backward-compat kludge: since no released OOo
                             // version to date can handle svg properly, wrap it up
                             // into an svm. slight catch22 here, since strict ODF
@@ -691,6 +692,7 @@ void SvXMLGraphicHelper::ImplInsertGraphicURL( const OUString& rURLStr, sal_uInt
                             else
                                 aExtension = ".svg";
                             break;
+                        case GfxLinkType::NativePdf: aExtension = ".pdf"; break;
 
                         default:
                             aExtension = ".grf";
@@ -699,14 +701,14 @@ void SvXMLGraphicHelper::ImplInsertGraphicURL( const OUString& rURLStr, sal_uInt
                 }
                 else
                 {
-                    if( aGrfObject.GetType() == GRAPHIC_BITMAP )
+                    if( aGrfObject.GetType() == GraphicType::Bitmap )
                     {
                         if( aGrfObject.IsAnimated() )
                             aExtension = ".gif";
                         else
                             aExtension = ".png";
                     }
-                    else if( aGrfObject.GetType() == GRAPHIC_GDIMETAFILE )
+                    else if( aGrfObject.GetType() == GraphicType::GdiMetafile )
                     {
                         // SJ: first check if this metafile is just a eps file, then we will store the eps instead of svm
                         GDIMetaFile& rMtf( (GDIMetaFile&)aGraphic.GetGDIMetaFile() );
@@ -765,7 +767,7 @@ void SvXMLGraphicHelper::Init( const uno::Reference < embed::XStorage >& rXMLSto
 {
     mxRootStorage = rXMLStorage;
     meCreateMode = eCreateMode;
-    mbDirect = meCreateMode != GRAPHICHELPER_MODE_READ || bDirect;
+    mbDirect = meCreateMode != SvXMLGraphicHelperMode::Read || bDirect;
 }
 
 SvXMLGraphicHelper* SvXMLGraphicHelper::Create( const uno::Reference < embed::XStorage >& rXMLStorage,
@@ -851,7 +853,7 @@ Reference< XInputStream > SAL_CALL SvXMLGraphicHelper::getInputStream( const OUS
     OUString                    aPictureStorageName, aGraphicId;
 
 
-    if( ( GRAPHICHELPER_MODE_WRITE == meCreateMode ) &&
+    if( ( SvXMLGraphicHelperMode::Write == meCreateMode ) &&
         ImplGetStreamNames( rURL, aPictureStorageName, aGraphicId ) )
     {
         SvXMLGraphicInputStream* pInputStream = new SvXMLGraphicInputStream( aGraphicId );
@@ -870,7 +872,7 @@ Reference< XOutputStream > SAL_CALL SvXMLGraphicHelper::createOutputStream()
 {
     Reference< XOutputStream > xRet;
 
-    if( GRAPHICHELPER_MODE_READ == meCreateMode )
+    if( SvXMLGraphicHelperMode::Read == meCreateMode )
     {
         SvXMLGraphicOutputStream* pOutputStream = new SvXMLGraphicOutputStream;
 
@@ -888,7 +890,7 @@ OUString SAL_CALL SvXMLGraphicHelper::resolveOutputStream( const Reference< XOut
 {
     OUString aRet;
 
-    if( ( GRAPHICHELPER_MODE_READ == meCreateMode ) && rxBinaryStream.is() )
+    if( ( SvXMLGraphicHelperMode::Read == meCreateMode ) && rxBinaryStream.is() )
     {
         if( ::std::find( maGrfStms.begin(), maGrfStms.end(), rxBinaryStream ) != maGrfStms.end() )
         {
@@ -1040,7 +1042,7 @@ OUString SAL_CALL SvXMLGraphicImportExportHelper::resolveOutputStream( const Ref
 OUString SAL_CALL SvXMLGraphicImportExportHelper::getImplementationName()
     throw (uno::RuntimeException, std::exception)
 {
-    if( m_eGraphicHelperMode == GRAPHICHELPER_MODE_READ )
+    if( m_eGraphicHelperMode == SvXMLGraphicHelperMode::Read )
         return OUString("com.sun.star.comp.Svx.GraphicImportHelper");
     return OUString("com.sun.star.comp.Svx.GraphicExportHelper");
 }
@@ -1071,7 +1073,7 @@ Sequence< OUString > SAL_CALL SvXMLGraphicImportExportHelper::getSupportedServic
 
     You should call dispose after you no longer need this component.
 
-    uses eCreateMode == GRAPHICHELPER_MODE_READ, bDirect == sal_True in
+    uses eCreateMode == SvXMLGraphicHelperMode::Read, bDirect == sal_True in
     SvXMLGraphicHelper
  */
 extern "C" SAL_DLLPUBLIC_EXPORT css::uno::XInterface * SAL_CALL
@@ -1079,7 +1081,7 @@ com_sun_star_comp_Svx_GraphicImportHelper_get_implementation(
     css::uno::XComponentContext *,
     css::uno::Sequence<css::uno::Any> const &)
 {
-    return cppu::acquire(new SvXMLGraphicImportExportHelper(GRAPHICHELPER_MODE_READ));
+    return cppu::acquire(new SvXMLGraphicImportExportHelper(SvXMLGraphicHelperMode::Read));
 }
 
 /** Create this with createInstanceWithArguments. service name
@@ -1091,7 +1093,7 @@ com_sun_star_comp_Svx_GraphicImportHelper_get_implementation(
     To write the Pictures stream, you have to call dispose at this component.
     Make sure you call dispose before you commit the parent storage.
 
-    uses eCreateMode == GRAPHICHELPER_MODE_WRITE, bDirect == sal_True in
+    uses eCreateMode == SvXMLGraphicHelperMode::Write, bDirect == sal_True in
     SvXMLGraphicHelper
  */
 extern "C" SAL_DLLPUBLIC_EXPORT css::uno::XInterface * SAL_CALL
@@ -1099,7 +1101,7 @@ com_sun_star_comp_Svx_GraphicExportHelper_get_implementation(
     css::uno::XComponentContext *,
     css::uno::Sequence<css::uno::Any> const &)
 {
-    return cppu::acquire(new SvXMLGraphicImportExportHelper(GRAPHICHELPER_MODE_WRITE));
+    return cppu::acquire(new SvXMLGraphicImportExportHelper(SvXMLGraphicHelperMode::Write));
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

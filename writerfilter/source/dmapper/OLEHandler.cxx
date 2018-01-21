@@ -44,6 +44,7 @@
 #include <com/sun/star/lang/XInitialization.hpp>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/text/XTextDocument.hpp>
+#include <com/sun/star/text/WrapTextMode.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
 
 namespace writerfilter {
@@ -111,7 +112,7 @@ void OLEHandler::lcl_attribute(Id rName, Value & rVal)
 
                 try
                 {
-                    // Shapes in the header or footer should be in the background.
+                    // Shapes in the header or footer should be in the background, since the default is WrapTextMode_THROUGH.
                     if (m_rDomainMapper.IsInHeaderFooter())
                         xShapeProps->setPropertyValue("Opaque", uno::makeAny(false));
 
@@ -165,6 +166,11 @@ void OLEHandler::lcl_sprm(Sprm & rSprm)
                     xShapeProps->setPropertyValue(
                         getPropertyName( PROP_SURROUND ),
                         uno::makeAny( m_nWrapMode ) );
+
+                    // Through shapes in the header or footer(that spill into the body) should be in the background.
+                    // It is just assumed that all shapes will spill into the body.
+                    if( m_rDomainMapper.IsInHeaderFooter() )
+                        xShapeProps->setPropertyValue("Opaque", uno::makeAny(m_nWrapMode != text::WrapTextMode_THROUGHT));
                 }
                 catch( const uno::Exception& e )
                 {
@@ -273,9 +279,8 @@ OUString OLEHandler::copyOLEOStream(
 
             ::oox::ole::SaveInteropProperties(xTextDocument, aURL, nullptr, m_sProgId, m_sDrawAspect);
 
-            static const char sProtocol[] = "vnd.sun.star.EmbeddedObject:";
             OUString aPersistName( xEmbeddedResolver->resolveEmbeddedObjectURL( aURL ) );
-            sRet = aPersistName.copy( strlen(sProtocol) );
+            sRet = aPersistName.copy( strlen("vnd.sun.star.EmbeddedObject:") );
 
         }
         uno::Reference< lang::XComponent > xComp( xEmbeddedResolver, uno::UNO_QUERY_THROW );

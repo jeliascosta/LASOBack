@@ -50,17 +50,11 @@ class RecordObjectBase : public SequenceRecordObjectBase
 {
 protected:
     explicit            RecordObjectBase();
-    virtual             ~RecordObjectBase();
+    virtual             ~RecordObjectBase() override;
 
     using               SequenceRecordObjectBase::construct;
 
     virtual bool        implReadRecordHeader( BinaryInputStream& rBaseStrm, sal_Int64& ornRecId, sal_Int64& ornRecSize ) override;
-
-private:
-    typedef std::shared_ptr< SequenceInputStream > SequenceInputStreamRef;
-
-    SequenceInputStreamRef mxBiffStrm;
-    NameListRef         mxErrCodes;
 };
 
 

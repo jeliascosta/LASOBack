@@ -60,7 +60,7 @@ namespace drawinglayer
 
         protected:
             /// local decomposition
-            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
 
         public:
             /// constructor
@@ -73,7 +73,6 @@ namespace drawinglayer
 
             /// data read access
             const basegfx::B2DHomMatrix& getTransform() const { return maTransform; }
-            const OUString& getURL() const { return maURL; }
             const basegfx::BColor& getBackgroundColor() const { return maBackgroundColor; }
             sal_uInt32 getDiscreteBorder() const { return mnDiscreteBorder; }
 

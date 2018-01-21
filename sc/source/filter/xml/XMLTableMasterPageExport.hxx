@@ -40,7 +40,7 @@ class XMLTableMasterPageExport : public XMLTextMasterPageExport
 protected:
     virtual void exportHeaderFooterContent(
             const css::uno::Reference< css::text::XText >& rText,
-            bool bAutoStyles, bool bProgress ) override;
+            bool bAutoStyles, bool bProgress = true ) override;
 
     virtual void exportMasterPageContent(
                 const css::uno::Reference< css::beans::XPropertySet > & rPropSet,
@@ -48,7 +48,7 @@ protected:
 
 public:
     explicit XMLTableMasterPageExport( ScXMLExport& rExp );
-    virtual ~XMLTableMasterPageExport();
+    virtual ~XMLTableMasterPageExport() override;
 };
 
 #endif  //  _XMLOFF_XMLTABLEMASTERPAGEEXPORT_HXX

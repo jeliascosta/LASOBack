@@ -37,7 +37,7 @@
 #include <com/sun/star/frame/XDispatchProvider.hpp>
 #include <com/sun/star/sdb/CommandType.hpp>
 
-#include <svtools/localresaccess.hxx>
+#include <tools/resary.hxx>
 #include <tools/diagnose_ex.h>
 #include <osl/diagnose.h>
 
@@ -145,7 +145,7 @@ namespace pcr
     {
         if ( m_xDesigner.is() && ( Source.Source == m_xDesigner ) )
         {
-            impl_designerClosed_nothrow();
+            m_aCloseLink.Call( *this );
             m_xDesigner.clear();
         }
     }
@@ -261,8 +261,9 @@ namespace pcr
             Reference< XTitle> xTitle(xQueryDesign,UNO_QUERY);
             if ( xTitle.is() )
             {
-                ::svt::OLocalResourceAccess aEnumStrings( PcrRes( RID_RSC_ENUM_COMMAND_TYPE ), RSC_RESOURCE );
-                OUString sDisplayName = PcrRes(CommandType::COMMAND + 1).toString();
+                PcrRes aResId(RID_RSC_ENUM_COMMAND_TYPE);
+                ResStringArray aResList(aResId);
+                OUString sDisplayName = aResList.GetString(CommandType::COMMAND);
                 xTitle->setTitle( sDisplayName );
             }
         }
@@ -294,12 +295,6 @@ namespace pcr
             DBG_UNHANDLED_EXCEPTION();
         }
         return xFrame;
-    }
-
-
-    void SQLCommandDesigner::impl_designerClosed_nothrow()
-    {
-        m_aCloseLink.Call( *this );
     }
 
 

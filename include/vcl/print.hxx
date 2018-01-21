@@ -50,12 +50,12 @@ namespace vcl {
 }
 
 
-enum PrinterSupport
+enum class PrinterSupport
 {
-    SUPPORT_SET_ORIENTATION, SUPPORT_SET_PAPERBIN,
-    SUPPORT_SET_PAPERSIZE, SUPPORT_SET_PAPER,
-    SUPPORT_COPY, SUPPORT_COLLATECOPY,
-    SUPPORT_SETUPDIALOG, SUPPORT_FAX, SUPPORT_PDF
+    SetOrientation, SetPaperBin,
+    SetPaperSize, SetPaper,
+    Copy, CollateCopy,
+    SetupDialog, Fax, Pdf
 };
 
 
@@ -85,25 +85,25 @@ public:
 };
 
 
-enum PrinterTransparencyMode
+enum class PrinterTransparencyMode
 {
-    PRINTER_TRANSPARENCY_AUTO = 0,
-    PRINTER_TRANSPARENCY_NONE = 1
+    Auto = 0,
+    NONE = 1
 };
 
 
-enum PrinterGradientMode
+enum class PrinterGradientMode
 {
-    PRINTER_GRADIENT_STRIPES  = 0,
-    PRINTER_GRADIENT_COLOR    = 1
+    Stripes  = 0,
+    Color    = 1
 };
 
 
-enum PrinterBitmapMode
+enum class PrinterBitmapMode
 {
-    PRINTER_BITMAP_OPTIMAL    = 0,
-    PRINTER_BITMAP_NORMAL     = 1,
-    PRINTER_BITMAP_RESOLUTION = 2
+    Optimal    = 0,
+    Normal     = 1,
+    Resolution = 2
 };
 
 
@@ -205,7 +205,6 @@ private:
     bool                        mbPrintFile;
     bool                        mbInPrintPage;
     bool                        mbNewJobSetup;
-    bool                        mbIsQueuePrinter;
 
     SAL_DLLPRIVATE void         ImplInitData();
     SAL_DLLPRIVATE void         ImplInit( SalPrinterQueueInfo* pInfo );
@@ -273,7 +272,7 @@ public:
                                 Printer( const JobSetup& rJobSetup );
                                 Printer( const QueueInfo& rQueueInfo );
                                 Printer( const OUString& rPrinterName );
-    virtual                     ~Printer();
+    virtual                     ~Printer() override;
     virtual void                dispose() override;
 
     static const std::vector< OUString >&
@@ -293,7 +292,7 @@ public:
     bool                        SetJobSetup( const JobSetup& rSetup );
     const JobSetup&             GetJobSetup() const { return maJobSetup; }
 
-    bool                        Setup( vcl::Window* pWindow = nullptr, bool bPapersizeFromSetup = false );
+    bool                        Setup( vcl::Window* pWindow, bool bPapersizeFromSetup = false );
     bool                        SetPrinterProps( const Printer* pPrinter );
 
     /** SetPrinterOptions is used internally only now
@@ -310,11 +309,6 @@ public:
     Orientation                 GetOrientation() const;
     bool                        SetDuplexMode( DuplexMode );
 
-    /**  @return The angle that a landscape page will be turned counterclockwise wrt to portrait.
-
-         The return value may be only valid for the current paper
-    */
-    int                         GetLandscapeAngle() const;
     bool                        SetPaperBin( sal_uInt16 nPaperBin );
     sal_uInt16                  GetPaperBin() const;
     bool                        SetPaper( Paper ePaper );
@@ -339,7 +333,7 @@ public:
     const Point&                GetPageOffsetPixel() const { return maPageOffset; }
     Point                       GetPageOffset() const { return PixelToLogic( maPageOffset ); }
 
-    bool                        SetCopyCount( sal_uInt16 nCopy, bool bCollate = false );
+    bool                        SetCopyCount( sal_uInt16 nCopy, bool bCollate );
     sal_uInt16                  GetCopyCount() const { return mnCopyCount; }
     bool                        IsCollateCopy() const { return mbCollateCopy; }
 
@@ -391,23 +385,22 @@ namespace vcl
 {
 class ImplPrinterControllerData;
 
+enum class NupOrderType
+{
+    LRTB, TBLR, TBRL, RLTB
+};
+
 class VCL_DLLPUBLIC PrinterController
 {
     ImplPrinterControllerData*          mpImplData;
 protected:
                                         PrinterController( const VclPtr<Printer>& );
 public:
-    enum NupOrderType
-    {
-        LRTB, TBLR, TBRL, RLTB
-    };
-
     struct MultiPageSetup
     {
         // all metrics in 100th mm
         int                             nRows;
         int                             nColumns;
-        int                             nRepeat;
         Size                            aPaperSize;
         long                            nLeftMargin;
         long                            nTopMargin;
@@ -416,15 +409,15 @@ public:
         long                            nHorizontalSpacing;
         long                            nVerticalSpacing;
         bool                            bDrawBorder;
-        PrinterController::NupOrderType nOrder;
+        NupOrderType                    nOrder;
 
         MultiPageSetup()
-             : nRows( 1 ), nColumns( 1 ), nRepeat( 1 ), aPaperSize( 21000, 29700 )
+             : nRows( 1 ), nColumns( 1 ), aPaperSize( 21000, 29700 )
              , nLeftMargin( 0 ), nTopMargin( 0 )
              , nRightMargin( 0 ), nBottomMargin( 0 )
              , nHorizontalSpacing( 0 ), nVerticalSpacing( 0 )
              , bDrawBorder( false )
-             , nOrder( LRTB ) {}
+             , nOrder( NupOrderType::LRTB ) {}
     };
 
     struct PageSize
@@ -601,7 +594,7 @@ public:
     /** @return An empty Any for not existing properties */
     css::uno::Any        getValue( const OUString& i_rPropertyName ) const;
 
-    bool                 getBoolValue( const OUString& i_rPropertyName, bool i_bDefault = false ) const;
+    bool                 getBoolValue( const OUString& i_rPropertyName, bool i_bDefault ) const;
     // convenience for fixed strings
     bool                 getBoolValue( const char* i_pPropName, bool i_bDefault = false ) const
                              { return getBoolValue( OUString::createFromAscii( i_pPropName ), i_bDefault ); }
@@ -684,8 +677,8 @@ public:
         note: max value < min value means do not apply min/max values
     */
     static css::uno::Any setRangeControlOpt( const OUString& i_rID, const OUString& i_rTitle, const OUString& i_rHelpId,
-                             const OUString& i_rProperty, sal_Int32 i_nValue, sal_Int32 i_nMinValue = -1,
-                             sal_Int32 i_nMaxValue = -2, const UIControlOptions& i_rControlOptions = UIControlOptions());
+                             const OUString& i_rProperty, sal_Int32 i_nValue, sal_Int32 i_nMinValue,
+                             sal_Int32 i_nMaxValue, const UIControlOptions& i_rControlOptions);
 
     /** Show a string field
 
@@ -693,7 +686,7 @@ public:
     */
     static css::uno::Any setEditControlOpt( const OUString& i_rID, const OUString& i_rTitle, const OUString& i_rHelpId,
                              const OUString&  i_rProperty, const OUString& i_rValue,
-                             const UIControlOptions& i_rControlOptions = UIControlOptions());
+                             const UIControlOptions& i_rControlOptions);
 }; // class PrinterOptionsHelper
 
 } // namespace vcl

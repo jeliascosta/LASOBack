@@ -22,7 +22,6 @@
 
 #include <sfx2/tabdlg.hxx>
 #include <svx/pageitem.hxx>
-#include <svtools/stdctrl.hxx>
 #include <vcl/group.hxx>
 #include <vcl/lstbox.hxx>
 #include <vcl/timer.hxx>
@@ -54,7 +53,7 @@ class SC_DLLPUBLIC ScEditWindow : public Control
 {
 public:
             ScEditWindow( vcl::Window* pParent,  WinBits nBits , ScEditWindowLocation eLoc );
-            virtual ~ScEditWindow();
+            virtual ~ScEditWindow() override;
     virtual void dispose() override;
 
     using Control::SetFont;
@@ -104,12 +103,12 @@ class SC_DLLPUBLIC ScExtIButton : public ImageButton
 private:
 
     Idle            aIdle;
-    PopupMenu*      pPopupMenu;
+    VclPtr<PopupMenu>        pPopupMenu;
     Link<ScExtIButton&,void> aMLink;
     sal_uInt16      nSelected;
     OString         aSelectedIdent;
 
-                    DECL_DLLPRIVATE_LINK_TYPED( TimerHdl, Idle*, void );
+                    DECL_DLLPRIVATE_LINK( TimerHdl, Idle*, void );
 
 protected:
 
@@ -122,6 +121,8 @@ protected:
 public:
 
     ScExtIButton(vcl::Window* pParent, WinBits nBits );
+    virtual ~ScExtIButton() override;
+    virtual void dispose() override;
 
     void            SetPopupMenu(PopupMenu* pPopUp);
 

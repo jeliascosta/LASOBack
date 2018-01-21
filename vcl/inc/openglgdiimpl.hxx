@@ -29,7 +29,7 @@
 #include "opengl/framebuffer.hxx"
 #include "opengl/program.hxx"
 #include "opengl/texture.hxx"
-#include "opengl/AccumulatedTextures.hxx"
+#include "opengl/RenderList.hxx"
 
 #include <memory>
 
@@ -83,6 +83,8 @@ protected:
 
     bool mbXORMode;
 
+    bool mbAcquiringOpenGLContext;
+
     /**
      * All rendering happens to this off-screen texture. For
      * non-virtual devices, ie. windows - we will blit it and
@@ -100,11 +102,11 @@ protected:
     SalColor mProgramSolidColor;
     double mProgramSolidTransparency;
 
-    std::unique_ptr<AccumulatedTextures> mpAccumulatedTextures;
+    std::unique_ptr<RenderList> mpRenderList;
 
     void ImplInitClipRegion();
     void ImplSetClipBit( const vcl::Region& rClip, GLuint nMask );
-    void ImplDrawLineAA( double nX1, double nY1, double nX2, double nY2, bool edge = false );
+    void ImplDrawLineAA( double nX1, double nY1, double nX2, double nY2, bool edge );
     bool CheckOffscreenTexture();
 
     void ApplyProgramMatrices(float fPixelOffset = 0.0);
@@ -114,28 +116,26 @@ public:
     bool UseSolid( SalColor nColor, sal_uInt8 nTransparency );
     bool UseSolid( SalColor nColor, double fTransparency );
     bool UseSolid( SalColor nColor );
+    bool UseSolid();
     bool UseLine(SalColor nColor, double fTransparency, GLfloat fLineWidth, bool bUseAA);
+    bool UseLine(GLfloat fLineWidth, bool bUseAA);
     bool UseInvert50();
     bool UseInvert(SalInvert nFlags);
 
-    void DrawPoint( long nX, long nY );
-    void DrawLine( double nX1, double nY1, double nX2, double nY2 );
     void DrawConvexPolygon( sal_uInt32 nPoints, const SalPoint* pPtAry, bool blockAA = false );
-    void DrawConvexPolygon( const tools::Polygon& rPolygon, bool blockAA = false );
-    void DrawTrapezoid( const basegfx::B2DTrapezoid& trapezoid, bool blockAA = false );
+    void DrawConvexPolygon( const tools::Polygon& rPolygon, bool blockAA );
+    void DrawTrapezoid( const basegfx::B2DTrapezoid& trapezoid, bool blockAA );
     void DrawRect( long nX, long nY, long nWidth, long nHeight );
     void DrawRect( const Rectangle& rRect );
     void DrawPolygon( sal_uInt32 nPoints, const SalPoint* pPtAry );
     void DrawLineSegment(float x1, float y1, float x2, float y2);
-    void DrawLineCap(float x1, float y1, float x2, float y2, css::drawing::LineCap eLineCap, float fLineWidth);
-    void DrawPolyLine( const basegfx::B2DPolygon& rPolygon, float fLineWidth, basegfx::B2DLineJoin eLineJoin, css::drawing::LineCap eLineCap, float fMiterMinimumAngle);
     void DrawPolyPolygon( const basegfx::B2DPolyPolygon& rPolyPolygon, bool blockAA = false );
     void DrawRegionBand( const RegionBand& rRegion );
     void DrawTextureRect( OpenGLTexture& rTexture, const SalTwoRect& rPosAry, bool bInverted = false );
     void DrawTexture( OpenGLTexture& rTexture, const SalTwoRect& rPosAry, bool bInverted = false );
     void DrawTransformedTexture( OpenGLTexture& rTexture, OpenGLTexture& rMask, const basegfx::B2DPoint& rNull, const basegfx::B2DPoint& rX, const basegfx::B2DPoint& rY );
-    void DrawAlphaTexture( OpenGLTexture& rTexture, const SalTwoRect& rPosAry, bool bInverted = false, bool pPremultiplied = false );
-    void DrawTextureDiff( OpenGLTexture& rTexture, OpenGLTexture& rMask, const SalTwoRect& rPosAry, bool bInverted = false );
+    void DrawAlphaTexture( OpenGLTexture& rTexture, const SalTwoRect& rPosAry, bool bInverted, bool pPremultiplied );
+    void DrawTextureDiff( OpenGLTexture& rTexture, OpenGLTexture& rMask, const SalTwoRect& rPosAry, bool bInverted );
     void DrawTextureWithMask( OpenGLTexture& rTexture, OpenGLTexture& rMask, const SalTwoRect& rPosAry );
     void DrawBlendedTexture( OpenGLTexture& rTexture, OpenGLTexture& rMask, OpenGLTexture& rAlpha, const SalTwoRect& rPosAry );
     void DrawMask( OpenGLTexture& rTexture, SalColor nMaskColor, const SalTwoRect& rPosAry );
@@ -143,7 +143,9 @@ public:
     void DrawAxialGradient( const Gradient& rGradient, const Rectangle& rRect );
     void DrawRadialGradient( const Gradient& rGradient, const Rectangle& rRect );
     void DeferredTextDraw(OpenGLTexture& rTexture, const SalColor nMaskColor, const SalTwoRect& rPosAry);
+
     void FlushDeferredDrawing();
+    bool FlushLinesOrTriangles(DrawShaderType eType, RenderParameters& rParameters);
 
 public:
     // get the width of the device
@@ -162,7 +164,7 @@ public:
     enum XOROption { IGNORE_XOR, IMPLEMENT_XOR };
 
     // initialize pre-draw state
-    void InitializePreDrawState(XOROption eOpt = IGNORE_XOR);
+    void InitializePreDrawState(XOROption eOpt);
 
     // operations to do before painting
     void PreDraw(XOROption eOpt = IGNORE_XOR);
@@ -188,7 +190,7 @@ protected:
 
 public:
     OpenGLSalGraphicsImpl(SalGraphics& pParent, SalGeometryProvider *pProvider);
-    virtual ~OpenGLSalGraphicsImpl ();
+    virtual ~OpenGLSalGraphicsImpl () override;
 
     rtl::Reference<OpenGLContext> GetOpenGLContext();
 
@@ -226,7 +228,7 @@ public:
     virtual void SetFillColor( SalColor nSalColor ) override;
 
     // enable/disable XOR drawing
-    virtual void SetXORMode( bool bSet, bool bInvertOnly ) override;
+    virtual void SetXORMode( bool bSet ) override;
 
     // set line color for raster operations
     virtual void SetROPLineColor( SalROPColor nROPColor ) override;

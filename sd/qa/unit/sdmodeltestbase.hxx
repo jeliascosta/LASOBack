@@ -12,13 +12,17 @@
 
 #include <test/bootstrapfixture.hxx>
 #include <test/xmldiff.hxx>
+#include <test/xmltesttools.hxx>
 
 #include <unotest/filters-test.hxx>
 #include <unotest/macros_test.hxx>
 
 #include "drawdoc.hxx"
-#include "../source/ui/inc/DrawDocShell.hxx"
-#include "unotools/tempfile.hxx"
+#include "DrawDocShell.hxx"
+#include <unotools/tempfile.hxx>
+#include <unotools/ucbstreamhelper.hxx>
+#include <tools/color.hxx>
+#include <comphelper/processfactory.hxx>
 
 #include <rtl/strbuf.hxx>
 #include <sfx2/docfile.hxx>
@@ -26,6 +30,7 @@
 #include <svl/itemset.hxx>
 
 #include <com/sun/star/drawing/XDrawPagesSupplier.hpp>
+#include <com/sun/star/packages/zip/ZipFileAccess.hpp>
 #include <drawinglayer/XShapeDumper.hxx>
 #include <com/sun/star/text/XTextField.hpp>
 
@@ -131,8 +136,8 @@ protected:
         pFilter->SetVersion(SOFFICE_FILEFORMAT_CURRENT);
         std::shared_ptr<const SfxFilter> pFilt(pFilter);
 
-        ::sd::DrawDocShellRef xDocShRef = new ::sd::DrawDocShell();
-        SfxMedium* pSrcMed = new SfxMedium(rURL, STREAM_STD_READ, pFilt, pParams);
+        ::sd::DrawDocShellRef xDocShRef = new ::sd::DrawDocShell(SfxObjectCreateMode::EMBEDDED, false);
+        SfxMedium* pSrcMed = new SfxMedium(rURL, StreamMode::STD_READ, pFilt, pParams);
         if ( !xDocShRef->DoLoad(pSrcMed) || !xDocShRef.Is() )
         {
             if (xDocShRef.Is())
@@ -154,7 +159,7 @@ protected:
 
     void exportTo(sd::DrawDocShell* pShell, FileFormat* pFormat, utl::TempFile& rTempFile)
     {
-        SfxMedium aStoreMedium(rTempFile.GetURL(), STREAM_STD_WRITE);
+        SfxMedium aStoreMedium(rTempFile.GetURL(), StreamMode::STD_WRITE);
         SotClipboardFormatId nExportFormat = SotClipboardFormatId::NONE;
         if (pFormat->nFormatType == ODP_FORMAT_TYPE)
             nExportFormat = SotClipboardFormatId::STARCALC_8;
@@ -173,7 +178,7 @@ protected:
 
     void save(sd::DrawDocShell* pShell, FileFormat* pFormat, utl::TempFile& rTempFile)
     {
-        SfxMedium aStoreMedium(rTempFile.GetURL(), STREAM_STD_WRITE);
+        SfxMedium aStoreMedium(rTempFile.GetURL(), StreamMode::STD_WRITE);
         SotClipboardFormatId nExportFormat = SotClipboardFormatId::NONE;
         if (pFormat->nFormatType == ODP_FORMAT_TYPE)
             nExportFormat = SotClipboardFormatId::STARCHART_8;
@@ -209,6 +214,10 @@ protected:
         {
             BootstrapFixture::validate(pTempFile->GetFileName(), test::OOXML);
         }
+        else if(nExportType == PPT)
+        {
+            BootstrapFixture::validate(pTempFile->GetFileName(), test::MSBINARY);
+        }
         pTempFile->EnableKillingFile();
         return loadURL(pTempFile->GetURL(), nExportType);
     }
@@ -217,7 +226,7 @@ protected:
 
         @param bCreate Instead of comparing to the reference file(s), create it/them.
     */
-    void compareWithShapesDump( ::sd::DrawDocShellRef xDocShRef, const OUString &rShapesDumpFileNameBase, bool bCreate = false )
+    void compareWithShapesDump( ::sd::DrawDocShellRef xDocShRef, const OUString &rShapesDumpFileNameBase, bool bCreate )
     {
         CPPUNIT_ASSERT_MESSAGE( "failed to load", xDocShRef.Is() );
         CPPUNIT_ASSERT_MESSAGE( "not in destruction", !xDocShRef->IsInDestruction() );
@@ -247,7 +256,7 @@ protected:
 
             if ( bCreate )
             {
-                std::ofstream aStream( aFileName.getStr(), std::ofstream::out );
+                std::ofstream aStream( aFileName.getStr(), std::ofstream::out | std::ofstream::binary );
                 aStream << aString;
                 aStream.close();
             }
@@ -291,7 +300,7 @@ protected:
         return pPage;
     }
 
-    uno::Reference< beans::XPropertySet > getShape( int nShape, uno::Reference< drawing::XDrawPage > xPage )
+    uno::Reference< beans::XPropertySet > getShape( int nShape, uno::Reference< drawing::XDrawPage > const & xPage )
     {
         uno::Reference< beans::XPropertySet > xShape( xPage->getByIndex( nShape ), uno::UNO_QUERY );
         CPPUNIT_ASSERT_MESSAGE( "Failed to load shape", xShape.is() );
@@ -309,7 +318,7 @@ protected:
     }
 
     // Nth paragraph of text in given text shape
-    uno::Reference< text::XTextRange > getParagraphFromShape( int nPara, uno::Reference< beans::XPropertySet > xShape )
+    uno::Reference< text::XTextRange > getParagraphFromShape( int nPara, uno::Reference< beans::XPropertySet > const & xShape )
     {
         uno::Reference< text::XText > xText = uno::Reference< text::XTextRange>( xShape, uno::UNO_QUERY )->getText();
         CPPUNIT_ASSERT_MESSAGE( "Not a text shape", xText.is() );
@@ -325,7 +334,7 @@ protected:
         return xParagraph;
     }
 
-    uno::Reference< text::XTextRange > getRunFromParagraph( int nRun, uno::Reference< text::XTextRange > xParagraph )
+    uno::Reference< text::XTextRange > getRunFromParagraph( int nRun, uno::Reference< text::XTextRange > const & xParagraph )
     {
         uno::Reference< container::XEnumerationAccess > runEnumAccess(xParagraph, uno::UNO_QUERY);
         uno::Reference< container::XEnumeration > runEnum = runEnumAccess->createEnumeration();
@@ -355,7 +364,50 @@ protected:
         xPropSet->getPropertyValue("TextField") >>= xField;
         return xField;
     }
+
 };
+
+class SdModelTestBaseXML
+    : public SdModelTestBase, public XmlTestTools
+{
+
+public:
+    xmlDocPtr parseExport(utl::TempFile & rTempFile, OUString const& rStreamName)
+    {
+        OUString const url(rTempFile.GetURL());
+        uno::Reference<packages::zip::XZipFileAccess2> const xZipNames(
+            packages::zip::ZipFileAccess::createWithURL(
+                comphelper::getComponentContext(m_xSFactory), url));
+        uno::Reference<io::XInputStream> const xInputStream(
+            xZipNames->getByName(rStreamName), uno::UNO_QUERY);
+        std::unique_ptr<SvStream> const pStream(
+            utl::UcbStreamHelper::CreateStream(xInputStream, true));
+        xmlDocPtr const pXmlDoc = parseXmlStream(pStream.get());
+        pXmlDoc->name = reinterpret_cast<char *>(xmlStrdup(
+            reinterpret_cast<xmlChar const *>(OUStringToOString(url, RTL_TEXTENCODING_UTF8).getStr())));
+        return pXmlDoc;
+    }
+
+};
+
+CPPUNIT_NS_BEGIN
+
+template<> struct assertion_traits<Color>
+{
+    static bool equal( const Color& c1, const Color& c2 )
+    {
+        return c1 == c2;
+    }
+
+    static std::string toString( const Color& c )
+    {
+        OStringStream ost;
+        ost << static_cast<unsigned int>(c.GetColor());
+        return ost.str();
+    }
+};
+
+CPPUNIT_NS_END
 
 #endif
 

@@ -85,7 +85,7 @@ namespace dbaui
             ExternalFeature( const css::util::URL& _rURL ) : aURL( _rURL ), bEnabled( false ) { }
         };
 
-        typedef ::std::map< sal_uInt16, ExternalFeature, ::std::less< sal_uInt16 > >  ExternalFeaturesMap;
+        typedef ::std::map< sal_uInt16, ExternalFeature >  ExternalFeaturesMap;
         ExternalFeaturesMap     m_aExternalFeatures;
 
         svx::ODataAccessDescriptor    m_aDocumentDataSource;
@@ -117,7 +117,7 @@ namespace dbaui
     // attribute access
     public:
         SbaTableQueryBrowser(const css::uno::Reference< css::uno::XComponentContext >& _rM);
-        virtual ~SbaTableQueryBrowser();
+        virtual ~SbaTableQueryBrowser() override;
 
         enum EntryType
         {
@@ -230,12 +230,12 @@ namespace dbaui
         virtual sal_Int8    executeDrop( const ExecuteDropEvent& _rEvt ) override;
 
         // IContextMenuProvider
-        virtual PopupMenu*      getContextMenu( Control& _rControl ) const override;
-        virtual IController&    getCommandController() override;
+        virtual OUString          getContextMenuResourceName( Control& _rControl ) const override;
+        virtual VclPtr<PopupMenu> getContextMenu( Control& _rControl ) const override;
+        virtual IController&      getCommandController() override;
         virtual ::comphelper::OInterfaceContainerHelper2*
-                                getContextMenuInterceptors() override;
-        virtual css::uno::Any
-                                getCurrentSelection( Control& _rControl ) const override;
+                                  getContextMenuInterceptors() override;
+        virtual css::uno::Any     getCurrentSelection( Control& _rControl ) const override;
 
         virtual void impl_initialize() override;
 
@@ -254,7 +254,7 @@ namespace dbaui
         // returns <TRUE/> if the entry is selected (which means it's part of the selected path)
         static bool isSelected(SvTreeListEntry* _pEntry);
         // select the entry (and only the entry, not the whole path)
-        void        select(SvTreeListEntry* _pEntry, bool _bSelect = true);
+        void        select(SvTreeListEntry* _pEntry, bool _bSelect);
         // select the path of the entry (which must be an entry without children)
         void        selectPath(SvTreeListEntry* _pEntry, bool _bSelect = true);
 
@@ -345,14 +345,14 @@ namespace dbaui
         OUString      GetEntryText( SvTreeListEntry* _pEntry ) const;
 
         // is called when a table or a query was selected
-        DECL_LINK_TYPED( OnSelectionChange, LinkParamNone*, void );
-        DECL_LINK_TYPED( OnExpandEntry, SvTreeListEntry*, bool );
+        DECL_LINK( OnSelectionChange, LinkParamNone*, void );
+        DECL_LINK( OnExpandEntry, SvTreeListEntry*, bool );
 
-        DECL_LINK_TYPED( OnCopyEntry, LinkParamNone*, void );
+        DECL_LINK( OnCopyEntry, LinkParamNone*, void );
 
-        DECL_LINK_TYPED( OnTreeEntryCompare, const SvSortData&, sal_Int32 );
+        DECL_LINK( OnTreeEntryCompare, const SvSortData&, sal_Int32 );
 
-        DECL_LINK_TYPED( OnAsyncDrop, void*, void );
+        DECL_LINK( OnAsyncDrop, void*, void );
 
         void implRemoveStatusListeners();
 
@@ -366,7 +366,7 @@ namespace dbaui
             const sal_Int32 _nCommandType,
             const bool _bEscapeProcessing,
             const SharedConnection& _rxConnection,
-            bool _bSelectDirect = false
+            bool _bSelectDirect
         );
 
         SvTreeListEntry* implGetConnectionEntry(SvTreeListEntry* _pEntry) const;
@@ -380,7 +380,7 @@ namespace dbaui
 
         /// loads the grid control with the data object specified (which may be a table, a query or a command)
         bool implLoadAnything(const OUString& _rDataSourceName, const OUString& _rCommand,
-            const sal_Int32 _nCommandType, const bool _bEscapeProcessing, const SharedConnection& _rxConnection = SharedConnection() );
+            const sal_Int32 _nCommandType, const bool _bEscapeProcessing, const SharedConnection& _rxConnection );
 
         /** retrieves the tree entry for the object described by <arg>_rDescriptor</arg>
             @param _rDescriptor
@@ -391,7 +391,7 @@ namespace dbaui
                 If not <NULL/>, the object container tree entry will be returned here
         */
         SvTreeListEntry* getObjectEntry(const svx::ODataAccessDescriptor& _rDescriptor,
-            SvTreeListEntry** _ppDataSourceEntry = nullptr, SvTreeListEntry** _ppContainerEntry = nullptr
+            SvTreeListEntry** _ppDataSourceEntry, SvTreeListEntry** _ppContainerEntry
         );
         /** retrieves the tree entry for the object described by data source name, command and command type
             @param _rDataSource
@@ -411,7 +411,7 @@ namespace dbaui
         */
         SvTreeListEntry* getObjectEntry(
             const OUString& _rDataSource, const OUString& _rCommand, sal_Int32 _nCommandType,
-            SvTreeListEntry** _ppDataSourceEntry = nullptr, SvTreeListEntry** _ppContainerEntry = nullptr,
+            SvTreeListEntry** _ppDataSourceEntry, SvTreeListEntry** _ppContainerEntry,
             bool _bExpandAncestors = true,
             const SharedConnection& _rxConnection = SharedConnection()
         );

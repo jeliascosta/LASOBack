@@ -38,7 +38,7 @@ using namespace ::com::sun::star;
 
 uno::Reference< uno::XInterface > createUnoCustomShow( SdCustomShow* pShow )
 {
-    return static_cast<cppu::OWeakObject*>(new SdXCustomPresentation( pShow, nullptr ));
+    return static_cast<cppu::OWeakObject*>(new SdXCustomPresentation( pShow ));
 }
 
 SdXCustomPresentation::SdXCustomPresentation() throw()
@@ -48,8 +48,8 @@ SdXCustomPresentation::SdXCustomPresentation() throw()
 {
 }
 
-SdXCustomPresentation::SdXCustomPresentation( SdCustomShow* pShow, SdXImpressDocument* pMyModel) throw()
-:   mpSdCustomShow(pShow), mpModel(pMyModel),
+SdXCustomPresentation::SdXCustomPresentation( SdCustomShow* pShow) throw()
+:   mpSdCustomShow(pShow), mpModel(nullptr),
     aDisposeListeners( aDisposeContainerMutex ),
     bDisposing( false )
 {
@@ -108,7 +108,7 @@ void SAL_CALL SdXCustomPresentation::insertByIndex( sal_Int32 Index, const uno::
             mpModel = pPage->GetModel();
 
         if( nullptr != mpModel && nullptr == mpSdCustomShow && mpModel->GetDoc() )
-            mpSdCustomShow = new SdCustomShow( mpModel->GetDoc() );
+            mpSdCustomShow = new SdCustomShow;
 
         mpSdCustomShow->PagesVector().insert(mpSdCustomShow->PagesVector().begin() + Index,
             static_cast<SdPage*>(pPage->GetSdrPage()));
@@ -349,7 +349,7 @@ void SAL_CALL SdXCustomPresentationAccess::insertByName( const OUString& aName, 
     SdCustomShow* pShow = pXShow->GetSdCustomShow();
     if( nullptr == pShow )
     {
-        pShow = new SdCustomShow( mrModel.GetDoc(), xContainer );
+        pShow = new SdCustomShow( xContainer );
         pXShow->SetSdCustomShow( pShow );
     }
     else

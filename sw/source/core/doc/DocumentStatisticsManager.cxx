@@ -120,7 +120,7 @@ void DocumentStatisticsManager::UpdateDocStat( bool bCompleteAsync, bool bFields
         if (!bCompleteAsync)
         {
             while (IncrementalDocStatCalculate(
-                        ::std::numeric_limits<long>::max(), bFields)) {}
+                        std::numeric_limits<long>::max(), bFields)) {}
             maStatsUpdateTimer.Stop();
         }
         else if (IncrementalDocStatCalculate(5000, bFields))
@@ -231,7 +231,7 @@ bool DocumentStatisticsManager::IncrementalDocStatCalculate(long nChars, bool bF
     return nChars < 0;
 }
 
-IMPL_LINK_TYPED( DocumentStatisticsManager, DoIdleStatsUpdate, Timer *, pTimer, void )
+IMPL_LINK( DocumentStatisticsManager, DoIdleStatsUpdate, Timer *, pTimer, void )
 {
     (void)pTimer;
     if (IncrementalDocStatCalculate(32000))

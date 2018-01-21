@@ -38,9 +38,6 @@ private:
     ::std::unique_ptr< ::dbtools::FormattedColumnValue >
                                 m_pFormattedValue;
 
-protected:
-    virtual css::uno::Sequence< css::uno::Type> _getTypes() override;
-
 public:
     DECLARE_DEFAULT_LEAF_XTOR( OPatternModel );
 
@@ -75,9 +72,6 @@ protected:
 
 class OPatternControl: public OBoundControl
 {
-protected:
-    virtual css::uno::Sequence< css::uno::Type> _getTypes() override;
-
 public:
     explicit OPatternControl(const css::uno::Reference< css::uno::XComponentContext>& _rxFactory);
 

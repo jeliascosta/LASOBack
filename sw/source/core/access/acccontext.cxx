@@ -227,9 +227,7 @@ void SwAccessibleContext::ChildrenScrolled( const SwFrame *pFrame,
                         {
                         case Action::SCROLLED:
                         case Action::SCROLLED_WITHIN:
-                            xAccImpl->ViewForwarderChanged(
-                                ::accessibility::IAccessibleViewForwarderListener::VISIBLE_AREA,
-                                GetMap() );
+                            xAccImpl->ViewForwarderChanged();
                             break;
                         case Action::SCROLLED_IN:
                             ScrolledInShape( rLower.GetDrawObject(),
@@ -237,9 +235,7 @@ void SwAccessibleContext::ChildrenScrolled( const SwFrame *pFrame,
                             break;
                         case Action::SCROLLED_OUT:
                             {
-                                xAccImpl->ViewForwarderChanged(
-                                    ::accessibility::IAccessibleViewForwarderListener::VISIBLE_AREA,
-                                    GetMap() );
+                                xAccImpl->ViewForwarderChanged();
                                 // this DisposeShape call was removed by
                                 // IAccessibility2 implementation
                                 // without giving any reason why
@@ -393,8 +389,9 @@ void SwAccessibleContext::InvalidateChildrenStates( const SwFrame* _pFrame,
     }
 }
 
-void SwAccessibleContext::DisposeChildren( const SwFrame *pFrame,
-                                           bool bRecursive )
+void SwAccessibleContext::DisposeChildren(const SwFrame *pFrame,
+                                          bool bRecursive,
+                                          bool bCanSkipInvisible)
 {
     const SwAccessibleChildSList aVisList( GetVisArea(), *pFrame, *(GetMap()) );
     SwAccessibleChildSList::const_iterator aIter( aVisList.begin() );
@@ -409,8 +406,21 @@ void SwAccessibleContext::DisposeChildren( const SwFrame *pFrame,
                 xAccImpl = GetMap()->GetContextImpl( pLower, false );
             if( xAccImpl.is() )
                 xAccImpl->Dispose( bRecursive );
-            else if( bRecursive )
-                DisposeChildren( pLower, bRecursive );
+            else
+            {
+                // it's possible that the xAccImpl *does* exist with a
+                // ref-count of 0 and blocked in its dtor in another thread -
+                // this call here could be from SwAccessibleMap dtor so
+                // remove it from any maps now!
+                GetMap()->RemoveContext(pLower);
+                // in this case the context will check with a weak_ptr
+                // that the map is still alive so it's not necessary
+                // to clear its m_pMap here.
+                if (bRecursive)
+                {
+                    DisposeChildren(pLower, bRecursive, bCanSkipInvisible);
+                }
+            }
         }
         else if ( rLower.GetDrawObject() )
         {
@@ -422,7 +432,7 @@ void SwAccessibleContext::DisposeChildren( const SwFrame *pFrame,
         }
         else if ( rLower.GetWindow() )
         {
-            DisposeChild( rLower, false );
+            DisposeChild(rLower, false, bCanSkipInvisible);
         }
         ++aIter;
     }
@@ -520,12 +530,13 @@ bool SwAccessibleContext::IsEditableState()
     return bRet;
 }
 
-SwAccessibleContext::SwAccessibleContext( SwAccessibleMap *const pMap,
+SwAccessibleContext::SwAccessibleContext(std::shared_ptr<SwAccessibleMap> const& pMap,
                                           sal_Int16 const nRole,
                                           const SwFrame *pF )
     : SwAccessibleFrame( pMap->GetVisArea().SVRect(), pF,
                          pMap->GetShell()->IsPreview() )
-    , m_pMap( pMap )
+    , m_pMap(pMap.get())
+    , m_wMap(pMap)
     , m_nClientId(0)
     , m_nRole(nRole)
     , m_isDisposing( false )
@@ -537,8 +548,16 @@ SwAccessibleContext::SwAccessibleContext( SwAccessibleMap *const pMap,
 
 SwAccessibleContext::~SwAccessibleContext()
 {
+    // must have for 2 reasons: 2. as long as this thread has SolarMutex
+    // another thread cannot destroy the SwAccessibleMap so our temporary
+    // taking a hard ref to SwAccessibleMap won't delay its destruction
     SolarMutexGuard aGuard;
-    RemoveFrameFromAccessibleMap();
+    // must check with weak_ptr that m_pMap is still alive
+    std::shared_ptr<SwAccessibleMap> pMap(m_wMap.lock());
+    if (m_isRegisteredAtAccessibleMap && GetFrame() && pMap)
+    {
+        pMap->RemoveContext( GetFrame() );
+    }
 }
 
 uno::Reference< XAccessibleContext > SAL_CALL
@@ -1032,7 +1051,7 @@ void SwAccessibleContext::ScrolledInShape( const SdrObject* ,
     }
 }
 
-void SwAccessibleContext::Dispose( bool bRecursive )
+void SwAccessibleContext::Dispose(bool bRecursive, bool bCanSkipInvisible)
 {
     SolarMutexGuard aGuard;
 
@@ -1044,7 +1063,7 @@ void SwAccessibleContext::Dispose( bool bRecursive )
 
     // dispose children
     if( bRecursive )
-        DisposeChildren( GetFrame(), bRecursive );
+        DisposeChildren(GetFrame(), bRecursive, bCanSkipInvisible);
 
     // get parent
     uno::Reference< XAccessible > xParent( GetWeakParent() );
@@ -1061,7 +1080,7 @@ void SwAccessibleContext::Dispose( bool bRecursive )
         pAcc->FireAccessibleEvent( aEvent );
     }
 
-    // set defunc state (its not required to broadcast a state changed
+    // set defunc state (it's not required to broadcast a state changed
     // event if the object is disposed afterwards)
     {
         osl::MutexGuard aDefuncStateGuard( m_Mutex );
@@ -1078,17 +1097,19 @@ void SwAccessibleContext::Dispose( bool bRecursive )
     RemoveFrameFromAccessibleMap();
     ClearFrame();
     m_pMap = nullptr;
+    m_wMap.reset();
 
     m_isDisposing = false;
 }
 
 void SwAccessibleContext::DisposeChild( const SwAccessibleChild& rChildFrameOrObj,
-                                        bool bRecursive )
+                                        bool bRecursive, bool bCanSkipInvisible )
 {
     SolarMutexGuard aGuard;
 
-    if ( IsShowing( *(GetMap()), rChildFrameOrObj ) ||
+    if ( !bCanSkipInvisible ||
          rChildFrameOrObj.AlwaysIncludeAsChild() ||
+         IsShowing( *(GetMap()), rChildFrameOrObj ) ||
          !SwAccessibleChild( GetFrame() ).IsVisibleChildrenOnly() )
     {
         // If the object could have existed before, than there is nothing to do,
@@ -1119,7 +1140,7 @@ void SwAccessibleContext::DisposeChild( const SwAccessibleChild& rChildFrameOrOb
         }
     }
     else if( bRecursive && rChildFrameOrObj.GetSwFrame() )
-        DisposeChildren( rChildFrameOrObj.GetSwFrame(), bRecursive );
+        DisposeChildren(rChildFrameOrObj.GetSwFrame(), bRecursive, bCanSkipInvisible);
 }
 
 void SwAccessibleContext::InvalidatePosOrSize( const SwRect& )
@@ -1434,8 +1455,17 @@ OUString SwAccessibleContext::GetResource( sal_uInt16 nResId,
     return sStr;
 }
 
+
+void SwAccessibleContext::ClearMapPointer()
+{
+    DBG_TESTSOLARMUTEX();
+    m_pMap = nullptr;
+    m_wMap.reset();
+}
+
 void SwAccessibleContext::RemoveFrameFromAccessibleMap()
 {
+    assert(m_refCount > 0); // must be alive to do this without using m_wMap
     if (m_isRegisteredAtAccessibleMap && GetFrame() && GetMap())
         GetMap()->RemoveContext( GetFrame() );
 }

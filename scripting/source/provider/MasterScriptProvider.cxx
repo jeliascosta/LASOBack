@@ -235,7 +235,7 @@ MasterScriptProvider::getScript( const OUString& scriptURI )
 throw ( provider::ScriptFrameworkErrorException,
         RuntimeException, std::exception )
 {
-    if ( !isValid() )
+    if ( !m_bIsValid )
     {
         throw provider::ScriptFrameworkErrorException(
             "MasterScriptProvider not initialised", Reference< XInterface >(),
@@ -304,7 +304,7 @@ throw ( provider::ScriptFrameworkErrorException,
     Reference< provider::XScript > xScript;
 
     // If the script location is in the same location context as this
-    // MSP then delete to the lanaguage provider controlled by this MSP
+    // MSP then delete to the language provider controlled by this MSP
     // ** Special case is BASIC, all calls to getScript will be handled
     // by the language script provider in the current location context
     // even if its different
@@ -389,7 +389,7 @@ OUString SAL_CALL
 MasterScriptProvider::getName()
         throw ( css::uno::RuntimeException, std::exception )
 {
-    if ( !isPkgProvider() )
+    if ( !m_bIsPkgMSP )
     {
         OUString sCtx = getContextString();
         if ( sCtx.startsWith( "vnd.sun.star.tdoc" ) )
@@ -419,11 +419,12 @@ Sequence< Reference< browse::XBrowseNode > > SAL_CALL
 MasterScriptProvider::getChildNodes()
         throw ( css::uno::RuntimeException, std::exception )
 {
-    Sequence< Reference< provider::XScriptProvider > > providers = getAllProviders();
+    if ( !providerCache() )
+        throw RuntimeException( "MasterScriptProvider::getAllProviders, cache not initialised" );
+    Sequence< Reference< provider::XScriptProvider > > providers = providerCache()->getAllProviders();
 
-    Reference< provider::XScriptProvider > pkgProv = getPkgProvider();
     sal_Int32 size = providers.getLength();
-    bool hasPkgs = pkgProv.is();
+    bool hasPkgs = m_xMSPPkg.is();
     if ( hasPkgs  )
     {
         size++;
@@ -437,7 +438,7 @@ MasterScriptProvider::getChildNodes()
 
     if ( hasPkgs  )
     {
-        children[ provIndex ].set( pkgProv, UNO_QUERY );
+        children[ provIndex ].set( m_xMSPPkg, UNO_QUERY );
 
     }
 
@@ -750,22 +751,6 @@ sal_Bool SAL_CALL MasterScriptProvider::hasElements(  ) throw ( RuntimeException
         throw RuntimeException( "hasElements not implemented!!!!" );
     }
     return false;
-}
-
-
-Sequence< Reference< provider::XScriptProvider > > SAL_CALL
-MasterScriptProvider::getAllProviders() throw ( css::uno::RuntimeException )
-{
-    if ( providerCache() )
-    {
-        return providerCache()->getAllProviders();
-    }
-    else
-    {
-        OUString errorMsg(
-            "MasterScriptProvider::getAllProviders, cache not initialised");
-        throw RuntimeException( errorMsg.concat( errorMsg ) );
-    }
 }
 
 

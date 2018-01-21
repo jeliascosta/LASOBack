@@ -159,7 +159,7 @@ private:
 
 protected:
     bool InitGLEW();
-    void InitGLEWDebugging();
+    static void InitGLEWDebugging();
     static void InitChildWindow(SystemChildWindow *pChildWindow);
     static void BuffersSwapped();
     virtual GLWindow& getModifiableOpenGLWindow() = 0;

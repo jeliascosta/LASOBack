@@ -293,7 +293,7 @@ OUString Model::getNodeDisplayName( const XNode_t& xNode,
             OUString sContent = xNode->getNodeValue();
             if( bDetail || ! lcl_isWhitespace( sContent ) )
             {
-                aBuffer = aBuffer + "\"" + Convert::collapseWhitespace( sContent ) + "\"";
+                aBuffer.append("\"" + Convert::collapseWhitespace( sContent ) + "\"");
             }
         }
         break;
@@ -609,7 +609,7 @@ Model::XNode_t Model::renameNode( const XNode_t& xNode,
     if( xNode->getNodeName() == sName )
         return xNode;
 
-    // refuse to change name if its an attribute, and the name is already used
+    // refuse to change name if it's an attribute, and the name is already used
     if( xNode->getNodeType() == NodeType_ATTRIBUTE_NODE
         && xNode->getParentNode().is()
         && Reference<XElement>(xNode->getParentNode(), UNO_QUERY_THROW)->hasAttribute( sName ) )
@@ -759,7 +759,7 @@ static OUString lcl_serializeForDisplay( const Reference< XAttr >& _rxAttrNode )
         if ( sValue.indexOf( nQuote ) >= 0 )
             nQuote = '\'';
 
-        sResult = _rxAttrNode->getName() + "=" + OUString(nQuote) + sValue + OUString(nQuote) + " ";
+        sResult = _rxAttrNode->getName() + "=" + OUStringLiteral1(nQuote) + sValue + OUStringLiteral1(nQuote) + " ";
     }
     return sResult;
 }
@@ -866,7 +866,7 @@ static OUString lcl_serializeForDisplay( const Reference<XXPathObject>& xResult 
         break;
 
     case XPathObjectType_XPATH_STRING:
-        aBuffer = aBuffer + "\"" + xResult->getString() + "\"";
+        aBuffer.append("\"" + xResult->getString() + "\"");
         break;
 
     case XPathObjectType_XPATH_NODESET:

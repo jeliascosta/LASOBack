@@ -54,17 +54,20 @@
 
 #include <IDocumentContentOperations.hxx>
 
+#define ED_POS              2
+#define ED_FORMULA          3
+
 SFX_IMPL_POS_CHILDWINDOW_WITHID( SwInputChild, FN_EDIT_FORMULA, SFX_OBJECTBAR_OBJECT )
 
 SwInputWindow::SwInputWindow(vcl::Window* pParent, SfxDispatcher* pDispatcher)
-    : ToolBox(  pParent ,   SW_RES( RID_TBX_FORMULA )),
-    aPos(       VclPtr<Edit>::Create(this,       SW_RES(ED_POS))),
-    aEdit(      VclPtr<InputEdit>::Create(this, WB_3DLOOK|WB_TABSTOP|WB_BORDER|WB_NOHIDESELECTION)),
-    aPopMenu(   SW_RES(MN_CALC_POPUP)),
-    pMgr(nullptr),
-    pWrtShell(nullptr),
-    pView(nullptr),
-    aAktTableName(aEmptyOUStr)
+    : ToolBox(pParent, WB_3DLOOK|WB_BORDER)
+    , aPos(VclPtr<Edit>::Create(this, WB_3DLOOK|WB_CENTER|WB_BORDER|WB_READONLY))
+    , aEdit(VclPtr<InputEdit>::Create(this, WB_3DLOOK|WB_TABSTOP|WB_BORDER|WB_NOHIDESELECTION))
+    , aPopMenu(SW_RES(MN_CALC_POPUP))
+    , pMgr(nullptr)
+    , pWrtShell(nullptr)
+    , pView(nullptr)
+    , aAktTableName(aEmptyOUStr)
     , m_bDoesUndo(true)
     , m_bResetUndo(false)
     , m_bCallUndo(false)
@@ -72,12 +75,21 @@ SwInputWindow::SwInputWindow(vcl::Window* pParent, SfxDispatcher* pDispatcher)
     bFirst = true;
     bActive = bIsTable = bDelSel = false;
 
-    FreeResource();
+    aEdit->SetSizePixel(aEdit->CalcMinimumSize());
+    aPos->SetSizePixel(aPos->LogicToPixel(Size(45, 11), MapMode(MapUnit::MapAppFont)));
 
-    aEdit->SetSizePixel( aEdit->CalcMinimumSize() );
-
-    SfxImageManager* pManager = SfxImageManager::GetImageManager( *SW_MOD() );
+    SfxImageManager* pManager = SfxImageManager::GetImageManager(*SW_MOD());
     pManager->RegisterToolBox(this);
+    InsertItem(FN_FORMULA_CALC, pManager->GetImage(FN_FORMULA_CALC),
+               SW_RESSTR(STR_FORMULA_CALC));
+    InsertItem(FN_FORMULA_CANCEL, pManager->GetImage(FN_FORMULA_CANCEL),
+               SW_RESSTR(STR_FORMULA_CANCEL));
+    InsertItem(FN_FORMULA_APPLY, pManager->GetImage(FN_FORMULA_APPLY),
+               SW_RESSTR(STR_FORMULA_APPLY));
+
+    SetHelpId(FN_FORMULA_CALC, HID_TBX_FORMULA_CALC);
+    SetHelpId(FN_FORMULA_CANCEL, HID_TBX_FORMULA_CANCEL);
+    SetHelpId(FN_FORMULA_APPLY, HID_TBX_FORMULA_APPLY);
 
     SwView *pDispatcherView = dynamic_cast<SwView*>(pDispatcher ? pDispatcher->GetFrame()->GetViewShell() : nullptr);
     SwView* pActiveView = ::GetActiveView();
@@ -85,20 +97,16 @@ SwInputWindow::SwInputWindow(vcl::Window* pParent, SfxDispatcher* pDispatcher)
         pView = pActiveView;
     pWrtShell = pView ? pView->GetWrtShellPtr() : nullptr;
 
-    InsertWindow( ED_POS, aPos.get(), ToolBoxItemBits::NONE, 0);
+    InsertWindow(ED_POS, aPos.get(), ToolBoxItemBits::NONE, 0);
     SetItemText(ED_POS, SW_RESSTR(STR_ACCESS_FORMULA_TYPE));
     aPos->SetAccessibleName(SW_RESSTR(STR_ACCESS_FORMULA_TYPE));
     SetAccessibleName(SW_RESSTR(STR_ACCESS_FORMULA_TOOLBAR));
     InsertSeparator ( 1 );
     InsertSeparator ();
-    InsertWindow( ED_FORMULA, aEdit.get());
+    InsertWindow(ED_FORMULA, aEdit.get());
     SetItemText(ED_FORMULA, SW_RESSTR(STR_ACCESS_FORMULA_TEXT));
     aEdit->SetAccessibleName(SW_RESSTR(STR_ACCESS_FORMULA_TEXT));
     SetHelpId(ED_FORMULA, HID_EDIT_FORMULA);
-
-    SetItemImage( FN_FORMULA_CALC,   pManager->GetImage(FN_FORMULA_CALC   ));
-    SetItemImage( FN_FORMULA_CANCEL, pManager->GetImage(FN_FORMULA_CANCEL ));
-    SetItemImage( FN_FORMULA_APPLY,  pManager->GetImage(FN_FORMULA_APPLY  ));
 
     SetItemBits( FN_FORMULA_CALC, GetItemBits( FN_FORMULA_CALC ) | ToolBoxItemBits::DROPDOWNONLY );
     SetDropdownClickHdl( LINK( this, SwInputWindow, DropdownClickHdl ));
@@ -124,7 +132,7 @@ SwInputWindow::SwInputWindow(vcl::Window* pParent, SfxDispatcher* pDispatcher)
     aPos->SetPosSizePixel( aPosPos, aPosSize );
     aEdit->SetPosSizePixel( aEditPos, aEditSize );
 
-    aPopMenu.SetSelectHdl(LINK( this, SwInputWindow, MenuHdl ));
+    aPopMenu->SetSelectHdl(LINK( this, SwInputWindow, MenuHdl ));
 }
 
 SwInputWindow::~SwInputWindow()
@@ -254,9 +262,9 @@ void SwInputWindow::ShowWin()
 
                 if( !pWrtShell->SwCursorShell::HasSelection() )
                 {
-                    pWrtShell->MoveSection( fnSectionCurr, fnSectionStart );
+                    pWrtShell->MoveSection( GoCurrSection, fnSectionStart );
                     pWrtShell->SetMark();
-                    pWrtShell->MoveSection( fnSectionCurr, fnSectionEnd );
+                    pWrtShell->MoveSection( GoCurrSection, fnSectionEnd );
                 }
                 if( pWrtShell->SwCursorShell::HasSelection() )
                 {
@@ -302,7 +310,7 @@ void SwInputWindow::ShowWin()
     ToolBox::Show();
 }
 
-IMPL_LINK_TYPED( SwInputWindow, MenuHdl, Menu *, pMenu, bool )
+IMPL_LINK( SwInputWindow, MenuHdl, Menu *, pMenu, bool )
 {
 static const char * const aStrArr[] = {
     sCalc_Phd,
@@ -342,7 +350,7 @@ static const char * const aStrArr[] = {
     return false;
 }
 
-IMPL_LINK_NOARG_TYPED(SwInputWindow, DropdownClickHdl, ToolBox *, void)
+IMPL_LINK_NOARG(SwInputWindow, DropdownClickHdl, ToolBox *, void)
 {
     sal_uInt16 nCurID = GetCurItemId();
     EndSelection(); // reset back CurItemId !
@@ -350,7 +358,7 @@ IMPL_LINK_NOARG_TYPED(SwInputWindow, DropdownClickHdl, ToolBox *, void)
     {
         case FN_FORMULA_CALC :
         {
-            aPopMenu.Execute( this, GetItemRect( FN_FORMULA_CALC ), PopupMenuFlags::NoMouseUpClose );
+            aPopMenu->Execute( this, GetItemRect( FN_FORMULA_CALC ), PopupMenuFlags::NoMouseUpClose );
             break;
         default:
             break;
@@ -421,7 +429,7 @@ void  SwInputWindow::CancelFormula()
 const sal_Unicode CH_LRE = 0x202a;
 const sal_Unicode CH_PDF = 0x202c;
 
-IMPL_LINK_TYPED( SwInputWindow, SelTableCellsNotify, SwWrtShell&, rCaller, void )
+IMPL_LINK( SwInputWindow, SelTableCellsNotify, SwWrtShell&, rCaller, void )
 {
     if(bIsTable)
     {
@@ -433,10 +441,8 @@ IMPL_LINK_TYPED( SwInputWindow, SelTableCellsNotify, SwWrtShell&, rCaller, void 
 
         aEdit->UpdateRange( sBoxNms, sTableNm );
 
-        OUString sNew;
-        sNew += OUString(CH_LRE);
-        sNew += aEdit->GetText();
-        sNew += OUString(CH_PDF);
+        OUString sNew = OUStringLiteral1(CH_LRE) + aEdit->GetText()
+            + OUStringLiteral1(CH_PDF);
 
         if( sNew != sOldFormula )
         {
@@ -446,9 +452,9 @@ IMPL_LINK_TYPED( SwInputWindow, SelTableCellsNotify, SwWrtShell&, rCaller, void 
             pWrtShell->StartAllAction();
 
             SwPaM aPam( *pWrtShell->GetStackCursor()->GetPoint() );
-            aPam.Move( fnMoveBackward, fnGoSection );
+            aPam.Move( fnMoveBackward, GoInSection );
             aPam.SetMark();
-            aPam.Move( fnMoveForward, fnGoSection );
+            aPam.Move( fnMoveForward, GoInSection );
 
             IDocumentContentOperations& rIDCO = pWrtShell->getIDocumentContentOperations();
             rIDCO.DeleteRange( aPam );
@@ -477,16 +483,14 @@ void SwInputWindow::SetFormula( const OUString& rFormula )
     bDelSel = true;
 }
 
-IMPL_LINK_NOARG_TYPED(SwInputWindow, ModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(SwInputWindow, ModifyHdl, Edit&, void)
 {
     if (bIsTable && m_bResetUndo)
     {
         pWrtShell->StartAllAction();
         DelBoxContent();
-        OUString sNew;
-        sNew += OUString(CH_LRE);
-        sNew += aEdit->GetText();
-        sNew += OUString(CH_PDF);
+        OUString sNew = OUStringLiteral1(CH_LRE) + aEdit->GetText()
+            + OUStringLiteral1(CH_PDF);
         pWrtShell->SwEditShell::Insert2( sNew );
         pWrtShell->EndAllAction();
         sOldFormula = sNew;
@@ -501,9 +505,9 @@ void SwInputWindow::DelBoxContent()
         pWrtShell->ClearMark();
         pWrtShell->Pop( false );
         pWrtShell->Push();
-        pWrtShell->MoveSection( fnSectionCurr, fnSectionStart );
+        pWrtShell->MoveSection( GoCurrSection, fnSectionStart );
         pWrtShell->SetMark();
-        pWrtShell->MoveSection( fnSectionCurr, fnSectionEnd );
+        pWrtShell->MoveSection( GoCurrSection, fnSectionEnd );
         pWrtShell->SwEditShell::Delete();
         pWrtShell->EndAllAction();
     }

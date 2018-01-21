@@ -57,7 +57,7 @@ public:
     virtual void SAL_CALL setFastPropertyValue_NoBroadcast(sal_Int32 nHandle, const css::uno::Any& rValue) throw ( css::uno::Exception, std::exception) override;
 
     virtual sal_Bool SAL_CALL convertFastPropertyValue(css::uno::Any& rConvertedValue, css::uno::Any& rOldValue, sal_Int32 nHandle, const css::uno::Any& rValue )
-        throw(css::lang::IllegalArgumentException) override;
+        throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     virtual css::uno::Any getPropertyDefaultByHandle( sal_Int32 _nHandle ) const override;
 
@@ -81,8 +81,6 @@ public:
     using OControlModel::getFastPropertyValue;
 
 protected:
-    void _reset();
-
     virtual css::uno::Reference< css::util::XCloneable > SAL_CALL createClone(  ) throw (css::uno::RuntimeException, std::exception) override;
 };
 

@@ -34,7 +34,6 @@
 #include <vcl/settings.hxx>
 #include <vcl/decoview.hxx>
 #include <rtl/ustrbuf.hxx>
-#include <unx/saldata.hxx>
 
 /**
   Conversion function between VCL ControlState together with
@@ -93,7 +92,6 @@ bool KDESalGraphics::IsNativeControlSupported( ControlType type, ControlPart par
         case ControlType::Frame:
         case ControlType::Scrollbar:
         case ControlType::WindowBackground:
-        case ControlType::Groupbox:
         case ControlType::Fixedline:
             return true;
 
@@ -116,7 +114,7 @@ bool KDESalGraphics::IsNativeControlSupported( ControlType type, ControlPart par
 /// helper drawing methods
 namespace
 {
-    void draw( QStyle::ControlElement element, QStyleOption* option, QImage* image, QStyle::State state, QRect rect = QRect())
+    void draw( QStyle::ControlElement element, QStyleOption* option, QImage* image, QStyle::State const & state, QRect rect = QRect())
     {
         option->state |= state;
         option->rect = !rect.isNull() ? rect : image->rect();
@@ -125,7 +123,7 @@ namespace
         QApplication::style()->drawControl(element, option, &painter);
     }
 
-    void draw( QStyle::PrimitiveElement element, QStyleOption* option, QImage* image, QStyle::State state, QRect rect = QRect())
+    void draw( QStyle::PrimitiveElement element, QStyleOption* option, QImage* image, QStyle::State const & state, QRect rect = QRect())
     {
         option->state |= state;
         option->rect = !rect.isNull() ? rect : image->rect();
@@ -134,7 +132,7 @@ namespace
         QApplication::style()->drawPrimitive(element, option, &painter);
     }
 
-    void draw( QStyle::ComplexControl element, QStyleOptionComplex* option, QImage* image, QStyle::State state )
+    void draw( QStyle::ComplexControl element, QStyleOptionComplex* option, QImage* image, QStyle::State const & state )
     {
         option->state |= state;
         option->rect = image->rect();
@@ -143,7 +141,7 @@ namespace
         QApplication::style()->drawComplexControl(element, option, &painter);
     }
 
-    void lcl_drawFrame(QStyle::PrimitiveElement element, QImage* image, QStyle::State state)
+    void lcl_drawFrame(QStyle::PrimitiveElement element, QImage* image, QStyle::State const & state)
     {
     #if ( QT_VERSION >= QT_VERSION_CHECK( 4, 5, 0 ) )
         QStyleOptionFrameV3 option;
@@ -222,13 +220,46 @@ bool KDESalGraphics::drawNativeControl( ControlType type, ControlPart part,
     {
         m_image.reset(new QImage( widgetRect.width(), widgetRect.height(), QImage::Format_ARGB32 ) );
     }
-    m_image->fill(KApplication::palette().color(QPalette::Window).rgb());
 
-    QRegion* clipRegion = nullptr;
+    // Default image color - just once
+    switch (type)
+    {
+        case ControlType::MenuPopup:
+            if( part == ControlPart::MenuItemCheckMark || part == ControlPart::MenuItemRadioMark )
+            {
+                // it is necessary to fill the background transparently first, as this
+                // is painted after menuitem highlight, otherwise there would be a grey area
+                m_image->fill( Qt::transparent );
+                break;
+            }
+            SAL_FALLTHROUGH; // QPalette::Window
+        case ControlType::Menubar:
+        case ControlType::WindowBackground:
+            m_image->fill( KApplication::palette().color(QPalette::Window).rgb() );
+            break;
+        case ControlType::Tooltip:
+            m_image->fill(KApplication::palette().color(QPalette::ToolTipBase).rgb());
+            break;
+        case ControlType::Pushbutton:
+            m_image->fill(KApplication::palette().color(QPalette::Button).rgb());
+            break;
+        case ControlType::Scrollbar:
+            if ((part == ControlPart::DrawBackgroundVert)
+                || (part == ControlPart::DrawBackgroundHorz))
+            {
+                m_image->fill( KApplication::palette().color(QPalette::Window).rgb() );
+                break;
+            }
+            SAL_FALLTHROUGH; // Qt::transparent
+        default:
+            m_image->fill( Qt::transparent );
+            break;
+    }
+
+    QRegion* localClipRegion = nullptr;
 
     if (type == ControlType::Pushbutton)
     {
-        m_image->fill( Qt::transparent );
         QStyleOptionButton option;
         draw( QStyle::CE_PushButton, &option, m_image.get(),
               vclStateValue2StateFlag(nControlState, value) );
@@ -292,7 +323,7 @@ bool KDESalGraphics::drawNativeControl( ControlType type, ControlPart part,
             rect.moveCenter( center );
             // don't paint over popup frame border (like the hack above, but here it can be simpler)
             int fw = QApplication::style()->pixelMetric( QStyle::PM_MenuPanelWidth );
-            clipRegion = new QRegion( rect.translated( widgetRect.topLeft()).adjusted( fw, 0, -fw, 0 ));
+            localClipRegion = new QRegion(rect.translated(widgetRect.topLeft()).adjusted(fw, 0, -fw, 0));
             draw( QStyle::CE_MenuItem, &option, m_image.get(),
                   vclStateValue2StateFlag(nControlState, value), rect );
         }
@@ -311,9 +342,11 @@ bool KDESalGraphics::drawNativeControl( ControlType type, ControlPart part,
             QRect menuItemRect( region2QRect( menuVal->maItemRect ));
             QRect rect( menuItemRect.topLeft() - widgetRect.topLeft(),
                 widgetRect.size().expandedTo( menuItemRect.size()));
-            m_image->fill( Qt::transparent );
+            // checkboxes are always displayed next to images in menues, so are never centered
+            const int focus_size = QApplication::style()->pixelMetric( QStyle::PM_FocusFrameHMargin );
+            rect.moveTo( -focus_size, rect.y() );
             draw( QStyle::CE_MenuItem, &option, m_image.get(),
-                  vclStateValue2StateFlag(nControlState, value), rect );
+                  vclStateValue2StateFlag(nControlState & ~ControlState::PRESSED, value), rect );
         }
         else if( part == ControlPart::Entire )
         {
@@ -330,7 +363,6 @@ bool KDESalGraphics::drawNativeControl( ControlType type, ControlPart part,
     }
     else if ( (type == ControlType::Toolbar) && (part == ControlPart::Button) )
     {
-        m_image->fill( Qt::transparent );
         QStyleOptionToolButton option;
 
         option.arrowType = Qt::NoArrow;
@@ -356,7 +388,7 @@ bool KDESalGraphics::drawNativeControl( ControlType type, ControlPart part,
     {   // reduce paint area only to the handle area
         const int width = QApplication::style()->pixelMetric(QStyle::PM_ToolBarHandleExtent);
         QRect rect( 0, 0, width, widgetRect.height());
-        clipRegion = new QRegion( widgetRect.x(), widgetRect.y(), width, widgetRect.height());
+        localClipRegion = new QRegion(widgetRect.x(), widgetRect.y(), width, widgetRect.height());
 
         QStyleOption option;
         option.state = QStyle::State_Horizontal;
@@ -398,7 +430,6 @@ bool KDESalGraphics::drawNativeControl( ControlType type, ControlPart part,
                       vclStateValue2StateFlag(nControlState, value) );
                 break;
             case ControlPart::ButtonDown:
-                m_image->fill( Qt::transparent );
                 option.subControls = QStyle::SC_ComboBoxArrow;
                 draw( QStyle::CC_ComboBox, &option, m_image.get(),
                       vclStateValue2StateFlag(nControlState, value) );
@@ -409,7 +440,6 @@ bool KDESalGraphics::drawNativeControl( ControlType type, ControlPart part,
     }
     else if (type == ControlType::ListNode)
     {
-        m_image->fill( Qt::transparent );
         QStyleOption option;
         option.state = QStyle::State_Item | QStyle::State_Children;
 
@@ -421,7 +451,6 @@ bool KDESalGraphics::drawNativeControl( ControlType type, ControlPart part,
     }
     else if (type == ControlType::Checkbox)
     {
-        m_image->fill( Qt::transparent );
         QStyleOptionButton option;
         draw( QStyle::CE_CheckBox, &option, m_image.get(),
                vclStateValue2StateFlag(nControlState, value) );
@@ -482,15 +511,8 @@ bool KDESalGraphics::drawNativeControl( ControlType type, ControlPart part,
         draw( QStyle::CC_SpinBox, &option, m_image.get(),
               vclStateValue2StateFlag(nControlState, value) );
     }
-    else if (type == ControlType::Groupbox)
-    {
-        QStyleOptionGroupBox option;
-        draw( QStyle::CC_GroupBox, &option, m_image.get(),
-              vclStateValue2StateFlag(nControlState, value) );
-    }
     else if (type == ControlType::Radiobutton)
     {
-        m_image->fill( Qt::transparent );
         QStyleOptionButton option;
         draw( QStyle::CE_RadioButton, &option, m_image.get(),
               vclStateValue2StateFlag(nControlState, value) );
@@ -508,11 +530,11 @@ bool KDESalGraphics::drawNativeControl( ControlType type, ControlPart part,
 
         // draw just the border, see http://qa.openoffice.org/issues/show_bug.cgi?id=107945
         int fw = static_cast< KDESalInstance* >(GetSalData()->m_pInstance)->getFrameWidth();
-        clipRegion = new QRegion( QRegion( widgetRect ).subtracted( widgetRect.adjusted( fw, fw, -fw, -fw )));
+        localClipRegion = new QRegion(QRegion(widgetRect).subtracted(widgetRect.adjusted(fw, fw, -fw, -fw)));
     }
     else if (type == ControlType::WindowBackground)
     {
-        m_image->fill(KApplication::palette().color(QPalette::Window).rgb());
+        // Nothing to do - see "Default image color" switch ^^
     }
     else if (type == ControlType::Fixedline)
     {
@@ -568,10 +590,10 @@ bool KDESalGraphics::drawNativeControl( ControlType type, ControlPart part,
         // See XRegionToQRegion() comment for a small catch (although not real hopefully).
         QPixmap destPixmap = QPixmap::fromX11Pixmap( GetDrawable(), QPixmap::ExplicitlyShared );
         QPainter paint( &destPixmap );
-        if( clipRegion && mpClipRegion )
-            paint.setClipRegion( clipRegion->intersected( XRegionToQRegion( mpClipRegion )));
-        else if( clipRegion )
-            paint.setClipRegion( *clipRegion );
+        if (localClipRegion && mpClipRegion)
+            paint.setClipRegion(localClipRegion->intersected(XRegionToQRegion(mpClipRegion)));
+        else if (localClipRegion)
+            paint.setClipRegion(*localClipRegion);
         else if( mpClipRegion )
             paint.setClipRegion( XRegionToQRegion( mpClipRegion ));
         paint.drawImage( widgetRect.left(), widgetRect.top(), *m_image,
@@ -582,10 +604,10 @@ bool KDESalGraphics::drawNativeControl( ControlType type, ControlPart part,
         if( gc )
         {
             Region pTempClipRegion = NULL;
-            if( clipRegion )
+            if (localClipRegion)
             {
                 pTempClipRegion = XCreateRegion();
-                foreach( const QRect& r, clipRegion->rects())
+                foreach(const QRect& r, localClipRegion->rects())
                 {
                     XRectangle xr;
                     xr.x = r.x();
@@ -617,7 +639,7 @@ bool KDESalGraphics::drawNativeControl( ControlType type, ControlPart part,
             returnVal = false;
 #endif
     }
-    delete clipRegion;
+    delete localClipRegion;
     return returnVal;
 }
 

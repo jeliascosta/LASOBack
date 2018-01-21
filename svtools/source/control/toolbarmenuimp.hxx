@@ -25,7 +25,7 @@
 #include <vcl/menu.hxx>
 
 #include <cppuhelper/compbase.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 
 #include <com/sun/star/frame/XFrame.hpp>
 #include <com/sun/star/accessibility/XAccessible.hpp>
@@ -39,8 +39,6 @@
 
 #include <memory>
 #include <vector>
-
-#include <svtools/framestatuslistener.hxx>
 
 namespace svtools {
 
@@ -107,13 +105,13 @@ typedef ::cppu::WeakComponentImplHelper<
     ToolbarMenuAccComponentBase;
 
 class ToolbarMenuAcc :
-    public ::comphelper::OBaseMutex,
+    public ::cppu::BaseMutex,
     public ToolbarMenuAccComponentBase
 {
 public:
 
     explicit ToolbarMenuAcc( ToolbarMenu_Impl& rParent );
-    virtual ~ToolbarMenuAcc();
+    virtual ~ToolbarMenuAcc() override;
 
     void                FireAccessibleEvent( short nEventId, const css::uno::Any& rOldValue, const css::uno::Any& rNewValue );
     bool                HasAccessibleListeners() const { return( mxEventListeners.size() > 0 ); }
@@ -159,15 +157,13 @@ public:
     virtual css::uno::Reference< css::accessibility::XAccessible > SAL_CALL getSelectedAccessibleChild( sal_Int32 nSelectedChildIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL deselectAccessibleChild( sal_Int32 nSelectedChildIndex ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception) override;
 
-    DECL_LINK_TYPED( WindowEventListener, VclWindowEvent&, void );
+    DECL_LINK( WindowEventListener, VclWindowEvent&, void );
 
 private:
     EventListenerVector mxEventListeners;
     ToolbarMenu_Impl* mpParent;
     /// The current FOCUSED state.
     bool mbIsFocused;
-
-    void ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent );
 
     /** Tell all listeners that the object is dying.  This callback is
         usually called from the WeakComponentImplHelper class.
@@ -188,12 +184,12 @@ typedef ::cppu::WeakComponentImplHelper< css::accessibility::XAccessible,
                                                      css::accessibility::XAccessibleContext,
                                                      css::accessibility::XAccessibleComponent > ToolbarMenuEntryAccBase;
 
-class ToolbarMenuEntryAcc : public ::comphelper::OBaseMutex,
+class ToolbarMenuEntryAcc : public ::cppu::BaseMutex,
                             public ToolbarMenuEntryAccBase
 {
 public:
     explicit ToolbarMenuEntryAcc( ToolbarMenuEntry* pParent );
-    virtual ~ToolbarMenuEntryAcc();
+    virtual ~ToolbarMenuEntryAcc() override;
 
     // XAccessible
     virtual css::uno::Reference< css::accessibility::XAccessibleContext > SAL_CALL getAccessibleContext(  ) throw (css::uno::RuntimeException, std::exception) override;
@@ -241,8 +237,6 @@ struct ToolbarMenu_Impl
 {
     ToolbarMenu& mrMenu;
 
-    css::uno::Reference< css::frame::XFrame >              mxFrame;
-    rtl::Reference< svt::FrameStatusListener >             mxStatusListener;
     rtl::Reference< ToolbarMenuAcc >                       mxAccessible;
     css::uno::Reference< css::accessibility::XAccessible > mxOldSelection;
 
@@ -260,13 +254,12 @@ struct ToolbarMenu_Impl
 
     Link<ToolbarMenu*,void>          maSelectHdl;
 
-    ToolbarMenu_Impl( ToolbarMenu& rMenu, const css::uno::Reference< css::frame::XFrame >& xFrame );
+    explicit ToolbarMenu_Impl( ToolbarMenu& rMenu );
     ~ToolbarMenu_Impl();
 
     void setAccessible( ToolbarMenuAcc* pAccessible );
 
     void fireAccessibleEvent( short nEventId, const css::uno::Any& rOldValue, const css::uno::Any& rNewValue );
-    bool hasAccessibleListeners();
 
     sal_Int32 getAccessibleChildCount() throw (css::uno::RuntimeException);
     css::uno::Reference< css::accessibility::XAccessible > getAccessibleChild( sal_Int32 index ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException);

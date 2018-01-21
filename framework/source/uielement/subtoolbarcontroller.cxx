@@ -48,7 +48,7 @@ class SubToolBarController : public ToolBarBase
     void disposeUIElement();
 public:
     explicit SubToolBarController( const css::uno::Sequence< css::uno::Any >& rxArgs );
-    virtual ~SubToolBarController();
+    virtual ~SubToolBarController() override;
 
     // XInitialization
     virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& rxArgs ) throw ( css::uno::Exception, css::uno::RuntimeException, std::exception ) override;
@@ -240,10 +240,10 @@ css::uno::Reference< css::awt::XWindow > SubToolBarController::createPopupWindow
                 disposeUIElement();
                 m_xUIElement = xUIElement;
 
-                vcl::Window* pTbxWindow = VCLUnoHelper::GetWindow( xSubToolBar );
+                VclPtr<vcl::Window> pTbxWindow = VCLUnoHelper::GetWindow( xSubToolBar );
                 if ( pTbxWindow && pTbxWindow->GetType() == WINDOW_TOOLBOX )
                 {
-                    ToolBox* pToolBar = static_cast< ToolBox* >( pTbxWindow );
+                    ToolBox* pToolBar = static_cast< ToolBox* >( pTbxWindow.get() );
                     pToolBar->SetParent( pToolBox );
                     // calc and set size for popup mode
                     Size aSize = pToolBar->CalcPopupWindowSizePixel();
@@ -291,7 +291,13 @@ void SubToolBarController::updateImage()
         sal_uInt16 nId = 0;
         if ( getToolboxId( nId, &pToolBox ) )
         {
-            Image aImage = vcl::CommandInfoProvider::Instance().GetImageForCommand( m_aLastCommand, pToolBox->GetToolboxButtonSize() == TOOLBOX_BUTTONSIZE_LARGE, getFrameInterface() );
+            vcl::ImageType eImageType = vcl::ImageType::Size16;
+            if (pToolBox->GetToolboxButtonSize() == ToolBoxButtonSize::Large)
+                eImageType = vcl::ImageType::Size26;
+            else if (pToolBox->GetToolboxButtonSize() == ToolBoxButtonSize::Size32)
+                eImageType = vcl::ImageType::Size32;
+
+            Image aImage = vcl::CommandInfoProvider::Instance().GetImageForCommand(m_aLastCommand, getFrameInterface(), eImageType);
             if ( !!aImage )
                 pToolBox->SetItemImage( nId, aImage );
         }
@@ -375,7 +381,7 @@ void SubToolBarController::endPopupMode( const css::awt::EndPopupModeEvent& e )
                 OUString aPersistentString( "Persistent" );
                 try
                 {
-                    vcl::Window*  pTbxWindow = VCLUnoHelper::GetWindow( xSubToolBar );
+                    VclPtr<vcl::Window> pTbxWindow = VCLUnoHelper::GetWindow( xSubToolBar );
                     if ( pTbxWindow && pTbxWindow->GetType() == WINDOW_TOOLBOX )
                     {
                         css::uno::Any a = xProp->getPropertyValue( aPersistentString );
@@ -450,8 +456,7 @@ sal_Bool SubToolBarController::supportsService( const OUString& rServiceName )
 css::uno::Sequence< OUString > SubToolBarController::getSupportedServiceNames()
     throw ( css::uno::RuntimeException )
 {
-    css::uno::Sequence<OUString> aRet { "com.sun.star.frame.ToolbarController" };
-    return aRet;
+    return {"com.sun.star.frame.ToolbarController"};
 }
 
 extern "C" SAL_DLLPUBLIC_EXPORT css::uno::XInterface * SAL_CALL

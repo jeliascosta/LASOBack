@@ -215,11 +215,13 @@ void TextObjectBar::GetAttrState( SfxItemSet& rSet )
                     {
                         SvxFontHeightItem aFontItem = dynamic_cast<const SvxFontHeightItem&>(*pI);
                         aFontItem.SetHeight(aFontItem.GetHeight(), stretchX, aFontItem.GetPropUnit());
-                        aAttrSet.Put( aFontItem, nWhich );
+                        aFontItem.SetWhich(nWhich);
+                        aAttrSet.Put( aFontItem );
                     }
                     else
                     {
-                        aAttrSet.Put( *pI, nWhich );
+                        std::unique_ptr<SfxPoolItem> pNewItem(pI->CloneSetWhich(nWhich));
+                        aAttrSet.Put( *pNewItem );
                     }
                 }
                 else
@@ -254,7 +256,7 @@ void TextObjectBar::GetAttrState( SfxItemSet& rSet )
 
                 //fdo#78151 it doesn't make sense to promote or demote outline levels in master view.
                 const DrawViewShell* pDrawViewShell = dynamic_cast< DrawViewShell* >(mpViewShell);
-                const bool bInMasterView = pDrawViewShell && pDrawViewShell->GetEditMode() == EM_MASTERPAGE;
+                const bool bInMasterView = pDrawViewShell && pDrawViewShell->GetEditMode() == EditMode::MasterPage;
 
                 if (!bInMasterView)
                 {
@@ -581,9 +583,9 @@ void TextObjectBar::GetAttrState( SfxItemSet& rSet )
     SvxEscapement eEsc = (SvxEscapement ) static_cast<const SvxEscapementItem&>(
                     aAttrSet.Get( EE_CHAR_ESCAPEMENT ) ).GetEnumValue();
 
-    if( eEsc == SVX_ESCAPEMENT_SUPERSCRIPT )
+    if( eEsc == SvxEscapement::Superscript )
         rSet.Put( SfxBoolItem( SID_SET_SUPER_SCRIPT, true ) );
-    else if( eEsc == SVX_ESCAPEMENT_SUBSCRIPT )
+    else if( eEsc == SvxEscapement::Subscript )
         rSet.Put( SfxBoolItem( SID_SET_SUB_SCRIPT, true ) );
 }
 

@@ -26,7 +26,6 @@
 
 #include <cppcanvas/basegfxfactory.hxx>
 
-#include <comphelper/optional.hxx>
 #include <comphelper/make_shared_from_uno.hxx>
 
 #include <com/sun/star/rendering/XIntegerBitmap.hpp>
@@ -95,7 +94,7 @@ class PluginSlideChange: public SlideChangeBase
     uno::Reference<presentation::XTransition> mxTransition;
     UnoViewSharedPtr mpView;
 
-    TransitionViewPair( uno::Reference<presentation::XTransition> xTransition, const UnoViewSharedPtr& rView )
+    TransitionViewPair( uno::Reference<presentation::XTransition> const & xTransition, const UnoViewSharedPtr& rView )
     {
         mxTransition = xTransition;
         mpView = rView;
@@ -152,7 +151,7 @@ public:
         mbSuccess = true;
     }
 
-    virtual ~PluginSlideChange()
+    virtual ~PluginSlideChange() override
     {
         mxFactory.clear();
 
@@ -941,7 +940,7 @@ NumberAnimationSharedPtr TransitionFactory::createSlideTransition(
             createPluginTransition(
                 nTransitionType,
                 nTransitionSubType,
-                comphelper::make_optional(pLeavingSlide),
+                boost::make_optional(pLeavingSlide),
                 pEnteringSlide,
                 rViewContainer,
                 rScreenUpdater,
@@ -1037,7 +1036,7 @@ NumberAnimationSharedPtr TransitionFactory::createSlideTransition(
                     case animations::TransitionType::PUSHWIPE:
                     {
                         return createPushWipeTransition(
-                            comphelper::make_optional(pLeavingSlide),
+                            boost::make_optional(pLeavingSlide),
                             pEnteringSlide,
                             rViewContainer,
                             rScreenUpdater,
@@ -1051,7 +1050,7 @@ NumberAnimationSharedPtr TransitionFactory::createSlideTransition(
                     case animations::TransitionType::SLIDEWIPE:
                     {
                         return createSlideWipeTransition(
-                            comphelper::make_optional(pLeavingSlide),
+                            boost::make_optional(pLeavingSlide),
                             pEnteringSlide,
                             rViewContainer,
                             rScreenUpdater,

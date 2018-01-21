@@ -42,6 +42,7 @@
 #include <sal/macros.h>
 
 #include <algorithm>
+#include <deque>
 #include <vector>
 
 using namespace psp;
@@ -730,11 +731,11 @@ bool PrinterJob::writeFeatureList( osl::File* pFile, const JobData& rJob, bool b
             bool bEmit = false;
             if( bDocumentSetup )
             {
-                if( pKey->getSetupType()    == PPDKey::DocumentSetup )
+                if( pKey->getSetupType()    == PPDKey::SetupType::DocumentSetup )
                     bEmit = true;
             }
-            if( pKey->getSetupType()    == PPDKey::PageSetup        ||
-                pKey->getSetupType()    == PPDKey::AnySetup )
+            if( pKey->getSetupType()    == PPDKey::SetupType::PageSetup        ||
+                pKey->getSetupType()    == PPDKey::SetupType::AnySetup )
                 bEmit = true;
             if( bEmit )
             {
@@ -829,7 +830,7 @@ void PrinterJob::writeJobPatch( osl::File* pFile, const JobData& rJobData )
     // order the patch files
     // according to PPD spec the JobPatchFile options must be int
     // and should be emitted in order
-    std::list< sal_Int32 > patch_order;
+    std::deque< sal_Int32 > patch_order;
     int nValueCount = pKey->countValues();
     for( int i = 0; i < nValueCount; i++ )
     {
@@ -846,10 +847,10 @@ void PrinterJob::writeJobPatch( osl::File* pFile, const JobData& rJobData )
         }
     }
 
-    patch_order.sort();
-    patch_order.unique();
+    std::sort(patch_order.begin(), patch_order.end());
+    patch_order.erase(std::unique(patch_order.begin(), patch_order.end()), patch_order.end());
 
-    while( patch_order.begin() != patch_order.end() )
+    while( !patch_order.empty() )
     {
         // note: this discards patch files not adhering to the "int" scheme
         // as there won't be a value for them

@@ -40,19 +40,14 @@ public:
     {
     }
 
-    inline ~SwSaveClip();
+    ~SwSaveClip();
     inline void ChgClip( const SwRect &rRect, const SwTextFrame* pFrame = nullptr,
                          bool bEnlargeRect = false)
              { if( pOut ) ChgClip_( rRect, pFrame, bEnlargeRect ); }
-           void Reset();
     inline bool IsOn()  const { return bOn; }
     inline bool IsChg() const { return bChg; }
 };
 
-inline SwSaveClip::~SwSaveClip()
-{
-    Reset();
-}
 
 #ifdef DBG_UTIL
 
@@ -68,8 +63,7 @@ class DbgBackColor : public SwDbgOut
 {
         Color   aOldFillColor;
 public:
-        DbgBackColor( OutputDevice* pOut, const bool bOn = true,
-                  ColorData nColor = COL_YELLOW );
+        DbgBackColor( OutputDevice* pOut, const bool bOn = true );
        ~DbgBackColor();
 };
 
@@ -85,14 +79,13 @@ inline SwDbgOut::SwDbgOut( OutputDevice* pOutDev, const bool bOn )
                :pOut( bOn ? pOutDev : nullptr )
 { }
 
-inline DbgBackColor::DbgBackColor( OutputDevice* pOutDev, const bool bOn,
-                           ColorData eColor )
+inline DbgBackColor::DbgBackColor( OutputDevice* pOutDev, const bool bOn )
     :SwDbgOut( pOutDev, bOn )
 {
     if( pOut )
     {
         aOldFillColor = pOut->GetFillColor();
-        pOut->SetFillColor( Color(eColor) );
+        pOut->SetFillColor( Color(COL_RED) );
     }
 }
 

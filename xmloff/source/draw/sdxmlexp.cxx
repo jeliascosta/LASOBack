@@ -402,9 +402,6 @@ SdXMLExport::SdXMLExport(
     mpNotesPageMasterUsageList(new ImpXMLEXPPageMasterList()),
     mpHandoutPageMaster(nullptr),
     mpAutoLayoutInfoList(new ImpXMLAutoLayoutInfoList()),
-    mpSdPropHdlFactory(nullptr),
-    mpPropertySetMapper(nullptr),
-    mpPresPagePropsMapper(nullptr),
     mbIsDraw(bIsDraw),
     msPageLayoutNames( "PageLayoutNames" )
 {
@@ -422,30 +419,20 @@ void SAL_CALL SdXMLExport::setSourceDocument( const Reference< lang::XComponent 
     // prepare factory parts
     mpSdPropHdlFactory = new XMLSdPropHdlFactory( GetModel(), *this );
 
-    // set lock to avoid deletion
-    mpSdPropHdlFactory->acquire();
-
-    // build one ref
-    const rtl::Reference< XMLPropertyHandlerFactory > aFactoryRef = mpSdPropHdlFactory;
-
     // construct PropertySetMapper
-    rtl::Reference < XMLPropertySetMapper > xMapper = new XMLShapePropertySetMapper( aFactoryRef, true);
+    rtl::Reference < XMLPropertySetMapper > xMapper = new XMLShapePropertySetMapper( mpSdPropHdlFactory.get(), true);
 
     // get or create text paragraph export
     GetTextParagraphExport();
     mpPropertySetMapper = new XMLShapeExportPropertyMapper( xMapper, *this );
-    // set lock to avoid deletion
-    mpPropertySetMapper->acquire();
 
     // chain text attributes
     mpPropertySetMapper->ChainExportMapper(XMLTextParagraphExport::CreateParaExtPropMapper(*this));
 
     // construct PresPagePropsMapper
-    xMapper = new XMLPropertySetMapper(aXMLSDPresPageProps, aFactoryRef, true);
+    xMapper = new XMLPropertySetMapper(aXMLSDPresPageProps, mpSdPropHdlFactory.get(), true);
 
     mpPresPagePropsMapper = new XMLPageExportPropertyMapper( xMapper, *this  );
-    // set lock to avoid deletion
-    mpPresPagePropsMapper->acquire();
 
     // add family name
       GetAutoStylePool()->AddFamily(
@@ -654,25 +641,13 @@ sal_uInt32 SdXMLExport::ImpRecursiveObjectCount(const Reference< drawing::XShape
 SdXMLExport::~SdXMLExport()
 {
     // cleanup factory, decrease refcount. Should lead to destruction.
-    if(mpSdPropHdlFactory)
-    {
-        mpSdPropHdlFactory->release();
-        mpSdPropHdlFactory = nullptr;
-    }
+    mpSdPropHdlFactory.clear();
 
     // cleanup mapper, decrease refcount. Should lead to destruction.
-    if(mpPropertySetMapper)
-    {
-        mpPropertySetMapper->release();
-        mpPropertySetMapper = nullptr;
-    }
+    mpPropertySetMapper.clear();
 
     // cleanup presPage mapper, decrease refcount. Should lead to destruction.
-    if(mpPresPagePropsMapper)
-    {
-        mpPresPagePropsMapper->release();
-        mpPresPagePropsMapper = nullptr;
-    }
+    mpPresPagePropsMapper.clear();
 
     // clear evtl. temporary page master infos
     if(mpPageMasterUsageList)
@@ -1729,14 +1704,6 @@ void SdXMLExport::ImpWritePresentationStyles()
     }
 }
 
-void SdXMLExport::SetProgress(sal_Int32 nProg)
-{
-    // set progress view
-    if(GetStatusIndicator().is())
-        GetStatusIndicator()->setValue(nProg);
-}
-
-
 void SdXMLExport::ExportMeta_()
 {
     uno::Sequence<beans::NamedValue> stats { { "ObjectCount", uno::makeAny(mnObjectCount) } };
@@ -1770,7 +1737,9 @@ void SdXMLExport::ExportContent_()
     {
         uno::Reference<drawing::XDrawPage> xDrawPage( mxDocDrawPages->getByIndex(nPageInd), uno::UNO_QUERY );
 
-        SetProgress(((nPageInd + 1) * 100) / mnDocDrawPageCount);
+        // set progress view
+        if(GetStatusIndicator().is())
+            GetStatusIndicator()->setValue(((nPageInd + 1) * 100) / mnDocDrawPageCount);
 
         if(xDrawPage.is())
         {
@@ -2095,7 +2064,7 @@ void SdXMLExport::exportPresentationSettings()
                 AddAttribute(XML_NAMESPACE_PRESENTATION, XML_NAME, *pShowNames );
 
                 xShows->getByName( *pShowNames ) >>= xShow;
-                DBG_ASSERT( xShow.is(), "invalid custom show!" );
+                SAL_WARN_IF( !xShow.is(), "xmloff", "invalid custom show!" );
                 if( !xShow.is() )
                     continue;
 

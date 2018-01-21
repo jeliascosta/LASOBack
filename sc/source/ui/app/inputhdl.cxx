@@ -23,6 +23,7 @@
 
 #include <sfx2/app.hxx>
 #include <editeng/acorrcfg.hxx>
+#include <formula/errorcodes.hxx>
 #include <svx/algitem.hxx>
 #include <editeng/adjustitem.hxx>
 #include <editeng/brushitem.hxx>
@@ -90,8 +91,6 @@ using namespace formula;
 bool ScInputHandler::bOptLoaded = false;            // Evaluate App options
 bool ScInputHandler::bAutoComplete = false;         // Is set in KeyInput
 
-extern sal_uInt16 nEditAdjust;      //! Member of ViewData
-
 namespace {
 
 // Formula data replacement character for a pair of parentheses at end of
@@ -107,7 +106,7 @@ sal_Unicode lcl_getSheetSeparator(ScDocument* pDoc)
 }
 
 ScTypedCaseStrSet::const_iterator findText(
-    const ScTypedCaseStrSet& rDataSet, ScTypedCaseStrSet::const_iterator itPos,
+    const ScTypedCaseStrSet& rDataSet, ScTypedCaseStrSet::const_iterator const & itPos,
     const OUString& rStart, OUString& rResult, bool bBack)
 {
     if (bBack) // Backwards
@@ -182,7 +181,7 @@ OUString getExactMatch(const ScTypedCaseStrSet& rDataSet, const OUString& rStrin
 }
 
 ScTypedCaseStrSet::const_iterator findTextAll(
-    const ScTypedCaseStrSet& rDataSet, ScTypedCaseStrSet::const_iterator itPos,
+    const ScTypedCaseStrSet& rDataSet, ScTypedCaseStrSet::const_iterator const & itPos,
     const OUString& rStart, ::std::vector< OUString > &rResultVec, bool bBack)
 {
     rResultVec.clear(); // clear contents
@@ -394,7 +393,7 @@ handle_r1c1:
     {
         pEngine->SetUpdateMode( true );
 
-        pDocSh->Broadcast( SfxSimpleHint( SC_HINT_SHOWRANGEFINDER ) );
+        pDocSh->Broadcast( SfxHint( SC_HINT_SHOWRANGEFINDER ) );
     }
 }
 
@@ -484,7 +483,7 @@ void ScInputHandler::DeleteRangeFinder()
     {
         ScDocShell* pDocSh = pActiveViewSh->GetViewData().GetDocShell();
         pRangeFindList->SetHidden(true);
-        pDocSh->Broadcast( SfxSimpleHint( SC_HINT_SHOWRANGEFINDER ) );  // Steal
+        pDocSh->Broadcast( SfxHint( SC_HINT_SHOWRANGEFINDER ) );  // Steal
         DELETEZ(pRangeFindList);
     }
 }
@@ -660,14 +659,14 @@ ScInputHandler::~ScInputHandler()
     if ( pInputWin && pInputWin->GetInputHandler() == this )
         pInputWin->SetInputHandler( nullptr );
 
-    delete pRangeFindList;
-    delete pEditDefaults;
-    delete pEngine;
-    delete pLastState;
-    delete pDelayTimer;
-    delete pColumnData;
-    delete pFormulaData;
-    delete pFormulaDataPara;
+    delete pRangeFindList;     pRangeFindList = nullptr;
+    delete pEditDefaults;      pEditDefaults = nullptr;
+    delete pEngine;            pEngine = nullptr;
+    delete pLastState;         pLastState = nullptr;
+    delete pDelayTimer;        pDelayTimer = nullptr;
+    delete pColumnData;        pColumnData = nullptr;
+    delete pFormulaData;       pFormulaData = nullptr;
+    delete pFormulaDataPara;   pFormulaDataPara = nullptr;
 }
 
 void ScInputHandler::SetRefScale( const Fraction& rX, const Fraction& rY )
@@ -678,7 +677,7 @@ void ScInputHandler::SetRefScale( const Fraction& rX, const Fraction& rY )
         aScaleY = rY;
         if (pEngine)
         {
-            MapMode aMode( MAP_100TH_MM, Point(), aScaleX, aScaleY );
+            MapMode aMode( MapUnit::Map100thMM, Point(), aScaleX, aScaleY );
             pEngine->SetRefMapMode( aMode );
         }
     }
@@ -702,7 +701,7 @@ void ScInputHandler::UpdateRefDevice()
     else
         pEngine->SetRefDevice( nullptr );
 
-    MapMode aMode( MAP_100TH_MM, Point(), aScaleX, aScaleY );
+    MapMode aMode( MapUnit::Map100thMM, Point(), aScaleX, aScaleY );
     pEngine->SetRefMapMode( aMode );
 
     //  SetRefDevice(NULL) uses VirtualDevice, SetRefMapMode forces creation of a local VDev,
@@ -854,13 +853,13 @@ void ScInputHandler::GetFormulaData()
     }
 }
 
-IMPL_LINK_TYPED( ScInputHandler, ShowHideTipVisibleParentListener, VclWindowEvent&, rEvent, void )
+IMPL_LINK( ScInputHandler, ShowHideTipVisibleParentListener, VclWindowEvent&, rEvent, void )
 {
     if( rEvent.GetId() == VCLEVENT_OBJECT_DYING || rEvent.GetId() == VCLEVENT_WINDOW_HIDE )
         HideTip();
 }
 
-IMPL_LINK_TYPED( ScInputHandler, ShowHideTipVisibleSecParentListener, VclWindowEvent&, rEvent, void )
+IMPL_LINK( ScInputHandler, ShowHideTipVisibleSecParentListener, VclWindowEvent&, rEvent, void )
 {
     if( rEvent.GetId() == VCLEVENT_OBJECT_DYING || rEvent.GetId() == VCLEVENT_WINDOW_HIDE )
         HideTipBelow();
@@ -1140,7 +1139,7 @@ bool ScInputHandler::GetFuncName( OUString& aStart, OUString& aResult )
     ::std::vector<sal_Unicode>::reverse_iterator rIt = aTemp.rbegin();
     aResult = OUString( *rIt++ );
     while ( rIt != aTemp.rend() )
-        aResult += OUString( *rIt++ );
+        aResult += OUStringLiteral1( *rIt++ );
 
     return true;
 }
@@ -1295,7 +1294,7 @@ namespace {
 
 bool needToExtendSelection(const OUString& rSelectedText, const OUString& rInsertText)
 {
-    return !rInsertText.startsWithIgnoreAsciiCase(rSelectedText);
+    return !ScGlobal::GetpTransliteration()->isMatch( rSelectedText, rInsertText);
 }
 
 void completeFunction( EditView* pView, const OUString& rInsert, bool& rParInserted )
@@ -1434,8 +1433,8 @@ static OUString lcl_Calculate( const OUString& rFormula, ScDocument* pDoc, const
             bColRowName = false;
     }
 
-    sal_uInt16 nErrCode = pCalc->GetErrCode();
-    if ( nErrCode != 0 )
+    FormulaError nErrCode = pCalc->GetErrCode();
+    if ( nErrCode != FormulaError::NONE )
         return ScGlobal::GetErrorString(nErrCode);
 
     SvNumberFormatter& aFormatter = *(pDoc->GetFormatTable());
@@ -1837,7 +1836,7 @@ void ScInputHandler::ViewShellGone(ScTabViewShell* pViewSh) // Executed synchron
         EnterHandler();
         bFormulaMode = false;
         pRefViewSh = nullptr;
-        SfxGetpApp()->Broadcast( SfxSimpleHint( FID_REFMODECHANGED ) );
+        SfxGetpApp()->Broadcast( SfxHint( FID_REFMODECHANGED ) );
         SC_MOD()->SetRefInputHdl(nullptr);
         if (pInputWin)
             pInputWin->SetFormulaMode(false);
@@ -1885,13 +1884,11 @@ void ScInputHandler::UpdateActiveView()
         pTableView = nullptr;
 
     // setup the pTableView editeng for tiled rendering to get cursor and selections
-    if (pActiveViewSh && pTableView)
+    if (pTableView && pActiveViewSh)
     {
-        ScDocShell* pDocShell = pActiveViewSh->GetViewData().GetDocShell();
         if (comphelper::LibreOfficeKit::isActive())
         {
-            ScDrawLayer *pDrawLayer = pDocShell->GetDocument().GetDrawLayer();
-            pTableView->registerLibreOfficeKitCallback(pDrawLayer);
+            pTableView->RegisterViewShell(pActiveViewSh);
         }
     }
 
@@ -1973,8 +1970,10 @@ void ScInputHandler::UpdateAdjust( sal_Unicode cTyped )
     pEditDefaults->Put( SvxAdjustItem( eSvxAdjust, EE_PARA_JUST ) );
     pEngine->SetDefaults( *pEditDefaults );
 
-    nEditAdjust = sal::static_int_cast<sal_uInt16>(eSvxAdjust); //! set at ViewData or with PostEditView
-
+    if ( pActiveViewSh )
+    {
+        pActiveViewSh->GetViewData().SetEditAdjust( eSvxAdjust );
+    }
     pEngine->SetVertical( bAsianVertical );
 }
 
@@ -2230,7 +2229,7 @@ void ScInputHandler::SyncViews( EditView* pSourceView )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ScInputHandler, ModifyHdl, LinkParamNone*, void)
+IMPL_LINK_NOARG(ScInputHandler, ModifyHdl, LinkParamNone*, void)
 {
     if ( !bInOwnChange && ( eMode==SC_INPUT_TYPE || eMode==SC_INPUT_TABLE ) &&
          pEngine && pEngine->GetUpdateMode() && pInputWin )
@@ -2298,14 +2297,10 @@ void ScInputHandler::DataChanged( bool bFromTopNotify, bool bSetModified )
         if ( pInputWin )
             pInputWin->SetTextString( aText );
 
-        if ( comphelper::LibreOfficeKit::isActive() )
+        if (comphelper::LibreOfficeKit::isActive())
         {
             if (pActiveViewSh)
-            {
-                ScDocShell* pDocSh = pActiveViewSh->GetViewData().GetDocShell();
-                ScDocument& rDoc = pDocSh->GetDocument();
-                rDoc.GetDrawLayer()->libreOfficeKitCallback(LOK_CALLBACK_CELL_FORMULA, aText.toUtf8().getStr());
-            }
+                pActiveViewSh->libreOfficeKitViewCallback(LOK_CALLBACK_CELL_FORMULA, aText.toUtf8().getStr());
         }
     }
 
@@ -2322,7 +2317,7 @@ void ScInputHandler::DataChanged( bool bFromTopNotify, bool bSetModified )
     {
         ScViewData& rViewData = pActiveViewSh->GetViewData();
 
-        bool bNeedGrow = ( nEditAdjust != SVX_ADJUST_LEFT ); // Always right-aligned
+        bool bNeedGrow = ( rViewData.GetEditAdjust() != SVX_ADJUST_LEFT ); // Always right-aligned
         if (!bNeedGrow)
         {
             // Cursor before the end?
@@ -2365,7 +2360,7 @@ void ScInputHandler::UpdateFormulaMode()
         {
             bFormulaMode = true;
             pRefViewSh = pActiveViewSh;
-            pSfxApp->Broadcast( SfxSimpleHint( FID_REFMODECHANGED ) );
+            pSfxApp->Broadcast( SfxHint( FID_REFMODECHANGED ) );
             SC_MOD()->SetRefInputHdl(this);
             if (pInputWin)
                 pInputWin->SetFormulaMode(true);
@@ -2384,7 +2379,7 @@ void ScInputHandler::UpdateFormulaMode()
             ShowRefFrame();
             bFormulaMode = false;
             pRefViewSh = nullptr;
-            pSfxApp->Broadcast( SfxSimpleHint( FID_REFMODECHANGED ) );
+            pSfxApp->Broadcast( SfxHint( FID_REFMODECHANGED ) );
             SC_MOD()->SetRefInputHdl(nullptr);
             if (pInputWin)
                 pInputWin->SetFormulaMode(false);
@@ -2816,7 +2811,7 @@ void ScInputHandler::EnterHandler( ScEnterMode nBlockMode )
         }
 
         bFormulaMode = false;
-        pSfxApp->Broadcast( SfxSimpleHint( FID_REFMODECHANGED ) );
+        pSfxApp->Broadcast( SfxHint( FID_REFMODECHANGED ) );
         SC_MOD()->SetRefInputHdl(nullptr);
         if (pInputWin)
             pInputWin->SetFormulaMode(false);
@@ -2871,7 +2866,7 @@ void ScInputHandler::EnterHandler( ScEnterMode nBlockMode )
             }
         }
 
-        pSfxApp->Broadcast( SfxSimpleHint( FID_KILLEDITVIEW_NOPAINT ) );
+        pSfxApp->Broadcast( SfxHint( FID_KILLEDITVIEW_NOPAINT ) );
 
         if ( pExecuteSh )
         {
@@ -2900,7 +2895,7 @@ void ScInputHandler::EnterHandler( ScEnterMode nBlockMode )
         pLastState = nullptr;
     }
     else
-        pSfxApp->Broadcast( SfxSimpleHint( FID_KILLEDITVIEW ) );
+        pSfxApp->Broadcast( SfxHint( FID_KILLEDITVIEW ) );
 
     if ( bOldMod && pExecuteSh && pCellAttrs && !bForget )
     {
@@ -2944,7 +2939,7 @@ void ScInputHandler::CancelHandler()
             pExecuteSh->ActiveGrabFocus();
         }
         bFormulaMode = false;
-        SfxGetpApp()->Broadcast( SfxSimpleHint( FID_REFMODECHANGED ) );
+        SfxGetpApp()->Broadcast( SfxHint( FID_REFMODECHANGED ) );
         SC_MOD()->SetRefInputHdl(nullptr);
         if (pInputWin)
             pInputWin->SetFormulaMode(false);
@@ -3211,7 +3206,7 @@ bool ScInputHandler::KeyInput( const KeyEvent& rKEvt, bool bStartEdit /* = false
         EnterHandler();
 
         if (pActiveViewSh)
-            pActiveViewSh->FindNextUnprot( bShift );
+            pActiveViewSh->FindNextUnprot( bShift, true );
         return true;
     }
 
@@ -3360,10 +3355,10 @@ bool ScInputHandler::KeyInput( const KeyEvent& rKEvt, bool bStartEdit /* = false
                 if (bDoEnter)
                 {
                     if (pTableView)
-                        if( pTableView->PostKeyEvent( KeyEvent( CHAR_CR, vcl::KeyCode(KEY_RETURN) ) ) )
+                        if( pTableView->PostKeyEvent( KeyEvent( '\r', vcl::KeyCode(KEY_RETURN) ) ) )
                             bUsed = true;
                     if (pTopView)
-                        if( pTopView->PostKeyEvent( KeyEvent( CHAR_CR, vcl::KeyCode(KEY_RETURN) ) ) )
+                        if( pTopView->PostKeyEvent( KeyEvent( '\r', vcl::KeyCode(KEY_RETURN) ) ) )
                             bUsed = true;
                 }
                 else if ( nAutoPar && nChar == ')' && CursorAtClosingPar() )
@@ -3652,8 +3647,11 @@ void ScInputHandler::NotifyChange( const ScInputHdlState* pState,
 
                         if ( pInputWin )
                             pInputWin->SetTextString(aString);
-                        else if ( comphelper::LibreOfficeKit::isActive() )
-                            rDoc.GetDrawLayer()->libreOfficeKitCallback(LOK_CALLBACK_CELL_FORMULA, aString.toUtf8().getStr());
+                        else if (comphelper::LibreOfficeKit::isActive())
+                        {
+                            if (pActiveViewSh)
+                                pActiveViewSh->libreOfficeKitViewCallback(LOK_CALLBACK_CELL_FORMULA, aString.toUtf8().getStr());
+                        }
                     }
 
                     if ( pInputWin )                        // Named range input
@@ -3691,7 +3689,7 @@ void ScInputHandler::NotifyChange( const ScInputHdlState* pState,
                     }
 
                     if (bStopEditing)
-                        SfxGetpApp()->Broadcast( SfxSimpleHint( FID_KILLEDITVIEW ) );
+                        SfxGetpApp()->Broadcast( SfxHint( FID_KILLEDITVIEW ) );
 
                     //  As long as the content is not edited, turn off online spelling.
                     //  Online spelling is turned back on in StartTable, after setting
@@ -3729,7 +3727,7 @@ void ScInputHandler::NotifyChange( const ScInputHdlState* pState,
                 // still be active
                 if ( !pDelayTimer )
                 {
-                    pDelayTimer = new Timer;
+                    pDelayTimer = new Timer("Restart ScInputHandlerDelay timer");
                     pDelayTimer->SetTimeout( 500 ); // 500 ms delay
                     pDelayTimer->SetTimeoutHdl( LINK( this, ScInputHandler, DelayTimer ) );
                     pDelayTimer->Start();
@@ -3741,7 +3739,7 @@ void ScInputHandler::NotifyChange( const ScInputHdlState* pState,
     {
         if ( !pDelayTimer )
         {
-            pDelayTimer = new Timer;
+            pDelayTimer = new Timer("ScInputHandlerDelay timer");
             pDelayTimer->SetTimeout( 500 ); // 500 ms delay
             pDelayTimer->SetTimeoutHdl( LINK( this, ScInputHandler, DelayTimer ) );
             pDelayTimer->Start();
@@ -3772,7 +3770,7 @@ void ScInputHandler::ResetDelayTimer()
     }
 }
 
-IMPL_LINK_TYPED( ScInputHandler, DelayTimer, Timer*, pTimer, void )
+IMPL_LINK( ScInputHandler, DelayTimer, Timer*, pTimer, void )
 {
     if ( pTimer == pDelayTimer )
     {

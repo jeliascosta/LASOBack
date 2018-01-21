@@ -35,7 +35,6 @@ this is a bug =) since aFooMember assumes heap allocated lifecycle and
 not delete on last 'release'.
 
 TODO check that things that extend SvRefBase are managed by SvRef
-TODO fix the SvXMLImportContext class (mentioned below)
 TODO fix the slideshow::internal::SlideView class (mentioned below)
 */
 
@@ -51,6 +50,15 @@ public:
 
     bool VisitFieldDecl(const FieldDecl *);
     bool VisitVarDecl(const VarDecl *);
+    bool VisitFunctionDecl(const FunctionDecl *);
+
+    // Creation of temporaries with one argument are represented by
+    // CXXFunctionalCastExpr, while any other number of arguments are
+    // represented by CXXTemporaryObjectExpr:
+    bool VisitCXXTemporaryObjectExpr(CXXTemporaryObjectExpr const * expr)
+    { return visitTemporaryObjectExpr(expr); }
+    bool VisitCXXFunctionalCastExpr(CXXFunctionalCastExpr const * expr)
+    { return visitTemporaryObjectExpr(expr); }
 
     bool WalkUpFromObjCIvarDecl(ObjCIvarDecl * decl) {
         // Don't recurse into WalkUpFromFieldDecl, as VisitFieldDecl calls
@@ -59,6 +67,11 @@ public:
         // ObjCIvarDecl.
         return VisitObjCIvarDecl(decl);
     }
+private:
+    void checkUnoReference(QualType qt, const Decl* decl,
+                           const std::string& rParentName, const std::string& rDeclName);
+
+    bool visitTemporaryObjectExpr(Expr const * expr);
 };
 
 bool BaseCheckNotSubclass(const CXXRecordDecl *BaseDefinition, void *p) {
@@ -79,10 +92,7 @@ bool isDerivedFrom(const CXXRecordDecl *decl, const char *pString) {
     if (!decl->hasDefinition()) {
         return false;
     }
-    if (// not sure what hasAnyDependentBases() does,
-        // but it avoids classes we don't want, e.g. WeakAggComponentImplHelper1
-        !decl->hasAnyDependentBases() &&
-        !compat::forallBases(
+    if (!compat::forallBases(
             *decl,
 #if CLANG_VERSION < 30800
             BaseCheckNotSubclass,
@@ -104,47 +114,6 @@ bool containsXInterfaceSubclass(const Type* pType0);
 bool containsXInterfaceSubclass(const QualType& qType) {
     return containsXInterfaceSubclass(qType.getTypePtr());
 }
-
-static std::vector<std::string> PROBABLY_GOOD_TEMPLATES = {
-    "abp::OMultiInstanceAutoRegistration",
-    "com::sun::star::uno::Reference",
-    "com::sun::star::uno::WeakReference",
-    "com::sun::star::uno::Sequence",
-    "accessibility::WeakCppRef",
-    "dba::OAutoRegistration",
-    "dbp::OMultiInstanceAutoRegistration",
-    "dbaui::OMultiInstanceAutoRegistration",
-    "dbaxml::OMultiInstanceAutoRegistration",
-    "io_acceptor::ReferenceEqual",
-    "io_acceptor::ReferenceHash",
-    "comphelper::OAutoRegistration",
-    "comphelper::OInterfaceCompare",
-    "comphelper::WeakBag",
-    "comphelper::service_decl::class_",
-    "comphelper::service_decl::vba_service_class_",
-    "comphelper::service_decl::inheritingClass_",
-    "comphelper::module::OAutoRegistration",
-    "comphelper::mem_fun1_t",
-    "comphelper::OSimpleListenerContainer",
-    "dbmm::OAutoRegistration",
-    "pcr::OAutoRegistration",
-    "logging::ComponentMethodGuard",
-    "logging::OAutoRegistration",
-    "rtl::Reference",
-    "sdbtools::OAutoRegistration",
-    "stoc_connector::ReferenceEqual",
-    "stoc_connector::ReferenceHash",
-    "std::__1::mem_fun_t",
-    "std::__1::mem_fun1_t",
-    "std::mem_fun_t",
-    "std::mem_fun1_t",
-    "SwIterator",
-    "toolkit::InitGuard",
-    "utl::SharedUNOComponent",
-    "utl::OAutoRegistration",
-    "vcl::DeleteUnoReferenceOnDeinit",
-    "xmloff::OInterfaceCompare",
-};
 
 bool containsXInterfaceSubclass(const Type* pType0) {
     if (!pType0)
@@ -168,11 +137,6 @@ bool containsXInterfaceSubclass(const Type* pType0) {
         if (isDerivedFrom(pRecordDecl, "dbaui::OSbaWeakSubObject")) { // module dbaccess
             return false;
         }
-        // FIXME this class extends 2 different ref-counting bases, SvRefBase and XInterface (via. cppu::WeakImplHelper)
-        // I have no idea how to fix it
-        if (isDerivedFrom(pRecordDecl, "SvXMLImportContext")) { // module xmloff
-            return false;
-        }
         // The actual problem child is SlideView, of which this is the parent.
         // Everything in the hierarchy above this wants to be managed via boost::shared_ptr
         if (isDerivedFrom(pRecordDecl, "slideshow::internal::UnoView")) { // module slideshow
@@ -186,21 +150,79 @@ bool containsXInterfaceSubclass(const Type* pType0) {
     if (pRecordDecl) {
         const ClassTemplateSpecializationDecl* pTemplate = dyn_cast<ClassTemplateSpecializationDecl>(pRecordDecl);
         if (pTemplate) {
-            if (loplugin::DeclCheck(pTemplate).Struct("FindUnoInstanceHint")
-                .AnonymousNamespace().GlobalNamespace())
+            // Probably good templates:
+            loplugin::DeclCheck dc(pTemplate);
+            if ((dc.Struct("FindUnoInstanceHint").AnonymousNamespace()
+                 .GlobalNamespace())
+                || (dc.Class("OMultiInstanceAutoRegistration").Namespace("abp")
+                    .GlobalNamespace())
+                || (dc.Class("Reference").Namespace("uno").Namespace("star")
+                    .Namespace("sun").Namespace("com").GlobalNamespace())
+                || (dc.Class("WeakReference").Namespace("uno").Namespace("star")
+                    .Namespace("sun").Namespace("com").GlobalNamespace())
+                || (dc.Class("Sequence").Namespace("uno").Namespace("star")
+                    .Namespace("sun").Namespace("com").GlobalNamespace())
+                || (dc.Class("WeakCppRef").Namespace("accessibility")
+                    .GlobalNamespace())
+                || (dc.Class("OAutoRegistration").Namespace("dba")
+                    .GlobalNamespace())
+                || (dc.Class("OMultiInstanceAutoRegistration").Namespace("dbp")
+                    .GlobalNamespace())
+                || (dc.Class("OMultiInstanceAutoRegistration")
+                    .Namespace("dbaui").GlobalNamespace())
+                || (dc.Class("OMultiInstanceAutoRegistration")
+                    .Namespace("dbaxml").GlobalNamespace())
+                || (dc.Struct("ReferenceEqual").Namespace("io_acceptor")
+                    .GlobalNamespace())
+                || (dc.Struct("ReferenceHash").Namespace("io_acceptor")
+                    .GlobalNamespace())
+                || (dc.Class("OAutoRegistration").Namespace("comphelper")
+                    .GlobalNamespace())
+                || (dc.Struct("OInterfaceCompare").Namespace("comphelper")
+                    .GlobalNamespace())
+                || dc.Class("WeakBag").Namespace("comphelper").GlobalNamespace()
+                || (dc.Struct("class_").Namespace("service_decl")
+                    .Namespace("comphelper").GlobalNamespace())
+                || (dc.Struct("vba_service_class_").Namespace("service_decl")
+                    .Namespace("comphelper").GlobalNamespace())
+                || (dc.Struct("inheritingClass_").Namespace("service_decl")
+                    .Namespace("comphelper").GlobalNamespace())
+                || (dc.Class("OAutoRegistration").Namespace("module")
+                    .Namespace("comphelper").GlobalNamespace())
+                || (dc.Class("mem_fun1_t").Namespace("comphelper")
+                    .GlobalNamespace())
+                || (dc.Class("OSimpleListenerContainer").Namespace("comphelper")
+                    .GlobalNamespace())
+                || (dc.Class("OAutoRegistration").Namespace("dbmm")
+                    .GlobalNamespace())
+                || (dc.Class("OAutoRegistration").Namespace("pcr")
+                    .GlobalNamespace())
+                || (dc.Class("ComponentMethodGuard").Namespace("logging")
+                    .GlobalNamespace())
+                || (dc.Class("OAutoRegistration").Namespace("logging")
+                    .GlobalNamespace())
+                || dc.Class("Reference").Namespace("rtl").GlobalNamespace()
+                || (dc.Class("OAutoRegistration").Namespace("sdbtools")
+                    .GlobalNamespace())
+                || (dc.Struct("ReferenceEqual").Namespace("stoc_connector")
+                    .GlobalNamespace())
+                || (dc.Struct("ReferenceHash").Namespace("stoc_connector")
+                    .GlobalNamespace())
+                || dc.Class("mem_fun_t").StdNamespace()
+                || dc.Class("mem_fun1_t").StdNamespace()
+                || dc.Class("SwIterator").GlobalNamespace()
+                || (dc.Class("InitGuard").Namespace("toolkit")
+                    .GlobalNamespace())
+                || (dc.Class("SharedUNOComponent").Namespace("utl")
+                    .GlobalNamespace())
+                || (dc.Class("OAutoRegistration").Namespace("utl")
+                    .GlobalNamespace())
+                || (dc.Class("DeleteUnoReferenceOnDeinit").Namespace("vcl")
+                    .GlobalNamespace())
+                || (dc.Struct("OInterfaceCompare").Namespace("xmloff")
+                    .GlobalNamespace()))
             {
                 return false;
-            }
-            std::string aName = pTemplate->getQualifiedNameAsString();
-            if (std::find(PROBABLY_GOOD_TEMPLATES.begin(), PROBABLY_GOOD_TEMPLATES.end(), aName) != PROBABLY_GOOD_TEMPLATES.end())
-                return false;
-            for(unsigned i=0; i<pTemplate->getTemplateArgs().size(); ++i) {
-                const TemplateArgument& rArg = pTemplate->getTemplateArgs()[i];
-                if (rArg.getKind() == TemplateArgument::ArgKind::Type &&
-                    containsXInterfaceSubclass(rArg.getAsType()))
-                {
-                    return true;
-                }
             }
         }
     }
@@ -292,6 +314,72 @@ bool containsSalhelperReferenceObjectSubclass(const Type* pType0) {
     }
 }
 
+static bool containsStaticTypeMethod(const CXXRecordDecl* x)
+{
+    for (auto it = x->method_begin(); it != x->method_end(); ++it) {
+        auto i = *it;
+        if ( !i->isStatic() )
+            continue;
+        auto ident = i->getIdentifier();
+        if ( ident && ident->isStr("static_type") ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void RefCounting::checkUnoReference(QualType qt, const Decl* decl, const std::string& rParentName, const std::string& rDeclName)
+{
+    if (loplugin::TypeCheck(qt).Class("Reference").Namespace("uno").Namespace("star").Namespace("sun").Namespace("com").GlobalNamespace()) {
+        const CXXRecordDecl* pRecordDecl = qt->getAsCXXRecordDecl();
+        const ClassTemplateSpecializationDecl* pTemplate = dyn_cast<ClassTemplateSpecializationDecl>(pRecordDecl);
+        const TemplateArgument& rArg = pTemplate->getTemplateArgs()[0];
+        const CXXRecordDecl* templateParam = rArg.getAsType()->getAsCXXRecordDecl()->getDefinition();
+        if (templateParam && !containsStaticTypeMethod(templateParam)) {
+            report(
+                DiagnosticsEngine::Warning,
+                "uno::Reference " + rDeclName + " with template parameter that does not contain ::static_type() "
+                + qt.getAsString()
+                + ", parent is " + rParentName
+                + ", should probably be using rtl::Reference instead",
+                decl->getLocation())
+              << decl->getSourceRange();
+        }
+    }
+}
+
+bool RefCounting::visitTemporaryObjectExpr(Expr const * expr) {
+    if (ignoreLocation(expr)) {
+        return true;
+    }
+    auto t = expr->getType();
+    if (containsSvRefBaseSubclass(t.getTypePtr())) {
+        report(
+            DiagnosticsEngine::Warning,
+            ("Temporary object of SvRefBase subclass %0 being directly stack"
+             " managed, should be managed via tools::SvRef"),
+            expr->getLocStart())
+            << t.getUnqualifiedType() << expr->getSourceRange();
+    } else if (containsSalhelperReferenceObjectSubclass(t.getTypePtr())) {
+        report(
+            DiagnosticsEngine::Warning,
+            ("Temporary object of salhelper::SimpleReferenceObject subclass %0"
+             " being directly stack managed, should be managed via"
+             " rtl::Reference"),
+            expr->getLocStart())
+            << t.getUnqualifiedType() << expr->getSourceRange();
+    } else if (containsXInterfaceSubclass(t)) {
+        report(
+            DiagnosticsEngine::Warning,
+            ("Temporary object of css::uno::XInterface subclass %0 being"
+             " directly stack managed, should be managed via"
+             " css::uno::Reference"),
+            expr->getLocStart())
+            << t.getUnqualifiedType() << expr->getSourceRange();
+    }
+    return true;
+}
+
 bool RefCounting::VisitFieldDecl(const FieldDecl * fieldDecl) {
     if (ignoreLocation(fieldDecl)) {
         return true;
@@ -339,6 +427,9 @@ bool RefCounting::VisitFieldDecl(const FieldDecl * fieldDecl) {
             fieldDecl->getLocation())
           << fieldDecl->getSourceRange();
     }
+
+    checkUnoReference(fieldDecl->getType(), fieldDecl, aParentName, "field");
+
     return true;
 }
 
@@ -347,37 +438,51 @@ bool RefCounting::VisitVarDecl(const VarDecl * varDecl) {
     if (ignoreLocation(varDecl)) {
         return true;
     }
-    if (isa<ParmVarDecl>(varDecl)) {
+    if (!isa<ParmVarDecl>(varDecl)) {
+        if (containsSvRefBaseSubclass(varDecl->getType().getTypePtr())) {
+            report(
+                DiagnosticsEngine::Warning,
+                "SvRefBase subclass being directly stack managed, should be managed via tools::SvRef, "
+                + varDecl->getType().getAsString(),
+                varDecl->getLocation())
+              << varDecl->getSourceRange();
+        }
+        if (containsSalhelperReferenceObjectSubclass(varDecl->getType().getTypePtr())) {
+            StringRef name { compiler.getSourceManager().getFilename(compiler.getSourceManager().getSpellingLoc(varDecl->getLocation())) };
+            // this is playing games that it believes is safe
+            if (name == SRCDIR "/stoc/source/security/permissions.cxx")
+                return true;
+            report(
+                DiagnosticsEngine::Warning,
+                "salhelper::SimpleReferenceObject subclass being directly stack managed, should be managed via rtl::Reference, "
+                + varDecl->getType().getAsString(),
+                varDecl->getLocation())
+              << varDecl->getSourceRange();
+        }
+        if (containsXInterfaceSubclass(varDecl->getType())) {
+            report(
+                DiagnosticsEngine::Warning,
+                "XInterface subclass being directly stack managed, should be managed via uno::Reference, "
+                + varDecl->getType().getAsString(),
+                varDecl->getLocation())
+              << varDecl->getSourceRange();
+        }
+    }
+    checkUnoReference(varDecl->getType(), varDecl, "", "var");
+    return true;
+}
+
+bool RefCounting::VisitFunctionDecl(const FunctionDecl * functionDecl) {
+    if (ignoreLocation(functionDecl)) {
         return true;
     }
-    if (containsSvRefBaseSubclass(varDecl->getType().getTypePtr())) {
-        report(
-            DiagnosticsEngine::Warning,
-            "SvRefBase subclass being directly stack managed, should be managed via tools::SvRef, "
-            + varDecl->getType().getAsString(),
-            varDecl->getLocation())
-          << varDecl->getSourceRange();
-    }
-    if (containsSalhelperReferenceObjectSubclass(varDecl->getType().getTypePtr())) {
-        StringRef name { compiler.getSourceManager().getFilename(compiler.getSourceManager().getSpellingLoc(varDecl->getLocation())) };
-        // this is playing games that it believes is safe
-        if (name == SRCDIR "/stoc/source/security/permissions.cxx")
+    // only consider base declarations, not overriden ones, or we warn on methods that
+    // are overriding stuff from external libraries
+    const CXXMethodDecl * methodDecl = dyn_cast<CXXMethodDecl>(functionDecl);
+    if (methodDecl && methodDecl->size_overridden_methods() > 0) {
             return true;
-        report(
-            DiagnosticsEngine::Warning,
-            "salhelper::SimpleReferenceObject subclass being directly stack managed, should be managed via rtl::Reference, "
-            + varDecl->getType().getAsString(),
-            varDecl->getLocation())
-          << varDecl->getSourceRange();
     }
-    if (containsXInterfaceSubclass(varDecl->getType())) {
-        report(
-            DiagnosticsEngine::Warning,
-            "XInterface subclass being directly stack managed, should be managed via uno::Reference, "
-            + varDecl->getType().getAsString(),
-            varDecl->getLocation())
-          << varDecl->getSourceRange();
-    }
+    checkUnoReference(compat::getReturnType(*functionDecl), functionDecl, "", "return");
     return true;
 }
 

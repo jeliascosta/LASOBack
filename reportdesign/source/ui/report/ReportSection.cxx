@@ -90,7 +90,7 @@ OReportSection::OReportSection(OSectionWindow* _pParent,const uno::Reference< re
 {
     //EnableChildTransparentMode();
     SetHelpId(HID_REPORTSECTION);
-    SetMapMode(MapMode(MAP_100TH_MM));
+    SetMapMode(MapMode(MapUnit::Map100thMM));
     SetParentClipMode(ParentClipMode::Clip);
     EnableChildTransparentMode( false );
     SetPaintTransparent( false );
@@ -169,11 +169,6 @@ void OReportSection::Paint( vcl::RenderContext& rRenderContext, const Rectangle&
     }
 }
 
-void OReportSection::Resize()
-{
-    Window::Resize();
-}
-
 void OReportSection::fill()
 {
     if ( !m_xSection.is() )
@@ -211,7 +206,7 @@ void OReportSection::fill()
     const Fraction aY(aGridSizeFine.B());
     m_pView->SetSnapGridWidth(aX, aY);
 
-    m_pView->SetGridSnap( pDesignView->isGridSnap() );
+    m_pView->SetGridSnap( true );
     m_pView->SetGridFront( false );
     m_pView->SetDragStripes( true );
     m_pView->SetPageVisible();
@@ -271,7 +266,7 @@ void OReportSection::Paste(const uno::Sequence< beans::NamedValue >& _aAllreadyC
 
                             pNeuObj->SetPage( m_pPage );
                             pNeuObj->SetModel( m_pModel.get() );
-                            SdrInsertReason aReason(SDRREASON_VIEWCALL);
+                            SdrInsertReason aReason(SdrInsertReasonKind::ViewCall);
                             m_pPage->InsertObject(pNeuObj, SAL_MAX_SIZE, &aReason);
 
                             Rectangle aRet(VCLPoint((*pCopiesIter)->getPosition()),VCLSize((*pCopiesIter)->getSize()));
@@ -422,7 +417,7 @@ void OReportSection::SelectAll(const sal_uInt16 _nObjectType)
         else
         {
             m_pView->UnmarkAll();
-            SdrObjListIter aIter(*m_pPage,IM_DEEPNOGROUPS);
+            SdrObjListIter aIter(*m_pPage,SdrIterMode::DeepNoGroups);
             SdrObject* pObjIter = nullptr;
             while( (pObjIter = aIter.Next()) != nullptr )
             {
@@ -452,7 +447,7 @@ void lcl_insertMenuItemImages(
             else
             {
                 const OUString sCommand = rContextMenu.GetItemCommand(nId);
-                rContextMenu.SetItemImage(nId, vcl::CommandInfoProvider::Instance().GetImageForCommand(sCommand, false, _rFrame));
+                rContextMenu.SetItemImage(nId, vcl::CommandInfoProvider::Instance().GetImageForCommand(sCommand, _rFrame));
                 if ( nId == SID_PAGEHEADERFOOTER )
                 {
                     OUString sText = ModuleRes((_xReportDefinition.is() && _xReportDefinition->getPageHeaderOn()) ? RID_STR_PAGEHEADERFOOTER_DELETE : RID_STR_PAGEHEADERFOOTER_INSERT);
@@ -477,14 +472,14 @@ void OReportSection::Command( const CommandEvent& _rCEvt )
     {
         OReportController& rController = m_pParent->getViewsWindow()->getView()->getReportView()->getController();
         uno::Reference<frame::XFrame> xFrame = rController.getFrame();
-        PopupMenu aContextMenu( ModuleRes( RID_MENU_REPORT ) );
+        ScopedVclPtrInstance<PopupMenu> aContextMenu( ModuleRes( RID_MENU_REPORT ) );
         uno::Reference< report::XReportDefinition> xReportDefinition = getSection()->getReportDefinition();
 
-        lcl_insertMenuItemImages(aContextMenu,rController,xReportDefinition,xFrame);
+        lcl_insertMenuItemImages(*aContextMenu.get(),rController,xReportDefinition,xFrame);
 
         Point aPos = _rCEvt.GetMousePosPixel();
         m_pView->EndAction();
-        const sal_uInt16 nId = aContextMenu.Execute(this, aPos);
+        const sal_uInt16 nId = aContextMenu->Execute(this, aPos);
         if ( nId )
         {
             uno::Sequence< beans::PropertyValue> aArgs;

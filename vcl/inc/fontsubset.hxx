@@ -27,11 +27,11 @@
 
 namespace vcl { struct TrueTypeFont; }         ///< SFT's idea of a TTF font
 
-class FontSubsetInfo
+class FontSubsetInfo final
 {
 public:
     explicit    FontSubsetInfo();
-    virtual     ~FontSubsetInfo();
+                ~FontSubsetInfo();
 
     enum FontType {
         NO_FONT     = 0,
@@ -43,8 +43,7 @@ public:
         TYPE3_FONT  = 1<<6,                     ///< PSType3 Postscript font
         TYPE42_FONT = 1<<7,                     ///< PSType42 wrapper for an SFNT_TTF
         ANY_SFNT    = SFNT_TTF | SFNT_CFF,
-        ANY_TYPE1   = TYPE1_PFA | TYPE1_PFB,
-        ANY_FONT    = 0xFF
+        ANY_TYPE1   = TYPE1_PFA | TYPE1_PFB
     };
 
     bool        LoadFont( FontType eInFontType,
@@ -80,10 +79,9 @@ private:
     const sal_uInt8*        mpReqEncodedIds;
     int                     mnReqGlyphCount;
 
-protected:
-    bool    CreateFontSubsetFromCff( sal_Int32* pOutGlyphWidths = nullptr );
-    bool    CreateFontSubsetFromSfnt( sal_Int32* pOutGlyphWidths = nullptr );
-    static bool CreateFontSubsetFromType1( sal_Int32* pOutGlyphWidths = nullptr );
+    bool    CreateFontSubsetFromCff( sal_Int32* pOutGlyphWidths );
+    bool    CreateFontSubsetFromSfnt( sal_Int32* pOutGlyphWidths );
+    static bool CreateFontSubsetFromType1( sal_Int32* pOutGlyphWidths );
 };
 
 #endif // INCLUDED_VCL_INC_FONTSUBSET_HXX

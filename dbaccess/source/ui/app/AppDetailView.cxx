@@ -39,7 +39,6 @@
 #include "callbacks.hxx"
 #include <dbaccess/IController.hxx>
 #include "moduledbu.hxx"
-#include <svtools/localresaccess.hxx>
 #include "svtools/treelistentry.hxx"
 #include "svtools/viewdataentry.hxx"
 #include <algorithm>
@@ -79,7 +78,7 @@ OCreationList::OCreationList( OTasksWindow& _rParent )
 {
     sal_uInt16 nSize = SPACEBETWEENENTRIES;
     SetSpaceBetweenEntries(nSize);
-    SetSelectionMode( NO_SELECTION );
+    SetSelectionMode( SelectionMode::NONE );
     SetExtendedWinBits( EWB_NO_AUTO_CURENTRY );
     SetNodeDefaultImages( );
     EnableEntryMnemonics();
@@ -155,7 +154,7 @@ Rectangle OCreationList::GetFocusRect( SvTreeListEntry* _pEntry, long _nLine )
     aRect.Left() = 0;
 
     // try to let the focus rect start before the bitmap item - this looks better
-    SvLBoxItem* pBitmapItem = _pEntry->GetFirstItem( SV_ITEM_ID_LBOXCONTEXTBMP );
+    SvLBoxItem* pBitmapItem = _pEntry->GetFirstItem(SvLBoxItemType::ContextBmp);
     SvLBoxTab* pTab = pBitmapItem ? GetTab( _pEntry, pBitmapItem ) : nullptr;
     SvViewDataItem* pItemData = pBitmapItem ? GetViewDataItem( _pEntry, pBitmapItem ) : nullptr;
     OSL_ENSURE( pTab && pItemData, "OCreationList::GetFocusRect: could not find the first bitmap item!" );
@@ -430,7 +429,7 @@ void OTasksWindow::setHelpText(sal_uInt16 _nId)
 
 }
 
-IMPL_LINK_NOARG_TYPED(OTasksWindow, OnEntrySelectHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(OTasksWindow, OnEntrySelectHdl, SvTreeListBox*, void)
 {
     SvTreeListEntry* pEntry = m_aCreation->GetHdlEntry();
     if ( pEntry )
@@ -444,7 +443,7 @@ void OTasksWindow::Resize()
     long nOutputWidth   = aOutputSize.Width();
     long nOutputHeight  = aOutputSize.Height();
 
-    Size aFLSize = LogicToPixel( Size( 2, 6 ), MAP_APPFONT );
+    Size aFLSize = LogicToPixel( Size( 2, 6 ), MapUnit::MapAppFont );
     sal_Int32 n6PPT = aFLSize.Height();
     long nHalfOutputWidth = static_cast<long>(nOutputWidth * 0.5);
 
@@ -542,7 +541,7 @@ OApplicationDetailView::OApplicationDetailView(OAppBorderWindow& _rParent,Previe
 
     m_aContainer->Show();
 
-    const long  nFrameWidth = LogicToPixel( Size( 3, 0 ), MAP_APPFONT ).Width();
+    const long  nFrameWidth = LogicToPixel( Size( 3, 0 ), MapUnit::MapAppFont ).Width();
     m_aHorzSplitter->SetPosSizePixel( Point(0,50), Size(0,nFrameWidth) );
     // now set the components at the base class
     set(m_aContainer.get(),m_aTasks.get());
@@ -599,11 +598,6 @@ void OApplicationDetailView::DataChanged( const DataChangedEvent& rDCEvt )
         ImplInitSettings();
         Invalidate();
     }
-}
-
-void OApplicationDetailView::GetFocus()
-{
-    OSplitterView::GetFocus();
 }
 
 void OApplicationDetailView::setTaskExternalMnemonics( MnemonicGenerator& _rMnemonics )

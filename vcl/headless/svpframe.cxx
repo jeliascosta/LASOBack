@@ -26,7 +26,9 @@
 
 #include <basegfx/vector/b2ivector.hxx>
 
+#ifndef IOS
 #include <cairo.h>
+#endif
 
 using namespace basegfx;
 
@@ -44,7 +46,9 @@ SvpSalFrame::SvpSalFrame( SvpSalInstance* pInstance,
     m_pParent( static_cast<SvpSalFrame*>(pParent) ),
     m_nStyle( nSalFrameStyle ),
     m_bVisible( false ),
+#ifndef IOS
     m_pSurface( nullptr ),
+#endif
     m_nMinWidth( 0 ),
     m_nMinHeight( 0 ),
     m_nMaxWidth( 0 ),
@@ -55,7 +59,7 @@ SvpSalFrame::SvpSalFrame( SvpSalInstance* pInstance,
     memset( static_cast<void *>(&m_aSystemChildData), 0, sizeof( SystemEnvData ) );
     m_aSystemChildData.nSize        = sizeof( SystemEnvData );
 #ifdef IOS
-    (void) nScanlineFormat;
+    // Nothing
 #elif defined ANDROID
     // Nothing
 #else
@@ -111,8 +115,10 @@ SvpSalFrame::~SvpSalFrame()
             }
         }
     }
+#ifndef IOS
     if (m_pSurface)
         cairo_surface_destroy(m_pSurface);
+#endif
 }
 
 void SvpSalFrame::GetFocus()
@@ -285,13 +291,8 @@ void SvpSalFrame::SetPosSize( long nX, long nY, long nWidth, long nHeight, sal_u
 
 void SvpSalFrame::GetClientSize( long& rWidth, long& rHeight )
 {
-    if( m_bVisible )
-    {
-        rWidth = maGeometry.nWidth;
-        rHeight = maGeometry.nHeight;
-    }
-    else
-        rWidth = rHeight = 0;
+    rWidth = maGeometry.nWidth;
+    rHeight = maGeometry.nHeight;
 }
 
 void SvpSalFrame::GetWorkArea( Rectangle& rRect )

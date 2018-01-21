@@ -464,6 +464,23 @@ ORowSetValue& ORowSetValue::operator=(const ORowSetValue& _rRH)
     return *this;
 }
 
+ORowSetValue& ORowSetValue::operator=(ORowSetValue&& _rRH)
+{
+    if ( m_eTypeKind != _rRH.m_eTypeKind || !m_bNull)
+        free();
+    if(!_rRH.m_bNull)
+    {
+        m_aValue    = _rRH.m_aValue;
+        memset(&_rRH.m_aValue, 0, sizeof(_rRH.m_aValue));
+    }
+    m_bBound    = _rRH.m_bBound;
+    m_eTypeKind = _rRH.m_eTypeKind;
+    m_bSigned   = _rRH.m_bSigned;
+    m_bNull     = _rRH.m_bNull;
+    _rRH.m_bNull = true;
+    return *this;
+}
+
 
 ORowSetValue& ORowSetValue::operator=(const Date& _rRH)
 {
@@ -1844,7 +1861,7 @@ Sequence<sal_Int8>  ORowSetValue::getSequence() const
 
                         do
                         {
-                            ::com::sun::star::uno::Sequence< sal_Int8 > aReadSeq;
+                            css::uno::Sequence< sal_Int8 > aReadSeq;
 
                             nRead = xStream->readSomeBytes( aReadSeq, nBytesToRead );
 
@@ -1885,9 +1902,9 @@ Sequence<sal_Int8>  ORowSetValue::getSequence() const
 
 }
 
-::com::sun::star::util::Date ORowSetValue::getDate() const
+css::util::Date ORowSetValue::getDate() const
 {
-    ::com::sun::star::util::Date aValue;
+    css::util::Date aValue;
     if(!m_bNull)
     {
         switch(m_eTypeKind)
@@ -1906,11 +1923,11 @@ Sequence<sal_Int8>  ORowSetValue::getSequence() const
                 break;
 
             case DataType::DATE:
-                aValue = *static_cast< ::com::sun::star::util::Date*>(m_aValue.m_pValue);
+                aValue = *static_cast< css::util::Date*>(m_aValue.m_pValue);
                 break;
             case DataType::TIMESTAMP:
                 {
-                    ::com::sun::star::util::DateTime* pDateTime = static_cast< ::com::sun::star::util::DateTime*>(m_aValue.m_pValue);
+                    css::util::DateTime* pDateTime = static_cast< css::util::DateTime*>(m_aValue.m_pValue);
                     aValue.Day      = pDateTime->Day;
                     aValue.Month    = pDateTime->Month;
                     aValue.Year     = pDateTime->Year;
@@ -1943,9 +1960,9 @@ Sequence<sal_Int8>  ORowSetValue::getSequence() const
     return aValue;
 }
 
-::com::sun::star::util::Time ORowSetValue::getTime()        const
+css::util::Time ORowSetValue::getTime()        const
 {
-    ::com::sun::star::util::Time aValue;
+    css::util::Time aValue;
     if(!m_bNull)
     {
         switch(m_eTypeKind)
@@ -1966,7 +1983,7 @@ Sequence<sal_Int8>  ORowSetValue::getSequence() const
                 break;
             case DataType::TIMESTAMP:
                 {
-                    ::com::sun::star::util::DateTime* pDateTime = static_cast< ::com::sun::star::util::DateTime*>(m_aValue.m_pValue);
+                    css::util::DateTime* pDateTime = static_cast< css::util::DateTime*>(m_aValue.m_pValue);
                     aValue.NanoSeconds      = pDateTime->NanoSeconds;
                     aValue.Seconds          = pDateTime->Seconds;
                     aValue.Minutes          = pDateTime->Minutes;
@@ -1974,7 +1991,7 @@ Sequence<sal_Int8>  ORowSetValue::getSequence() const
                 }
                 break;
             case DataType::TIME:
-                aValue = *static_cast< ::com::sun::star::util::Time*>(m_aValue.m_pValue);
+                aValue = *static_cast< css::util::Time*>(m_aValue.m_pValue);
                 break;
             default:
                 {
@@ -1987,9 +2004,9 @@ Sequence<sal_Int8>  ORowSetValue::getSequence() const
     return aValue;
 }
 
-::com::sun::star::util::DateTime ORowSetValue::getDateTime()    const
+css::util::DateTime ORowSetValue::getDateTime()    const
 {
-    ::com::sun::star::util::DateTime aValue;
+    css::util::DateTime aValue;
     if(!m_bNull)
     {
         switch(m_eTypeKind)
@@ -2010,7 +2027,7 @@ Sequence<sal_Int8>  ORowSetValue::getSequence() const
                 break;
             case DataType::DATE:
                 {
-                    ::com::sun::star::util::Date* pDate = static_cast< ::com::sun::star::util::Date*>(m_aValue.m_pValue);
+                    css::util::Date* pDate = static_cast< css::util::Date*>(m_aValue.m_pValue);
                     aValue.Day      = pDate->Day;
                     aValue.Month    = pDate->Month;
                     aValue.Year     = pDate->Year;
@@ -2018,7 +2035,7 @@ Sequence<sal_Int8>  ORowSetValue::getSequence() const
                 break;
             case DataType::TIME:
                 {
-                    ::com::sun::star::util::Time* pTime = static_cast< ::com::sun::star::util::Time*>(m_aValue.m_pValue);
+                    css::util::Time* pTime = static_cast< css::util::Time*>(m_aValue.m_pValue);
                     aValue.NanoSeconds      = pTime->NanoSeconds;
                     aValue.Seconds          = pTime->Seconds;
                     aValue.Minutes          = pTime->Minutes;
@@ -2026,7 +2043,7 @@ Sequence<sal_Int8>  ORowSetValue::getSequence() const
                 }
                 break;
             case DataType::TIMESTAMP:
-                aValue = *static_cast< ::com::sun::star::util::DateTime*>(m_aValue.m_pValue);
+                aValue = *static_cast< css::util::DateTime*>(m_aValue.m_pValue);
                 break;
             default:
                 {
@@ -2197,7 +2214,7 @@ void ORowSetValue::fill( sal_Int32 _nPos, sal_Int32 _nType, bool  _bNullable, co
 
 void ORowSetValue::fill(sal_Int32 _nPos,
                      sal_Int32 _nType,
-                     const ::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XRow>& _xRow)
+                     const css::uno::Reference< css::sdbc::XRow>& _xRow)
 {
     fill(_nPos,_nType,true,_xRow);
 }
@@ -2220,7 +2237,7 @@ void ORowSetValue::impl_fill( const sal_Int32 _nType, bool _bNullable, const det
             (*this) = _rValueSource.getLong();
         else
             // TODO: this is rather horrible performance-wise
-            //       but fixing it needs extending the ::com::sun::star::sdbc::XRow API
+            //       but fixing it needs extending the css::sdbc::XRow API
             //       to have a getULong(), and needs updating all drivers :-|
             //       When doing that, add getUByte, getUShort, getUInt for symmetry/completeness
             (*this) = _rValueSource.getString().toUInt64();
@@ -2269,11 +2286,11 @@ void ORowSetValue::impl_fill( const sal_Int32 _nType, bool _bNullable, const det
             (*this) = _rValueSource.getLong();
         break;
     case DataType::CLOB:
-        (*this) = ::com::sun::star::uno::makeAny(_rValueSource.getClob());
+        (*this) = css::uno::makeAny(_rValueSource.getClob());
         setTypeKind(DataType::CLOB);
         break;
     case DataType::BLOB:
-        (*this) = ::com::sun::star::uno::makeAny(_rValueSource.getBlob());
+        (*this) = css::uno::makeAny(_rValueSource.getBlob());
         setTypeKind(DataType::BLOB);
         break;
     case DataType::OTHER:
@@ -2402,9 +2419,9 @@ void ORowSetValue::fill(const Any& _rValue)
 
         case TypeClass_STRUCT:
         {
-            ::com::sun::star::util::Date aDate;
-            ::com::sun::star::util::Time aTime;
-            ::com::sun::star::util::DateTime aDateTime;
+            css::util::Date aDate;
+            css::util::Time aTime;
+            css::util::DateTime aDateTime;
             if ( _rValue >>= aDate )
             {
                 (*this) = aDate;

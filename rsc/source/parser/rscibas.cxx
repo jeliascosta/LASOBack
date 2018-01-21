@@ -165,11 +165,6 @@ Atom RscLangEnum::AddLanguage( const char* pLang, RscNameTable& rNames )
     return nResult;
 }
 
-void RscTypCont::InitLangType()
-{
-    aLangType.Init( aNmTb );
-}
-
 RscEnum * RscTypCont::InitFieldUnitsType()
 {
     RscEnum * pFieldUnits;
@@ -228,20 +223,19 @@ RscEnum * RscTypCont::InitMapUnit()
     RscEnum * pMapUnit;
     pMapUnit = new RscEnum( pHS->getID( "EnumMapUnit" ), RSC_NOTYPE );
 
-    SETCONST( pMapUnit, "MAP_PIXEL",                  MAP_PIXEL );
-    SETCONST( pMapUnit, "MAP_SYSFONT",                MAP_SYSFONT );
-    SETCONST( pMapUnit, "MAP_100TH_MM",               MAP_100TH_MM );
-    SETCONST( pMapUnit, "MAP_10TH_MM",                MAP_10TH_MM );
-    SETCONST( pMapUnit, "MAP_MM",                     MAP_MM );
-    SETCONST( pMapUnit, "MAP_CM",                     MAP_CM );
-    SETCONST( pMapUnit, "MAP_1000TH_INCH",            MAP_1000TH_INCH );
-    SETCONST( pMapUnit, "MAP_100TH_INCH",             MAP_100TH_INCH );
-    SETCONST( pMapUnit, "MAP_10TH_INCH",              MAP_10TH_INCH );
-    SETCONST( pMapUnit, "MAP_INCH",                   MAP_INCH );
-    SETCONST( pMapUnit, "MAP_POINT",                  MAP_POINT );
-    SETCONST( pMapUnit, "MAP_TWIP",                   MAP_TWIP );
-    SETCONST( pMapUnit, "MAP_APPFONT",                MAP_APPFONT );
-    SETCONST( pMapUnit, "MAP_SV",                     RSC_EXTRAMAPUNIT );
+    SETCONST( pMapUnit, "MAP_PIXEL",                  MapUnit::MapPixel );
+    SETCONST( pMapUnit, "MAP_SYSFONT",                MapUnit::MapSysFont );
+    SETCONST( pMapUnit, "MAP_100TH_MM",               MapUnit::Map100thMM );
+    SETCONST( pMapUnit, "MAP_10TH_MM",                MapUnit::Map10thMM );
+    SETCONST( pMapUnit, "MAP_MM",                     MapUnit::MapMM );
+    SETCONST( pMapUnit, "MAP_CM",                     MapUnit::MapCM );
+    SETCONST( pMapUnit, "MAP_1000TH_INCH",            MapUnit::Map1000thInch );
+    SETCONST( pMapUnit, "MAP_100TH_INCH",             MapUnit::Map100thInch );
+    SETCONST( pMapUnit, "MAP_10TH_INCH",              MapUnit::Map10thInch );
+    SETCONST( pMapUnit, "MAP_INCH",                   MapUnit::MapInch );
+    SETCONST( pMapUnit, "MAP_POINT",                  MapUnit::MapPoint );
+    SETCONST( pMapUnit, "MAP_TWIP",                   MapUnit::MapTwip );
+    SETCONST( pMapUnit, "MAP_APPFONT",                MapUnit::MapAppFont );
     return pMapUnit;
 }
 
@@ -380,7 +374,7 @@ RscTupel * RscTypCont::InitGeometry()
 
     // Clientvariablen einfuegen
     pTupel = new RscTupel( pHS->getID( "TupelDeltaSystem" ),
-                                RSC_NOTYPE, nullptr );
+                                RSC_NOTYPE );
     nId = aNmTb.Put( "X", VARNAME );
     pTupel->SetVariable( nId, &aShort );
     nId = aNmTb.Put( "Y", VARNAME );
@@ -420,7 +414,7 @@ RscTupel * RscTypCont::InitStringTupel()
     Atom        nId;
 
     // Clientvariablen einfuegen
-    pTupel = new RscTupel( pHS->getID( "CharsTupel" ), RSC_NOTYPE, nullptr );
+    pTupel = new RscTupel( pHS->getID( "CharsTupel" ), RSC_NOTYPE );
     nId = aNmTb.Put( "FILTER", VARNAME );
     pTupel->SetVariable( nId, &aString );
     nId = aNmTb.Put( "MASK", VARNAME );
@@ -435,7 +429,7 @@ RscTupel * RscTypCont::InitStringLongTupel()
     Atom        nId;
 
     // Clientvariablen einfuegen
-    pTupel = new RscTupel( pHS->getID( "CharsLongTupel" ), RSC_NOTYPE, nullptr );
+    pTupel = new RscTupel( pHS->getID( "CharsLongTupel" ), RSC_NOTYPE );
     nId = aNmTb.Put( "ItemText", VARNAME );
     pTupel->SetVariable( nId, &aString );
     nId = aNmTb.Put( "ItemId", VARNAME );

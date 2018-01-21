@@ -44,6 +44,9 @@
 #include <vcl/settings.hxx>
 #include <vcl/sysdata.hxx>
 
+#include <vcl/uitest/uiobject.hxx>
+#include <vcl/uitest/uitest.hxx>
+
 #include <salframe.hxx>
 #include <salobj.hxx>
 #include <salinst.hxx>
@@ -90,21 +93,14 @@ Window::Window( WindowType nType ) :
 }
 
 Window::Window( vcl::Window* pParent, WinBits nStyle ) :
-    Window(WINDOW_WINDOW)
+    mpWindowImpl(new WindowImpl( WINDOW_WINDOW ))
 {
-    ImplInit( pParent, nStyle, nullptr );
-}
+    meOutDevType = OUTDEV_WINDOW;
 
-Window::Window( vcl::Window* pParent, const ResId& rResId ) :
-    Window(WINDOW_WINDOW)
-{
-    rResId.SetRT( RSC_WINDOW );
-    WinBits nStyle = ImplInitRes( rResId );
-    ImplInit( pParent, nStyle, nullptr );
-    ImplLoadRes( rResId );
+    // true: this outdev will be mirrored if RTL window layout (UI mirroring) is globally active
+    mbEnableRTL = AllSettings::GetLayoutRTL();
 
-    if ( !(nStyle & WB_HIDE) )
-        Show();
+    ImplInit( pParent, nStyle, nullptr );
 }
 
 #if OSL_DEBUG_LEVEL > 0
@@ -245,9 +241,9 @@ void Window::dispose()
     if ( pSVData->maHelpData.mpHelpWin && (pSVData->maHelpData.mpHelpWin->GetParent() == this) )
         ImplDestroyHelpWindow( true );
 
-    DBG_ASSERT( pSVData->maWinData.mpTrackWin.get() != this,
+    SAL_WARN_IF( pSVData->maWinData.mpTrackWin.get() == this, "vcl",
                 "Window::~Window(): Window is in TrackingMode" );
-    DBG_ASSERT(!IsMouseCaptured(),
+    SAL_WARN_IF(IsMouseCaptured(), "vcl",
                 "Window::~Window(): Window has the mouse captured");
 
     // due to old compatibility
@@ -523,13 +519,14 @@ void Window::dispose()
 
             auto myPos = ::std::find( pParentWinData->maTopWindowChildren.begin(),
                 pParentWinData->maTopWindowChildren.end(), VclPtr<vcl::Window>(this) );
-            DBG_ASSERT( myPos != pParentWinData->maTopWindowChildren.end(), "Window::~Window: inconsistency in top window chain!" );
+            SAL_WARN_IF( myPos == pParentWinData->maTopWindowChildren.end(), "vcl", "Window::~Window: inconsistency in top window chain!" );
             if ( myPos != pParentWinData->maTopWindowChildren.end() )
                 pParentWinData->maTopWindowChildren.erase( myPos );
         }
     }
 
     delete mpWindowImpl->mpWinData;
+    mpWindowImpl->mpWinData = nullptr;
 
     // remove BorderWindow or Frame window data
     mpWindowImpl->mpBorderWindow.disposeAndClear();
@@ -556,15 +553,20 @@ void Window::dispose()
                 SAL_WARN("vcl", "Window " << this << " marked as frame window, "
                          "is missing from list of " << nWindows << " frames");
         }
-        mpWindowImpl->mpFrame->SetCallback( nullptr, nullptr );
-        pSVData->mpDefInst->DestroyFrame( mpWindowImpl->mpFrame );
+        if (mpWindowImpl->mpFrame) // otherwise exception during init
+        {
+            mpWindowImpl->mpFrame->SetCallback( nullptr, nullptr );
+            pSVData->mpDefInst->DestroyFrame( mpWindowImpl->mpFrame );
+        }
         assert (mpWindowImpl->mpFrameData->mnFocusId == nullptr);
         assert (mpWindowImpl->mpFrameData->mnMouseMoveId == nullptr);
+
         delete mpWindowImpl->mpFrameData;
+        mpWindowImpl->mpFrameData = nullptr;
     }
 
     // should be the last statements
-    delete mpWindowImpl; mpWindowImpl = nullptr;
+    mpWindowImpl.reset();
 
     OutputDevice::dispose();
 }
@@ -652,8 +654,8 @@ WindowImpl::WindowImpl( WindowType nType )
     mnDlgCtrlFlags                      = DialogControlFlags::NONE;  // DialogControl-Flags
     mnLockCount                         = 0;                         // LockCount
     meAlwaysInputMode                   = AlwaysInputNone;           // neither AlwaysEnableInput nor AlwaysDisableInput called
-    meHalign                            = VCL_ALIGN_FILL;
-    meValign                            = VCL_ALIGN_FILL;
+    meHalign                            = VclAlign::Fill;
+    meValign                            = VclAlign::Fill;
     mePackType                          = VclPackType::Start;
     mnPadding                           = 0;
     mnGridHeight                        = 1;
@@ -681,15 +683,12 @@ WindowImpl::WindowImpl( WindowType nType )
     mbOverlapVisible                    = false;                     // true: Hide called for visible window from ImplHideAllOverlapWindow()
     mbDisabled                          = false;                     // true: Enable( false ) called
     mbInputDisabled                     = false;                     // true: EnableInput( false ) called
-    mbDropDisabled                      = false;                     // true: Drop is enabled
     mbNoUpdate                          = false;                     // true: SetUpdateMode( false ) called
     mbNoParentUpdate                    = false;                     // true: SetParentUpdateMode( false ) called
     mbActive                            = false;                     // true: Window Active
-    mbParentActive                      = false;                     // true: OverlapActive from Parent
     mbReallyVisible                     = false;                     // true: this and all parents to an overlapped window are visible
     mbReallyShown                       = false;                     // true: this and all parents to an overlapped window are shown
     mbInInitShow                        = false;                     // true: we are in InitShow
-    mbChildNotify                       = false;                     // true: ChildNotify
     mbChildPtrOverwrite                 = false;                     // true: PointerStyle overwrites Child-Pointer
     mbNoPtrVisible                      = false;                     // true: ShowPointer( false ) called
     mbMouseMove                         = false;                     // true: BaseMouseMove called
@@ -744,7 +743,8 @@ WindowImpl::WindowImpl( WindowType nType )
     mbFill                              = true;
     mbSecondary                         = false;
     mbNonHomogeneous                    = false;
-    mbDoubleBufferingRequested = getenv("VCL_DOUBLEBUFFERING_FORCE_ENABLE"); // when we are not sure, assume it cannot do double-buffering via RenderContext
+    static bool bDoubleBuffer = getenv("VCL_DOUBLEBUFFERING_FORCE_ENABLE");
+    mbDoubleBufferingRequested = bDoubleBuffer; // when we are not sure, assume it cannot do double-buffering via RenderContext
 }
 
 WindowImpl::~WindowImpl()
@@ -844,7 +844,7 @@ bool Window::AcquireGraphics() const
 
     if ( mpGraphics )
     {
-        mpGraphics->SetXORMode( (ROP_INVERT == meRasterOp) || (ROP_XOR == meRasterOp), ROP_INVERT == meRasterOp );
+        mpGraphics->SetXORMode( (RasterOp::Invert == meRasterOp) || (RasterOp::Xor == meRasterOp) );
         mpGraphics->setAntiAliasB2DDraw(bool(mnAntialiasing & AntialiasingFlags::EnableB2dDraw));
     }
 
@@ -885,7 +885,7 @@ void Window::ReleaseGraphics( bool bRelease )
 
 static sal_Int32 CountDPIScaleFactor(sal_Int32 nDPI)
 {
-    sal_Int32 nResult = 1;
+    sal_Int32 nResult = 100;
 
 #ifndef MACOSX
     // Setting of HiDPI is unfortunately all only a heuristic; and to add
@@ -893,8 +893,12 @@ static sal_Int32 CountDPIScaleFactor(sal_Int32 nDPI)
     // the DPI and whatnot
     // eg. fdo#77059 - set the value from which we do consider the
     // screen hi-dpi to greater than 168
-    if (nDPI > 168)
-        nResult = std::max(sal_Int32(1), (nDPI + 48) / 96);
+    if (nDPI > 216)      // 96 * 2   + 96 / 4
+        nResult = 250;
+    else if (nDPI > 168) // 96 * 2   - 96 / 4
+        nResult = 200;
+    else if (nDPI > 120) // 96 * 1.5 - 96 / 4
+        nResult = 150;
 #else
     (void)nDPI;
 #endif
@@ -904,7 +908,7 @@ static sal_Int32 CountDPIScaleFactor(sal_Int32 nDPI)
 
 void Window::ImplInit( vcl::Window* pParent, WinBits nStyle, SystemParentData* pSystemParentData )
 {
-    DBG_ASSERT( mpWindowImpl->mbFrame || pParent || GetType() == WINDOW_FIXEDIMAGE,
+    SAL_WARN_IF( !mpWindowImpl->mbFrame && !pParent && GetType() != WINDOW_FIXEDIMAGE, "vcl",
         "Window::Window(): pParent == NULL" );
 
     ImplSVData* pSVData = ImplGetSVData();
@@ -1053,7 +1057,7 @@ void Window::ImplInit( vcl::Window* pParent, WinBits nStyle, SystemParentData* p
         mpWindowImpl->mpFrameData->mnFirstMouseCode   = 0;
         mpWindowImpl->mpFrameData->mnMouseCode        = 0;
         mpWindowImpl->mpFrameData->mnMouseMode        = MouseEventModifiers::NONE;
-        mpWindowImpl->mpFrameData->meMapUnit          = MAP_PIXEL;
+        mpWindowImpl->mpFrameData->meMapUnit          = MapUnit::MapPixel;
         mpWindowImpl->mpFrameData->mbHasFocus         = false;
         mpWindowImpl->mpFrameData->mbInMouseMove      = false;
         mpWindowImpl->mpFrameData->mbMouseIn          = false;
@@ -1146,15 +1150,14 @@ void Window::ImplInit( vcl::Window* pParent, WinBits nStyle, SystemParentData* p
     }
 
     // setup the scale factor for Hi-DPI displays
-    mnDPIScaleFactor = CountDPIScaleFactor(mpWindowImpl->mpFrameData->mnDPIY);
+    mnDPIScalePercentage = CountDPIScaleFactor(mpWindowImpl->mpFrameData->mnDPIY);
+    mnDPIX = mpWindowImpl->mpFrameData->mnDPIX;
+    mnDPIY = mpWindowImpl->mpFrameData->mnDPIY;
 
     if (!utl::ConfigManager::IsAvoidConfig())
     {
         const StyleSettings& rStyleSettings = mxSettings->GetStyleSettings();
-        sal_uInt16 nScreenZoom = rStyleSettings.GetScreenZoom();
-        mnDPIX          = (mpWindowImpl->mpFrameData->mnDPIX*nScreenZoom)/100;
-        mnDPIY          = (mpWindowImpl->mpFrameData->mnDPIY*nScreenZoom)/100;
-        maFont          = rStyleSettings.GetAppFont();
+        maFont = rStyleSettings.GetAppFont();
 
         if ( nStyle & WB_3DLOOK )
         {
@@ -1169,8 +1172,6 @@ void Window::ImplInit( vcl::Window* pParent, WinBits nStyle, SystemParentData* p
     }
     else
     {
-        mnDPIX          = 96;
-        mnDPIY          = 96;
         maFont = GetDefaultFont( DefaultFontType::FIXED, LANGUAGE_ENGLISH_US, GetDefaultFontFlags::NONE );
     }
 
@@ -1226,10 +1227,6 @@ void Window::ImplInitAppFontData( vcl::Window* pWindow )
         }
     }
 #endif
-
-    pSVData->maGDIData.mnRealAppFontX = pSVData->maGDIData.mnAppFontX;
-    if ( pSVData->maAppData.mnDialogScaleX )
-        pSVData->maGDIData.mnAppFontX += (pSVData->maGDIData.mnAppFontX*pSVData->maAppData.mnDialogScaleX)/100;
 }
 
 ImplWinData* Window::ImplGetWinData() const
@@ -1335,20 +1332,19 @@ void Window::ImplInitResolutionSettings()
     // recalculate AppFont-resolution and DPI-resolution
     if (mpWindowImpl->mbFrame)
     {
-        const StyleSettings& rStyleSettings = mxSettings->GetStyleSettings();
-        sal_uInt16 nScreenZoom = rStyleSettings.GetScreenZoom();
-        mnDPIX = (mpWindowImpl->mpFrameData->mnDPIX*nScreenZoom)/100;
-        mnDPIY = (mpWindowImpl->mpFrameData->mnDPIY*nScreenZoom)/100;
+        mnDPIX = mpWindowImpl->mpFrameData->mnDPIX;
+        mnDPIY = mpWindowImpl->mpFrameData->mnDPIY;
 
         // setup the scale factor for Hi-DPI displays
-        mnDPIScaleFactor = CountDPIScaleFactor(mpWindowImpl->mpFrameData->mnDPIY);
+        mnDPIScalePercentage = CountDPIScaleFactor(mpWindowImpl->mpFrameData->mnDPIY);
+        const StyleSettings& rStyleSettings = mxSettings->GetStyleSettings();
         SetPointFont(*this, rStyleSettings.GetAppFont());
     }
     else if ( mpWindowImpl->mpParent )
     {
         mnDPIX  = mpWindowImpl->mpParent->mnDPIX;
         mnDPIY  = mpWindowImpl->mpParent->mnDPIY;
-        mnDPIScaleFactor = mpWindowImpl->mpParent->mnDPIScaleFactor;
+        mnDPIScalePercentage = mpWindowImpl->mpParent->mnDPIScalePercentage;
     }
 
     // update the recalculated values for logical units
@@ -1364,25 +1360,16 @@ void Window::ImplInitResolutionSettings()
 void Window::ImplPointToLogic(vcl::RenderContext& rRenderContext, vcl::Font& rFont) const
 {
     Size aSize = rFont.GetFontSize();
-    sal_uInt16 nScreenFontZoom;
-    if (!utl::ConfigManager::IsAvoidConfig())
-        nScreenFontZoom = rRenderContext.GetSettings().GetStyleSettings().GetScreenFontZoom();
-    else
-        nScreenFontZoom = 100;
 
     if (aSize.Width())
     {
         aSize.Width() *= mpWindowImpl->mpFrameData->mnDPIX;
         aSize.Width() += 72 / 2;
         aSize.Width() /= 72;
-        aSize.Width() *= nScreenFontZoom;
-        aSize.Width() /= 100;
     }
     aSize.Height() *= mpWindowImpl->mpFrameData->mnDPIY;
     aSize.Height() += 72/2;
     aSize.Height() /= 72;
-    aSize.Height() *= nScreenFontZoom;
-    aSize.Height() /= 100;
 
     if (rRenderContext.IsMapModeEnabled())
         aSize = rRenderContext.PixelToLogic(aSize);
@@ -1393,25 +1380,16 @@ void Window::ImplPointToLogic(vcl::RenderContext& rRenderContext, vcl::Font& rFo
 void Window::ImplLogicToPoint(vcl::RenderContext& rRenderContext, vcl::Font& rFont) const
 {
     Size aSize = rFont.GetFontSize();
-    sal_uInt16 nScreenFontZoom;
-    if (!utl::ConfigManager::IsAvoidConfig())
-        nScreenFontZoom = rRenderContext.GetSettings().GetStyleSettings().GetScreenFontZoom();
-    else
-        nScreenFontZoom = 100;
 
     if (rRenderContext.IsMapModeEnabled())
         aSize = rRenderContext.LogicToPixel(aSize);
 
     if (aSize.Width())
     {
-        aSize.Width() *= 100;
-        aSize.Width() /= nScreenFontZoom;
         aSize.Width() *= 72;
         aSize.Width() += mpWindowImpl->mpFrameData->mnDPIX / 2;
         aSize.Width() /= mpWindowImpl->mpFrameData->mnDPIX;
     }
-    aSize.Height() *= 100;
-    aSize.Height() /= nScreenFontZoom;
     aSize.Height() *= 72;
     aSize.Height() += mpWindowImpl->mpFrameData->mnDPIY / 2;
     aSize.Height() /= mpWindowImpl->mpFrameData->mnDPIY;
@@ -1436,7 +1414,7 @@ bool Window::ImplUpdatePos()
         mnOutOffY  = mpWindowImpl->mnY + pParent->mnOutOffY;
     }
 
-    vcl::Window* pChild = mpWindowImpl->mpFirstChild;
+    VclPtr< vcl::Window > pChild = mpWindowImpl->mpFirstChild;
     while ( pChild )
     {
         if ( pChild->ImplUpdatePos() )
@@ -1455,7 +1433,7 @@ void Window::ImplUpdateSysObjPos()
     if ( mpWindowImpl->mpSysObj )
         mpWindowImpl->mpSysObj->SetPosSize( mnOutOffX, mnOutOffY, mnOutWidth, mnOutHeight );
 
-    vcl::Window* pChild = mpWindowImpl->mpFirstChild;
+    VclPtr< vcl::Window > pChild = mpWindowImpl->mpFirstChild;
     while ( pChild )
     {
         pChild->ImplUpdateSysObjPos();
@@ -1836,7 +1814,7 @@ void Window::KeyInput( const KeyEvent& rKEvt )
     if (cod.GetCode () >= 0x200 && cod.GetCode () <= 0x219)
     {
         if (!accel) return;
-        if (autoacc && cod.GetModifier () != 0x4000) return;
+        if (autoacc && cod.GetModifier () != KEY_MOD2) return;
     }
 
     NotifyEvent aNEvt( MouseNotifyEvent::KEYINPUT, this, &rKEvt );
@@ -1985,7 +1963,7 @@ bool Window::IsLocked() const
     if ( mpWindowImpl->mnLockCount != 0 )
         return true;
 
-    vcl::Window* pChild = mpWindowImpl->mpFirstChild;
+    VclPtr<vcl::Window> pChild = mpWindowImpl->mpFirstChild;
     while ( pChild )
     {
         if ( pChild->IsLocked() )
@@ -2184,7 +2162,7 @@ void Window::CollectChildren(::std::vector<vcl::Window *>& rAllChildren )
 {
     rAllChildren.push_back( this );
 
-    vcl::Window* pChild = mpWindowImpl->mpFirstChild;
+    VclPtr< vcl::Window > pChild = mpWindowImpl->mpFirstChild;
     while ( pChild )
     {
         pChild->CollectChildren( rAllChildren );
@@ -2369,7 +2347,7 @@ void Window::Show(bool bVisible, ShowFlags nFlags)
                 pSVData->mpIntroWindow->Hide();
             }
 
-            //DBG_ASSERT( !mpWindowImpl->mbSuppressAccessibilityEvents, "Window::Show() - Frame reactivated");
+            //SAL_WARN_IF( mpWindowImpl->mbSuppressAccessibilityEvents, "vcl", "Window::Show() - Frame reactivated");
             mpWindowImpl->mbSuppressAccessibilityEvents = false;
 
             mpWindowImpl->mbPaintFrame = true;
@@ -2496,9 +2474,9 @@ void Window::Enable( bool bEnable, bool bChild )
         CallEventListeners( bEnable ? VCLEVENT_WINDOW_ENABLED : VCLEVENT_WINDOW_DISABLED );
     }
 
-    if ( bChild || mpWindowImpl->mbChildNotify )
+    if ( bChild )
     {
-        vcl::Window* pChild = mpWindowImpl->mpFirstChild;
+        VclPtr< vcl::Window > pChild = mpWindowImpl->mpFirstChild;
         while ( pChild )
         {
             pChild->Enable( bEnable, bChild );
@@ -2514,7 +2492,7 @@ void Window::SetCallHandlersOnInputDisabled( bool bCall )
 {
     mpWindowImpl->mbCallHandlersDuringInputDisabled = bCall;
 
-    vcl::Window* pChild = mpWindowImpl->mpFirstChild;
+    VclPtr< vcl::Window > pChild = mpWindowImpl->mpFirstChild;
     while ( pChild )
     {
         pChild->SetCallHandlersOnInputDisabled( bCall );
@@ -2569,9 +2547,9 @@ void Window::EnableInput( bool bEnable, bool bChild )
         mpWindowImpl->mpFrameData->mpFocusWin == this )
         pSVData->maWinData.mpFocusWin = this;
 
-    if ( bChild || mpWindowImpl->mbChildNotify )
+    if ( bChild )
     {
-        vcl::Window* pChild = mpWindowImpl->mpFirstChild;
+        VclPtr< vcl::Window > pChild = mpWindowImpl->mpFirstChild;
         while ( pChild )
         {
             pChild->EnableInput( bEnable, bChild );
@@ -2668,9 +2646,9 @@ void Window::AlwaysEnableInput( bool bAlways, bool bChild )
         mpWindowImpl->meAlwaysInputMode = AlwaysInputNone;
     }
 
-    if ( bChild || mpWindowImpl->mbChildNotify )
+    if ( bChild )
     {
-        vcl::Window* pChild = mpWindowImpl->mpFirstChild;
+        VclPtr< vcl::Window > pChild = mpWindowImpl->mpFirstChild;
         while ( pChild )
         {
             pChild->AlwaysEnableInput( bAlways, bChild );
@@ -2697,9 +2675,9 @@ void Window::AlwaysDisableInput( bool bAlways, bool bChild )
         mpWindowImpl->meAlwaysInputMode = AlwaysInputNone;
     }
 
-    if ( bChild || mpWindowImpl->mbChildNotify )
+    if ( bChild )
     {
-        vcl::Window* pChild = mpWindowImpl->mpFirstChild;
+        VclPtr< vcl::Window > pChild = mpWindowImpl->mpFirstChild;
         while ( pChild )
         {
             pChild->AlwaysDisableInput( bAlways, bChild );
@@ -3177,8 +3155,10 @@ const OUString& Window::GetHelpText() const
     return mpWindowImpl->maHelpText;
 }
 
-void Window::SetWindowPeer( Reference< css::awt::XWindowPeer > xPeer, VCLXWindow* pVCLXWindow  )
+void Window::SetWindowPeer( Reference< css::awt::XWindowPeer > const & xPeer, VCLXWindow* pVCLXWindow  )
 {
+    assert(mpWindowImpl);
+
     // be safe against re-entrance: first clear the old ref, then assign the new one
     mpWindowImpl->mxWindowPeer.clear();
     mpWindowImpl->mxWindowPeer = xPeer;
@@ -3197,10 +3177,10 @@ Reference< css::awt::XWindowPeer > Window::GetComponentInterface( bool bCreate )
     return mpWindowImpl->mxWindowPeer;
 }
 
-void Window::SetComponentInterface( Reference< css::awt::XWindowPeer > xIFace )
+void Window::SetComponentInterface( Reference< css::awt::XWindowPeer > const & xIFace )
 {
     UnoWrapperBase* pWrapper = Application::GetUnoWrapper();
-    DBG_ASSERT( pWrapper, "SetComponentInterface: No Wrapper!" );
+    SAL_WARN_IF( !pWrapper, "vcl", "SetComponentInterface: No Wrapper!" );
     if ( pWrapper )
         pWrapper->SetWindowInterface( this, xIFace );
 }
@@ -3242,7 +3222,7 @@ void Window::ImplCallActivateListeners( vcl::Window *pOld )
     }
 }
 
-void Window::SetClipboard(Reference<XClipboard> xClipboard)
+void Window::SetClipboard(Reference<XClipboard> const & xClipboard)
 {
     if (mpWindowImpl->mpFrameData)
         mpWindowImpl->mpFrameData->mxClipboard = xClipboard;
@@ -3327,17 +3307,10 @@ void Window::RecordLayoutData( vcl::ControlLayoutData* pLayout, const Rectangle&
     mpOutDevData->mpRecordLayout = nullptr;
 }
 
-void Window::DrawSelectionBackground( const Rectangle& rRect, sal_uInt16 highlight, bool bChecked, bool bDrawBorder )
-{
-    DrawSelectionBackground( rRect, highlight, bChecked, bDrawBorder, nullptr, nullptr );
-}
-
 void Window::DrawSelectionBackground( const Rectangle& rRect,
                                       sal_uInt16 highlight,
                                       bool bChecked,
-                                      bool bDrawBorder,
-                                      Color* pSelectionTextColor,
-                                      Color* pPaintColor
+                                      bool bDrawBorder
                                       )
 {
     if( rRect.IsEmpty() )
@@ -3346,7 +3319,7 @@ void Window::DrawSelectionBackground( const Rectangle& rRect,
     const StyleSettings& rStyles = GetSettings().GetStyleSettings();
 
     // colors used for item highlighting
-    Color aSelectionBorderCol( pPaintColor ? *pPaintColor : rStyles.GetHighlightColor() );
+    Color aSelectionBorderCol( rStyles.GetHighlightColor() );
     Color aSelectionFillCol( aSelectionBorderCol );
 
     bool bDark = rStyles.GetFaceColor().IsDark();
@@ -3355,7 +3328,7 @@ void Window::DrawSelectionBackground( const Rectangle& rRect,
     int c1 = aSelectionBorderCol.GetLuminance();
     int c2 = GetDisplayBackground().GetColor().GetLuminance();
 
-    if( !bDark && !bBright && abs( c2-c1 ) < (pPaintColor ? 40 : 75) )
+    if( !bDark && !bBright && abs( c2-c1 ) < 75 )
     {
         // constrast too low
         sal_uInt16 h,s,b;
@@ -3430,14 +3403,6 @@ void Window::DrawSelectionBackground( const Rectangle& rRect,
     }
 
     SetFillColor( aSelectionFillCol );
-    if( pSelectionTextColor )
-    {
-        Color aTextColor = IsControlBackground() ? GetControlForeground() : rStyles.GetButtonTextColor();
-        Color aHLTextColor = rStyles.GetHighlightTextColor();
-        int nTextDiff = abs(aSelectionFillCol.GetLuminance() - aTextColor.GetLuminance());
-        int nHLDiff = abs(aSelectionFillCol.GetLuminance() - aHLTextColor.GetLuminance());
-        *pSelectionTextColor = (nHLDiff >= nTextDiff) ? aHLTextColor : aTextColor;
-    }
 
     if( bDark )
     {
@@ -3457,7 +3422,7 @@ void Window::DrawSelectionBackground( const Rectangle& rRect,
 bool Window::IsScrollable() const
 {
     // check for scrollbars
-    vcl::Window *pChild = mpWindowImpl->mpFirstChild;
+    VclPtr< vcl::Window > pChild = mpWindowImpl->mpFirstChild;
     while( pChild )
     {
         if( pChild->GetType() == WINDOW_SCROLLBAR )
@@ -3530,14 +3495,14 @@ bool Window::HasActiveChildFrame()
         if( pFrameWin != mpWindowImpl->mpFrameWindow )
         {
             bool bDecorated = false;
-            vcl::Window *pChildFrame = pFrameWin->ImplGetWindow();
+            VclPtr< vcl::Window > pChildFrame = pFrameWin->ImplGetWindow();
             // #i15285# unfortunately WB_MOVEABLE is the same as WB_TABSTOP which can
             // be removed for ToolBoxes to influence the keyboard accessibility
             // thus WB_MOVEABLE is no indicator for decoration anymore
             // but FloatingWindows carry this information in their TitleType...
             // TODO: avoid duplicate WinBits !!!
             if( pChildFrame && pChildFrame->ImplIsFloatingWindow() )
-                bDecorated = static_cast<FloatingWindow*>(pChildFrame)->GetTitleType() != FloatWinTitleType::NONE;
+                bDecorated = static_cast<FloatingWindow*>(pChildFrame.get())->GetTitleType() != FloatWinTitleType::NONE;
             if( bDecorated || (pFrameWin->mpWindowImpl->mnStyle & (WB_MOVEABLE | WB_SIZEABLE) ) )
                 if( pChildFrame && pChildFrame->IsVisible() && pChildFrame->IsActive() )
                 {
@@ -3579,7 +3544,7 @@ void Window::EnableNativeWidget( bool bEnable )
     }
 
     // push down, useful for compound controls
-    vcl::Window *pChild = mpWindowImpl->mpFirstChild;
+    VclPtr< vcl::Window > pChild = mpWindowImpl->mpFirstChild;
     while( pChild )
     {
         pChild->EnableNativeWidget( bEnable );
@@ -3688,7 +3653,7 @@ Selection Window::GetSurroundingTextSelection() const
 
 bool Window::UsePolyPolygonForComplexGradient()
 {
-    if ( meRasterOp != ROP_OVERPAINT )
+    if ( meRasterOp != RasterOp::OverPaint )
         return true;
 
     return false;
@@ -3778,6 +3743,21 @@ bool Window::CompatNotify( NotifyEvent& rNEvt )
         return Window::Notify( rNEvt );
     else
         return Notify( rNEvt );
+}
+
+void Window::set_id(const OUString& rID)
+{
+    mpWindowImpl->maID = rID;
+}
+
+const OUString& Window::get_id() const
+{
+    return mpWindowImpl->maID;
+}
+
+FactoryFunction Window::GetUITestFactory() const
+{
+    return WindowUIObject::create;
 }
 
 } /* namespace vcl */

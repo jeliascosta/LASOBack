@@ -46,7 +46,7 @@ class DrawViewWrapper : public E3dView
 {
 public:
     DrawViewWrapper(SdrModel* pModel, OutputDevice* pOut);
-    virtual ~DrawViewWrapper();
+    virtual ~DrawViewWrapper() override;
 
     //triggers the use of an updated first page
     void    ReInit();
@@ -56,7 +56,7 @@ public:
         const css::uno::Reference< css::frame::XModel > & xChartModel );
 
     //fill list of selection handles 'aHdl'
-    virtual void SetMarkHandles() override;
+    virtual void SetMarkHandles(SfxViewShell* pOtherShell) override;
 
     SdrPageView*    GetPageView() const;
 

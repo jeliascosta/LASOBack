@@ -30,7 +30,7 @@ class VCL_DLLPUBLIC SvpSalBitmap : public SalBitmap
     BitmapBuffer*   mpDIB;
 public:
     SvpSalBitmap() : mpDIB(nullptr) {}
-    virtual ~SvpSalBitmap();
+    virtual ~SvpSalBitmap() override;
 
     // SalBitmap
     virtual bool            Create( const Size& rSize,
@@ -49,7 +49,7 @@ public:
     {
         return mpDIB;
     }
-    virtual void            Destroy() override;
+    virtual void            Destroy() final override;
     virtual Size            GetSize() const override;
     virtual sal_uInt16      GetBitCount() const override;
 

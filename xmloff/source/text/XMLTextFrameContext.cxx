@@ -17,6 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <o3tl/make_unique.hxx>
 #include <tools/debug.hxx>
 #include <osl/diagnose.h>
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
@@ -121,7 +122,7 @@ public:
                                          sal_uInt16 nPrfx,
                                          const OUString& rLName,
                                          OUString& rTitleOrDesc );
-    virtual ~XMLTextFrameTitleOrDescContext_Impl();
+    virtual ~XMLTextFrameTitleOrDescContext_Impl() override;
 
     virtual void Characters( const OUString& rText ) override;
 };
@@ -156,7 +157,7 @@ public:
             const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
             sal_uInt16 nType,
             ParamMap &rParamMap);
-    virtual ~XMLTextFrameParam_Impl();
+    virtual ~XMLTextFrameParam_Impl() override;
 };
 
 
@@ -210,7 +211,7 @@ public:
             const css::uno::Reference< css::xml::sax::XAttributeList > & xAttrList,
             const Reference < XPropertySet >& rPropSet,
             bool bPath );
-    virtual ~XMLTextFrameContourContext_Impl();
+    virtual ~XMLTextFrameContourContext_Impl() override;
 };
 
 
@@ -409,6 +410,7 @@ class XMLTextFrameContext_Impl : public SvXMLImportContext
     bool    bSyncHeight : 1;
     bool    bCreateFailed : 1;
     bool    bOwnBase64Stream : 1;
+    bool    mbMultipleContent : 1; // This context is created based on a multiple content (image)
 
     void Create( bool bHRefOrBase64 );
 
@@ -424,8 +426,9 @@ public:
             const css::uno::Reference<css::xml::sax::XAttributeList > & rAttrList,
             css::text::TextContentAnchorType eAnchorType,
             sal_uInt16 nType,
-            const css::uno::Reference<css::xml::sax::XAttributeList > & rFrameAttrList );
-    virtual ~XMLTextFrameContext_Impl();
+            const css::uno::Reference<css::xml::sax::XAttributeList > & rFrameAttrList,
+            bool bMultipleContent = false );
+    virtual ~XMLTextFrameContext_Impl() override;
 
     virtual void EndElement() override;
 
@@ -446,6 +449,8 @@ public:
     void SetDesc( const OUString& rDesc );
 
     void SetName();
+
+    const OUString& GetOrigName() const { return m_sOrigName; }
 
     css::text::TextContentAnchorType GetAnchorType() const { return eAnchorType; }
 
@@ -547,7 +552,7 @@ void XMLTextFrameContext_Impl::Create( bool /*bHRefOrBase64*/ )
                     case XML_TEXT_FRAME_GRAPHIC: sServiceName = sGraphicServiceName; break;
                 }
                 Reference<XInterface> xIfc = xFactory->createInstance( sServiceName );
-                DBG_ASSERT( xIfc.is(), "couldn't create frame" );
+                SAL_WARN_IF( !xIfc.is(), "xmloff", "couldn't create frame" );
                 if( xIfc.is() )
                     xPropSet.set( xIfc, UNO_QUERY );
             }
@@ -561,6 +566,15 @@ void XMLTextFrameContext_Impl::Create( bool /*bHRefOrBase64*/ )
     }
 
     Reference< XPropertySetInfo > xPropSetInfo = xPropSet->getPropertySetInfo();
+
+    // Skip duplicated frames
+    if(!mbMultipleContent && // It's allowed to have multiple image for the same frame
+       !sName.isEmpty() &&
+       xTextImportHelper->IsDuplicateFrame(sName, nX, nY, nWidth, nHeight))
+    {
+        bCreateFailed = true;
+        return;
+    }
 
     // set name
     Reference < XNamed > xNamed( xPropSet, UNO_QUERY );
@@ -581,14 +595,9 @@ void XMLTextFrameContext_Impl::Create( bool /*bHRefOrBase64*/ )
             xNamed->setName( sName );
             if( sName != sOldName )
             {
-                bool bSuccess = xTextImportHelper->GetRenameMap().Add( XML_TEXT_RENAME_TYPE_FRAME,
+                xTextImportHelper->GetRenameMap().Add( XML_TEXT_RENAME_TYPE_FRAME,
                                              sOldName, sName );
 
-                if (!bSuccess && !sOldName.isEmpty())
-                {
-                    bCreateFailed = true;
-                    return;
-                }
             }
         }
     }
@@ -824,7 +833,8 @@ XMLTextFrameContext_Impl::XMLTextFrameContext_Impl(
         const Reference< XAttributeList > & rAttrList,
         TextContentAnchorType eATyp,
         sal_uInt16 nNewType,
-        const Reference< XAttributeList > & rFrameAttrList )
+        const Reference< XAttributeList > & rFrameAttrList,
+        bool bMultipleContent )
 :   SvXMLImportContext( rImport, nPrfx, rLName )
 ,   mbListContextPushed( false )
 ,   sWidth("Width")
@@ -869,6 +879,7 @@ XMLTextFrameContext_Impl::XMLTextFrameContext_Impl(
     bSyncHeight = false;
     bCreateFailed = false;
     bOwnBase64Stream = false;
+    mbMultipleContent = bMultipleContent;
 
     rtl::Reference < XMLTextImportHelper > xTxtImport =
         GetImport().GetTextImport();
@@ -1322,7 +1333,7 @@ void XMLTextFrameContext_Impl::SetDesc( const OUString& rDesc )
 
 bool XMLTextFrameContext::CreateIfNotThere( css::uno::Reference < css::beans::XPropertySet >& rPropSet )
 {
-    SvXMLImportContext *pContext = &m_xImplContext;
+    SvXMLImportContext *pContext = m_xImplContext.get();
     XMLTextFrameContext_Impl *pImpl = dynamic_cast< XMLTextFrameContext_Impl*>( pContext );
     if( pImpl )
     {
@@ -1341,7 +1352,6 @@ XMLTextFrameContext::XMLTextFrameContext(
 :   SvXMLImportContext( rImport, nPrfx, rLName )
 ,   MultiImageImportHelper()
 ,   m_xAttrList( new SvXMLAttributeList( xAttrList ) )
-,   m_pHyperlink( nullptr )
     // Implement Title/Description Elements UI (#i73249#)
 ,   m_sTitle()
 ,   m_sDesc()
@@ -1391,27 +1401,22 @@ XMLTextFrameContext::XMLTextFrameContext(
     }
 }
 
-XMLTextFrameContext::~XMLTextFrameContext()
-{
-    delete m_pHyperlink;
-}
-
 void XMLTextFrameContext::EndElement()
 {
     /// solve if multiple image child contexts were imported
     SvXMLImportContextRef const pMultiContext(solveMultipleImages());
 
     SvXMLImportContext const*const pContext =
-        (pMultiContext) ? &pMultiContext : &m_xImplContext;
+        (pMultiContext.is()) ? pMultiContext.get() : m_xImplContext.get();
     XMLTextFrameContext_Impl *pImpl = const_cast<XMLTextFrameContext_Impl*>(dynamic_cast< const XMLTextFrameContext_Impl*>( pContext ));
-    assert(!pMultiContext || pImpl);
+    assert(!pMultiContext.is() || pImpl);
     if( pImpl )
     {
         pImpl->CreateIfNotThere();
 
         // fdo#68839: in case the surviving image was not the first one,
         // it will have a counter added to its name - set the original name
-        if (pMultiContext) // do this only when necessary; esp. not for text
+        if (pMultiContext.is()) // do this only when necessary; esp. not for text
         {                  // frames that may have entries in GetRenameMap()!
             pImpl->SetName();
         }
@@ -1429,9 +1434,10 @@ void XMLTextFrameContext::EndElement()
         {
             pImpl->SetHyperlink( m_pHyperlink->GetHRef(), m_pHyperlink->GetName(),
                           m_pHyperlink->GetTargetFrameName(), m_pHyperlink->GetMap() );
-            delete m_pHyperlink;
-            m_pHyperlink = nullptr;
+            m_pHyperlink.reset();
         }
+
+        GetImport().GetTextImport()->StoreLastImportedFrameName(pImpl->GetOrigName());
 
     }
 }
@@ -1443,7 +1449,7 @@ SvXMLImportContext *XMLTextFrameContext::CreateChildContext(
 {
     SvXMLImportContext *pContext = nullptr;
 
-    if( !m_xImplContext.Is() )
+    if( !m_xImplContext.is() )
     {
         // no child exists
         if( XML_NAMESPACE_DRAW == p_nPrefix )
@@ -1526,7 +1532,7 @@ SvXMLImportContext *XMLTextFrameContext::CreateChildContext(
 
                 if(getSupportsMultipleContents() && XML_TEXT_FRAME_GRAPHIC == nFrameType)
                 {
-                    addContent(*m_xImplContext);
+                    addContent(*m_xImplContext.get());
                 }
             }
         }
@@ -1536,12 +1542,12 @@ SvXMLImportContext *XMLTextFrameContext::CreateChildContext(
         // read another image
         pContext = new XMLTextFrameContext_Impl(
             GetImport(), p_nPrefix, rLocalName, xAttrList,
-            m_eDefaultAnchorType, XML_TEXT_FRAME_GRAPHIC, m_xAttrList);
+            m_eDefaultAnchorType, XML_TEXT_FRAME_GRAPHIC, m_xAttrList, true);
 
         m_xImplContext = pContext;
-        addContent(*m_xImplContext);
+        addContent(*m_xImplContext.get());
     }
-    else if( m_bSupportsReplacement && !m_xReplImplContext &&
+    else if( m_bSupportsReplacement && !m_xReplImplContext.is() &&
              XML_NAMESPACE_DRAW == p_nPrefix &&
              IsXMLToken( rLocalName, XML_IMAGE ) )
     {
@@ -1665,7 +1671,7 @@ SvXMLImportContext *XMLTextFrameContext::CreateChildContext(
     {
         // the child is a drawing shape
         pContext = XMLShapeImportHelper::CreateFrameChildContext(
-                                    &m_xImplContext, p_nPrefix, rLocalName, xAttrList );
+                                    m_xImplContext.get(), p_nPrefix, rLocalName, xAttrList );
     }
 
     if( !pContext )
@@ -1680,14 +1686,13 @@ void XMLTextFrameContext::SetHyperlink( const OUString& rHRef,
                        bool bMap )
 {
     OSL_ENSURE( !m_pHyperlink, "recursive SetHyperlink call" );
-    delete m_pHyperlink;
-    m_pHyperlink = new XMLTextFrameContextHyperlink_Impl(
+    m_pHyperlink = o3tl::make_unique<XMLTextFrameContextHyperlink_Impl>(
                 rHRef, rName, rTargetFrameName, bMap );
 }
 
 TextContentAnchorType XMLTextFrameContext::GetAnchorType() const
 {
-    SvXMLImportContext *pContext = &m_xImplContext;
+    SvXMLImportContext *pContext = m_xImplContext.get();
     XMLTextFrameContext_Impl *pImpl = dynamic_cast< XMLTextFrameContext_Impl*>( pContext );
     if( pImpl )
         return pImpl->GetAnchorType();
@@ -1698,7 +1703,7 @@ TextContentAnchorType XMLTextFrameContext::GetAnchorType() const
 Reference < XTextContent > XMLTextFrameContext::GetTextContent() const
 {
     Reference < XTextContent > xTxtCntnt;
-    SvXMLImportContext *pContext = &m_xImplContext;
+    SvXMLImportContext *pContext = m_xImplContext.get();
     XMLTextFrameContext_Impl *pImpl = dynamic_cast< XMLTextFrameContext_Impl* >( pContext );
     if( pImpl )
         xTxtCntnt.set( pImpl->GetPropSet(), UNO_QUERY );
@@ -1709,7 +1714,7 @@ Reference < XTextContent > XMLTextFrameContext::GetTextContent() const
 Reference < XShape > XMLTextFrameContext::GetShape() const
 {
     Reference < XShape > xShape;
-    SvXMLImportContext* pContext = &m_xImplContext;
+    SvXMLImportContext* pContext = m_xImplContext.get();
     SvXMLShapeContext* pImpl = dynamic_cast<SvXMLShapeContext*>( pContext  );
     if ( pImpl )
     {

@@ -73,7 +73,7 @@ OUString SvxPosSizeStatusBarControl::GetMetricStr_Impl( long nVal )
 
     if( FUNIT_NONE != eOutUnit )
     {
-        sMetric += OUString(cSep);
+        sMetric += OUStringLiteral1(cSep);
         sal_Int64 nFract = nConvVal % 100;
 
         if ( nFract < 0 )
@@ -176,17 +176,6 @@ SvxPosSizeStatusBarControl::SvxPosSizeStatusBarControl( sal_uInt16 _nSlotId,
     pImpl->nFunctionSet = 0;
     pImpl->aPosImage = Image( ResId( RID_SVXBMP_POSITION, DIALOG_MGR() ) );
     pImpl->aSizeImage = Image( ResId( RID_SVXBMP_SIZE, DIALOG_MGR() ) );
-
-    if ( rStb.GetDPIScaleFactor() > 1)
-    {
-        BitmapEx b = pImpl->aPosImage.GetBitmapEx();
-        b.Scale(rStb.GetDPIScaleFactor(), rStb.GetDPIScaleFactor(), BmpScaleFlag::Fast);
-        pImpl->aPosImage = Image(b);
-
-        b = pImpl->aSizeImage.GetBitmapEx();
-        b.Scale(rStb.GetDPIScaleFactor(), rStb.GetDPIScaleFactor(), BmpScaleFlag::Fast);
-        pImpl->aSizeImage = Image(b);
-    }
 
     addStatusListener( STR_POSITION);         // SID_ATTR_POSITION
     addStatusListener( STR_TABLECELL);   // SID_TABLE_CELL
@@ -317,10 +306,10 @@ void SvxPosSizeStatusBarControl::Command( const CommandEvent& rCEvt )
         sal_uInt32 nSelect = pImpl->nFunctionSet;
         if (!nSelect)
             nSelect = ( 1 << PSZ_FUNC_NONE );
-        FunctionPopup_Impl aMenu( nSelect );
-        if ( aMenu.Execute( &GetStatusBar(), rCEvt.GetMousePosPixel() ) )
+        ScopedVclPtrInstance<FunctionPopup_Impl> aMenu( nSelect );
+        if ( aMenu->Execute( &GetStatusBar(), rCEvt.GetMousePosPixel() ) )
         {
-            nSelect = aMenu.GetSelected();
+            nSelect = aMenu->GetSelected();
             if (nSelect)
             {
                 if (nSelect == (1 << PSZ_FUNC_NONE))
@@ -377,9 +366,12 @@ void SvxPosSizeStatusBarControl::Paint( const UserDrawEvent& rUsrEvt )
         OUString aStr = GetMetricStr_Impl( pImpl->aPos.X());
         aStr += " / ";
         aStr += GetMetricStr_Impl( pImpl->aPos.Y());
-        pDev->DrawRect(
-            Rectangle( aPnt, Point( nSizePosX, rRect.Bottom() ) ) );
-        pDev->DrawText( aPnt, aStr );
+        Rectangle aRect(aPnt, Point(nSizePosX, rRect.Bottom()));
+        pDev->DrawRect(aRect);
+        vcl::Region aOrigRegion(pDev->GetClipRegion());
+        pDev->SetClipRegion(vcl::Region(aRect));
+        pDev->DrawText(aPnt, aStr);
+        pDev->SetClipRegion(aOrigRegion);
 
         // draw the size, when available
         aPnt.X() = nSizePosX;
@@ -393,8 +385,12 @@ void SvxPosSizeStatusBarControl::Paint( const UserDrawEvent& rUsrEvt )
             aStr = GetMetricStr_Impl( pImpl->aSize.Width() );
             aStr += " x ";
             aStr += GetMetricStr_Impl( pImpl->aSize.Height() );
-            pDev->DrawRect( Rectangle( aDrwPnt, rRect.BottomRight() ) );
-            pDev->DrawText( aPnt, aStr );
+            aRect = Rectangle(aDrwPnt, rRect.BottomRight());
+            pDev->DrawRect(aRect);
+            aOrigRegion = pDev->GetClipRegion();
+            pDev->SetClipRegion(vcl::Region(aRect));
+            pDev->DrawText(aPnt, aStr);
+            pDev->SetClipRegion(aOrigRegion);
         }
         else
             pDev->DrawRect( Rectangle( aPnt, rRect.BottomRight() ) );

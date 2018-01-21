@@ -14,15 +14,20 @@
 
 #include <rtl/ustring.hxx>
 #include <tubes/tubesdllapi.h>
+#include <vcl/vclptr.hxx>
 
 class TeleConference;
+namespace tubes { class TubeContacts; }
 typedef struct _TpContact TpContact;
 
 class TUBES_DLLPUBLIC Collaboration
 {
     TeleConference* mpConference;
-    // This is in fact of type TubeContacts* from anonymous namespace
-    void* mpContacts;
+    VclPtr<tubes::TubeContacts> mpContacts;
+
+    Collaboration(Collaboration &) = delete;
+    void operator =(Collaboration &) = delete;
+
 public:
             Collaboration();
     virtual ~Collaboration();
@@ -35,8 +40,8 @@ public:
     /** Prepares document for collaboration and should call SetConference() */
     virtual void StartCollaboration( TeleConference* pConference ) = 0;
 
-    TUBES_DLLPRIVATE sal_uInt64 GetId() const;
-    TUBES_DLLPRIVATE void Invite( TpContact* pContact ) const;
+    SAL_DLLPRIVATE sal_uInt64 GetId() const;
+    SAL_DLLPRIVATE void Invite( TpContact* pContact ) const;
 
     /** Application calls this to display contacts dialog from where can the collaboration start */
     void DisplayContacts();

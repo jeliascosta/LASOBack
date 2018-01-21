@@ -66,7 +66,7 @@ namespace {
         PresenterScreenListener (
             const css::uno::Reference<css::uno::XComponentContext>& rxContext,
             const css::uno::Reference<css::frame::XModel2>& rxModel);
-        virtual ~PresenterScreenListener();
+        virtual ~PresenterScreenListener() override;
         PresenterScreenListener(const PresenterScreenListener&) = delete;
         PresenterScreenListener& operator=(const PresenterScreenListener&) = delete;
 
@@ -85,8 +85,6 @@ namespace {
         css::uno::Reference<css::frame::XModel2 > mxModel;
         css::uno::Reference<css::uno::XComponentContext> mxComponentContext;
         rtl::Reference<PresenterScreen> mpPresenterScreen;
-
-        void ThrowIfDisposed() const throw (css::lang::DisposedException);
     };
 }
 
@@ -215,7 +213,13 @@ void SAL_CALL PresenterScreenListener::disposing()
 
 void SAL_CALL PresenterScreenListener::notifyEvent( const css::document::EventObject& Event ) throw (css::uno::RuntimeException, std::exception)
 {
-    ThrowIfDisposed();
+    if (rBHelper.bDisposed || rBHelper.bInDispose)
+    {
+        throw lang::DisposedException (
+            OUString(
+                "PresenterScreenListener object has already been disposed"),
+            const_cast<uno::XWeak*>(static_cast<const uno::XWeak*>(this)));
+    }
 
     if ( Event.EventName == "OnStartPresentation" )
     {
@@ -244,18 +248,6 @@ void SAL_CALL PresenterScreenListener::disposing (const css::lang::EventObject& 
     {
         mpPresenterScreen->RequestShutdownPresenterScreen();
         mpPresenterScreen = nullptr;
-    }
-}
-
-void PresenterScreenListener::ThrowIfDisposed() const throw (
-    css::lang::DisposedException)
-{
-    if (rBHelper.bDisposed || rBHelper.bInDispose)
-    {
-        throw lang::DisposedException (
-            OUString(
-                "PresenterScreenListener object has already been disposed"),
-            const_cast<uno::XWeak*>(static_cast<const uno::XWeak*>(this)));
     }
 }
 

@@ -4,8 +4,8 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
 "POT-Creation-Date: 2016-11-09 14:10+0100\n"
-"PO-Revision-Date: 2017-03-16 20:04+0000\n"
-"Last-Translator: Christian Kühl <kuehl.christian@googlemail.com>\n"
+"PO-Revision-Date: 2017-10-21 14:05+0000\n"
+"Last-Translator: Sophia Schröder <sophia.schroeder@outlook.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Accelerator-Marker: ~\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1489694671.000000\n"
+"X-POOTLE-MTIME: 1508594747.000000\n"
 
 #: classificationbar.xhp
 msgctxt ""
@@ -38,7 +38,7 @@ msgctxt ""
 "bm_id030820161847569710\n"
 "help.text"
 msgid "<bookmark_value>classification;BAILS levels</bookmark_value>  <bookmark_value>classification;BAF category</bookmark_value>  <bookmark_value>classification;security levels</bookmark_value>  <bookmark_value>classification;document</bookmark_value>  <bookmark_value>classification;classification bar</bookmark_value>  <bookmark_value>document;classification</bookmark_value>"
-msgstr "<bookmark_value>Klassifizierung;BAILS Ebenen</bookmark_value>  <bookmark_value>Klassifizierung;BAF Kategorie</bookmark_value>  <bookmark_value>Klassifizierung;Sicherheitsebenen</bookmark_value>  <bookmark_value>Klassifizierung;Dokument</bookmark_value>  <bookmark_value>Klassifizierung;Symbolleiste</bookmark_value>  <bookmark_value>Dokument;Klassifizierung</bookmark_value>"
+msgstr "<bookmark_value>Klassifizierung; BAILS Ebenen</bookmark_value><bookmark_value>Klassifizierung; BAF Kategorie</bookmark_value><bookmark_value>Klassifizierung; Sicherheitsebenen</bookmark_value><bookmark_value>Klassifizierung; Dokument</bookmark_value><bookmark_value>Klassifizierung; Symbolleiste</bookmark_value><bookmark_value>Dokument; Klassifizierung</bookmark_value>"
 
 #: classificationbar.xhp
 msgctxt ""
@@ -110,7 +110,7 @@ msgctxt ""
 "bm_id030820161856432825\n"
 "help.text"
 msgid "<bookmark_value>classification;displayed in user interface</bookmark_value>  <bookmark_value>classification;headers and footers</bookmark_value>  <bookmark_value>classification;watermark</bookmark_value>  <bookmark_value>classification;categories</bookmark_value>"
-msgstr "<bookmark_value>Klassifizierung; angezeigt in der Benutzeroberfläche</bookmark_value>  <bookmark_value>Klassifizierung; Kopf- und Fußzeilen</bookmark_value>  <bookmark_value>Klassifizierung; Wasserzeichen</bookmark_value>  <bookmark_value>Klassifizierung; Kategorien</bookmark_value>"
+msgstr "<bookmark_value>Klassifizierung; angezeigt in der Benutzeroberfläche</bookmark_value><bookmark_value>Klassifizierung; Kopf- und Fußzeilen</bookmark_value><bookmark_value>Klassifizierung; Wasserzeichen</bookmark_value><bookmark_value>Klassifizierung; Kategorien</bookmark_value>"
 
 #: classificationbar.xhp
 msgctxt ""
@@ -198,7 +198,7 @@ msgctxt ""
 "bm_id030820161849574719\n"
 "help.text"
 msgid "<bookmark_value>classification levels;Internal use only</bookmark_value>  <bookmark_value>classification levels;Confidential</bookmark_value>  <bookmark_value>classification levels;General Business</bookmark_value>  <bookmark_value>classification levels;Non-Business</bookmark_value>"
-msgstr "<bookmark_value>Klassifizierungsstufen;nur für den internen Gebrauch</bookmark_value>  <bookmark_value>Klassifizierungsstufen;vertraulich</bookmark_value>  <bookmark_value>Klassifizierungsstufen;allgemein Geschäftliches</bookmark_value>  <bookmark_value>Klassifizierungsstufen;nicht Geschäftliches</bookmark_value>"
+msgstr "<bookmark_value>Klassifizierungsstufen; Nur für den internen Gebrauch</bookmark_value><bookmark_value>Klassifizierungsstufen; Vertraulich</bookmark_value><bookmark_value>Klassifizierungsstufen; Allgemein Geschäftliches</bookmark_value><bookmark_value>Klassifizierungsstufen; Nicht Geschäftliches</bookmark_value>"
 
 #: classificationbar.xhp
 msgctxt ""
@@ -254,7 +254,7 @@ msgctxt ""
 "bm_id030820161851045883\n"
 "help.text"
 msgid "<bookmark_value>custom;classifcation levels</bookmark_value>  <bookmark_value>classifcation levels;customizing</bookmark_value>"
-msgstr "<bookmark_value>Benutzerdefiniert;Klassifizierungsstufen</bookmark_value>  <bookmark_value>Klassifizierungsstufen;Anpassung</bookmark_value>"
+msgstr "<bookmark_value>Benutzerdefiniert; Klassifizierungsstufen</bookmark_value><bookmark_value>Klassifizierungsstufen; Anpassung</bookmark_value>"
 
 #: classificationbar.xhp
 msgctxt ""
@@ -302,7 +302,7 @@ msgctxt ""
 "bm_id030820161851512902\n"
 "help.text"
 msgid "<bookmark_value>document classification;pasting contents</bookmark_value>"
-msgstr "<bookmark_value>Dokumentenklassifizierung;Inhalte einfügen</bookmark_value>"
+msgstr "<bookmark_value>Dokumentenklassifizierung; Inhalte einfügen</bookmark_value>"
 
 #: classificationbar.xhp
 msgctxt ""
@@ -326,7 +326,7 @@ msgctxt ""
 "bm_id030820161853495457\n"
 "help.text"
 msgid "<bookmark_value>Classification toolbar;display</bookmark_value>"
-msgstr "<bookmark_value>Symbolleiste Klassifikation;anzeigen</bookmark_value>"
+msgstr "<bookmark_value>Symbolleiste Klassifikation; anzeigen</bookmark_value>"
 
 #: classificationbar.xhp
 msgctxt ""
@@ -956,7 +956,7 @@ msgctxt ""
 "par_id3147258\n"
 "help.text"
 msgid "<ahelp hid=\".\">Contains spelling tools, a gallery of object art that you can add to your document, as well as tools for configuring menus, and setting program preferences.</ahelp>"
-msgstr "<ahelp hid=\".\">Enthält Rechtschreibfunktionen, die Gallery mit Grafiken, die Sie in das Dokument einfügen können, sowie Funktionen zum Konfigurieren von Menüs und Programmvoreinstellungen.</ahelp>"
+msgstr "<ahelp hid=\".\">Enthält Rechtschreibfunktionen, eine Gallery mit Grafiken, die Sie in das Dokument einfügen können, sowie Funktionen zum Konfigurieren von Menüs und Programmvoreinstellungen.</ahelp>"
 
 #: main0106.xhp
 msgctxt ""
@@ -1430,7 +1430,7 @@ msgctxt ""
 "par_idN10933\n"
 "help.text"
 msgid "Opens the <link href=\"text/swriter/main0214.xhp\">Formula bar</link> to enter or edit a formula."
-msgstr "Öffnet die <link href=\"text/swriter/main0214.xhp\">Rechenleiste</link> zum Eingeben bzw. Bearbeiten von Formeln."
+msgstr "Öffnet die <link href=\"text/swriter/main0214.xhp\">Rechenleiste</link> zum Eingeben beziehungsweise Bearbeiten von Formeln."
 
 #: main0110.xhp
 msgctxt ""
@@ -1910,7 +1910,7 @@ msgctxt ""
 "par_id8193914\n"
 "help.text"
 msgid "<ahelp hid=\".\">Displays the language for the selected text. <br/>Click to open a menu where you can choose another language for the selected text or for the current paragraph. <br/>Choose None to exclude the text from spellchecking and hyphenation. <br/>Choose Reset to Default Language to re-apply the default language for the selection or the paragraph. <br/>Choose More to open a dialog with more options.</ahelp>"
-msgstr "<ahelp hid=\".\">Zeigt die Spracheinstellung für den markierten Text. <br/>Klicken Sie hier, um ein Menü zur Auswahl einer anderen Sprache für den markierten Text oder den gesamten Absatz zu öffnen. <br/>Wählen Sie 'Keine (Rechtschreibung nicht prüfen)', um den Text von der Rechtschreibprüfung und der Silbentrennung auszuschließen. <br/>Wählen Sie 'Auf die Standardsprache zurücksetzen', um die Standardsprache wieder für den markierten Text oder den Absatz anzuwenden<br/>Wählen Sie 'Mehr...', um einen Dialog mit weiteren Optionen zu öffnen.</ahelp>"
+msgstr "<ahelp hid=\".\">Zeigt die Spracheinstellung für den markierten Text. <br/>Klicken Sie hier, um ein Menü zur Auswahl einer anderen Sprache für den markierten Text oder den gesamten Absatz zu öffnen. <br/>Wählen Sie 'Keine (Rechtschreibung nicht prüfen)', um den Text von der Rechtschreibprüfung und der Silbentrennung auszuschließen. <br/>Wählen Sie 'Auf die Standardsprache zurücksetzen', um die Standardsprache wieder für den markierten Text oder den Absatz anzuwenden. <br/>Wählen Sie 'Mehr...', um einen Dialog mit weiteren Optionen zu öffnen.</ahelp>"
 
 #: main0208.xhp
 msgctxt ""
@@ -2464,7 +2464,7 @@ msgctxt ""
 "18\n"
 "help.text"
 msgid "You can insert pictures with <link href=\"text/shared/00/00000020.xhp\" name=\"different formats\">different formats</link> into a text document, including graphics with a JPG or GIF format. In addition, the <link href=\"text/shared/01/gallery.xhp\" name=\"Gallery\">Gallery</link> provides a collection of clipart graphics, and the <link href=\"text/shared/guide/fontwork.xhp\">Fontwork Gallery</link> creates stunning font effects."
-msgstr "Sie können in ein Textdokument Grafiken <link href=\"text/shared/00/00000020.xhp\" name=\"different formats\">unterschiedlicher Formate</link> einfügen, z.B. Grafiken im JPG- oder GIF-Format. Zusätzlich finden Sie in der <link href=\"text/shared/01/gallery.xhp\" name=\"Gallery\">Gallery</link> eine Vielzahl von nach Themen geordneten Clip-Arts. Sie können mit <link href=\"text/shared/guide/fontwork.xhp\">Fontwork</link> wirkungsvolle Schrifteffekte erzeugen."
+msgstr "Sie können in ein Textdokument Grafiken <link href=\"text/shared/00/00000020.xhp\" name=\"different formats\">unterschiedlicher Formate</link> einfügen, einschließlich Grafiken im JPG- oder GIF-Format. Zusätzlich finden Sie in der <link href=\"text/shared/01/gallery.xhp\" name=\"Gallery\">Gallery</link> eine Vielzahl von nach Themen geordneten Clip-Arts. Sie können mit <link href=\"text/shared/guide/fontwork.xhp\">Fontwork</link> wirkungsvolle Schrifteffekte erzeugen."
 
 #: main0503.xhp
 msgctxt ""
@@ -2491,7 +2491,7 @@ msgctxt ""
 "23\n"
 "help.text"
 msgid "Drag&Drop"
-msgstr "Ziehen&Ablegen"
+msgstr "Ziehen-und-Ablegen"
 
 #: main0503.xhp
 msgctxt ""
@@ -2500,7 +2500,7 @@ msgctxt ""
 "24\n"
 "help.text"
 msgid "The <link href=\"text/shared/guide/dragdrop.xhp\" name=\"drag-and-drop\">drag-and-drop</link> feature enables you to work quickly and efficiently with text documents in $[officename]. For example, you can drag-and-drop objects, such as graphics from the Gallery, from one location to another in the same document, or between open $[officename] documents."
-msgstr "Die Funktion <link href=\"text/shared/guide/dragdrop.xhp\" name=\"Ziehen&Ablegen\">Ziehen&Ablegen</link> ermöglicht eine schnelle und effiziente Arbeit mit Textdokumenten in $[officename]. Sie können beispielsweise Objekte wie Grafiken aus der Gallery innerhalb eines Dokuments oder zwischen aktiven $[officename] Dokumenten ziehen und ablegen."
+msgstr "Die Funktion <link href=\"text/shared/guide/dragdrop.xhp\" name=\"Ziehen-und-Ablegen\">Ziehen-und-Ablegen</link> ermöglicht eine schnelle und effiziente Arbeit mit Textdokumenten in $[officename]. Sie können beispielsweise Objekte wie Grafiken aus der Gallery innerhalb eines Dokuments oder zwischen aktiven $[officename] Dokumenten ziehen und ablegen."
 
 #: main0503.xhp
 msgctxt ""

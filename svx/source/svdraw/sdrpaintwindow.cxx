@@ -17,6 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <comphelper/lok.hxx>
 #include <comphelper/random.hxx>
 #include <svx/sdrpaintwindow.hxx>
 #include <sdr/overlay/overlaymanagerbuffered.hxx>
@@ -35,13 +36,13 @@ class CandidateMgr
 {
     std::vector<VclPtr<vcl::Window> > m_aCandidates;
     std::set<VclPtr<vcl::Window> > m_aDeletedCandidates;
-    DECL_LINK_TYPED(WindowEventListener, VclWindowEvent&, void);
+    DECL_LINK(WindowEventListener, VclWindowEvent&, void);
 public:
     void PaintTransparentChildren(vcl::Window & rWindow, Rectangle const& rPixelRect);
     ~CandidateMgr();
 };
 
-IMPL_LINK_TYPED(CandidateMgr, WindowEventListener, VclWindowEvent&, rEvent, void)
+IMPL_LINK(CandidateMgr, WindowEventListener, VclWindowEvent&, rEvent, void)
 {
     vcl::Window* pWindow = rEvent.GetWindow();
     if (rEvent.GetId() == VCLEVENT_OBJECT_DYING)
@@ -196,7 +197,7 @@ void SdrPaintWindow::impCreateOverlayManager()
         {
             vcl::Window& rWindow = dynamic_cast<vcl::Window&>(GetOutputDevice());
             // decide which OverlayManager to use
-            if(GetPaintView().IsBufferedOverlayAllowed() && mbUseBuffer && !rWindow.SupportsDoubleBuffering())
+            if(GetPaintView().IsBufferedOverlayAllowed() && !rWindow.SupportsDoubleBuffering())
             {
                 // buffered OverlayManager, buffers its background and refreshes from there
                 // for pure overlay changes (no system redraw). The 3rd parameter specifies
@@ -219,7 +220,10 @@ void SdrPaintWindow::impCreateOverlayManager()
             // Request a repaint so that the buffered overlay manager fills
             // its buffer properly.  This is a workaround for missing buffer
             // updates.
-            rWindow.Invalidate();
+            if (!comphelper::LibreOfficeKit::isActive())
+            {
+                rWindow.Invalidate();
+            }
 
             Color aColA(GetPaintView().getOptionsDrawinglayer().GetStripeColorA());
             Color aColB(GetPaintView().getOptionsDrawinglayer().GetStripeColorB());
@@ -242,8 +246,7 @@ SdrPaintWindow::SdrPaintWindow(SdrPaintView& rNewPaintView, OutputDevice& rOut, 
     mpWindow(pWindow),
     mrPaintView(rNewPaintView),
     mpPreRenderDevice(nullptr),
-    mbTemporaryTarget(false), // #i72889#
-    mbUseBuffer(true)
+    mbTemporaryTarget(false) // #i72889#
 {
 }
 
@@ -254,7 +257,7 @@ SdrPaintWindow::~SdrPaintWindow()
     DestroyPreRenderDevice();
 }
 
-rtl::Reference< sdr::overlay::OverlayManager > SdrPaintWindow::GetOverlayManager() const
+rtl::Reference< sdr::overlay::OverlayManager > const & SdrPaintWindow::GetOverlayManager() const
 {
     if(!mxOverlayManager.is())
     {

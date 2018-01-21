@@ -18,6 +18,9 @@
  */
 
 #include "elementexport.hxx"
+
+#include <o3tl/make_unique.hxx>
+
 #include "strings.hxx"
 #include <xmloff/xmlnmspe.hxx>
 #include "eventexport.hxx"
@@ -92,13 +95,11 @@ namespace xmloff
         const Sequence< ScriptEventDescriptor >& _rEvents)
         :OPropertyExport(_rContext, _rxProps)
         ,m_aEvents(_rEvents)
-        ,m_pXMLElement(nullptr)
     {
     }
 
     OElementExport::~OElementExport()
     {
-        implEndElement();
     }
 
     void OElementExport::doExport()
@@ -142,13 +143,12 @@ namespace xmloff
 
     void OElementExport::implStartElement(const sal_Char* _pName)
     {
-        m_pXMLElement = new SvXMLElementExport(m_rContext.getGlobalContext(), XML_NAMESPACE_FORM, _pName, true, true);
+        m_pXMLElement = o3tl::make_unique<SvXMLElementExport>(m_rContext.getGlobalContext(), XML_NAMESPACE_FORM, _pName, true, true);
     }
 
     void OElementExport::implEndElement()
     {
-        delete m_pXMLElement;
-        m_pXMLElement = nullptr;
+        m_pXMLElement.reset();
     }
 
     void OElementExport::exportServiceNameAttribute()
@@ -239,14 +239,8 @@ namespace xmloff
         ,m_nIncludeSpecial(SCAFlags::NONE)
         ,m_nIncludeEvents(EAFlags::NONE)
         ,m_nIncludeBindings(BAFlags::NONE)
-        ,m_pOuterElement(nullptr)
     {
         OSL_ENSURE(m_xProps.is(), "OControlExport::OControlExport: invalid arguments!");
-    }
-
-    OControlExport::~OControlExport()
-    {
-        implEndElement();
     }
 
     void OControlExport::exportOuterAttributes()
@@ -778,31 +772,34 @@ namespace xmloff
             // get the property names
             getValuePropertyNames(m_eType, m_nClassId, pCurrentValuePropertyName, pValuePropertyName);
 
-            static const sal_Char* pCurrentValueAttributeName = OAttributeMetaData::getCommonControlAttributeName(CCAFlags::CurrentValue);
-            static const sal_Char* pValueAttributeName = OAttributeMetaData::getCommonControlAttributeName(CCAFlags::Value);
-            static const sal_uInt16 nCurrentValueAttributeNamespaceKey = OAttributeMetaData::getCommonControlAttributeNamespace(CCAFlags::CurrentValue);
-            static const sal_uInt16 nValueAttributeNamespaceKey = OAttributeMetaData::getCommonControlAttributeNamespace(CCAFlags::Value);
-
             // add the attributes if necessary and possible
             if (pCurrentValuePropertyName && (CCAFlags::CurrentValue & m_nIncludeCommon))
             {
+                static const sal_Char* pCurrentValueAttributeName = OAttributeMetaData::getCommonControlAttributeName(CCAFlags::CurrentValue);
                 // don't export the current-value if this value originates from a data binding
                 // #i26944#
                 if ( controlHasActiveDataBinding() )
                     exportedProperty( OUString::createFromAscii( pCurrentValuePropertyName ) );
                 else
+                {
+                    static const sal_uInt16 nCurrentValueAttributeNamespaceKey = OAttributeMetaData::getCommonControlAttributeNamespace(CCAFlags::CurrentValue);
                     exportGenericPropertyAttribute(
                         nCurrentValueAttributeNamespaceKey,
                         pCurrentValueAttributeName,
                         pCurrentValuePropertyName
                     );
+                }
             }
 
             if (pValuePropertyName && (CCAFlags::Value & m_nIncludeCommon))
+            {
+                static const sal_Char* pValueAttributeName = OAttributeMetaData::getCommonControlAttributeName(CCAFlags::Value);
+                static const sal_uInt16 nValueAttributeNamespaceKey = OAttributeMetaData::getCommonControlAttributeNamespace(CCAFlags::Value);
                 exportGenericPropertyAttribute(
                     nValueAttributeNamespaceKey,
                     pValueAttributeName,
                     pValuePropertyName);
+            }
 
             OSL_ENSURE((nullptr == pValuePropertyName) == (CCAFlags::NONE == (CCAFlags::Value & m_nIncludeCommon)),
                 "OControlExport::exportCommonControlAttributes: no property found for the value attribute!");
@@ -1159,9 +1156,9 @@ namespace xmloff
             {   // attribute flags
                 SCAFlags::GroupName
             };
-            static const OUString pStringPropertyNames[] =
+            static const OUStringLiteral pStringPropertyNames[] =
             {   // property names
-                OUString(PROPERTY_GROUP_NAME)
+                OUStringLiteral(PROPERTY_GROUP_NAME)
             };
 
             static const sal_Int32 nIdCount = SAL_N_ELEMENTS( nStringPropertyAttributeIds );
@@ -1403,13 +1400,12 @@ namespace xmloff
     {
         // before we let the base class start it's outer element, we add a wrapper element
         const sal_Char *pOuterElementName = getOuterXMLElementName();
-        m_pOuterElement = pOuterElementName
-                               ? new SvXMLElementExport(
+        if (pOuterElementName)
+            m_pOuterElement = o3tl::make_unique<SvXMLElementExport>(
                                         m_rContext.getGlobalContext(),
                                         XML_NAMESPACE_FORM,
                                         pOuterElementName, true,
-                                        true)
-                            : nullptr;
+                                        true);
 
         // add the attributes for the inner element
         exportInnerAttributes();
@@ -1424,8 +1420,7 @@ namespace xmloff
         OElementExport::implEndElement();
 
         // end the outer element if it exists
-        delete m_pOuterElement;
-        m_pOuterElement = nullptr;
+        m_pOuterElement.reset();
     }
 
     const sal_Char* OControlExport::getOuterXMLElementName() const
@@ -1968,7 +1963,6 @@ namespace xmloff
 
     OColumnExport::~OColumnExport()
     {
-        implEndElement();
     }
 
     void OColumnExport::exportServiceNameAttribute()
@@ -2062,7 +2056,7 @@ namespace xmloff
                 AddAttribute(
                     OAttributeMetaData::getCommonControlAttributeNamespace(CCAFlags::TargetLocation),
                     OAttributeMetaData::getCommonControlAttributeName(CCAFlags::TargetLocation),
-                    sPropValue);
+                    m_rContext.getGlobalContext().GetRelativeReference(sPropValue));
             if ( m_rContext.getGlobalContext().GetAttrList().getLength() )
             {
                 SvXMLElementExport aFormElement(m_rContext.getGlobalContext(), XML_NAMESPACE_FORM, xmloff::token::XML_CONNECTION_RESOURCE, true, true);

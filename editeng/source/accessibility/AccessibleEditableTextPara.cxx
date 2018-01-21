@@ -27,6 +27,7 @@
 #include <osl/mutex.hxx>
 #include <vcl/window.hxx>
 #include <vcl/svapp.hxx>
+#include <tools/diagnose_ex.h>
 #include <editeng/flditem.hxx>
 #include <com/sun/star/uno/Any.hxx>
 #include <com/sun/star/uno/Reference.hxx>
@@ -584,16 +585,6 @@ namespace accessibility
                                                              aEvent );
     }
 
-    void AccessibleEditableTextPara::GotPropertyEvent( const uno::Any& rNewValue, const sal_Int16 nEventId ) const
-    {
-        FireEvent( nEventId, rNewValue );
-    }
-
-    void AccessibleEditableTextPara::LostPropertyEvent( const uno::Any& rOldValue, const sal_Int16 nEventId ) const
-    {
-        FireEvent( nEventId, uno::Any(), rOldValue );
-    }
-
     void AccessibleEditableTextPara::SetState( const sal_Int16 nStateId )
     {
         ::utl::AccessibleStateSetHelper* pStateSet = static_cast< ::utl::AccessibleStateSetHelper*>(mxStateSet.get());
@@ -601,7 +592,7 @@ namespace accessibility
             !pStateSet->contains(nStateId) )
         {
             pStateSet->AddState( nStateId );
-            GotPropertyEvent( uno::makeAny( nStateId ), AccessibleEventId::STATE_CHANGED );
+            FireEvent( AccessibleEventId::STATE_CHANGED, uno::makeAny( nStateId ) );
         }
     }
 
@@ -612,7 +603,7 @@ namespace accessibility
             pStateSet->contains(nStateId) )
         {
             pStateSet->RemoveState( nStateId );
-            LostPropertyEvent( uno::makeAny( nStateId ), AccessibleEventId::STATE_CHANGED );
+            FireEvent( AccessibleEventId::STATE_CHANGED, uno::Any(), uno::makeAny( nStateId ) );
         }
     }
 
@@ -784,15 +775,8 @@ namespace accessibility
 
     OUString SAL_CALL AccessibleEditableTextPara::getAccessibleName() throw (uno::RuntimeException, std::exception)
     {
-        SolarMutexGuard aGuard;
-
-        // throws if defunc
-        sal_Int32 nPara( GetParagraphIndex() );
-
-        // Get the string from the resource for the specified id.
-        OUString sStr(EditResId(RID_SVXSTR_A11Y_PARAGRAPH_NAME));
-        OUString sParaIndex = OUString::number(nPara);
-        return sStr.replaceFirst("$(ARG)", sParaIndex);
+        //See tdf#101003 before implementing a body
+        return OUString();
     }
 
     uno::Reference< XAccessibleRelationSet > SAL_CALL AccessibleEditableTextPara::getAccessibleRelationSet() throw (uno::RuntimeException, std::exception)
@@ -835,92 +819,60 @@ namespace accessibility
         }
     }
 
-    static uno::Sequence< OUString > getAttributeNames()
+    static uno::Sequence< OUString > const & getAttributeNames()
     {
-        static uno::Sequence< OUString >* pNames = nullptr;
+        static const uno::Sequence<OUString> aNames{
+            "CharColor",
+            "CharContoured",
+            "CharEmphasis",
+            "CharEscapement",
+            "CharFontName",
+            "CharHeight",
+            "CharPosture",
+            "CharShadowed",
+            "CharStrikeout",
+            "CharCaseMap",
+            "CharUnderline",
+            "CharUnderlineColor",
+            "CharWeight",
+            "NumberingLevel",
+            "NumberingRules",
+            "ParaAdjust",
+            "ParaBottomMargin",
+            "ParaFirstLineIndent",
+            "ParaLeftMargin",
+            "ParaLineSpacing",
+            "ParaRightMargin",
+            "ParaTabStops"};
 
-        if( pNames == nullptr )
-        {
-            uno::Sequence< OUString >* pSeq = new uno::Sequence< OUString >( 21 );
-            OUString* pStrings = pSeq->getArray();
-            sal_Int32 i = 0;
-            #define STR(x) pStrings[i++] = x
-            STR("CharColor");
-            STR("CharContoured");
-            STR("CharEmphasis");
-            STR("CharEscapement");
-            STR("CharFontName");
-            STR("CharHeight");
-            STR("CharPosture");
-            STR("CharShadowed");
-            STR("CharStrikeout");
-            STR("CharCaseMap");
-            STR("CharUnderline");
-            STR("CharUnderlineColor");
-            STR("CharWeight");
-            STR("NumberingLevel");
-            STR("NumberingRules");
-            STR("ParaAdjust");
-            STR("ParaBottomMargin");
-            STR("ParaFirstLineIndent");
-            STR("ParaLeftMargin");
-            STR("ParaLineSpacing");
-            STR("ParaRightMargin");
-            STR("ParaTabStops");
-            #undef STR
-            DBG_ASSERT( i == pSeq->getLength(), "Please adjust length" );
-            if( i != pSeq->getLength() )
-                pSeq->realloc( i );
-            pNames = pSeq;
-        }
-        return *pNames;
+        return aNames;
     }
 
     struct IndexCompare
     {
         const PropertyValue* pValues;
         explicit IndexCompare( const PropertyValue* pVals ) : pValues(pVals) {}
-        bool operator() ( const sal_Int32& a, const sal_Int32& b ) const
+        bool operator() ( sal_Int32 a, sal_Int32 b ) const
         {
             return pValues[a].Name < pValues[b].Name;
         }
     };
+}
 
-    OUString AccessibleEditableTextPara::GetFieldTypeNameAtIndex(sal_Int32 nIndex)
+namespace
+{
+    OUString GetFieldTypeNameFromField(EFieldInfo &ree)
     {
         OUString strFldType;
-        SvxAccessibleTextAdapter& rCacheTF = GetTextForwarder();
-        //For field object info
-        sal_Int32 nParaIndex = GetParagraphIndex();
-        sal_Int32 nAllFieldLen = 0;
-        sal_Int32 nField = rCacheTF.GetFieldCount(nParaIndex), nFoundFieldIndex = -1;
-        EFieldInfo ree;
-        sal_Int32  reeBegin, reeEnd;
         sal_Int32 nFieldType = -1;
-        for(sal_Int32 j = 0; j < nField; j++)
-        {
-            ree = rCacheTF.GetFieldInfo(nParaIndex, j);
-            reeBegin  = ree.aPosition.nIndex + nAllFieldLen;
-            reeEnd = reeBegin + ree.aCurrentText.getLength();
-            nAllFieldLen += (ree.aCurrentText.getLength() - 1);
-            if( reeBegin > nIndex )
-            {
-                break;
-            }
-            if(  nIndex >= reeBegin && nIndex < reeEnd )
-            {
-                nFoundFieldIndex = j;
-                break;
-            }
-        }
-        if (nFoundFieldIndex >= 0 && ree.pFieldItem)
+        if (ree.pFieldItem)
         {
             // So we get a field, check its type now.
             nFieldType = ree.pFieldItem->GetField()->GetClassId() ;
         }
-        switch(nFieldType)
+        switch (nFieldType)
         {
-        case text::textfield::Type::DATE:
+            case text::textfield::Type::DATE:
             {
                 const SvxDateField* pDateField = static_cast< const SvxDateField* >(ree.pFieldItem->GetField());
                 if (pDateField)
@@ -930,23 +882,23 @@ namespace accessibility
                     else if (pDateField->GetType() == SVXDATETYPE_VAR)
                         strFldType = "date (variable)";
                 }
+                break;
             }
-            break;
-        case text::textfield::Type::PAGE:
-            strFldType = "page-number";
-            break;
-        //support the sheet name & pages fields
-        case text::textfield::Type::PAGES:
-            strFldType = "page-count";
-            break;
-        case text::textfield::Type::TABLE:
-            strFldType = "sheet-name";
-            break;
-        //End
-        case text::textfield::Type::TIME:
-            strFldType = "time";
-            break;
-        case text::textfield::Type::EXTENDED_TIME:
+            case text::textfield::Type::PAGE:
+                strFldType = "page-number";
+                break;
+            //support the sheet name & pages fields
+            case text::textfield::Type::PAGES:
+                strFldType = "page-count";
+                break;
+            case text::textfield::Type::TABLE:
+                strFldType = "sheet-name";
+                break;
+            //End
+            case text::textfield::Type::TIME:
+                strFldType = "time";
+                break;
+            case text::textfield::Type::EXTENDED_TIME:
             {
                 const SvxExtTimeField* pTimeField = static_cast< const SvxExtTimeField* >(ree.pFieldItem->GetField());
                 if (pTimeField)
@@ -956,19 +908,47 @@ namespace accessibility
                     else if (pTimeField->GetType() == SVXTIMETYPE_VAR)
                         strFldType = "time (variable)";
                 }
+                break;
             }
-            break;
-        case text::textfield::Type::AUTHOR:
-            strFldType = "author";
-            break;
-        case text::textfield::Type::EXTENDED_FILE:
-        case text::textfield::Type::DOCINFO_TITLE:
-            strFldType = "file name";
-            break;
-        default:
-            break;
+            case text::textfield::Type::AUTHOR:
+                strFldType = "author";
+                break;
+            case text::textfield::Type::EXTENDED_FILE:
+            case text::textfield::Type::DOCINFO_TITLE:
+                strFldType = "file name";
+                break;
+            default:
+                break;
         }
         return strFldType;
+    }
+}
+
+namespace accessibility
+{
+    OUString AccessibleEditableTextPara::GetFieldTypeNameAtIndex(sal_Int32 nIndex)
+    {
+        SvxAccessibleTextAdapter& rCacheTF = GetTextForwarder();
+        //For field object info
+        sal_Int32 nParaIndex = GetParagraphIndex();
+        sal_Int32 nAllFieldLen = 0;
+        sal_Int32 nField = rCacheTF.GetFieldCount(nParaIndex);
+        for (sal_Int32 j = 0; j < nField; ++j)
+        {
+            EFieldInfo ree = rCacheTF.GetFieldInfo(nParaIndex, j);
+            sal_Int32 reeBegin = ree.aPosition.nIndex + nAllFieldLen;
+            sal_Int32 reeEnd = reeBegin + ree.aCurrentText.getLength();
+            nAllFieldLen += (ree.aCurrentText.getLength() - 1);
+            if (reeBegin > nIndex)
+            {
+                break;
+            }
+            if (nIndex >= reeBegin && nIndex < reeEnd)
+            {
+                return GetFieldTypeNameFromField(ree);
+            }
+        }
+        return OUString();
     }
 
     uno::Reference< XAccessibleStateSet > SAL_CALL AccessibleEditableTextPara::getAccessibleStateSet() throw (uno::RuntimeException, std::exception)
@@ -1596,7 +1576,7 @@ namespace accessibility
 //                  SvxAccessibleTextPropertySet aPropSet( &GetEditSource(),
 //                      ImplGetSvxCharAndParaPropertiesMap() );
                     // MT IA2 TODO: Check if this is the correct replacement for ImplGetSvxCharAndParaPropertiesMap
-                    uno::Reference< SvxAccessibleTextPropertySet > xPropSet( new SvxAccessibleTextPropertySet( &GetEditSource(), ImplGetSvxTextPortionSvxPropertySet() ) );
+                    rtl::Reference< SvxAccessibleTextPropertySet > xPropSet( new SvxAccessibleTextPropertySet( &GetEditSource(), ImplGetSvxTextPortionSvxPropertySet() ) );
 
                     xPropSet->SetSelection( MakeSelection( 0, GetTextLen() ) );
                     rRes.Value = xPropSet->_getPropertyValue( rRes.Name, mnParagraphIndex );
@@ -1619,7 +1599,7 @@ namespace accessibility
                 else
                 {
                     // MT IA2 TODO: Check if this is the correct replacement for ImplGetSvxCharAndParaPropertiesMap
-                    uno::Reference< SvxAccessibleTextPropertySet > xPropSet( new SvxAccessibleTextPropertySet( &GetEditSource(), ImplGetSvxTextPortionSvxPropertySet() ) );
+                    rtl::Reference< SvxAccessibleTextPropertySet > xPropSet( new SvxAccessibleTextPropertySet( &GetEditSource(), ImplGetSvxTextPortionSvxPropertySet() ) );
                     xPropSet->SetSelection( MakeSelection( 0, GetTextLen() ) );
                     rRes.Value = xPropSet->_getPropertyValue( rRes.Name, mnParagraphIndex );
                     rRes.State = xPropSet->_getPropertyState( rRes.Name, mnParagraphIndex );
@@ -1635,12 +1615,11 @@ namespace accessibility
         SvxAccessibleTextAdapter& rCacheTF = GetTextForwarder();
         sal_Int32 nAllFieldLen = 0;
         sal_Int32 nField = rCacheTF.GetFieldCount(nParaIndex), nFoundFieldIndex = -1;
-        EFieldInfo ree;
         sal_Int32  reeBegin=0, reeEnd=0;
-        for (sal_Int32 j = 0; j < nField; j++)
+        for (sal_Int32 j = 0; j < nField; ++j)
         {
-            ree = rCacheTF.GetFieldInfo(nParaIndex, j);
-            reeBegin  = ree.aPosition.nIndex + nAllFieldLen;
+            EFieldInfo ree = rCacheTF.GetFieldInfo(nParaIndex, j);
+            reeBegin = ree.aPosition.nIndex + nAllFieldLen;
             reeEnd = reeBegin + ree.aCurrentText.getLength();
             nAllFieldLen += (ree.aCurrentText.getLength() - 1);
             if( reeBegin > nIndex )
@@ -1673,11 +1652,10 @@ namespace accessibility
         SvxAccessibleTextAdapter& rCacheTF = GetTextForwarder();
         sal_Int32 nAllFieldLen = 0;
         sal_Int32 nField = rCacheTF.GetFieldCount(nParaIndex), nFoundFieldIndex = -1;
-        EFieldInfo ree;
         sal_Int32  reeBegin=0, reeEnd=0;
-        for (sal_Int32 j = 0; j < nField; j++)
+        for (sal_Int32 j = 0; j < nField; ++j)
         {
-            ree = rCacheTF.GetFieldInfo(nParaIndex, j);
+            EFieldInfo ree = rCacheTF.GetFieldInfo(nParaIndex, j);
             reeBegin  = ree.aPosition.nIndex + nAllFieldLen;
             reeEnd = reeBegin + ree.aCurrentText.getLength();
             nAllFieldLen += (ree.aCurrentText.getLength() - 1);
@@ -2399,7 +2377,7 @@ namespace accessibility
 
             // do the indices span the whole paragraph? Then use the outliner map
             // TODO: hold it as a member?
-            uno::Reference< SvxAccessibleTextPropertySet > xPropSet( new SvxAccessibleTextPropertySet( &GetEditSource(),
+            rtl::Reference< SvxAccessibleTextPropertySet > xPropSet( new SvxAccessibleTextPropertySet( &GetEditSource(),
                                                    0 == nStartIndex &&
                                                    rCacheTF.GetTextLen(nPara) == nEndIndex ?
                                                    ImplGetSvxUnoOutlinerTextCursorSvxPropertySet() :
@@ -2464,7 +2442,7 @@ namespace accessibility
 
         // get XPropertySetInfo for paragraph attributes and
         // character attributes that span all the paragraphs text.
-        uno::Reference< SvxAccessibleTextPropertySet > xPropSet( new SvxAccessibleTextPropertySet( &GetEditSource(),
+        rtl::Reference< SvxAccessibleTextPropertySet > xPropSet( new SvxAccessibleTextPropertySet( &GetEditSource(),
                 ImplGetSvxCharAndParaPropertiesSet() ) );
         xPropSet->SetSelection( MakeSelection( 0, GetTextLen() ) );
         uno::Reference< beans::XPropertySetInfo > xPropSetInfo = xPropSet->getPropertySetInfo();
@@ -2566,7 +2544,7 @@ namespace accessibility
         else
             CheckPosition(nIndex);
 
-        uno::Reference< SvxAccessibleTextPropertySet > xPropSet( new SvxAccessibleTextPropertySet( &GetEditSource(),
+        rtl::Reference< SvxAccessibleTextPropertySet > xPropSet( new SvxAccessibleTextPropertySet( &GetEditSource(),
                                                ImplGetSvxCharAndParaPropertiesSet() ) );
         xPropSet->SetSelection( MakeSelection( nIndex ) );
         uno::Reference< beans::XPropertySetInfo > xPropSetInfo = xPropSet->getPropertySetInfo();
@@ -2752,7 +2730,7 @@ namespace accessibility
                     catch (const lang::IndexOutOfBoundsException&)
                     {
                         // this is not the exception that should be raised in this function ...
-                        DBG_ASSERT( false, "unexpected exception" );
+                        DBG_UNHANDLED_EXCEPTION();
                     }
                 }
             }
@@ -2810,17 +2788,8 @@ namespace accessibility
 
     uno::Sequence< OUString> SAL_CALL AccessibleEditableTextPara::getSupportedServiceNames() throw (uno::RuntimeException, std::exception)
     {
-
-        const OUString sServiceName( getServiceName() );
-        return uno::Sequence< OUString > (&sServiceName, 1);
-    }
-
-    // XServiceName
-    OUString SAL_CALL AccessibleEditableTextPara::getServiceName() throw (uno::RuntimeException)
-    {
-
         // #105185# Using correct service now
-        return OUString("com.sun.star.text.AccessibleParagraphView");
+        return { OUString("com.sun.star.text.AccessibleParagraphView") };
     }
 
 }  // end of namespace accessibility

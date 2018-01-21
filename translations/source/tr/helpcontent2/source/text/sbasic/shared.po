@@ -4,7 +4,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
 "POT-Creation-Date: 2016-11-09 14:10+0100\n"
-"PO-Revision-Date: 2017-01-18 18:21+0000\n"
+"PO-Revision-Date: 2017-09-06 12:32+0000\n"
 "Last-Translator: Necdet Yucel <necdetyucel@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: tr\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Accelerator-Marker: ~\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1484763697.000000\n"
+"X-POOTLE-MTIME: 1504701141.000000\n"
 
 #: 00000002.xhp
 msgctxt ""
@@ -174,7 +174,7 @@ msgctxt ""
 "110\n"
 "help.text"
 msgid "URL notation does not allow certain special characters to be used. These are either replaced by other characters or encoded. A slash (<emph>/</emph>) is used as a path separator. For example, a file referred to as <emph>C:\\My File.odt</emph> on the local host in \"Windows notation\" becomes <emph>file:///C|/My%20File.odt</emph> in URL notation."
-msgstr ""
+msgstr "URL yazımı bazı özel karakterlerin kullanımına izin vermez. Bunlar ya başka karakterlerle değiştirilirler ya da kodlanırlar. Bölü işareti (<emph>/</emph>) yol ayırıcı olarak kullanılır. Örneğin, yerel <emph>C:\\My File.odt</emph> dizinindeki \"Windows notation\" dosyası URL yazımında <emph>file:///C|/My%20File.odt</emph> halini alır."
 
 #: 00000003.xhp
 msgctxt ""
@@ -1787,13 +1787,12 @@ msgid "Using Variables"
 msgstr "Değişkenlerin Kullanımı"
 
 #: 01020100.xhp
-#, fuzzy
 msgctxt ""
 "01020100.xhp\n"
 "bm_id3149346\n"
 "help.text"
 msgid "<bookmark_value>names of variables</bookmark_value>  <bookmark_value>variables; using</bookmark_value>  <bookmark_value>types of variables</bookmark_value>  <bookmark_value>declaring variables</bookmark_value>  <bookmark_value>values;of variables</bookmark_value>  <bookmark_value>constants</bookmark_value>  <bookmark_value>arrays;declaring</bookmark_value>  <bookmark_value>defining;constants</bookmark_value>"
-msgstr "<bookmark_value>değişken isimleri</bookmark_value><bookmark_value>değişkenler;kullanmak</bookmark_value><bookmark_value>değişken tipleri</bookmark_value><bookmark_value>değişkenleri tanımlamak</bookmark_value><bookmark_value>değerler;değişkenlerin</bookmark_value><bookmark_value>sabitler</bookmark_value><bookmark_value>diziler;tanımlamak</bookmark_value><bookmark_value>tanımlamak;sabitler</bookmark_value>"
+msgstr "<bookmark_value>değişken isimleri</bookmark_value>  <bookmark_value>değişkenler;kullanmak</bookmark_value>  <bookmark_value>değişken tipleri</bookmark_value>  <bookmark_value>değişkenleri tanımlamak</bookmark_value>  <bookmark_value>değerler;değişkenlerin</bookmark_value>  <bookmark_value>sabitler</bookmark_value>  <bookmark_value>diziler;tanımlamak</bookmark_value>  <bookmark_value>tanımlamak;sabitler</bookmark_value>"
 
 #: 01020100.xhp
 msgctxt ""
@@ -2401,13 +2400,12 @@ msgid "Using Procedures and Functions"
 msgstr "Fonksiyonlar ve Prosedürleri Kullanmak"
 
 #: 01020300.xhp
-#, fuzzy
 msgctxt ""
 "01020300.xhp\n"
 "bm_id3149456\n"
 "help.text"
 msgid "<bookmark_value>procedures</bookmark_value>  <bookmark_value>functions;using</bookmark_value>  <bookmark_value>variables;passing to procedures and functions</bookmark_value>  <bookmark_value>parameters;for procedures and functions</bookmark_value>  <bookmark_value>parameters;passing by reference or value</bookmark_value>  <bookmark_value>variables;scope</bookmark_value>  <bookmark_value>scope of variables</bookmark_value>  <bookmark_value>GLOBAL variables</bookmark_value>  <bookmark_value>PUBLIC variables</bookmark_value>  <bookmark_value>PRIVATE variables</bookmark_value>  <bookmark_value>functions;return value type</bookmark_value>  <bookmark_value>return value type of functions</bookmark_value>"
-msgstr "<bookmark_value>yordamlar</bookmark_value><bookmark_value>fonksiyonlar;kullanmak</bookmark_value><bookmark_value>değişkenler;yordamlara ve fonksiyonlara geçiliyor</bookmark_value><bookmark_value>parametreler;yordamlar ve fonksiyonlar için</bookmark_value><bookmark_value>parametreler;başvuru veya değer olarak geçiliyor</bookmark_value><bookmark_value>değişkenler;kapsam</bookmark_value><bookmark_value>değişkenlerin kapsamı</bookmark_value><bookmark_value>GLOBAL değişkenler</bookmark_value><bookmark_value>PUBLIC değişkenler</bookmark_value><bookmark_value>PRIVATE değişkenler</bookmark_value><bookmark_value>fonksiyonlar;dönüş değer türü</bookmark_value><bookmark_value>fonksiyonların dönüş değeri</bookmark_value>"
+msgstr "<bookmark_value>yordamlar</bookmark_value>  <bookmark_value>fonksiyonlar;kullanmak</bookmark_value>  <bookmark_value>değişkenler;yordamlara ve fonksiyonlara geçiliyor</bookmark_value>  <bookmark_value>parametreler;yordamlar ve fonksiyonlar için</bookmark_value>  <bookmark_value>parametreler;başvuru veya değer olarak geçiliyor</bookmark_value>  <bookmark_value>değişkenler;kapsam</bookmark_value>  <bookmark_value>değişkenlerin kapsamı</bookmark_value>  <bookmark_value>GLOBAL değişkenler</bookmark_value>  <bookmark_value>PUBLIC değişkenler</bookmark_value>  <bookmark_value>PRIVATE değişkenler</bookmark_value>  <bookmark_value>fonksiyonlar;dönüş değer türü</bookmark_value>  <bookmark_value>fonksiyonların dönüş değeri</bookmark_value>"
 
 #: 01020300.xhp
 msgctxt ""
@@ -2538,7 +2536,6 @@ msgid "Variable=FunctionName(Parameter1, Parameter2,...)"
 msgstr "Variable=FunctionName(Parameter1, Parameter2,...)"
 
 #: 01020300.xhp
-#, fuzzy
 msgctxt ""
 "01020300.xhp\n"
 "par_idN107B3\n"
@@ -10791,7 +10788,7 @@ msgctxt ""
 "par_id3154012\n"
 "help.text"
 msgid "To generate a list of all existing files in a specific directory, proceed as follows: The first time you call the Dir function, specify the complete search path for the files, for example, \"D:\\Files\\*.ods\". If the path is correct and the search finds at least one file, the Dir function returns the name of the first file that matches the search path. To return additional file names that match the path, call Dir again, but with no arguments."
-msgstr ""
+msgstr "Belirli bir dizindeki tüm dosyaların listesini oluşturmak için şunları yapın: Dir fonksiyonunu ilk çağırdığınızda dosyaların tam arama yolunu belirtin, örneğin \"D:\\Files\\*.ods\". Eğer yol doğru ve arama en azından bir dosya bulmuşsa Dir fonksiyonu arama yolu ile eşleşen ilk dosyanın ismini döndürür. Sorgu ile eşleşen diğer dosyaların isimleri için parametre kullanmadan Dir fonksiyonunu tekrar çalıştırın."
 
 #: 03020404.xhp
 msgctxt ""
@@ -11207,7 +11204,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "FileLen Function [Runtime]"
-msgstr "FileLen Fonksiyonu [Çalışma Anı]"
+msgstr "FileLen Fonksiyonu [Çalışma zamanı]"
 
 #: 03020408.xhp
 msgctxt ""
@@ -11218,7 +11215,6 @@ msgid "<bookmark_value>FileLen function</bookmark_value>"
 msgstr "<bookmark_value>FileLen Fonksiyonu</bookmark_value>"
 
 #: 03020408.xhp
-#, fuzzy
 msgctxt ""
 "03020408.xhp\n"
 "hd_id3153126\n"
@@ -13941,7 +13937,6 @@ msgid "Parameters:"
 msgstr "Parametreler:"
 
 #: 03030115.xhp
-#, fuzzy
 msgctxt ""
 "03030115.xhp\n"
 "par_id3145136\n"
@@ -15992,13 +15987,12 @@ msgid "On Error GoTo ... Resume Statement [Runtime]"
 msgstr "On Error GoTo ... Resume Deyimi [Runtime]"
 
 #: 03050500.xhp
-#, fuzzy
 msgctxt ""
 "03050500.xhp\n"
 "bm_id3146795\n"
 "help.text"
 msgid "<bookmark_value>Resume Next parameter</bookmark_value>  <bookmark_value>On Error GoTo ... Resume statement</bookmark_value>"
-msgstr "<bookmark_value>Sonraki Parametreden Devam Et</bookmark_value><bookmark_value>On Error GoTo ... Resume Deyimi</bookmark_value>"
+msgstr "<bookmark_value>Sonraki Parametreden devam et</bookmark_value><bookmark_value>On Error GoTo ... Resume Deyimi</bookmark_value>"
 
 #: 03050500.xhp
 msgctxt ""
@@ -18596,7 +18590,7 @@ msgctxt ""
 "hd_id3150616\n"
 "help.text"
 msgid "<variable id=\"heading_randomize\"><link href=\"text/sbasic/shared/03080301.xhp\" name=\"Randomize Statement [Runtime]\">Randomize Statement [Runtime]</link></variable>"
-msgstr ""
+msgstr "<variable id=\"heading_randomize\"><link href=\"text/sbasic/shared/03080301.xhp\" name=\"Randomize Statement [Runtime]\">Randomize Deyimi [Runtime]</link></variable>"
 
 #: 03080301.xhp
 msgctxt ""
@@ -18636,7 +18630,7 @@ msgctxt ""
 "par_id3149670\n"
 "help.text"
 msgid "<emph>Number:</emph> Any integer value. Used as seed to initialize the random-number generator. Equal seeds result in equal random-number sequences by the <emph>Rnd</emph> function. If the parameter is omitted, the <emph>Randomize</emph> statement will be ignored."
-msgstr ""
+msgstr "<emph>Sayı:</emph> Bir tamsayı değeri. Rasgele sayı üretecini beslemek için kullanılır. Aynı besleyici ile başlayan <emph>Rnd</emph> fonksiyonuyla üretilen rasgele sayı dizileri aynı olurlar. Eğer bu değer girilmezse <emph>Randomize</emph> durumu görmezden gelinir."
 
 #: 03080301.xhp
 msgctxt ""
@@ -18644,7 +18638,7 @@ msgctxt ""
 "par_id110520161656428611\n"
 "help.text"
 msgid "Unless a predictable sequence of numbers is desired, there is no need to use the <emph>Randomize</emph> statement, as the random-number generator will be initialized automatically at first use – it will be seeded using a system-provided random-number generator that produces uniformly-distributed, non-deterministic random numbers. If no such generator is available on the system, the system time will be used as seed."
-msgstr ""
+msgstr "Tahmin edilebilir bir sayı sırası istenmedikçe rastgele sayı üreteci ilk kullanımda otomatik olarak başlatılacağı için <emph>Randomize</emph> ifadesini kullanmaya gerek yoktur – sistem tarafından sağlanan bir rastgele kullanılarak rastgele sayılacaktır. Bu düzgün dağıtılmış, deterministik olmayan rastgele sayılar üreten sayı üretecidir. Sistemde böyle bir üreteç yoksa, sistem zamanı tohum olarak kullanılacaktır."
 
 #: 03080301.xhp
 msgctxt ""
@@ -18663,13 +18657,12 @@ msgid "Example:"
 msgstr "Örnek:"
 
 #: 03080301.xhp
-#, fuzzy
 msgctxt ""
 "03080301.xhp\n"
 "par_id3147288\n"
 "help.text"
 msgid "iVar = Int(10 * Rnd) ' Range from 0 to 9"
-msgstr "iVar = Int((10 * Rnd) ) ' Range from 0 To 9"
+msgstr "iVar = Int((10 * Rnd) ) ' 0 ile 9 arasında"
 
 #: 03080301.xhp
 msgctxt ""
@@ -18757,7 +18750,7 @@ msgctxt ""
 "par_id3125864\n"
 "help.text"
 msgid "<emph>Expression:</emph> Has no effect, is ignored if provided."
-msgstr ""
+msgstr "<emph>İfade:</emph> Etkisi yoktur, değer girerseniz göz ardı edilir."
 
 #: 03080302.xhp
 msgctxt ""
@@ -18765,7 +18758,7 @@ msgctxt ""
 "par_id3147318\n"
 "help.text"
 msgid "The <emph>Rnd</emph> function returns decimal fractions ranging from 0 (included) to 1 (excluded) according to a uniform distribution. It uses the Mersenne Twister 19937 random-number generator. To generate random integers in a given range, use a formula like in the example below. A <emph>Randomize</emph> statement with a defined seed value can be used beforehand, if a predictable sequence of numbers is desired."
-msgstr ""
+msgstr "<emph>Rnd</emph> fonksiyonu normal dağılıma bağlı olarak 0 (dahil) ile 1 (hariç) arasında bir ondalık sayı döndürür. Verilen aralıkta rastgele tamsayı üretmek için aşağıdaki gibi bir formül kullanın. Öngörülebilir sayı dizileri istenirse öncesinde <emph>Randomize</emph> komutu belli bir tohum değeriyle kullanılabilir."
 
 #: 03080302.xhp
 msgctxt ""
@@ -19959,13 +19952,12 @@ msgid "Select...Case Statement [Runtime]"
 msgstr "Select...Case İfadesi [Runtime]"
 
 #: 03090102.xhp
-#, fuzzy
 msgctxt ""
 "03090102.xhp\n"
 "bm_id3149416\n"
 "help.text"
 msgid "<bookmark_value>Select...Case statement</bookmark_value>  <bookmark_value>Case statement</bookmark_value>"
-msgstr "<bookmark_value>Select...Case ifadesi</bookmark_value><bookmark_value>Case ifadesi</bookmark_value>"
+msgstr "<bookmark_value>Select...Case ifadesi</bookmark_value>  <bookmark_value>Case ifadesi</bookmark_value>"
 
 #: 03090102.xhp
 msgctxt ""
@@ -20177,13 +20169,12 @@ msgid "Do...Loop Statement [Runtime]"
 msgstr "Do...Loop Deyimi [Runtime]"
 
 #: 03090201.xhp
-#, fuzzy
 msgctxt ""
 "03090201.xhp\n"
 "bm_id3156116\n"
 "help.text"
 msgid "<bookmark_value>Do...Loop statement</bookmark_value>  <bookmark_value>While; Do loop</bookmark_value>  <bookmark_value>Until</bookmark_value>  <bookmark_value>loops</bookmark_value>"
-msgstr "<bookmark_value>Do...Loop deyimi</bookmark_value><bookmark_value>While; Do döngüsü</bookmark_value><bookmark_value>Until</bookmark_value><bookmark_value>döngüler</bookmark_value>"
+msgstr "<bookmark_value>Do...Loop deyimi</bookmark_value>  <bookmark_value>While; Do döngüsü</bookmark_value>  <bookmark_value>Until</bookmark_value>  <bookmark_value>döngüler</bookmark_value>"
 
 #: 03090201.xhp
 msgctxt ""
@@ -20530,13 +20521,12 @@ msgid "For...Next Statement [Runtime]"
 msgstr "For...Next Deyimi [Runtime]"
 
 #: 03090202.xhp
-#, fuzzy
 msgctxt ""
 "03090202.xhp\n"
 "bm_id3149205\n"
 "help.text"
 msgid "<bookmark_value>For statement</bookmark_value>  <bookmark_value>To statement</bookmark_value>  <bookmark_value>Step statement</bookmark_value>  <bookmark_value>Next statement</bookmark_value>"
-msgstr "<bookmark_value>For deyimi</bookmark_value><bookmark_value>To deyimi</bookmark_value><bookmark_value>Step deyimi</bookmark_value><bookmark_value>Next deyimi</bookmark_value>"
+msgstr "<bookmark_value>For deyimi</bookmark_value>  <bookmark_value>To deyimi</bookmark_value>  <bookmark_value>Step deyimi</bookmark_value>  <bookmark_value>Next deyimi</bookmark_value>"
 
 #: 03090202.xhp
 msgctxt ""
@@ -21433,13 +21423,12 @@ msgid "On...GoSub Statement; On...GoTo Statement [Runtime]"
 msgstr "On...GoSub İfadesi; On...GoTo İfadesi [Runtime]"
 
 #: 03090303.xhp
-#, fuzzy
 msgctxt ""
 "03090303.xhp\n"
 "bm_id3153897\n"
 "help.text"
 msgid "<bookmark_value>On...GoSub statement</bookmark_value>  <bookmark_value>On...GoTo statement</bookmark_value>"
-msgstr "<bookmark_value>On...GoSub ifadesi</bookmark_value><bookmark_value>On...GoTo ifadesi</bookmark_value>"
+msgstr "<bookmark_value>On...GoSub ifadesi</bookmark_value>  <bookmark_value>On...GoTo ifadesi</bookmark_value>"
 
 #: 03090303.xhp
 msgctxt ""
@@ -22333,13 +22322,12 @@ msgid "Rem Statement [Runtime]"
 msgstr "Rem Deyimi [Runtime]"
 
 #: 03090407.xhp
-#, fuzzy
 msgctxt ""
 "03090407.xhp\n"
 "bm_id3154347\n"
 "help.text"
 msgid "<bookmark_value>Rem statement</bookmark_value>  <bookmark_value>comments;Rem statement</bookmark_value>"
-msgstr "<bookmark_value>Rem deyimi</bookmark_value><bookmark_value>açıklamalar;Rem deyimi</bookmark_value>"
+msgstr "<bookmark_value>Rem deyimi</bookmark_value>  <bookmark_value>açıklamalar;Rem deyimi</bookmark_value>"
 
 #: 03090407.xhp
 msgctxt ""
@@ -25496,13 +25484,12 @@ msgid "Dim Statement [Runtime]"
 msgstr "Dim Deyimi [Runtime]"
 
 #: 03102100.xhp
-#, fuzzy
 msgctxt ""
 "03102100.xhp\n"
 "bm_id3149812\n"
 "help.text"
 msgid "<bookmark_value>Dim statement</bookmark_value>  <bookmark_value>arrays; dimensioning</bookmark_value>  <bookmark_value>dimensioning arrays</bookmark_value>"
-msgstr "<bookmark_value>Dim ifadesi</bookmark_value><bookmark_value>diziler; boyutlandırma</bookmark_value><bookmark_value>dizileri boyutlandırma</bookmark_value>"
+msgstr "<bookmark_value>Dim ifadesi</bookmark_value>  <bookmark_value>diziler; boyutlandırma</bookmark_value>  <bookmark_value>dizileri boyutlandırma</bookmark_value>"
 
 #: 03102100.xhp
 msgctxt ""
@@ -26417,13 +26404,12 @@ msgid "IsNull Function [Runtime]"
 msgstr "IsNull Fonksiyonu [Runtime]"
 
 #: 03102600.xhp
-#, fuzzy
 msgctxt ""
 "03102600.xhp\n"
 "bm_id3155555\n"
 "help.text"
 msgid "<bookmark_value>IsNull function</bookmark_value>  <bookmark_value>Null value</bookmark_value>"
-msgstr "<bookmark_value>IsNull fonksiyonu</bookmark_value><bookmark_value>Null değeri</bookmark_value>"
+msgstr "<bookmark_value>IsNull fonksiyonu</bookmark_value>  <bookmark_value>Null değeri</bookmark_value>"
 
 #: 03102600.xhp
 msgctxt ""
@@ -27410,13 +27396,12 @@ msgid "TypeName Function; VarType Function[Runtime]"
 msgstr "TypeName Fonksiyonu; VarType Fonksiyonu[Runtime]"
 
 #: 03103600.xhp
-#, fuzzy
 msgctxt ""
 "03103600.xhp\n"
 "bm_id3143267\n"
 "help.text"
 msgid "<bookmark_value>TypeName function</bookmark_value>  <bookmark_value>VarType function</bookmark_value>"
-msgstr "<bookmark_value>TypeName fonksiyonu</bookmark_value><bookmark_value>VarType fonksiyonu</bookmark_value>"
+msgstr "<bookmark_value>TypeName fonksiyonu</bookmark_value>  <bookmark_value>VarType fonksiyonu</bookmark_value>"
 
 #: 03103600.xhp
 msgctxt ""
@@ -27707,13 +27692,12 @@ msgid "Set Statement[Runtime]"
 msgstr "Set Deyimi [Runtime]"
 
 #: 03103700.xhp
-#, fuzzy
 msgctxt ""
 "03103700.xhp\n"
 "bm_id3154422\n"
 "help.text"
 msgid "<bookmark_value>Set statement</bookmark_value>  <bookmark_value>Nothing object</bookmark_value>"
-msgstr "<bookmark_value>Set deyimi</bookmark_value><bookmark_value>Hiçbir nesne</bookmark_value>"
+msgstr "<bookmark_value>Set deyimi</bookmark_value>  <bookmark_value>Hiçbir nesne</bookmark_value>"
 
 #: 03103700.xhp
 msgctxt ""
@@ -29087,13 +29071,12 @@ msgid "Comparison Operators [Runtime]"
 msgstr "Karşılaştırma Operatörleri [Runtime]"
 
 #: 03110100.xhp
-#, fuzzy
 msgctxt ""
 "03110100.xhp\n"
 "bm_id3150682\n"
 "help.text"
 msgid "<bookmark_value>comparison operators;%PRODUCTNAME Basic</bookmark_value>  <bookmark_value>operators;comparisons</bookmark_value>"
-msgstr "<bookmark_value>karşılaştırma operatörleri;%PRODUCTNAME Basic</bookmark_value><bookmark_value>operatörler;karşılaştırmalar</bookmark_value>"
+msgstr "<bookmark_value>karşılaştırma operatörleri;%PRODUCTNAME Basic</bookmark_value>  <bookmark_value>operatörler;karşılaştırmalar</bookmark_value>"
 
 #: 03110100.xhp
 msgctxt ""
@@ -30881,13 +30864,12 @@ msgid "Mid Function, Mid Statement [Runtime]"
 msgstr "Mid Fonksiyonu, Mid Deyimi [Runtime]"
 
 #: 03120306.xhp
-#, fuzzy
 msgctxt ""
 "03120306.xhp\n"
 "bm_id3143268\n"
 "help.text"
 msgid "<bookmark_value>Mid function</bookmark_value>  <bookmark_value>Mid statement</bookmark_value>"
-msgstr "<bookmark_value>Mid fonksiyonu</bookmark_value><bookmark_value>Mid deyimi</bookmark_value>"
+msgstr "<bookmark_value>Mid fonksiyonu</bookmark_value>  <bookmark_value>Mid deyimi</bookmark_value>"
 
 #: 03120306.xhp
 msgctxt ""
@@ -33392,7 +33374,7 @@ msgctxt ""
 "par_idN1060F\n"
 "help.text"
 msgid "For a list of available services, go to: http://api.libreoffice.org/docs/idl/ref/namespacecom_1_1sun_1_1star.html"
-msgstr ""
+msgstr "Kullanılabilir bütün servisler için http://api.libreoffice.org/docs/idl/ref/namespacecom_1_1sun_1_1star.html adresine bakın"
 
 #: 03131600.xhp
 msgctxt ""
@@ -34270,13 +34252,12 @@ msgid "ThisComponent Statement [Runtime]"
 msgstr "ThisComponent İfade [Runtime]"
 
 #: 03132200.xhp
-#, fuzzy
 msgctxt ""
 "03132200.xhp\n"
 "bm_id3155342\n"
 "help.text"
 msgid "<bookmark_value>ThisComponent property</bookmark_value>  <bookmark_value>components;addressing</bookmark_value>"
-msgstr "<bookmark_value>ThisComponent özelliği</bookmark_value><bookmark_value>bileşenler;adresleme</bookmark_value>"
+msgstr "<bookmark_value>ThisComponent özelliği</bookmark_value>  <bookmark_value>bileşenler;adresleme</bookmark_value>"
 
 #: 03132200.xhp
 msgctxt ""

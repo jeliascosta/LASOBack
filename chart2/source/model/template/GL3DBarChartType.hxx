@@ -22,7 +22,7 @@ class GL3DBarChartType : public ChartType
 {
 public:
     explicit GL3DBarChartType( const css::uno::Reference<css::uno::XComponentContext>& xContext );
-    virtual ~GL3DBarChartType();
+    virtual ~GL3DBarChartType() override;
 
     virtual css::uno::Sequence< OUString > SAL_CALL
         getSupportedPropertyRoles()
@@ -36,9 +36,6 @@ public:
     virtual css::uno::Sequence< OUString > SAL_CALL
         getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString >
-        getSupportedServiceNames_Static();
 
 protected:
     GL3DBarChartType( const GL3DBarChartType& rOther );

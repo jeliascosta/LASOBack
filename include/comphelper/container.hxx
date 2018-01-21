@@ -47,11 +47,11 @@ protected:
         // That is the path from the root node to m_xCurrentObject
 
 public:
-    IndexAccessIterator(css::uno::Reference< css::uno::XInterface> xStartingPoint);
+    IndexAccessIterator(css::uno::Reference< css::uno::XInterface> const & xStartingPoint);
 
     virtual ~IndexAccessIterator();
 
-    css::uno::Reference< css::uno::XInterface>    Next();
+    css::uno::Reference< css::uno::XInterface> const &    Next();
 
     virtual void Invalidate() { m_xCurrentObject = nullptr; }
 

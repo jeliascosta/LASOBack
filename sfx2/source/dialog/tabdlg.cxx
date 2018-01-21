@@ -37,6 +37,8 @@
 #include <sfx2/sfxdlg.hxx>
 #include <sfx2/itemconnect.hxx>
 
+#include "uitest/sfx_uiobject.hxx"
+
 #include "dialog.hrc"
 #include "helpid.hrc"
 
@@ -199,7 +201,7 @@ void SfxTabPage::ActivatePage( const SfxItemSet& )
 {
 }
 
-SfxTabPage::sfxpg SfxTabPage::DeactivatePage( SfxItemSet* )
+DeactivateRC SfxTabPage::DeactivatePage( SfxItemSet* )
 
 /*  [Description]
 
@@ -213,11 +215,11 @@ SfxTabPage::sfxpg SfxTabPage::DeactivatePage( SfxItemSet* )
 
     [Return value]
 
-    LEAVE_PAGE; Allow leaving the page
+    DeactivateRC::LeavePage; Allow leaving the page
 */
 
 {
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 
@@ -285,7 +287,7 @@ const SfxPoolItem* SfxTabPage::GetOldItem( const SfxItemSet& rSet,
 
 void SfxTabPage::PageCreated( const SfxAllItemSet& /*aSet*/ )
 {
-    DBG_ASSERT(false, "SfxTabPage::PageCreated should not be called");
+    SAL_WARN( "sfx", "SfxTabPage::PageCreated should not be called");
 }
 
 void SfxTabPage::ChangesApplied()
@@ -438,14 +440,20 @@ void SfxTabDialog::Init_Impl(bool bFmtFlag)
     m_pResetBtn = m_pUIBuilder->get<PushButton>("reset");
     m_bOwnsResetBtn = m_pResetBtn == nullptr;
     if (m_bOwnsResetBtn)
+    {
         m_pResetBtn = VclPtr<PushButton>::Create(m_pActionArea.get());
+        m_pResetBtn->set_id("reset");
+    }
     else
         m_pImpl->bHideResetBtn = !m_pResetBtn->IsVisible();
 
     m_pBaseFmtBtn = m_pUIBuilder->get<PushButton>("standard");
     m_bOwnsBaseFmtBtn = m_pBaseFmtBtn == nullptr;
     if (m_bOwnsBaseFmtBtn)
+    {
         m_pBaseFmtBtn = VclPtr<PushButton>::Create(m_pActionArea.get());
+        m_pBaseFmtBtn->set_id("standard");
+    }
 
     m_pOKBtn->SetClickHdl( LINK( this, SfxTabDialog, OkHdl ) );
     m_pCancelBtn->SetClickHdl( LINK( this, SfxTabDialog, CancelHdl ) );
@@ -551,12 +559,6 @@ void SfxTabDialog::Start_Impl()
 
         if ( USHRT_MAX != m_nAppPageId )
             nActPage = m_nAppPageId;
-        else
-        {
-            sal_uInt16 nAutoTabPageId = SfxGetpApp()->Get_Impl()->nAutoTabPageId;
-            if ( nAutoTabPageId )
-                nActPage = nAutoTabPageId;
-        }
 
         if ( TAB_PAGE_NOTFOUND == m_pTabCtrl->GetPagePos( nActPage ) )
             nActPage = m_pTabCtrl->GetPageId( 0 );
@@ -581,7 +583,7 @@ sal_uInt16 SfxTabDialog::AddTabPage
 (
     const OString &rName,          // Page ID
     CreateTabPage pCreateFunc,     // Pointer to the Factory Method
-    GetTabPageRanges pRangesFunc   // Pointer to the Method for quering
+    GetTabPageRanges pRangesFunc   // Pointer to the Method for querying
                                    // Ranges onDemand
 )
 {
@@ -801,7 +803,7 @@ short SfxTabDialog::Ok()
     return bModified ? RET_OK : RET_CANCEL;
 }
 
-IMPL_LINK_NOARG_TYPED(SfxTabDialog, CancelHdl, Button*, void)
+IMPL_LINK_NOARG(SfxTabDialog, CancelHdl, Button*, void)
 {
     EndDialog( RET_USER_CANCEL );
 }
@@ -827,7 +829,7 @@ void SfxTabDialog::RefreshInputSet()
 
     Default implementation of the virtual Method.
     This is called, when <SfxTabPage::DeactivatePage(SfxItemSet *)>
-    returns <SfxTabPage::REFRESH_SET>.
+    returns <DeactivateRC::RefreshSet>.
 */
 
 {
@@ -835,13 +837,13 @@ void SfxTabDialog::RefreshInputSet()
 }
 
 
-IMPL_LINK_NOARG_TYPED(SfxTabDialog, OkHdl, Button*, void)
+IMPL_LINK_NOARG(SfxTabDialog, OkHdl, Button*, void)
 
 /*  [Description]
 
     Handler of the Ok-Buttons
     This calls the current page <SfxTabPage::DeactivatePage(SfxItemSet *)>.
-    Returns <SfxTabPage::LEAVE_PAGE>, <SfxTabDialog::Ok()> is called
+    Returns <DeactivateRC::LeavePage>, <SfxTabDialog::Ok()> is called
     and the Dialog is ended.
 */
 
@@ -886,7 +888,7 @@ bool SfxTabDialog::PrepareLeaveCurrentPage()
 
     if ( pPage )
     {
-        int nRet = SfxTabPage::LEAVE_PAGE;
+        DeactivateRC nRet = DeactivateRC::LeavePage;
         if ( m_pSet )
         {
             SfxItemSet aTmp( *m_pSet->GetPool(), m_pSet->GetRanges() );
@@ -896,7 +898,7 @@ bool SfxTabDialog::PrepareLeaveCurrentPage()
             else
                 nRet = pPage->DeactivatePage( nullptr );
 
-            if ( ( SfxTabPage::LEAVE_PAGE & nRet ) == SfxTabPage::LEAVE_PAGE
+            if ( ( DeactivateRC::LeavePage & nRet ) == DeactivateRC::LeavePage
                  && aTmp.Count() )
             {
                 m_pExampleSet->Put( aTmp );
@@ -905,20 +907,20 @@ bool SfxTabDialog::PrepareLeaveCurrentPage()
         }
         else
             nRet = pPage->DeactivatePage( nullptr );
-        bEnd = nRet;
+        bEnd = nRet != DeactivateRC::KeepPage;
     }
 
     return bEnd;
 }
 
 
-IMPL_LINK_NOARG_TYPED(SfxTabDialog, UserHdl, Button*, void)
+IMPL_LINK_NOARG(SfxTabDialog, UserHdl, Button*, void)
 
 /*  [Description]
 
     Handler of the User-Buttons
     This calls the current page <SfxTabPage::DeactivatePage(SfxItemSet *)>.
-    returns this <SfxTabPage::LEAVE_PAGE> and  <SfxTabDialog::Ok()> is called.
+    returns this <DeactivateRC::LeavePage> and  <SfxTabDialog::Ok()> is called.
     Then the Dialog is ended with the Return value <SfxTabDialog::Ok()>
 */
 
@@ -936,7 +938,7 @@ IMPL_LINK_NOARG_TYPED(SfxTabDialog, UserHdl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SfxTabDialog, ResetHdl, Button*, void)
+IMPL_LINK_NOARG(SfxTabDialog, ResetHdl, Button*, void)
 
 /*  [Description]
 
@@ -954,7 +956,7 @@ IMPL_LINK_NOARG_TYPED(SfxTabDialog, ResetHdl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SfxTabDialog, BaseFmtHdl, Button*, void)
+IMPL_LINK_NOARG(SfxTabDialog, BaseFmtHdl, Button*, void)
 
 /*  [Description]
 
@@ -1030,7 +1032,7 @@ IMPL_LINK_NOARG_TYPED(SfxTabDialog, BaseFmtHdl, Button*, void)
 }
 
 
-IMPL_LINK_TYPED( SfxTabDialog, ActivatePageHdl, TabControl *, pTabCtrl, void )
+IMPL_LINK( SfxTabDialog, ActivatePageHdl, TabControl *, pTabCtrl, void )
 
 /*  [Description]
 
@@ -1130,7 +1132,7 @@ IMPL_LINK_TYPED( SfxTabDialog, ActivatePageHdl, TabControl *, pTabCtrl, void )
 }
 
 
-IMPL_LINK_TYPED( SfxTabDialog, DeactivatePageHdl, TabControl *, pTabCtrl, bool )
+IMPL_LINK( SfxTabDialog, DeactivatePageHdl, TabControl *, pTabCtrl, bool )
 
 /*  [Description]
 
@@ -1153,7 +1155,7 @@ IMPL_LINK_TYPED( SfxTabDialog, DeactivatePageHdl, TabControl *, pTabCtrl, bool )
     DBG_ASSERT( pDataObject, "no Data structure for current page" );
 #endif
 
-    int nRet = SfxTabPage::LEAVE_PAGE;
+    DeactivateRC nRet = DeactivateRC::LeavePage;
 
     if ( !m_pExampleSet && pPage->HasExchangeSupport() && m_pSet )
         m_pExampleSet = new SfxItemSet( *m_pSet->GetPool(), m_pSet->GetRanges() );
@@ -1166,7 +1168,7 @@ IMPL_LINK_TYPED( SfxTabDialog, DeactivatePageHdl, TabControl *, pTabCtrl, bool )
             nRet = pPage->DeactivatePage( &aTmp );
         else
             nRet = pPage->DeactivatePage( nullptr );
-        if ( ( SfxTabPage::LEAVE_PAGE & nRet ) == SfxTabPage::LEAVE_PAGE &&
+        if ( ( DeactivateRC::LeavePage & nRet ) == DeactivateRC::LeavePage &&
              aTmp.Count() )
         {
             m_pExampleSet->Put( aTmp );
@@ -1189,7 +1191,7 @@ IMPL_LINK_TYPED( SfxTabDialog, DeactivatePageHdl, TabControl *, pTabCtrl, bool )
             nRet = pPage->DeactivatePage( nullptr );
     }
 
-    if ( nRet & SfxTabPage::REFRESH_SET )
+    if ( nRet & DeactivateRC::RefreshSet )
     {
         RefreshInputSet();
         // Flag all Pages as to be initialized as new
@@ -1204,7 +1206,7 @@ IMPL_LINK_TYPED( SfxTabDialog, DeactivatePageHdl, TabControl *, pTabCtrl, bool )
                 pObj->bRefresh = false;
         }
     }
-    if ( nRet & SfxTabPage::LEAVE_PAGE )
+    if ( nRet & DeactivateRC::LeavePage )
         return true;
     else
         return false;
@@ -1223,6 +1225,21 @@ void SfxTabDialog::ShowPage( sal_uInt16 nId )
     ActivatePageHdl( m_pTabCtrl );
 }
 
+OString SfxTabDialog::GetScreenshotId() const
+{
+    SfxTabPage *pActiveTabPage = GetCurTabPage();
+    OString aScreenshotId = GetHelpId();
+
+    if ( pActiveTabPage )
+    {
+        vcl::Window* pToplevelBox = pActiveTabPage->GetWindow( GetWindowType::FirstChild );
+
+        if ( pToplevelBox )
+            aScreenshotId = pToplevelBox->GetHelpId();
+    }
+
+    return aScreenshotId;
+}
 
 const sal_uInt16* SfxTabDialog::GetInputRanges( const SfxItemPool& rPool )
 
@@ -1308,6 +1325,59 @@ void SfxTabDialog::SetInputSet( const SfxItemSet* pInSet )
         m_pExampleSet = new SfxItemSet( *m_pSet );
         m_pOutSet = new SfxItemSet( *m_pSet->GetPool(), m_pSet->GetRanges() );
     }
+}
+
+FactoryFunction SfxTabDialog::GetUITestFactory() const
+{
+    return SfxTabDialogUIObject::create;
+}
+
+std::vector<OString> SfxTabDialog::getAllPageUIXMLDescriptions() const
+{
+    std::vector<OString> aRetval;
+
+    for (SfxTabDlgData_Impl::const_iterator it = m_pImpl->aData.begin(); it != m_pImpl->aData.end(); ++it)
+    {
+        SfxTabPage* pCandidate = GetTabPage((*it)->nId);
+
+        if (!pCandidate)
+        {
+            // force SfxTabPage creation
+            const_cast<SfxTabDialog*>(this)->ShowPage((*it)->nId);
+            pCandidate = GetTabPage((*it)->nId);
+        }
+
+        if (pCandidate)
+        {
+            // use UIXMLDescription (without '.ui', with '/')
+            aRetval.push_back(pCandidate->getUIFile());
+        }
+    }
+
+    return aRetval;
+}
+
+bool SfxTabDialog::selectPageByUIXMLDescription(const OString& rUIXMLDescription)
+{
+    for (SfxTabDlgData_Impl::const_iterator it = m_pImpl->aData.begin(); it != m_pImpl->aData.end(); ++it)
+    {
+        SfxTabPage* pCandidate = (*it)->pTabPage;
+
+        if (!pCandidate)
+        {
+            // force SfxTabPage creation
+            ShowPage((*it)->nId);
+            pCandidate = GetTabPage((*it)->nId);
+        }
+
+        if (pCandidate && pCandidate->getUIFile() == rUIXMLDescription)
+        {
+            ShowPage((*it)->nId);
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

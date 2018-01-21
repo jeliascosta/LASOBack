@@ -59,12 +59,7 @@ public:
         const css::uno::Reference<css::accessibility::XAccessible>& rxParent,
         const AccessibleShapeTreeInfo& rShapeTreeInfo);
 
-    virtual ~AccessiblePageShape();
-
-    /** Initialize a new shape.  See the documentation of the constructor
-        for the reason of this method's existence.
-    */
-    virtual void Init() override;
+    virtual ~AccessiblePageShape() override;
 
     //=====  XAccessibleContext  ==============================================
 
@@ -79,7 +74,7 @@ public:
         @return
             Reference of the requested child which is the accessible object
             of a visible shape.
-        @raises IndexOutOfBoundsException
+        @throws IndexOutOfBoundsException
             Throws always an exception because there are no children.
     */
     virtual css::uno::Reference<css::accessibility::XAccessible> SAL_CALL

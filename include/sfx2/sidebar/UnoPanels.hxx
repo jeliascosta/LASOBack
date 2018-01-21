@@ -17,20 +17,19 @@
 #include <com/sun/star/container/XNameAccess.hpp>
 #include <com/sun/star/frame/XFrame.hpp>
 
-#include <cppuhelper/compbase1.hxx>
-#include <cppuhelper/weakref.hxx>
+#include <cppuhelper/compbase.hxx>
 
 #include <sfx2/sidebar/SidebarController.hxx>
 
 /** get the decks
 */
-class SfxUnoPanels : public ::cppu::WeakImplHelper1< css::ui::XPanels >
+class SfxUnoPanels : public cppu::WeakImplHelper<css::ui::XPanels>
 {
 
 public:
 
     SfxUnoPanels(const css::uno::Reference<css::frame::XFrame>& , const OUString&);
-    virtual ~SfxUnoPanels() {};
+    virtual ~SfxUnoPanels() override {};
 
 // XPanels
     virtual OUString SAL_CALL getDeckId()

@@ -25,6 +25,7 @@
 
 class SvMetaSlot : public SvMetaAttribute
 {
+public:
     tools::SvRef<SvMetaType>      aSlotType;
     tools::SvRef<SvMetaSlot>      aMethod;
     SvIdentifier     aGroupId;
@@ -47,8 +48,6 @@ class SvMetaSlot : public SvMetaAttribute
     SvBOOL           aAccelConfig;
     SvBOOL           aFastCall;
     SvBOOL           aContainer;
-    SvBOOL           aImageRotation;
-    SvBOOL           aImageReflection;
     SvIdentifier     aPseudoPrefix;
     OString          aDisableFlags;
     SvMetaSlot*      pLinkedSlot;
@@ -69,10 +68,6 @@ class SvMetaSlot : public SvMetaAttribute
     bool            IsVariable() const;
     bool            IsMethod() const;
 
-protected:
-    void    SetToggle( bool bSet ) { aToggle = bSet; }
-    void    SetAutoUpdate( bool bSet ) { aAutoUpdate = bSet; }
-    void    SetAsynchron( bool bSet ) { aAsynchron = bSet; }
     void    SetRecordPerItem( bool bSet )
             {
                 aRecordPerItem = bSet;
@@ -91,12 +86,8 @@ protected:
                 if( bSet )
                     aRecordPerItem = aRecordPerSet = false;
             }
-    void    SetRecordAbsolute( bool bSet ) { aRecordAbsolute = bSet; }
 
 public:
-            SvMetaObject *  MakeClone() const;
-            SvMetaSlot *Clone() const { return static_cast<SvMetaSlot *>(MakeClone()); }
-
             SvMetaSlot();
             SvMetaSlot( SvMetaType * pType );
 
@@ -123,8 +114,6 @@ public:
     bool                GetAccelConfig() const;
     bool                GetFastCall() const;
     bool                GetContainer() const;
-    bool                GetImageRotation() const;
-    bool                GetImageReflection() const;
     bool                GetReadOnlyDoc() const;
     bool                GetExport() const;
     bool                GetHidden() const;

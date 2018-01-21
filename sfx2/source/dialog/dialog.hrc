@@ -32,7 +32,6 @@
 
 #define RC_DIALOG_BEGIN                 RID_SFX_DIALOG_START
 
-#define RID_DLG_ALIEN_WARNING           ( RC_DIALOG_BEGIN + 0)
 #define STR_RESET                       ( RC_DIALOG_BEGIN + 0)
 #define STR_QUERY_OVERWRITE             ( RC_DIALOG_BEGIN + 1)
 #define STR_TABPAGE_INVALIDNAME         ( RC_DIALOG_BEGIN + 13)
@@ -56,14 +55,16 @@
 #define STR_MACRO_LOSS                  ( RC_DIALOG_BEGIN + 107 )
 #define STR_CANCEL_RECORDING            ( RC_DIALOG_BEGIN + 108 )
 
-#define RID_DLG_SEARCH                  ( RC_DIALOG_BEGIN + 109 )
-
 #define STR_PDF_EXPORT_SEND             ( RC_DIALOG_BEGIN + 120 )
 #define IMG_INFO                        ( RC_DIALOG_BEGIN + 122 )
-
+#define RID_STYLE_DESIGNER_IMAGELIST    ( RC_DIALOG_BEGIN + 123 )
 #define SFX_ST_EDIT                     ( RC_DIALOG_BEGIN + 124 )
 #define STR_STYLE_ELEMTLIST             ( RC_DIALOG_BEGIN + 125 )
 #define STR_FONT_TABPAGE                ( RC_DIALOG_BEGIN + 126 )
+#define STR_PREVIEW_CHECKBOX            ( RC_DIALOG_BEGIN + 127 )
+#define STR_STYLE_FILL_FORMAT_MODE      ( RC_DIALOG_BEGIN + 128 )
+#define STR_STYLE_NEW_STYLE_FROM_SELECTION ( RC_DIALOG_BEGIN + 129 )
+#define STR_STYLE_UPDATE_STYLE          ( RC_DIALOG_BEGIN + 130 )
 
 #endif
 

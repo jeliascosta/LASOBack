@@ -1,6 +1,5 @@
 # -*- Mode: makefile-gmake; tab-width: 4; indent-tabs-mode: t -*-
 #
-#
 # This file is part of the LibreOffice project.
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
@@ -30,7 +29,6 @@ MERGE_LIBRARY_LIST := \
 	fwi \
 	fwk \
 	$(call gb_Helper_optional,DESKTOP,helplinker) \
-	i18nlangtag \
 	i18npool \
 	i18nutil \
 	lng \

@@ -67,7 +67,7 @@ protected:
 
 public:
     DataBrowser( vcl::Window* pParent, WinBits nStyle, bool bLiveUpdate );
-    virtual ~DataBrowser();
+    virtual ~DataBrowser() override;
     virtual void dispose() override;
 
     /** GetCellText returns the text at the given position
@@ -128,9 +128,6 @@ public:
     /// confirms all pending changes to be ready to be closed
     bool EndEditing();
 
-    // calls the protected inline-function BrowseBox::GetFirstVisibleColNumber()
-    sal_Int16 GetFirstVisibleColumNumber() const;
-
     bool CellContainsNumbers( sal_Int32 nRow, sal_uInt16 nCol ) const;
 
     sal_uInt32 GetNumberFormatKey( sal_Int32 nRow, sal_uInt16 nCol ) const;
@@ -173,10 +170,9 @@ private:
     void ImplAdjustHeaderControls();
 
     OUString GetColString( sal_Int32 nColumnId ) const;
-    static OUString GetRowString( sal_Int32 nRow );
 
-    DECL_LINK_TYPED( SeriesHeaderGotFocus, Control&, void );
-    DECL_LINK_TYPED( SeriesHeaderChanged,  impl::SeriesHeaderEdit*, void );
+    DECL_LINK( SeriesHeaderGotFocus, Control&, void );
+    DECL_LINK( SeriesHeaderChanged,  impl::SeriesHeaderEdit*, void );
 
     DataBrowser( const DataBrowser & ) = delete;
 };

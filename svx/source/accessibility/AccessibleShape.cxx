@@ -410,38 +410,10 @@ uno::Reference<XAccessibleStateSet> SAL_CALL
     ::osl::MutexGuard aGuard (maMutex);
     Reference<XAccessibleStateSet> xStateSet;
 
-    if (rBHelper.bDisposed || mpText == nullptr)
-        // Return a minimal state set that only contains the DEFUNC state.
+    if (IsDisposed())
     {
+        // Return a minimal state set that only contains the DEFUNC state.
         xStateSet = AccessibleContextBase::getAccessibleStateSet ();
-        ::utl::AccessibleStateSetHelper* pStateSet =
-              static_cast< ::utl::AccessibleStateSetHelper*>(mxStateSet.get());
-        css::uno::Reference<XAccessible> xTempAcc = getAccessibleParent();
-        if( xTempAcc.is() )
-        {
-            css::uno::Reference<XAccessibleContext>
-                                    xTempAccContext = xTempAcc->getAccessibleContext();
-            if( xTempAccContext.is() )
-            {
-                css::uno::Reference<XAccessibleStateSet> rState =
-                    xTempAccContext->getAccessibleStateSet();
-                if( rState.is() )           {
-                    css::uno::Sequence<short> aStates = rState->getStates();
-                    int count = aStates.getLength();
-                    for( int iIndex = 0;iIndex < count;iIndex++ )
-                    {
-                        if( aStates[iIndex] == AccessibleStateType::EDITABLE )
-                        {
-                            pStateSet->AddState (AccessibleStateType::EDITABLE);
-                            pStateSet->AddState (AccessibleStateType::RESIZABLE);
-                            pStateSet->AddState (AccessibleStateType::MOVEABLE);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        xStateSet.set( new ::utl::AccessibleStateSetHelper (*pStateSet));
     }
     else
     {
@@ -489,7 +461,12 @@ uno::Reference<XAccessibleStateSet> SAL_CALL
             xStateSet.set( new ::utl::AccessibleStateSetHelper (*pStateSet));
         }
     }
-    UpdateDocumentAllSelState(xStateSet);
+    if (mpParent && mpParent->IsDocumentSelAll())
+    {
+        ::utl::AccessibleStateSetHelper* pStateSet =
+            static_cast< ::utl::AccessibleStateSetHelper*>(xStateSet.get());
+        pStateSet->AddState (AccessibleStateType::SELECTED);
+    }
     return xStateSet;
 }
 
@@ -1091,8 +1068,7 @@ sal_Int64 SAL_CALL
 }
 
 // IAccessibleViewForwarderListener
-void AccessibleShape::ViewForwarderChanged (ChangeType aChangeType,
-        const IAccessibleViewForwarder* pViewForwarder)
+void AccessibleShape::ViewForwarderChanged()
 {
     // Inform all listeners that the graphical representation (i.e. size
     // and/or position) of the shape has changed.
@@ -1102,7 +1078,7 @@ void AccessibleShape::ViewForwarderChanged (ChangeType aChangeType,
 
     // Tell children manager of the modified view forwarder.
     if (mpChildrenManager != nullptr)
-        mpChildrenManager->ViewForwarderChanged (aChangeType, pViewForwarder);
+        mpChildrenManager->ViewForwarderChanged();
 
     // update our children that our screen position might have changed
     if( mpText )
@@ -1203,8 +1179,8 @@ OUString
             break;
 
         case DRAWING_CONTROL:
-            aDG.AddProperty ("ControlBackground", DescriptionGenerator::COLOR, "");
-            aDG.AddProperty ("ControlBorder", DescriptionGenerator::INTEGER, "");
+            aDG.AddProperty ("ControlBackground", DescriptionGenerator::PropertyType::Color, "");
+            aDG.AddProperty ("ControlBorder", DescriptionGenerator::PropertyType::Integer, "");
             break;
 
         case DRAWING_TEXT:
@@ -1264,7 +1240,7 @@ void AccessibleShape::disposing()
     // Cleanup.  Remove references to objects to allow them to be
     // destroyed.
     mxShape = nullptr;
-    maShapeTreeInfo = AccessibleShapeTreeInfo();
+    maShapeTreeInfo.dispose();
 
     // Call base classes.
     AccessibleContextBase::dispose ();
@@ -1336,21 +1312,6 @@ sal_Int16 SAL_CALL AccessibleShape::getAccessibleRole()
     return nAccessibleRole;
 }
 
-
-void AccessibleShape::UpdateDocumentAllSelState(Reference<XAccessibleStateSet> &xStateSet)
-{
-    if (mpParent && mpParent->IsDocumentSelAll())
-    {
-        ::utl::AccessibleStateSetHelper* pStateSet =
-            static_cast< ::utl::AccessibleStateSetHelper*>(xStateSet.get());
-        pStateSet->AddState (AccessibleStateType::SELECTED);
-
-        //uno::Any NewValue;
-        //NewValue <<= AccessibleStateType::SELECTED;
-
-        //CommitChange(AccessibleEventId::STATE_CHANGED,NewValue,uno::Any());
-    }
-}
 
 //sort the drawing objects from up to down, from left to right
 struct XShapePosCompareHelper
@@ -1524,7 +1485,7 @@ throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::ex
 }
 // XAccesibleText
 sal_Int32 SAL_CALL AccessibleShape::getCaretPosition(  ) throw (css::uno::RuntimeException, std::exception){return 0;}
-sal_Bool SAL_CALL AccessibleShape::setCaretPosition( sal_Int32 ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception){return 0;}
+sal_Bool SAL_CALL AccessibleShape::setCaretPosition( sal_Int32 ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception){return false;}
 sal_Unicode SAL_CALL AccessibleShape::getCharacter( sal_Int32 ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception){return 0;}
 css::uno::Sequence< css::beans::PropertyValue > SAL_CALL AccessibleShape::getCharacterAttributes( sal_Int32, const css::uno::Sequence< OUString >& ) throw (css::lang::IndexOutOfBoundsException, css::uno::RuntimeException, std::exception)
 {

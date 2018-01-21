@@ -80,7 +80,7 @@ public:
         be within the range!
 
         \warning The range has to include at least two nodes or has to be a
-        SwDoc::IsColumnSelection!
+        SwDoc::IsColumnSelection, because the rPam is treated [mark, point[.
 
         Normally this function should work only with content nodes. But there
         is a special case used by SwDoc::Paste, which starts the SwPaM at the
@@ -171,11 +171,10 @@ public:
 
     /** Insert OLE-objects.
     */
-    virtual SwFlyFrameFormat* Insert(const SwPaM &rRg, const svt::EmbeddedObjectRef& xObj, const SfxItemSet* pFlyAttrSet,
-        const SfxItemSet* pGrfAttrSet, SwFrameFormat*) = 0;
+    virtual SwFlyFrameFormat* Insert(const SwPaM &rRg, const svt::EmbeddedObjectRef& xObj, const SfxItemSet* pFlyAttrSet) = 0;
 
     virtual SwFlyFrameFormat* InsertOLE(const SwPaM &rRg, const OUString& rObjName, sal_Int64 nAspect, const SfxItemSet* pFlyAttrSet,
-                           const SfxItemSet* pGrfAttrSet, SwFrameFormat*) = 0;
+                           const SfxItemSet* pGrfAttrSet) = 0;
 
     /** Split a node at rPos (implemented only for TextNode).
     */

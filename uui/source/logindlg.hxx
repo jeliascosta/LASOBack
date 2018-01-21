@@ -20,7 +20,6 @@
 #ifndef INCLUDED_UUI_SOURCE_LOGINDLG_HXX
 #define INCLUDED_UUI_SOURCE_LOGINDLG_HXX
 
-#include <svtools/stdctrl.hxx>
 #include <vcl/button.hxx>
 #include <vcl/dialog.hxx>
 #include <vcl/edit.hxx>
@@ -62,14 +61,14 @@ class LoginDialog : public ModalDialog
     void            EnableUseSysCredsControls_Impl( bool bUseSysCredsEnabled );
     void            SetRequest();
 
-    DECL_LINK_TYPED(OKHdl_Impl, Button*, void);
-    DECL_LINK_TYPED(PathHdl_Impl, Button*, void);
-    DECL_LINK_TYPED(UseSysCredsHdl_Impl, Button*, void);
+    DECL_LINK(OKHdl_Impl, Button*, void);
+    DECL_LINK(PathHdl_Impl, Button*, void);
+    DECL_LINK(UseSysCredsHdl_Impl, Button*, void);
 
 public:
     LoginDialog(vcl::Window* pParent, sal_uInt16 nFlags,
         const OUString& rServer, const OUString &rRealm);
-    virtual ~LoginDialog();
+    virtual ~LoginDialog() override;
     virtual void    dispose() override;
 
     OUString        GetName() const                             { return m_pNameED->GetText(); }

@@ -50,7 +50,7 @@ namespace writerfilter {
 namespace ooxml
 {
 
-OOXMLDocumentImpl::OOXMLDocumentImpl(OOXMLStream::Pointer_t pStream, const uno::Reference<task::XStatusIndicator>& xStatusIndicator, bool bSkipImages, const uno::Sequence<beans::PropertyValue>& rDescriptor)
+OOXMLDocumentImpl::OOXMLDocumentImpl(OOXMLStream::Pointer_t const & pStream, const uno::Reference<task::XStatusIndicator>& xStatusIndicator, bool bSkipImages, const uno::Sequence<beans::PropertyValue>& rDescriptor)
     : mpStream(pStream)
     , mxStatusIndicator(xStatusIndicator)
     , mnXNoteId(0)
@@ -186,7 +186,7 @@ void OOXMLDocumentImpl::importSubStreamRelations(const OOXMLStream::Pointer_t& p
     OOXMLStream::Pointer_t cStream;
     try
     {
-       cStream = OOXMLDocumentFactory::createStream(pStream, nType);
+        cStream = OOXMLDocumentFactory::createStream(pStream, nType);
     }
     catch (uno::Exception const& e)
     {
@@ -271,7 +271,7 @@ OOXMLDocumentImpl::getSubStream(const OUString & rId)
     writerfilter::Reference<Stream>::Pointer_t pRet( pTemp = new OOXMLDocumentImpl(pStream, uno::Reference<task::XStatusIndicator>(), mbSkipImages, maMediaDescriptor));
     pTemp->setModel(mxModel);
     pTemp->setDrawPage(mxDrawPage);
-    pTemp->setIsSubstream( true );
+    pTemp->mbIsSubstream = true;
     return pRet;
 }
 
@@ -763,9 +763,18 @@ void OOXMLDocumentImpl::resolveEmbeddingsStream(const OOXMLStream::Pointer_t& pS
                 }
                 if(bHeaderFooterFound)
                 {
-                    OOXMLStream::Pointer_t Stream = OOXMLDocumentFactory::createStream(pStream, streamType);
-                    if(Stream)
-                        resolveEmbeddingsStream(Stream);
+                    try
+                    {
+                        OOXMLStream::Pointer_t Stream = OOXMLDocumentFactory::createStream(pStream, streamType);
+                        if (Stream)
+                            resolveEmbeddingsStream(Stream);
+                    }
+                    catch (uno::Exception const& e)
+                    {
+                        SAL_INFO("writerfilter", "resolveEmbeddingsStream: can't find header/footer whilst "
+                               "resolving stream " << streamType << " : " << e.Message);
+                        return;
+                    }
                 }
 
                 beans::PropertyValue embeddingsTemp;

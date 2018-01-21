@@ -3,8 +3,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LibO 40l10n\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2016-12-01 12:11+0100\n"
-"PO-Revision-Date: 2016-10-18 12:48+0000\n"
+"POT-Creation-Date: 2017-06-01 14:03+0200\n"
+"PO-Revision-Date: 2016-12-01 11:54+0000\n"
 "Last-Translator: Anonymous Pootle User\n"
 "Language-Team: none\n"
 "Language: ast\n"
@@ -12,9 +12,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: LibreOffice\n"
 "X-Accelerator-Marker: ~\n"
-"X-POOTLE-MTIME: 1476794929.000000\n"
+"X-Generator: LibreOffice\n"
+"X-POOTLE-MTIME: 1480593267.000000\n"
 
 #: aboutconfigdialog.ui
 msgctxt ""
@@ -179,14 +179,13 @@ msgid "%PRODUCTNAME is a modern, easy-to-use, open source productivity suite for
 msgstr "%PRODUCTNAME ye una suite de productividá moderna, cenciella d'usar y de códigu abiertu, pa procesar testu, fueyes de cálculu, presentaciones y más."
 
 #: aboutdialog.ui
-#, fuzzy
 msgctxt ""
 "aboutdialog.ui\n"
 "copyright\n"
 "label\n"
 "string.text"
-msgid "Copyright © 2000–2016 LibreOffice contributors."
-msgstr "Copyright © 2000–2014 collaboradores de LibreOffice."
+msgid "Copyright © 2000–2017 LibreOffice contributors."
+msgstr ""
 
 #: aboutdialog.ui
 msgctxt ""
@@ -12342,13 +12341,14 @@ msgid "_Company:"
 msgstr "_Empresa"
 
 #: optuserpage.ui
+#, fuzzy
 msgctxt ""
 "optuserpage.ui\n"
 "nameft\n"
 "label\n"
 "string.text"
-msgid "Name/initials:"
-msgstr ""
+msgid "First/last _name/initials:"
+msgstr "_Nome/Apellíos/Iniciales"
 
 #: optuserpage.ui
 #, fuzzy
@@ -12421,11 +12421,20 @@ msgstr "Fa_x / corréu electrónicu"
 #: optuserpage.ui
 msgctxt ""
 "optuserpage.ui\n"
+"firstname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "First name"
+msgstr "Nome"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
 "lastname-atkobject\n"
 "AtkObject::accessible-name\n"
 "string.text"
-msgid "Name"
-msgstr ""
+msgid "Last name"
+msgstr "Nome"
 
 #: optuserpage.ui
 msgctxt ""
@@ -12525,6 +12534,89 @@ msgctxt ""
 "string.text"
 msgid "Use data for document properties"
 msgstr "Usar datos pa les propiedaes del documentu"
+
+#: optuserpage.ui
+#, fuzzy
+msgctxt ""
+"optuserpage.ui\n"
+"rusnameft\n"
+"label\n"
+"string.text"
+msgid "Last name/first _name/father’s name/initials:"
+msgstr "Apellíos/_Nome/Nome del pa/Iniciales"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"ruslastname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Last name"
+msgstr "Nome"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"rusfathersname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Father's name"
+msgstr "Nome del padre"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"russhortname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Initials"
+msgstr "Iniciales"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"rusfirstname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "First name"
+msgstr "Nome"
+
+#: optuserpage.ui
+#, fuzzy
+msgctxt ""
+"optuserpage.ui\n"
+"eastnameft\n"
+"label\n"
+"string.text"
+msgid "Last/first _name/initials:"
+msgstr "_Nome/Apellíos/Iniciales"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"eastlastname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Last name"
+msgstr "Nome"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"eastfirstname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "First name"
+msgstr "Nome"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"eastshortname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Initials"
+msgstr "Iniciales"
 
 #: optuserpage.ui
 #, fuzzy
@@ -12687,33 +12779,6 @@ msgstr "Iconos nos me_nús"
 #: optviewpage.ui
 msgctxt ""
 "optviewpage.ui\n"
-"menuicons\n"
-"0\n"
-"stringlist.text"
-msgid "Automatic"
-msgstr "Automáticu"
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
-"menuicons\n"
-"1\n"
-"stringlist.text"
-msgid "Hide"
-msgstr "Anubrir"
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
-"menuicons\n"
-"2\n"
-"stringlist.text"
-msgid "Show"
-msgstr "Amosar"
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
 "contextmenushortcuts\n"
 "0\n"
 "stringlist.text"
@@ -12746,6 +12811,33 @@ msgctxt ""
 "string.text"
 msgid "Shortcuts in context menus:"
 msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"menuicons\n"
+"0\n"
+"stringlist.text"
+msgid "Automatic"
+msgstr "Automáticu"
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"menuicons\n"
+"1\n"
+"stringlist.text"
+msgid "Hide"
+msgstr "Anubrir"
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"menuicons\n"
+"2\n"
+"stringlist.text"
+msgid "Show"
+msgstr "Amosar"
 
 #: optviewpage.ui
 msgctxt ""
@@ -12932,16 +13024,6 @@ msgid "Screen font antialiasin_g"
 msgstr "Suavizar les _fontes na pantalla"
 
 #: optviewpage.ui
-#, fuzzy
-msgctxt ""
-"optviewpage.ui\n"
-"aafrom\n"
-"label\n"
-"string.text"
-msgid "fro_m:"
-msgstr "_dende"
-
-#: optviewpage.ui
 msgctxt ""
 "optviewpage.ui\n"
 "label9\n"
@@ -13012,6 +13094,16 @@ msgctxt ""
 "stringlist.text"
 msgid "Large"
 msgstr ""
+
+#: optviewpage.ui
+#, fuzzy
+msgctxt ""
+"optviewpage.ui\n"
+"aafrom\n"
+"label\n"
+"string.text"
+msgid "fro_m:"
+msgstr "_dende"
 
 #: optviewpage.ui
 msgctxt ""

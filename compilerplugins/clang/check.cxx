@@ -31,11 +31,46 @@ TerminalCheck TypeCheck::Char() const {
             || type_->isSpecificBuiltinType(clang::BuiltinType::Char_U)));
 }
 
+TerminalCheck TypeCheck::AnyBoolean() const {
+    if (type_->isBooleanType()) {
+        return TerminalCheck(true);
+    }
+    auto t = type_->getAs<clang::TypedefType>();
+    if (t == nullptr) {
+        return TerminalCheck(false);
+    }
+    auto n =t->getDecl()->getName();
+    return TerminalCheck(
+        n == "sal_Bool" || n == "BOOL" || n == "Boolean" || n == "FT_Bool"
+        || n == "FcBool" || n == "GLboolean" || n == "NPBool" || n == "UBool"
+        || n == "dbus_bool_t" || n == "gboolean" || n == "hb_bool_t"
+        || n == "jboolean");
+}
+
 TypeCheck TypeCheck::LvalueReference() const {
     if (!type_.isNull()) {
         auto const t = type_->getAs<clang::LValueReferenceType>();
         if (t != nullptr) {
             return TypeCheck(t->getPointeeType());
+        }
+    }
+    return TypeCheck();
+}
+
+TypeCheck TypeCheck::Pointer() const {
+    if (!type_.isNull()) {
+        auto const t = type_->getAs<clang::PointerType>();
+        if (t != nullptr) {
+            return TypeCheck(t->getPointeeType());
+        }
+    }
+    return TypeCheck();
+}
+
+TypeCheck TypeCheck::Typedef() const {
+    if (!type_.isNull()) {
+        if (auto const t = type_->getAs<clang::TypedefType>()) {
+            return TypeCheck(t->desugar());
         }
     }
     return TypeCheck();
@@ -54,6 +89,11 @@ ContextCheck DeclCheck::Operator(clang::OverloadedOperatorKind op) const {
     return ContextCheck(
         f != nullptr && f->getOverloadedOperator() == op
         ? f->getDeclContext() : nullptr);
+}
+
+ContextCheck DeclCheck::MemberFunction() const {
+    auto m = llvm::dyn_cast_or_null<clang::CXXMethodDecl>(decl_);
+    return ContextCheck(m == nullptr ? nullptr : m->getParent());
 }
 
 TerminalCheck ContextCheck::GlobalNamespace() const {

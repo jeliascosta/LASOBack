@@ -392,7 +392,7 @@ void LoadEnv::startLoading()
 -----------------------------------------------*/
 bool LoadEnv::waitWhileLoading(sal_uInt32 nTimeout)
 {
-    // Because its not a good idea to block the main thread
+    // Because it's not a good idea to block the main thread
     // (and we can't be sure that we are currently not used inside the
     // main thread!), we can't use conditions here really. We must yield
     // in an intelligent manner :-)
@@ -606,8 +606,8 @@ LoadEnv::EContentType LoadEnv::classifyContent(const OUString&                  
     //      Mos of our filters are handled by our global
     //      default loader. But there exist some specialized
     //      loader, which does not work on top of filters!
-    //      So its not enough to search on the filter configuration.
-    //      Further its not enough to search for types!
+    //      So it's not enough to search on the filter configuration.
+    //      Further it's not enough to search for types!
     //      Because there exist some types, which are referenced by
     //      other objects ... but not by filters nor frame loaders!
 
@@ -726,8 +726,6 @@ bool queryOrcusTypeAndFilter(const uno::Sequence<beans::PropertyValue>&, OUStrin
 void LoadEnv::impl_detectTypeAndFilter()
     throw(LoadEnvException, css::uno::RuntimeException, std::exception)
 {
-    static const char TYPEPROP_PREFERREDFILTER[] = "PreferredFilter";
-    static const char FILTERPROP_FLAGS        [] = "Flags";
     static sal_Int32       FILTERFLAG_TEMPLATEPATH  = 16;
 
     // SAFE ->
@@ -799,7 +797,7 @@ void LoadEnv::impl_detectTypeAndFilter()
         try
         {
             ::comphelper::SequenceAsHashMap lTypeProps(xTypeCont->getByName(sType));
-            sFilter = lTypeProps.getUnpackedValueOrDefault(TYPEPROP_PREFERREDFILTER, OUString());
+            sFilter = lTypeProps.getUnpackedValueOrDefault("PreferredFilter", OUString());
             if (!sFilter.isEmpty())
             {
                 // SAFE ->
@@ -828,7 +826,7 @@ void LoadEnv::impl_detectTypeAndFilter()
         try
         {
             ::comphelper::SequenceAsHashMap lFilterProps(xFilterCont->getByName(sFilter));
-            sal_Int32 nFlags         = lFilterProps.getUnpackedValueOrDefault(FILTERPROP_FLAGS, (sal_Int32)0);
+            sal_Int32 nFlags         = lFilterProps.getUnpackedValueOrDefault("Flags", (sal_Int32)0);
                       bIsOwnTemplate = ((nFlags & FILTERFLAG_TEMPLATEPATH) == FILTERFLAG_TEMPLATEPATH);
         }
         catch(const css::container::NoSuchElementException&)
@@ -1073,7 +1071,7 @@ bool LoadEnv::impl_loadContent()
 
     if (!bHidden && !bMinimized && !bPreview && !xProgress.is())
     {
-        // Note: its an optional interface!
+        // Note: it's an optional interface!
         css::uno::Reference< css::task::XStatusIndicatorFactory > xProgressFactory(xTargetFrame, css::uno::UNO_QUERY);
         if (xProgressFactory.is())
         {
@@ -1221,7 +1219,7 @@ css::uno::Reference< css::frame::XFrame > LoadEnv::impl_searchAlreadyLoaded()
     osl::MutexGuard g(m_mutex);
 
     // such search is allowed for special requests only ...
-    // or better its not allowed for some requests in general :-)
+    // or better it's not allowed for some requests in general :-)
     if (
         ( ! TargetHelper::matchSpecialTarget(m_sTarget, TargetHelper::E_DEFAULT)                                               ) ||
         m_lMediaDescriptor.getUnpackedValueOrDefault(utl::MediaDescriptor::PROP_ASTEMPLATE() , false) ||
@@ -1233,7 +1231,7 @@ css::uno::Reference< css::frame::XFrame > LoadEnv::impl_searchAlreadyLoaded()
     }
 
     // check URL
-    // May its not useful to start expensive document search, if it
+    // May it's not useful to start expensive document search, if it
     // can fail only .. because we load from a stream or model directly!
     if (
         (ProtocolCheck::isProtocol(m_aURL.Complete, ProtocolCheck::E_PRIVATE_STREAM )) ||
@@ -1361,7 +1359,7 @@ bool LoadEnv::impl_isFrameAlreadyUsedForLoading(const css::uno::Reference< css::
 
     // ? no lock interface ?
     // Might its an external written frame implementation :-(
-    // Allowing using of it ... but it can fail if its not synchronized with our processes !
+    // Allowing using of it ... but it can fail if it's not synchronized with our processes !
     if (!xLock.is())
         return false;
 
@@ -1447,7 +1445,7 @@ css::uno::Reference< css::frame::XFrame > LoadEnv::impl_searchRecycleTarget()
     if (xModified->isModified())
         return css::uno::Reference< css::frame::XFrame >();
 
-    vcl::Window* pWindow = VCLUnoHelper::GetWindow(xTask->getContainerWindow());
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(xTask->getContainerWindow());
     if (pWindow && pWindow->IsInModalMode())
         return css::uno::Reference< css::frame::XFrame >();
 
@@ -1521,10 +1519,10 @@ void LoadEnv::impl_reactForLoadingState()
         if (bMinimized)
         {
             SolarMutexGuard aSolarGuard;
-            vcl::Window* pWindow = VCLUnoHelper::GetWindow(xWindow);
+            VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(xWindow);
             // check for system window is necessary to guarantee correct pointer cast!
             if (pWindow && pWindow->IsSystemWindow())
-                static_cast<WorkWindow*>(pWindow)->Minimize();
+                static_cast<WorkWindow*>(pWindow.get())->Minimize();
         }
         else if (!bHidden)
         {
@@ -1629,7 +1627,7 @@ void LoadEnv::impl_makeFrameWindowVisible(const css::uno::Reference< css::awt::X
     // <- SAFE ----------------------------------
 
     SolarMutexGuard aSolarGuard;
-    vcl::Window* pWindow = VCLUnoHelper::GetWindow(xWindow);
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(xWindow);
     if ( pWindow )
     {
         bool const preview( m_lMediaDescriptor.getUnpackedValueOrDefault(
@@ -1657,8 +1655,6 @@ void LoadEnv::impl_makeFrameWindowVisible(const css::uno::Reference< css::awt::X
 
 void LoadEnv::impl_applyPersistentWindowState(const css::uno::Reference< css::awt::XWindow >& xWindow)
 {
-    static const char PACKAGE_SETUP_MODULES[] = "/org.openoffice.Setup/Office/Factories";
-
     // no window -> action not possible
     if (!xWindow.is())
         return;
@@ -1675,7 +1671,7 @@ void LoadEnv::impl_applyPersistentWindowState(const css::uno::Reference< css::aw
     // SOLAR SAFE ->
     SolarMutexClearableGuard aSolarGuard1;
 
-    vcl::Window*  pWindow       = VCLUnoHelper::GetWindow(xWindow);
+    VclPtr<vcl::Window>  pWindow = VCLUnoHelper::GetWindow(xWindow);
     if (!pWindow)
         return;
 
@@ -1686,7 +1682,7 @@ void LoadEnv::impl_applyPersistentWindowState(const css::uno::Reference< css::aw
         return;
 
     // don't overwrite this special state!
-    WorkWindow* pWorkWindow = static_cast<WorkWindow*>(pWindow);
+    WorkWindow* pWorkWindow = static_cast<WorkWindow*>(pWindow.get());
     if (pWorkWindow->IsMinimized())
         return;
 
@@ -1720,7 +1716,7 @@ void LoadEnv::impl_applyPersistentWindowState(const css::uno::Reference< css::aw
         // get access to the configuration of this office module
         css::uno::Reference< css::container::XNameAccess > xModuleCfg(::comphelper::ConfigurationHelper::openConfig(
                                                                         xContext,
-                                                                        PACKAGE_SETUP_MODULES,
+                                                                        "/org.openoffice.Setup/Office/Factories",
                                                                         ::comphelper::EConfigurationModes::ReadOnly),
                                                                       css::uno::UNO_QUERY_THROW);
 
@@ -1743,11 +1739,11 @@ void LoadEnv::impl_applyPersistentWindowState(const css::uno::Reference< css::aw
             // But if we get a valid pointer we can be sure, that it's the system window pointer
             // we already checked and used before. Because nobody recycle the same uno reference for
             // a new internal c++ implementation ... hopefully .-))
-            vcl::Window* pWindowCheck  = VCLUnoHelper::GetWindow(xWindow);
+            VclPtr<vcl::Window> pWindowCheck = VCLUnoHelper::GetWindow(xWindow);
             if (! pWindowCheck)
                 return;
 
-            SystemWindow* pSystemWindow = static_cast<SystemWindow*>(pWindowCheck);
+            SystemWindow* pSystemWindow = static_cast<SystemWindow*>(pWindowCheck.get());
             pSystemWindow->SetWindowState(OUStringToOString(sWindowState,RTL_TEXTENCODING_UTF8));
             // <- SOLAR SAFE
         }

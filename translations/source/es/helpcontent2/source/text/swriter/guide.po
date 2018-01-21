@@ -4,7 +4,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
 "POT-Creation-Date: 2016-12-01 12:12+0100\n"
-"PO-Revision-Date: 2017-03-29 11:23+0000\n"
+"PO-Revision-Date: 2017-10-18 22:32+0000\n"
 "Last-Translator: Adolfo Jayme Barrientos <fito@libreoffice.org>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: es\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Accelerator-Marker: ~\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1490786604.000000\n"
+"X-POOTLE-MTIME: 1508365944.000000\n"
 
 #: anchor_object.xhp
 msgctxt ""
@@ -222,7 +222,7 @@ msgctxt ""
 "par_id0915200809400790\n"
 "help.text"
 msgid "Ensure that all heading levels are shown in the Navigator. By default all levels are shown. See steps below how to change the heading levels that are shown."
-msgstr "Asegúrese que se muestren todos los niveles de encabezados en el Navegador. De manera predeterminada se muestran todos los niveles. Vea un poco más abajo cómo cambiar los niveles de encabezados que se muestran."
+msgstr "Asegúrese que se muestren todos los niveles de títulos en el Navegador. De manera predeterminada se muestran todos los niveles. Vea un poco más abajo cómo cambiar los niveles de títulos que se muestran."
 
 #: arrange_chapters.xhp
 msgctxt ""
@@ -579,7 +579,7 @@ msgctxt ""
 "10\n"
 "help.text"
 msgid "Choose <item type=\"menuitem\">Tools – AutoCorrect Options</item>."
-msgstr "Elija <item type=\"menuitem\">Herramientas – Opciones de autocorrección</item>."
+msgstr "Vaya a <item type=\"menuitem\">Herramientas ▸ Corrección automática ▸ Opciones de corrección automática</item>."
 
 #: auto_off.xhp
 msgctxt ""
@@ -711,7 +711,7 @@ msgctxt ""
 "6\n"
 "help.text"
 msgid "If you choose a word from the <item type=\"menuitem\">AutoCorrect</item> submenu, the underlined word and the replacement word are automatically added to the AutoCorrect list for the current language. To view the AutoCorrect list, choose <item type=\"menuitem\">Tools – AutoCorrect Options</item>, and then click the <item type=\"menuitem\">Replace</item> tab."
-msgstr "Si selecciona una palabra desde el submenú <item type=\"menuitem\">Autocorrección</item>, la palabra subrayada y la palabra substituta se agregan automáticamente a la lista de Autocorrección del idioma actual. Para ver la lista de Autocorrección, seleccione <item type=\"menuitem\">Herramientas – Opciones de Autocorrección</item> y, a continuación, haga clic en la ficha <item type=\"menuitem\">Reemplazar</item>."
+msgstr "Si selecciona una palabra desde el submenú <item type=\"menuitem\">Corrección automática</item>, la palabra subrayada y la palabra substituta se añaden automáticamente a la lista de Corrección automática del idioma actual. Para ver la lista de Corrección automática, seleccione <item type=\"menuitem\">Herramientas ▸ Opciones de corrección automática</item> y, a continuación, pulse en la pestaña <item type=\"menuitem\">Reemplazar</item>."
 
 #: auto_spellcheck.xhp
 msgctxt ""
@@ -1324,7 +1324,7 @@ msgctxt ""
 "par_id3148413\n"
 "help.text"
 msgid "If two adjacent text ranges' all border properties are identical (same style, width, color, padding and shadow), then those two ranges will be considered to be part of the same border group and rendered within the same border in the document."
-msgstr "Si, en dos áreas de texto adyacentes, todas las propiedades del borde fueran idénticas —estilo, anchura, color, espaciamiento y sombra—, ambas áreas se considerarán parte de un mismo grupo y se representarán con un solo borde en el documento."
+msgstr "Si, en dos intervalos de texto adyacentes, todas las propiedades del borde fueran idénticas —estilo, anchura, color, separación y sombra—, ambos intervalos se considerarán parte de un mismo grupo y se representarán con un solo borde en el documento."
 
 #: border_character.xhp
 msgctxt ""
@@ -2300,7 +2300,7 @@ msgctxt ""
 "37\n"
 "help.text"
 msgid "Select the formula in the text. The formula can only contain numbers and operators and cannot contain spaces."
-msgstr "Seleccione la fórmula en el texto. La fórmula sólo puede contener números, operadores y símbolos de monedas, pero no espacios."
+msgstr "Seleccione la fórmula en el texto. La fórmula puede contener números y operadores, pero no espacios."
 
 #: calculate_clipboard.xhp
 msgctxt ""
@@ -2317,7 +2317,7 @@ msgctxt ""
 "par_id5172582\n"
 "help.text"
 msgid "Place the cursor where you want to insert the result of the formula, and then choose <item type=\"menuitem\">Edit - Paste</item>, or press <switchinline select=\"sys\"><caseinline select=\"MAC\">Command </caseinline><defaultinline>Ctrl</defaultinline></switchinline>+V.<br/>The selected formula is replaced by the result."
-msgstr "Coloque el cursor donde desee insertar el resultado de la fórmula y, a continuación, seleccione <item type=\"menuitem\">Editar - Pegar</item> o pulse <switchinline select=\"sys\"><caseinline select=\"MAC\">Comando </caseinline><defaultinline>Ctrl</defaultinline></switchinline>+V.<br/> El resultado sustituye a la fórmula seleccionada."
+msgstr "Coloque el cursor donde desee insertar el resultado de la fórmula y, a continuación, seleccione <item type=\"menuitem\">Editar ▸ Pegar</item>, o bien, oprima <switchinline select=\"sys\"><caseinline select=\"MAC\">⌘V</caseinline><defaultinline>Ctrl + V</defaultinline></switchinline>.<br/> El resultado sustituye a la fórmula seleccionada."
 
 #: calculate_intable.xhp
 msgctxt ""
@@ -2953,7 +2953,7 @@ msgctxt ""
 "par_id3154245\n"
 "help.text"
 msgid "For example, you can create a page style that displays a particular header, and another page style that displays a different header."
-msgstr "Por ejemplo, puede crear un estilo de página que muestra un encabezamiento concreto y otro estilo de página que muestra un encabezamiento diferente."
+msgstr "Por ejemplo, puede crear un estilo de página que muestre una cabecera concreta y otro que muestre una diferente."
 
 #: change_header.xhp
 msgctxt ""
@@ -2969,7 +2969,7 @@ msgctxt ""
 "par_id3150532\n"
 "help.text"
 msgid "Click the <emph>New Style from Selection</emph> icon and select <emph>New Styles from Selection</emph> from the submenu."
-msgstr "Pulse el símbolo <emph>Nuevo estilo a partir de selección</emph> y seleccione en el submenú <emph>Nuevos estilos a partir de selección</emph>."
+msgstr "Pulse en el icono <emph>Estilo nuevo a partir de selección</emph> y seleccione en el submenú <emph>Estilos nuevos a partir de selección</emph>."
 
 #: change_header.xhp
 msgctxt ""
@@ -3638,7 +3638,7 @@ msgctxt ""
 "par_id3153153\n"
 "help.text"
 msgid "In the list of page styles, right-click \"Left Page\" and choose <emph>Modify</emph>."
-msgstr "En la lista de estilos de página pulse con el botón derecho del ratón sobre \"Página izquierda\" y seleccione <emph>Modificar</emph>."
+msgstr "En la lista de estilos de página, pulse con el botón secundario del ratón sobre «Página izquierda» y seleccione <emph>Modificar</emph>."
 
 #: even_odd_sdw.xhp
 msgctxt ""
@@ -5084,7 +5084,7 @@ msgctxt ""
 "par_id3150508\n"
 "help.text"
 msgid "Choose <emph>Insert - Header and Footer - Footer</emph> and select the page style that you want to add the footer to."
-msgstr ""
+msgstr "Vaya a <emph>Insertar ▸ Cabecera y pie ▸ Pie de página</emph> y seleccione el estilo de página al que quiera añadir el pie."
 
 #: footer_pagenumber.xhp
 msgctxt ""
@@ -5537,7 +5537,7 @@ msgctxt ""
 "par_idN106BD\n"
 "help.text"
 msgid "On the next step of the wizard, click the <emph>Select Address List</emph> button to check that you are using the correct address list. If you want to use an address block, select an address block type, match the data fields if necessary, and click <emph>Next</emph>."
-msgstr "En el siguiente paso del asistente, pulse el botón <emph>Seleccionar lista de direcciones</emph> para comprobar que está usando la lista de direcciones correcta. Si quiere usar un bloque de direcciones, seleccione un tipo de bloque, empareje los campos de datos si es necesario, y pulse <emph>Siguiente</emph>."
+msgstr "En el siguiente paso del asistente, pulse en el botón <emph>Elegir lista de direcciones</emph> para comprobar que esté utilizando la lista de direcciones correcta. Si quiere usar un bloque de direcciones, seleccione un tipo de bloque, relacione los campos de datos si es necesario y pulse en <emph>Siguiente</emph>."
 
 #: form_letters_main.xhp
 msgctxt ""
@@ -6069,7 +6069,7 @@ msgctxt ""
 "par_id3146876\n"
 "help.text"
 msgid "To use different headers or footers in your document, you must add them to different <link href=\"text/swriter/guide/header_pagestyles.xhp\" name=\"Page Styles\">Page Styles</link>, and then apply the styles to the pages where you want the headers or footer to appear."
-msgstr "Si desea usar encabezamientos o pies de página diferentes en el documento, debe añadirlos a los <link href=\"text/swriter/guide/header_pagestyles.xhp\" name=\"Estilos de página\">Estilos de página</link> y a continuación aplicar éstos a las páginas donde desee que aparezcan los encabezamientos o los pies de página."
+msgstr "Si desea emplear cabeceras o pies diferentes en el documento, debe añadirlos a los <link href=\"text/swriter/guide/header_pagestyles.xhp\" name=\"Estilos de página\">estilos de página</link> y, a continuación, aplicar estos a las páginas donde quiera que aparezcan las cabeceras o los pies."
 
 #: header_footer.xhp
 msgctxt ""
@@ -6125,7 +6125,7 @@ msgctxt ""
 "par_id3154263\n"
 "help.text"
 msgid "You can use different headers and footers on different pages in your document, so long as the pages use different page styles. $[officename] provides several predefined page styles, such as <emph>First page</emph>, <emph>Left page</emph> and <emph>Right page</emph>, or you can create a custom page style."
-msgstr "Puede usar encabezamientos y pies de página diferentes en varias páginas del documento, siempre que las páginas usen estilos diferentes. $[officename] proporciona varios estilos de páginas predefinidos, como <emph>Primera página</emph>, <emph>Página izquierda</emph> y <emph>Página derecha</emph>. También se puede crear un estilo de página personalizado."
+msgstr "Puede usar cabeceras y pies diferentes en varias páginas del documento, siempre y cuando las páginas usen estilos diferentes. $[officename] proporciona varios estilos de páginas predefinidos, como <emph>Primera página</emph>, <emph>Página izquierda</emph> y <emph>Página derecha</emph>. También se puede crear un estilo de página personalizado."
 
 #: header_pagestyles.xhp
 msgctxt ""
@@ -6141,7 +6141,7 @@ msgctxt ""
 "par_id3150224\n"
 "help.text"
 msgid "For example, you can use page styles to define different headers for even and odd pages in a document."
-msgstr "Por ejemplo puede usar estilos de página con el fin de definir encabezamientos diferentes para las páginas pares e impares de un documento."
+msgstr "Por ejemplo, es posible emplear los estilos de página para definir una cabecera para las páginas pares y otra para las impares."
 
 #: header_pagestyles.xhp
 msgctxt ""
@@ -6416,13 +6416,12 @@ msgid "Formatting Headers or Footers"
 msgstr "Dar formato a encabezados o pies de página"
 
 #: header_with_line.xhp
-#, fuzzy
 msgctxt ""
 "header_with_line.xhp\n"
 "bm_id3154866\n"
 "help.text"
 msgid "<bookmark_value>inserting;lines under headers/above footers</bookmark_value>  <bookmark_value>lines; under headers/above footers</bookmark_value>  <bookmark_value>headers;formatting</bookmark_value>  <bookmark_value>footers;formatting</bookmark_value>  <bookmark_value>shadows;headers/footers</bookmark_value>  <bookmark_value>borders;for headers/footers</bookmark_value>"
-msgstr "<bookmark_value>insertar;líneas debajo de encabezamientos/encima de pies de página</bookmark_value>      <bookmark_value>líneas; debajo de encabezamientos/encima de pies de página</bookmark_value>      <bookmark_value>encabezamientos;dar formato</bookmark_value>      <bookmark_value>pies de página;dar formato</bookmark_value>      <bookmark_value>sombras;encabezamientos/pies de página</bookmark_value>      <bookmark_value>bordes;para encabezamientos/pies de página</bookmark_value>"
+msgstr "<bookmark_value>insertar;líneas debajo de cabeceras/encima de pies de página</bookmark_value>  <bookmark_value>líneas; debajo de cabeceras/encima de pies de página</bookmark_value>  <bookmark_value>cabeceras;dar formato</bookmark_value>  <bookmark_value>pies de página;dar formato</bookmark_value>  <bookmark_value>sombras;cabeceras/pies de página</bookmark_value>  <bookmark_value>bordes;para cabeceras/pies de página</bookmark_value>"
 
 #: header_with_line.xhp
 msgctxt ""
@@ -7053,7 +7052,7 @@ msgctxt ""
 "29\n"
 "help.text"
 msgid "To quickly exclude a word from hyphenation, select the word, choose <emph>Format - Character</emph>, click the <emph>Font </emph>tab, and select \"None\" in the <emph>Language </emph>box."
-msgstr "Para excluir rápidamente una palabra de la separación silábica, seleccione la palabra, vaya a <emph>Formato ▸ Carácter</emph>, pulse en la pestaña <emph>Tipo de letra</emph> y seleccione «Ninguno» en el cuadro <emph>Idioma</emph>."
+msgstr "Para excluir rápidamente una palabra de la división, seleccione la palabra, vaya a <emph>Formato ▸ Carácter</emph>, pulse en la pestaña <emph>Tipo de letra</emph> y seleccione «Ninguno» en el cuadro <emph>Idioma</emph>."
 
 #: hyphen_prevent.xhp
 msgctxt ""
@@ -7610,7 +7609,7 @@ msgctxt ""
 "52\n"
 "help.text"
 msgid "In the <item type=\"menuitem\">Level</item> list click the heading level that you want to assign hyperlinks to."
-msgstr "En la lista <item type=\"menuitem\">Nivel</item> haga clic en el nivel de encabezado al que desee asignar hipervínculos."
+msgstr "En la lista <item type=\"menuitem\">Nivel</item>, pulse en el nivel de título al que desee asignar hiperenlaces."
 
 #: indices_form.xhp
 msgctxt ""
@@ -9049,7 +9048,7 @@ msgctxt ""
 "par_idN10703\n"
 "help.text"
 msgid "Click the arrow next to the <emph>New Style from Selection</emph> icon to open the submenu."
-msgstr "Haga clic en la flecha que hay junto al icono <emph>Nuevo estilo a partir de selección</emph> para abrir el submenú."
+msgstr "Pulse en la flecha que se encuentra junto al icono <emph>Estilo nuevo a partir de selección</emph> para abrir el submenú."
 
 #: load_styles.xhp
 msgctxt ""
@@ -9715,7 +9714,7 @@ msgctxt ""
 "par_id3153733\n"
 "help.text"
 msgid "Select <emph>Include this paragraph in line numbering</emph>."
-msgstr "Seleccione <emph>Contar las líneas de este párrafo</emph>."
+msgstr "Seleccione <emph>Contar los renglones de este párrafo</emph>."
 
 #: numbering_lines.xhp
 msgctxt ""
@@ -9763,7 +9762,7 @@ msgctxt ""
 "par_id3148389\n"
 "help.text"
 msgid "Select the <item type=\"menuitem\">Include this paragraph in line numbering</item> check box."
-msgstr "Seleccione la casilla de verificación <item type=\"menuitem\">Contar las líneas de este párrafo</item>."
+msgstr "Seleccione la casilla <item type=\"menuitem\">Contar los renglones de este párrafo</item>."
 
 #: numbering_lines.xhp
 msgctxt ""
@@ -10691,7 +10690,7 @@ msgctxt ""
 "par_id7524033\n"
 "help.text"
 msgid "To Change the Page Orientation for All Pages"
-msgstr "Para cambiar la orientación de todas las  páginas"
+msgstr "Para cambiar la orientación de todas las páginas"
 
 #: pageorientation.xhp
 msgctxt ""
@@ -12191,7 +12190,7 @@ msgctxt ""
 "par_id7321390\n"
 "help.text"
 msgid "Choose <emph>View - Field Names</emph> to switch between viewing the reference names and the reference contents."
-msgstr ""
+msgstr "Utilice <emph>Ver ▸ Nombres de campos</emph> para intercambiar entre los nombres y los contenidos de las referencias."
 
 #: references_modify.xhp
 msgctxt ""
@@ -13262,7 +13261,7 @@ msgctxt ""
 "par_id3155922\n"
 "help.text"
 msgid "When you save a text document in HTML format, any graphics in the document are saved into the HTML document as embedded data streams. $[officename] tries to keep the original format of graphics, i.e. JPEG pictures or SVG images will be saved into HTML as such. All other graphic formats are saved as PNG."
-msgstr "Cuando guarda un documento de texto en el formato HTML, se almacenan todos los elementos gráficos como flujos de datos incrustados en el documento HTML. $[officename] intentará mantener el formato original de las imágenes, p. ej., los archivos JPEG y los SVG se mantendrán tal cual en el documento HTML. El resto de formatos de imagen se convertirán a PNG."
+msgstr "Cuando guarda un documento de texto en el formato HTML, se almacenan todos los elementos gráficos como flujos de datos incrustados en el documento HTML. $[officename] intentará mantener el formato original de las imágenes, p. ej., los archivos JPEG y los SVG se mantendrán tal cual en el documento HTML. El resto de los formatos de imagen se convertirán a PNG."
 
 #: send2html.xhp
 msgctxt ""
@@ -13985,7 +13984,7 @@ msgctxt ""
 "43\n"
 "help.text"
 msgid "Click the arrow next to the <emph>New Style from Selection</emph> icon and choose <emph>Update Style</emph> from the submenu."
-msgstr "Haga clic en la flecha que se encuentra junto al icono <emph>Nuevo estilo a partir de selección</emph> y elija <emph>Actualizar estilo</emph>en el submenú"
+msgstr "Pulse en la flecha que se encuentra junto al icono <emph>Estilo nuevo a partir de selección</emph> y elija <emph>Actualizar estilo</emph> en el submenú."
 
 #: stylist_update.xhp
 msgctxt ""
@@ -14063,7 +14062,7 @@ msgctxt ""
 "3\n"
 "help.text"
 msgid "Press <switchinline select=\"sys\"><caseinline select=\"MAC\">Command</caseinline><defaultinline>Ctrl</defaultinline></switchinline>+Shift+P to make the text superscript, and <switchinline select=\"sys\"><caseinline select=\"MAC\">Command</caseinline><defaultinline>Ctrl</defaultinline></switchinline>+Shift+B to make the text subscript."
-msgstr "Presione <switchinline select=\"sys\"><caseinline select=\"MAC\">Comando</caseinline><defaultinline>Ctrl</defaultinline></switchinline>+Mayús+P para convertir el texto a superíndice, y <switchinline select=\"sys\"><caseinline select=\"MAC\">Comando</caseinline><defaultinline>Ctrl</defaultinline></switchinline>+Mayús+B para convertir el texto a subíndice."
+msgstr "Presione <switchinline select=\"sys\"><caseinline select=\"MAC\">⌘⇧P</caseinline><defaultinline>Ctrl + Mayús + P</defaultinline></switchinline> para convertir el texto en superíndice y <switchinline select=\"sys\"><caseinline select=\"MAC\">⌘⇧B</caseinline><defaultinline>Ctrl + Mayús + B</defaultinline></switchinline> para convertirlo en subíndice."
 
 #: subscript.xhp
 msgctxt ""
@@ -14469,7 +14468,7 @@ msgctxt ""
 "68\n"
 "help.text"
 msgid "Choose <emph>Edit - Copy</emph>."
-msgstr "Seleccione <emph>Editar - Copiar</emph>."
+msgstr "Vaya a <emph>Editar ▸ Copiar</emph>."
 
 #: table_insert.xhp
 msgctxt ""
@@ -14821,7 +14820,7 @@ msgctxt ""
 "bm_id3156108\n"
 "help.text"
 msgid "<bookmark_value>cells; enlarging and reducing in text tables</bookmark_value><bookmark_value>table cells; enlarging/reducing in text</bookmark_value><bookmark_value>keyboard; resizing rows/columns</bookmark_value><bookmark_value>resizing;rows and columns in text tables</bookmark_value><bookmark_value>enlarging columns,cells and table rows</bookmark_value><bookmark_value>reducing rows and columns in text tables</bookmark_value><bookmark_value>tables; resizing/juxtaposing</bookmark_value><bookmark_value>juxtaposing tables</bookmark_value><bookmark_value>heights of table rows</bookmark_value><bookmark_value>widths of table columns</bookmark_value><bookmark_value>rows;resizing in tables</bookmark_value><bookmark_value>columns;resizing in tables</bookmark_value><bookmark_value>column widths in tables</bookmark_value>"
-msgstr "<bookmark_value>celdas; aumentar y reducir en tablas de texto</bookmark_value><bookmark_value>celdas de tabla; aumentar y reducir en texto</bookmark_value><bookmark_value>teclado; cambiar tamaño de filas/columnas</bookmark_value><bookmark_value>cambiar tamaño;filas y columnas en tablas de texto</bookmark_value><bookmark_value>aumentar columnas, celdas y filas de tabla</bookmark_value>      <bookmark_value>reducir filas y columnas en tablas de texto</bookmark_value><bookmark_value>tablas; cambiar tamaño/yuxtaponer</bookmark_value>      <bookmark_value>yuxtaponer tablas</bookmark_value>"
+msgstr "<bookmark_value>celdas; ampliar y reducir en tablas de texto</bookmark_value><bookmark_value>celdas de tablas; ampliar/reducir en texto</bookmark_value><bookmark_value>teclado; cambiar tamaño de filas/columnas</bookmark_value><bookmark_value>redimensionar;filas y columnas en tablas de texto</bookmark_value><bookmark_value>aumentar columnas, celdas y filas de tablas</bookmark_value><bookmark_value>reducir filas y columnas en tablas de texto</bookmark_value><bookmark_value>tablas; redimensionar/yuxtaponer</bookmark_value><bookmark_value>yuxtaponer tablas</bookmark_value><bookmark_value>alturas de filas de tablas</bookmark_value><bookmark_value>anchuras de columnas de tablas</bookmark_value><bookmark_value>filas;redimensionar en tablas</bookmark_value><bookmark_value>columnas;redimensionar en tablas</bookmark_value><bookmark_value>anchuras de columnas en tablas</bookmark_value>"
 
 #: table_sizing.xhp
 msgctxt ""
@@ -14869,7 +14868,7 @@ msgctxt ""
 "hd_id3149574\n"
 "help.text"
 msgid "To Change the Width of a Column"
-msgstr "Para cambiar el ancho de una columna"
+msgstr "Para cambiar la anchura de una columna"
 
 #: table_sizing.xhp
 msgctxt ""
@@ -15443,7 +15442,7 @@ msgctxt ""
 "par_idN10728\n"
 "help.text"
 msgid "When you apply formatting to your text by <emph>Format - Character</emph>, the text stays the same, it is only displayed in another way. On the other hand, when you choose <emph>Format - Text</emph> or <emph>Format - Text - Change Case</emph>, the text is permanently changed."
-msgstr ""
+msgstr "Cuando se aplica un formato al texto mediante <emph>Formato ▸ Carácter</emph>, el texto no se modifica, sino que solo se muestra en pantalla de otra forma. Ahora bien, si se elige <emph>Formato ▸ Texto ▸ Cambiar uso de mayúsculas</emph>, el texto se cambia permanentemente."
 
 #: text_capital.xhp
 msgctxt ""
@@ -15495,7 +15494,7 @@ msgctxt ""
 "11\n"
 "help.text"
 msgid "To Change Text to Lowercase"
-msgstr "Para cambiar texto a minúscula"
+msgstr "Para transformar el texto en minúsculas"
 
 #: text_capital.xhp
 msgctxt ""
@@ -15873,7 +15872,7 @@ msgctxt ""
 "14\n"
 "help.text"
 msgid "To edit a frame, select the frame, right-click, and then choose a formatting option. You can also right-click the selected frame, and choose <emph>Frame</emph>."
-msgstr "Para editar un marco selecciónelo, pulse con el botón derecho del ratón y elija una opción de formateado. También puede pulsar con el botón derecho del ratón el marco seleccionado y a continuación elegir <emph>Marco</emph>."
+msgstr "Para editar un marco selecciónelo, pulse con el botón secundario del ratón y elija una opción de formato. También puede pulsar con el botón secundario del ratón en el marco seleccionado y a continuación elegir <emph>Marco</emph>."
 
 #: text_frame.xhp
 msgctxt ""
@@ -15882,7 +15881,7 @@ msgctxt ""
 "63\n"
 "help.text"
 msgid "To resize a text frame, click an edge of the frame, and drag one of the edges or corners of the frame. Hold down Shift while you drag to maintain the proportion of the frame."
-msgstr "Para cambiar el tamaño de un marco de texto, haga clic en un borde del marco y arrastre uno de los bordes o esquinas del marco. Mantenga pulsada la tecla Mayús. mientras arrastra para mantener la proporción del marco."
+msgstr "Para cambiar el tamaño de un marco de texto, pulse en un borde del marco y arrastre uno de los bordes o esquinas del marco. Mantenga oprimida la tecla Mayús mientras arrastra para mantener la proporción del marco."
 
 #: text_frame.xhp
 msgctxt ""
@@ -15917,7 +15916,7 @@ msgctxt ""
 "par_id3155875\n"
 "help.text"
 msgid "Choose <emph>Format - Frame and Object - Properties - Options</emph>."
-msgstr ""
+msgstr "Vaya a <emph>Formato ▸ Marco y objeto ▸ Propiedades ▸ Opciones</emph>."
 
 #: text_frame.xhp
 msgctxt ""
@@ -15926,7 +15925,7 @@ msgctxt ""
 "102\n"
 "help.text"
 msgid "In the <emph>Properties</emph> area, unmark the <emph>Print</emph> check box and click <emph>OK</emph>."
-msgstr "En el área <emph>Propiedades</emph>, deje en blanco la casilla de verificación <emph>Imprimir</emph> y pulse <emph>Aceptar</emph>."
+msgstr "En el apartado <emph>Propiedades</emph>, desmarque la casilla de verificación <emph>Imprimir</emph> y pulse en <emph>Aceptar</emph>."
 
 #: text_frame.xhp
 msgctxt ""
@@ -16254,7 +16253,7 @@ msgctxt ""
 "42\n"
 "help.text"
 msgid "Moves the cursor to the end of the current line."
-msgstr "Mueve el cursor al final de la línea actual."
+msgstr "Traslada el cursor al final del renglón actual."
 
 #: text_nav_keyb.xhp
 msgctxt ""
@@ -16492,7 +16491,7 @@ msgctxt ""
 "30\n"
 "help.text"
 msgid "Choose <emph>Insert - File</emph>."
-msgstr "Elija <emph>Insertar - Archivo</emph>."
+msgstr "Vaya a <emph>Insertar ▸ Archivo</emph>."
 
 #: textdoc_inframe.xhp
 msgctxt ""
@@ -16624,7 +16623,7 @@ msgctxt ""
 "31\n"
 "help.text"
 msgid "By default, $[officename] moves words that do not fit on a line to the next line. If you want, you can use automatic or manual hyphenation to avoid this behavior:"
-msgstr "De forma predeterminada, $[officename] traslada palabras que no encajan en una línea a la siguiente. Si lo desea puede usar la separación silábica automática o manual para evitar este comportamiento:"
+msgstr "De manera predeterminada, $[officename] traslada palabras que no encajan en un renglón al siguiente. Si lo desea, puede emplear la división de palabras automática o manual para evitar este comportamiento:"
 
 #: using_hyphen.xhp
 msgctxt ""
@@ -16642,7 +16641,7 @@ msgctxt ""
 "22\n"
 "help.text"
 msgid "Automatic hyphenation inserts hyphens where they are needed in a paragraph. This option is only available for paragraph styles and individual paragraphs."
-msgstr "La separación silábica automática inserta guiones donde se necesiten dentro del párrafo. Esta opción sólo está disponible en los estilos de párrafos y párrafos concretos."
+msgstr "La división de palabras automática inserta guiones donde se necesiten dentro del párrafo. Esta opción solo está disponible en los estilos de párrafos y en párrafos concretos."
 
 #: using_hyphen.xhp
 msgctxt ""
@@ -16705,7 +16704,7 @@ msgctxt ""
 "33\n"
 "help.text"
 msgid "If you want to automatically hyphenate more than one paragraph, use a paragraph style."
-msgstr "Si desea establecer la separación silábica automática en más de un párrafo use un estilo."
+msgstr "Si desea establecer la división de palabras automática en más de un párrafo, utilice un estilo."
 
 #: using_hyphen.xhp
 msgctxt ""
@@ -16731,7 +16730,7 @@ msgctxt ""
 "55\n"
 "help.text"
 msgid "Right-click the paragraph style that you want to hyphenate, and then choose <emph>Modify</emph>."
-msgstr "Pulse con el botón derecho del ratón sobre el estilo de párrafo en el que desee establecer la separación silábica y seleccione <emph>Modificar</emph>."
+msgstr "Pulse con el botón secundario del ratón sobre el estilo de párrafo en el que quiera establecer la división de palabras y seleccione <emph>Modificar</emph>."
 
 #: using_hyphen.xhp
 msgctxt ""
@@ -16811,7 +16810,7 @@ msgctxt ""
 "37\n"
 "help.text"
 msgid "If you insert a manual hyphen in a word, the word is only hyphenated at the manual hyphen. No additional automatic hyphenation is applied for this word. A word with a manual hyphen will be hyphenated without regard to the settings on the <emph>Text Flow</emph> tab page."
-msgstr "Si inserta un guión manual en una palabra, ésta sólo se dividirá por el guión manual. No se aplicará ninguna separación silábica adicional automática a esta palabra. Una palabra con el guión manual se dividirá sin tener en cuenta la configuración de la pestaña <emph>Flujo de texto</emph>."
+msgstr "Si inserta un guion manual en una palabra, esta solo se dividirá por el guion manual. No se aplicará ninguna división adicional automática a esta palabra. Una palabra con el guion manual se dividirá sin tener en cuenta la configuración de la pestaña <emph>Flujo de texto</emph>."
 
 #: using_hyphen.xhp
 msgctxt ""
@@ -16829,7 +16828,7 @@ msgctxt ""
 "61\n"
 "help.text"
 msgid "Select the text that you want to hyphenate."
-msgstr "Seleccione el texto que desea donde desea establecer la separación silábica."
+msgstr "Seleccione el texto al que quiera aplicar la división de palabras."
 
 #: using_hyphen.xhp
 msgctxt ""
@@ -17445,7 +17444,7 @@ msgctxt ""
 "par_id2593462\n"
 "help.text"
 msgid "To fine-tune the word completion choose <item type=\"menuitem\">Tools – AutoCorrect Options - Word Completion</item> and select any of the following options:"
-msgstr "Para ajustar con precisión el completado de palabras, elija <item type=\"menuitem\">Herramientas – Opciones de autocorrección - Completado de palabras</item> y seleccione cualquiera de las siguientes opciones:"
+msgstr "Para optimizar la compleción de palabras, vaya a <item type=\"menuitem\">Herramientas ▸ Opciones de corrección automática ▸ Compleción de palabras</item> y seleccione cualquiera de las opciones siguientes:"
 
 #: word_completion_adjust.xhp
 msgctxt ""
@@ -17687,7 +17686,7 @@ msgctxt ""
 "par_id1116200901133998\n"
 "help.text"
 msgid "In general, every string of characters between two spaces is a word. Dashes, tabs, line breaks, and paragraph breaks are word limits, too."
-msgstr "En general, cada cadena de caracteres entre dos espacios es una palabra. Los guiones, tabulaciones, saltos de línea y saltos de párrafo también son los límites entre palabras."
+msgstr "En general, cada secuencia de caracteres entre dos espacios constituye una palabra. Los guiones, las tabulaciones y los saltos de renglón y de párrafo también representan límites entre palabras."
 
 #: words_count.xhp
 msgctxt ""
@@ -17808,7 +17807,7 @@ msgctxt ""
 "par_id3153396\n"
 "help.text"
 msgid "Choose <emph>Format - Frame and Object - Properties</emph>, and then click the <link href=\"text/swriter/01/05060200.xhp\" name=\"Wrap\"><emph>Wrap</emph></link> tab."
-msgstr ""
+msgstr "Vaya a <emph>Formato ▸ Marco y objeto ▸ Propiedades</emph> y, a continuación, seleccione la pestaña <link href=\"text/swriter/01/05060200.xhp\" name=\"Ajuste\"><emph>Ajuste</emph></link>."
 
 #: wrap.xhp
 msgctxt ""

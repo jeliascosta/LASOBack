@@ -30,6 +30,7 @@ class GtkSalObject : public SalObject
     SystemEnvData     m_aSystemData;
     GtkWidget*          m_pSocket;
 #if GTK_CHECK_VERSION(3,0,0)
+    GtkSalFrame*        m_pParent;
     cairo_region_t*     m_pRegion;
 #else
     GdkRegion*          m_pRegion;
@@ -40,8 +41,8 @@ class GtkSalObject : public SalObject
     static gboolean     signalFocus( GtkWidget*, GdkEventFocus*, gpointer );
     static void         signalDestroy( GtkWidget*, gpointer );
 public:
-    GtkSalObject( GtkSalFrame* pParent, bool bShow = true );
-    virtual ~GtkSalObject();
+    GtkSalObject( GtkSalFrame* pParent, bool bShow );
+    virtual ~GtkSalObject() override;
 
     // override all pure virtual methods
     virtual void                    ResetClipRegion() override;

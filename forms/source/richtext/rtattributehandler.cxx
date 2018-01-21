@@ -226,9 +226,9 @@ namespace frm
         (void)_pAdditionalArg;
 
         SvxLineSpacingItem aLineSpacing( m_nLineSpace, getWhich() );
-        aLineSpacing.GetLineSpaceRule() = SVX_LINE_SPACE_AUTO;
+        aLineSpacing.SetLineSpaceRule( SvxLineSpaceRule::Auto );
         if ( 100 == m_nLineSpace )
-            aLineSpacing.GetInterLineSpaceRule() = SVX_INTER_LINE_SPACE_OFF;
+            aLineSpacing.SetInterLineSpaceRule( SvxInterLineSpaceRule::Off );
         else
             aLineSpacing.SetPropLineSpace( (sal_uInt8)m_nLineSpace );
 
@@ -237,12 +237,12 @@ namespace frm
 
     EscapementHandler::EscapementHandler( AttributeId _nAttributeId )
         :AttributeHandler( _nAttributeId, EE_CHAR_ESCAPEMENT )
-        ,m_eEscapement( SVX_ESCAPEMENT_OFF )
+        ,m_eEscapement( SvxEscapement::Off )
     {
         switch ( getAttribute() )
         {
-            case SID_SET_SUPER_SCRIPT   : m_eEscapement = SVX_ESCAPEMENT_SUPERSCRIPT; break;
-            case SID_SET_SUB_SCRIPT     : m_eEscapement = SVX_ESCAPEMENT_SUBSCRIPT;   break;
+            case SID_SET_SUPER_SCRIPT   : m_eEscapement = SvxEscapement::Superscript; break;
+            case SID_SET_SUB_SCRIPT     : m_eEscapement = SvxEscapement::Subscript;   break;
             default:
                 OSL_FAIL( "EscapementHandler::EscapementHandler: invalid slot!" );
                 break;
@@ -264,7 +264,7 @@ namespace frm
         (void)_pAdditionalArg;
 
         bool bIsChecked = getCheckState( _rCurrentAttribs ) == eChecked;
-        _rNewAttribs.Put( SvxEscapementItem( bIsChecked ? SVX_ESCAPEMENT_OFF : m_eEscapement, getWhich() ) );
+        _rNewAttribs.Put( SvxEscapementItem( bIsChecked ? SvxEscapement::Off : m_eEscapement, getWhich() ) );
     }
 
     SlotHandler::SlotHandler( AttributeId _nAttributeId, WhichId _nWhichId )
@@ -326,12 +326,12 @@ namespace frm
         {
             // by definition, the item should have the unit twip
             sal_uLong nHeight = pFontHeightItem->GetHeight();
-            if ( _rAttribs.GetPool()->GetMetric( getWhich() ) != SFX_MAPUNIT_TWIP )
+            if ( _rAttribs.GetPool()->GetMetric( getWhich() ) != MapUnit::MapTwip )
             {
                 nHeight = OutputDevice::LogicToLogic(
                     Size( 0, nHeight ),
                     MapMode( (MapUnit)( _rAttribs.GetPool()->GetMetric( getWhich() ) ) ),
-                    MapMode( MAP_TWIP )
+                    MapMode( MapUnit::MapTwip )
                 ).Height();
             }
 
@@ -352,13 +352,13 @@ namespace frm
         if ( pFontHeightItem )
         {
             // correct measurement units
-            SfxMapUnit eItemMapUnit = pFontHeightItem->GetPropUnit(); (void)eItemMapUnit;
+            MapUnit eItemMapUnit = pFontHeightItem->GetPropUnit(); (void)eItemMapUnit;
             sal_uLong nHeight = pFontHeightItem->GetHeight();
-            if ( _rNewAttribs.GetPool()->GetMetric( getWhich() ) != SFX_MAPUNIT_TWIP )
+            if ( _rNewAttribs.GetPool()->GetMetric( getWhich() ) != MapUnit::MapTwip )
             {
                 nHeight = OutputDevice::LogicToLogic(
                     Size( 0, nHeight ),
-                    MapMode( (MapUnit)( SFX_MAPUNIT_TWIP ) ),
+                    MapMode( (MapUnit)( MapUnit::MapTwip ) ),
                     MapMode( (MapUnit)( _rNewAttribs.GetPool()->GetMetric( getWhich() ) ) )
                 ).Height();
             }

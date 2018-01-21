@@ -95,7 +95,6 @@ private:
 
     SvXMLImportContext* CreateStylesContext(sal_uInt16 nPrefix,const OUString& rLocalName,
                                      const Reference< XAttributeList>& xAttrList, bool bIsAutoStyle );
-    SvXMLImportContext* CreateScriptContext( const OUString& rLocalName );
 
 protected:
     // SvXMLImport
@@ -103,7 +102,7 @@ protected:
                                       const OUString& rLocalName,
                                       const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList ) override;
 
-    virtual ~ODBFilter()  throw();
+    virtual ~ODBFilter()  throw() override;
 public:
 
     explicit ODBFilter( const Reference< XComponentContext >& _rxContext );
@@ -139,9 +138,9 @@ public:
     const SvXMLTokenMap& GetQueryElemTokenMap() const;
     const SvXMLTokenMap& GetColumnElemTokenMap() const;
 
-    rtl::Reference < XMLPropertySetMapper > GetTableStylesPropertySetMapper() const;
-    rtl::Reference < XMLPropertySetMapper > GetColumnStylesPropertySetMapper() const;
-    rtl::Reference < XMLPropertySetMapper > GetCellStylesPropertySetMapper() const;
+    rtl::Reference < XMLPropertySetMapper > const & GetTableStylesPropertySetMapper() const;
+    rtl::Reference < XMLPropertySetMapper > const & GetColumnStylesPropertySetMapper() const;
+    rtl::Reference < XMLPropertySetMapper > const & GetCellStylesPropertySetMapper() const;
 
     /** add a Info to the sequence which will be appended to the data source
         @param  _rInfo The property to append.

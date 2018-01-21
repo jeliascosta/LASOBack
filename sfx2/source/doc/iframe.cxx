@@ -65,7 +65,7 @@ class IFrameObject : public ::cppu::WeakImplHelper <
 public:
     IFrameObject(const css::uno::Reference < css::uno::XComponentContext>& rxContext, const css::uno::Sequence< css::uno::Any >& aArguments)
         throw (css::uno::Exception, css::uno::RuntimeException);
-    virtual ~IFrameObject();
+    virtual ~IFrameObject() override;
 
     virtual OUString SAL_CALL getImplementationName()
         throw (css::uno::RuntimeException, std::exception) override
@@ -168,7 +168,7 @@ throw( uno::RuntimeException, std::exception )
     if ( SvtMiscOptions().IsPluginsEnabled() )
     {
         DBG_ASSERT( !mxFrame.is(), "Frame already existing!" );
-        vcl::Window* pParent = VCLUnoHelper::GetWindow( xFrame->getContainerWindow() );
+        VclPtr<vcl::Window> pParent = VCLUnoHelper::GetWindow( xFrame->getContainerWindow() );
         VclPtr<IFrameWindow_Impl> pWin = VclPtr<IFrameWindow_Impl>::Create( pParent, maFrmDescr.IsFrameBorderOn() );
         pWin->SetSizePixel( pParent->GetOutputSizePixel() );
         pWin->SetBackground();
@@ -404,7 +404,7 @@ void SAL_CALL IFrameObject::removeVetoableChangeListener(const OUString&, const 
 ::sal_Int16 SAL_CALL IFrameObject::execute() throw (css::uno::RuntimeException, std::exception)
 {
     SfxAbstractDialogFactory* pFact = SfxAbstractDialogFactory::Create();
-    VclAbstractDialog* pDlg = pFact->CreateEditObjectDialog( ".uno:InsertObjectFloatingFrame", mxObj );
+    ScopedVclPtr<VclAbstractDialog> pDlg(pFact->CreateEditObjectDialog( ".uno:InsertObjectFloatingFrame", mxObj ));
     if ( pDlg )
         pDlg->Execute();
     return 0;

@@ -412,7 +412,7 @@ Sequence< Type > OConnection::getTypes() throw (RuntimeException, std::exception
     if ( !m_bSupportsGroups )
         aNormalizedTypes.erase( cppu::UnoType<XGroupsSupplier>::get() );
 
-    return comphelper::containerToSequence<Type>(aNormalizedTypes);
+    return comphelper::containerToSequence(aNormalizedTypes);
 }
 
 Sequence< sal_Int8 > OConnection::getImplementationId() throw (RuntimeException, std::exception)
@@ -669,7 +669,7 @@ Sequence< OUString > SAL_CALL OConnection::getAvailableServiceNames(  ) throw (R
     return aRet;
 }
 
-Reference< XTablesSupplier > OConnection::getMasterTables()
+Reference< XTablesSupplier > const & OConnection::getMasterTables()
 {
 // check if out "master connection" can supply tables
     if(!m_xMasterTables.is())

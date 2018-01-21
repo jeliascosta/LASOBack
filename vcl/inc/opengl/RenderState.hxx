@@ -19,6 +19,11 @@ class GenericCapabilityState
 protected:
     bool mbTest;
 
+    GenericCapabilityState()
+        : mbTest(false)
+    {
+    }
+
     static bool readState()
     {
         return glIsEnabled(ENUM_TYPE);

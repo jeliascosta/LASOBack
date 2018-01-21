@@ -909,7 +909,9 @@ DECLARE_OOXMLEXPORT_TEST(testExtentValue, "fdo74605.docx")
     xmlDocPtr pXmlDoc = parseExport();
     if (!pXmlDoc)
         return;
-    assertXPath(pXmlDoc, "/w:document/w:body/w:p[2]/w:r[1]/mc:AlternateContent[1]/mc:Choice[1]/w:drawing[1]/wp:anchor[1]/wp:extent","cx","0");
+    sal_Int32 nX = getXPath(pXmlDoc, "/w:document/w:body/w:p[2]/w:r[1]/mc:AlternateContent[1]/mc:Choice[1]/w:drawing[1]/wp:anchor[1]/wp:extent", "cx").toInt32();
+    // This was negative.
+    CPPUNIT_ASSERT(nX >= 0);
 }
 
 // part of tdf#93676, word gives the frame in the exported .docx a huge height,
@@ -923,7 +925,7 @@ DECLARE_OOXMLEXPORT_TEST(testSyncedRelativePercent, "tdf93676-1.odt")
         return;
 
     // check no explicit pctHeight has been exported, all we care
-    // about at this point is that its not 255000
+    // about at this point is that it's not 255000
     assertXPath(pXmlDoc, "//wp14:pctHeight", 0);
 }
 

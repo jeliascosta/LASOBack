@@ -32,7 +32,6 @@
 #include <unotext.hxx>
 
 class SwDoc;
-class SwModify;
 class SwFormatFootnote;
 
 typedef ::cppu::WeakImplHelper
@@ -62,7 +61,7 @@ protected:
     virtual css::uno::Reference< css::text::XTextCursor > CreateCursor()
         throw (css::uno::RuntimeException) override;
 
-    virtual ~SwXFootnote();
+    virtual ~SwXFootnote() override;
 
     SwXFootnote(SwDoc & rDoc, SwFormatFootnote & rFormat);
     SwXFootnote(const bool bEndnote);

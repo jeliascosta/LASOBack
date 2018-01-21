@@ -36,7 +36,7 @@ class ImportExcel8 : public ImportExcel
 {
 public:
                             ImportExcel8( XclImpRootData& rImpData, SvStream& rStrm );
-    virtual                 ~ImportExcel8();
+    virtual                 ~ImportExcel8() override;
 
     virtual FltError        Read() override;
 
@@ -58,9 +58,6 @@ public:
 
     virtual void            EndSheet() override;
     virtual void            PostDocLoad() override;
-
-private:
-    void                    LoadDocumentProperties();
 
 private:
     // represents codename ( and associated modules )
@@ -105,7 +102,6 @@ public:
     void                        SetExtractPos( const ScAddress& rAddr );
     inline void                 SetAutoOrAdvanced()  { bAutoOrAdvanced = true; }
     void                        Apply();
-    void                        CreateScDBData();
     void                        EnableRemoveFilter();
 };
 

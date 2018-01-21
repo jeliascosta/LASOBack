@@ -51,7 +51,7 @@ public:
     virtual void GetState (SfxItemSet&, unsigned nWhich) = 0;
     virtual void UpdateDebug (bool bBasicStopped ) = 0;
 
-    virtual ~Layout();
+    virtual ~Layout() override;
     virtual void dispose() override;
 
 protected:
@@ -121,7 +121,7 @@ private:
         Point MakePoint (long, long) const;
         Size MakeSize (long, long) const;
         static bool IsDocking (DockingWindow const&);
-        DECL_LINK_TYPED(SplitHdl, Splitter*, void);
+        DECL_LINK(SplitHdl, Splitter*, void);
         void CheckMarginsFor (Splitter*);
         void InitSplitter (Splitter&);
     } aLeftSide, aBottomSide;

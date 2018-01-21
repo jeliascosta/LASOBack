@@ -269,7 +269,7 @@ public:
 
     explicit librdf_Repository(
         uno::Reference< uno::XComponentContext > const & i_xContext);
-    virtual ~librdf_Repository();
+    virtual ~librdf_Repository() override;
 
     // css::lang::XServiceInfo:
     virtual OUString SAL_CALL getImplementationName()
@@ -461,7 +461,7 @@ public:
         , m_pStream(i_pStream)
     { };
 
-    virtual ~librdf_GraphResult()
+    virtual ~librdf_GraphResult() override
     {
         ::osl::MutexGuard g(m_rMutex); // lock mutex when destroying members
         const_cast<std::shared_ptr<librdf_stream>& >(m_pStream).reset();
@@ -510,11 +510,11 @@ librdf_node* librdf_GraphResult::getContext_Lock() const
 {
     if (!m_pStream.get() || librdf_stream_end(m_pStream.get()))
         return nullptr;
-    librdf_node *pCtxt( static_cast<librdf_node *>
+    librdf_node *pCtxt(
 #if LIBRDF_VERSION >= 10012
-        (librdf_stream_get_context2(m_pStream.get())) );
+        librdf_stream_get_context2(m_pStream.get()) );
 #else
-        (librdf_stream_get_context(m_pStream.get())) );
+        static_cast<librdf_node *>(librdf_stream_get_context(m_pStream.get())) );
 #endif
     if (pCtxt)
         return pCtxt;
@@ -575,7 +575,7 @@ public:
         , m_BindingNames(i_rBindingNames)
     { };
 
-    virtual ~librdf_QuerySelectResult()
+    virtual ~librdf_QuerySelectResult() override
     {
         ::osl::MutexGuard g(m_rMutex); // lock mutex when destroying members
         const_cast<std::shared_ptr<librdf_query_results>& >(m_pQueryResult)
@@ -695,7 +695,7 @@ public:
         , m_xName(i_xName)
     { };
 
-    virtual ~librdf_NamedGraph() {}
+    virtual ~librdf_NamedGraph() override {}
 
     // css::rdf::XNode:
     virtual OUString SAL_CALL getStringValue()
@@ -1491,12 +1491,6 @@ void SAL_CALL librdf_Repository::setStatementRDFa(
 throw (uno::RuntimeException, lang::IllegalArgumentException,
     rdf::RepositoryException, std::exception)
 {
-    static const char s_cell[] = "com.sun.star.table.Cell";
-    static const char s_cellprops[] = "com.sun.star.text.CellProperties"; // for writer
-    static const char s_paragraph[] = "com.sun.star.text.Paragraph";
-    static const char s_bookmark[] = "com.sun.star.text.Bookmark";
-    static const char s_meta[] = "com.sun.star.text.InContentMetadata";
-
     if (!i_xSubject.is()) {
         throw lang::IllegalArgumentException(
             "librdf_Repository::setStatementRDFa: Subject is null", *this, 0);
@@ -1520,14 +1514,14 @@ throw (uno::RuntimeException, lang::IllegalArgumentException,
     const uno::Reference<lang::XServiceInfo> xService(i_xObject,
         uno::UNO_QUERY_THROW);
     uno::Reference<text::XTextRange> xTextRange;
-    if (xService->supportsService(s_cell) ||
-        xService->supportsService(s_cellprops) ||
-        xService->supportsService(s_paragraph))
+    if (xService->supportsService("com.sun.star.table.Cell") ||
+        xService->supportsService("com.sun.star.text.CellProperties") || // for writer
+        xService->supportsService("com.sun.star.text.Paragraph"))
     {
         xTextRange.set(i_xObject, uno::UNO_QUERY_THROW);
     }
-    else if (xService->supportsService(s_bookmark) ||
-             xService->supportsService(s_meta))
+    else if (xService->supportsService("com.sun.star.text.Bookmark") ||
+             xService->supportsService("com.sun.star.text.InContentMetadata"))
     {
         const uno::Reference<text::XTextContent> xTextContent(i_xObject,
             uno::UNO_QUERY_THROW);
@@ -1689,11 +1683,11 @@ librdf_statement *rdfa_context_stream_map_handler(
 {
     OSL_ENSURE(i_pStream, "rdfa_context_stream_map_handler: stream null");
     if (i_pStream) {
-        librdf_node *pCtxt( static_cast<librdf_node *>
+        librdf_node *pCtxt(
 #if LIBRDF_VERSION >= 10012
-            (librdf_stream_get_context2(i_pStream)) );
+            librdf_stream_get_context2(i_pStream) );
 #else
-            (librdf_stream_get_context(i_pStream)) );
+            static_cast<librdf_node *>(librdf_stream_get_context(i_pStream)) );
 #endif
         OSL_ENSURE(pCtxt, "rdfa_context_stream_map_handler: context null");
         if (pCtxt && isInternalContext(pCtxt)) {

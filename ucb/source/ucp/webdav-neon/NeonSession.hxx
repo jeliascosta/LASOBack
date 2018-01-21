@@ -68,7 +68,7 @@ private:
     static NeonLockStore m_aNeonLockStore;
 
 protected:
-    virtual ~NeonSession();
+    virtual ~NeonSession() override;
 
 public:
     NeonSession( const rtl::Reference< DAVSessionFactory > & rSessionFactory,
@@ -85,6 +85,12 @@ public:
 
     const DAVRequestEnvironment & getRequestEnvironment() const
     { return m_aEnv; }
+
+    virtual void
+    OPTIONS( const OUString & inPath,
+             DAVOptions& rOptions, // contains the name+values
+             const DAVRequestEnvironment & rEnv )
+        throw( std::exception ) SAL_OVERRIDE;
 
     // allprop & named
     virtual void
@@ -133,6 +139,13 @@ public:
          DAVResource & ioResource,
          const DAVRequestEnvironment & rEnv )
         throw ( std::exception ) override;
+
+    virtual void
+    GET0( const OUString & inPath,
+         const std::vector< OUString > & inHeaderNames,
+         DAVResource & ioResource,
+         const DAVRequestEnvironment & rEnv )
+        throw( std::exception ) override;
 
     virtual void
     GET( const OUString & inPath,
@@ -244,6 +257,13 @@ private:
                     ne_block_reader reader,
                     bool getheaders,
                     void * userdata );
+
+    // low level GET implementation, used by public GET implementations
+    // used as a HEAD substitute when head is not available
+    static int GET0( ne_session * sess,
+                     const char * uri,
+                     bool getheaders,
+                     void * userdata );
 
     // Buffer-based PUT implementation. Neon only has file descriptor-
     // based API.

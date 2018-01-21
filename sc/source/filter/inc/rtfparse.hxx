@@ -62,7 +62,7 @@ private:
     sal_uInt16          nLastWidth;
     bool                bNewDef;
 
-    DECL_LINK_TYPED( RTFImportHdl, ImportInfo&, void );
+    DECL_LINK( RTFImportHdl, ImportInfo&, void );
     inline void         NextRow();
     void                EntryEnd( ScEEParseEntry*, const ESelection& );
     void                ProcToken( ImportInfo* );
@@ -72,7 +72,7 @@ private:
 
 public:
                         ScRTFParser( EditEngine* );
-    virtual             ~ScRTFParser();
+    virtual             ~ScRTFParser() override;
     virtual sal_uLong       Read( SvStream&, const OUString& rBaseURL ) override;
 };
 

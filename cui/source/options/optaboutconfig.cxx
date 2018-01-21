@@ -137,7 +137,7 @@ void CuiCustomMultilineEdit::KeyInput( const KeyEvent& rKeyEvent )
 
 Size CuiCustomMultilineEdit::GetOptimalSize() const
 {
-    return LogicToPixel(Size(150, GetTextHeight()), MAP_APPFONT);
+    return LogicToPixel(Size(150, GetTextHeight()), MapUnit::MapAppFont);
 }
 
 CuiAboutConfigTabPage::CuiAboutConfigTabPage( vcl::Window* pParent/*, const SfxItemSet& rItemSet*/ ) :
@@ -150,7 +150,7 @@ CuiAboutConfigTabPage::CuiAboutConfigTabPage( vcl::Window* pParent/*, const SfxI
     m_vectorOfModified(),
     m_pPrefBox( VclPtr<SvSimpleTable>::Create(*m_pPrefCtrl, WB_SCROLL | WB_HSCROLL | WB_VSCROLL ) )
 {
-    Size aControlSize(LogicToPixel(Size(385, 230), MAP_APPFONT));
+    Size aControlSize(LogicToPixel(Size(385, 230), MapUnit::MapAppFont));
     m_pPrefCtrl->set_width_request(aControlSize.Width());
     m_pPrefCtrl->set_height_request(aControlSize.Height());
 
@@ -179,7 +179,7 @@ CuiAboutConfigTabPage::CuiAboutConfigTabPage( vcl::Window* pParent/*, const SfxI
     m_options.searchFlag |= (util::SearchFlags::REG_NOT_BEGINOFLINE |
                                         util::SearchFlags::REG_NOT_ENDOFLINE);
 
-    m_pPrefBox->SetTabs(aTabs, MAP_PIXEL);
+    m_pPrefBox->SetTabs(aTabs, MapUnit::MapPixel);
     m_pPrefBox->SetAlternatingRowColors( true );
 }
 
@@ -562,18 +562,18 @@ void CuiAboutConfigValueDialog::dispose()
     ModalDialog::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED( CuiAboutConfigTabPage, ResetBtnHdl_Impl, Button*, void )
+IMPL_LINK_NOARG( CuiAboutConfigTabPage, ResetBtnHdl_Impl, Button*, void )
 {
     Reset();
 }
 
-IMPL_LINK_NOARG_TYPED( CuiAboutConfigTabPage, DoubleClickHdl_Impl, SvTreeListBox*, bool )
+IMPL_LINK_NOARG( CuiAboutConfigTabPage, DoubleClickHdl_Impl, SvTreeListBox*, bool )
 {
     StandardHdl_Impl(nullptr);
     return false;
 }
 
-IMPL_LINK_NOARG_TYPED( CuiAboutConfigTabPage, StandardHdl_Impl, Button*, void )
+IMPL_LINK_NOARG( CuiAboutConfigTabPage, StandardHdl_Impl, Button*, void )
 {
     SvTreeListEntry* pEntry = m_pPrefBox->GetHdlEntry();
     if(pEntry == nullptr)
@@ -808,7 +808,7 @@ IMPL_LINK_NOARG_TYPED( CuiAboutConfigTabPage, StandardHdl_Impl, Button*, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED( CuiAboutConfigTabPage, SearchHdl_Impl, Button*, void)
+IMPL_LINK_NOARG( CuiAboutConfigTabPage, SearchHdl_Impl, Button*, void)
 {
     m_pPrefBox->Clear();
     m_pPrefBox->SetUpdateMode( false );
@@ -871,6 +871,12 @@ void CuiAboutConfigTabPage::InsertEntry( SvTreeListEntry *pEntry)
     {
         int prevIndex = index;
         index = sPath.indexOf("/", index+1);
+        // deal with no parent case (tdf#107811)
+        if (index < 0)
+        {
+            m_pPrefBox->Insert( pEntry, nullptr);
+            return;
+        }
         OUString sParentName = sPath.copy(prevIndex+1, index - prevIndex - 1);
 
         bool hasEntry = false;
@@ -905,7 +911,7 @@ void CuiAboutConfigTabPage::InsertEntry( SvTreeListEntry *pEntry)
     m_pPrefBox->Expand( pParentEntry );
 }
 
-IMPL_LINK_NOARG_TYPED( CuiAboutConfigTabPage, ExpandingHdl_Impl, SvTreeListBox*, bool )
+IMPL_LINK_NOARG( CuiAboutConfigTabPage, ExpandingHdl_Impl, SvTreeListBox*, bool )
 {
     SvTreeListEntry* pEntry = m_pPrefBox->GetHdlEntry();
 

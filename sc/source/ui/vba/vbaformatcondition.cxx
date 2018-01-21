@@ -20,6 +20,7 @@
 #include "vbaformatconditions.hxx"
 #include "unonames.hxx"
 #include <ooo/vba/excel/XlFormatConditionType.hpp>
+#include <basic/sberrors.hxx>
 
 using namespace ::ooo::vba;
 using namespace ::com::sun::star;
@@ -131,6 +132,7 @@ ScVbaFormatCondition::Operator( bool bVal ) throw (script::BasicErrorException )
 {
     return ScVbaFormatCondition_BASE::Operator( bVal );
 }
+
 ::sal_Int32 SAL_CALL
 ScVbaFormatCondition::Operator(  ) throw (script::BasicErrorException, uno::RuntimeException)
 {

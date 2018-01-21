@@ -89,7 +89,7 @@ protected:
     void ExportOperator(const SmNode *pNode, int nLevel);
     void ExportAttributes(const SmNode *pNode, int nLevel);
     void ExportFont(const SmNode *pNode, int nLevel);
-    void ExportVerticalBrace(const SmNode *pNode, int nLevel);
+    void ExportVerticalBrace(const SmVerticalBraceNode *pNode, int nLevel);
     void ExportMatrix(const SmNode *pNode, int nLevel);
     void ExportBlank(const SmNode *pNode, int nLevel);
 
@@ -97,7 +97,7 @@ public:
     SmXMLExport(
         const css::uno::Reference< css::uno::XComponentContext >& rContext,
         OUString const & implementationName, SvXMLExportFlags nExportFlags);
-    virtual ~SmXMLExport() {};
+    virtual ~SmXMLExport() override {};
 
     // XUnoTunnel
     sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& rId ) throw(css::uno::RuntimeException, std::exception) override;
@@ -106,7 +106,7 @@ public:
     void ExportAutoStyles_() override {}
     void ExportMasterStyles_() override {}
     void ExportContent_() override;
-    sal_uInt32 exportDoc(enum ::xmloff::token::XMLTokenEnum eClass) override;
+    sal_uInt32 exportDoc(enum ::xmloff::token::XMLTokenEnum eClass = ::xmloff::token::XML_TOKEN_INVALID) override;
 
     virtual void GetViewSettings(css::uno::Sequence<css::beans::PropertyValue>& aProps) override;
     virtual void GetConfigurationSettings(css::uno::Sequence<css::beans::PropertyValue>& aProps) override;

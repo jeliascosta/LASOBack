@@ -28,9 +28,8 @@ namespace sdr
 {
     namespace contact
     {
-        class SVX_DLLPUBLIC DisplayInfo
+        class SVX_DLLPUBLIC DisplayInfo final
         {
-        protected:
             // The Layers which shall be processed (visible)
             SetOfByte                                       maProcessLayers;
 
@@ -38,7 +37,6 @@ namespace sdr
             // is empty, everything needs to be redrawn
             vcl::Region                                          maRedrawArea;
 
-            // bitfield
 
             // Internal flag to know when the control layer is painted. Default is
             // false. If set to true, painting of the page, page borders and
@@ -70,7 +68,7 @@ namespace sdr
             DisplayInfo();
 
             // destructor
-            virtual ~DisplayInfo();
+            ~DisplayInfo();
 
             // access to ProcessLayers
             void SetProcessLayers(const SetOfByte& rSet);

@@ -57,7 +57,7 @@ class SvtExtendedSecurityOptions_Impl : public ConfigItem
 {
     public:
          SvtExtendedSecurityOptions_Impl();
-        virtual ~SvtExtendedSecurityOptions_Impl();
+        virtual ~SvtExtendedSecurityOptions_Impl() override;
 
         /*-****************************************************************************************************
             @short      called for notify of configmanager
@@ -78,7 +78,7 @@ class SvtExtendedSecurityOptions_Impl : public ConfigItem
         virtual void ImplCommit() override;
 
         /*-****************************************************************************************************
-            @short      return list of key names of our configuration management which represent oue module tree
+            @short      return list of key names of our configuration management which represent our module tree
             @descr      These methods return a static const list of key names. We need it to get needed values from our
                         configuration management.
             @return     A list of needed configuration keys is returned.
@@ -239,45 +239,32 @@ Sequence< OUString > SvtExtendedSecurityOptions_Impl::GetPropertyNames()
     return seqPropertyNames;
 }
 
-//  initialize static member
-//  DON'T DO IT IN YOUR HEADER!
-//  see definition for further information
+namespace {
 
-SvtExtendedSecurityOptions_Impl*    SvtExtendedSecurityOptions::m_pDataContainer    = nullptr;
-sal_Int32                           SvtExtendedSecurityOptions::m_nRefCount         = 0;
+std::weak_ptr<SvtExtendedSecurityOptions_Impl> g_pExtendedSecurityOptions;
 
-//  constructor
+}
 
 SvtExtendedSecurityOptions::SvtExtendedSecurityOptions()
 {
     // Global access, must be guarded (multithreading!).
     MutexGuard aGuard( GetInitMutex() );
-    // Increase our refcount ...
-    ++m_nRefCount;
-    // ... and initialize our data container only if it not already exist!
-    if( m_pDataContainer == nullptr )
-    {
-       m_pDataContainer = new SvtExtendedSecurityOptions_Impl;
 
+    m_pImpl = g_pExtendedSecurityOptions.lock();
+    if( !m_pImpl )
+    {
+        m_pImpl = std::make_shared<SvtExtendedSecurityOptions_Impl>();
+        g_pExtendedSecurityOptions = m_pImpl;
         ItemHolder1::holdConfigItem(E_EXTENDEDSECURITYOPTIONS);
     }
 }
-
-//  destructor
 
 SvtExtendedSecurityOptions::~SvtExtendedSecurityOptions()
 {
     // Global access, must be guarded (multithreading!)
     MutexGuard aGuard( GetInitMutex() );
-    // Decrease our refcount.
-    --m_nRefCount;
-    // If last instance was deleted ...
-    // we must destroy our static data container!
-    if( m_nRefCount <= 0 )
-    {
-        delete m_pDataContainer;
-        m_pDataContainer = nullptr;
-    }
+
+    m_pImpl.reset();
 }
 
 //  public method
@@ -285,7 +272,7 @@ SvtExtendedSecurityOptions::~SvtExtendedSecurityOptions()
 SvtExtendedSecurityOptions::OpenHyperlinkMode SvtExtendedSecurityOptions::GetOpenHyperlinkMode()
 {
     MutexGuard aGuard( GetInitMutex() );
-    return m_pDataContainer->GetOpenHyperlinkMode();
+    return m_pImpl->GetOpenHyperlinkMode();
 }
 
 namespace

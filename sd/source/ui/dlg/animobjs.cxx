@@ -59,7 +59,7 @@ SdDisplay::SdDisplay(vcl::Window* pWin)
     : Control(pWin, 0)
     , aScale(1, 1)
 {
-    SetMapMode( MAP_PIXEL );
+    SetMapMode( MapUnit::MapPixel );
     const StyleSettings& rStyles = Application::GetSettings().GetStyleSettings();
     SetBackground( Wallpaper( Color( rStyles.GetFieldColor() ) ) );
 }
@@ -105,7 +105,7 @@ void SdDisplay::SetScale( const Fraction& rFrac )
 
 Size SdDisplay::GetOptimalSize() const
 {
-    return LogicToPixel(Size(147, 87), MAP_APPFONT);
+    return LogicToPixel(Size(147, 87), MapUnit::MapAppFont);
 }
 
 void SdDisplay::DataChanged( const DataChangedEvent& rDCEvt )
@@ -164,7 +164,7 @@ AnimationWindow::AnimationWindow(SfxBindings* pInBindings, SfxChildWindow *pCW, 
     m_pCtlDisplay->Show();
 
     // create new document with page
-    pMyDoc = new SdDrawDocument(DOCUMENT_TYPE_IMPRESS, nullptr);
+    pMyDoc = new SdDrawDocument(DocumentType::Impress, nullptr);
     SdPage* pPage = pMyDoc->AllocSdPage(false);
     pMyDoc->InsertPage(pPage);
 
@@ -244,18 +244,18 @@ void AnimationWindow::dispose()
     SfxDockingWindow::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(AnimationWindow, ClickFirstHdl, Button*, void)
+IMPL_LINK_NOARG(AnimationWindow, ClickFirstHdl, Button*, void)
 {
     m_nCurrentFrame = (m_FrameList.empty()) ? EMPTY_FRAMELIST : 0;
     UpdateControl();
 }
 
-IMPL_LINK_NOARG_TYPED(AnimationWindow, ClickStopHdl, Button*, void)
+IMPL_LINK_NOARG(AnimationWindow, ClickStopHdl, Button*, void)
 {
     bMovie = false;
 }
 
-IMPL_LINK_TYPED( AnimationWindow, ClickPlayHdl, Button *, p, void )
+IMPL_LINK( AnimationWindow, ClickPlayHdl, Button *, p, void )
 {
     ScopeLockGuard aGuard( maPlayLock );
 
@@ -372,14 +372,14 @@ IMPL_LINK_TYPED( AnimationWindow, ClickPlayHdl, Button *, p, void )
     m_pBtnGetOneObject->Enable( bBtnGetOneObjectEnabled );
 }
 
-IMPL_LINK_NOARG_TYPED(AnimationWindow, ClickLastHdl, Button*, void)
+IMPL_LINK_NOARG(AnimationWindow, ClickLastHdl, Button*, void)
 {
     m_nCurrentFrame =
         (m_FrameList.empty()) ? EMPTY_FRAMELIST : m_FrameList.size() - 1 ;
     UpdateControl();
 }
 
-IMPL_LINK_TYPED( AnimationWindow, ClickRbtHdl, Button*, p, void )
+IMPL_LINK( AnimationWindow, ClickRbtHdl, Button*, p, void )
 {
     if (m_FrameList.empty() || p == m_pRbtGroup || m_pRbtGroup->IsChecked())
     {
@@ -401,7 +401,7 @@ IMPL_LINK_TYPED( AnimationWindow, ClickRbtHdl, Button*, p, void )
     }
 }
 
-IMPL_LINK_TYPED( AnimationWindow, ClickGetObjectHdl, Button*, pBtn, void )
+IMPL_LINK( AnimationWindow, ClickGetObjectHdl, Button*, pBtn, void )
 {
     bAllObjects = pBtn == m_pBtnGetAllObjects;
 
@@ -412,9 +412,9 @@ IMPL_LINK_TYPED( AnimationWindow, ClickGetObjectHdl, Button*, pBtn, void )
         SID_ANIMATOR_ADD, SfxCallMode::SLOT | SfxCallMode::RECORD, { &aItem });
 }
 
-IMPL_LINK_TYPED( AnimationWindow, ClickRemoveBitmapHdl, Button*, pBtn, void )
+IMPL_LINK( AnimationWindow, ClickRemoveBitmapHdl, Button*, pBtn, void )
 {
-    SdPage*     pPage = pMyDoc->GetSdPage(0, PK_STANDARD);
+    SdPage*     pPage = pMyDoc->GetSdPage(0, PageKind::Standard);
     SdrObject*  pObject;
 
     // tdf#95298 check m_nCurrentFrame for EMPTY_FRAMELIST to avoid out-of-bound array access
@@ -486,7 +486,7 @@ IMPL_LINK_TYPED( AnimationWindow, ClickRemoveBitmapHdl, Button*, pBtn, void )
     UpdateControl();
 }
 
-IMPL_LINK_NOARG_TYPED(AnimationWindow, ClickCreateGroupHdl, Button*, void)
+IMPL_LINK_NOARG(AnimationWindow, ClickCreateGroupHdl, Button*, void)
 {
     // Code now in CreatePresObj()
     SfxBoolItem aItem( SID_ANIMATOR_CREATE, true );
@@ -495,7 +495,7 @@ IMPL_LINK_NOARG_TYPED(AnimationWindow, ClickCreateGroupHdl, Button*, void)
             SfxCallMode::SLOT | SfxCallMode::RECORD, { &aItem });
 }
 
-IMPL_LINK_NOARG_TYPED(AnimationWindow, ModifyBitmapHdl, Edit&, void)
+IMPL_LINK_NOARG(AnimationWindow, ModifyBitmapHdl, Edit&, void)
 {
     sal_uLong nBmp = static_cast<sal_uLong>(m_pNumFldBitmap->GetValue());
 
@@ -509,7 +509,7 @@ IMPL_LINK_NOARG_TYPED(AnimationWindow, ModifyBitmapHdl, Edit&, void)
     UpdateControl();
 }
 
-IMPL_LINK_NOARG_TYPED(AnimationWindow, ModifyTimeHdl, Edit&, void)
+IMPL_LINK_NOARG(AnimationWindow, ModifyTimeHdl, Edit&, void)
 {
     sal_uLong nPos = static_cast<sal_uLong>(m_pNumFldBitmap->GetValue() - 1);
 
@@ -525,9 +525,8 @@ void AnimationWindow::UpdateControl(bool const bDisableCtrls)
     {
         BitmapEx aBmp(*m_FrameList[m_nCurrentFrame].first);
 
-        SdPage* pPage = pMyDoc->GetSdPage(0, PK_STANDARD);
-        SdrObject *const pObject =
-            static_cast<SdrObject*>(pPage->GetObj(m_nCurrentFrame));
+        SdPage* pPage = pMyDoc->GetSdPage(0, PageKind::Standard);
+        SdrObject *const pObject = pPage->GetObj(m_nCurrentFrame);
         if( pObject )
         {
             ScopedVclPtrInstance< VirtualDevice > pVD;
@@ -535,7 +534,7 @@ void AnimationWindow::UpdateControl(bool const bDisableCtrls)
             Size            aObjSize( aObjRect.GetSize() );
             Point           aOrigin( Point( -aObjRect.Left(), -aObjRect.Top() ) );
             MapMode         aMap( pVD->GetMapMode() );
-            aMap.SetMapUnit( MAP_100TH_MM );
+            aMap.SetMapUnit( MapUnit::Map100thMM );
             aMap.SetOrigin( aOrigin );
             pVD->SetMapMode( aMap );
             pVD->SetOutputSize( aObjSize );
@@ -700,11 +699,6 @@ bool AnimationWindow::Close()
     }
 }
 
-void AnimationWindow::FillInfo( SfxChildWinInfo& rInfo ) const
-{
-    SfxDockingWindow::FillInfo( rInfo ) ;
-}
-
 void AnimationWindow::AddObj (::sd::View& rView )
 {
     // finish text entry mode to ensure that bitmap is identical with object
@@ -714,7 +708,7 @@ void AnimationWindow::AddObj (::sd::View& rView )
     // clone object(s) and insert the clone(s) into the list
     const SdrMarkList& rMarkList   = rView.GetMarkedObjectList();
     const size_t nMarkCount = rMarkList.GetMarkCount();
-    SdPage*            pPage       = pMyDoc->GetSdPage(0, PK_STANDARD);
+    SdPage*            pPage       = pMyDoc->GetSdPage(0, PageKind::Standard);
     const size_t nCloneCount = pPage->GetObjCount();
 
     if (nMarkCount > 0)
@@ -726,12 +720,12 @@ void AnimationWindow::AddObj (::sd::View& rView )
         {
             SdrMark*            pMark = rMarkList.GetMark(0);
             SdrObject*          pObject = pMark->GetMarkedSdrObj();
-            SdAnimationInfo*    pAnimInfo = rView.GetDoc().GetAnimationInfo( pObject );
-            sal_uInt32              nInv = pObject->GetObjInventor();
-            sal_uInt16              nId = pObject->GetObjIdentifier();
+            SdAnimationInfo*    pAnimInfo = SdDrawDocument::GetAnimationInfo( pObject );
+            SdrInventor         nInv = pObject->GetObjInventor();
+            sal_uInt16          nId = pObject->GetObjIdentifier();
 
             // Animated Bitmap (GIF)
-            if( nInv == SdrInventor && nId == OBJ_GRAF && static_cast<SdrGrafObj*>( pObject )->IsAnimated() )
+            if( nInv == SdrInventor::Default && nId == OBJ_GRAF && static_cast<SdrGrafObj*>( pObject )->IsAnimated() )
             {
                 const SdrGrafObj*   pGrafObj = static_cast<SdrGrafObj*>(pObject);
                 Graphic             aGraphic( pGrafObj->GetTransformedGraphic() );
@@ -897,7 +891,7 @@ void AnimationWindow::CreateAnimObj (::sd::View& rView )
     DBG_ASSERT( pOutWin, "Window does not exist!" );
 
     // find window center
-    const MapMode       aMap100( MAP_100TH_MM );
+    const MapMode       aMap100( MapUnit::Map100thMM );
     Size                aMaxSizeLog;
     Size                aMaxSizePix;
     Size                aTemp( pOutWin->GetOutputSizePixel() );
@@ -914,7 +908,7 @@ void AnimationWindow::CreateAnimObj (::sd::View& rView )
         Size            aTmpSizeLog;
         const Size      aTmpSizePix( rBmpEx.GetSizePixel() );
 
-        if ( aGraphic.GetPrefMapMode().GetMapUnit() == MAP_PIXEL )
+        if ( aGraphic.GetPrefMapMode().GetMapUnit() == MapUnit::MapPixel )
             aTmpSizeLog = pDefDev->PixelToLogic( aGraphic.GetPrefSize(), aMap100 );
         else
             aTmpSizeLog = OutputDevice::LogicToLogic( aGraphic.GetPrefSize(), aGraphic.GetPrefMapMode(), aMap100 );
@@ -1019,7 +1013,7 @@ void AnimationWindow::CreateAnimObj (::sd::View& rView )
         // calculate offset for the specified direction
         Size aOffset;
         SdrObject * pClone = nullptr;
-        SdPage* pPage = pMyDoc->GetSdPage(0, PK_STANDARD);
+        SdPage* pPage = pMyDoc->GetSdPage(0, PageKind::Standard);
 
         for (size_t i = 0; i < nCount; ++i)
         {

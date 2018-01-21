@@ -46,7 +46,7 @@ typedef long Py_hash_t;
 #  define Py_TPFLAGS_HAVE_SEQUENCE_IN 0
 #endif
 
-#include <pyuno/pyuno.hxx>
+#include <pyuno.hxx>
 
 #include <unordered_map>
 #include <unordered_set>
@@ -262,7 +262,7 @@ OUString pyString2ustring( PyObject *str );
 
 
 void raiseInvocationTargetExceptionWhenNeeded( const Runtime &runtime )
-    throw ( css::reflection::InvocationTargetException );
+    throw (css::reflection::InvocationTargetException, css::uno::RuntimeException);
 
 PyRef PyUNO_callable_new (
     const css::uno::Reference<css::script::XInvocation2> &xInv,
@@ -318,7 +318,7 @@ struct RuntimeCargo
     FILE *logFile;
     sal_Int32 logLevel;
 
-    PyRef getUnoModule();
+    PyRef const & getUnoModule();
 };
 
 struct stRuntimeImpl
@@ -353,7 +353,7 @@ public:
     static css::uno::Sequence< sal_Int8 > getUnoTunnelImplementationId();
     const PyRef& getWrappedObject() const { return mWrappedObject; }
     const css::uno::Sequence< css::uno::Type >& getWrappedTypes() const { return mTypes; }
-    virtual ~Adapter();
+    virtual ~Adapter() override;
 
     // XInvocation
     virtual css::uno::Reference< css::beans::XIntrospectionAccess >

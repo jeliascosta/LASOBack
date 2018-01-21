@@ -1,16 +1,16 @@
 #. extracted from officecfg/registry/data/org/openoffice/Office/UI
 msgid ""
 msgstr ""
-"Project-Id-Version: LibreOffice 5.4\n"
+"Project-Id-Version: LibreOffice 5.3\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2017-04-10 17:20+0200\n"
-"PO-Revision-Date: 2017-04-10 21:50+0200\n"
+"POT-Creation-Date: 2017-01-17 09:45+0100\n"
+"PO-Revision-Date: 2017-01-15 03:06+0200\n"
 "Last-Translator: Martin Srebotnjak <miles@filmsi.net>\n"
 "Language-Team: sl.libreoffice.org\n"
-"Language: sl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Language: sl\n"
 "Plural-Forms: nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);\n"
 "X-Generator: Virtaal 0.7.1\n"
 "X-Accelerator-Marker: ~\n"
@@ -152,51 +152,6 @@ msgctxt ""
 msgid "Form Spin Button"
 msgstr "Pomikalnik obrazca"
 
-#: BasicIDECommands.xcu
-msgctxt ""
-"BasicIDECommands.xcu\n"
-"..BasicIDECommands.UserInterface.Commands..uno:NewModule\n"
-"Label\n"
-"value.text"
-msgid "BASIC Module"
-msgstr "Modul za BASIC"
-
-#: BasicIDECommands.xcu
-msgctxt ""
-"BasicIDECommands.xcu\n"
-"..BasicIDECommands.UserInterface.Commands..uno:NewDialog\n"
-"Label\n"
-"value.text"
-msgid "BASIC Dialog"
-msgstr "Pogovorno okno za BASIC"
-
-#: BasicIDECommands.xcu
-msgctxt ""
-"BasicIDECommands.xcu\n"
-"..BasicIDECommands.UserInterface.Commands..uno:DeleteCurrent\n"
-"Label\n"
-"value.text"
-msgid "Delete"
-msgstr "Izbriši"
-
-#: BasicIDECommands.xcu
-msgctxt ""
-"BasicIDECommands.xcu\n"
-"..BasicIDECommands.UserInterface.Commands..uno:RenameCurrent\n"
-"Label\n"
-"value.text"
-msgid "Rename"
-msgstr "Preimenuj"
-
-#: BasicIDECommands.xcu
-msgctxt ""
-"BasicIDECommands.xcu\n"
-"..BasicIDECommands.UserInterface.Commands..uno:HideCurPage\n"
-"Label\n"
-"value.text"
-msgid "Hide"
-msgstr "Skrij"
-
 #: BasicIDEWindowState.xcu
 msgctxt ""
 "BasicIDEWindowState.xcu\n"
@@ -205,15 +160,6 @@ msgctxt ""
 "value.text"
 msgid "Dialog"
 msgstr "Pogovorno okno"
-
-#: BasicIDEWindowState.xcu
-msgctxt ""
-"BasicIDEWindowState.xcu\n"
-"..BasicIDEWindowState.UIElements.States.private:resource/popupmenu/tabbar\n"
-"UIName\n"
-"value.text"
-msgid "Tab Bar"
-msgstr "Vrstica zavihkov"
 
 #: BasicIDEWindowState.xcu
 msgctxt ""
@@ -2372,7 +2318,7 @@ msgctxt ""
 "..CalcCommands.UserInterface.Commands..uno:InsertSheetFromFile\n"
 "Label\n"
 "value.text"
-msgid "Insert Shee~t from File..."
+msgid "Insert Shee~t From File..."
 msgstr "Vstavi delovni ~list iz datoteke ..."
 
 #: CalcCommands.xcu
@@ -2846,6 +2792,15 @@ msgstr "Zaščiti p~reglednico ..."
 #: CalcCommands.xcu
 msgctxt ""
 "CalcCommands.xcu\n"
+"..CalcCommands.UserInterface.Commands..uno:ToolsOptions\n"
+"Label\n"
+"value.text"
+msgid "Spreadsheet Options"
+msgstr "Možnosti preglednice"
+
+#: CalcCommands.xcu
+msgctxt ""
+"CalcCommands.xcu\n"
 "..CalcCommands.UserInterface.Commands..uno:ScenarioManager\n"
 "Label\n"
 "value.text"
@@ -3053,6 +3008,15 @@ msgstr "S~amodejno oriši"
 #: CalcCommands.xcu
 msgctxt ""
 "CalcCommands.xcu\n"
+"..CalcCommands.UserInterface.Commands..uno:DataImport\n"
+"Label\n"
+"value.text"
+msgid "Import Data"
+msgstr "Uvozi podatke"
+
+#: CalcCommands.xcu
+msgctxt ""
+"CalcCommands.xcu\n"
 "..CalcCommands.UserInterface.Commands..uno:DataReImport\n"
 "Label\n"
 "value.text"
@@ -3164,7 +3128,7 @@ msgctxt ""
 "..CalcCommands.UserInterface.Commands..uno:Add\n"
 "Label\n"
 "value.text"
-msgid "Insert Sheet at End..."
+msgid "Insert Sheet At End..."
 msgstr "Vstavi delovni list na konec ..."
 
 #: CalcCommands.xcu
@@ -3445,6 +3409,15 @@ msgctxt ""
 "value.text"
 msgid "Lin~ks..."
 msgstr "~Povezave ..."
+
+#: CalcCommands.xcu
+msgctxt ""
+"CalcCommands.xcu\n"
+"..CalcCommands.UserInterface.Commands..uno:InsertObjectStarImage\n"
+"Label\n"
+"value.text"
+msgid "Insert From Image Editor"
+msgstr "Vstavi iz urejevalnika slik"
 
 #: CalcCommands.xcu
 msgctxt ""
@@ -3875,7 +3848,7 @@ msgctxt ""
 "..CalcCommands.UserInterface.Popups..uno:ExportAsGraphic\n"
 "Label\n"
 "value.text"
-msgid "Export as Image"
+msgid "Export as image"
 msgstr "Izvozi kot sliko"
 
 #: CalcCommands.xcu
@@ -3884,8 +3857,8 @@ msgctxt ""
 "..CalcCommands.UserInterface.Popups..uno:EditShapeHyperlink\n"
 "Label\n"
 "value.text"
-msgid "Edit Hyperlink"
-msgstr "Uredi hiperpovezavo"
+msgid "Edit Link"
+msgstr "Uredi povezavo"
 
 #: CalcCommands.xcu
 msgctxt ""
@@ -3893,8 +3866,26 @@ msgctxt ""
 "..CalcCommands.UserInterface.Popups..uno:DeleteShapeHyperlink\n"
 "Label\n"
 "value.text"
-msgid "Remove Hyperlink"
-msgstr "Odstrani hiperpovezavo"
+msgid "Remove Link"
+msgstr "Odstrani povezavo"
+
+#: CalcCommands.xcu
+msgctxt ""
+"CalcCommands.xcu\n"
+"..CalcCommands.UserInterface.Popups..uno:ColorScaleDialog\n"
+"Label\n"
+"value.text"
+msgid "Color Scale..."
+msgstr "Barvna lestvica ..."
+
+#: CalcCommands.xcu
+msgctxt ""
+"CalcCommands.xcu\n"
+"..CalcCommands.UserInterface.Popups..uno:DataBarDialog\n"
+"Label\n"
+"value.text"
+msgid "Data Bar..."
+msgstr "Podatkovna vrstica ..."
 
 #: CalcCommands.xcu
 msgctxt ""
@@ -3965,8 +3956,8 @@ msgctxt ""
 "..CalcCommands.UserInterface.Popups..uno:ColumnOperations\n"
 "Label\n"
 "value.text"
-msgid "Column"
-msgstr "Stolpec"
+msgid "Column Operations"
+msgstr "Operacije s stolpci"
 
 #: CalcCommands.xcu
 msgctxt ""
@@ -3974,8 +3965,8 @@ msgctxt ""
 "..CalcCommands.UserInterface.Popups..uno:RowOperations\n"
 "Label\n"
 "value.text"
-msgid "Row"
-msgstr "Vrstica"
+msgid "Row Operations"
+msgstr "Operacije z vrsticami"
 
 #: CalcCommands.xcu
 msgctxt ""
@@ -4084,15 +4075,6 @@ msgctxt ""
 "value.text"
 msgid "Media"
 msgstr "Medijska datoteka"
-
-#: CalcWindowState.xcu
-msgctxt ""
-"CalcWindowState.xcu\n"
-"..CalcWindowState.UIElements.States.private:resource/popupmenu/notebookbar\n"
-"UIName\n"
-"value.text"
-msgid "Notebookbar"
-msgstr "Zloženka"
 
 #: CalcWindowState.xcu
 msgctxt ""
@@ -4480,16 +4462,6 @@ msgctxt ""
 "value.text"
 msgid "Arrows"
 msgstr "Puščice"
-
-#: CalcWindowState.xcu
-#, fuzzy
-msgctxt ""
-"CalcWindowState.xcu\n"
-"..CalcWindowState.UIElements.States.private:resource/toolbar/notebookbarshortcuts\n"
-"UIName\n"
-"value.text"
-msgid "Notebookbar shortcuts"
-msgstr "Tipke za bližnjico zloženke / Bližnjice za zloženko / Zloženka z bližnjicami"
 
 #: ChartCommands.xcu
 msgctxt ""
@@ -5367,6 +5339,15 @@ msgstr "Posodobi grafikon"
 #: ChartCommands.xcu
 msgctxt ""
 "ChartCommands.xcu\n"
+"..ChartCommands.UserInterface.Commands..uno:ToggleTitle\n"
+"Label\n"
+"value.text"
+msgid "Title On/Off"
+msgstr "Naslov vključen/izključen"
+
+#: ChartCommands.xcu
+msgctxt ""
+"ChartCommands.xcu\n"
 "..ChartCommands.UserInterface.Commands..uno:ToggleLegend\n"
 "Label\n"
 "value.text"
@@ -5646,15 +5627,6 @@ msgstr "Zvezde in pasice"
 #: DbBrowserWindowState.xcu
 msgctxt ""
 "DbBrowserWindowState.xcu\n"
-"..DbBrowserWindowState.UIElements.States.private:resource/popupmenu/explorer\n"
-"UIName\n"
-"value.text"
-msgid "Explorer"
-msgstr "Raziskovalec"
-
-#: DbBrowserWindowState.xcu
-msgctxt ""
-"DbBrowserWindowState.xcu\n"
 "..DbBrowserWindowState.UIElements.States.private:resource/toolbar/toolbar\n"
 "UIName\n"
 "value.text"
@@ -5696,15 +5668,6 @@ msgctxt ""
 "value.text"
 msgid "Standard"
 msgstr "Standardno"
-
-#: DbReportWindowState.xcu
-msgctxt ""
-"DbReportWindowState.xcu\n"
-".DbReportWindowState.UIElements.States.private:resource/popupmenu/report\n"
-"UIName\n"
-"value.text"
-msgid "Report"
-msgstr "Poročilo"
 
 #: DbReportWindowState.xcu
 msgctxt ""
@@ -6555,33 +6518,6 @@ msgstr "Poročilo ..."
 #: DbuCommands.xcu
 msgctxt ""
 "DbuCommands.xcu\n"
-"..DbuCommands.UserInterface.Commands..uno:DSBEditDB\n"
-"Label\n"
-"value.text"
-msgid "Edit ~Database File..."
-msgstr "Uredi datoteko ~podatkovne zbirke ..."
-
-#: DbuCommands.xcu
-msgctxt ""
-"DbuCommands.xcu\n"
-"..DbuCommands.UserInterface.Commands..uno:DSBCloseConnection\n"
-"Label\n"
-"value.text"
-msgid "Disco~nnect"
-msgstr "Preki~ni povezavo"
-
-#: DbuCommands.xcu
-msgctxt ""
-"DbuCommands.xcu\n"
-"..DbuCommands.UserInterface.Commands..uno:DSBAdministrate\n"
-"Label\n"
-"value.text"
-msgid "Registered databases ..."
-msgstr "Registrirane zbirke podatkov ..."
-
-#: DbuCommands.xcu
-msgctxt ""
-"DbuCommands.xcu\n"
 "..DbuCommands.UserInterface.Popups..uno:DBDatabasePropertiesMenu\n"
 "Label\n"
 "value.text"
@@ -6693,7 +6629,7 @@ msgctxt ""
 "..DrawImpressCommands.UserInterface.Commands..uno:Presentation\n"
 "Label\n"
 "value.text"
-msgid "Start from ~First Slide"
+msgid "Start from ~first Slide"
 msgstr "Začni s ~prvo prosojnico"
 
 #: DrawImpressCommands.xcu
@@ -6702,7 +6638,7 @@ msgctxt ""
 "..DrawImpressCommands.UserInterface.Commands..uno:PresentationCurrentSlide\n"
 "Label\n"
 "value.text"
-msgid "Start from C~urrent Slide"
+msgid "Start from c~urrent Slide"
 msgstr "Začni s tren~utno prosojnico"
 
 #: DrawImpressCommands.xcu
@@ -6711,7 +6647,7 @@ msgctxt ""
 "..DrawImpressCommands.UserInterface.Commands..uno:RestoreEditingView\n"
 "Label\n"
 "value.text"
-msgid "Jump to Last Edited Slide"
+msgid "Jump to last edited Slide"
 msgstr "Skoči na nazadnje urejeno prosojnico"
 
 #: DrawImpressCommands.xcu
@@ -6783,7 +6719,7 @@ msgctxt ""
 "..DrawImpressCommands.UserInterface.Commands..uno:PagesPerRow\n"
 "Label\n"
 "value.text"
-msgid "Slides per Row"
+msgid "Slides Per Row"
 msgstr "Prosojnic v vrstici"
 
 #: DrawImpressCommands.xcu
@@ -7086,11 +7022,29 @@ msgstr "~Pred predmet"
 #: DrawImpressCommands.xcu
 msgctxt ""
 "DrawImpressCommands.xcu\n"
+"..DrawImpressCommands.UserInterface.Commands..uno:PreviewWindow\n"
+"Label\n"
+"value.text"
+msgid "Pre~view"
+msgstr "Predo~gled"
+
+#: DrawImpressCommands.xcu
+msgctxt ""
+"DrawImpressCommands.xcu\n"
 "..DrawImpressCommands.UserInterface.Commands..uno:CustomAnimation\n"
 "Label\n"
 "value.text"
 msgid "Animation"
 msgstr "Animacija"
+
+#: DrawImpressCommands.xcu
+msgctxt ""
+"DrawImpressCommands.xcu\n"
+"..DrawImpressCommands.UserInterface.Commands..uno:CustomAnimationSchemes\n"
+"Label\n"
+"value.text"
+msgid "Animation Schemes..."
+msgstr "Animacijske sheme ..."
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -7190,6 +7144,15 @@ msgctxt ""
 "value.text"
 msgid "~Slide Master"
 msgstr "~Matrica prosojnice"
+
+#: DrawImpressCommands.xcu
+msgctxt ""
+"DrawImpressCommands.xcu\n"
+"..DrawImpressCommands.UserInterface.Commands..uno:HandoutMasterPage\n"
+"Label\n"
+"value.text"
+msgid "~Handout Master"
+msgstr "Matrica ~izročka"
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -7401,6 +7364,15 @@ msgstr "V ~metadatoteko"
 #: DrawImpressCommands.xcu
 msgctxt ""
 "DrawImpressCommands.xcu\n"
+"..DrawImpressCommands.UserInterface.Commands..uno:PackAndGo\n"
+"Label\n"
+"value.text"
+msgid "Pack"
+msgstr "Stisni"
+
+#: DrawImpressCommands.xcu
+msgctxt ""
+"DrawImpressCommands.xcu\n"
 "..DrawImpressCommands.UserInterface.Commands..uno:convert_to_contour\n"
 "Label\n"
 "value.text"
@@ -7413,8 +7385,8 @@ msgctxt ""
 "..DrawImpressCommands.UserInterface.Commands..uno:EditHyperlink\n"
 "Label\n"
 "value.text"
-msgid "~Hyperlink..."
-msgstr "~Hiperpovezava ..."
+msgid "~Link..."
+msgstr "~Povezava ..."
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -7802,6 +7774,15 @@ msgctxt ""
 "value.text"
 msgid "Slide Effects"
 msgstr "Učinki prosojnice"
+
+#: DrawImpressCommands.xcu
+msgctxt ""
+"DrawImpressCommands.xcu\n"
+"..DrawImpressCommands.UserInterface.Commands..uno:DiaSpeed\n"
+"Label\n"
+"value.text"
+msgid "Transition Speed"
+msgstr "Hitrost prehoda"
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -9537,8 +9518,8 @@ msgctxt ""
 "..DrawImpressCommands.UserInterface.Popups..uno:AssignLayout?WhatLayout:long=20\n"
 "Label\n"
 "value.text"
-msgid "Blank Slide"
-msgstr "Prazna prosojnica"
+msgid "Blank"
+msgstr "Prazno"
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -9546,8 +9527,8 @@ msgctxt ""
 "..DrawImpressCommands.UserInterface.Popups..uno:AssignLayout?WhatLayout:long=19\n"
 "Label\n"
 "value.text"
-msgid "Title Only"
-msgstr "Samo naslov"
+msgid "Title"
+msgstr "Naslov"
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -9555,8 +9536,8 @@ msgctxt ""
 "..DrawImpressCommands.UserInterface.Popups..uno:AssignLayout?WhatLayout:long=0\n"
 "Label\n"
 "value.text"
-msgid "Title Slide"
-msgstr "Naslovna prosojnica"
+msgid "Title, Text"
+msgstr "Naslov, besedilo"
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -9582,8 +9563,8 @@ msgctxt ""
 "..DrawImpressCommands.UserInterface.Popups..uno:AssignLayout?WhatLayout:long=3\n"
 "Label\n"
 "value.text"
-msgid "Title and 2 Content"
-msgstr "Naslov in vsebini"
+msgid "Title, 2 Content"
+msgstr "Naslov, dve vsebini"
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -9591,8 +9572,8 @@ msgctxt ""
 "..DrawImpressCommands.UserInterface.Popups..uno:AssignLayout?WhatLayout:long=12\n"
 "Label\n"
 "value.text"
-msgid "Title, Content and 2 Content"
-msgstr "Naslov, vsebina in vsebini"
+msgid "Title, Content and 2 Content on Right"
+msgstr "Naslov, vsebina in dve vsebini na desni"
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -9600,8 +9581,8 @@ msgctxt ""
 "..DrawImpressCommands.UserInterface.Popups..uno:AssignLayout?WhatLayout:long=15\n"
 "Label\n"
 "value.text"
-msgid "Title, 2 Content and Content"
-msgstr "Naslov, vsebini in vsebina"
+msgid "Title, 2 Content on Left and Content"
+msgstr "Naslov, dve vsebini na levi in vsebina"
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -9609,8 +9590,8 @@ msgctxt ""
 "..DrawImpressCommands.UserInterface.Popups..uno:AssignLayout?WhatLayout:long=14\n"
 "Label\n"
 "value.text"
-msgid "Title, Content over Content"
-msgstr "Naslov, vsebina prek vsebine"
+msgid "Title, Content above Content"
+msgstr "Naslov, vsebina nad vsebino"
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -9618,8 +9599,8 @@ msgctxt ""
 "..DrawImpressCommands.UserInterface.Popups..uno:AssignLayout?WhatLayout:long=16\n"
 "Label\n"
 "value.text"
-msgid "Title, 2 Content over Content"
-msgstr "Naslov, vsebini prek vsebine"
+msgid "Title, 2 Content above Content"
+msgstr "Naslov, dve vsebini nad vsebino"
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -9645,8 +9626,8 @@ msgctxt ""
 "..DrawImpressCommands.UserInterface.Popups..uno:AssignLayout?WhatLayout:long=28\n"
 "Label\n"
 "value.text"
-msgid "Vertical Title, Vertical Text"
-msgstr "Navpični naslov, navpično besedilo"
+msgid "Title, Content (Vertical)"
+msgstr "Naslov, vsebina (navpično)"
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -9654,8 +9635,8 @@ msgctxt ""
 "..DrawImpressCommands.UserInterface.Popups..uno:AssignLayout?WhatLayout:long=27\n"
 "Label\n"
 "value.text"
-msgid "Vertical Title, Text, Chart"
-msgstr "Navpični naslov, besedilo, grafikon"
+msgid "Title, Content over Content (Vertical)"
+msgstr "Naslov, vsebina prek vsebine (navpično)"
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -9663,8 +9644,8 @@ msgctxt ""
 "..DrawImpressCommands.UserInterface.Popups..uno:AssignLayout?WhatLayout:long=29\n"
 "Label\n"
 "value.text"
-msgid "Title, Vertical Text"
-msgstr "Naslov, navpično besedilo"
+msgid "Title, Vertical Content"
+msgstr "Naslov, navpična vsebina"
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -9672,8 +9653,8 @@ msgctxt ""
 "..DrawImpressCommands.UserInterface.Popups..uno:AssignLayout?WhatLayout:long=30\n"
 "Label\n"
 "value.text"
-msgid "Title, 2 Vertical Text, Clipart"
-msgstr "Naslov, navpični besedili, sličica"
+msgid "Title, 2 Vertical Content"
+msgstr "Naslov, dve navpični vsebini"
 
 #: DrawImpressCommands.xcu
 msgctxt ""
@@ -9737,15 +9718,6 @@ msgctxt ""
 "value.text"
 msgid "Presentation ~Object..."
 msgstr "Pre~dmet predstavitve ..."
-
-#: DrawImpressCommands.xcu
-msgctxt ""
-"DrawImpressCommands.xcu\n"
-"..DrawImpressCommands.UserInterface.Popups..uno:HangingIndent\n"
-"Label\n"
-"value.text"
-msgid "Hanging Indent"
-msgstr "Viseči zamik"
 
 #: DrawWindowState.xcu
 msgctxt ""
@@ -13803,7 +13775,7 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:Polygon\n"
 "Label\n"
 "value.text"
-msgid "Polygon, Filled"
+msgid "Polygon, filled"
 msgstr "Mnogokotnik, zapolnjen"
 
 #: GenericCommands.xcu
@@ -15054,7 +15026,7 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:StarShapes.concave-star6\n"
 "Label\n"
 "value.text"
-msgid "6-Point Star, Concave"
+msgid "6-Point Star, concave"
 msgstr "Šestkraka zvezda, konkavna"
 
 #: GenericCommands.xcu
@@ -15600,15 +15572,6 @@ msgstr "Izberi modul"
 #: GenericCommands.xcu
 msgctxt ""
 "GenericCommands.xcu\n"
-"..GenericCommands.UserInterface.Commands..uno:ModuleDialog\n"
-"PopupLabel\n"
-"value.text"
-msgid "Modules..."
-msgstr "Moduli ..."
-
-#: GenericCommands.xcu
-msgctxt ""
-"GenericCommands.xcu\n"
 "..GenericCommands.UserInterface.Commands..uno:Shadowed\n"
 "Label\n"
 "value.text"
@@ -15650,6 +15613,15 @@ msgctxt ""
 "value.text"
 msgid "Strikethrough"
 msgstr "Prečrtano"
+
+#: GenericCommands.xcu
+msgctxt ""
+"GenericCommands.xcu\n"
+"..GenericCommands.UserInterface.Commands..uno:HelpOnHelp\n"
+"Label\n"
+"value.text"
+msgid "Help on Help"
+msgstr "Pomoč pri pomoči"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -15783,7 +15755,7 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:ExtendedHelp\n"
 "Label\n"
 "value.text"
-msgid "~What's This?"
+msgid "What's ~This?"
 msgstr "Kaj je ~to?"
 
 #: GenericCommands.xcu
@@ -16179,7 +16151,7 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:ZoomOptimal\n"
 "ContextLabel\n"
 "value.text"
-msgid "Optimal View"
+msgid "Optimal view"
 msgstr "Optimalen pogled"
 
 #: GenericCommands.xcu
@@ -16296,7 +16268,7 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:GrafMode\n"
 "Label\n"
 "value.text"
-msgid "Image Mode"
+msgid "Image mode"
 msgstr "Slikovni način"
 
 #: GenericCommands.xcu
@@ -16648,7 +16620,7 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:CheckOut\n"
 "Label\n"
 "value.text"
-msgid "Check Out"
+msgid "Check-Out"
 msgstr "Prevzemi"
 
 #: GenericCommands.xcu
@@ -16657,7 +16629,7 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:CancelCheckOut\n"
 "Label\n"
 "value.text"
-msgid "Cancel Checkout..."
+msgid "Cancel Check-Out..."
 msgstr "Prekliči prevzem ..."
 
 #. This is the action to merge a private working copy            of the document on a server. It shows a dialog to input some information on            the new version to create on the server.
@@ -16667,7 +16639,7 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:CheckIn\n"
 "Label\n"
 "value.text"
-msgid "Check In..."
+msgid "Check-In..."
 msgstr "Oddaj ..."
 
 #: GenericCommands.xcu
@@ -17456,6 +17428,24 @@ msgstr "Navpična črta"
 #: GenericCommands.xcu
 msgctxt ""
 "GenericCommands.xcu\n"
+"..GenericCommands.UserInterface.Commands..uno:ChoosePolygon\n"
+"Label\n"
+"value.text"
+msgid "Symbol Selection"
+msgstr "Izbira simbola"
+
+#: GenericCommands.xcu
+msgctxt ""
+"GenericCommands.xcu\n"
+"..GenericCommands.UserInterface.Commands..uno:ShowBrowser\n"
+"Label\n"
+"value.text"
+msgid "Display Properties"
+msgstr "Lastnosti prikaza"
+
+#: GenericCommands.xcu
+msgctxt ""
+"GenericCommands.xcu\n"
 "..GenericCommands.UserInterface.Commands..uno:FillStyle\n"
 "Label\n"
 "value.text"
@@ -17711,7 +17701,7 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:LeaveGroup\n"
 "Label\n"
 "value.text"
-msgid "E~xit Group"
+msgid "E~xit group"
 msgstr "I~zhod iz skupine"
 
 #: GenericCommands.xcu
@@ -17819,8 +17809,8 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:OpenHyperlinkOnCursor\n"
 "Label\n"
 "value.text"
-msgid "Open Hyperlink"
-msgstr "Odpri hiperpovezavo"
+msgid "Open Link"
+msgstr "Odpri povezavo"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -17830,6 +17820,15 @@ msgctxt ""
 "value.text"
 msgid "Smart Tags"
 msgstr "Pametne značke"
+
+#: GenericCommands.xcu
+msgctxt ""
+"GenericCommands.xcu\n"
+"..GenericCommands.UserInterface.Commands..uno:InsertImage\n"
+"Label\n"
+"value.text"
+msgid "Insert from Image Editor"
+msgstr "Vstavi iz urejevalnika slik"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -17956,6 +17955,24 @@ msgctxt ""
 "value.text"
 msgid "Vertical Scroll Bar"
 msgstr "Navpični drsni trak"
+
+#: GenericCommands.xcu
+msgctxt ""
+"GenericCommands.xcu\n"
+"..GenericCommands.UserInterface.Commands..uno:Preview\n"
+"Label\n"
+"value.text"
+msgid "Preview"
+msgstr "Predogled"
+
+#: GenericCommands.xcu
+msgctxt ""
+"GenericCommands.xcu\n"
+"..GenericCommands.UserInterface.Commands..uno:URLButton\n"
+"Label\n"
+"value.text"
+msgid "URL Button"
+msgstr "URL gumb"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -18285,10 +18302,10 @@ msgstr "~Slika ..."
 msgctxt ""
 "GenericCommands.xcu\n"
 "..GenericCommands.UserInterface.Commands..uno:InsertGraphic\n"
-"PopupLabel\n"
+"TooltipLabel\n"
 "value.text"
-msgid "Insert Image..."
-msgstr "Vstavi sliko ..."
+msgid "Insert Image"
+msgstr "Vstavi sliko"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -18530,7 +18547,7 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:SaveAsUrl\n"
 "Label\n"
 "value.text"
-msgid "Save Document as URL"
+msgid "Save Document As URL"
 msgstr "Shrani dokument kot URL"
 
 #: GenericCommands.xcu
@@ -18647,7 +18664,7 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:InsertBusinessCard\n"
 "Label\n"
 "value.text"
-msgid "Insert Business Cards"
+msgid "Insert business cards"
 msgstr "Vstavi vizitke"
 
 #: GenericCommands.xcu
@@ -18683,8 +18700,8 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:HyperlinkDialog\n"
 "Label\n"
 "value.text"
-msgid "~Hyperlink..."
-msgstr "~Hiperpovezava ..."
+msgid "~Link..."
+msgstr "~Povezava ..."
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -18692,8 +18709,8 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:HyperlinkDialog\n"
 "TooltipLabel\n"
 "value.text"
-msgid "Insert Hyperlink"
-msgstr "Vstavi hiperpovezavo"
+msgid "Insert Link"
+msgstr "Vstavi povezavo"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -19724,6 +19741,15 @@ msgstr "Možnosti grafikona"
 #: GenericCommands.xcu
 msgctxt ""
 "GenericCommands.xcu\n"
+"..GenericCommands.UserInterface.Commands..uno:SimEditOptions\n"
+"Label\n"
+"value.text"
+msgid "Image Options"
+msgstr "Možnosti slike"
+
+#: GenericCommands.xcu
+msgctxt ""
+"GenericCommands.xcu\n"
 "..GenericCommands.UserInterface.Commands..uno:FrameName\n"
 "Label\n"
 "value.text"
@@ -20051,7 +20077,7 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:RubyDialog\n"
 "Label\n"
 "value.text"
-msgid "Asian Phonetic G~uide..."
+msgid "Asian phonetic g~uide..."
 msgstr "Vodnik za ~azijsko izgovorjavo ..."
 
 #: GenericCommands.xcu
@@ -20123,7 +20149,7 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:SendViaBluetooth\n"
 "Label\n"
 "value.text"
-msgid "Send via ~Bluetooth..."
+msgid "Send Via ~Bluetooth..."
 msgstr "Pošlji prek ~Bluetootha ..."
 
 #: GenericCommands.xcu
@@ -20258,7 +20284,7 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:QuestionAnswers\n"
 "Label\n"
 "value.text"
-msgid "~Get Help Online..."
+msgid "~Get help online..."
 msgstr "Pomoč s sple~ta ..."
 
 #: GenericCommands.xcu
@@ -20267,8 +20293,8 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:Documentation\n"
 "Label\n"
 "value.text"
-msgid "~User Guides..."
-msgstr "~Uporabniški vodniki (v angl.) ..."
+msgid "User Guides..."
+msgstr "Uporabniški vodniki (v angl.) ..."
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -20314,6 +20340,24 @@ msgctxt ""
 "value.text"
 msgid "~Presentation"
 msgstr "~Predstavitev"
+
+#: GenericCommands.xcu
+msgctxt ""
+"GenericCommands.xcu\n"
+"..GenericCommands.UserInterface.Commands..uno:SaveConfiguration\n"
+"Label\n"
+"value.text"
+msgid "Save configuration"
+msgstr "Shrani konfiguracijo"
+
+#: GenericCommands.xcu
+msgctxt ""
+"GenericCommands.xcu\n"
+"..GenericCommands.UserInterface.Commands..uno:LoadConfiguration\n"
+"Label\n"
+"value.text"
+msgid "Load Configuration"
+msgstr "Naloži konfiguracijo"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -20843,7 +20887,7 @@ msgctxt ""
 "..GenericCommands.UserInterface.Commands..uno:About\n"
 "Label\n"
 "value.text"
-msgid "~About %PRODUCTNAME"
+msgid "A~bout %PRODUCTNAME"
 msgstr "~O programu %PRODUCTNAME"
 
 #: GenericCommands.xcu
@@ -20908,6 +20952,15 @@ msgctxt ""
 "value.text"
 msgid "Current Date"
 msgstr "Trenutni datum"
+
+#: GenericCommands.xcu
+msgctxt ""
+"GenericCommands.xcu\n"
+"..GenericCommands.UserInterface.Commands..uno:VersionVisible\n"
+"Label\n"
+"value.text"
+msgid "Version Visible"
+msgstr "Različica vidna"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -21106,6 +21159,15 @@ msgctxt ""
 "value.text"
 msgid "AutoFilter"
 msgstr "Samodejni filter"
+
+#: GenericCommands.xcu
+msgctxt ""
+"GenericCommands.xcu\n"
+"..GenericCommands.UserInterface.Commands..uno:CountAll\n"
+"Label\n"
+"value.text"
+msgid "Records"
+msgstr "Zapisi"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -21385,6 +21447,15 @@ msgctxt ""
 "value.text"
 msgid "Data source as Table"
 msgstr "Vir podatkov kot tabela"
+
+#: GenericCommands.xcu
+msgctxt ""
+"GenericCommands.xcu\n"
+"..GenericCommands.UserInterface.Commands..uno:RemoveFilter\n"
+"Label\n"
+"value.text"
+msgid "Reset Filter"
+msgstr "Ponastavi filter"
 
 #: GenericCommands.xcu
 msgctxt ""
@@ -21839,6 +21910,15 @@ msgstr "Porav~naj"
 #: GenericCommands.xcu
 msgctxt ""
 "GenericCommands.xcu\n"
+"..GenericCommands.UserInterface.Popups..uno:PolyFormen\n"
+"Label\n"
+"value.text"
+msgid "~Shapes"
+msgstr "~Liki"
+
+#: GenericCommands.xcu
+msgctxt ""
+"GenericCommands.xcu\n"
 "..GenericCommands.UserInterface.Popups..uno:Scan\n"
 "Label\n"
 "value.text"
@@ -22274,7 +22354,7 @@ msgctxt ""
 "..GenericCommands.UserInterface.Popups..uno:SetLanguageAllTextMenu\n"
 "Label\n"
 "value.text"
-msgid "For All Text"
+msgid "For all Text"
 msgstr "Celotnega besedila"
 
 #: GenericCommands.xcu
@@ -22418,8 +22498,8 @@ msgctxt ""
 "..GenericCommands.UserInterface.Popups..uno:SafeMode\n"
 "Label\n"
 "value.text"
-msgid "~Restart in Safe Mode..."
-msgstr "Ponovno za~ženi v varnem načinu ..."
+msgid "Restart in Safe Mode..."
+msgstr "Ponovno zaženi v varnem načinu ..."
 
 #: ImpressWindowState.xcu
 msgctxt ""
@@ -22564,15 +22644,6 @@ msgctxt ""
 "value.text"
 msgid "Multiple Selection"
 msgstr "Večkratna izbira"
-
-#: ImpressWindowState.xcu
-msgctxt ""
-"ImpressWindowState.xcu\n"
-"..ImpressWindowState.UIElements.States.private:resource/popupmenu/notebookbar\n"
-"UIName\n"
-"value.text"
-msgid "Notebookbar"
-msgstr "Zloženka"
 
 #: ImpressWindowState.xcu
 msgctxt ""
@@ -23123,16 +23194,6 @@ msgctxt ""
 msgid "Standard (Single Mode)"
 msgstr "Standardno (enojni način)"
 
-#: ImpressWindowState.xcu
-#, fuzzy
-msgctxt ""
-"ImpressWindowState.xcu\n"
-"..ImpressWindowState.UIElements.States.private:resource/toolbar/notebookbarshortcuts\n"
-"UIName\n"
-"value.text"
-msgid "Notebookbar shortcuts"
-msgstr "Tipke za bližnjico zloženke / Bližnjice za zloženko / Zloženka z bližnjicami"
-
 #: MathCommands.xcu
 msgctxt ""
 "MathCommands.xcu\n"
@@ -23177,6 +23238,15 @@ msgctxt ""
 "value.text"
 msgid "~AutoUpdate Display"
 msgstr "S~amodejno posodobi prikaz"
+
+#: MathCommands.xcu
+msgctxt ""
+"MathCommands.xcu\n"
+"..MathCommands.UserInterface.Commands..uno:Symbols\n"
+"Label\n"
+"value.text"
+msgid "Symbols"
+msgstr "Simboli"
 
 #: MathCommands.xcu
 msgctxt ""
@@ -23294,6 +23364,15 @@ msgctxt ""
 "value.text"
 msgid "~Symbols…"
 msgstr "~Simboli ..."
+
+#: MathCommands.xcu
+msgctxt ""
+"MathCommands.xcu\n"
+"..MathCommands.UserInterface.Commands..uno:Preferences\n"
+"Label\n"
+"value.text"
+msgid "Options"
+msgstr "Možnosti"
 
 #: MathCommands.xcu
 msgctxt ""
@@ -23874,15 +23953,6 @@ msgstr "Skrči od spodaj"
 #: ReportCommands.xcu
 msgctxt ""
 "ReportCommands.xcu\n"
-".ReportCommands.UserInterface.Commands..uno:DBBackgroundColor\n"
-"Label\n"
-"value.text"
-msgid "Background Color..."
-msgstr "Barva ozadja ..."
-
-#: ReportCommands.xcu
-msgctxt ""
-"ReportCommands.xcu\n"
 ".ReportCommands.UserInterface.Popups..uno:ExportReportTo\n"
 "Label\n"
 "value.text"
@@ -23906,6 +23976,15 @@ msgctxt ""
 "value.text"
 msgid "Object Resizing"
 msgstr "Spreminjanje velikosti predmeta"
+
+#: ReportCommands.xcu
+msgctxt ""
+"ReportCommands.xcu\n"
+".ReportCommands.UserInterface.Popups..uno:ArrangeMenu\n"
+"Label\n"
+"value.text"
+msgid "A~rrange"
+msgstr "~Razporedi"
 
 #: Sidebar.xcu
 msgctxt ""
@@ -24678,7 +24757,7 @@ msgctxt ""
 "..ToolbarMode.Applications.Writer.Modes.Single\n"
 "Label\n"
 "value.text"
-msgid "Single Toolbar"
+msgid "Single toolbar"
 msgstr "Enojna orodna vrstica"
 
 #: ToolbarMode.xcu
@@ -24714,7 +24793,7 @@ msgctxt ""
 "..ToolbarMode.Applications.Calc.Modes.Single\n"
 "Label\n"
 "value.text"
-msgid "Single Toolbar"
+msgid "Single toolbar"
 msgstr "Enojna orodna vrstica"
 
 #: ToolbarMode.xcu
@@ -24750,7 +24829,7 @@ msgctxt ""
 "..ToolbarMode.Applications.Impress.Modes.Single\n"
 "Label\n"
 "value.text"
-msgid "Single Toolbar"
+msgid "Single toolbar"
 msgstr "Enojna orodna vrstica"
 
 #: ToolbarMode.xcu
@@ -25299,8 +25378,8 @@ msgctxt ""
 "..WriterCommands.UserInterface.Commands..uno:CommentChangeTracking\n"
 "TooltipLabel\n"
 "value.text"
-msgid "Insert Track Change Comment"
-msgstr "Vstavi komentar sledenja spremembam"
+msgid "Insert ODF Track Change Comment"
+msgstr "Vstavi komentar sledenja spremembam ODF"
 
 #: WriterCommands.xcu
 msgctxt ""
@@ -25371,8 +25450,8 @@ msgctxt ""
 "..WriterCommands.UserInterface.Commands..uno:EditHyperlink\n"
 "Label\n"
 "value.text"
-msgid "~Hyperlink"
-msgstr "~Hiperpovezava"
+msgid "~Link"
+msgstr "~Povezava"
 
 #: WriterCommands.xcu
 msgctxt ""
@@ -25380,8 +25459,8 @@ msgctxt ""
 "..WriterCommands.UserInterface.Commands..uno:EditHyperlink\n"
 "PopupLabel\n"
 "value.text"
-msgid "Edit Hyperlink..."
-msgstr "Uredi hiperpovezavo ..."
+msgid "Edit Link..."
+msgstr "Uredi povezavo ..."
 
 #: WriterCommands.xcu
 msgctxt ""
@@ -25389,8 +25468,8 @@ msgctxt ""
 "..WriterCommands.UserInterface.Commands..uno:RemoveHyperlink\n"
 "Label\n"
 "value.text"
-msgid "Remove Hyperlink"
-msgstr "Odstrani hiperpovezavo"
+msgid "Remove Link"
+msgstr "Odstrani povezavo"
 
 #: WriterCommands.xcu
 msgctxt ""
@@ -25398,8 +25477,8 @@ msgctxt ""
 "..WriterCommands.UserInterface.Commands..uno:CopyHyperlinkLocation\n"
 "Label\n"
 "value.text"
-msgid "Copy Hyperlink Location"
-msgstr "Kopiraj mesto hiperpovezave"
+msgid "Copy Link Location"
+msgstr "Kopiraj mesto povezave"
 
 #: WriterCommands.xcu
 msgctxt ""
@@ -25533,8 +25612,8 @@ msgctxt ""
 "..WriterCommands.UserInterface.Commands..uno:InsertHyperlinkDlg\n"
 "Label\n"
 "value.text"
-msgid "Insert Hyperlink"
-msgstr "Vstavi hiperpovezavo"
+msgid "Insert Link"
+msgstr "Vstavi povezavo"
 
 #: WriterCommands.xcu
 msgctxt ""
@@ -26091,8 +26170,8 @@ msgctxt ""
 "..WriterCommands.UserInterface.Commands..uno:ExecHyperlinks\n"
 "Label\n"
 "value.text"
-msgid "Hyperlinks Active"
-msgstr "Hiperpovezave aktivne"
+msgid "Links Active"
+msgstr "Povezave aktivne"
 
 #: WriterCommands.xcu
 msgctxt ""
@@ -26273,15 +26352,6 @@ msgctxt ""
 "value.text"
 msgid "Rotate 90° ~Right"
 msgstr "Zasukaj 90° v ~desno"
-
-#: WriterCommands.xcu
-msgctxt ""
-"WriterCommands.xcu\n"
-"..WriterCommands.UserInterface.Commands..uno:Rotate180\n"
-"Label\n"
-"value.text"
-msgid "Rotate 1~80°"
-msgstr "Zasukaj 1~80°"
 
 #: WriterCommands.xcu
 msgctxt ""
@@ -26575,15 +26645,6 @@ msgstr "Lastnosti ~tabele ..."
 msgctxt ""
 "WriterCommands.xcu\n"
 "..WriterCommands.UserInterface.Commands..uno:FootnoteDialog\n"
-"Label\n"
-"value.text"
-msgid "~Footnotes and Endnotes..."
-msgstr "~Sprotne in končne opombe ..."
-
-#: WriterCommands.xcu
-msgctxt ""
-"WriterCommands.xcu\n"
-"..WriterCommands.UserInterface.Commands..uno:CurrentFootnoteDialog\n"
 "Label\n"
 "value.text"
 msgid "~Footnotes and Endnotes..."
@@ -27749,15 +27810,6 @@ msgctxt ""
 "value.text"
 msgid "~Sections..."
 msgstr "Odseki ~..."
-
-#: WriterCommands.xcu
-msgctxt ""
-"WriterCommands.xcu\n"
-"..WriterCommands.UserInterface.Commands..uno:EditCurrentRegion\n"
-"Label\n"
-"value.text"
-msgid "Edit Section..."
-msgstr "Uredi odsek ..."
 
 #: WriterCommands.xcu
 msgctxt ""
@@ -29171,15 +29223,6 @@ msgctxt ""
 "value.text"
 msgid "Page Margin"
 msgstr "Rob strani"
-
-#: WriterCommands.xcu
-msgctxt ""
-"WriterCommands.xcu\n"
-"..WriterCommands.UserInterface.Popups..uno:HangingIndent\n"
-"Label\n"
-"value.text"
-msgid "Hanging Indent"
-msgstr "Viseči zamik"
 
 #: WriterFormWindowState.xcu
 msgctxt ""
@@ -30993,15 +31036,6 @@ msgstr "Medijska datoteka"
 #: WriterWindowState.xcu
 msgctxt ""
 "WriterWindowState.xcu\n"
-"..WriterWindowState.UIElements.States.private:resource/popupmenu/notebookbar\n"
-"UIName\n"
-"value.text"
-msgid "Notebookbar"
-msgstr "Zloženka"
-
-#: WriterWindowState.xcu
-msgctxt ""
-"WriterWindowState.xcu\n"
 "..WriterWindowState.UIElements.States.private:resource/popupmenu/oleobject\n"
 "UIName\n"
 "value.text"
@@ -31043,16 +31077,6 @@ msgctxt ""
 "value.text"
 msgid "Standard"
 msgstr "Standardno"
-
-#: WriterWindowState.xcu
-#, fuzzy
-msgctxt ""
-"WriterWindowState.xcu\n"
-"..WriterWindowState.UIElements.States.private:resource/toolbar/notebookbarshortcuts\n"
-"UIName\n"
-"value.text"
-msgid "Notebookbar shortcuts"
-msgstr "Tipke za bližnjico zloženke / Bližnjice za zloženko / Zloženka z bližnjicami"
 
 #: WriterWindowState.xcu
 msgctxt ""

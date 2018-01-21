@@ -35,12 +35,6 @@ using utl::MediaDescriptor;
 
 namespace {
 
-const sal_Char pFilterLotus[]        = "Lotus";
-const sal_Char pFilterQPro6[]        = "Quattro Pro 6.0";
-const sal_Char pFilterDBase[]        = "dBase";
-const sal_Char pFilterDif[]      = "DIF";
-const sal_Char pFilterSylk[]     = "SYLK";
-
 // Tabelle mit Suchmustern
 // Bedeutung der Sequenzen
 // 0x00??: genau Byte 0x?? muss an dieser Stelle stehen
@@ -247,7 +241,8 @@ static bool lcl_MayBeDBase( SvStream& rStream )
     }
 
     // tdf#84834 sanity check of size
-    if (0 == nRecords || nSize < nHeaderLen + nRecords * sal_uInt64(nRecordSize))
+    // tdf#106423: a dbf file can have 0 record, so no need to check nRecords
+    if (nSize < nHeaderLen + nRecords * sal_uInt64(nRecordSize))
         return false;
 
     // Last byte of header must be 0x0d, this is how it's specified.
@@ -290,35 +285,35 @@ OUString SAL_CALL ScFilterDetect::detect( uno::Sequence<beans::PropertyValue>& l
         if (!detectThisFormat(*pStream, pLotus) && !detectThisFormat(*pStream, pLotusNew) && !detectThisFormat(*pStream, pLotus2))
             return OUString();
 
-        pSearchFilterName = pFilterLotus;
+        pSearchFilterName = "Lotus";
     }
     else if (aTypeName == "calc_QPro")
     {
         if (!detectThisFormat(*pStream, pQPro))
             return OUString();
 
-        pSearchFilterName = pFilterQPro6;
+        pSearchFilterName = "Quattro Pro 6.0";
     }
     else if (aTypeName == "calc_SYLK")
     {
         if (!detectThisFormat(*pStream, pSylk))
             return OUString();
 
-        pSearchFilterName = pFilterSylk;
+        pSearchFilterName = "SYLK";
     }
     else if (aTypeName == "calc_DIF")
     {
         if (!detectThisFormat(*pStream, pDIF1) && !detectThisFormat(*pStream, pDIF2))
             return OUString();
 
-        pSearchFilterName = pFilterDif;
+        pSearchFilterName = "DIF";
     }
     else if (aTypeName == "calc_dBase")
     {
         if (!lcl_MayBeDBase(*pStream))
             return OUString();
 
-        pSearchFilterName = pFilterDBase;
+        pSearchFilterName = "dBase";
     }
     else
         return OUString();

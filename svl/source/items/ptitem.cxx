@@ -56,8 +56,8 @@ SfxPointItem::SfxPointItem( const SfxPointItem& rItem ) :
 bool SfxPointItem::GetPresentation
 (
     SfxItemPresentation     /*ePresentation*/,
-    SfxMapUnit              /*eCoreMetric*/,
-    SfxMapUnit              /*ePresentationMetric*/,
+    MapUnit                 /*eCoreMetric*/,
+    MapUnit                 /*ePresentationMetric*/,
     OUString&               rText,
     const IntlWrapper *
 )   const
@@ -69,7 +69,7 @@ bool SfxPointItem::GetPresentation
 
 bool SfxPointItem::operator==( const SfxPoolItem& rItem ) const
 {
-    DBG_ASSERT( SfxPoolItem::operator==( rItem ), "unequal type" );
+    assert(SfxPoolItem::operator==(rItem));
     return static_cast<const SfxPointItem&>(rItem).aVal == aVal;
 }
 

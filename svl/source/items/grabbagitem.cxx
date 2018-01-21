@@ -17,27 +17,14 @@
 
 using namespace com::sun::star;
 
-SfxGrabBagItem::SfxGrabBagItem()
-{
-}
+SfxGrabBagItem::SfxGrabBagItem() = default;
 
-SfxGrabBagItem::SfxGrabBagItem(sal_uInt16 nWhich, const std::map<OUString, uno::Any>* pMap) :
+SfxGrabBagItem::SfxGrabBagItem(sal_uInt16 nWhich) :
     SfxPoolItem(nWhich)
 {
-    if (pMap)
-        m_aMap = *pMap;
 }
 
-SfxGrabBagItem::SfxGrabBagItem(const SfxGrabBagItem& rItem) :
-    SfxPoolItem(rItem),
-    m_aMap(rItem.m_aMap)
-{
-}
-
-SfxGrabBagItem::~SfxGrabBagItem()
-{
-}
-
+SfxGrabBagItem::~SfxGrabBagItem() = default;
 
 bool SfxGrabBagItem::operator==(const SfxPoolItem& rItem) const
 {
@@ -74,10 +61,10 @@ bool SfxGrabBagItem::QueryValue(uno::Any& rVal, sal_uInt8 /*nMemberId*/) const
 {
     uno::Sequence<beans::PropertyValue> aValue(m_aMap.size());
     beans::PropertyValue* pValue = aValue.getArray();
-    for (std::map<OUString, uno::Any>::const_iterator i = m_aMap.begin(); i != m_aMap.end(); ++i)
+    for (const auto& i : m_aMap)
     {
-        pValue[0].Name = i->first;
-        pValue[0].Value = i->second;
+        pValue[0].Name = i.first;
+        pValue[0].Value = i.second;
         ++pValue;
     }
     rVal = uno::makeAny(aValue);

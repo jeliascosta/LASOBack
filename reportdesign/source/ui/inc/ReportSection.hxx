@@ -72,13 +72,12 @@ namespace rptui
         virtual void        Paint( vcl::RenderContext& rRenderContext, const Rectangle& rRect ) override;
         virtual void        MouseMove( const MouseEvent& rMEvt ) override;
         virtual void        Command( const CommandEvent& rCEvt ) override;
-        virtual void        Resize() override;
 
         // OPropertyChangeListener
         virtual void    _propertyChanged(const css::beans::PropertyChangeEvent& _rEvent) throw( css::uno::RuntimeException) override;
     public:
         OReportSection(OSectionWindow* _pParent,const css::uno::Reference< css::report::XSection >& _xSection);
-        virtual ~OReportSection();
+        virtual ~OReportSection() override;
         virtual void dispose() override;
 
         // window overrides

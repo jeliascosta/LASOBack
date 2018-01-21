@@ -85,7 +85,7 @@ namespace frm
         void    updateAttribute( AttributeId _nAttribute );
 
         /// enables the callback for a particular attribute
-        void    enableAttributeNotification( AttributeId _nAttributeId, ITextAttributeListener* _pListener = nullptr );
+        void    enableAttributeNotification( AttributeId _nAttributeId, ITextAttributeListener* _pListener );
 
         /// disables the change notifications for a particular attribute
         void    disableAttributeNotification( AttributeId _nAttributeId );
@@ -173,9 +173,9 @@ namespace frm
         virtual void EditEngineStatusChanged( const EditStatus& _rStatus ) override;
 
     private:
-        DECL_LINK_TYPED( OnInvalidateAllAttributes, LinkParamNone*, void );
-        DECL_LINK_TYPED( OnHScroll, ScrollBar*, void );
-        DECL_LINK_TYPED( OnVScroll, ScrollBar*, void );
+        DECL_LINK( OnInvalidateAllAttributes, LinkParamNone*, void );
+        DECL_LINK( OnHScroll, ScrollBar*, void );
+        DECL_LINK( OnVScroll, ScrollBar*, void );
     };
 
 

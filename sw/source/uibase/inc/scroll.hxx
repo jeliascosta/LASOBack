@@ -48,8 +48,8 @@ public:
     void    SetAuto(bool bSet);
     bool    IsAuto() { return bAuto;}
 
-    SwScrollbar(vcl::Window *pParent, bool bHori = true );
-    virtual ~SwScrollbar();
+    SwScrollbar(vcl::Window *pParent, bool bHori );
+    virtual ~SwScrollbar() override;
 };
 
 #endif

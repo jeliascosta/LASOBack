@@ -42,14 +42,14 @@ class SvxDistributePage : public SvxTabPage
 
 public:
     SvxDistributePage(vcl::Window* pWindow, const SfxItemSet& rInAttrs,
-        SvxDistributeHorizontal eHor = SvxDistributeHorizontalNone,
-        SvxDistributeVertical eVer = SvxDistributeVerticalNone);
-    virtual ~SvxDistributePage();
+        SvxDistributeHorizontal eHor = SvxDistributeHorizontal::NONE,
+        SvxDistributeVertical eVer = SvxDistributeVertical::NONE);
+    virtual ~SvxDistributePage() override;
     virtual void dispose() override;
 
     virtual bool FillItemSet(SfxItemSet*) override;
     virtual void Reset(const SfxItemSet*) override;
-    virtual void PointChanged(vcl::Window* pWindow, RECT_POINT eRP) override;
+    virtual void PointChanged(vcl::Window* pWindow, RectPoint eRP) override;
 
     SvxDistributeHorizontal GetDistributeHor() const { return m_eDistributeHor; }
     SvxDistributeVertical GetDistributeVer() const { return m_eDistributeVer; }
@@ -61,9 +61,9 @@ class SvxDistributeDialog : public SfxSingleTabDialog
 
 public:
     SvxDistributeDialog(vcl::Window* pParent, const SfxItemSet& rAttr,
-        SvxDistributeHorizontal eHor = SvxDistributeHorizontalNone,
-        SvxDistributeVertical eVer = SvxDistributeVerticalNone);
-    virtual ~SvxDistributeDialog();
+        SvxDistributeHorizontal eHor = SvxDistributeHorizontal::NONE,
+        SvxDistributeVertical eVer = SvxDistributeVertical::NONE);
+    virtual ~SvxDistributeDialog() override;
     virtual void dispose() override;
 
     SvxDistributeHorizontal GetDistributeHor() const { return mpPage->GetDistributeHor(); }

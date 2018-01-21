@@ -156,7 +156,7 @@ public class _XMultiLayerStratum extends MultiMethodTest {
         tRes.tested("getUpdatableLayer()", res);
     }
 
-    public void _getUpdateLayerId() {
+    public void _getUpdateLayerId() throws com.sun.star.uno.Exception {
         boolean res = true;
 
         try {
@@ -202,7 +202,7 @@ public class _XMultiLayerStratum extends MultiMethodTest {
         tRes.tested("getUpdateLayerId()", res);
     }
 
-    public void _listLayerIds() {
+    public void _listLayerIds() throws com.sun.star.uno.Exception {
         boolean res = true;
 
         try {

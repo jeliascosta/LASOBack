@@ -45,8 +45,11 @@
 #include "runtime.hxx"
 
 #include <rtl/strbuf.hxx>
+#include <rtl/character.hxx>
 #include <svl/zforlist.hxx>
 #include <comphelper/processfactory.hxx>
+
+#include <o3tl/make_unique.hxx>
 
 
 void ImpGetIntntlSep( sal_Unicode& rcDecimalSep, sal_Unicode& rcThousandSep )
@@ -57,10 +60,6 @@ void ImpGetIntntlSep( sal_Unicode& rcDecimalSep, sal_Unicode& rcThousandSep )
     rcThousandSep = rData.getNumThousandSep()[0];
 }
 
-inline bool ImpIsDigit( sal_Unicode c )
-{
-    return '0' <= c && c <= '9';
-}
 
 /** NOTE: slightly differs from strchr() in that it does not consider the
     terminating NULL character to be part of the string and returns bool
@@ -78,10 +77,6 @@ bool ImpStrChr( const sal_Unicode* p, sal_Unicode c )
     return false;
 }
 
-bool ImpIsAlNum( sal_Unicode c )
-{
-    return c < 128 && isalnum( static_cast<char>(c) );
-}
 
 // scanning a string according to BASIC-conventions
 // but exponent may also be a D, so data type is SbxDOUBLE
@@ -118,8 +113,8 @@ SbxError ImpScan( const OUString& rWSrc, double& nVal, SbxDataType& rType,
         p++;
         bMinus = true;
     }
-    if( ImpIsDigit( *p ) || ((*p == cNonIntntlDecSep || *p == cIntntlDecSep ||
-                    (cIntntlDecSep && *p == cIntntlGrpSep)) && ImpIsDigit( *(p+1) )))
+    if( rtl::isAsciiDigit( *p ) || ((*p == cNonIntntlDecSep || *p == cIntntlDecSep ||
+                    (cIntntlDecSep && *p == cIntntlGrpSep)) && rtl::isAsciiDigit( *(p+1) )))
     {
         short exp = 0;
         short decsep = 0;
@@ -229,7 +224,7 @@ SbxError ImpScan( const OUString& rWSrc, double& nVal, SbxDataType& rType,
                 bRes = false;
         }
         const sal_Unicode* const pCmp = aCmp.getStr();
-        while( ImpIsAlNum( *p ) )    /* XXX: really munge all alnum also when error? */
+        while( rtl::isAsciiAlphanumeric( *p ) )    /* XXX: really munge all alnum also when error? */
         {
             sal_Unicode ch = *p;
             if( ImpStrChr( pCmp, ch ) )
@@ -316,7 +311,7 @@ static const double roundArray[] = {
 ***************************************************************************/
 
 static void myftoa( double nNum, char * pBuf, short nPrec, short nExpWidth,
-                    bool bPt, bool bFix, sal_Unicode cForceThousandSep = 0 )
+                    bool bPt, bool bFix, sal_Unicode cForceThousandSep )
 {
 
     short nExp = 0;
@@ -819,8 +814,7 @@ void SbxValue::Format( OUString& rRes, const OUString* pFmt ) const
             {
                 if( rAppData.eBasicFormaterLangType != eLangType )
                 {
-                    delete rAppData.pBasicFormater;
-                    rAppData.pBasicFormater = nullptr;
+                    rAppData.pBasicFormater.reset();
                 }
             }
             rAppData.eBasicFormaterLangType = eLangType;
@@ -845,7 +839,8 @@ void SbxValue::Format( OUString& rRes, const OUString* pFmt ) const
                 OUString aFalseStrg = SbxValueFormatResId(STR_BASICKEY_FORMAT_FALSE).toString();
                 OUString aCurrencyFormatStrg = SbxValueFormatResId(STR_BASICKEY_FORMAT_CURRENCY).toString();
 
-                rAppData.pBasicFormater = new SbxBasicFormater( cComma,c1000,aOnStrg,aOffStrg,
+                rAppData.pBasicFormater = o3tl::make_unique<SbxBasicFormater>(
+                                                                cComma,c1000,aOnStrg,aOffStrg,
                                                                 aYesStrg,aNoStrg,aTrueStrg,aFalseStrg,
                                                                 aCurrencyStrg,aCurrencyFormatStrg );
             }
@@ -865,7 +860,7 @@ void SbxValue::Format( OUString& rRes, const OUString* pFmt ) const
             }
             else
             {
-                rRes = rAppData.pBasicFormater->BasicFormatNull( *pFmt );
+                rRes = SbxBasicFormater::BasicFormatNull( *pFmt );
             }
 
         }

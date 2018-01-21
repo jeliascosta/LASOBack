@@ -44,8 +44,8 @@ class WallFloorWrapper : public ::cppu::ImplInheritanceHelper<
                     >
 {
 public:
-    WallFloorWrapper( bool bWall, std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
-    virtual ~WallFloorWrapper();
+    WallFloorWrapper(bool bWall, const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
+    virtual ~WallFloorWrapper() override;
 
     /// XServiceInfo declarations
     virtual OUString SAL_CALL getImplementationName()
@@ -54,9 +54,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // ____ XComponent ____
     virtual void SAL_CALL dispose()

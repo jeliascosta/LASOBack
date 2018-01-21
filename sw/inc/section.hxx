@@ -23,7 +23,7 @@
 #include <com/sun/star/uno/Sequence.h>
 
 #include <tools/ref.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <sfx2/lnkbase.hxx>
 #include <sfx2/Metadatable.hxx>
 
@@ -96,7 +96,7 @@ public:
     void SetType(SectionType const eNew)    { m_eType = eNew; }
 
     bool IsHidden() const { return m_bHidden; }
-    void SetHidden(bool const bFlag = true) { m_bHidden = bFlag; }
+    void SetHidden(bool const bFlag) { m_bHidden = bFlag; }
 
     bool IsHiddenFlag() const { return m_bHiddenFlag; }
     SAL_DLLPRIVATE void
@@ -108,7 +108,7 @@ public:
     void SetEditInReadonlyFlag(bool const bFlag)
         { m_bEditInReadonlyFlag = bFlag; }
 
-    void SetCondHidden(bool const bFlag = true) { m_bCondHiddenFlag = bFlag; }
+    void SetCondHidden(bool const bFlag) { m_bCondHiddenFlag = bFlag; }
     bool IsCondHidden() const { return m_bCondHiddenFlag; }
 
     const OUString& GetCondition() const           { return m_sCondition; }
@@ -131,7 +131,7 @@ public:
     { return (DDE_LINK_SECTION == m_eType) || (FILE_LINK_SECTION == m_eType); }
 
     bool IsConnectFlag() const                  { return m_bConnectFlag; }
-    void SetConnectFlag(bool const bFlag = true){ m_bConnectFlag = bFlag; }
+    void SetConnectFlag(bool const bFlag){ m_bConnectFlag = bFlag; }
 
     static OUString CollapseWhiteSpaces(const OUString& sName);
 };
@@ -160,7 +160,7 @@ public:
 
     SwSection(SectionType const eType, OUString const& rName,
                 SwSectionFormat & rFormat);
-    virtual ~SwSection();
+    virtual ~SwSection() override;
 
     bool DataEquals(SwSectionData const& rCmp) const;
 
@@ -189,7 +189,7 @@ public:
     bool IsProtectFlag() const { return m_Data.IsProtectFlag(); }
     bool IsEditInReadonlyFlag() const { return m_Data.IsEditInReadonlyFlag(); }
 
-    void SetCondHidden(bool const bFlag = true);
+    void SetCondHidden(bool const bFlag);
     bool IsCondHidden() const { return m_Data.IsCondHidden(); }
     // Query (also for parents) if this section is to be hidden.
     bool CalcHiddenFlag() const;
@@ -213,8 +213,8 @@ public:
 
     // Data server methods.
     void SetRefObject( SwServerObject* pObj );
-    const SwServerObject* GetObject() const {  return & m_RefObj; }
-          SwServerObject* GetObject()       {  return & m_RefObj; }
+    const SwServerObject* GetObject() const {  return m_RefObj.get(); }
+          SwServerObject* GetObject()       {  return m_RefObj.get(); }
     bool IsServer() const                   {  return m_RefObj.Is(); }
 
     // Methods for linked ranges.
@@ -248,15 +248,15 @@ public:
 };
 
 // #i117863#
-class SwSectionFrameMoveAndDeleteHint : public SfxSimpleHint
+class SwSectionFrameMoveAndDeleteHint : public SfxHint
 {
     public:
         SwSectionFrameMoveAndDeleteHint( const bool bSaveContent )
-            : SfxSimpleHint( SFX_HINT_DYING )
+            : SfxHint( SFX_HINT_DYING )
             , mbSaveContent( bSaveContent )
         {}
 
-        virtual ~SwSectionFrameMoveAndDeleteHint()
+        virtual ~SwSectionFrameMoveAndDeleteHint() override
         {}
 
         bool IsSaveContent() const
@@ -289,7 +289,7 @@ protected:
    virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem* pNew ) override;
 
 public:
-    virtual ~SwSectionFormat();
+    virtual ~SwSectionFormat() override;
 
     // Deletes all Frames in aDepend (Frames are recognized via dynamic_cast).
     virtual void DelFrames() override;

@@ -23,7 +23,6 @@
 #include "Chart2ModelContact.hxx"
 #include "ChartTypeHelper.hxx"
 #include "DiagramHelper.hxx"
-#include "ContainerHelper.hxx"
 #include "ChartModelHelper.hxx"
 #include "LinePropertiesHelper.hxx"
 #include "FillProperties.hxx"
@@ -67,7 +66,6 @@ using ::com::sun::star::uno::Any;
 
 namespace
 {
-static const char lcl_aServiceName[] = "com.sun.star.comp.chart.DataSeries";
 
 enum
 {
@@ -259,8 +257,8 @@ struct StaticPointWrapperPropertyArray : public rtl::StaticAggregate< Sequence< 
 class WrappedAttachedAxisProperty : public ::chart::WrappedProperty
 {
 public:
-    explicit WrappedAttachedAxisProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
-    virtual ~WrappedAttachedAxisProperty();
+    explicit WrappedAttachedAxisProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
+    virtual ~WrappedAttachedAxisProperty() override;
 
     virtual void setPropertyValue( const Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
                         throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
@@ -276,7 +274,7 @@ protected:
 };
 
 WrappedAttachedAxisProperty::WrappedAttachedAxisProperty(
-                std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
+                const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact )
                 : WrappedProperty("Axis",OUString())
             , m_spChart2ModelContact( spChart2ModelContact )
 {
@@ -332,7 +330,7 @@ class WrappedSegmentOffsetProperty : public ::chart::WrappedProperty
 {
 public:
     WrappedSegmentOffsetProperty();
-    virtual ~WrappedSegmentOffsetProperty();
+    virtual ~WrappedSegmentOffsetProperty() override;
 
 protected:
     virtual Any convertInnerToOuterValue( const Any& rInnerValue ) const override;
@@ -374,7 +372,7 @@ class WrappedLineColorProperty : public WrappedSeriesAreaOrLineProperty
 {
 public:
     explicit WrappedLineColorProperty( DataSeriesPointWrapper* pDataSeriesPointWrapper );
-    virtual ~WrappedLineColorProperty();
+    virtual ~WrappedLineColorProperty() override;
 
     virtual void setPropertyValue( const Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
                         throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
@@ -435,7 +433,7 @@ class WrappedLineStyleProperty : public WrappedSeriesAreaOrLineProperty
 {
 public:
     explicit WrappedLineStyleProperty( DataSeriesPointWrapper* pDataSeriesPointWrapper );
-    virtual ~WrappedLineStyleProperty();
+    virtual ~WrappedLineStyleProperty() override;
 
     virtual void setPropertyValue( const Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
                         throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
@@ -490,15 +488,14 @@ namespace chart
 namespace wrapper
 {
 
-DataSeriesPointWrapper::DataSeriesPointWrapper(
-            std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
-        : m_spChart2ModelContact( spChart2ModelContact )
-        , m_aEventListenerContainer( m_aMutex )
-        , m_eType( DATA_SERIES )
-        , m_nSeriesIndexInNewAPI( -1 )
-        , m_nPointIndex( -1 )
-        , m_bLinesAllowed(true)
-        , m_xDataSeries(nullptr)
+DataSeriesPointWrapper::DataSeriesPointWrapper(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
+    : m_spChart2ModelContact( spChart2ModelContact )
+    , m_aEventListenerContainer( m_aMutex )
+    , m_eType( DATA_SERIES )
+    , m_nSeriesIndexInNewAPI( -1 )
+    , m_nPointIndex( -1 )
+    , m_bLinesAllowed(true)
+    , m_xDataSeries(nullptr)
 {
     //need initialize call afterwards
 }
@@ -529,10 +526,10 @@ void SAL_CALL DataSeriesPointWrapper::initialize( const uno::Sequence< uno::Any 
         m_eType = DATA_SERIES;
 }
 
-DataSeriesPointWrapper::DataSeriesPointWrapper( eType _eType,
-                                                sal_Int32 nSeriesIndexInNewAPI ,
-                                                sal_Int32 nPointIndex, //ignored for series
-                                                std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
+DataSeriesPointWrapper::DataSeriesPointWrapper(eType _eType,
+                                               sal_Int32 nSeriesIndexInNewAPI ,
+                                               sal_Int32 nPointIndex, //ignored for series
+                                               const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
     : m_spChart2ModelContact( spChart2ModelContact )
     , m_aEventListenerContainer( m_aMutex )
     , m_eType( _eType )
@@ -911,30 +908,10 @@ Any SAL_CALL DataSeriesPointWrapper::getPropertyValue( const OUString& rProperty
     return WrappedPropertySet::getPropertyValue( rPropertyName );
 }
 
-uno::Sequence< OUString > DataSeriesPointWrapper::getSupportedServiceNames_Static()
-{
-    uno::Sequence< OUString > aServices( 7 );
-    aServices[ 0 ] = "com.sun.star.chart.ChartDataRowProperties";
-    aServices[ 1 ] = "com.sun.star.chart.ChartDataPointProperties";
-    aServices[ 2 ] = "com.sun.star.xml.UserDefinedAttributesSupplier";
-    aServices[ 3 ] =  "com.sun.star.beans.PropertySet";
-    aServices[ 4 ] = "com.sun.star.drawing.FillProperties";
-    aServices[ 5 ] = "com.sun.star.drawing.LineProperties";
-    aServices[ 6 ] = "com.sun.star.style.CharacterProperties";
-
-    return aServices;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL DataSeriesPointWrapper::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString DataSeriesPointWrapper::getImplementationName_Static()
-{
-    return OUString(lcl_aServiceName);
+    return OUString("com.sun.star.comp.chart.DataSeries");
 }
 
 sal_Bool SAL_CALL DataSeriesPointWrapper::supportsService( const OUString& rServiceName )
@@ -946,7 +923,15 @@ sal_Bool SAL_CALL DataSeriesPointWrapper::supportsService( const OUString& rServ
 css::uno::Sequence< OUString > SAL_CALL DataSeriesPointWrapper::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        "com.sun.star.chart.ChartDataRowProperties",
+        "com.sun.star.chart.ChartDataPointProperties",
+        "com.sun.star.xml.UserDefinedAttributesSupplier",
+        "com.sun.star.beans.PropertySet",
+        "com.sun.star.drawing.FillProperties",
+        "com.sun.star.drawing.LineProperties",
+        "com.sun.star.style.CharacterProperties"
+    };
 }
 
 } //  namespace wrapper

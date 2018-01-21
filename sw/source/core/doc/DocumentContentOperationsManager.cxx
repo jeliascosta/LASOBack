@@ -223,7 +223,7 @@ namespace
         const SwPosition &rStt = *rPam.Start(), &rEnd = *rPam.End();
         SwPosition* pCpyStt = rCpyPam.Start();
 
-        typedef ::std::vector< const ::sw::mark::IMark* > mark_vector_t;
+        typedef std::vector< const ::sw::mark::IMark* > mark_vector_t;
         mark_vector_t vMarksToCopy;
         for ( IDocumentMarkAccess::const_iterator_t ppMark = pSrcMarkAccess->getAllMarksBegin();
               ppMark != pSrcMarkAccess->getAllMarksEnd();
@@ -234,14 +234,16 @@ namespace
             const SwPosition& rMarkStart = pMark->GetMarkStart();
             const SwPosition& rMarkEnd = pMark->GetMarkEnd();
             // only include marks that are in the range and not touching both start and end
-            // - not for annotation marks.
+            // - not for annotation or checkbox marks.
             const bool bIsNotOnBoundary =
                 pMark->IsExpanded()
                 ? (rMarkStart != rStt || rMarkEnd != rEnd)  // rMarkStart != rMarkEnd
                 : (rMarkStart != rStt && rMarkEnd != rEnd); // rMarkStart == rMarkEnd
+            const IDocumentMarkAccess::MarkType aMarkType = IDocumentMarkAccess::GetType(*pMark);
             if ( rMarkStart >= rStt && rMarkEnd <= rEnd
                  && ( bIsNotOnBoundary
-                      || IDocumentMarkAccess::GetType( *pMark ) == IDocumentMarkAccess::MarkType::ANNOTATIONMARK ) )
+                      || aMarkType == IDocumentMarkAccess::MarkType::ANNOTATIONMARK
+                      || aMarkType == IDocumentMarkAccess::MarkType::CHECKBOX_FIELDMARK ) )
             {
                 vMarksToCopy.push_back(pMark);
             }
@@ -267,7 +269,8 @@ namespace
             ::sw::mark::IMark* const pNewMark = pDestDoc->getIDocumentMarkAccess()->makeMark(
                 aTmpPam,
                 pMark->GetName(),
-                IDocumentMarkAccess::GetType(*pMark));
+                IDocumentMarkAccess::GetType(*pMark),
+                ::sw::mark::InsertMode::CopyText);
             // Explicitly try to get exactly the same name as in the source
             // because NavigatorReminders, DdeBookmarks etc. ignore the proposed name
             pDestDoc->getIDocumentMarkAccess()->renameMark(pNewMark, pMark->GetName());
@@ -373,19 +376,19 @@ namespace
 
             if( pDelPam )
             {
-                RedlineMode_t eOld = pDestDoc->getIDocumentRedlineAccess().GetRedlineMode();
-                pDestDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( (RedlineMode_t)(eOld | nsRedlineMode_t::REDLINE_IGNORE));
+                RedlineFlags eOld = pDestDoc->getIDocumentRedlineAccess().GetRedlineFlags();
+                pDestDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld | RedlineFlags::Ignore );
 
                 ::sw::UndoGuard const undoGuard(pDestDoc->GetIDocumentUndoRedo());
 
                 do {
-                    pDestDoc->getIDocumentContentOperations().DeleteAndJoin( *static_cast<SwPaM*>(pDelPam->GetNext()) );
+                    pDestDoc->getIDocumentContentOperations().DeleteAndJoin( *pDelPam->GetNext() );
                     if( !pDelPam->IsMultiSelection() )
                         break;
                     delete pDelPam->GetNext();
                 } while( true );
 
-                pDestDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+                pDestDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
             }
         }
     }
@@ -473,7 +476,7 @@ namespace
 namespace
 {
     void
-    lcl_CalcBreaks( ::std::vector<sal_Int32> & rBreaks, SwPaM const & rPam )
+    lcl_CalcBreaks( std::vector<sal_Int32> & rBreaks, SwPaM const & rPam )
     {
         SwTextNode const * const pTextNode(
                 rPam.End()->nNode.GetNode().GetTextNode() );
@@ -503,7 +506,7 @@ namespace
     bool lcl_DoWithBreaks(::sw::DocumentContentOperationsManager & rDocumentContentOperations, SwPaM & rPam,
             bool (::sw::DocumentContentOperationsManager::*pFunc)(SwPaM&, bool), const bool bForceJoinNext = false)
     {
-        ::std::vector<sal_Int32> Breaks;
+        std::vector<sal_Int32> Breaks;
 
         lcl_CalcBreaks(Breaks, rPam);
 
@@ -521,7 +524,7 @@ namespace
 
         bool bRet( true );
         // iterate from end to start, to avoid invalidating the offsets!
-        ::std::vector<sal_Int32>::reverse_iterator iter( Breaks.rbegin() );
+        std::vector<sal_Int32>::reverse_iterator iter( Breaks.rbegin() );
         SwPaM aPam( rSelectionEnd, rSelectionEnd ); // end node!
         SwPosition & rEnd( *aPam.End() );
         SwPosition & rStart( *aPam.Start() );
@@ -657,9 +660,9 @@ namespace
         if( nCurrentRedline > 0)
             nCurrentRedline--;
 
-        // redline mode REDLINE_IGNORE|REDLINE_ON; save old mode
-        RedlineMode_t eOld = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( (RedlineMode_t)(( eOld & ~nsRedlineMode_t::REDLINE_IGNORE) | nsRedlineMode_t::REDLINE_ON ));
+        // redline mode RedlineFlags::Ignore|RedlineFlags::On; save old mode
+        RedlineFlags eOld = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( (( eOld & ~RedlineFlags::Ignore) | RedlineFlags::On ));
 
         // iterate over relevant redlines and decide for each whether it should
         // be saved, or split + saved
@@ -707,13 +710,13 @@ namespace
         }
 
         // restore old redline mode
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
     }
 
     void lcl_RestoreRedlines(SwDoc* pDoc, const SwPosition& rPos, SaveRedlines_t& rArr)
     {
-        RedlineMode_t eOld = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( (RedlineMode_t)(( eOld & ~nsRedlineMode_t::REDLINE_IGNORE) | nsRedlineMode_t::REDLINE_ON ));
+        RedlineFlags eOld = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( ( eOld & ~RedlineFlags::Ignore) | RedlineFlags::On );
 
         for(SaveRedline & rSvRedLine : rArr)
         {
@@ -721,7 +724,7 @@ namespace
             pDoc->getIDocumentRedlineAccess().AppendRedline( rSvRedLine.pRedl, true );
         }
 
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
     }
 
     void lcl_SaveRedlines(const SwNodeRange& rRg, SaveRedlines_t& rArr)
@@ -735,8 +738,8 @@ namespace
         else if( nRedlPos >= pDoc->getIDocumentRedlineAccess().GetRedlineTable().size() )
             return ;
 
-        RedlineMode_t eOld = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( (RedlineMode_t)(( eOld & ~nsRedlineMode_t::REDLINE_IGNORE) | nsRedlineMode_t::REDLINE_ON ));
+        RedlineFlags eOld = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( ( eOld & ~RedlineFlags::Ignore) | RedlineFlags::On );
         SwRedlineTable& rRedlTable = (SwRedlineTable&)pDoc->getIDocumentRedlineAccess().GetRedlineTable();
 
         do {
@@ -804,13 +807,13 @@ namespace
                 break;
 
         } while( ++nRedlPos < pDoc->getIDocumentRedlineAccess().GetRedlineTable().size() );
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
     }
 
     void lcl_RestoreRedlines(SwDoc *const pDoc, sal_uInt32 const nInsPos, SaveRedlines_t& rArr)
     {
-        RedlineMode_t eOld = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( (RedlineMode_t)(( eOld & ~nsRedlineMode_t::REDLINE_IGNORE) | nsRedlineMode_t::REDLINE_ON ));
+        RedlineFlags eOld = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( ( eOld & ~RedlineFlags::Ignore) | RedlineFlags::On );
 
         for(SaveRedline & rSvRedLine : rArr)
         {
@@ -818,7 +821,7 @@ namespace
             pDoc->getIDocumentRedlineAccess().AppendRedline( rSvRedLine.pRedl, true );
         }
 
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
     }
 
     bool lcl_SaveFootnote( const SwNodeIndex& rSttNd, const SwNodeIndex& rEndNd,
@@ -1298,7 +1301,7 @@ namespace //local functions originally from docfmt.cxx
                                     false, reinterpret_cast<const SfxPoolItem**>(&pRule) ) &&
                     !pDoc->FindNumRulePtr( pRule->GetValue() ) &&
                     USHRT_MAX != (nPoolId = SwStyleNameMapper::GetPoolIdFromUIName ( pRule->GetValue(),
-                                    nsSwGetPoolIdFromName::GET_POOLID_NUMRULE )) )
+                                    SwGetPoolIdFromName::NumRule )) )
                     pDoc->getIDocumentStylePoolAccess().GetNumRuleFromPool( nPoolId );
             }
         }
@@ -1638,7 +1641,7 @@ DocumentContentOperationsManager::CopyRange( SwPaM& rPam, SwPosition& rPos, cons
         (!pDoc->getIDocumentRedlineAccess().IsIgnoreRedline() && !pDoc->getIDocumentRedlineAccess().GetRedlineTable().empty() ) )
         pRedlineRange = new SwPaM( rPos );
 
-    RedlineMode_t eOld = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
+    RedlineFlags eOld = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
 
     bool bRet = false;
 
@@ -1662,7 +1665,7 @@ DocumentContentOperationsManager::CopyRange( SwPaM& rPam, SwPosition& rPos, cons
         OSL_ENSURE( &m_rDoc == pDoc, " invalid copy branch!" );
         OSL_FAIL("mst: i thought this could be dead code;"
                 "please tell me what you did to get here!");
-        pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern((RedlineMode_t)(eOld | nsRedlineMode_t::REDLINE_IGNORE));
+        pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern(eOld | RedlineFlags::Ignore);
 
         // Then copy the area to the underlying document area
         // (with start/end nodes clamped) and move them to
@@ -1721,7 +1724,7 @@ DocumentContentOperationsManager::CopyRange( SwPaM& rPam, SwPosition& rPos, cons
         bRet = true;
     }
 
-    pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+    pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
     if( pRedlineRange )
     {
         if( pDoc->getIDocumentRedlineAccess().IsRedlineOn() )
@@ -1849,11 +1852,11 @@ bool DocumentContentOperationsManager::DelFullPara( SwPaM& rPam )
             rPam.Exchange();
 
         // Try to move past the End
-        if( !rPam.Move( fnMoveForward, fnGoNode ) )
+        if( !rPam.Move( fnMoveForward, GoInNode ) )
         {
             // Fair enough, at the Beginning then
             rPam.Exchange();
-            if( !rPam.Move( fnMoveBackward, fnGoNode ))
+            if( !rPam.Move( fnMoveBackward, GoInNode ))
             {
                 OSL_FAIL( "no more Nodes" );
                 return false;
@@ -2027,17 +2030,25 @@ bool DocumentContentOperationsManager::MoveRange( SwPaM& rPaM, SwPosition& rPos,
 
     // Put back the Pam by one "content"; so that it's always outside of
     // the manipulated range.
-    // If there's no content anymore, set it to the StartNode (that's
-    // always there).
-    const bool bNullContent = !aSavePam.Move( fnMoveBackward, fnGoContent );
+    // tdf#99692 don't Move() back if that would end up in another node
+    // because moving backward is not necessarily the inverse of forward then.
+    // (but do Move() back if we have split the node)
+    const bool bNullContent = !bSplit && aSavePam.GetPoint()->nContent == 0;
     if( bNullContent )
     {
         aSavePam.GetPoint()->nNode--;
+        aSavePam.GetPoint()->nContent.Assign(aSavePam.GetContentNode(), 0);
+    }
+    else
+    {
+        bool const success(aSavePam.Move(fnMoveBackward, GoInContent));
+        assert(success);
+        (void) success;
     }
 
     // Copy all Bookmarks that are within the Move range into an array,
     // that saves the position as an offset.
-    ::std::vector< ::sw::mark::SaveBookmark> aSaveBkmks;
+    std::vector< ::sw::mark::SaveBookmark> aSaveBkmks;
     DelBookmarks(
         pStt->nNode,
         pEnd->nNode,
@@ -2107,7 +2118,7 @@ bool DocumentContentOperationsManager::MoveRange( SwPaM& rPaM, SwPosition& rPos,
             }
             bJoin = false;
         }
-        else if ( !aSavePam.Move( fnMoveForward, fnGoContent ) )
+        else if ( !aSavePam.Move( fnMoveForward, GoInContent ) )
         {
             aSavePam.GetPoint()->nNode++;
         }
@@ -2138,14 +2149,14 @@ bool DocumentContentOperationsManager::MoveRange( SwPaM& rPaM, SwPosition& rPos,
         }
         else if( bRemove ) // No move forward after joining with next paragraph
         {
-            aSavePam.Move( fnMoveForward, fnGoContent );
+            aSavePam.Move( fnMoveForward, GoInContent );
         }
     }
 
     // Insert the Bookmarks back into the Document.
     *rPaM.GetMark() = *aSavePam.Start();
     for(
-        ::std::vector< ::sw::mark::SaveBookmark>::iterator pBkmk = aSaveBkmks.begin();
+        std::vector< ::sw::mark::SaveBookmark>::iterator pBkmk = aSaveBkmks.begin();
         pBkmk != aSaveBkmks.end();
         ++pBkmk)
         pBkmk->SetInDoc(
@@ -2230,7 +2241,7 @@ bool DocumentContentOperationsManager::MoveNodeRange( SwNodeRange& rRange, SwNod
     // Copy all Bookmarks that are within the Move range into an array
     // that stores all references to positions as an offset.
     // The final mapping happens after the Move.
-    ::std::vector< ::sw::mark::SaveBookmark> aSaveBkmks;
+    std::vector< ::sw::mark::SaveBookmark> aSaveBkmks;
     DelBookmarks(rRange.aStart, rRange.aEnd, &aSaveBkmks);
 
     // Save the paragraph-bound Flys, so that they can be moved.
@@ -2266,7 +2277,7 @@ bool DocumentContentOperationsManager::MoveNodeRange( SwNodeRange& rRange, SwNod
 
     // Add the Bookmarks back to the Document
     for(
-        ::std::vector< ::sw::mark::SaveBookmark>::iterator pBkmk = aSaveBkmks.begin();
+        std::vector< ::sw::mark::SaveBookmark>::iterator pBkmk = aSaveBkmks.begin();
         pBkmk != aSaveBkmks.end();
         ++pBkmk)
         pBkmk->SetInDoc(&m_rDoc, aIdx);
@@ -2646,38 +2657,32 @@ SwFlyFrameFormat* DocumentContentOperationsManager::Insert( const SwPaM &rRg, co
 }
 
 SwFlyFrameFormat* DocumentContentOperationsManager::Insert(const SwPaM &rRg, const svt::EmbeddedObjectRef& xObj,
-                        const SfxItemSet* pFlyAttrSet,
-                        const SfxItemSet* pGrfAttrSet,
-                        SwFrameFormat* pFrameFormat )
+                        const SfxItemSet* pFlyAttrSet)
 {
-    if( !pFrameFormat )
+    sal_uInt16 nId = RES_POOLFRM_OLE;
+    if (xObj.is())
     {
-        sal_uInt16 nId = RES_POOLFRM_OLE;
-        if (xObj.is())
-        {
-            SvGlobalName aClassName( xObj->getClassID() );
-            if (SotExchange::IsMath(aClassName))
-                nId = RES_POOLFRM_FORMEL;
-        }
-
-        pFrameFormat = m_rDoc.getIDocumentStylePoolAccess().GetFrameFormatFromPool( nId );
+        SvGlobalName aClassName( xObj->getClassID() );
+        if (SotExchange::IsMath(aClassName))
+            nId = RES_POOLFRM_FORMEL;
     }
+
+    SwFrameFormat* pFrameFormat = m_rDoc.getIDocumentStylePoolAccess().GetFrameFormatFromPool( nId );
+
     return InsNoTextNode( *rRg.GetPoint(), m_rDoc.GetNodes().MakeOLENode(
                             SwNodeIndex( m_rDoc.GetNodes().GetEndOfAutotext() ),
                             xObj,
                             m_rDoc.GetDfltGrfFormatColl() ),
-                            pFlyAttrSet, pGrfAttrSet,
+                            pFlyAttrSet, nullptr,
                             pFrameFormat );
 }
 
 SwFlyFrameFormat* DocumentContentOperationsManager::InsertOLE(const SwPaM &rRg, const OUString& rObjName,
                         sal_Int64 nAspect,
                         const SfxItemSet* pFlyAttrSet,
-                        const SfxItemSet* pGrfAttrSet,
-                        SwFrameFormat* pFrameFormat )
+                        const SfxItemSet* pGrfAttrSet)
 {
-    if( !pFrameFormat )
-        pFrameFormat = m_rDoc.getIDocumentStylePoolAccess().GetFrameFormatFromPool( RES_POOLFRM_OLE );
+    SwFrameFormat* pFrameFormat = m_rDoc.getIDocumentStylePoolAccess().GetFrameFormatFromPool( RES_POOLFRM_OLE );
 
     return InsNoTextNode( *rRg.GetPoint(),
                             m_rDoc.GetNodes().MakeOLENode(
@@ -3001,7 +3006,7 @@ bool DocumentContentOperationsManager::ReplaceRange( SwPaM& rPam, const OUString
     // unfortunately replace works slightly differently from delete,
     // so we cannot use lcl_DoWithBreaks here...
 
-    ::std::vector<sal_Int32> Breaks;
+    std::vector<sal_Int32> Breaks;
 
     SwPaM aPam( *rPam.GetMark(), *rPam.GetPoint() );
     aPam.Normalize(false);
@@ -3037,7 +3042,7 @@ bool DocumentContentOperationsManager::ReplaceRange( SwPaM& rPam, const OUString
 
     bool bRet( true );
     // iterate from end to start, to avoid invalidating the offsets!
-    ::std::vector<sal_Int32>::reverse_iterator iter( Breaks.rbegin() );
+    std::vector<sal_Int32>::reverse_iterator iter( Breaks.rbegin() );
     OSL_ENSURE(aPam.GetPoint() == aPam.End(), "wrong!");
     SwPosition & rEnd( *aPam.End() );
     SwPosition & rStart( *aPam.Start() );
@@ -3228,7 +3233,7 @@ void DocumentContentOperationsManager::CopyWithFlyInFly(
         lcl_CopyBookmarks((pCopiedPaM) ? pCopiedPaM->first : aRgTmp, aCpyPaM);
     }
 
-    if( bDelRedlines && ( nsRedlineMode_t::REDLINE_DELETE_REDLINES & pDest->getIDocumentRedlineAccess().GetRedlineMode() ))
+    if( bDelRedlines && ( RedlineFlags::DeleteRedlines & pDest->getIDocumentRedlineAccess().GetRedlineFlags() ))
         lcl_DeleteRedlines( rRg, aCpyRange );
 
     pDest->GetNodes().DelDummyNodes( aCpyRange );
@@ -3250,7 +3255,7 @@ void DocumentContentOperationsManager::CopyFlyInFlyImpl(
     // and then only copy them. This maintains the ordering numbers (which are only
     // managed in the DrawModel).
     SwDoc *const pDest = rStartIdx.GetNode().GetDoc();
-    ::std::set< ZSortFly > aSet;
+    std::set< ZSortFly > aSet;
     const size_t nArrLen = m_rDoc.GetSpzFrameFormats()->size();
 
     SwTextBoxHelper::SavedLink aOldTextBoxes;
@@ -3342,8 +3347,8 @@ void DocumentContentOperationsManager::CopyFlyInFlyImpl(
     // Store all copied (and also the newly created) frames in another array.
     // They are stored as matching the originals, so that we will be later
     // able to build the chains accordingly.
-    ::std::vector< SwFrameFormat* > aVecSwFrameFormat;
-    ::std::set< ZSortFly >::const_iterator it=aSet.begin();
+    std::vector< SwFrameFormat* > aVecSwFrameFormat;
+    std::set< ZSortFly >::const_iterator it=aSet.begin();
 
     while (it != aSet.end())
     {
@@ -3461,14 +3466,14 @@ void DocumentContentOperationsManager::CopyFlyInFlyImpl(
     if ( aSet.size() == aVecSwFrameFormat.size() )
     {
         size_t n = 0;
-        for (::std::set< ZSortFly >::const_iterator nIt=aSet.begin() ; nIt != aSet.end(); ++nIt, ++n )
+        for (std::set< ZSortFly >::const_iterator nIt=aSet.begin() ; nIt != aSet.end(); ++nIt, ++n )
         {
             const SwFrameFormat *pFormatN = (*nIt).GetFormat();
             const SwFormatChain &rChain = pFormatN->GetChain();
             int nCnt = int(nullptr != rChain.GetPrev());
             nCnt += rChain.GetNext() ? 1: 0;
             size_t k = 0;
-            for (::std::set< ZSortFly >::const_iterator kIt=aSet.begin() ; kIt != aSet.end(); ++kIt, ++k )
+            for (std::set< ZSortFly >::const_iterator kIt=aSet.begin() ; kIt != aSet.end(); ++kIt, ++k )
             {
                 const SwFrameFormat *pFormatK = (*kIt).GetFormat();
                 if ( rChain.GetPrev() == pFormatK )
@@ -3543,7 +3548,7 @@ bool DocumentContentOperationsManager::DeleteAndJoinWithRedlineImpl( SwPaM & rPa
 
     {
         SwUndoRedlineDelete* pUndo = nullptr;
-        RedlineMode_t eOld = m_rDoc.getIDocumentRedlineAccess().GetRedlineMode();
+        RedlineFlags eOld = m_rDoc.getIDocumentRedlineAccess().GetRedlineFlags();
         m_rDoc.GetDocumentRedlineManager().checkRedlining( eOld );
         if (m_rDoc.GetIDocumentUndoRedo().DoesUndo())
         {
@@ -3551,8 +3556,8 @@ bool DocumentContentOperationsManager::DeleteAndJoinWithRedlineImpl( SwPaM & rPa
             /* please don't translate -- for cultural reasons this comment is protected
                until the redline implementation is finally fixed some day */
             //JP 06.01.98: MUSS noch optimiert werden!!!
-            m_rDoc.getIDocumentRedlineAccess().SetRedlineMode(
-                (RedlineMode_t) ( nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE ) );
+            m_rDoc.getIDocumentRedlineAccess().SetRedlineFlags(
+                RedlineFlags::On | RedlineFlags::ShowInsert | RedlineFlags::ShowDelete );
 
             m_rDoc.GetIDocumentUndoRedo().StartUndo( UNDO_DELETE, nullptr );
             pUndo = new SwUndoRedlineDelete( rPam, UNDO_DELETE );
@@ -3587,7 +3592,7 @@ bool DocumentContentOperationsManager::DeleteAndJoinWithRedlineImpl( SwPaM & rPa
                 }
             }
             //JP 06.01.98: MUSS noch optimiert werden!!!
-            m_rDoc.getIDocumentRedlineAccess().SetRedlineMode( eOld );
+            m_rDoc.getIDocumentRedlineAccess().SetRedlineFlags( eOld );
         }
         return true;
     }
@@ -3850,18 +3855,21 @@ bool DocumentContentOperationsManager::ReplaceRangeImpl( SwPaM& rPam, const OUSt
 
         if( m_rDoc.getIDocumentRedlineAccess().IsRedlineOn() )
         {
-            RedlineMode_t eOld = m_rDoc.getIDocumentRedlineAccess().GetRedlineMode();
+            RedlineFlags eOld = m_rDoc.getIDocumentRedlineAccess().GetRedlineFlags();
             m_rDoc.GetDocumentRedlineManager().checkRedlining(eOld);
             if (m_rDoc.GetIDocumentUndoRedo().DoesUndo())
             {
                 m_rDoc.GetIDocumentUndoRedo().StartUndo(UNDO_EMPTY, nullptr);
 
                 // If any Redline will change (split!) the node
-                const ::sw::mark::IMark* pBkmk = m_rDoc.getIDocumentMarkAccess()->makeMark( aDelPam, OUString(), IDocumentMarkAccess::MarkType::UNO_BOOKMARK );
+                const ::sw::mark::IMark* pBkmk =
+                    m_rDoc.getIDocumentMarkAccess()->makeMark( aDelPam,
+                        OUString(), IDocumentMarkAccess::MarkType::UNO_BOOKMARK,
+                        ::sw::mark::InsertMode::New);
 
                 //JP 06.01.98: MUSS noch optimiert werden!!!
-                m_rDoc.getIDocumentRedlineAccess().SetRedlineMode(
-                    (RedlineMode_t)(nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE ));
+                m_rDoc.getIDocumentRedlineAccess().SetRedlineFlags(
+                    RedlineFlags::On | RedlineFlags::ShowInsert | RedlineFlags::ShowDelete );
 
                 *aDelPam.GetPoint() = pBkmk->GetMarkPos();
                 if(pBkmk->IsExpanded())
@@ -3949,7 +3957,10 @@ bool DocumentContentOperationsManager::ReplaceRangeImpl( SwPaM& rPam, const OUSt
                 m_rDoc.GetIDocumentUndoRedo().EndUndo(UNDO_EMPTY, nullptr);
 
                 // If any Redline will change (split!) the node
-                const ::sw::mark::IMark* pBkmk = m_rDoc.getIDocumentMarkAccess()->makeMark( aDelPam, OUString(), IDocumentMarkAccess::MarkType::UNO_BOOKMARK );
+                const ::sw::mark::IMark* pBkmk =
+                    m_rDoc.getIDocumentMarkAccess()->makeMark( aDelPam,
+                        OUString(), IDocumentMarkAccess::MarkType::UNO_BOOKMARK,
+                        ::sw::mark::InsertMode::New);
 
                 SwIndex& rIdx = aDelPam.GetPoint()->nContent;
                 rIdx.Assign( nullptr, 0 );
@@ -3958,7 +3969,7 @@ bool DocumentContentOperationsManager::ReplaceRangeImpl( SwPaM& rPam, const OUSt
                 rPam.GetPoint()->nContent = rIdx;
                 *rPam.GetMark() = *rPam.GetPoint();
                 //JP 06.01.98: MUSS noch optimiert werden!!!
-                m_rDoc.getIDocumentRedlineAccess().SetRedlineMode( eOld );
+                m_rDoc.getIDocumentRedlineAccess().SetRedlineFlags( eOld );
 
                 *rPam.GetPoint() = pBkmk->GetMarkPos();
                 if(pBkmk->IsExpanded())
@@ -4169,13 +4180,13 @@ bool DocumentContentOperationsManager::CopyImpl( SwPaM& rPam, SwPosition& rPos,
         pDoc->GetIDocumentUndoRedo().AppendUndo( pUndo );
     }
 
-    RedlineMode_t eOld = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
-    pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern((RedlineMode_t)(eOld | nsRedlineMode_t::REDLINE_IGNORE));
+    RedlineFlags eOld = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
+    pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern(eOld | RedlineFlags::Ignore);
 
     // Move the PaM one node back from the insert position, so that
     // the position doesn't get moved
     pCopyPam->SetMark();
-    bool bCanMoveBack = pCopyPam->Move(fnMoveBackward, fnGoContent);
+    bool bCanMoveBack = pCopyPam->Move(fnMoveBackward, GoInContent);
     // If the position was shifted from more than one node, an end node has been skipped
     bool bAfterTable = false;
     if ((rPos.nNode.GetIndex() - pCopyPam->GetPoint()->nNode.GetIndex()) > 1)
@@ -4267,8 +4278,8 @@ bool DocumentContentOperationsManager::CopyImpl( SwPaM& rPam, SwPosition& rPos,
                     if (bCanMoveBack && rPos == *pCopyPam->GetPoint())
                     {
                         // after the SplitNode, span the CpyPam correctly again
-                        pCopyPam->Move( fnMoveBackward, fnGoContent );
-                        pCopyPam->Move( fnMoveBackward, fnGoContent );
+                        pCopyPam->Move( fnMoveBackward, GoInContent );
+                        pCopyPam->Move( fnMoveBackward, GoInContent );
                     }
 
                     pDestTextNd = pDoc->GetNodes()[ aInsPos.GetIndex()-1 ]->GetTextNode();
@@ -4281,7 +4292,7 @@ bool DocumentContentOperationsManager::CopyImpl( SwPaM& rPam, SwPosition& rPos,
                         bool bChg = pEnd != rPam.GetPoint();
                         if( bChg )
                             rPam.Exchange();
-                        rPam.Move( fnMoveBackward, fnGoContent );
+                        rPam.Move( fnMoveBackward, GoInContent );
                         if( bChg )
                             rPam.Exchange();
                     }
@@ -4352,8 +4363,8 @@ bool DocumentContentOperationsManager::CopyImpl( SwPaM& rPam, SwPosition& rPos,
                 if (bCanMoveBack && rPos == *pCopyPam->GetPoint())
                 {
                     // after the SplitNode, span the CpyPam correctly again
-                    pCopyPam->Move( fnMoveBackward, fnGoContent );
-                    pCopyPam->Move( fnMoveBackward, fnGoContent );
+                    pCopyPam->Move( fnMoveBackward, GoInContent );
+                    pCopyPam->Move( fnMoveBackward, GoInContent );
                 }
 
                 // Correct the area again
@@ -4440,7 +4451,7 @@ bool DocumentContentOperationsManager::CopyImpl( SwPaM& rPam, SwPosition& rPos,
             if (bCanMoveBack)
             {   // pCopyPam is actually 1 before the copy range so move it fwd
                 SwPaM temp(*pCopyPam->GetPoint());
-                temp.Move(fnMoveForward, fnGoContent);
+                temp.Move(fnMoveForward, GoInContent);
                 startPos = *temp.GetPoint();
             }
             assert(startPos.nNode.GetNode().IsContentNode());
@@ -4495,7 +4506,7 @@ bool DocumentContentOperationsManager::CopyImpl( SwPaM& rPam, SwPosition& rPos,
         *pCopyPam->GetMark() = rPos;
 
     if ( !bAfterTable )
-        pCopyPam->Move( fnMoveForward, bCanMoveBack ? fnGoContent : fnGoNode );
+        pCopyPam->Move( fnMoveForward, bCanMoveBack ? GoInContent : GoInNode );
     else
     {
         // Reset the offset to 0 as it was before the insertion
@@ -4514,11 +4525,11 @@ bool DocumentContentOperationsManager::CopyImpl( SwPaM& rPam, SwPosition& rPos,
     if( bCopyBookmarks && m_rDoc.getIDocumentMarkAccess()->getAllMarksCount() )
         lcl_CopyBookmarks( rPam, *pCopyPam );
 
-    if( nsRedlineMode_t::REDLINE_DELETE_REDLINES & eOld )
+    if( RedlineFlags::DeleteRedlines & eOld )
     {
         assert(*pCopyPam->GetPoint() == rPos);
         // the Node rPos points to may be deleted so unregister ...
-        rPos.nContent = SwIndex(nullptr);
+        rPos.nContent.Assign(nullptr, 0);
         lcl_DeleteRedlines(rPam, *pCopyPam);
         rPos = *pCopyPam->GetPoint(); // ... and restore.
     }
@@ -4543,7 +4554,7 @@ bool DocumentContentOperationsManager::CopyImpl( SwPaM& rPam, SwPosition& rPos,
                           aListIdToPropagate, true, true );
     }
 
-    pDoc->getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+    pDoc->getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
     pDoc->getIDocumentState().SetModified();
 
     return true;

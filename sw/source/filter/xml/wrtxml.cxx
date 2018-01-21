@@ -29,6 +29,7 @@
 #include <com/sun/star/frame/XModule.hpp>
 #include <comphelper/processfactory.hxx>
 #include <comphelper/genericpropertyset.hxx>
+#include <o3tl/any.hxx>
 #include <unotools/streamwrap.hxx>
 #include <svx/xmlgrhlp.hxx>
 #include <svx/xmleohlp.hxx>
@@ -86,7 +87,7 @@ sal_uInt32 SwXMLWriter::Write_( const uno::Reference < task::XStatusIndicator >&
 
     OSL_ENSURE( xStg.is(), "Where is my storage?" );
     pGraphicHelper = SvXMLGraphicHelper::Create( xStg,
-                                                 GRAPHICHELPER_MODE_WRITE,
+                                                 SvXMLGraphicHelperMode::Write,
                                                  false );
     xGraphicResolver = pGraphicHelper;
 
@@ -95,7 +96,7 @@ sal_uInt32 SwXMLWriter::Write_( const uno::Reference < task::XStatusIndicator >&
     {
         pObjectHelper = SvXMLEmbeddedObjectHelper::Create(
                                          xStg, *pPersist,
-                                         EMBEDDEDOBJECTHELPER_MODE_WRITE,
+                                         SvXMLEmbeddedObjectHelperMode::Write,
                                          false );
         xObjectResolver = pObjectHelper;
     }
@@ -180,13 +181,13 @@ sal_uInt32 SwXMLWriter::Write_( const uno::Reference < task::XStatusIndicator >&
 
     // save show redline mode ...
     const OUString sShowChanges("ShowChanges");
-    sal_uInt16 nRedlineMode = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
+    RedlineFlags nRedlineFlags = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
     xInfoSet->setPropertyValue( sShowChanges,
-        makeAny( IDocumentRedlineAccess::IsShowChanges( nRedlineMode ) ) );
+        makeAny( IDocumentRedlineAccess::IsShowChanges( nRedlineFlags ) ) );
     // ... and hide redlines for export
-    nRedlineMode &= ~nsRedlineMode_t::REDLINE_SHOW_MASK;
-    nRedlineMode |= nsRedlineMode_t::REDLINE_SHOW_INSERT;
-    pDoc->getIDocumentRedlineAccess().SetRedlineMode((RedlineMode_t)( nRedlineMode ));
+    nRedlineFlags &= ~RedlineFlags::ShowMask;
+    nRedlineFlags |= RedlineFlags::ShowInsert;
+    pDoc->getIDocumentRedlineAccess().SetRedlineFlags( nRedlineFlags );
 
     // Set base URI
     xInfoSet->setPropertyValue( "BaseURI", makeAny( GetBaseURL() ) );
@@ -399,12 +400,12 @@ sal_uInt32 SwXMLWriter::Write_( const uno::Reference < task::XStatusIndicator >&
 
     // restore redline mode
     aAny = xInfoSet->getPropertyValue( sShowChanges );
-    nRedlineMode = pDoc->getIDocumentRedlineAccess().GetRedlineMode();
-    nRedlineMode &= ~nsRedlineMode_t::REDLINE_SHOW_MASK;
-    nRedlineMode |= nsRedlineMode_t::REDLINE_SHOW_INSERT;
-    if ( *static_cast<sal_Bool const *>(aAny.getValue()) )
-        nRedlineMode |= nsRedlineMode_t::REDLINE_SHOW_DELETE;
-    pDoc->getIDocumentRedlineAccess().SetRedlineMode((RedlineMode_t)( nRedlineMode ));
+    nRedlineFlags = pDoc->getIDocumentRedlineAccess().GetRedlineFlags();
+    nRedlineFlags &= ~RedlineFlags::ShowMask;
+    nRedlineFlags |= RedlineFlags::ShowInsert;
+    if ( *o3tl::doAccess<bool>(aAny) )
+        nRedlineFlags |= RedlineFlags::ShowDelete;
+    pDoc->getIDocumentRedlineAccess().SetRedlineFlags( nRedlineFlags );
 
     if (xStatusIndicator.is())
     {

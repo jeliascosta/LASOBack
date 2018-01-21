@@ -22,7 +22,6 @@
 
 #include "viewdata.hxx"
 #include <com/sun/star/uno/XInterface.hpp>
-#include <svl/smplhint.hxx>
 #include <svl/hint.hxx>
 
 #define SC_HINT_ACC_SIMPLE_START    SFX_HINT_USER00
@@ -37,13 +36,13 @@
 class ScAccWinFocusLostHint : public SfxHint
 {
 public:
-                virtual ~ScAccWinFocusLostHint();
+                virtual ~ScAccWinFocusLostHint() override;
 };
 
 class ScAccWinFocusGotHint : public SfxHint
 {
 public:
-                virtual ~ScAccWinFocusGotHint();
+                virtual ~ScAccWinFocusGotHint() override;
 };
 
 class ScAccGridWinFocusLostHint : public ScAccWinFocusLostHint
@@ -51,7 +50,7 @@ class ScAccGridWinFocusLostHint : public ScAccWinFocusLostHint
     ScSplitPos  eOldGridWin;
 public:
                 ScAccGridWinFocusLostHint( ScSplitPos eOldGridWin );
-                virtual ~ScAccGridWinFocusLostHint();
+                virtual ~ScAccGridWinFocusLostHint() override;
 
     ScSplitPos  GetOldGridWin() const { return eOldGridWin; }
 };
@@ -61,7 +60,7 @@ class ScAccGridWinFocusGotHint : public ScAccWinFocusGotHint
     ScSplitPos  eNewGridWin;
 public:
                 ScAccGridWinFocusGotHint( ScSplitPos eNewGridWin );
-                virtual ~ScAccGridWinFocusGotHint();
+                virtual ~ScAccGridWinFocusGotHint() override;
 
     ScSplitPos  GetNewGridWin() const { return eNewGridWin; }
 };

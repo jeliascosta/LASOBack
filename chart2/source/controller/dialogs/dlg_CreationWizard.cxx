@@ -47,14 +47,10 @@ using namespace ::com::sun::star;
 
 CreationWizard::CreationWizard( vcl::Window* pParent, const uno::Reference< frame::XModel >& xChartModel
                                , const uno::Reference< uno::XComponentContext >& xContext )
-                : svt::RoadmapWizard( pParent,
-                        WizardButtonFlags::HELP | WizardButtonFlags::CANCEL | WizardButtonFlags::PREVIOUS | WizardButtonFlags::NEXT | WizardButtonFlags::FINISH
-                  )
+                : svt::RoadmapWizard( pParent )
                 , m_xChartModel(xChartModel,uno::UNO_QUERY)
                 , m_xCC( xContext )
-                , m_bIsClosable(true)
                 , m_pTemplateProvider(nullptr)
-                , m_nFirstState(STATE_FIRST)
                 , m_nLastState(STATE_LAST)
                 , m_aTimerTriggeredControllerLock( xChartModel )
                 , m_bCanTravel( true )
@@ -72,8 +68,8 @@ CreationWizard::CreationWizard( vcl::Window* pParent, const uno::Reference< fram
     );
     this->SetRoadmapHelpId( HID_SCH_WIZARD_ROADMAP );
     this->SetRoadmapInteractive( true );
-    Size aAdditionalRoadmapSize( LogicToPixel( Size( 85, 0 ), MAP_APPFONT ) );
-    Size aSize(LogicToPixel(Size(CHART_WIZARD_PAGEWIDTH, CHART_WIZARD_PAGEHEIGHT), MAP_APPFONT));
+    Size aAdditionalRoadmapSize( LogicToPixel( Size( 85, 0 ), MapUnit::MapAppFont ) );
+    Size aSize(LogicToPixel(Size(CHART_WIZARD_PAGEWIDTH, CHART_WIZARD_PAGEHEIGHT), MapUnit::MapAppFont));
     aSize.Width() += aAdditionalRoadmapSize.Width();
     this->SetSizePixel( aSize );
 
@@ -89,6 +85,8 @@ CreationWizard::CreationWizard( vcl::Window* pParent, const uno::Reference< fram
     // Call ActivatePage, to create and activate the first page
     ActivatePage();
 }
+
+CreationWizard::~CreationWizard() = default;
 
 VclPtr<TabPage> CreationWizard::createPage(WizardState nState)
 {
@@ -150,7 +148,7 @@ svt::WizardTypes::WizardState CreationWizard::determineNextState( WizardState nC
 void CreationWizard::enterState(WizardState nState)
 {
     m_aTimerTriggeredControllerLock.startTimer();
-    enableButtons( WizardButtonFlags::PREVIOUS, bool( nState > m_nFirstState ) );
+    enableButtons( WizardButtonFlags::PREVIOUS, bool( nState > STATE_FIRST ) );
     enableButtons( WizardButtonFlags::NEXT, bool( nState < m_nLastState ) );
     if( isStateEnabled( nState ))
         svt::RoadmapWizard::enterState(nState);

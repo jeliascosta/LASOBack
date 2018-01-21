@@ -63,6 +63,12 @@ typedef enum
      * @see lok::Office::setDocumentPassword().
      */
     LOK_FEATURE_DOCUMENT_PASSWORD_TO_MODIFY = (1ULL << 1),
+
+    /**
+     * Request to have the part number as an 5th value in the
+     * LOK_CALLBACK_INVALIDATE_TILES payload.
+     */
+    LOK_FEATURE_PART_IN_INVALIDATION_CALLBACK = (1ULL << 2),
 }
 LibreOfficeKitOptionalFeatures;
 
@@ -84,6 +90,8 @@ typedef enum
      * Rectangle format: "x, y, width, height", where all numbers are document
      * coordinates, in twips. When all tiles are supposed to be dropped, the
      * format is the "EMPTY" string.
+     *
+     * @see LOK_FEATURE_PART_IN_INVALIDATION_CALLBACK.
      */
     LOK_CALLBACK_INVALIDATE_TILES,
     /**
@@ -284,7 +292,7 @@ typedef enum
      * {
      *     "classification": "error" | "warning" | "info"
      *     "kind": "network" etc.
-     *     "code": 403 | 404 | ...
+     *     "code": a structured 32-bit error code, the ErrCode from LibreOffice's <tools/errcode.hxx>
      *     "message": freeform description
      * }
      */
@@ -312,6 +320,148 @@ typedef enum
      */
     LOK_CALLBACK_CONTEXT_MENU,
 
+    /**
+     * The size and/or the position of the view cursor changed. A view cursor
+     * is a cursor of an other view, the current view can't change it.
+     *
+     * The payload format:
+     *
+     * {
+     *     "viewId": "..."
+     *     "rectangle": "..."
+     * }
+     *
+     * - viewId is a value returned earlier by lok::Document::createView()
+     * - rectangle uses the format of LOK_CALLBACK_INVALIDATE_VISIBLE_CURSOR
+     */
+    LOK_CALLBACK_INVALIDATE_VIEW_CURSOR,
+
+    /**
+     * The text selection in one of the other views has changed.
+     *
+     * The payload format:
+     *
+     * {
+     *     "viewId": "..."
+     *     "selection": "..."
+     * }
+     *
+     * - viewId is a value returned earlier by lok::Document::createView()
+     * - selection uses the format of LOK_CALLBACK_TEXT_SELECTION.
+     */
+    LOK_CALLBACK_TEXT_VIEW_SELECTION,
+
+    /**
+     * The cell cursor in one of the other views has changed.
+     *
+     * The payload format:
+     *
+     * {
+     *     "viewId": "..."
+     *     "rectangle": "..."
+     * }
+     *
+     * - viewId is a value returned earlier by lok::Document::createView()
+     * - rectangle uses the format of LOK_CALLBACK_CELL_CURSOR.
+     */
+    LOK_CALLBACK_CELL_VIEW_CURSOR,
+
+    /**
+     * The size and/or the position of a graphic selection in one of the other
+     * views has changed.
+     *
+     * The payload format:
+     *
+     * {
+     *     "viewId": "..."
+     *     "selection": "..."
+     * }
+     *
+     * - viewId is a value returned earlier by lok::Document::createView()
+     * - selection uses the format of LOK_CALLBACK_INVALIDATE_TILES.
+     */
+    LOK_CALLBACK_GRAPHIC_VIEW_SELECTION,
+
+    /**
+     * The blinking text cursor in one of the other views is now visible or
+     * not.
+     *
+     * The payload format:
+     *
+     * {
+     *     "viewId": "..."
+     *     "visible": "..."
+     * }
+     *
+     * - viewId is a value returned earlier by lok::Document::createView()
+     * - visible uses the format of LOK_CALLBACK_CURSOR_VISIBLE.
+     */
+    LOK_CALLBACK_VIEW_CURSOR_VISIBLE,
+
+    /**
+     * The size and/or the position of a lock rectangle in one of the other
+     * views has changed.
+     *
+     * The payload format:
+     *
+     * {
+     *     "viewId": "..."
+     *     "rectangle": "..."
+     * }
+     *
+     * - viewId is a value returned earlier by lok::Document::createView()
+     * - rectangle uses the format of LOK_CALLBACK_INVALIDATE_TILES.
+     */
+    LOK_CALLBACK_VIEW_LOCK,
+
+    /**
+     * The size of the change tracking table has changed.
+     *
+     * The payload example:
+     * {
+     *     "redline": {
+     *         "action": "Remove",
+     *         "index": "1",
+     *         "author": "Unknown Author",
+     *         "type": "Delete",
+     *         "comment": "",
+     *         "description": "Delete 'abc'",
+     *         "dateTime": "2016-08-18T12:14:00"
+     *     }
+     * }
+     *
+     * The format is the same as an entry of
+     * lok::Document::getCommandValues('.uno:AcceptTrackedChanges'), extra
+     * fields:
+     *
+     * - 'action' is either 'Add' or 'Remove', depending on if this is an
+     *   insertion into the table or a removal.
+     */
+    LOK_CALLBACK_REDLINE_TABLE_SIZE_CHANGED,
+
+    /**
+     * An entry in the change tracking table has been modified.
+     *
+     * The payload example:
+     * {
+     *     "redline": {
+     *         "action": "Modify",
+     *         "index": "1",
+     *         "author": "Unknown Author",
+     *         "type": "Insert",
+     *         "comment": "",
+     *         "description": "Insert 'abcd'",
+     *         "dateTime": "2016-08-18T13:13:00"
+     *     }
+     * }
+     *
+     * The format is the same as an entry of
+     * lok::Document::getCommandValues('.uno:AcceptTrackedChanges'), extra
+     * fields:
+     *
+     * - 'action' is 'Modify'.
+     */
+    LOK_CALLBACK_REDLINE_TABLE_ENTRY_MODIFIED,
 }
 LibreOfficeKitCallbackType;
 

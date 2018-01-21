@@ -71,18 +71,6 @@ namespace o3tl
     template<> struct typed_flags<BmpDitherFlags> : is_typed_flags<BmpDitherFlags, 0x07> {};
 }
 
-enum class BmpVectorizeFlags
-{
-    Inner         = 0x0001,
-    Outer         = 0x0002,
-    BoundOnly     = 0x0004,
-    ReduceEdges   = 0x0008,
-};
-namespace o3tl
-{
-    template<> struct typed_flags<BmpVectorizeFlags> : is_typed_flags<BmpVectorizeFlags, 0x0f> {};
-}
-
 #define BMP_COL_TRANS               Color( 252, 3, 251 )
 
 enum BmpConversion
@@ -115,21 +103,7 @@ enum BmpCombine
 enum BmpReduce
 {
     BMP_REDUCE_SIMPLE = 0,
-    BMP_REDUCE_POPULAR = 1,
-    BMP_REDUCE_MEDIAN = 2
-};
-
-enum BmpEmboss
-{
-    BMP_EMBOSS_TOPLEFT = 0,
-    BMP_EMBOSS_TOP = 1,
-    BMP_EMBOSS_TOPRIGHT = 2,
-    BMP_EMBOSS_LEFT = 3,
-    BMP_EMBOSS_MIDDLE = 4,
-    BMP_EMBOSS_RIGHT = 5,
-    BMP_EMBOSS_BOTTOMLEFT = 6,
-    BMP_EMBOSS_BOTTOM = 7,
-    BMP_EMBOSS_BOTTOMRIGHT = 8
+    BMP_REDUCE_POPULAR = 1
 };
 
 enum BmpFilter
@@ -262,11 +236,11 @@ public:
     virtual                 ~Bitmap();
 
     Bitmap&                 operator=( const Bitmap& rBitmap );
+    Bitmap&                 operator=( Bitmap&& rBitmap );
     inline bool             operator!() const;
     inline bool             operator==( const Bitmap& rBitmap ) const;
     inline bool             operator!=( const Bitmap& rBitmap ) const;
 
-    inline bool             IsSameInstance( const Bitmap& rBmp ) const;
     bool                    IsEqual( const Bitmap& rBmp ) const;
 
     inline bool             IsEmpty() const;
@@ -404,7 +378,7 @@ public:
     bool                    CopyPixel_AlphaOptimized(
                                 const Rectangle& rRectDst,
                                 const Rectangle& rRectSrc,
-                                const Bitmap* pBmpSrc = nullptr );
+                                const Bitmap* pBmpSrc );
 
     /** Perform boolean operations with another bitmap
 
@@ -623,15 +597,10 @@ public:
         @param rPolyPoly
         The resulting PolyPolygon
 
-        @param nFlags
-        Whether the inline or the outline of the color areas should be
-        represented by the polygon
-
         @return true, if the operation was completed successfully.
      */
     bool                    Vectorize(
-                                tools::PolyPolygon& rPolyPoly,
-                                BmpVectorizeFlags nFlags = BmpVectorizeFlags::Outer );
+                                tools::PolyPolygon& rPolyPoly );
 
     /** Convert the bitmap to a meta file
 
@@ -645,10 +614,6 @@ public:
         @param cReduce
         If non-null, minimal size of bound rects for individual polygons. Smaller ones are ignored.
 
-        @param nFlags
-        Whether the inline or the outline of the color areas should be
-        represented by the polygon
-
         @param pProgress
         A callback for showing the progress of the vectorization
 
@@ -656,9 +621,8 @@ public:
      */
     bool                    Vectorize(
                                 GDIMetaFile& rMtf,
-                                sal_uInt8 cReduce = 0,
-                                BmpVectorizeFlags nFlags = BmpVectorizeFlags::Inner,
-                                const Link<long,void>* pProgress = nullptr );
+                                sal_uInt8 cReduce,
+                                const Link<long,void>* pProgress );
 
     /** Change various global color characteristics
 
@@ -691,7 +655,7 @@ public:
         @return true, if the operation was completed successfully.
      */
     bool                    Adjust(
-                                short nLuminancePercent = 0,
+                                short nLuminancePercent,
                                 short nContrastPercent = 0,
                                 short nChannelRPercent = 0,
                                 short nChannelGPercent = 0,
@@ -751,8 +715,7 @@ public:
                                 long nR1, long nR2, long nG1, long nG2, long nB1, long nB2,
                                 long nColors, long nPixels, long& rIndex );
 
-    SAL_DLLPRIVATE bool     ImplConvolute3(
-                                const long* pMatrix, long nDivisor );
+    SAL_DLLPRIVATE bool     ImplConvolute3( const long* pMatrix );
 
     SAL_DLLPRIVATE bool     ImplMedianFilter();
     SAL_DLLPRIVATE bool     ImplSobelGrey();
@@ -762,10 +725,10 @@ public:
     SAL_DLLPRIVATE bool     ImplMosaic( const BmpFilterParam* pFilterParam );
     SAL_DLLPRIVATE bool     ImplPopArt();
 
-    SAL_DLLPRIVATE bool     ImplSeparableBlurFilter( const double aRadius = 0.7 );
-    SAL_DLLPRIVATE bool     ImplSeparableUnsharpenFilter( const double aRadius = 0.7 );
+    SAL_DLLPRIVATE bool     ImplSeparableBlurFilter( const double aRadius );
+    SAL_DLLPRIVATE bool     ImplSeparableUnsharpenFilter( const double aRadius );
     SAL_DLLPRIVATE bool     ImplDuotoneFilter( const sal_uLong nColorOne,  sal_uLong nColorTwo );
-    SAL_DLLPRIVATE void     ImplBlurContributions(
+    SAL_DLLPRIVATE static void ImplBlurContributions(
                                 const int aSize,
                                 const int aNumberOfContributions,
                                 double* pBlurVector,
@@ -805,11 +768,6 @@ inline bool Bitmap::operator==( const Bitmap& rBitmap ) const
 inline bool Bitmap::operator!=( const Bitmap& rBitmap ) const
 {
     return( rBitmap.mxImpBmp != mxImpBmp );
-}
-
-inline bool Bitmap::IsSameInstance( const Bitmap& rBitmap ) const
-{
-    return( rBitmap.mxImpBmp == mxImpBmp );
 }
 
 inline bool Bitmap::IsEmpty() const

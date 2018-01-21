@@ -247,7 +247,7 @@ void OEditControl::keyReleased(const css::awt::KeyEvent& /*e*/) throw ( css::uno
 }
 
 
-IMPL_LINK_NOARG_TYPED(OEditControl, OnKeyPressed, void*, void)
+IMPL_LINK_NOARG(OEditControl, OnKeyPressed, void*, void)
 {
     m_nKeyEvent = nullptr;
 
@@ -258,17 +258,6 @@ IMPL_LINK_NOARG_TYPED(OEditControl, OnKeyPressed, void*, void)
         xSubmit->submit( Reference<XControl>(), css::awt::MouseEvent() );
 }
 
-
-void SAL_CALL OEditControl::createPeer( const Reference< XToolkit>& _rxToolkit, const Reference< XWindowPeer>& _rxParent ) throw ( RuntimeException, std::exception )
-{
-    OBoundControl::createPeer(_rxToolkit, _rxParent);
-}
-
-
-Sequence<Type> OEditModel::_getTypes()
-{
-    return OEditBaseModel::_getTypes();
-}
 
 
 OEditModel::OEditModel(const Reference<XComponentContext>& _rxFactory)
@@ -642,12 +631,6 @@ bool OEditModel::approveDbColumnType( sal_Int32 _nColumnType )
         return false;
 
     return OEditBaseModel::approveDbColumnType( _nColumnType );
-}
-
-
-void OEditModel::resetNoBroadcast()
-{
-    OEditBaseModel::resetNoBroadcast();
 }
 
 

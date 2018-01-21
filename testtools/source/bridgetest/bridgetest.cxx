@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <o3tl/any.hxx>
 #include <osl/diagnose.h>
 #include "osl/diagnose.hxx"
 #include <osl/time.h>
@@ -110,7 +111,7 @@ public:
     explicit TestBridgeImpl( const Reference< XComponentContext > & xContext )
         : m_xContext( xContext )
         {}
-    virtual ~TestBridgeImpl()
+    virtual ~TestBridgeImpl() override
     {
     }
 
@@ -275,7 +276,7 @@ static bool performAnyTest( const Reference< XBridgeTest > &xLBT, const TestData
     }
 
     {
-        a.setValue( &(data.Char) , cppu::UnoType<cppu::UnoCharType>::get() );
+        a <<= data.Char;
         OSL_ASSERT( xLBT->transportAny( a ) == a );
     }
 
@@ -338,9 +339,7 @@ class MyClass : public osl::DebugBase<MyClass>, public OWeakObject
 {
 public:
     MyClass();
-    virtual ~MyClass();
-    virtual void SAL_CALL acquire() throw () override;
-    virtual void SAL_CALL release() throw () override;
+    virtual ~MyClass() override;
 };
 
 
@@ -351,17 +350,6 @@ MyClass::MyClass()
 MyClass::~MyClass()
 {
 }
-
-void MyClass::acquire() throw ()
-{
-    OWeakObject::acquire();
-}
-
-void MyClass::release() throw ()
-{
-    OWeakObject::release();
-}
-
 
 static bool performTest(
     const Reference<XComponentContext> & xContext,
@@ -592,12 +580,9 @@ static bool performTest(
                     xLBT->getNullPolyType().member == Type(),
                     "getNullPolyType");
                 Any nullAny(xLBT->getNullPolyAny().member);
+                auto ifc = o3tl::tryAccess<Reference<XInterface>>(nullAny);
                 bRet &= check(
-                    (((nullAny.getValueTypeName() ==
-                       "com.sun.star.uno.XInterface") &&
-                      !static_cast< Reference< XInterface > const * >(
-                          nullAny.getValue())->is())
-                     || nullAny == Any()),
+                    !nullAny.hasValue() || (ifc && !ifc->is()),
                     "getNullPolyAny");
                 bRet &= check(
                     xLBT->getNullPolySequence().member.getLength() == 0,

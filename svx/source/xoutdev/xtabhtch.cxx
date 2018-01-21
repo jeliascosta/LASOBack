@@ -32,11 +32,12 @@
 #include <drawinglayer/processor2d/processor2dtools.hxx>
 #include <basegfx/polygon/b2dpolygontools.hxx>
 #include <memory>
+#include <o3tl/make_unique.hxx>
 
 using namespace ::com::sun::star;
 
 XHatchList::XHatchList(const OUString& rPath, const OUString& rReferer)
-  : XPropertyList( XHATCH_LIST, rPath, rReferer )
+  : XPropertyList( XPropertyListType::Hatch, rPath, rReferer )
 {
 }
 
@@ -44,14 +45,9 @@ XHatchList::~XHatchList()
 {
 }
 
-XHatchEntry* XHatchList::Replace(XHatchEntry* pEntry, long nIndex )
+void XHatchList::Replace(std::unique_ptr<XHatchEntry> pEntry, long nIndex)
 {
-    return static_cast<XHatchEntry*>( XPropertyList::Replace(pEntry, nIndex) );
-}
-
-XHatchEntry* XHatchList::Remove(long nIndex)
-{
-    return static_cast<XHatchEntry*>( XPropertyList::Remove(nIndex) );
+    XPropertyList::Replace(std::move(pEntry), nIndex);
 }
 
 XHatchEntry* XHatchList::GetHatch(long nIndex) const
@@ -71,16 +67,16 @@ bool XHatchList::Create()
     aStr.append(" 1");
 
     sal_Int32 nLen = aStr.getLength() - 1;
-    Insert(new XHatchEntry(XHatch(RGB_Color(COL_BLACK),css::drawing::HatchStyle_SINGLE,100,  0),aStr.toString()));
+    Insert(o3tl::make_unique<XHatchEntry>(XHatch(RGB_Color(COL_BLACK),css::drawing::HatchStyle_SINGLE,100,  0),aStr.toString()));
     aStr[nLen] = '2';
-    Insert(new XHatchEntry(XHatch(RGB_Color(COL_RED  ),css::drawing::HatchStyle_DOUBLE, 80,450),aStr.toString()));
+    Insert(o3tl::make_unique<XHatchEntry>(XHatch(RGB_Color(COL_RED  ),css::drawing::HatchStyle_DOUBLE, 80,450),aStr.toString()));
     aStr[nLen] = '3';
-    Insert(new XHatchEntry(XHatch(RGB_Color(COL_BLUE ),css::drawing::HatchStyle_TRIPLE,120,  0),aStr.toString()));
+    Insert(o3tl::make_unique<XHatchEntry>(XHatch(RGB_Color(COL_BLUE ),css::drawing::HatchStyle_TRIPLE,120,  0),aStr.toString()));
 
     return true;
 }
 
-Bitmap XHatchList::CreateBitmapForUI( long nIndex )
+Bitmap XHatchList::CreateBitmap( long nIndex, const Size& rSize) const
 {
     Bitmap aRetval;
     OSL_ENSURE(nIndex < Count(), "OOps, access out of range (!)");
@@ -88,7 +84,6 @@ Bitmap XHatchList::CreateBitmapForUI( long nIndex )
     if(nIndex < Count())
     {
         const StyleSettings& rStyleSettings = Application::GetSettings().GetStyleSettings();
-        const Size& rSize = rStyleSettings.GetListBoxPreviewDefaultPixelSize();
 
         // prepare polygon geometry for rectangle
         const basegfx::B2DPolygon aRectangle(
@@ -117,7 +112,7 @@ Bitmap XHatchList::CreateBitmapForUI( long nIndex )
             }
         }
 
-        const basegfx::B2DHomMatrix aScaleMatrix(OutputDevice::LogicToLogic(MAP_100TH_MM, MAP_PIXEL));
+        const basegfx::B2DHomMatrix aScaleMatrix(OutputDevice::LogicToLogic(MapUnit::Map100thMM, MapUnit::MapPixel));
         const basegfx::B2DVector aScaleVector(aScaleMatrix * basegfx::B2DVector(1.0, 0.0));
         const double fScaleValue(aScaleVector.getLength());
 
@@ -184,6 +179,19 @@ Bitmap XHatchList::CreateBitmapForUI( long nIndex )
     }
 
     return aRetval;
+}
+
+Bitmap XHatchList::CreateBitmapForUI(long nIndex)
+{
+    const StyleSettings& rStyleSettings = Application::GetSettings().GetStyleSettings();
+    const Size& rSize = rStyleSettings.GetListBoxPreviewDefaultPixelSize();
+    Bitmap aRetVal = CreateBitmap(nIndex, rSize);
+    return aRetVal;
+}
+
+Bitmap XHatchList::GetBitmapForPreview(long nIndex, const Size& rSize)
+{
+    return CreateBitmap(nIndex, rSize);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

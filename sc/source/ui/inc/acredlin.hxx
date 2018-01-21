@@ -42,7 +42,7 @@ class ScRedlinData : public RedlinData
 {
 public:
                     ScRedlinData();
-                    virtual ~ScRedlinData();
+                    virtual ~ScRedlinData() override;
     SCTAB           nTable;
     SCCOL           nCol;
     SCROW           nRow;
@@ -87,30 +87,28 @@ private:
     sal_uLong                   nRejectCount;
     bool                    bAcceptEnableFlag:1;
     bool                    bRejectEnableFlag:1;
-    bool                    bNeedsUpdate:1;
     bool                    bIgnoreMsg:1;
     bool                    bNoSelection:1;
     bool                    bHasFilterEntry:1;
     bool                    bUseColor:1;
 
     void            Init();
-    void            InitFilter();
 
-    DECL_LINK_TYPED( FilterHandle, SvxTPFilter*, void );
-    DECL_LINK_TYPED( RefHandle, SvxTPFilter*, void );
-    DECL_LINK_TYPED( RejectHandle, SvxTPView*, void );
-    DECL_LINK_TYPED( AcceptHandle, SvxTPView*, void );
-    DECL_LINK_TYPED( RejectAllHandle, SvxTPView*, void );
-    DECL_LINK_TYPED( AcceptAllHandle, SvxTPView*, void );
-    DECL_LINK_TYPED( ExpandingHandle, SvTreeListBox*, bool );
-    DECL_LINK_TYPED( SelectHandle, SvTreeListBox*, void );
-    DECL_LINK_TYPED( RefInfoHandle, const OUString*, void );
+    DECL_LINK( FilterHandle, SvxTPFilter*, void );
+    DECL_LINK( RefHandle, SvxTPFilter*, void );
+    DECL_LINK( RejectHandle, SvxTPView*, void );
+    DECL_LINK( AcceptHandle, SvxTPView*, void );
+    DECL_LINK( RejectAllHandle, SvxTPView*, void );
+    DECL_LINK( AcceptAllHandle, SvxTPView*, void );
+    DECL_LINK( ExpandingHandle, SvTreeListBox*, bool );
+    DECL_LINK( SelectHandle, SvTreeListBox*, void );
+    DECL_LINK( RefInfoHandle, const OUString*, void );
 
-    DECL_LINK_TYPED( UpdateSelectionHdl, Idle*, void );
-    DECL_LINK_TYPED( ChgTrackModHdl, ScChangeTrack&, void );
-    DECL_LINK_TYPED( CommandHdl, SvSimpleTable*, void );
-    DECL_LINK_TYPED( ReOpenTimerHdl, Idle*, void );
-    DECL_LINK_TYPED( ColCompareHdl, const SvSortData*, sal_Int32 );
+    DECL_LINK( UpdateSelectionHdl, Idle*, void );
+    DECL_LINK( ChgTrackModHdl, ScChangeTrack&, void );
+    DECL_LINK( CommandHdl, SvSimpleTable*, void );
+    DECL_LINK( ReOpenTimerHdl, Idle*, void );
+    DECL_LINK( ColCompareHdl, const SvSortData*, sal_Int32 );
 
 protected:
 
@@ -163,12 +161,10 @@ public:
                     ScAcceptChgDlg( SfxBindings* pB, SfxChildWindow* pCW, vcl::Window* pParent,
                                ScViewData*      ptrViewData);
 
-                    virtual ~ScAcceptChgDlg();
+                    virtual ~ScAcceptChgDlg() override;
     virtual void    dispose() override;
 
     void            ReInit(ScViewData* ptrViewData);
-
-    virtual bool    PreNotify( NotifyEvent& rNEvt ) override;
 
     void            Initialize (SfxChildWinInfo* pInfo);
     virtual void    FillInfo(SfxChildWinInfo&) const override;

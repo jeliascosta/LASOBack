@@ -28,6 +28,7 @@
 #include <vcl/dllapi.h>
 #include <vcl/bitmapex.hxx>
 #include <vcl/keycod.hxx>
+#include <vcl/vclreferencebase.hxx>
 #include <vcl/vclevent.hxx>
 #include <com/sun/star/frame/XFrame.hpp>
 #include <com/sun/star/uno/Reference.hxx>
@@ -104,7 +105,7 @@ namespace o3tl
 struct ImplMenuDelData
 {
     ImplMenuDelData* mpNext;
-    const Menu* mpMenu;
+    VclPtr<const Menu> mpMenu;
 
     explicit ImplMenuDelData( const Menu* );
     ~ImplMenuDelData();
@@ -121,7 +122,7 @@ struct MenuLogo
 
 typedef void (*MenuUserDataReleaseFunction)(sal_uLong);
 
-class VCL_DLLPUBLIC Menu : public Resource
+class VCL_DLLPUBLIC Menu : public Resource, public VclReferenceBase
 {
     friend class MenuBar;
     friend class MenuBarWindow;
@@ -132,15 +133,14 @@ class VCL_DLLPUBLIC Menu : public Resource
     friend struct ImplMenuDelData;
 private:
     ImplMenuDelData* mpFirstDel;
-    MenuItemList* pItemList; // Liste mit den MenuItems
+    std::unique_ptr<MenuItemList> pItemList; // list with MenuItems
     MenuLogo* pLogo;
-    Menu* pStartedFrom;
+    VclPtr<Menu> pStartedFrom;
     VclPtr<vcl::Window> pWindow;
 
     Link<Menu*, bool> aActivateHdl;       // Active-Handler
     Link<Menu*, bool> aDeactivateHdl;     // Deactivate-Handler
-    Link<Menu*, bool> aHighlightHdl;      // Highlight-Handler
-    Link<Menu*, bool> aSelectHdl;         // Highlight-Handler
+    Link<Menu*, bool> aSelectHdl;         // Select-Handler
 
     std::list<Link<VclMenuEvent&,void> >  maEventListeners;
 
@@ -183,7 +183,7 @@ protected:
     SAL_DLLPRIVATE void ImplSelect();
     SAL_DLLPRIVATE void ImplCallHighlight( sal_uInt16 nHighlightItem );
     SAL_DLLPRIVATE void ImplCallEventListeners( sal_uLong nEvent, sal_uInt16 nPos );
-    DECL_DLLPRIVATE_LINK_TYPED(ImplCallSelect, void*, void );
+    DECL_DLLPRIVATE_LINK(ImplCallSelect, void*, void );
 
     SAL_DLLPRIVATE void ImplFillLayoutData() const;
     SAL_DLLPRIVATE SalMenu* ImplGetSalMenu() { return mpSalMenu; }
@@ -196,7 +196,7 @@ protected:
 
     // returns native submenu arrow size and spacing from right border
     // return value is whether it's supported natively
-    SAL_DLLPRIVATE bool ImplGetNativeSubmenuArrowSize(vcl::RenderContext& rRenderContext, Size& rArrowSize, long& rArrowSpacing) const;
+    SAL_DLLPRIVATE static bool ImplGetNativeSubmenuArrowSize(vcl::RenderContext& rRenderContext, Size& rArrowSize, long& rArrowSpacing);
 
     SAL_DLLPRIVATE void ImplAddDel( ImplMenuDelData &rDel );
     SAL_DLLPRIVATE void ImplRemoveDel( ImplMenuDelData &rDel );
@@ -229,11 +229,11 @@ protected:
     Menu();
 
 public:
-    virtual ~Menu();
+    virtual ~Menu() override;
+    virtual void dispose() override;
 
     void Activate();
     void Deactivate();
-    virtual void Highlight();
     virtual void Select();
 
     void InsertItem(sal_uInt16 nItemId, const OUString& rStr,
@@ -341,11 +341,6 @@ public:
         aDeactivateHdl = rLink;
     }
 
-    void SetHighlightHdl( const Link<Menu *, bool>& rLink )
-    {
-        aHighlightHdl = rLink;
-    }
-
     void  SetSelectHdl( const Link<Menu*,bool>& rLink )
     {
         aSelectHdl = rLink;
@@ -364,7 +359,7 @@ public:
     // Fuer Menu-'Funktionen'
     MenuItemList* GetItemList() const
     {
-        return pItemList;
+        return pItemList.get();
     }
 
     // returns the system's menu handle if native menus are supported
@@ -391,7 +386,6 @@ public:
 
     vcl::Window* GetWindow() const { return pWindow; }
 
-    void SetAccessibleName( sal_uInt16 nItemId, const OUString& rStr );
     OUString GetAccessibleName( sal_uInt16 nItemId ) const;
 
     // returns whether the item a position nItemPos is highlighted or not.
@@ -432,7 +426,8 @@ protected:
 public:
     MenuBar();
     MenuBar( const MenuBar& rMenu );
-    virtual ~MenuBar();
+    virtual ~MenuBar() override;
+    virtual void dispose() override;
 
     MenuBar& operator =( const MenuBar& rMenu );
 
@@ -444,7 +439,7 @@ public:
     /// Forward the KeyInput call to the MenuBar.
     virtual void MenuBarKeyInput(const KeyEvent& rEvent) override;
 
-    void ShowCloseButton( bool bShow = true );
+    void ShowCloseButton( bool bShow );
     bool HasCloseButton() const { return mbCloseBtnVisible; }
     bool HasFloatButton() const { return mbFloatBtnVisible; }
     bool HasHideButton() const { return mbHideBtnVisible; }
@@ -468,7 +463,7 @@ public:
     {
         sal_uInt16 nId;    // Id of the button
         bool bHighlight;   // highlight on/off
-        MenuBar* pMenuBar; // menubar the button belongs to
+        VclPtr<MenuBar> pMenuBar; // menubar the button belongs to
     };
     // add an arbitrary button to the menubar (will appear next to closer)
     // passed link will be call with a MenuBarButtonCallbackArg on press
@@ -500,7 +495,7 @@ class VCL_DLLPUBLIC PopupMenu : public Menu
     friend struct MenuItemData;
 
 private:
-    Menu** pRefAutoSubMenu; // keeps track if a pointer to this Menu is stored in the MenuItemData
+    VclPtr<Menu>* pRefAutoSubMenu; // keeps track if a pointer to this Menu is stored in the MenuItemData
 
     SAL_DLLPRIVATE MenuFloatingWindow * ImplGetFloatingWindow() const;
 
@@ -508,13 +503,14 @@ protected:
     SAL_DLLPRIVATE sal_uInt16 ImplExecute( const VclPtr<vcl::Window>& xWindow, const Rectangle& rRect, FloatWinPopupFlags nPopupFlags, Menu* pStaredFrom, bool bPreSelectFirst );
     SAL_DLLPRIVATE void ImplFlushPendingSelect();
     SAL_DLLPRIVATE long ImplCalcHeight( sal_uInt16 nEntries ) const;
-    SAL_DLLPRIVATE sal_uInt16 ImplCalcVisEntries( long nMaxHeight, sal_uInt16 nStartEntry = 0, sal_uInt16* pLastVisible = nullptr ) const;
+    SAL_DLLPRIVATE sal_uInt16 ImplCalcVisEntries( long nMaxHeight, sal_uInt16 nStartEntry, sal_uInt16* pLastVisible = nullptr ) const;
 
 public:
     PopupMenu();
     PopupMenu( const PopupMenu& rMenu );
     explicit PopupMenu( const ResId& );
-    virtual ~PopupMenu();
+    virtual ~PopupMenu() override;
+    virtual void dispose() override;
 
     virtual bool IsMenuBar() const override { return false; }
 

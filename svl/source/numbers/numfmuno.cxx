@@ -19,6 +19,7 @@
 
 #include <tools/color.hxx>
 #include <i18nlangtag/mslangid.hxx>
+#include <o3tl/any.hxx>
 #include <osl/mutex.hxx>
 #include <osl/diagnose.h>
 #include <rtl/ustring.hxx>
@@ -93,10 +94,6 @@ static const SfxItemPropertyMapEntry* lcl_GetNumberSettingsPropertyMap()
 
 static LanguageType lcl_GetLanguage( const lang::Locale& rLocale )
 {
-    //  empty language -> LANGUAGE_SYSTEM
-    if ( rLocale.Language.isEmpty() )
-        return LANGUAGE_SYSTEM;
-
     LanguageType eRet = LanguageTag::convertToLanguageType( rLocale, false);
     if ( eRet == LANGUAGE_NONE )
         eRet = LANGUAGE_SYSTEM; //! or throw an exception?
@@ -622,14 +619,7 @@ sal_Bool SAL_CALL SvNumberFormatsObj::isTypeCompatible( sal_Int16 nOldType, sal_
 {
     ::osl::MutexGuard aGuard( m_aMutex );
 
-    bool bRet = false;
-    SvNumberFormatter* pFormatter = rSupplier.GetNumberFormatter();
-    if (pFormatter)
-        bRet = pFormatter->IsCompatible( nOldType, nNewType );
-    else
-        throw uno::RuntimeException();
-
-    return bRet;
+    return SvNumberFormatter::IsCompatible( nOldType, nNewType );
 }
 
 sal_Int32 SAL_CALL SvNumberFormatsObj::getFormatForLocale( sal_Int32 nKey, const lang::Locale& nLocale )
@@ -723,7 +713,7 @@ uno::Any SAL_CALL SvNumberFormatObj::getPropertyValue( const OUString& aProperty
         }
         else if (aPropertyName == PROPERTYNAME_LOCALE)
         {
-            lang::Locale aLocale( LanguageTag( pFormat->GetLanguage()).getLocale( false));
+            lang::Locale aLocale( LanguageTag::convertToLocale( pFormat->GetLanguage(), false));
             aRet <<= aLocale;
         }
         else if (aPropertyName == PROPERTYNAME_TYPE)
@@ -959,8 +949,8 @@ void SAL_CALL SvNumberFormatSettingsObj::setPropertyValue( const OUString& aProp
         if (aPropertyName == PROPERTYNAME_NOZERO)
         {
             //  operator >>= shouldn't be used for bool (?)
-            if ( aValue.getValueTypeClass() == uno::TypeClass_BOOLEAN )
-                pFormatter->SetNoZero( *static_cast<sal_Bool const *>(aValue.getValue()) );
+            if ( auto b = o3tl::tryAccess<bool>(aValue) )
+                pFormatter->SetNoZero( *b );
         }
         else if (aPropertyName == PROPERTYNAME_NULLDATE)
         {

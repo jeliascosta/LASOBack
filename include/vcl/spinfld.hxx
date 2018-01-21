@@ -51,15 +51,12 @@ protected:
     SAL_DLLPRIVATE void   ImplInit( vcl::Window* pParent, WinBits nStyle );
 
 private:
-    DECL_DLLPRIVATE_LINK_TYPED( ImplTimeout, Timer*, void );
+    DECL_DLLPRIVATE_LINK( ImplTimeout, Timer*, void );
     SAL_DLLPRIVATE void   ImplInitSpinFieldData();
     SAL_DLLPRIVATE void   ImplCalcButtonAreas( OutputDevice* pDev, const Size& rOutSz, Rectangle& rDDArea, Rectangle& rSpinUpArea, Rectangle& rSpinDownArea );
 
 protected:
-    explicit        SpinField( WindowType nTyp );
-
     virtual bool    Notify( NotifyEvent& rNEvt ) override;
-    virtual void    Command( const CommandEvent& rCEvt ) override;
 
     void            EndDropDown();
 
@@ -67,9 +64,8 @@ protected:
     Rectangle *     ImplFindPartRect( const Point& rPt );
 
 public:
-    explicit        SpinField( vcl::Window* pParent, WinBits nWinStyle = 0 );
-    explicit        SpinField( vcl::Window* pParent, const ResId& );
-    virtual         ~SpinField();
+    explicit        SpinField( vcl::Window* pParent, WinBits nWinStyle );
+    virtual         ~SpinField() override;
     virtual void    dispose() override;
 
     virtual bool    ShowDropDown( bool bShow );
@@ -99,6 +95,8 @@ public:
     virtual Size    CalcMinimumSizeForText(const OUString &rString) const override;
     virtual Size    GetOptimalSize() const override;
     virtual Size    CalcSize(sal_Int32 nChars) const override;
+
+    virtual FactoryFunction GetUITestFactory() const override;
 };
 
 #endif // INCLUDED_VCL_SPINFLD_HXX

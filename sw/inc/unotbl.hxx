@@ -75,7 +75,6 @@ class SwXCell final : public SwXCellBaseClass,
     size_t nFndPos;
     static size_t const NOTFOUND = SAL_MAX_SIZE;
 
-protected:
     virtual const SwStartNode *GetStartNode() const override;
 
     virtual css::uno::Reference< css::text::XTextCursor >
@@ -84,14 +83,14 @@ protected:
 
     bool IsValid() const;
 
-    virtual ~SwXCell();
+    virtual ~SwXCell() override;
 
     //SwClient
     virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew) override;
     virtual void SwClientNotify(const SwModify&, const SfxHint&) override;
 
 public:
-    SwXCell(SwFrameFormat* pTableFormat, SwTableBox* pBox, size_t nPos = NOTFOUND);
+    SwXCell(SwFrameFormat* pTableFormat, SwTableBox* pBox, size_t nPos);
     SwXCell(SwFrameFormat* pTableFormat, const SwStartNode& rStartNode); // XML import interface
 
 
@@ -116,8 +115,6 @@ public:
         { return const_cast<SwXCell*>(this)->getValue(); };
     virtual void SAL_CALL setValue( double nValue ) throw(css::uno::RuntimeException, std::exception) override;
     virtual css::table::CellContentType SAL_CALL getType(  ) throw(css::uno::RuntimeException, std::exception) override;
-    css::table::CellContentType SAL_CALL getType(  ) const throw(css::uno::RuntimeException, std::exception)
-        { return const_cast<SwXCell*>(this)->getType(); };
     virtual sal_Int32 SAL_CALL getError(  ) throw(css::uno::RuntimeException, std::exception) override;
 
     //XText
@@ -166,8 +163,7 @@ class SwXTextTableRow final : public cppu::WeakImplHelper
 
     SwFrameFormat* GetFrameFormat() { return static_cast<SwFrameFormat*>(GetRegisteredIn()); }
     const SwFrameFormat* GetFrameFormat() const { return const_cast<SwXTextTableRow*>(this)->GetFrameFormat(); }
-protected:
-    virtual ~SwXTextTableRow();
+    virtual ~SwXTextTableRow() override;
     //SwClient
     virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew) override;
     virtual void SwClientNotify(const SwModify&, const SfxHint&) override;
@@ -196,7 +192,6 @@ public:
     virtual sal_Bool SAL_CALL supportsService(const OUString& ServiceName) throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception ) override;
 
-    const SwTableLine*  GetTableRow() const {return pLine;}
     static SwTableLine* FindLine(SwTable* pTable, SwTableLine* pLine);
 };
 
@@ -272,7 +267,7 @@ public:
     SwUnoCursor&                  GetCursor();
     sw::UnoCursorPointer m_pUnoCursor;
     SwFrameFormat*       GetFrameFormat() const { return const_cast<SwFrameFormat*>(static_cast<const SwFrameFormat*>(GetRegisteredIn())); }
-    virtual ~SwXTextTableCursor() { };
+    virtual ~SwXTextTableCursor() override { };
 };
 
 struct SwRangeDescriptor
@@ -305,7 +300,7 @@ private:
 
     SwXTextTable();
     SwXTextTable(SwFrameFormat& rFrameFormat);
-    virtual ~SwXTextTable();
+    virtual ~SwXTextTable() override;
 
 public:
     static css::uno::Reference<css::text::XTextTable>
@@ -426,7 +421,7 @@ private:
     ::sw::UnoImplPtr<Impl> m_pImpl;
 
     SwXCellRange(const sw::UnoCursorPointer& pCursor, SwFrameFormat& rFrameFormat, SwRangeDescriptor& rDesc);
-    virtual ~SwXCellRange();
+    virtual ~SwXCellRange() override;
 
 public:
     static ::rtl::Reference<SwXCellRange> CreateXCellRange(
@@ -508,16 +503,14 @@ class SwXTableRows final : public cppu::WeakImplHelper
     css::lang::XServiceInfo
 >
 {
-private:
     class Impl;
     ::sw::UnoImplPtr<Impl> m_pImpl;
     SwFrameFormat* GetFrameFormat();
     const SwFrameFormat* GetFrameFormat() const { return const_cast<SwXTableRows*>(this)->GetFrameFormat(); }
-protected:
-    virtual ~SwXTableRows();
+    virtual ~SwXTableRows() override;
+
 public:
     SwXTableRows(SwFrameFormat& rFrameFormat);
-
 
     //XIndexAccess
     virtual sal_Int32 SAL_CALL getCount() throw( css::uno::RuntimeException, std::exception ) override;
@@ -552,7 +545,7 @@ private:
     ::sw::UnoImplPtr<Impl> m_pImpl;
     SwFrameFormat* GetFrameFormat() const;
 protected:
-    virtual ~SwXTableColumns();
+    virtual ~SwXTableColumns() override;
 public:
     SwXTableColumns(SwFrameFormat& rFrameFormat);
 

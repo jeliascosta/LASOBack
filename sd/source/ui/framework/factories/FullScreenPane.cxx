@@ -173,7 +173,7 @@ void SAL_CALL FullScreenPane::setAccessible (
     }
 }
 
-IMPL_LINK_TYPED(FullScreenPane, WindowEventHandler, VclWindowEvent&, rEvent, void)
+IMPL_LINK(FullScreenPane, WindowEventHandler, VclWindowEvent&, rEvent, void)
 {
     switch (rEvent.GetId())
     {
@@ -193,13 +193,13 @@ IMPL_LINK_TYPED(FullScreenPane, WindowEventHandler, VclWindowEvent&, rEvent, voi
 Reference<rendering::XCanvas> FullScreenPane::CreateCanvas()
     throw (RuntimeException)
 {
-    vcl::Window* pWindow = VCLUnoHelper::GetWindow(mxWindow);
-    if (pWindow != nullptr)
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow(mxWindow);
+    if (pWindow)
     {
         Sequence<Any> aArg (5);
 
         // common: first any is VCL pointer to window (for VCL canvas)
-        aArg[0] = makeAny(reinterpret_cast<sal_Int64>(pWindow));
+        aArg[0] = makeAny(reinterpret_cast<sal_Int64>(pWindow.get()));
         aArg[1] = Any();
         aArg[2] = makeAny(css::awt::Rectangle());
         aArg[3] = makeAny(false);

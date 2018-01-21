@@ -24,6 +24,7 @@
 #include <sfx2/linkmgr.hxx>
 #include <sfx2/bindings.hxx>
 #include <sfx2/objsh.hxx>
+#include <sfx2/viewsh.hxx>
 #include <svl/zforlist.hxx>
 #include <svl/PasswordHelper.hxx>
 #include <vcl/svapp.hxx>
@@ -151,7 +152,7 @@ void ScDocument::SetAllRangeNames(const std::map<OUString, std::unique_ptr<ScRan
     }
 }
 
-void ScDocument::GetTabRangeNameMap(std::map<OUString, ScRangeName*>& aRangeNameMap)
+void ScDocument::GetRangeNameMap(std::map<OUString, ScRangeName*>& aRangeNameMap)
 {
     for (SCTAB i = 0; i < static_cast<SCTAB>(maTabs.size()); ++i)
     {
@@ -167,11 +168,6 @@ void ScDocument::GetTabRangeNameMap(std::map<OUString, ScRangeName*>& aRangeName
         maTabs[i]->GetName(aTableName);
         aRangeNameMap.insert(std::pair<OUString, ScRangeName*>(aTableName,p));
     }
-}
-
-void ScDocument::GetRangeNameMap(std::map<OUString, ScRangeName*>& aRangeNameMap)
-{
-    GetTabRangeNameMap(aRangeNameMap);
     if (!pRangeName)
     {
         pRangeName = new ScRangeName();
@@ -417,7 +413,7 @@ bool ScDocument::IsScenario( SCTAB nTab ) const
 }
 
 void ScDocument::SetScenarioData( SCTAB nTab, const OUString& rComment,
-                                        const Color& rColor, sal_uInt16 nFlags )
+                                        const Color& rColor, ScScenarioFlags nFlags )
 {
     if (ValidTab(nTab) && nTab < static_cast<SCTAB>(maTabs.size()) && maTabs[nTab] && maTabs[nTab]->IsScenario())
     {
@@ -448,7 +444,7 @@ bool ScDocument::IsDefaultTabBgColor( SCTAB nTab ) const
 }
 
 void ScDocument::GetScenarioData( SCTAB nTab, OUString& rComment,
-                                        Color& rColor, sal_uInt16& rFlags ) const
+                                        Color& rColor, ScScenarioFlags& rFlags ) const
 {
     if (ValidTab(nTab) && nTab < static_cast<SCTAB>(maTabs.size()) && maTabs[nTab] && maTabs[nTab]->IsScenario())
     {
@@ -458,7 +454,7 @@ void ScDocument::GetScenarioData( SCTAB nTab, OUString& rComment,
     }
 }
 
-void ScDocument::GetScenarioFlags( SCTAB nTab, sal_uInt16& rFlags ) const
+void ScDocument::GetScenarioFlags( SCTAB nTab, ScScenarioFlags& rFlags ) const
 {
     if (ValidTab(nTab) && nTab < static_cast<SCTAB>(maTabs.size()) && maTabs[nTab] && maTabs[nTab]->IsScenario())
         rFlags = maTabs[nTab]->GetScenarioFlags();
@@ -812,7 +808,7 @@ void ScDocument::CopyScenario( SCTAB nSrcTab, SCTAB nDestTab, bool bNewScenario 
                 if (bTouched)
                 {
                     maTabs[nTab]->SetActiveScenario(false);
-                    if ( maTabs[nTab]->GetScenarioFlags() & SC_SCENARIO_TWOWAY )
+                    if ( maTabs[nTab]->GetScenarioFlags() & ScScenarioFlags::TwoWay )
                         maTabs[nTab]->CopyScenarioFrom( maTabs[nDestTab] );
                 }
             }
@@ -831,7 +827,7 @@ void ScDocument::CopyScenario( SCTAB nSrcTab, SCTAB nDestTab, bool bNewScenario 
 }
 
 void ScDocument::MarkScenario( SCTAB nSrcTab, SCTAB nDestTab, ScMarkData& rDestMark,
-                                bool bResetMark, sal_uInt16 nNeededBits ) const
+                                bool bResetMark, ScScenarioFlags nNeededBits ) const
 {
     if (bResetMark)
         rDestMark.ResetMark();
@@ -939,9 +935,8 @@ void ScDocument::BroadcastUno( const SfxHint &rHint )
         // The listener calls must be processed after completing the broadcast,
         // because they can add or remove objects from pUnoBroadcaster.
 
-        const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-        if ( pUnoListenerCalls && pSimpleHint &&
-                pSimpleHint->GetId() == SFX_HINT_DATACHANGED &&
+        if ( pUnoListenerCalls &&
+                rHint.GetId() == SFX_HINT_DATACHANGED &&
                 !bInUnoListenerCall )
         {
             // Listener calls may lead to BroadcastUno calls again. The listener calls
@@ -1320,10 +1315,11 @@ bool ScDocument::SearchAndReplace(
                                     rSearchItem, nCol, nRow );
 
                                 // notify LibreOfficeKit about changed page
-                                if ( comphelper::LibreOfficeKit::isActive() )
+                                if (comphelper::LibreOfficeKit::isActive())
                                 {
                                     OString aPayload = OString::number(nTab);
-                                    GetDrawLayer()->libreOfficeKitCallback(LOK_CALLBACK_SET_PART, aPayload.getStr());
+                                    if (SfxViewShell* pViewShell = SfxViewShell::Current())
+                                        pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_SET_PART, aPayload.getStr());
                                 }
                             }
                         }
@@ -1350,10 +1346,11 @@ bool ScDocument::SearchAndReplace(
                                     rSearchItem, nCol, nRow );
 
                                 // notify LibreOfficeKit about changed page
-                                if ( comphelper::LibreOfficeKit::isActive() )
+                                if (comphelper::LibreOfficeKit::isActive())
                                 {
                                     OString aPayload = OString::number(nTab);
-                                    GetDrawLayer()->libreOfficeKitCallback(LOK_CALLBACK_SET_PART, aPayload.getStr());
+                                    if(SfxViewShell* pViewShell = SfxViewShell::Current())
+                                        pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_SET_PART, aPayload.getStr());
                                 }
                             }
                         }
@@ -1398,7 +1395,7 @@ void ScDocument::Sort(
     }
 }
 
-void ScDocument::Reorder( const sc::ReorderParam& rParam, ScProgress* pProgress )
+void ScDocument::Reorder( const sc::ReorderParam& rParam )
 {
     ScTable* pTab = FetchTable(rParam.maSortRange.aStart.Tab());
     if (!pTab)
@@ -1406,7 +1403,7 @@ void ScDocument::Reorder( const sc::ReorderParam& rParam, ScProgress* pProgress 
 
     bool bOldEnableIdle = IsIdleEnabled();
     EnableIdle(false);
-    pTab->Reorder(rParam, pProgress);
+    pTab->Reorder(rParam);
     EnableIdle(bOldEnableIdle);
 }
 
@@ -1701,7 +1698,7 @@ void ScDocument::ResetEmbedded()
     while result is less than nStopTwips.
     @return true if advanced at least one row.
  */
-static bool lcl_AddTwipsWhile( long & rTwips, long nStopTwips, SCROW & rPosY, SCROW nEndRow, const ScTable * pTable, bool bHiddenAsZero = true )
+static bool lcl_AddTwipsWhile( long & rTwips, long nStopTwips, SCROW & rPosY, SCROW nEndRow, const ScTable * pTable, bool bHiddenAsZero )
 {
     SCROW nRow = rPosY;
     bool bAdded = false;
@@ -1995,6 +1992,19 @@ void ScDocument::DoMergeContents( SCTAB nTab, SCCOL nStartCol, SCROW nStartRow,
         }
 
     SetString(nStartCol,nStartRow,nTab,aTotal.makeStringAndClear());
+}
+
+void ScDocument::DoEmptyBlock( SCTAB nTab, SCCOL nStartCol, SCROW nStartRow,
+                               SCCOL nEndCol, SCROW nEndRow )
+{
+    SCCOL nCol;
+    SCROW nRow;
+    for (nRow=nStartRow; nRow<=nEndRow; nRow++)
+        for (nCol=nStartCol; nCol<=nEndCol; nCol++)
+        {  // empty block except first cell
+            if (nCol != nStartCol || nRow != nStartRow)
+                SetString(nCol,nRow,nTab,"");
+        }
 }
 
 void ScDocument::DoMerge( SCTAB nTab, SCCOL nStartCol, SCROW nStartRow,

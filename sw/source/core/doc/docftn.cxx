@@ -58,8 +58,7 @@ SwEndNoteInfo& SwEndNoteInfo::operator=(const SwEndNoteInfo& rInfo)
         const_cast<SwModify*>(rInfo.aAnchorCharFormatDep.GetRegisteredIn())->Add(
                                                     &aAnchorCharFormatDep );
     else if( aAnchorCharFormatDep.GetRegisteredIn() )
-        static_cast<SwModify*>(aAnchorCharFormatDep.GetRegisteredIn())->Remove(
-                                                    &aAnchorCharFormatDep );
+        aAnchorCharFormatDep.GetRegisteredIn()->Remove( &aAnchorCharFormatDep );
 
     aFormat = rInfo.aFormat;
     nFootnoteOffset = rInfo.nFootnoteOffset;
@@ -107,8 +106,8 @@ SwEndNoteInfo::SwEndNoteInfo(const SwEndNoteInfo& rInfo) :
                 &aAnchorCharFormatDep );
 }
 
-SwEndNoteInfo::SwEndNoteInfo(SwTextFormatColl *pFormat) :
-    SwClient(pFormat),
+SwEndNoteInfo::SwEndNoteInfo() :
+    SwClient(nullptr),
     aPageDescDep( this, nullptr ),
     aCharFormatDep( this, nullptr ),
     aAnchorCharFormatDep( this, nullptr ),
@@ -240,8 +239,8 @@ SwFootnoteInfo::SwFootnoteInfo(const SwFootnoteInfo& rInfo) :
     m_bEndNote = false;
 }
 
-SwFootnoteInfo::SwFootnoteInfo(SwTextFormatColl *pFormat) :
-    SwEndNoteInfo( pFormat ),
+SwFootnoteInfo::SwFootnoteInfo() :
+    SwEndNoteInfo(),
     ePos( FTNPOS_PAGE ),
     eNum( FTNNUM_DOC )
 {
@@ -258,7 +257,7 @@ void SwDoc::SetFootnoteInfo(const SwFootnoteInfo& rInfo)
 
         if (GetIDocumentUndoRedo().DoesUndo())
         {
-            GetIDocumentUndoRedo().AppendUndo( new SwUndoFootNoteInfo(rOld) );
+            GetIDocumentUndoRedo().AppendUndo( new SwUndoFootNoteInfo(rOld, this) );
         }
 
         bool bFootnotePos  = rInfo.ePos != rOld.ePos;
@@ -315,7 +314,7 @@ void SwDoc::SetFootnoteInfo(const SwFootnoteInfo& rInfo)
         // #i81002# no update during loading
         if ( !IsInReading() )
         {
-            getIDocumentFieldsAccess().UpdateRefFields(nullptr);
+            getIDocumentFieldsAccess().UpdateRefFields();
         }
         getIDocumentState().SetModified();
     }
@@ -328,7 +327,7 @@ void SwDoc::SetEndNoteInfo(const SwEndNoteInfo& rInfo)
     {
         if(GetIDocumentUndoRedo().DoesUndo())
         {
-            SwUndo *const pUndo( new SwUndoEndNoteInfo( GetEndNoteInfo() ) );
+            SwUndo *const pUndo( new SwUndoEndNoteInfo( GetEndNoteInfo(), this ) );
             GetIDocumentUndoRedo().AppendUndo(pUndo);
         }
 
@@ -383,7 +382,7 @@ void SwDoc::SetEndNoteInfo(const SwEndNoteInfo& rInfo)
         // #i81002# no update during loading
         if ( !IsInReading() )
         {
-            getIDocumentFieldsAccess().UpdateRefFields(nullptr);
+            getIDocumentFieldsAccess().UpdateRefFields();
         }
         getIDocumentState().SetModified();
     }

@@ -44,7 +44,7 @@ namespace dbaui
     {
     public:
         OTextConnectionHelper( vcl::Window* pParent, const short _nAvailableSections );
-        virtual ~OTextConnectionHelper();
+        virtual ~OTextConnectionHelper() override;
         virtual void dispose() override;
 
     private:
@@ -76,8 +76,8 @@ namespace dbaui
         short       m_nAvailableSections;
 
     protected:
-        DECL_LINK_TYPED(OnSetExtensionHdl,RadioButton&,void);
-        DECL_LINK_TYPED(OnEditModified, Edit&, void);
+        DECL_LINK(OnSetExtensionHdl,RadioButton&,void);
+        DECL_LINK(OnEditModified, Edit&, void);
 
     private:
         OUString    GetSeparator( const ComboBox& rBox, const OUString& rList );

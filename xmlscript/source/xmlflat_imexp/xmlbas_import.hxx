@@ -29,6 +29,7 @@
 #include <cppuhelper/implbase.hxx>
 #include <osl/mutex.hxx>
 #include <rtl/ustrbuf.hxx>
+#include <rtl/ref.hxx>
 
 namespace xmlscript
 {
@@ -43,11 +44,13 @@ namespace xmlscript
     class BasicElementBase : public BasicElementBase_BASE
     {
     protected:
-        BasicImport* m_pImport;
-        BasicElementBase* m_pParent;
+        rtl::Reference<BasicImport> m_xImport;
+    private:
+        rtl::Reference<BasicElementBase> m_xParent;
         OUString m_aLocalName;
         css::uno::Reference< css::xml::input::XAttributes > m_xAttributes;
 
+    protected:
         static bool getBoolAttr( bool* pRet, const OUString& rAttrName,
             const css::uno::Reference< css::xml::input::XAttributes >& xAttributes,
             sal_Int32 nUid );
@@ -56,7 +59,7 @@ namespace xmlscript
         BasicElementBase( const OUString& rLocalName,
             const css::uno::Reference< css::xml::input::XAttributes >& xAttributes,
             BasicElementBase* pParent, BasicImport* pImport );
-        virtual ~BasicElementBase();
+        virtual ~BasicElementBase() override;
 
         // XElement
         virtual css::uno::Reference< css::xml::input::XElement > SAL_CALL getParent()
@@ -93,7 +96,7 @@ namespace xmlscript
     public:
         BasicLibrariesElement( const OUString& rLocalName,
             const css::uno::Reference< css::xml::input::XAttributes >& xAttributes,
-            BasicElementBase* pParent, BasicImport* pImport,
+            BasicImport* pImport,
             const css::uno::Reference< css::script::XLibraryContainer2 >& rxLibContainer );
 
         // XElement
@@ -198,7 +201,7 @@ namespace xmlscript
 
     public:
         BasicImport( const css::uno::Reference< css::frame::XModel >& rxModel, bool bOasis );
-        virtual ~BasicImport();
+        virtual ~BasicImport() override;
 
         // XRoot
         virtual void SAL_CALL startDocument(
@@ -236,7 +239,7 @@ namespace xmlscript
     public:
         XMLBasicImporterBase(
             const css::uno::Reference< css::uno::XComponentContext >& rxContext, bool bOasis );
-        virtual ~XMLBasicImporterBase();
+        virtual ~XMLBasicImporterBase() override;
 
         // XServiceInfo
         virtual sal_Bool SAL_CALL supportsService( const OUString& ServiceName )
@@ -273,7 +276,7 @@ namespace xmlscript
     public:
         explicit XMLBasicImporter(
             const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-        virtual ~XMLBasicImporter();
+        virtual ~XMLBasicImporter() override;
 
         // XServiceInfo
         virtual OUString SAL_CALL getImplementationName(  )
@@ -289,7 +292,7 @@ namespace xmlscript
     public:
         explicit XMLOasisBasicImporter(
             const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-        virtual ~XMLOasisBasicImporter();
+        virtual ~XMLOasisBasicImporter() override;
 
         // XServiceInfo
         virtual OUString SAL_CALL getImplementationName(  )

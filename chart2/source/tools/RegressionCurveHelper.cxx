@@ -53,22 +53,22 @@ OUString lcl_getServiceNameForType(SvxChartRegress eType)
     OUString aServiceName;
     switch( eType )
     {
-        case CHREGRESS_LINEAR:
+        case SvxChartRegress::Linear:
             aServiceName = "com.sun.star.chart2.LinearRegressionCurve";
             break;
-        case CHREGRESS_LOG:
+        case SvxChartRegress::Log:
             aServiceName = "com.sun.star.chart2.LogarithmicRegressionCurve";
             break;
-        case CHREGRESS_EXP:
+        case SvxChartRegress::Exp:
             aServiceName = "com.sun.star.chart2.ExponentialRegressionCurve";
             break;
-        case CHREGRESS_POWER:
+        case SvxChartRegress::Power:
             aServiceName = "com.sun.star.chart2.PotentialRegressionCurve";
             break;
-        case CHREGRESS_POLYNOMIAL:
+        case SvxChartRegress::Polynomial:
             aServiceName = "com.sun.star.chart2.PolynomialRegressionCurve";
             break;
-        case CHREGRESS_MOVING_AVERAGE:
+        case SvxChartRegress::MovingAverage:
             aServiceName = "com.sun.star.chart2.MovingAverageRegressionCurve";
             break;
         default:
@@ -84,15 +84,12 @@ OUString lcl_getServiceNameForType(SvxChartRegress eType)
 namespace chart
 {
 
-Reference< XRegressionCurve > RegressionCurveHelper::createMeanValueLine(
-    const Reference< XComponentContext > & xContext )
+Reference< XRegressionCurve > RegressionCurveHelper::createMeanValueLine()
 {
-    return Reference< XRegressionCurve >(
-        new MeanValueRegressionCurve( xContext ));
+    return Reference< XRegressionCurve >( new MeanValueRegressionCurve );
 }
 
 Reference< XRegressionCurve > RegressionCurveHelper::createRegressionCurveByServiceName(
-    const Reference< XComponentContext > & xContext,
     const OUString& aServiceName )
 {
     Reference< XRegressionCurve > xResult;
@@ -100,27 +97,27 @@ Reference< XRegressionCurve > RegressionCurveHelper::createRegressionCurveByServ
     // todo: use factory methods with service name
     if( aServiceName == "com.sun.star.chart2.LinearRegressionCurve" )
     {
-        xResult.set( new LinearRegressionCurve( xContext ) );
+        xResult.set( new LinearRegressionCurve );
     }
     else if( aServiceName == "com.sun.star.chart2.LogarithmicRegressionCurve" )
     {
-        xResult.set( new LogarithmicRegressionCurve( xContext ) );
+        xResult.set( new LogarithmicRegressionCurve );
     }
     else if( aServiceName == "com.sun.star.chart2.ExponentialRegressionCurve" )
     {
-        xResult.set( new ExponentialRegressionCurve( xContext ) );
+        xResult.set( new ExponentialRegressionCurve );
     }
     else if( aServiceName == "com.sun.star.chart2.PotentialRegressionCurve" )
     {
-        xResult.set( new PotentialRegressionCurve( xContext ) );
+        xResult.set( new PotentialRegressionCurve );
     }
     else if( aServiceName == "com.sun.star.chart2.PolynomialRegressionCurve" )
     {
-        xResult.set( new PolynomialRegressionCurve( xContext ) );
+        xResult.set( new PolynomialRegressionCurve );
     }
     else if( aServiceName == "com.sun.star.chart2.MovingAverageRegressionCurve" )
     {
-        xResult.set( new MovingAverageRegressionCurve( xContext ) );
+        xResult.set( new MovingAverageRegressionCurve );
     }
 
     return xResult;
@@ -299,7 +296,6 @@ uno::Reference< chart2::XRegressionCurve >
 
 void RegressionCurveHelper::addMeanValueLine(
     uno::Reference< XRegressionCurveContainer > & xRegCnt,
-    const uno::Reference< XComponentContext > & xContext,
     const uno::Reference< XPropertySet > & xSeriesProp )
 {
     if( !xRegCnt.is() ||
@@ -307,7 +303,7 @@ void RegressionCurveHelper::addMeanValueLine(
         return;
 
     // todo: use a valid context
-    uno::Reference< XRegressionCurve > xCurve( createMeanValueLine( xContext ));
+    uno::Reference< XRegressionCurve > xCurve( createMeanValueLine() );
     xRegCnt->addRegressionCurve( xCurve );
 
     if( xSeriesProp.is())
@@ -362,7 +358,7 @@ uno::Reference< chart2::XRegressionCurve > RegressionCurveHelper::addRegressionC
     if( !xRegressionCurveContainer.is() )
         return xCurve;
 
-    if( eType == CHREGRESS_NONE )
+    if( eType == SvxChartRegress::NONE )
     {
         OSL_FAIL("don't create a regression curve of type none");
         return xCurve;
@@ -372,8 +368,7 @@ uno::Reference< chart2::XRegressionCurve > RegressionCurveHelper::addRegressionC
     if( !aServiceName.isEmpty())
     {
         // todo: use a valid context
-        xCurve.set( createRegressionCurveByServiceName(
-                         uno::Reference< uno::XComponentContext >(), aServiceName ));
+        xCurve.set( createRegressionCurveByServiceName( aServiceName ) );
 
         if( xEquationProperties.is())
             xCurve->setEquationProperties( xEquationProperties );
@@ -456,6 +451,8 @@ void RegressionCurveHelper::removeEquations(
                         if( xEqProp.is())
                         {
                             xEqProp->setPropertyValue( "ShowEquation", uno::makeAny( false ));
+                            xEqProp->setPropertyValue( "XName", uno::makeAny( OUString("x") ));
+                            xEqProp->setPropertyValue( "YName", uno::makeAny( OUString("f(x) ") ));
                             xEqProp->setPropertyValue( "ShowCorrelationCoefficient", uno::makeAny( false ));
                         }
                     }
@@ -537,7 +534,7 @@ uno::Reference< chart2::XRegressionCurve > RegressionCurveHelper::getRegressionC
 SvxChartRegress RegressionCurveHelper::getRegressionType(
     const Reference< XRegressionCurve > & xCurve )
 {
-    SvxChartRegress eResult = CHREGRESS_UNKNOWN;
+    SvxChartRegress eResult = SvxChartRegress::Unknown;
 
     try
     {
@@ -548,31 +545,31 @@ SvxChartRegress RegressionCurveHelper::getRegressionType(
 
             if( aServiceName == "com.sun.star.chart2.LinearRegressionCurve" )
             {
-                eResult = CHREGRESS_LINEAR;
+                eResult = SvxChartRegress::Linear;
             }
             else if( aServiceName == "com.sun.star.chart2.LogarithmicRegressionCurve" )
             {
-                eResult = CHREGRESS_LOG;
+                eResult = SvxChartRegress::Log;
             }
             else if( aServiceName == "com.sun.star.chart2.ExponentialRegressionCurve" )
             {
-                eResult = CHREGRESS_EXP;
+                eResult = SvxChartRegress::Exp;
             }
             else if( aServiceName == "com.sun.star.chart2.PotentialRegressionCurve" )
             {
-                eResult = CHREGRESS_POWER;
+                eResult = SvxChartRegress::Power;
             }
             else if( aServiceName == "com.sun.star.chart2.MeanValueRegressionCurve" )
             {
-                eResult = CHREGRESS_MEAN_VALUE;
+                eResult = SvxChartRegress::MeanValue;
             }
             else if( aServiceName == "com.sun.star.chart2.PolynomialRegressionCurve" )
             {
-                eResult = CHREGRESS_POLYNOMIAL;
+                eResult = SvxChartRegress::Polynomial;
             }
             else if( aServiceName == "com.sun.star.chart2.MovingAverageRegressionCurve" )
             {
-                eResult = CHREGRESS_MOVING_AVERAGE;
+                eResult = SvxChartRegress::MovingAverage;
             }
         }
     }
@@ -587,7 +584,7 @@ SvxChartRegress RegressionCurveHelper::getRegressionType(
 SvxChartRegress RegressionCurveHelper::getFirstRegressTypeNotMeanValueLine(
     const Reference< XRegressionCurveContainer > & xRegCnt )
 {
-    SvxChartRegress eResult = CHREGRESS_NONE;
+    SvxChartRegress eResult = SvxChartRegress::NONE;
 
     if( xRegCnt.is())
     {
@@ -596,8 +593,8 @@ SvxChartRegress RegressionCurveHelper::getFirstRegressTypeNotMeanValueLine(
         for( sal_Int32 i = 0; i < aCurves.getLength(); ++i )
         {
             SvxChartRegress eType = getRegressionType( aCurves[i] );
-            if( eType != CHREGRESS_MEAN_VALUE &&
-                eType != CHREGRESS_UNKNOWN )
+            if( eType != SvxChartRegress::MeanValue &&
+                eType != SvxChartRegress::Unknown )
             {
                 eResult = eType;
                 break;

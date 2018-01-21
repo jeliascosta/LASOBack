@@ -47,22 +47,21 @@ namespace connectivity
             LoadProductsInfo();
         }
 
-        sal_Int32 ProfileAccess::LoadProductsInfo()
+        void ProfileAccess::LoadProductsInfo()
         {
             //tdf#39279: LO should search Thunderbird first then Seamonkey and finally Firefox
             //load thunderbird profiles to m_ProductProfileList
-            sal_Int32 count = LoadXPToolkitProfiles(MozillaProductType_Thunderbird);
+            LoadXPToolkitProfiles(MozillaProductType_Thunderbird);
 
             //load SeaMonkey 2 profiles to m_ProductProfileList
-            count += LoadXPToolkitProfiles(MozillaProductType_Mozilla);
+            LoadXPToolkitProfiles(MozillaProductType_Mozilla);
 
             //load firefox profiles to m_ProductProfileList
             //firefox profile does not containt address book, but maybe others need them
-            count += LoadXPToolkitProfiles(MozillaProductType_Firefox);
-            return count;
+            LoadXPToolkitProfiles(MozillaProductType_Firefox);
         }
         //Thunderbird and firefox profiles are saved in profiles.ini
-        sal_Int32 ProfileAccess::LoadXPToolkitProfiles(MozillaProductType product)
+        void ProfileAccess::LoadXPToolkitProfiles(MozillaProductType product)
         {
             sal_Int32 index=product;
             ProductStruct &rProduct = m_ProductProfileList[index];
@@ -138,10 +137,9 @@ namespace connectivity
                 }
 
             }
-            return static_cast< ::sal_Int32 >(rProduct.mProfileList.size());
         }
 
-        OUString ProfileAccess::getProfilePath( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException)
+        OUString ProfileAccess::getProfilePath( css::mozilla::MozillaProductType product, const OUString& profileName ) throw (css::uno::RuntimeException)
         {
             sal_Int32 index=product;
             ProductStruct &rProduct = m_ProductProfileList[index];
@@ -154,13 +152,13 @@ namespace connectivity
                 return rProduct.mProfileList[profileName]->getProfilePath();
         }
 
-        ::sal_Int32 ProfileAccess::getProfileCount( ::com::sun::star::mozilla::MozillaProductType product) throw (::com::sun::star::uno::RuntimeException)
+        ::sal_Int32 ProfileAccess::getProfileCount( css::mozilla::MozillaProductType product) throw (css::uno::RuntimeException)
         {
             sal_Int32 index=product;
             ProductStruct &rProduct = m_ProductProfileList[index];
             return static_cast< ::sal_Int32 >(rProduct.mProfileList.size());
         }
-        ::sal_Int32 ProfileAccess::getProfileList( ::com::sun::star::mozilla::MozillaProductType product, ::com::sun::star::uno::Sequence< OUString >& list ) throw (::com::sun::star::uno::RuntimeException)
+        ::sal_Int32 ProfileAccess::getProfileList( css::mozilla::MozillaProductType product, css::uno::Sequence< OUString >& list ) throw (css::uno::RuntimeException)
         {
             sal_Int32 index=product;
             ProductStruct &rProduct = m_ProductProfileList[index];
@@ -178,7 +176,7 @@ namespace connectivity
             return static_cast< ::sal_Int32 >(rProduct.mProfileList.size());
         }
 
-        OUString ProfileAccess::getDefaultProfile( ::com::sun::star::mozilla::MozillaProductType product ) throw (::com::sun::star::uno::RuntimeException)
+        OUString ProfileAccess::getDefaultProfile( css::mozilla::MozillaProductType product ) throw (css::uno::RuntimeException)
         {
             sal_Int32 index=product;
             ProductStruct &rProduct = m_ProductProfileList[index];
@@ -195,14 +193,14 @@ namespace connectivity
             ProfileStruct * aProfile = (*rProduct.mProfileList.begin()).second;
             return aProfile->getProfileName();
         }
-        bool ProfileAccess::isProfileLocked( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException)
+        bool ProfileAccess::isProfileLocked( css::mozilla::MozillaProductType product, const OUString& profileName ) throw (css::uno::RuntimeException)
         {
             (void)product; /* avoid warning about unused parameter */
             (void)profileName; /* avoid warning about unused parameter */
             return true;
         }
 
-        bool ProfileAccess::getProfileExists( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException)
+        bool ProfileAccess::getProfileExists( css::mozilla::MozillaProductType product, const OUString& profileName ) throw (css::uno::RuntimeException)
         {
             sal_Int32 index=product;
             ProductStruct &rProduct = m_ProductProfileList[index];

@@ -19,7 +19,6 @@
 
 #include "ErrorBar.hxx"
 #include "macros.hxx"
-#include "LineProperties.hxx"
 #include "ContainerHelper.hxx"
 #include "EventListenerHelper.hxx"
 #include "PropertyHelper.hxx"
@@ -82,35 +81,37 @@ const SfxItemPropertySet* GetErrorBarPropertySet()
 namespace chart
 {
 
-uno::Reference< beans::XPropertySet > createErrorBar( const uno::Reference< uno::XComponentContext > & xContext )
-{
-    return new ErrorBar( xContext );
-}
-
-ErrorBar::ErrorBar(
-    uno::Reference< uno::XComponentContext > const & xContext ) :
-    LineProperties(),
+ErrorBar::ErrorBar() :
+    mnLineWidth(0),
+    meLineStyle(drawing::LineStyle_SOLID),
+    maLineColor(0),
+    mnLineTransparence(0),
+    meLineJoint(drawing::LineJoint_ROUND),
     mbShowPositiveError(true),
     mbShowNegativeError(true),
     mfPositiveError(0),
     mfNegativeError(0),
     mfWeight(1),
     meStyle(css::chart::ErrorBarStyle::NONE),
-    m_xContext( xContext ),
     m_xModifyEventForwarder( ModifyListenerHelper::createModifyEventForwarder())
 {}
 
 ErrorBar::ErrorBar( const ErrorBar & rOther ) :
     MutexContainer(),
     impl::ErrorBar_Base(),
-    LineProperties(rOther),
+    maDashName(rOther.maDashName),
+    maLineDash(rOther.maLineDash),
+    mnLineWidth(rOther.mnLineWidth),
+    meLineStyle(rOther.meLineStyle),
+    maLineColor(rOther.maLineColor),
+    mnLineTransparence(rOther.mnLineTransparence),
+    meLineJoint(rOther.meLineJoint),
     mbShowPositiveError(rOther.mbShowPositiveError),
     mbShowNegativeError(rOther.mbShowNegativeError),
     mfPositiveError(rOther.mfPositiveError),
     mfNegativeError(rOther.mfNegativeError),
     mfWeight(rOther.mfWeight),
     meStyle(rOther.meStyle),
-    m_xContext( rOther.m_xContext ),
     m_xModifyEventForwarder( ModifyListenerHelper::createModifyEventForwarder())
 {
     if( ! rOther.m_aDataSequences.empty())
@@ -169,8 +170,20 @@ void ErrorBar::setPropertyValue( const OUString& rPropName, const uno::Any& rAny
         rAny >>= mbShowNegativeError;
     else if(rPropName == "ErrorBarRangePositive" || rPropName == "ErrorBarRangeNegative")
         throw beans::UnknownPropertyException("read-only property", static_cast< uno::XWeak*>(this));
-    else
-        LineProperties::setPropertyValue(rPropName, rAny);
+    else if(rPropName == "LineDashName")
+        rAny >>= maDashName;
+    else if(rPropName == "LineDash")
+        rAny >>= maLineDash;
+    else if(rPropName == "LineWidth")
+        rAny >>= mnLineWidth;
+    else if(rPropName == "LineStyle")
+        rAny >>= meLineStyle;
+    else if(rPropName == "LineColor")
+        rAny >>= maLineColor;
+    else if(rPropName == "LineTransparence")
+        rAny >>= mnLineTransparence;
+    else if(rPropName == "LineJoint")
+        rAny >>= meLineJoint;
 
     m_xModifyEventForwarder->modified( lang::EventObject( static_cast< uno::XWeak* >( this )));
 }
@@ -260,8 +273,20 @@ uno::Any ErrorBar::getPropertyValue(const OUString& rPropName)
 
         aRet <<= aRange;
     }
-    else
-        aRet = LineProperties::getPropertyValue(rPropName);
+    else if(rPropName == "LineDashName")
+        aRet <<= maDashName;
+    else if(rPropName == "LineDash")
+        aRet <<= maLineDash;
+    else if(rPropName == "LineWidth")
+        aRet <<= mnLineWidth;
+    else if(rPropName == "LineStyle")
+        aRet = uno::makeAny(meLineStyle);
+    else if(rPropName == "LineColor")
+        aRet <<= maLineColor;
+    else if(rPropName == "LineTransparence")
+        aRet <<= mnLineTransparence;
+    else if(rPropName == "LineJoint")
+        aRet <<= meLineJoint;
 
     SAL_WARN_IF(!aRet.hasValue(), "chart2", "asked for property value: " << rPropName);
     return aRet;
@@ -443,22 +468,8 @@ uno::Sequence< uno::Reference< chart2::data::XLabeledDataSequence > > SAL_CALL E
     return comphelper::containerToSequence( m_aDataSequences );
 }
 
-uno::Sequence< OUString > ErrorBar::getSupportedServiceNames_Static()
-{
-    uno::Sequence< OUString > aServices( 2 );
-    aServices[ 0 ] = lcl_aServiceName;
-    aServices[ 1 ] = "com.sun.star.chart2.ErrorBar";
-    return aServices;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL ErrorBar::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
-{
-    return getImplementationName_Static();
-}
-
-OUString ErrorBar::getImplementationName_Static()
 {
     return OUString(lcl_aServiceName);
 }
@@ -472,7 +483,10 @@ sal_Bool SAL_CALL ErrorBar::supportsService( const OUString& rServiceName )
 css::uno::Sequence< OUString > SAL_CALL ErrorBar::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        lcl_aServiceName,
+        "com.sun.star.chart2.ErrorBar"
+    };
 }
 
 // needed by MSC compiler
@@ -481,10 +495,10 @@ using impl::ErrorBar_Base;
 } //  namespace chart
 
 extern "C" SAL_DLLPUBLIC_EXPORT css::uno::XInterface * SAL_CALL
-com_sun_star_comp_chart2_ErrorBar_get_implementation(css::uno::XComponentContext *context,
+com_sun_star_comp_chart2_ErrorBar_get_implementation(css::uno::XComponentContext *,
         css::uno::Sequence<css::uno::Any> const &)
 {
-    return cppu::acquire(new ::chart::ErrorBar(context));
+    return cppu::acquire(new ::chart::ErrorBar);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -491,7 +491,7 @@ void SAL_CALL SlideShow::setPropertyValue( const OUString& aPropertyName, const 
         {
             bIllegalArgument = false;
 
-            SdOptions* pOptions = SD_MOD()->GetSdOptions(DOCUMENT_TYPE_IMPRESS);
+            SdOptions* pOptions = SD_MOD()->GetSdOptions(DocumentType::Impress);
             pOptions->SetDisplay( nDisplay );
 
             FullScreenWorkWindow *pWin = dynamic_cast<FullScreenWorkWindow *>(GetWorkWindow());
@@ -570,7 +570,7 @@ Any SAL_CALL SlideShow::getPropertyValue( const OUString& PropertyName ) throw(U
         return Any( rPresSettings.mbShowPauseLogo );
     case ATTR_PRESENT_DISPLAY:
     {
-        SdOptions* pOptions = SD_MOD()->GetSdOptions(DOCUMENT_TYPE_IMPRESS);
+        SdOptions* pOptions = SD_MOD()->GetSdOptions(DocumentType::Impress);
         return Any(pOptions->GetDisplay());
     }
 
@@ -613,7 +613,7 @@ WorkWindow *SlideShow::GetWorkWindow()
     if( !pShell || !pShell->GetViewFrame() )
         return nullptr;
 
-    return dynamic_cast<WorkWindow*>(pShell->GetViewFrame()->GetTopFrame().GetWindow().GetParent());
+    return dynamic_cast<WorkWindow*>(pShell->GetViewFrame()->GetFrame().GetWindow().GetParent());
 }
 
 bool SlideShow::IsExitAfterPresenting() const
@@ -668,10 +668,11 @@ void SAL_CALL SlideShow::end()
 
             if( pShell && pShell->GetViewFrame() )
             {
-                WorkWindow* pWorkWindow = dynamic_cast<WorkWindow*>(pShell->GetViewFrame()->GetTopFrame().GetWindow().GetParent());
+                WorkWindow* pWorkWindow = dynamic_cast<WorkWindow*>(pShell->GetViewFrame()->GetFrame().GetWindow().GetParent());
                 if( pWorkWindow )
                 {
-                    pWorkWindow->StartPresentationMode( isAlwaysOnTop() ? PresentationFlags::HideAllApps : PresentationFlags::NONE );
+                    pWorkWindow->StartPresentationMode(   (mxController.is() && mxController->maPresSettings.mbAlwaysOnTop)
+                                                        ? PresentationFlags::HideAllApps : PresentationFlags::NONE );
                 }
             }
         }
@@ -737,7 +738,7 @@ void SAL_CALL SlideShow::end()
                         if (xDrawView.is())
                             xDrawView->setCurrentPage(
                                 Reference<XDrawPage>(
-                                    mpDoc->GetSdPage(xController->getRestoreSlide(), PK_STANDARD)->getUnoPage(),
+                                    mpDoc->GetSdPage(xController->getRestoreSlide(), PageKind::Standard)->getUnoPage(),
                                     UNO_QUERY));
                     }
                 }
@@ -882,7 +883,7 @@ void SAL_CALL SlideShow::disposing()
     mpDoc = nullptr;
 }
 
-bool SlideShow::startPreview( const Reference< XDrawPage >& xDrawPage, const Reference< XAnimationNode >& xAnimationNode, vcl::Window* pParent )
+bool SlideShow::startPreview( const Reference< XDrawPage >& xDrawPage, const Reference< XAnimationNode >& xAnimationNode )
 {
     Sequence< PropertyValue > aArguments(4);
 
@@ -895,12 +896,8 @@ bool SlideShow::startPreview( const Reference< XDrawPage >& xDrawPage, const Ref
     aArguments[2].Name = "AnimationNode";
     aArguments[2].Value <<= xAnimationNode;
 
-    Reference< XWindow > xParentWindow;
-    if( pParent )
-        xParentWindow = VCLUnoHelper::GetInterface( pParent );
-
     aArguments[3].Name = "ParentWindow";
-    aArguments[3].Value <<= xParentWindow;
+    aArguments[3].Value <<= Reference< XWindow >();
 
     startWithArguments( aArguments );
 
@@ -998,11 +995,6 @@ void SlideShow::paint( const Rectangle& rRect )
         mxController->paint( rRect );
 }
 
-bool SlideShow::isAlwaysOnTop()
-{
-    return mxController.is() && mxController->maPresSettings.mbAlwaysOnTop;
-}
-
 void SlideShow::pause( bool bPause )
 {
     if( mxController.is() )
@@ -1032,7 +1024,7 @@ void SlideShow::StartInPlacePresentationConfigurationCallback()
     mnInPlaceConfigEvent = Application::PostUserEvent( LINK( this, SlideShow, StartInPlacePresentationConfigurationHdl ) );
 }
 
-IMPL_LINK_NOARG_TYPED(SlideShow, StartInPlacePresentationConfigurationHdl, void*, void)
+IMPL_LINK_NOARG(SlideShow, StartInPlacePresentationConfigurationHdl, void*, void)
 {
     mnInPlaceConfigEvent = nullptr;
     StartInPlacePresentation();
@@ -1063,7 +1055,7 @@ void SlideShow::StartInPlacePresentation()
                 FrameView* pFrameView = pMainViewShell->GetFrameView();
                 pFrameView->SetPresentationViewShellId(SID_VIEWSHELL1);
                 pFrameView->SetPreviousViewShellType (pMainViewShell->GetShellType());
-                pFrameView->SetPageKind (PK_STANDARD);
+                pFrameView->SetPageKind (PageKind::Standard);
             }
 
             pHelper->RequestView( FrameworkHelper::msImpressViewURL, FrameworkHelper::msCenterPaneURL );
@@ -1156,7 +1148,7 @@ sal_Int32 SlideShow::GetDisplay()
 {
     sal_Int32 nDisplay = 0;
 
-    SdOptions* pOptions = SD_MOD()->GetSdOptions(DOCUMENT_TYPE_IMPRESS);
+    SdOptions* pOptions = SD_MOD()->GetSdOptions(DocumentType::Impress);
     if( pOptions )
         nDisplay = pOptions->GetDisplay();
 

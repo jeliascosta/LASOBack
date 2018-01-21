@@ -18,6 +18,8 @@
 #include <vcl/dllapi.h>
 #include <vcl/window.hxx>
 #include <vcl/vclptr.hxx>
+#include <tools/wintypes.hxx>
+#include <vcl/EnumContext.hxx>
 
 #include <memory>
 #include <map>
@@ -106,7 +108,11 @@ public:
     static void     reorderWithinParent(std::vector< vcl::Window*>& rChilds, bool bIsButtonBox);
     static void     reorderWithinParent(vcl::Window &rWindow, sal_uInt16 nNewPosition);
 
-    const css::uno::Reference<css::frame::XFrame>& getFrame() { return m_xFrame; }
+    /// return UI-File name (without '.ui')
+    const OString& getUIFile() const
+    {
+        return m_sHelpRoot;
+    }
 
 private:
     VclBuilder(const VclBuilder&) = delete;
@@ -156,12 +162,9 @@ private:
     struct MenuAndId
     {
         OString m_sID;
-        PopupMenu *m_pMenu;
-        MenuAndId(const OString &rId, PopupMenu *pMenu)
-            : m_sID(rId)
-            , m_pMenu(pMenu)
-        {
-        }
+        VclPtr<PopupMenu> m_pMenu;
+        MenuAndId(const OString &rId, PopupMenu *pMenu);
+        ~MenuAndId();
     };
     std::vector<MenuAndId> m_aMenus;
 
@@ -352,6 +355,8 @@ private:
     void        handleChild(vcl::Window *pParent, xmlreader::XmlReader &reader);
     VclPtr<vcl::Window> handleObject(vcl::Window *pParent, xmlreader::XmlReader &reader);
     void        handlePacking(vcl::Window *pCurrent, vcl::Window *pParent, xmlreader::XmlReader &reader);
+    static std::vector<vcl::EnumContext::Context> handleStyle(xmlreader::XmlReader &reader, int &nPriority);
+    static OString getStyleClass(xmlreader::XmlReader &reader);
     void        applyPackingProperty(vcl::Window *pCurrent, vcl::Window *pParent, xmlreader::XmlReader &reader);
     void        collectProperty(xmlreader::XmlReader &reader, const OString &rID, stringmap &rVec);
     static void collectPangoAttribute(xmlreader::XmlReader &reader, stringmap &rMap);
@@ -370,8 +375,6 @@ private:
 
     void        handleListStore(xmlreader::XmlReader &reader, const OString &rID);
     void        handleRow(xmlreader::XmlReader &reader, const OString &rID, sal_Int32 nRowIndex);
-    void        handleAdjustment(const OString &rID, stringmap &rProperties);
-    void        handleTextBuffer(const OString &rID, stringmap &rProperties);
     void        handleTabChild(vcl::Window *pParent, xmlreader::XmlReader &reader);
     void        handleMenu(xmlreader::XmlReader &reader, const OString &rID);
     std::vector<OString> handleItems(xmlreader::XmlReader &reader, const OString &rID);
@@ -441,8 +444,6 @@ public:
     static OUString getUIRootDir();
     bool            hasBuilder() const { return m_pUIBuilder != nullptr; }
 
-    css::uno::Reference<css::frame::XFrame> getFrame() { return m_pUIBuilder->getFrame(); }
-
     template <typename T> T* get(VclPtr<T>& ret, const OString& sID)
     {
         return m_pUIBuilder->get<T>(ret, sID);
@@ -460,6 +461,15 @@ public:
         if (!m_pUIBuilder)
             return;
         m_pUIBuilder->setDeferredProperties();
+    }
+    OString getUIFile() const
+    {
+        if (m_pUIBuilder)
+        {
+            return m_pUIBuilder->getUIFile();
+        }
+
+        return OString();
     }
 
 protected:

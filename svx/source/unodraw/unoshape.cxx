@@ -26,6 +26,7 @@
 #include <vcl/svapp.hxx>
 #include <svl/itemprop.hxx>
 #include <vcl/fltcall.hxx>
+#include <o3tl/any.hxx>
 #include <osl/mutex.hxx>
 #include <editeng/unotext.hxx>
 #include <svx/svdobj.hxx>
@@ -234,9 +235,6 @@ SvxShape::~SvxShape() throw()
         SdrObject::Free( pObject );
     }
 
-    delete mpImpl;
-    mpImpl = nullptr;
-
     EndListeningAll(); // call explicitly within SolarMutexGuard
 }
 
@@ -329,10 +327,10 @@ svx::PropertyChangeNotifier& SvxShape::getShapePropertyChangeNotifier()
 
 void SvxShape::impl_construct()
 {
-    mpImpl->maPropertyNotifier.registerProvider( svx::eShapePosition,
-        svx::PPropertyValueProvider( new ShapePositionProvider( *mpImpl ) ) );
-    mpImpl->maPropertyNotifier.registerProvider( svx::eShapeSize,
-        svx::PPropertyValueProvider( new ShapeSizeProvider( *mpImpl ) ) );
+    mpImpl->maPropertyNotifier.registerProvider( svx::ShapeProperty::Position,
+        std::shared_ptr<svx::IPropertyValueProvider>( new ShapePositionProvider( *mpImpl ) ) );
+    mpImpl->maPropertyNotifier.registerProvider( svx::ShapeProperty::Size,
+        std::shared_ptr<svx::IPropertyValueProvider>( new ShapeSizeProvider( *mpImpl ) ) );
 
     if ( mpObj.is() )
         impl_initFromSdrObject();
@@ -362,19 +360,19 @@ void SvxShape::impl_initFromSdrObject()
         StartListening( *mpModel );
     }
 
-    const sal_uInt32 nInventor = mpObj->GetObjInventor();
+    const SdrInventor nInventor = mpObj->GetObjInventor();
 
     // is it one of ours (svx) ?
-    if( nInventor == SdrInventor || nInventor == E3dInventor || nInventor == FmFormInventor )
+    if( nInventor == SdrInventor::Default || nInventor == SdrInventor::E3d || nInventor == SdrInventor::FmForm )
     {
-        if(nInventor == FmFormInventor)
+        if(nInventor == SdrInventor::FmForm)
         {
             mpImpl->mnObjId = OBJ_UNO;
         }
         else
         {
             mpImpl->mnObjId = mpObj->GetObjIdentifier();
-            if( nInventor == E3dInventor )
+            if( nInventor == SdrInventor::E3d )
                 mpImpl->mnObjId |= E3D_INVENTOR_FLAG;
         }
 
@@ -486,12 +484,12 @@ void SvxShape::ForceMetricToItemPoolMetric(Pair& rPoint) const throw()
     DBG_TESTSOLARMUTEX();
     if(mpModel)
     {
-        SfxMapUnit eMapUnit = mpModel->GetItemPool().GetMetric(0);
-        if(eMapUnit != SFX_MAPUNIT_100TH_MM)
+        MapUnit eMapUnit = mpModel->GetItemPool().GetMetric(0);
+        if(eMapUnit != MapUnit::Map100thMM)
         {
             switch(eMapUnit)
             {
-                case SFX_MAPUNIT_TWIP :
+                case MapUnit::MapTwip :
                 {
                     rPoint.A() = MM_TO_TWIPS(rPoint.A());
                     rPoint.B() = MM_TO_TWIPS(rPoint.B());
@@ -512,12 +510,12 @@ void SvxShape::ForceMetricToItemPoolMetric(basegfx::B2DPolyPolygon& rPolyPolygon
     DBG_TESTSOLARMUTEX();
     if(mpModel)
     {
-        SfxMapUnit eMapUnit = mpModel->GetItemPool().GetMetric(0);
-        if(eMapUnit != SFX_MAPUNIT_100TH_MM)
+        MapUnit eMapUnit = mpModel->GetItemPool().GetMetric(0);
+        if(eMapUnit != MapUnit::Map100thMM)
         {
             switch(eMapUnit)
             {
-                case SFX_MAPUNIT_TWIP :
+                case MapUnit::MapTwip :
                 {
                     basegfx::B2DHomMatrix aTransform;
                     const double fMMToTWIPS(72.0 / 127.0);
@@ -539,15 +537,15 @@ void SvxShape::ForceMetricToItemPoolMetric(basegfx::B2DPolyPolygon& rPolyPolygon
 void SvxShape::ForceMetricTo100th_mm(Pair& rPoint) const throw()
 {
     DBG_TESTSOLARMUTEX();
-    SfxMapUnit eMapUnit = SFX_MAPUNIT_100TH_MM;
+    MapUnit eMapUnit = MapUnit::Map100thMM;
     if(mpModel)
     {
         eMapUnit = mpModel->GetItemPool().GetMetric(0);
-        if(eMapUnit != SFX_MAPUNIT_100TH_MM)
+        if(eMapUnit != MapUnit::Map100thMM)
         {
             switch(eMapUnit)
             {
-                case SFX_MAPUNIT_TWIP :
+                case MapUnit::MapTwip :
                 {
                     rPoint.A() = TWIPS_TO_MM(rPoint.A());
                     rPoint.B() = TWIPS_TO_MM(rPoint.B());
@@ -566,15 +564,15 @@ void SvxShape::ForceMetricTo100th_mm(Pair& rPoint) const throw()
 void SvxShape::ForceMetricTo100th_mm(basegfx::B2DPolyPolygon& rPolyPolygon) const throw()
 {
     DBG_TESTSOLARMUTEX();
-    SfxMapUnit eMapUnit = SFX_MAPUNIT_100TH_MM;
+    MapUnit eMapUnit = MapUnit::Map100thMM;
     if(mpModel)
     {
         eMapUnit = mpModel->GetItemPool().GetMetric(0);
-        if(eMapUnit != SFX_MAPUNIT_100TH_MM)
+        if(eMapUnit != MapUnit::Map100thMM)
         {
             switch(eMapUnit)
             {
-                case SFX_MAPUNIT_TWIP :
+                case MapUnit::MapTwip :
                 {
                     basegfx::B2DHomMatrix aTransform;
                     const double fTWIPSToMM(127.0 / 72.0);
@@ -662,7 +660,7 @@ uno::Any SvxShape::GetBitmap( bool bMetaFile /* = false */ ) const
         return aAny;
 
     ScopedVclPtrInstance< VirtualDevice > pVDev;
-    pVDev->SetMapMode(MapMode(MAP_100TH_MM));
+    pVDev->SetMapMode(MapMode(MapUnit::Map100thMM));
 
     SdrModel* pModel = mpObj->GetModel();
     SdrPage* pPage = mpObj->GetPage();
@@ -686,13 +684,13 @@ uno::Any SvxShape::GetBitmap( bool bMetaFile /* = false */ ) const
         const uno::Sequence<sal_Int8> aSeq(
             static_cast< const sal_Int8* >(aDestStrm.GetData()),
             aDestStrm.GetEndOfData());
-        aAny.setValue( &aSeq, cppu::UnoType<uno::Sequence< sal_Int8 >>::get() );
+        aAny <<= aSeq;
     }
     else
     {
         Graphic aGraph(aMtf);
         aGraph.SetPrefSize(aSize);
-        aGraph.SetPrefMapMode(MAP_100TH_MM);
+        aGraph.SetPrefMapMode(MapUnit::Map100thMM);
 
         Reference< awt::XBitmap > xBmp( aGraph.GetXGraphic(), UNO_QUERY );
         aAny <<= xBmp;
@@ -1007,13 +1005,13 @@ void SvxShape::Notify( SfxBroadcaster&, const SfxHint& rHint ) throw()
     if( !mpObj.is() )
         return;
 
-    // #i55919# HINT_OBJCHG is only interesting if it's for this object
+    // #i55919# SdrHintKind::ObjectChange is only interesting if it's for this object
 
     const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>(&rHint);
-    if (!pSdrHint || ( /* (pSdrHint->GetKind() != HINT_OBJREMOVED)  && */
-        (pSdrHint->GetKind() != HINT_MODELCLEARED) &&
+    if (!pSdrHint || ( /* (pSdrHint->GetKind() != SdrHintKind::ObjectRemoved)  && */
+        (pSdrHint->GetKind() != SdrHintKind::ModelCleared) &&
         // #110094#-9 (pSdrHint->GetKind() != HINT_OBJLISTCLEAR) &&
-        ((pSdrHint->GetKind() != HINT_OBJCHG || pSdrHint->GetObject() != mpObj.get() ))))
+        ((pSdrHint->GetKind() != SdrHintKind::ObjectChange || pSdrHint->GetObject() != mpObj.get() ))))
         return;
 
     uno::Reference< uno::XInterface > xSelf( mpObj->getWeakUnoShape() );
@@ -1027,12 +1025,12 @@ void SvxShape::Notify( SfxBroadcaster&, const SfxHint& rHint ) throw()
 
     switch( pSdrHint->GetKind() )
     {
-        case HINT_OBJCHG:
+        case SdrHintKind::ObjectChange:
         {
             updateShapeKind();
             break;
         }
-        case HINT_MODELCLEARED:
+        case SdrHintKind::ModelCleared:
         {
             bClearMe = true;
             mpModel = nullptr;
@@ -1064,7 +1062,7 @@ void SvxShape::Notify( SfxBroadcaster&, const SfxHint& rHint ) throw()
 
 static bool svx_needLogicRectHack( SdrObject* pObj )
 {
-    if( pObj->GetObjInventor() == SdrInventor)
+    if( pObj->GetObjInventor() == SdrInventor::Default)
     {
         switch(pObj->GetObjIdentifier())
         {
@@ -1203,7 +1201,7 @@ void SAL_CALL SvxShape::setSize( const awt::Size& rSize )
         Size aLocalSize( rSize.Width, rSize.Height );
         ForceMetricToItemPoolMetric(aLocalSize);
 
-        if(mpObj->GetObjInventor() == SdrInventor && mpObj->GetObjIdentifier() == OBJ_MEASURE )
+        if(mpObj->GetObjInventor() == SdrInventor::Default && mpObj->GetObjIdentifier() == OBJ_MEASURE )
         {
             Fraction aWdt(aLocalSize.Width(),aRect.Right()-aRect.Left());
             Fraction aHgt(aLocalSize.Height(),aRect.Bottom()-aRect.Top());
@@ -1438,7 +1436,7 @@ bool SAL_CALL SvxShape::SetFillAttribute( sal_Int32 nWID, const OUString& rName,
             if( nPos == -1 )
                 return false;
 
-            XBitmapEntry* pEntry = pBitmapList->GetBitmap( nPos );
+            const XBitmapEntry* pEntry = pBitmapList->GetBitmap(nPos);
             XFillBitmapItem aBmpItem;
             aBmpItem.SetWhich( XATTR_FILLBITMAP );
             aBmpItem.SetName( rName );
@@ -1457,7 +1455,7 @@ bool SAL_CALL SvxShape::SetFillAttribute( sal_Int32 nWID, const OUString& rName,
             if( nPos == -1 )
                 return false;
 
-            XGradientEntry* pEntry = pGradientList->GetGradient( nPos );
+            const XGradientEntry* pEntry = pGradientList->GetGradient(nPos);
             XFillGradientItem aGrdItem;
             aGrdItem.SetWhich( XATTR_FILLGRADIENT );
             aGrdItem.SetName( rName );
@@ -1476,7 +1474,7 @@ bool SAL_CALL SvxShape::SetFillAttribute( sal_Int32 nWID, const OUString& rName,
             if( nPos == -1 )
                 return false;
 
-            XHatchEntry* pEntry = pHatchList->GetHatch( nPos );
+            const XHatchEntry* pEntry = pHatchList->GetHatch( nPos );
             XFillHatchItem aHatchItem;
             aHatchItem.SetWhich( XATTR_FILLHATCH );
             aHatchItem.SetName( rName );
@@ -1496,7 +1494,7 @@ bool SAL_CALL SvxShape::SetFillAttribute( sal_Int32 nWID, const OUString& rName,
             if( nPos == -1 )
                 return false;
 
-            XLineEndEntry* pEntry = pLineEndList->GetLineEnd( nPos );
+            const XLineEndEntry* pEntry = pLineEndList->GetLineEnd(nPos);
             if( XATTR_LINEEND == nWID )
             {
                 XLineEndItem aLEItem;
@@ -1527,7 +1525,7 @@ bool SAL_CALL SvxShape::SetFillAttribute( sal_Int32 nWID, const OUString& rName,
             if( nPos == -1 )
                 return false;
 
-            XDashEntry* pEntry = pDashList->GetDash( nPos );
+            const XDashEntry* pEntry = pDashList->GetDash(nPos);
             XLineDashItem aDashItem;
             aDashItem.SetWhich( XATTR_LINEDASH );
             aDashItem.SetName( rName );
@@ -1947,7 +1945,7 @@ uno::Any SvxShape::GetAnyForItem( SfxItemSet& aSet, const SfxItemPropertySimpleE
 
     case SDRATTR_CIRCKIND:
     {
-        if( mpObj->GetObjInventor() == SdrInventor)
+        if( mpObj->GetObjInventor() == SdrInventor::Default)
         {
             drawing::CircleKind eKind;
             switch(mpObj->GetObjIdentifier())
@@ -2250,17 +2248,17 @@ bool SvxShape::setPropertyValueImpl( const OUString&, const SfxItemPropertySimpl
                     basegfx::B2DPolyPolygon aNewPolyPolygon;
 
                     // #123616# be a little bit more flexible regarding the data type used
-                    if( rValue.getValueType() == cppu::UnoType<drawing::PointSequenceSequence>::get())
+                    if( auto s = o3tl::tryAccess<drawing::PointSequenceSequence>(rValue) )
                     {
                         // get polygpon data from PointSequenceSequence
                         aNewPolyPolygon = basegfx::tools::UnoPointSequenceSequenceToB2DPolyPolygon(
-                            *static_cast<const drawing::PointSequenceSequence*>(rValue.getValue()));
+                            *s);
                     }
-                    else if( rValue.getValueType() == cppu::UnoType<drawing::PolyPolygonBezierCoords>::get())
+                    else if( auto cs = o3tl::tryAccess<drawing::PolyPolygonBezierCoords>(rValue) )
                     {
                         // get polygpon data from PolyPolygonBezierCoords
                         aNewPolyPolygon = basegfx::tools::UnoPolyPolygonBezierCoordsToB2DPolyPolygon(
-                            *static_cast<const drawing::PolyPolygonBezierCoords*>(rValue.getValue()));
+                            *cs);
                     }
 
                     if(aNewPolyPolygon.count())
@@ -2632,11 +2630,11 @@ bool SvxShape::getPropertyValueImpl( const OUString&, const SfxItemPropertySimpl
     case OWN_ATTR_LDBITMAP:
     {
         sal_uInt16 nId;
-        if( mpObj->GetObjInventor() == SdrInventor && mpObj->GetObjIdentifier() == OBJ_OLE2 )
+        if( mpObj->GetObjInventor() == SdrInventor::Default && mpObj->GetObjIdentifier() == OBJ_OLE2 )
         {
             nId = RID_UNODRAW_OLE2;
         }
-        else if( mpObj->GetObjInventor() == SdrInventor && mpObj->GetObjIdentifier() == OBJ_GRAF )
+        else if( mpObj->GetObjInventor() == SdrInventor::Default && mpObj->GetObjIdentifier() == OBJ_GRAF )
         {
             nId = RID_UNODRAW_GRAPHICS;
         }
@@ -2873,7 +2871,7 @@ bool SvxShape::getPropertyValueImpl( const OUString&, const SfxItemPropertySimpl
                 if ( pGraphic->IsLink() )
                 {
                     GfxLink aLnk = pGraphic->GetLink();
-                    if ( aLnk.GetType() == GFX_LINK_TYPE_NATIVE_WMF )
+                    if ( aLnk.GetType() == GfxLinkType::NativeWmf )
                     {
                         bIsWMF = true;
                         uno::Sequence<sal_Int8> aSeq(reinterpret_cast<sal_Int8 const *>(aLnk.GetData()), (sal_Int32) aLnk.GetDataSize());
@@ -3071,7 +3069,8 @@ void SvxShape::setAllPropertiesToDefault() throw (uno::RuntimeException, std::ex
         mpObj->SetMergedItem(Svx3DCharacterModeItem(true));
     }
 
-    mpModel->SetChanged();
+    if (mpModel)
+        mpModel->SetChanged();
 }
 
 void SvxShape::setPropertiesToDefault(
@@ -3167,7 +3166,7 @@ uno::Sequence< OUString > SAL_CALL SvxShape::_getSupportedServiceNames()
 {
     ::SolarMutexGuard aGuard;
 
-    if( mpObj.is() && mpObj->GetObjInventor() == SdrInventor)
+    if( mpObj.is() && mpObj->GetObjInventor() == SdrInventor::Default)
     {
         const sal_uInt16 nIdent = mpObj->GetObjIdentifier();
 
@@ -3694,11 +3693,11 @@ uno::Sequence< OUString > SAL_CALL SvxShape::_getSupportedServiceNames()
             }
         }
     }
-    else if( mpObj.is() && mpObj->GetObjInventor() == FmFormInventor)
+    else if( mpObj.is() && mpObj->GetObjInventor() == SdrInventor::FmForm)
     {
 #if OSL_DEBUG_LEVEL > 0
         const sal_uInt16 nIdent = mpObj->GetObjIdentifier();
-        OSL_ENSURE( nIdent == OBJ_UNO, "SvxShape::_getSupportedServiceNames: FmFormInventor, but no UNO object?" );
+        OSL_ENSURE( nIdent == OBJ_UNO, "SvxShape::_getSupportedServiceNames: SdrInventor::FmForm, but no UNO object?" );
 #endif
         static uno::Sequence< OUString > *pSeq = nullptr;
         if( nullptr == pSeq )
@@ -3750,14 +3749,14 @@ uno::Reference<uno::XInterface> SAL_CALL SvxShape::getParent()
 
         switch (pObjList->GetListKind())
         {
-            case SDROBJLIST_GROUPOBJ:
+            case SdrObjListKind::GroupObj:
                 if (SdrObjGroup *pGroup = dynamic_cast<SdrObjGroup*>(pObjList->GetOwnerObj()))
                     return pGroup->getUnoShape();
                 else if (E3dScene *pScene = dynamic_cast<E3dScene*>(pObjList->GetOwnerObj()))
                     return pScene->getUnoShape();
                 break;
-            case SDROBJLIST_DRAWPAGE:
-            case SDROBJLIST_MASTERPAGE:
+            case SdrObjListKind::DrawPage:
+            case SdrObjListKind::MasterPage:
                 return dynamic_cast<SdrPage&>(*pObjList).getUnoPage();
             default:
                 OSL_FAIL( "SvxShape::getParent(  ): unexpected SdrObjListKind" );

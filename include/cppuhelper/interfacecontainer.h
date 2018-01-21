@@ -450,8 +450,8 @@ struct OBroadcastHelperVar
     OBroadcastHelperVar( ::osl::Mutex & rMutex_ )
         : rMutex( rMutex_ )
         , aLC( rMutex_ )
-        , bDisposed( sal_False )
-        , bInDispose( sal_False )
+        , bDisposed( false )
+        , bInDispose( false )
     {}
 
     /**
@@ -476,7 +476,6 @@ struct OBroadcastHelperVar
         const css::uno::Reference < css::uno::XInterface > & r )
     {
         ::osl::MutexGuard guard( rMutex );
-        OSL_ENSURE( !bDisposed, "object is disposed" );
         if( ! bInDispose && ! bDisposed  )
             aLC.removeInterface( key , r );
     }

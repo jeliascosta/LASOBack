@@ -65,10 +65,10 @@ public:
     SAL_DLLPRIVATE void ClearObjEnv();
 
 public:
-    SAL_DLLPRIVATE virtual ~FmFormObj();
+    SAL_DLLPRIVATE virtual ~FmFormObj() override;
     SAL_DLLPRIVATE virtual void SetPage(SdrPage* pNewPage) override;
 
-    SAL_DLLPRIVATE virtual sal_uInt32 GetObjInventor() const override;
+    SAL_DLLPRIVATE virtual SdrInventor GetObjInventor() const override;
     SAL_DLLPRIVATE virtual sal_uInt16 GetObjIdentifier() const override;
     SAL_DLLPRIVATE virtual void NbcReformatText() override;
 
@@ -98,10 +98,6 @@ public:
 protected:
     SAL_DLLPRIVATE virtual bool        EndCreate( SdrDragStat& rStat, SdrCreateCmd eCmd ) override;
     SAL_DLLPRIVATE virtual void        BrkCreate( SdrDragStat& rStat ) override;
-
-    // #i70852# override Layer interface to force to FormControl layer
-    SAL_DLLPRIVATE virtual SdrLayerID GetLayer() const override;
-    SAL_DLLPRIVATE virtual void NbcSetLayer(SdrLayerID nLayer) override;
 
 private:
     /** isolates the control model from its form component hierarchy, i.e. removes it from

@@ -34,10 +34,6 @@ class MorkDriver:
 {
 public:
     explicit MorkDriver(const css::uno::Reference< css::uno::XComponentContext >& context);
-    static OUString getImplementationName_Static()
-        throw(css::uno::RuntimeException);
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static()
-        throw (css::uno::RuntimeException);
 
     const css::uno::Reference< com::sun::star::lang::XMultiServiceFactory >& getFactory(){return m_xFactory;}
     const OUString& getProfilePath() {return m_sProfilePath;}
@@ -46,7 +42,7 @@ private:
     MorkDriver(const MorkDriver&) = delete;
     MorkDriver& operator=(const MorkDriver&) = delete;
 
-    virtual ~MorkDriver() {}
+    virtual ~MorkDriver() override {}
 
     virtual OUString SAL_CALL getImplementationName()
         throw (css::uno::RuntimeException, std::exception) override;
@@ -79,7 +75,7 @@ private:
         throw (css::uno::RuntimeException, std::exception) override;
 
     css::uno::Reference< css::uno::XComponentContext > context_;
-    css::uno::Reference< com::sun::star::lang::XMultiServiceFactory > m_xFactory;
+    css::uno::Reference< css::lang::XMultiServiceFactory > m_xFactory;
     OUString m_sProfilePath;
 };
 

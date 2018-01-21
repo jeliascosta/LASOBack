@@ -18,6 +18,7 @@
  */
 
 #include <hintids.hxx>
+#include <o3tl/any.hxx>
 #include <svl/itemiter.hxx>
 #include <svtools/imapobj.hxx>
 #include <svtools/soerr.hxx>
@@ -71,6 +72,8 @@
 #include <ndole.hxx>
 #include <editeng/opaqitem.hxx>
 #include <fefly.hxx>
+#include <fmtcnct.hxx>
+
 
 using namespace ::com::sun::star;
 
@@ -764,9 +767,7 @@ const SwFrameFormat *SwFEShell::NewFlyFrame( const SfxItemSet& rSet, bool bAnchV
 
 void SwFEShell::Insert( const OUString& rGrfName, const OUString& rFltName,
                         const Graphic* pGraphic,
-                        const SfxItemSet* pFlyAttrSet,
-                        const SfxItemSet* pGrfAttrSet,
-                        SwFrameFormat* pFrameFormat )
+                        const SfxItemSet* pFlyAttrSet )
 {
     SwFlyFrameFormat* pFormat = nullptr;
     SET_CURR_SHELL( this );
@@ -818,7 +819,7 @@ void SwFEShell::Insert( const OUString& rGrfName, const OUString& rFltName,
         pFormat = GetDoc()->getIDocumentContentOperations().Insert(*pCursor, rGrfName,
                                 rFltName, pGraphic,
                                 pFlyAttrSet,
-                                pGrfAttrSet, pFrameFormat );
+                                nullptr, nullptr );
         OSL_ENSURE( pFormat, "Doc->getIDocumentContentOperations().Insert(notxt) failed." );
 
         pCursor = dynamic_cast<SwShellCursor*>(pCursor->GetNext());
@@ -847,9 +848,7 @@ void SwFEShell::Insert( const OUString& rGrfName, const OUString& rFltName,
 }
 
 SwFlyFrameFormat* SwFEShell::InsertObject( const svt::EmbeddedObjectRef&  xObj,
-                        const SfxItemSet* pFlyAttrSet,
-                        const SfxItemSet* pGrfAttrSet,
-                        SwFrameFormat* pFrameFormat )
+                        const SfxItemSet* pFlyAttrSet )
 {
     SwFlyFrameFormat* pFormat = nullptr;
     SET_CURR_SHELL( this );
@@ -857,7 +856,7 @@ SwFlyFrameFormat* SwFEShell::InsertObject( const svt::EmbeddedObjectRef&  xObj,
         for(SwPaM& rPaM : GetCursor()->GetRingContainer())
         {
             pFormat = GetDoc()->getIDocumentContentOperations().Insert(rPaM, xObj,
-                                    pFlyAttrSet, pGrfAttrSet, pFrameFormat );
+                                    pFlyAttrSet );
             OSL_ENSURE( pFormat, "Doc->getIDocumentContentOperations().Insert(notxt) failed." );
 
         }
@@ -1037,8 +1036,8 @@ bool SwFEShell::SetFlyFrameAttr( SfxItemSet& rSet )
     if( rSet.Count() )
     {
         SwFlyFrame *pFly = GetSelectedOrCurrFlyFrame();
-        OSL_ENSURE( pFly, "SetFlyFrameAttr, no Fly selected." );
-        if( pFly )
+        OSL_ENSURE(pFly, "SetFlyFrameAttr, no Fly selected.");
+        if (pFly)
         {
             StartAllAction();
             const Point aPt( pFly->Frame().Pos() );
@@ -1454,7 +1453,6 @@ const SwFrameFormat* SwFEShell::IsURLGrfAtPos( const Point& rPt, OUString* pURL,
     if( !Imp()->HasDrawView() )
         return nullptr;
 
-    SdrObject* pObj;
     SdrPageView* pPV;
     const SwFrameFormat* pRet = nullptr;
     SwDrawView *pDView = const_cast<SwDrawView*>(Imp()->GetDrawView());
@@ -1462,11 +1460,8 @@ const SwFrameFormat* SwFEShell::IsURLGrfAtPos( const Point& rPt, OUString* pURL,
     const auto nOld = pDView->GetHitTolerancePixel();
     pDView->SetHitTolerancePixel( 2 );
 
-    SwVirtFlyDrawObj* pFlyObj(nullptr);
-    if (pDView->PickObj(rPt, pDView->getHitTolLog(), pObj, pPV, SdrSearchOptions::PICKMACRO))
-    {
-        pFlyObj = dynamic_cast<SwVirtFlyDrawObj*>(pObj);
-    }
+    SdrObject* pObj = pDView->PickObj(rPt, pDView->getHitTolLog(), pPV, SdrSearchOptions::PICKMACRO);
+    SwVirtFlyDrawObj* pFlyObj = dynamic_cast<SwVirtFlyDrawObj*>(pObj);
     if (pFlyObj)
     {
         SwFlyFrame *pFly = pFlyObj->GetFlyFrame();
@@ -1507,7 +1502,7 @@ const SwFrameFormat* SwFEShell::IsURLGrfAtPos( const Point& rPt, OUString* pURL,
                         aPt -= pFly->Frame().Pos();
                         // without MapMode-Offset, without Offset, o ... !!!!!
                         aPt = GetOut()->LogicToPixel(
-                                aPt, MapMode( MAP_TWIP ) );
+                                aPt, MapMode( MapUnit::MapTwip ) );
                         ((( *pURL += "?" ) += OUString::number( aPt.getX() ))
                                   += "," ) += OUString::number(aPt.getY() );
                     }
@@ -1530,15 +1525,11 @@ const Graphic *SwFEShell::GetGrfAtPos( const Point &rPt,
     if( !Imp()->HasDrawView() )
         return nullptr;
 
-    SdrObject* pObj;
     SdrPageView* pPV;
     SwDrawView *pDView = const_cast<SwDrawView*>(Imp()->GetDrawView());
 
-    SwVirtFlyDrawObj* pFlyObj(nullptr);
-    if (pDView->PickObj(rPt, pDView->getHitTolLog(), pObj, pPV))
-    {
-        pFlyObj = dynamic_cast<SwVirtFlyDrawObj*>(pObj);
-    }
+    SdrObject* pObj = pDView->PickObj(rPt, pDView->getHitTolLog(), pPV);
+    SwVirtFlyDrawObj* pFlyObj = dynamic_cast<SwVirtFlyDrawObj*>(pObj);
     if (pFlyObj)
     {
         SwFlyFrame *pFly = pFlyObj->GetFlyFrame();
@@ -1572,7 +1563,6 @@ const SwFrameFormat* SwFEShell::GetFormatFromObj( const Point& rPt, SwRect** pRe
 
     if( Imp()->HasDrawView() )
     {
-        SdrObject* pObj;
         SdrPageView* pPView;
 
         SwDrawView *pDView = const_cast<SwDrawView*>(Imp()->GetDrawView());
@@ -1581,7 +1571,8 @@ const SwFrameFormat* SwFEShell::GetFormatFromObj( const Point& rPt, SwRect** pRe
         // tolerance for Drawing-SS
         pDView->SetHitTolerancePixel( pDView->GetMarkHdlSizePixel()/2 );
 
-        if( pDView->PickObj( rPt, pDView->getHitTolLog(), pObj, pPView, SdrSearchOptions::PICKMARKABLE ) )
+        SdrObject* pObj = pDView->PickObj(rPt, pDView->getHitTolLog(), pPView, SdrSearchOptions::PICKMARKABLE);
+        if (pObj)
         {
            // first check it:
             if (SwVirtFlyDrawObj* pFlyObj = dynamic_cast<SwVirtFlyDrawObj*>(pObj))
@@ -1612,7 +1603,7 @@ const SwFrameFormat* SwFEShell::GetFormatFromAnyObj( const Point& rPt ) const
     return pRet;
 }
 
-ObjCntType SwFEShell::GetObjCntType( const SdrObject& rObj ) const
+ObjCntType SwFEShell::GetObjCntType( const SdrObject& rObj )
 {
     ObjCntType eType = OBJCNT_NONE;
 
@@ -1628,7 +1619,7 @@ ObjCntType SwFEShell::GetObjCntType( const SdrObject& rObj ) const
         pInvestigatedObj = &rObj;
     }
 
-    if( FmFormInventor == pInvestigatedObj->GetObjInventor() )
+    if( SdrInventor::FmForm == pInvestigatedObj->GetObjInventor() )
     {
         eType = OBJCNT_CONTROL;
         uno::Reference< awt::XControlModel >  xModel =
@@ -1643,7 +1634,7 @@ ObjCntType SwFEShell::GetObjCntType( const SdrObject& rObj ) const
             if(xInfo->hasPropertyByName( sName ))
             {
                 aVal = xSet->getPropertyValue( sName );
-                if( aVal.getValue() && form::FormButtonType_URL == *static_cast<form::FormButtonType const *>(aVal.getValue()) )
+                if( aVal.hasValue() && form::FormButtonType_URL == *o3tl::doAccess<form::FormButtonType>(aVal) )
                     eType = OBJCNT_URLBUTTON;
             }
         }
@@ -1694,7 +1685,6 @@ ObjCntType SwFEShell::GetObjCntType( const Point &rPt, SdrObject *&rpObj ) const
 
     if( Imp()->HasDrawView() )
     {
-        SdrObject* pObj;
         SdrPageView* pPView;
 
         SwDrawView *pDView = const_cast<SwDrawView*>(Imp()->GetDrawView());
@@ -1703,7 +1693,8 @@ ObjCntType SwFEShell::GetObjCntType( const Point &rPt, SdrObject *&rpObj ) const
         // tolerance for Drawing-SS
         pDView->SetHitTolerancePixel( pDView->GetMarkHdlSizePixel()/2 );
 
-        if( pDView->PickObj( rPt, pDView->getHitTolLog(), pObj, pPView, SdrSearchOptions::PICKMARKABLE ) )
+        SdrObject* pObj = pDView->PickObj(rPt, pDView->getHitTolLog(), pPView, SdrSearchOptions::PICKMARKABLE);
+        if (pObj)
             eType = GetObjCntType( *(rpObj = pObj) );
 
         pDView->SetHitTolerancePixel( nOld );
@@ -1811,15 +1802,13 @@ static sal_uInt16 SwFormatGetPageNum(const SwFlyFrameFormat * pFormat)
     return aResult;
 }
 
-#include <fmtcnct.hxx>
-
 void SwFEShell::GetConnectableFrameFormats(SwFrameFormat & rFormat,
                                       const OUString & rReference,
                                       bool bSuccessors,
-                                      ::std::vector< OUString > & aPrevPageVec,
-                                      ::std::vector< OUString > & aThisPageVec,
-                                      ::std::vector< OUString > & aNextPageVec,
-                                      ::std::vector< OUString > & aRestVec)
+                                      std::vector< OUString > & aPrevPageVec,
+                                      std::vector< OUString > & aThisPageVec,
+                                      std::vector< OUString > & aNextPageVec,
+                                      std::vector< OUString > & aRestVec)
 {
     StartAction();
 
@@ -1836,7 +1825,7 @@ void SwFEShell::GetConnectableFrameFormats(SwFrameFormat & rFormat,
     const size_t nCnt = mpDoc->GetFlyCount(FLYCNTTYPE_FRM);
 
     /* potential successors resp. predecessors */
-    ::std::vector< const SwFrameFormat * > aTmpSpzArray;
+    std::vector< const SwFrameFormat * > aTmpSpzArray;
 
     mpDoc->FindFlyByName(rReference);
 
@@ -1877,7 +1866,7 @@ void SwFEShell::GetConnectableFrameFormats(SwFrameFormat & rFormat,
         /* number of page rFormat resides on */
         sal_uInt16 nPageNum = SwFormatGetPageNum(static_cast<SwFlyFrameFormat *>(&rFormat));
 
-        ::std::vector< const SwFrameFormat * >::const_iterator aIt;
+        std::vector< const SwFrameFormat * >::const_iterator aIt;
 
         for (aIt = aTmpSpzArray.begin(); aIt != aTmpSpzArray.end(); ++aIt)
         {
@@ -2034,8 +2023,8 @@ void SwFEShell::AlignFormulaToBaseline( const uno::Reference < embed::XEmbeddedO
         }
 
         sal_Int32 nBaseline = ::comphelper::getINT32(aBaseline);
-        const MapMode aSourceMapMode( MAP_100TH_MM );
-        const MapMode aTargetMapMode( MAP_TWIP );
+        const MapMode aSourceMapMode( MapUnit::Map100thMM );
+        const MapMode aTargetMapMode( MapUnit::MapTwip );
         nBaseline = OutputDevice::LogicToLogic( nBaseline, aSourceMapMode.GetMapUnit(), aTargetMapMode.GetMapUnit() );
 
         OSL_ENSURE( nBaseline > 0, "Wrong value of Baseline while retrieving from Starmath!" );

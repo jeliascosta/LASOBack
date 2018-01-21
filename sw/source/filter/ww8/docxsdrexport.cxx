@@ -15,6 +15,7 @@
 #include <editeng/unoprnms.hxx>
 #include <editeng/charrotateitem.hxx>
 #include <svx/svdogrp.hxx>
+#include <oox/helper/propertyset.hxx>
 #include <oox/token/properties.hxx>
 #include <textboxhelper.hxx>
 #include <fmtanchr.hxx>
@@ -131,28 +132,27 @@ struct DocxSdrExport::Impl
     const Size* m_pFlyFrameSize;
     bool m_bTextFrameSyntax;
     bool m_bDMLTextFrameSyntax;
-    uno::Reference<sax_fastparser::FastAttributeList> m_pFlyAttrList;
-    uno::Reference<sax_fastparser::FastAttributeList> m_pTextboxAttrList;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pFlyAttrList;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pTextboxAttrList;
     OStringBuffer m_aTextFrameStyle;
     bool m_bFrameBtLr;
     bool m_bDrawingOpen;
     bool m_bParagraphSdtOpen;
     bool m_bParagraphHasDrawing; ///Flag for checking drawing in a paragraph.
     bool m_bFlyFrameGraphic;
-    css::uno::Reference<sax_fastparser::FastAttributeList> m_pFlyFillAttrList;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pFlyFillAttrList;
     sax_fastparser::FastAttributeList* m_pFlyWrapAttrList;
     sax_fastparser::FastAttributeList* m_pBodyPrAttrList;
-    css::uno::Reference<sax_fastparser::FastAttributeList> m_pDashLineStyleAttr;
+    rtl::Reference<sax_fastparser::FastAttributeList> m_pDashLineStyleAttr;
     bool m_bDMLAndVMLDrawingOpen;
     /// List of TextBoxes in this document: they are exported as part of their shape, never alone.
-    std::set<const SwFrameFormat*> m_aTextBoxes;
     /// Preserved rotation for TextFrames.
     sal_Int32 m_nDMLandVMLTextFrameRotation;
 
     Impl(DocxSdrExport& rSdrExport, DocxExport& rExport, sax_fastparser::FSHelperPtr pSerializer, oox::drawingml::DrawingML* pDrawingML)
         : m_rSdrExport(rSdrExport),
           m_rExport(rExport),
-          m_pSerializer(pSerializer),
+          m_pSerializer(std::move(pSerializer)),
           m_pDrawingML(pDrawingML),
           m_pFlyFrameSize(nullptr),
           m_bTextFrameSyntax(false),
@@ -165,14 +165,11 @@ struct DocxSdrExport::Impl
           m_pFlyWrapAttrList(nullptr),
           m_pBodyPrAttrList(nullptr),
           m_bDMLAndVMLDrawingOpen(false),
-          m_aTextBoxes(SwTextBoxHelper::findTextBoxes(m_rExport.m_pDoc)),
           m_nDMLandVMLTextFrameRotation(0)
     {
     }
 
-    ~Impl()
-    {
-    }
+    ~Impl() = default;
 
     /// Writes wp wrapper code around an SdrObject, which itself is written using drawingML syntax.
 
@@ -187,9 +184,7 @@ DocxSdrExport::DocxSdrExport(DocxExport& rExport, sax_fastparser::FSHelperPtr pS
 {
 }
 
-DocxSdrExport::~DocxSdrExport()
-{
-}
+DocxSdrExport::~DocxSdrExport() = default;
 
 void DocxSdrExport::setSerializer(const sax_fastparser::FSHelperPtr& pSerializer)
 {
@@ -211,12 +206,12 @@ bool DocxSdrExport::getDMLTextFrameSyntax()
     return m_pImpl->m_bDMLTextFrameSyntax;
 }
 
-uno::Reference<sax_fastparser::FastAttributeList>& DocxSdrExport::getFlyAttrList()
+rtl::Reference<sax_fastparser::FastAttributeList>& DocxSdrExport::getFlyAttrList()
 {
     return m_pImpl->m_pFlyAttrList;
 }
 
-uno::Reference<sax_fastparser::FastAttributeList>& DocxSdrExport::getTextboxAttrList()
+rtl::Reference<sax_fastparser::FastAttributeList>& DocxSdrExport::getTextboxAttrList()
 {
     return m_pImpl->m_pTextboxAttrList;
 }
@@ -256,7 +251,7 @@ void DocxSdrExport::setParagraphHasDrawing(bool bParagraphHasDrawing)
     m_pImpl->m_bParagraphHasDrawing = bParagraphHasDrawing;
 }
 
-uno::Reference<sax_fastparser::FastAttributeList>& DocxSdrExport::getFlyFillAttrList()
+rtl::Reference<sax_fastparser::FastAttributeList>& DocxSdrExport::getFlyFillAttrList()
 {
     return m_pImpl->m_pFlyFillAttrList;
 }
@@ -271,7 +266,7 @@ sax_fastparser::FastAttributeList* DocxSdrExport::getBodyPrAttrList()
     return m_pImpl->m_pBodyPrAttrList;
 }
 
-uno::Reference<sax_fastparser::FastAttributeList>& DocxSdrExport::getDashLineStyle()
+rtl::Reference<sax_fastparser::FastAttributeList>& DocxSdrExport::getDashLineStyle()
 {
     return m_pImpl->m_pDashLineStyleAttr;
 }
@@ -332,7 +327,7 @@ void DocxSdrExport::startDMLAnchorInline(const SwFrameFormat* pFrameFormat, cons
         uno::Any aAny;
         pObject->GetGrabBagItem(aAny);
         comphelper::SequenceAsHashMap aGrabBag(aAny);
-        comphelper::SequenceAsHashMap::iterator it = aGrabBag.find("CT_EffectExtent");
+        auto it = aGrabBag.find("CT_EffectExtent");
         if (it != aGrabBag.end())
         {
             comphelper::SequenceAsHashMap aEffectExtent(it->second);
@@ -653,7 +648,7 @@ void DocxSdrExport::startDMLAnchorInline(const SwFrameFormat* pFrameFormat, cons
         uno::Any aAny;
         pObject->GetGrabBagItem(aAny);
         comphelper::SequenceAsHashMap aGrabBag(aAny);
-        comphelper::SequenceAsHashMap::iterator it = aGrabBag.find("EG_WrapType");
+        auto it = aGrabBag.find("EG_WrapType");
         if (it != aGrabBag.end())
         {
             OUString sType = it->second.get<OUString>();
@@ -675,7 +670,7 @@ void DocxSdrExport::startDMLAnchorInline(const SwFrameFormat* pFrameFormat, cons
                                                        FSEND);
                 drawing::PointSequenceSequence aSeqSeq = it->second.get< drawing::PointSequenceSequence >();
                 std::vector<awt::Point> aPoints(comphelper::sequenceToContainer<std::vector<awt::Point> >(aSeqSeq[0]));
-                for (std::vector<awt::Point>::iterator i = aPoints.begin(); i != aPoints.end(); ++i)
+                for (auto i = aPoints.begin(); i != aPoints.end(); ++i)
                 {
                     awt::Point& rPoint = *i;
                     m_pImpl->m_pSerializer->singleElementNS(XML_wp, (i == aPoints.begin() ? XML_start : XML_lineTo),
@@ -1789,7 +1784,7 @@ bool DocxSdrExport::Impl::checkFrameBtlr(SwNode* pStartNode, bool bDML)
 
 bool DocxSdrExport::isTextBox(const SwFrameFormat& rFrameFormat)
 {
-    return m_pImpl->m_aTextBoxes.find(&rFrameFormat) != m_pImpl->m_aTextBoxes.end();
+    return SwTextBoxHelper::isTextBox(&rFrameFormat, RES_FLYFRMFMT);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -46,7 +46,7 @@ ScHFPage::ScHFPage( vcl::Window* pParent, const SfxItemSet& rSet, sal_uInt16 nSe
         aDataSet    ( *rSet.GetPool(),
                        ATTR_PAGE_HEADERLEFT, ATTR_PAGE_FOOTERRIGHT,
                        ATTR_PAGE, ATTR_PAGE, 0 ),
-        nPageUsage  ( (sal_uInt16)SVX_PAGE_ALL ),
+        nPageUsage  ( SvxPageUsage::All ),
         pStyleDlg   ( nullptr )
 {
     get(m_pBtnEdit, "buttonEdit");
@@ -128,13 +128,13 @@ void ScHFPage::ActivatePage( const SfxItemSet& rSet )
     SvxHFPage::ActivatePage( rSet );
 }
 
-SfxTabPage::sfxpg ScHFPage::DeactivatePage( SfxItemSet* pSetP )
+DeactivateRC ScHFPage::DeactivatePage( SfxItemSet* pSetP )
 {
-    if ( LEAVE_PAGE == SvxHFPage::DeactivatePage( pSetP ) )
+    if ( DeactivateRC::LeavePage == SvxHFPage::DeactivatePage( pSetP ) )
         if ( pSetP )
             FillItemSet( pSetP );
 
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 void ScHFPage::ActivatePage()
@@ -147,7 +147,7 @@ void ScHFPage::DeactivatePage()
 
 // Handler:
 
-IMPL_LINK_NOARG_TYPED(ScHFPage, TurnOnHdl, Button*, void)
+IMPL_LINK_NOARG(ScHFPage, TurnOnHdl, Button*, void)
 {
     SvxHFPage::TurnOnHdl( m_pTurnOnBox );
 
@@ -157,7 +157,7 @@ IMPL_LINK_NOARG_TYPED(ScHFPage, TurnOnHdl, Button*, void)
         m_pBtnEdit->Disable();
 }
 
-IMPL_LINK_NOARG_TYPED(ScHFPage, BtnHdl, Button*, void)
+IMPL_LINK_NOARG(ScHFPage, BtnHdl, Button*, void)
 {
     // When the Edit-Dialog is directly called from the Button's Click-Handler,
     // the GrabFocus from the Edit-Dialog under OS/2 doesn't work.(Bug #41805#).
@@ -166,7 +166,7 @@ IMPL_LINK_NOARG_TYPED(ScHFPage, BtnHdl, Button*, void)
     Application::PostUserEvent( LINK( this, ScHFPage, HFEditHdl ), nullptr, true );
 }
 
-IMPL_LINK_NOARG_TYPED(ScHFPage, HFEditHdl, void*, void)
+IMPL_LINK_NOARG(ScHFPage, HFEditHdl, void*, void)
 {
     SfxViewShell*   pViewSh = SfxViewShell::Current();
 
@@ -186,7 +186,7 @@ IMPL_LINK_NOARG_TYPED(ScHFPage, HFEditHdl, void*, void)
         ScAbstractDialogFactory* pFact = ScAbstractDialogFactory::Create();
         OSL_ENSURE(pFact, "ScAbstractFactory create fail!");
 
-        std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateScHFEditDlg(
+        ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateScHFEditDlg(
             this, aDataSet, aStrPageStyle, nResId));
 
         OSL_ENSURE(pDlg, "Dialog create fail!");
@@ -201,23 +201,23 @@ IMPL_LINK_NOARG_TYPED(ScHFPage, HFEditHdl, void*, void)
         VclPtrInstance< SfxSingleTabDialog > pDlg(this, aDataSet);
         const int nSettingsId = 42;
         bool bRightPage =   m_pCntSharedBox->IsChecked()
-                         || ( SVX_PAGE_LEFT != SvxPageUsage(nPageUsage) );
+                         || ( SvxPageUsage::Left != nPageUsage );
 
         if ( nId == SID_ATTR_PAGE_HEADERSET )
         {
             aText = ScGlobal::GetRscString( STR_PAGEHEADER );
             if ( bRightPage )
-                pDlg->SetTabPage( ScRightHeaderEditPage::Create( pDlg->get_content_area(), &aDataSet ), nullptr, nSettingsId );
+                pDlg->SetTabPage( ScRightHeaderEditPage::Create( pDlg->get_content_area(), &aDataSet ), nSettingsId );
             else
-                pDlg->SetTabPage( ScLeftHeaderEditPage::Create( pDlg->get_content_area(), &aDataSet ), nullptr, nSettingsId );
+                pDlg->SetTabPage( ScLeftHeaderEditPage::Create( pDlg->get_content_area(), &aDataSet ), nSettingsId );
         }
         else
         {
             aText = ScGlobal::GetRscString( STR_PAGEFOOTER );
             if ( bRightPage )
-                pDlg->SetTabPage( ScRightFooterEditPage::Create( pDlg->get_content_area(), &aDataSet ), nullptr, nSettingsId );
+                pDlg->SetTabPage( ScRightFooterEditPage::Create( pDlg->get_content_area(), &aDataSet ), nSettingsId );
             else
-                pDlg->SetTabPage( ScLeftFooterEditPage::Create( pDlg->get_content_area(), &aDataSet ), nullptr, nSettingsId );
+                pDlg->SetTabPage( ScLeftFooterEditPage::Create( pDlg->get_content_area(), &aDataSet ), nSettingsId );
         }
 
         SvxNumType eNumType = static_cast<const SvxPageItem&>(aDataSet.Get(ATTR_PAGE)).GetNumType();

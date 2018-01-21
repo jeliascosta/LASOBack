@@ -60,14 +60,14 @@ void SwBaseShell::InsertURLButton(const OUString& rURL, const OUString& rTarget,
 
     rSh.StartAction();
     rSh.StartUndo( UNDO_UI_INSERT_URLBTN );
-    if (rSh.BeginCreate(OBJ_FM_BUTTON, FmFormInventor, aStartPos))
+    if (rSh.BeginCreate(OBJ_FM_BUTTON, SdrInventor::FmForm, aStartPos))
     {
         pSdrView->SetOrtho(false);
          Size aSz(GetView().GetEditWin().PixelToLogic(Size(140, 20)));
         Point aEndPos(aSz.Width(), aSz.Height());
 
         rSh.MoveCreate(aStartPos + aEndPos);
-        rSh.EndCreate(SDRCREATE_FORCEEND);
+        rSh.EndCreate(SdrCreateCmd::ForceEnd);
 
         const SdrMarkList& rMarkList = pSdrView->GetMarkedObjectList();
         if (rMarkList.GetMark(0))
@@ -104,8 +104,7 @@ void SwBaseShell::InsertURLButton(const OUString& rURL, const OUString& rTarget,
                 xPropSet->setPropertyValue( "TargetFrame", aTmp );
             }
 
-            form::FormButtonType eButtonType = form::FormButtonType_URL;
-            aTmp.setValue( &eButtonType, ::cppu::UnoType<form::FormButtonType>::get());
+            aTmp <<= form::FormButtonType_URL;
             xPropSet->setPropertyValue( "ButtonType", aTmp );
 
 #if HAVE_FEATURE_AVMEDIA

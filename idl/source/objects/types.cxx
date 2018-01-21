@@ -39,7 +39,7 @@ SvMetaAttribute::SvMetaAttribute( SvMetaType * pType )
 
 SvMetaType * SvMetaAttribute::GetType() const
 {
-    if( aType.Is() || !GetRef() ) return aType;
+    if( aType.Is() || !GetRef() ) return aType.get();
     return static_cast<SvMetaAttribute *>(GetRef())->GetType();
 }
 
@@ -95,12 +95,6 @@ bool SvMetaAttribute::ReadSvIdl( SvIdlDataBase & rBase,
     if( !bOk )
         rInStm.Seek( nTokPos );
     return bOk;
-}
-
-void SvMetaAttribute::ReadAttributesSvIdl( SvIdlDataBase & rBase,
-                                             SvTokenStream & rInStm )
-{
-    SvMetaReference::ReadAttributesSvIdl( rBase, rInStm );
 }
 
 sal_uLong SvMetaAttribute::MakeSfx( OStringBuffer& rAttrArray )
@@ -173,12 +167,12 @@ bool SvMetaType::ReadHeaderSvIdl( SvIdlDataBase & ,
     if( rTok.Is( SvHash_interface() ) )
     {
         SetType( MetaTypeType::Interface );
-        bOk = ReadNamesSvIdl( rInStm );
+        bOk = ReadNameSvIdl( rInStm );
     }
     else if( rTok.Is( SvHash_shell() ) )
     {
         SetType( MetaTypeType::Shell );
-        bOk = ReadNamesSvIdl( rInStm );
+        bOk = ReadNameSvIdl( rInStm );
     }
     if( !bOk )
         rInStm.Seek( nTokPos );
@@ -196,11 +190,6 @@ bool SvMetaType::ReadSvIdl( SvIdlDataBase & rBase,
     return false;
 }
 
-bool SvMetaType::ReadNamesSvIdl( SvTokenStream & rInStm )
-{
-    return ReadNameSvIdl( rInStm );
-}
-
 void SvMetaType::ReadContextSvIdl( SvIdlDataBase & rBase,
                                       SvTokenStream & rInStm )
 {
@@ -208,7 +197,7 @@ void SvMetaType::ReadContextSvIdl( SvIdlDataBase & rBase,
     if( xAttr->ReadSvIdl( rBase, rInStm ) )
     {
         if( xAttr->Test( rInStm ) )
-            GetAttrList().push_back( xAttr );
+            GetAttrList().push_back( xAttr.get() );
     }
 }
 

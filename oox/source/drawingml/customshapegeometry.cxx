@@ -56,8 +56,7 @@ enum FormularCommand
     FC_SIN,
     FC_SQRT,
     FC_TAN,
-    FC_VAL,
-    FC_LAST
+    FC_VAL
 };
 struct FormularCommandNameTable
 {
@@ -707,6 +706,7 @@ PolarAdjustHandleContext::PolarAdjustHandleContext( ContextHandler2Helper& rPare
     const OUString aEmptyDefault;
     if ( rAttribs.hasAttribute( XML_gdRefR ) )
     {
+        mrAdjustHandle.polar = true ;
         mrAdjustHandle.gdRef1 = GetGeomGuideName( rAttribs.getString( XML_gdRefR, aEmptyDefault ) );
     }
     if ( rAttribs.hasAttribute( XML_minR ) )
@@ -719,6 +719,7 @@ PolarAdjustHandleContext::PolarAdjustHandleContext( ContextHandler2Helper& rPare
     }
     if ( rAttribs.hasAttribute( XML_gdRefAng ) )
     {
+        mrAdjustHandle.polar = true ;
         mrAdjustHandle.gdRef2 = GetGeomGuideName( rAttribs.getString( XML_gdRefAng, aEmptyDefault ) );
     }
     if ( rAttribs.hasAttribute( XML_minAng ) )
@@ -733,6 +734,7 @@ PolarAdjustHandleContext::PolarAdjustHandleContext( ContextHandler2Helper& rPare
 
 ContextHandlerRef PolarAdjustHandleContext::onCreateContext( sal_Int32 aElementToken, const AttributeList& rAttribs )
 {
+    // mrAdjustHandle.pos uses planar coordinates.
     if ( aElementToken == A_TOKEN( pos ) )
         return new AdjPoint2DContext( *this, rAttribs, mrCustomShapeProperties, mrAdjustHandle.pos );   // CT_AdjPoint2D
     return nullptr;
@@ -928,7 +930,7 @@ class Path2DContext : public ContextHandler2
 {
 public:
     Path2DContext( ContextHandler2Helper& rParent, const AttributeList& rAttribs, CustomShapeProperties& rCustomShapeProperties, std::vector< css::drawing::EnhancedCustomShapeSegment >& rSegments, Path2D& rPath2D );
-    virtual ~Path2DContext();
+    virtual ~Path2DContext() override;
     virtual ::oox::core::ContextHandlerRef
         onCreateContext( sal_Int32 aElementToken, const ::oox::AttributeList& rAttribs ) override;
 

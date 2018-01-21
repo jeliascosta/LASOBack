@@ -32,7 +32,7 @@ class PanelTitleBar
 {
 public:
     PanelTitleBar(const OUString& rsTitle, vcl::Window* pParentWindow, Panel* pPanel);
-    virtual ~PanelTitleBar();
+    virtual ~PanelTitleBar() override;
     virtual void dispose() override;
 
     void SetMoreOptionsCommand(const OUString& rsCommandName,
@@ -53,7 +53,7 @@ protected:
 private:
     bool mbIsLeftButtonDown;
     VclPtr<Panel> mpPanel;
-    const sal_uInt16 mnMenuItemIndex;
+    static const sal_uInt16 mnMenuItemIndex = 1;
     css::uno::Reference<css::frame::XFrame> mxFrame;
     OUString msMoreOptionsCommand;
 };

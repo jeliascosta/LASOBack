@@ -96,7 +96,7 @@ namespace SwLangHelper
         // set sequence as status value
         SfxStringListItem aItem( SID_LANGUAGE_STATUS );
         aItem.SetStringList( aSeq );
-        rSet.Put( aItem, SID_LANGUAGE_STATUS );
+        rSet.Put( aItem );
         return 0;
     }
 
@@ -126,7 +126,7 @@ namespace SwLangHelper
             SfxAbstractDialogFactory* pFact = SfxAbstractDialogFactory::Create();
             if (pFact)
             {
-                std::unique_ptr<VclAbstractDialog> pDlg(pFact->CreateVclDialog( rView.GetWindow(), SID_LANGUAGE_OPTIONS ));
+                ScopedVclPtr<VclAbstractDialog> pDlg(pFact->CreateVclDialog( rView.GetWindow(), SID_LANGUAGE_OPTIONS ));
                 pDlg->Execute();
             }
         }
@@ -411,7 +411,7 @@ namespace SwLangHelper
         return GetLanguage(aSet,nLangWhichId);
     }
 
-    LanguageType GetLanguage( SfxItemSet aSet, sal_uInt16 nLangWhichId )
+    LanguageType GetLanguage( SfxItemSet const & aSet, sal_uInt16 nLangWhichId )
     {
 
         LanguageType nLang = LANGUAGE_SYSTEM;
@@ -490,7 +490,7 @@ namespace SwLangHelper
     ///     'In use' means the language(s) matching the script type(s) of the
     ///     selected text. Or in other words, the language a spell checker would use.
     ///     If there is more than one language LANGUAGE_DONTKNOW will be returned.
-    LanguageType GetCurrentLanguage( SfxItemSet aSet, SvtScriptType nScriptType )
+    LanguageType GetCurrentLanguage( SfxItemSet const & aSet, SvtScriptType nScriptType )
     {
         //set language attribute to use according to the script type
         sal_uInt16 nLangWhichId = 0;
@@ -587,12 +587,12 @@ namespace SwLangHelper
     {
         // select current para
         if (!rWrtSh.IsSttPara())
-            rWrtSh.MovePara( fnParaCurr, fnParaStart );
+            rWrtSh.MovePara( GoCurrPara, fnParaStart );
         if (!rWrtSh.HasMark())
             rWrtSh.SetMark();
         rWrtSh.SwapPam();
         if (!rWrtSh.IsEndPara())
-            rWrtSh.MovePara( fnParaCurr, fnParaEnd );
+            rWrtSh.MovePara( GoCurrPara, fnParaEnd );
     #if OSL_DEBUG_LEVEL > 1
         OUString aSelText;
         rWrtSh.GetSelectedText( aSelText );

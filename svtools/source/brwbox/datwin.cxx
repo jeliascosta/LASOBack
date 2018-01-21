@@ -43,18 +43,12 @@ void ButtonFrame::Draw( OutputDevice& rDev )
     rDev.SetFillColor( aColFace );
     rDev.DrawRect( aRect );
 
-    if( rDev.GetOutDevType() == OUTDEV_WINDOW )
+    if( rDev.GetOutDevType() != OUTDEV_WINDOW )
     {
-        vcl::Window *pWin = static_cast<vcl::Window*>( &rDev );
-        if( bPressed )
-            pWin->DrawSelectionBackground( aRect, 0, true, false );
-    }
-    else
-    {
-        rDev.SetLineColor( bPressed ? aColShadow : aColLight );
+        rDev.SetLineColor( aColLight );
         rDev.DrawLine( aRect.TopLeft(), Point( aRect.Right(), aRect.Top() ) );
         rDev.DrawLine( aRect.TopLeft(), Point( aRect.Left(), aRect.Bottom() - 1 ) );
-        rDev.SetLineColor( bPressed ? aColLight : aColShadow );
+        rDev.SetLineColor( aColShadow );
         rDev.DrawLine( aRect.BottomRight(), Point( aRect.Right(), aRect.Top() ) );
         rDev.DrawLine( aRect.BottomRight(), Point( aRect.Left(), aRect.Bottom() ) );
     }
@@ -229,6 +223,8 @@ void BrowserDataWin::dispose()
     pHeaderBar.clear();
     pEventWin.clear();
     pCornerWin.clear();
+    DragSourceHelper::dispose();
+    DropTargetHelper::dispose();
     Control::dispose();
 }
 
@@ -487,7 +483,7 @@ void BrowserDataWin::MouseMove( const MouseEvent& rEvt )
 }
 
 
-IMPL_LINK_NOARG_TYPED(BrowserDataWin, RepeatedMouseMove, Timer *, void)
+IMPL_LINK_NOARG(BrowserDataWin, RepeatedMouseMove, Timer *, void)
 {
     GetParent()->MouseMove( BrowserMouseEvent( this, aRepeatEvt ) );
 }
@@ -563,8 +559,6 @@ void BrowserDataWin::Tracking( const TrackingEvent& rTEvt )
     }
     else
     {
-        GetParent()->ImplTracking();
-
         long nDragRowDividerCurrentPos = aMousePos.Y() + m_nDragRowDividerOffset;
 
         // care for minimum row height

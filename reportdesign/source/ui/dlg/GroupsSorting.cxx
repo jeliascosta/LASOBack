@@ -107,13 +107,11 @@ class OFieldExpressionControl : public ::svt::EditBrowseBox
     ImplSVEvent *                   m_nDeleteEvent;
     VclPtr<OGroupsSortingDialog>    m_pParent;
     bool                            m_bIgnoreEvent;
-    css::uno::Reference<OFieldExpressionControlContainerListener> aContainerListener;
-
-    bool SaveModified(bool _bAppend);
+    rtl::Reference<OFieldExpressionControlContainerListener> aContainerListener;
 
 public:
     OFieldExpressionControl(OGroupsSortingDialog* _pParentDialog, vcl::Window *_pParent);
-    virtual ~OFieldExpressionControl();
+    virtual ~OFieldExpressionControl() override;
     virtual void dispose() override;
 
     // XContainerListener
@@ -168,13 +166,13 @@ protected:
 
 private:
 
-    DECL_LINK_TYPED( DelayedPaste, void*, void );
-    DECL_LINK_TYPED( CBChangeHdl, ComboBox&, void);
+    DECL_LINK( DelayedPaste, void*, void );
+    DECL_LINK( CBChangeHdl, ComboBox&, void);
 
     void InsertRows( long nRow );
 
 public:
-    DECL_LINK_TYPED( DelayedDelete, void*, void );
+    DECL_LINK( DelayedDelete, void*, void );
 
 };
 
@@ -413,7 +411,7 @@ void OFieldExpressionControl::lateInit()
 }
 
 
-IMPL_LINK_NOARG_TYPED( OFieldExpressionControl, CBChangeHdl, ComboBox&, void )
+IMPL_LINK_NOARG( OFieldExpressionControl, CBChangeHdl, ComboBox&, void )
 {
 
     SaveModified();
@@ -428,11 +426,6 @@ bool OFieldExpressionControl::IsTabAllowed(bool /*bForward*/) const
 
 bool OFieldExpressionControl::SaveModified()
 {
-    return SaveModified(true);
-}
-
-bool OFieldExpressionControl::SaveModified(bool _bAppendRow)
-{
     sal_Int32 nRow = GetCurRow();
     if ( nRow != BROWSER_ENDOFSELECTION )
     {
@@ -444,7 +437,7 @@ bool OFieldExpressionControl::SaveModified(bool _bAppendRow)
             {
                 bAppend = true;
                 OUString sUndoAction(ModuleRes(RID_STR_UNDO_APPEND_GROUP));
-                m_pParent->m_pController->getUndoManager().EnterListAction( sUndoAction, OUString() );
+                m_pParent->m_pController->getUndoManager().EnterListAction( sUndoAction, OUString(), 0, -1 );
                 xGroup = m_pParent->getGroups()->createGroup();
                 xGroup->setHeaderOn(true);
 
@@ -491,9 +484,9 @@ bool OFieldExpressionControl::SaveModified(bool _bAppendRow)
                     m_pParent->m_pController->getUndoManager().LeaveListAction();
             }
 
-            if ( Controller() )
+            if ( Controller().Is() )
                 Controller()->ClearModified();
-            if ( _bAppendRow && GetRowCount() == m_pParent->getGroups()->getCount() )
+            if ( GetRowCount() == m_pParent->getGroups()->getCount() )
             {
                 RowInserted( GetRowCount()-1);
                 m_aGroupPositions.push_back(NO_GROUP);
@@ -717,7 +710,7 @@ void OFieldExpressionControl::Command(const CommandEvent& rEvt)
 
             if ( nColId == HANDLE_ID )
             {
-                PopupMenu aContextMenu(ModuleRes(RID_GROUPSROWPOPUPMENU));
+                ScopedVclPtrInstance<PopupMenu> aContextMenu(ModuleRes(RID_GROUPSROWPOPUPMENU));
                 bool bEnable = false;
                 long nIndex = FirstSelectedRow();
                 while( nIndex >= 0 && !bEnable )
@@ -726,8 +719,8 @@ void OFieldExpressionControl::Command(const CommandEvent& rEvt)
                         bEnable = true;
                     nIndex = NextSelectedRow();
                 }
-                aContextMenu.EnableItem( SID_DELETE, IsDeleteAllowed() && bEnable );
-                switch (aContextMenu.Execute(this, rEvt.GetMousePosPixel()))
+                aContextMenu->EnableItem( SID_DELETE, IsDeleteAllowed() && bEnable );
+                switch (aContextMenu->Execute(this, rEvt.GetMousePosPixel()))
                 {
                     case SID_CUT:
                         cut();
@@ -783,7 +776,7 @@ void OFieldExpressionControl::DeleteRows()
             {
                 bFirstTime = false;
                 OUString sUndoAction(ModuleRes(RID_STR_UNDO_REMOVE_SELECTION));
-                m_pParent->m_pController->getUndoManager().EnterListAction( sUndoAction, OUString() );
+                m_pParent->m_pController->getUndoManager().EnterListAction( sUndoAction, OUString(), 0, -1 );
             }
 
             sal_Int32 nGroupPos = m_aGroupPositions[nIndex];
@@ -853,7 +846,7 @@ void OFieldExpressionControl::paste()
     }
 }
 
-IMPL_LINK_NOARG_TYPED( OFieldExpressionControl, DelayedPaste, void*, void )
+IMPL_LINK_NOARG( OFieldExpressionControl, DelayedPaste, void*, void )
 {
     m_nPasteEvent = nullptr;
 
@@ -864,7 +857,7 @@ IMPL_LINK_NOARG_TYPED( OFieldExpressionControl, DelayedPaste, void*, void )
     GoToRow( nPastePosition );
 }
 
-IMPL_LINK_NOARG_TYPED( OFieldExpressionControl, DelayedDelete, void*, void )
+IMPL_LINK_NOARG( OFieldExpressionControl, DelayedDelete, void*, void )
 {
     m_nDeleteEvent = nullptr;
     DeleteRows();
@@ -930,7 +923,7 @@ void OFieldExpressionControl::InsertRows( long nRow )
 
 Size OFieldExpressionControl::GetOptimalSize() const
 {
-    return LogicToPixel(Size(106, 75), MAP_APPFONT);
+    return LogicToPixel(Size(106, 75), MapUnit::MapAppFont);
 }
 
 // class OGroupsSortingDialog
@@ -1099,7 +1092,7 @@ sal_Int32 OGroupsSortingDialog::getColumnDataType(const OUString& _sColumnName)
     return nDataType;
 }
 
-IMPL_LINK_TYPED(OGroupsSortingDialog, OnControlFocusGot, Control&, rControl, void )
+IMPL_LINK(OGroupsSortingDialog, OnControlFocusGot, Control&, rControl, void )
 {
     if ( m_pFieldExpression && m_pFieldExpression->getExpressionControl() )
     {
@@ -1114,14 +1107,15 @@ IMPL_LINK_TYPED(OGroupsSortingDialog, OnControlFocusGot, Control&, rControl, voi
                 NumericField* pNumericField = dynamic_cast< NumericField* >( &rControl );
                 if ( pNumericField )
                     pNumericField->SaveValue();
-                showHelpText(static_cast<sal_uInt16>(i+STR_RPT_HELP_FIELD));
+                //shows the text given by the id in the multiline edit
+                m_pHelpWindow->SetText(OUString(ModuleRes(static_cast<sal_uInt16>(i+STR_RPT_HELP_FIELD))));
                 break;
             }
         }
     }
 }
 
-IMPL_LINK_TYPED(OGroupsSortingDialog, OnControlFocusLost, Control&, rControl, void )
+IMPL_LINK(OGroupsSortingDialog, OnControlFocusLost, Control&, rControl, void )
 {
     if (m_pFieldExpression && &rControl == m_pGroupIntervalEd)
     {
@@ -1130,7 +1124,7 @@ IMPL_LINK_TYPED(OGroupsSortingDialog, OnControlFocusLost, Control&, rControl, vo
     }
 }
 
-IMPL_LINK_NOARG_TYPED( OGroupsSortingDialog, OnFormatAction, ToolBox*, void )
+IMPL_LINK_NOARG( OGroupsSortingDialog, OnFormatAction, ToolBox*, void )
 {
 
     sal_uInt16 nCommand = m_pToolBox->GetCurItemId();
@@ -1172,7 +1166,7 @@ IMPL_LINK_NOARG_TYPED( OGroupsSortingDialog, OnFormatAction, ToolBox*, void )
     }
 }
 
-IMPL_LINK_TYPED( OGroupsSortingDialog, LBChangeHdl, ListBox&, rListBox, void )
+IMPL_LINK( OGroupsSortingDialog, LBChangeHdl, ListBox&, rListBox, void )
 {
     if ( rListBox.IsValueChangedFromSaved() )
     {
@@ -1202,11 +1196,6 @@ IMPL_LINK_TYPED( OGroupsSortingDialog, LBChangeHdl, ListBox&, rListBox, void )
             m_pFieldExpression->InvalidateHandleColumn();
         }
     }
-}
-
-void OGroupsSortingDialog::showHelpText(sal_uInt16 _nResId)
-{
-    m_pHelpWindow->SetText(OUString(ModuleRes(_nResId)));
 }
 
 void OGroupsSortingDialog::_propertyChanged(const beans::PropertyChangeEvent& _rEvent) throw(uno::RuntimeException, std::exception)

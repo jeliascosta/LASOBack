@@ -22,6 +22,7 @@
 
 #include "storagestream.hxx"
 
+#include <com/sun/star/xml/sax/Parser.hpp>
 #include <com/sun/star/embed/XStorage.hpp>
 #include <com/sun/star/xml/sax/XDocumentHandler.hpp>
 
@@ -32,7 +33,7 @@ namespace dbaccess
 
     // StorageXMLOutputStream
     struct StorageXMLOutputStream_Data;
-    class DBACCESS_DLLPRIVATE StorageXMLOutputStream : public StorageOutputStream
+    class StorageXMLOutputStream : public StorageOutputStream
     {
     public:
         StorageXMLOutputStream(
@@ -40,7 +41,7 @@ namespace dbaccess
             const css::uno::Reference< css::embed::XStorage >& i_rParentStorage,
             const OUString& i_rStreamName
         );
-        virtual ~StorageXMLOutputStream();
+        virtual ~StorageXMLOutputStream() override;
 
         // StorageOutputStream overridables
         virtual void close() override;
@@ -61,9 +62,7 @@ namespace dbaccess
         ::std::unique_ptr< StorageXMLOutputStream_Data >   m_pData;
     };
 
-    // StorageXMLInputStream
-    struct StorageXMLInputStream_Data;
-    class DBACCESS_DLLPRIVATE StorageXMLInputStream : public StorageInputStream
+    class StorageXMLInputStream
     {
     public:
         StorageXMLInputStream(
@@ -71,18 +70,18 @@ namespace dbaccess
             const css::uno::Reference< css::embed::XStorage >& i_rParentStorage,
             const OUString& i_rStreamName
         );
-        virtual ~StorageXMLInputStream();
+        ~StorageXMLInputStream();
 
         void    import(
                     const css::uno::Reference< css::xml::sax::XDocumentHandler >& i_rHandler
                 );
 
-    private:
         StorageXMLInputStream( const StorageXMLInputStream& ) = delete;
         StorageXMLInputStream& operator=( const StorageXMLInputStream& ) = delete;
 
     private:
-        ::std::unique_ptr< StorageXMLInputStream_Data >   m_pData;
+        css::uno::Reference< css::xml::sax::XParser >     m_xParser;
+        css::uno::Reference< css::io::XInputStream >      m_xInputStream;
     };
 
 } // namespace dbaccess

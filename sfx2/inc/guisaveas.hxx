@@ -50,9 +50,9 @@ private:
     css::uno::Reference< css::container::XContainerQuery > m_xFilterQuery;
     css::uno::Reference< css::frame::XModuleManager2 >     m_xModuleManager;
 
-    css::uno::Reference< css::container::XNameAccess > GetFilterConfiguration();
-    css::uno::Reference< css::container::XContainerQuery > GetFilterQuery();
-    css::uno::Reference< css::frame::XModuleManager2 > GetModuleManager();
+    css::uno::Reference< css::container::XNameAccess > const & GetFilterConfiguration();
+    css::uno::Reference< css::container::XContainerQuery > const & GetFilterQuery();
+    css::uno::Reference< css::frame::XModuleManager2 > const & GetModuleManager();
 
 public:
     SfxStoringHelper();
@@ -63,7 +63,7 @@ public:
                     css::uno::Sequence< css::beans::PropertyValue >& aArgsSequence,
                     bool bPreselectPassword,
                     const OUString& aUserSelectedName,
-                    SignatureState nDocumentSignatureState = SignatureState::NOSIGNATURES );
+                    SignatureState nDocumentSignatureState );
 
     static bool CheckFilterOptionsAppearence(
                     const css::uno::Reference< css::container::XNameAccess >& xFilterCFG,

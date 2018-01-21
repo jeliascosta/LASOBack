@@ -23,7 +23,7 @@
 #include <com/sun/star/report/XFormatCondition.hpp>
 #include "ReportControlModel.hxx"
 #include <cppuhelper/compbase.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <com/sun/star/lang/XServiceInfo.hpp>
 #include "ReportHelperDefines.hxx"
 
@@ -37,7 +37,7 @@ namespace reportdesign
      * \ingroup reportdesign_api
      *
      */
-    class OFormatCondition :    public comphelper::OBaseMutex,
+    class OFormatCondition :    public cppu::BaseMutex,
                             public FormatConditionBase,
                             public FormatConditionPropertySet
     {
@@ -73,7 +73,7 @@ namespace reportdesign
             l.notify();
         }
     protected:
-        virtual ~OFormatCondition();
+        virtual ~OFormatCondition() override;
     public:
         explicit OFormatCondition(css::uno::Reference< css::uno::XComponentContext > const & _xContext
             );

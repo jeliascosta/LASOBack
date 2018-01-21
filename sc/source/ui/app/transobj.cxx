@@ -53,6 +53,7 @@
 
 #include <editeng/paperinf.hxx>
 #include <editeng/sizeitem.hxx>
+#include <formula/errorcodes.hxx>
 #include <svx/algitem.hxx>
 #include <svl/intitem.hxx>
 #include <svl/zforlist.hxx>
@@ -95,7 +96,7 @@ void ScTransferObj::GetAreaSize( ScDocument* pDoc, SCTAB nTab1, SCTAB nTab2, SCR
 }
 
 void ScTransferObj::PaintToDev( OutputDevice* pDev, ScDocument* pDoc, double nPrintFactor,
-                                const ScRange& rBlock, bool bMetaFile )
+                                const ScRange& rBlock )
 {
     if (!pDoc)
         return;
@@ -110,7 +111,7 @@ void ScTransferObj::PaintToDev( OutputDevice* pDev, ScDocument* pDoc, double nPr
     aViewData.SetScreen( rBlock.aStart.Col(), rBlock.aStart.Row(),
                             rBlock.aEnd.Col(), rBlock.aEnd.Row() );
 
-    ScPrintFunc::DrawToDev( pDoc, pDev, nPrintFactor, aBound, &aViewData, bMetaFile );
+    ScPrintFunc::DrawToDev( pDoc, pDev, nPrintFactor, aBound, &aViewData, false/*bMetaFile*/ );
 }
 
 ScTransferObj::ScTransferObj( ScDocument* pClipDoc, const TransferableObjectDescriptor& rDesc ) :
@@ -121,7 +122,7 @@ ScTransferObj::ScTransferObj( ScDocument* pClipDoc, const TransferableObjectDesc
     nDragHandleY( 0 ),
     nSourceCursorX( MAXCOL + 1 ),
     nSourceCursorY( MAXROW + 1 ),
-    nDragSourceFlags( 0 ),
+    nDragSourceFlags( ScDragSrc::Undefined ),
     bDragWasInternal( false ),
     bUsedForLink( false ),
     bUseInApi( false )
@@ -239,6 +240,7 @@ void ScTransferObj::AddSupportedFormats()
     AddFormat( SotClipboardFormatId::STRING );
 
     AddFormat( SotClipboardFormatId::RTF );
+    AddFormat( SotClipboardFormatId::RICHTEXT );
     if ( aBlock.aStart == aBlock.aEnd )
         AddFormat( SotClipboardFormatId::EDITENGINE );
 }
@@ -254,7 +256,8 @@ bool ScTransferObj::GetData( const datatransfer::DataFlavor& rFlavor, const OUSt
         {
             bOK = SetTransferableObjectDescriptor( aObjDesc, rFlavor );
         }
-        else if ( ( nFormat == SotClipboardFormatId::RTF || nFormat == SotClipboardFormatId::EDITENGINE ) &&
+        else if ( ( nFormat == SotClipboardFormatId::RTF || nFormat == SotClipboardFormatId::RICHTEXT ||
+            nFormat == SotClipboardFormatId::EDITENGINE ) &&
                         aBlock.aStart == aBlock.aEnd )
         {
             //  RTF from a single cell is handled by EditEngine
@@ -287,7 +290,8 @@ bool ScTransferObj::GetData( const datatransfer::DataFlavor& rFlavor, const OUSt
                             (nFormat == SotClipboardFormatId::RTF) ? SCTRANS_TYPE_EDIT_RTF : SCTRANS_TYPE_EDIT_BIN,
                             rFlavor );
         }
-        else if ( ScImportExport::IsFormatSupported( nFormat ) || nFormat == SotClipboardFormatId::RTF )
+        else if ( ScImportExport::IsFormatSupported( nFormat ) || nFormat == SotClipboardFormatId::RTF
+            || nFormat == SotClipboardFormatId::RICHTEXT )
         {
             //  if this transfer object was used to create a DDE link, filtered rows
             //  have to be included for subsequent calls (to be consistent with link data)
@@ -296,7 +300,8 @@ bool ScTransferObj::GetData( const datatransfer::DataFlavor& rFlavor, const OUSt
 
             bool bIncludeFiltered = pDoc->IsCutMode() || bUsedForLink;
 
-            bool bReduceBlockFormat = nFormat == SotClipboardFormatId::HTML || nFormat == SotClipboardFormatId::RTF;
+            bool bReduceBlockFormat = nFormat == SotClipboardFormatId::HTML || nFormat == SotClipboardFormatId::RTF
+                || nFormat == SotClipboardFormatId::RICHTEXT;
             ScRange aReducedBlock = aBlock;
             if (bReduceBlockFormat && (aBlock.aEnd.Col() == MAXCOL || aBlock.aEnd.Row() == MAXROW) && aBlock.aStart.Tab() == aBlock.aEnd.Tab())
             {
@@ -347,11 +352,11 @@ bool ScTransferObj::GetData( const datatransfer::DataFlavor& rFlavor, const OUSt
                                                  aBlock.aEnd.Col(), aBlock.aEnd.Row(),
                                                  aBlock.aStart.Tab() );
             ScopedVclPtrInstance< VirtualDevice > pVirtDev;
-            pVirtDev->SetOutputSizePixel( pVirtDev->LogicToPixel( aMMRect.GetSize(), MAP_100TH_MM ) );
+            pVirtDev->SetOutputSizePixel( pVirtDev->LogicToPixel( aMMRect.GetSize(), MapUnit::Map100thMM ) );
 
-            PaintToDev( pVirtDev, pDoc, 1.0, aBlock, false );
+            PaintToDev( pVirtDev, pDoc, 1.0, aBlock );
 
-            pVirtDev->SetMapMode( MapMode( MAP_PIXEL ) );
+            pVirtDev->SetMapMode( MapMode( MapUnit::MapPixel ) );
             Bitmap aBmp = pVirtDev->GetBitmap( Point(), pVirtDev->GetOutputSize() );
             bOK = SetBitmapEx( aBmp, rFlavor );
         }
@@ -363,7 +368,7 @@ bool ScTransferObj::GetData( const datatransfer::DataFlavor& rFlavor, const OUSt
             // created.
             InitDocShell(false);
 
-            SfxObjectShell* pEmbObj = aDocShellRef;
+            SfxObjectShell* pEmbObj = aDocShellRef.get();
 
             // like SvEmbeddedTransfer::GetData:
             GDIMetaFile     aMtf;
@@ -390,7 +395,7 @@ bool ScTransferObj::GetData( const datatransfer::DataFlavor& rFlavor, const OUSt
             // #i123405# Do limit visual size calculation to PageSize
             InitDocShell(true);         // set aDocShellRef
 
-            SfxObjectShell* pEmbObj = aDocShellRef;
+            SfxObjectShell* pEmbObj = aDocShellRef.get();
             bOK = SetObject( pEmbObj, SCTRANS_TYPE_EMBOBJ, rFlavor );
         }
     }
@@ -490,7 +495,7 @@ bool ScTransferObj::WriteObject( tools::SvRef<SotStorageStream>& rxOStm, void* p
 void ScTransferObj::ObjectReleased()
 {
     ScModule* pScMod = SC_MOD();
-    if ( pScMod->GetClipData().pCellClipboard == this )
+    if ( pScMod && pScMod->GetClipData().pCellClipboard == this )
         pScMod->SetClipObject( nullptr, nullptr );
 
     TransferableHelper::ObjectReleased();
@@ -498,7 +503,7 @@ void ScTransferObj::ObjectReleased()
 
 void ScTransferObj::DragFinished( sal_Int8 nDropAction )
 {
-    if ( nDropAction == DND_ACTION_MOVE && !bDragWasInternal && !(nDragSourceFlags & SC_DROP_NAVIGATOR) )
+    if ( nDropAction == DND_ACTION_MOVE && !bDragWasInternal && !(nDragSourceFlags & ScDragSrc::Navigator) )
     {
         //  move: delete source data
         ScDocShell* pSourceSh = GetSourceDocShell();
@@ -556,7 +561,7 @@ void ScTransferObj::SetDragSource( ScDocShell* pSourceShell, const ScMarkData& r
     xDragSourceRanges = new ScCellRangesObj( pSourceShell, aRanges );
 }
 
-void ScTransferObj::SetDragSourceFlags( sal_uInt16 nFlags )
+void ScTransferObj::SetDragSourceFlags(ScDragSrc nFlags)
 {
     nDragSourceFlags = nFlags;
 }
@@ -816,9 +821,9 @@ void ScTransferObj::StripRefs( ScDocument* pDoc,
             SCCOL nCol = aIter.GetPos().Col() - nSubX;
             SCROW nRow = aIter.GetPos().Row() - nSubY;
 
-            sal_uInt16 nErrCode = pFCell->GetErrCode();
+            FormulaError nErrCode = pFCell->GetErrCode();
             ScAddress aPos(nCol, nRow, nDestTab);
-            if (nErrCode)
+            if (nErrCode != FormulaError::NONE)
             {
                 if ( static_cast<const SvxHorJustifyItem*>(pDestDoc->GetAttr(
                         nCol,nRow,nDestTab, ATTR_HOR_JUSTIFY))->GetValue() ==

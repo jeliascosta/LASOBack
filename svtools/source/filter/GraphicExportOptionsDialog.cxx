@@ -62,7 +62,7 @@ void GraphicExportOptionsDialog::initialize()
     mSize100mm = mRenderer.getDocumentSizeIn100mm(mCurrentPage);
 }
 
-IMPL_LINK_NOARG_TYPED( GraphicExportOptionsDialog, widthModifiedHandle, Edit&, void )
+IMPL_LINK_NOARG( GraphicExportOptionsDialog, widthModifiedHandle, Edit&, void )
 {
     mResolution =  mpWidth->GetValue() / getViewWidthInch();
 
@@ -70,7 +70,7 @@ IMPL_LINK_NOARG_TYPED( GraphicExportOptionsDialog, widthModifiedHandle, Edit&, v
     updateResolution();
 }
 
-IMPL_LINK_NOARG_TYPED( GraphicExportOptionsDialog, heightModifiedHandle, Edit&, void )
+IMPL_LINK_NOARG( GraphicExportOptionsDialog, heightModifiedHandle, Edit&, void )
 {
     mResolution =  mpHeight->GetValue() / getViewHeightInch();
 
@@ -78,7 +78,7 @@ IMPL_LINK_NOARG_TYPED( GraphicExportOptionsDialog, heightModifiedHandle, Edit&, 
     updateResolution();
 }
 
-IMPL_LINK_NOARG_TYPED( GraphicExportOptionsDialog, resolutionModifiedHandle, Edit&, void )
+IMPL_LINK_NOARG( GraphicExportOptionsDialog, resolutionModifiedHandle, Edit&, void )
 {
     mResolution = mpResolution->GetText().toInt32();
 
@@ -89,12 +89,12 @@ IMPL_LINK_NOARG_TYPED( GraphicExportOptionsDialog, resolutionModifiedHandle, Edi
 
 double GraphicExportOptionsDialog::getViewWidthInch()
 {
-    return (double) MetricField::ConvertValue(mSize100mm.Width(),  2, MAP_100TH_MM, FUNIT_INCH) / 100.0;
+    return (double) MetricField::ConvertValue(mSize100mm.Width(),  2, MapUnit::Map100thMM, FUNIT_INCH) / 100.0;
 }
 
 double GraphicExportOptionsDialog::getViewHeightInch()
 {
-    return (double) MetricField::ConvertValue(mSize100mm.Height(),  2, MAP_100TH_MM, FUNIT_INCH) / 100.0;
+    return (double) MetricField::ConvertValue(mSize100mm.Height(),  2, MapUnit::Map100thMM, FUNIT_INCH) / 100.0;
 }
 
 void GraphicExportOptionsDialog::updateWidth()

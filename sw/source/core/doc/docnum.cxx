@@ -18,7 +18,6 @@
  */
 
 #include <hintids.hxx>
-#include <rtl/random.h>
 #include <tools/resid.hxx>
 #include <editeng/lrspitem.hxx>
 #include <ftninfo.hxx>
@@ -55,10 +54,13 @@
 #include <list.hxx>
 #include <calbck.hxx>
 #include <comphelper/string.hxx>
+#include <comphelper/random.hxx>
 #include <tools/datetimeutils.hxx>
 
 #include <cstdlib>
 #include <map>
+#include <stdlib.h>
+
 
 namespace {
     void lcl_ResetIndentAttrs(SwDoc *pDoc, const SwPaM &rPam, sal_uInt16 marker )
@@ -83,8 +85,6 @@ namespace {
         }
     }
 }
-
-#include <stdlib.h>
 
 inline sal_uInt8 GetUpperLvlChg( sal_uInt8 nCurLvl, sal_uInt8 nLevel, sal_uInt16 nMask )
 {
@@ -1049,7 +1049,7 @@ void SwDoc::ChgNumRuleFormats( const SwNumRule& rRule )
         SwUndoInsNum* pUndo = nullptr;
         if (GetIDocumentUndoRedo().DoesUndo())
         {
-            pUndo = new SwUndoInsNum( *pRule, rRule );
+            pUndo = new SwUndoInsNum( *pRule, rRule, this );
             pUndo->GetHistory();
             GetIDocumentUndoRedo().AppendUndo( pUndo );
         }
@@ -1200,7 +1200,7 @@ void SwDoc::MakeUniqueNumRules(const SwPaM & rPaM)
 {
     OSL_ENSURE( rPaM.GetDoc() == this, "need same doc" );
 
-    ::std::map<SwNumRule *, ListStyleData> aMyNumRuleMap;
+    std::map<SwNumRule *, ListStyleData> aMyNumRuleMap;
 
     bool bFirst = true;
 
@@ -1959,13 +1959,13 @@ bool SwDoc::MoveParagraph( const SwPaM& rPam, long nOffset, bool bIsOutlMv )
             ++rOrigPam.GetPoint()->nNode;
             rOrigPam.GetPoint()->nContent.Assign( rOrigPam.GetContentNode(), 0 );
 
-            RedlineMode_t eOld = getIDocumentRedlineAccess().GetRedlineMode();
+            RedlineFlags eOld = getIDocumentRedlineAccess().GetRedlineFlags();
             GetDocumentRedlineManager().checkRedlining(eOld);
             if (GetIDocumentUndoRedo().DoesUndo())
             {
                 // Still NEEDS to be optimized (even after 14 years)
-                getIDocumentRedlineAccess().SetRedlineMode(
-                   (RedlineMode_t)(nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_SHOW_DELETE));
+                getIDocumentRedlineAccess().SetRedlineFlags(
+                   RedlineFlags::On | RedlineFlags::ShowInsert | RedlineFlags::ShowDelete );
                 SwUndo *const pUndo(new SwUndoRedlineDelete(aPam, UNDO_DELETE));
                 GetIDocumentUndoRedo().AppendUndo(pUndo);
             }
@@ -1981,7 +1981,7 @@ bool SwDoc::MoveParagraph( const SwPaM& rPam, long nOffset, bool bIsOutlMv )
             getIDocumentRedlineAccess().AppendRedline( pNewRedline, true );
 
             // Still NEEDS to be optimized!
-            getIDocumentRedlineAccess().SetRedlineMode( eOld );
+            getIDocumentRedlineAccess().SetRedlineFlags( eOld );
             GetIDocumentUndoRedo().EndUndo( UNDO_END, nullptr );
             getIDocumentState().SetModified();
 
@@ -2210,10 +2210,9 @@ OUString SwDoc::GetUniqueNumRuleName( const OUString* pChkStr, bool bAutoNum ) c
         }
         else
         {
-            static rtlRandomPool s_RandomPool( rtl_random_createPool() );
-            sal_Int64 n;
-            rtl_random_getBytes( s_RandomPool, &n, sizeof(n) );
-            aName = OUString::number( (n < 0 ? -n : n) );
+            unsigned int const n(comphelper::rng::uniform_uint_distribution(0,
+                                    std::numeric_limits<unsigned int>::max()));
+            aName = OUString::number(n);
         }
         if( pChkStr && pChkStr->isEmpty() )
             pChkStr = nullptr;
@@ -2300,16 +2299,9 @@ void SwDoc::MarkListLevel( const OUString& sListId,
 
     if ( pList )
     {
-        MarkListLevel( *pList, nListLevel, bValue );
+        // Set new marked list level and notify all affected nodes of the changed mark.
+        pList->MarkListLevel( nListLevel, bValue );
     }
-}
-
-void SwDoc::MarkListLevel( SwList& rList,
-                           const int nListLevel,
-                           const bool bValue )
-{
-    // Set new marked list level and notify all affected nodes of the changed mark.
-    rList.MarkListLevel( nListLevel, bValue );
 }
 
 bool SwDoc::IsFirstOfNumRuleAtPos( const SwPosition & rPos )

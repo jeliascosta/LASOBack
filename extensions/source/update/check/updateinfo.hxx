@@ -42,7 +42,6 @@ struct ReleaseNote
     OUString URL2;
 
     ReleaseNote(sal_uInt8 pos, const OUString& aURL) : Pos(pos), URL(aURL), Pos2(0), URL2() {};
-    ReleaseNote(sal_uInt8 pos, const OUString& aURL, sal_uInt8 pos2, const OUString& aURL2) : Pos(pos), URL(aURL), Pos2(pos2), URL2(aURL2) {};
 
     ReleaseNote(const ReleaseNote& rn) :Pos(rn.Pos), URL(rn.URL), Pos2(rn.Pos2), URL2(rn.URL2) {};
     ReleaseNote & operator=( const ReleaseNote& rn) { Pos=rn.Pos; URL=rn.URL; Pos2=rn.Pos2; URL2=rn.URL2; return *this; };
@@ -55,22 +54,7 @@ struct UpdateInfo
     OUString Description;
     std::vector< DownloadSource > Sources;
     std::vector< ReleaseNote > ReleaseNotes;
-
-    UpdateInfo() : BuildId(), Version(), Description(), Sources(), ReleaseNotes() {};
-    UpdateInfo(const UpdateInfo& ui) : BuildId(ui.BuildId), Version(ui.Version), Description(ui.Description), Sources(ui.Sources), ReleaseNotes(ui.ReleaseNotes) {};
-    inline UpdateInfo & operator=( const UpdateInfo& ui );
 };
-
-UpdateInfo & UpdateInfo::operator=( const UpdateInfo& ui )
-{
-    BuildId = ui.BuildId;
-    Version = ui.Version;
-    Description = ui.Description;
-    Sources = ui.Sources;
-    ReleaseNotes = ui.ReleaseNotes;
-    return *this;
-}
-
 
 // Returns the URL of the release note for the given position
 OUString getReleaseNote(const UpdateInfo& rInfo, sal_uInt8 pos, bool autoDownloadEnabled=false);

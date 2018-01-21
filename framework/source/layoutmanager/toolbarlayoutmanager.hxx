@@ -74,7 +74,7 @@ class ToolbarLayoutManager : public ::cppu::WeakImplHelper< css::awt::XDockableW
         ToolbarLayoutManager( const css::uno::Reference< css::uno::XComponentContext >& rxContext,
                               const css::uno::Reference< css::ui::XUIElementFactory >& xUIElementFactory,
                               LayoutManager* pParentLayouter );
-        virtual ~ToolbarLayoutManager();
+        virtual ~ToolbarLayoutManager() override;
 
         void reset();
         void attach( const css::uno::Reference< css::frame::XFrame >& xFrame,
@@ -291,7 +291,6 @@ class ToolbarLayoutManager : public ::cppu::WeakImplHelper< css::awt::XDockableW
         bool                                                                 m_bStoreWindowState;
         bool                                                                 m_bGlobalSettings;
         bool                                                                 m_bDockingInProgress;
-        bool                                                                 m_bVisible;
         bool                                                                 m_bLayoutInProgress;
         bool                                                                 m_bToolbarCreation;
 };

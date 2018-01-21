@@ -3,16 +3,17 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2015-04-22 23:40+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"POT-Creation-Date: 2016-04-16 21:40+0200\n"
+"PO-Revision-Date: 2017-08-13 19:49+0000\n"
+"Last-Translator: Андрей Абухба <aabuchba@mail.ru>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: ab\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: LibreOffice\n"
 "X-Accelerator-Marker: ~\n"
+"X-Generator: Pootle 2.8\n"
+"X-POOTLE-MTIME: 1502653744.000000\n"
 
 #: admindialog.ui
 msgctxt ""
@@ -21,7 +22,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Database Properties"
-msgstr ""
+msgstr "Адырқәа рбаза аҷыдаҟазшьақәа"
 
 #: admindialog.ui
 msgctxt ""
@@ -57,7 +58,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Special Settings"
-msgstr ""
+msgstr "Иҷыдоу архиарақәа"
 
 #: applycolpage.ui
 msgctxt ""
@@ -93,7 +94,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_User name"
-msgstr ""
+msgstr "Ахархәаҩ ихьӡ"
 
 #: authentificationpage.ui
 msgctxt ""
@@ -102,7 +103,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Password re_quired"
-msgstr ""
+msgstr "Иаҭахуп ажәамаӡа"
 
 #: authentificationpage.ui
 msgctxt ""
@@ -120,7 +121,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Character set:"
-msgstr ""
+msgstr "_Акодркра:"
 
 #: autocharsetpage.ui
 msgctxt ""
@@ -165,7 +166,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Save to:"
-msgstr ""
+msgstr "Иеиқәырхатәуп абра:"
 
 #: backuppage.ui
 msgctxt ""
@@ -174,7 +175,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Browse..."
-msgstr ""
+msgstr "Аҭыҧхәаҧшра..."
 
 #: choosedatasourcedialog.ui
 msgctxt ""
@@ -183,7 +184,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Data Source"
-msgstr ""
+msgstr "Адырқәа рхыҵхырҭа"
 
 #: choosedatasourcedialog.ui
 msgctxt ""
@@ -210,7 +211,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Save"
-msgstr ""
+msgstr "Иеиқәырхатәуп"
 
 #: collectionviewdialog.ui
 msgctxt ""
@@ -219,7 +220,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Save"
-msgstr ""
+msgstr "Иеиқәырхатәуп"
 
 #: collectionviewdialog.ui
 msgctxt ""
@@ -228,7 +229,7 @@ msgctxt ""
 "tooltip_text\n"
 "string.text"
 msgid "Create New Directory"
-msgstr ""
+msgstr "Иаҧҵатәуп акаталог"
 
 #: collectionviewdialog.ui
 msgctxt ""
@@ -246,7 +247,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "File _name:"
-msgstr ""
+msgstr "Афаил ахьӡ:"
 
 #: colwidthdialog.ui
 msgctxt ""
@@ -264,7 +265,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Width:"
-msgstr ""
+msgstr "_Аҭбаара:"
 
 #: colwidthdialog.ui
 msgctxt ""
@@ -273,7 +274,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Automatic"
-msgstr ""
+msgstr "Ихарҭәаатәуп"
 
 #: connectionpage.ui
 msgctxt ""
@@ -291,7 +292,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Create New"
-msgstr ""
+msgstr "_Иаҧҵатәуп"
 
 #: connectionpage.ui
 msgctxt ""
@@ -300,7 +301,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Browse…"
-msgstr ""
+msgstr "Аҭыҧхәаҧшра..."
 
 #: connectionpage.ui
 msgctxt ""
@@ -318,7 +319,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_User name:"
-msgstr ""
+msgstr "Ахархәаҩ ихьӡ:"
 
 #: connectionpage.ui
 msgctxt ""
@@ -327,7 +328,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Password required"
-msgstr ""
+msgstr "Иаҭахуп ажәамаӡа"
 
 #: connectionpage.ui
 msgctxt ""
@@ -363,7 +364,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "JDBC Properties"
-msgstr ""
+msgstr "JDBC аҷыдаҟазшьақәа"
 
 #: connectionpage.ui
 msgctxt ""
@@ -425,7 +426,7 @@ msgctxt ""
 "primarykey\n"
 "label\n"
 "string.text"
-msgid "Crea_te primary key"
+msgid "Crea_te new field as primary key"
 msgstr ""
 
 #: copytablepage.ui
@@ -435,6 +436,15 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Name:"
+msgstr "Ахьӡ:"
+
+#: copytablepage.ui
+msgctxt ""
+"copytablepage.ui\n"
+"infoLabel\n"
+"label\n"
+"string.text"
+msgid "Existing data fields can be set as primary key on the type formatting step (third page) of the wizard."
 msgstr ""
 
 #: copytablepage.ui
@@ -444,7 +454,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Options"
-msgstr ""
+msgstr "Апараметрқәа"
 
 #: copytablepage.ui
 msgctxt ""
@@ -453,7 +463,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Ta_ble name:"
-msgstr ""
+msgstr "Атаблица ахьӡ:"
 
 #: dbaseindexdialog.ui
 msgctxt ""
@@ -462,7 +472,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Indexes"
-msgstr ""
+msgstr "Аиндексқәа"
 
 #: dbaseindexdialog.ui
 msgctxt ""
@@ -471,7 +481,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Table:"
-msgstr ""
+msgstr "Атаблица:"
 
 #: dbaseindexdialog.ui
 msgctxt ""
@@ -507,7 +517,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Character set:"
-msgstr ""
+msgstr "_Акодркра:"
 
 #: dbasepage.ui
 msgctxt ""
@@ -525,7 +535,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Display deleted records as well"
-msgstr ""
+msgstr "Иаарҧшлатәуп ианыху анҵамҭақәа"
 
 #: dbasepage.ui
 msgctxt ""
@@ -552,7 +562,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Indexes..."
-msgstr ""
+msgstr "Аиндексқәа..."
 
 #: dbwizconnectionpage.ui
 msgctxt ""
@@ -579,7 +589,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Create New"
-msgstr ""
+msgstr "Иаҧҵатәуп"
 
 #: dbwizconnectionpage.ui
 msgctxt ""
@@ -588,7 +598,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Browse…"
-msgstr ""
+msgstr "Аҭыҧхәаҧшра..."
 
 #: dbwizmysqlintropage.ui
 msgctxt ""
@@ -671,7 +681,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Browse"
-msgstr ""
+msgstr "Аҭыҧхәаҧшра"
 
 #: dbwizspreadsheetpage.ui
 msgctxt ""
@@ -680,7 +690,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Create New"
-msgstr ""
+msgstr "Иаҧҵатәуп"
 
 #: dbwizspreadsheetpage.ui
 msgctxt ""
@@ -689,7 +699,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Password required"
-msgstr ""
+msgstr "Иаҭахуп ажәамаӡа"
 
 #: dbwiztextpage.ui
 msgctxt ""
@@ -698,7 +708,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Browse"
-msgstr ""
+msgstr "Аҭыҧхәаҧшра"
 
 #: dbwiztextpage.ui
 msgctxt ""
@@ -707,7 +717,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Create New"
-msgstr ""
+msgstr "Иаҧҵатәуп"
 
 #: deleteallrowsdialog.ui
 msgctxt ""
@@ -824,7 +834,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Format"
-msgstr ""
+msgstr "Аформат"
 
 #: fielddialog.ui
 msgctxt ""
@@ -833,7 +843,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Alignment"
-msgstr ""
+msgstr "Аиҟаратәра"
 
 #: fielddialog.ui
 msgctxt ""
@@ -905,7 +915,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Create tables using the table wizard"
-msgstr ""
+msgstr "Иаҧҵатәуп атаблицақәа азҟаза ахархәарала"
 
 #: finalpagewizard.ui
 msgctxt ""
@@ -932,7 +942,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Database _type:"
-msgstr ""
+msgstr "Адырқәа рбаза атип:"
 
 #: generalpagedialog.ui
 msgctxt ""
@@ -953,7 +963,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Welcome to the %PRODUCTNAME Database Wizard"
-msgstr ""
+msgstr "Бзиала шәаабеит адырқәа рбаза Азҟаза %PRODUCTNAME аҟны "
 
 #: generalpagewizard.ui
 msgctxt ""
@@ -1007,7 +1017,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Recently used:"
-msgstr ""
+msgstr "Аҵыхәтәантәиқәа:"
 
 #: generalpagewizard.ui
 msgctxt ""
@@ -1016,7 +1026,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Open"
-msgstr ""
+msgstr "Иаарттәуп"
 
 #: generalpagewizard.ui
 msgctxt ""
@@ -1043,7 +1053,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Port number:"
-msgstr ""
+msgstr "_Апорт:"
 
 #: generalspecialjdbcdetailspage.ui
 msgctxt ""
@@ -1088,7 +1098,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Character set:"
-msgstr ""
+msgstr "_Акодркра:"
 
 #: generalspecialjdbcdetailspage.ui
 msgctxt ""
@@ -1151,7 +1161,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "New Index"
-msgstr ""
+msgstr "Иаҧҵатәуп аиндекс"
 
 #: indexdesigndialog.ui
 msgctxt ""
@@ -1160,7 +1170,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Delete Current Index"
-msgstr ""
+msgstr "Ианыхтәуп уажәтәи аиндекс"
 
 #: indexdesigndialog.ui
 msgctxt ""
@@ -1178,7 +1188,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Save Current Index"
-msgstr ""
+msgstr "Иеиқырхатәуп уажәтәи аиндекс"
 
 #: indexdesigndialog.ui
 msgctxt ""
@@ -1259,7 +1269,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Create New"
-msgstr ""
+msgstr "_Иаҧҵатәуп"
 
 #: jdbcconnectionpage.ui
 msgctxt ""
@@ -1322,7 +1332,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Type:"
-msgstr ""
+msgstr "_Атип:"
 
 #: joindialog.ui
 msgctxt ""
@@ -1421,7 +1431,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Port number:"
-msgstr ""
+msgstr "_Апорт:"
 
 #: ldapconnectionpage.ui
 msgctxt ""
@@ -1475,7 +1485,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Port number:"
-msgstr ""
+msgstr "_Апорт:"
 
 #: ldappage.ui
 msgctxt ""
@@ -1484,7 +1494,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Maximum number of _records:"
-msgstr ""
+msgstr "Анҵамҭақәа имаксималтәу рхыҧхьаӡара:"
 
 #: ldappage.ui
 msgctxt ""
@@ -1601,7 +1611,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Character set:"
-msgstr ""
+msgstr "_Акодркра:"
 
 #: mysqlnativepage.ui
 msgctxt ""
@@ -1718,7 +1728,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Character set:"
-msgstr ""
+msgstr "_Акодркра:"
 
 #: odbcpage.ui
 msgctxt ""
@@ -2328,7 +2338,7 @@ msgctxt ""
 "title\n"
 "string.text"
 msgid "Save As"
-msgstr ""
+msgstr "Иеиқәырхатәуп иаба(ишҧа)"
 
 #: savedialog.ui
 msgctxt ""
@@ -2373,7 +2383,7 @@ msgctxt ""
 "text\n"
 "string.text"
 msgid "Do you want to save the changes made to the current index?"
-msgstr ""
+msgstr "Иеиқәырхатәума аҧсахрақәа уажәтәи аиндекс аҟны?"
 
 #: savemodifieddialog.ui
 msgctxt ""
@@ -2382,7 +2392,7 @@ msgctxt ""
 "text\n"
 "string.text"
 msgid "Do you want to save the changes?"
-msgstr ""
+msgstr "Иеиқәырхатәума аҧсахрақәа?"
 
 #: savemodifieddialog.ui
 msgctxt ""
@@ -2841,7 +2851,7 @@ msgctxt ""
 "text\n"
 "string.text"
 msgid "Do you want to save the changes?"
-msgstr ""
+msgstr "Иеиқәырхатәума аҧсахрақәа?"
 
 #: tabledesignsavemodifieddialog.ui
 msgctxt ""
@@ -3075,7 +3085,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Row Format"
-msgstr ""
+msgstr "Ацәаҳәа аформат"
 
 #: textpage.ui
 msgctxt ""
@@ -3084,7 +3094,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Character set:"
-msgstr ""
+msgstr "_Акодркра:"
 
 #: textpage.ui
 msgctxt ""
@@ -3111,7 +3121,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "Lines (ma_x.):"
-msgstr ""
+msgstr "Ацәаҳәақәа (имакс.):"
 
 #: typeselectpage.ui
 msgctxt ""
@@ -3183,7 +3193,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Delete User..."
-msgstr ""
+msgstr "_Даныхтәуп ахархәаҩ..."
 
 #: useradminpage.ui
 msgctxt ""
@@ -3192,7 +3202,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "User Selection"
-msgstr ""
+msgstr "Ахархәаҩ иалхра"
 
 #: useradminpage.ui
 msgctxt ""
@@ -3219,7 +3229,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Port number:"
-msgstr ""
+msgstr "_Апорт:"
 
 #: userdetailspage.ui
 msgctxt ""
@@ -3255,7 +3265,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "_Character set:"
-msgstr ""
+msgstr "_Акодркра:"
 
 #: userdetailspage.ui
 msgctxt ""

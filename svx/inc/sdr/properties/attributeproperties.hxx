@@ -61,7 +61,7 @@ namespace sdr
             virtual BaseProperties& Clone(SdrObject& rObj) const override;
 
             // destructor
-            virtual ~AttributeProperties();
+            virtual ~AttributeProperties() override;
 
             // set a new StyleSheet and broadcast
             virtual void SetStyleSheet(SfxStyleSheet* pNewStyleSheet, bool bDontRemoveHardAttr) override;
@@ -70,7 +70,7 @@ namespace sdr
             virtual SfxStyleSheet* GetStyleSheet() const override;
 
             // Move properties to a new ItemPool.
-            virtual void MoveToItemPool(SfxItemPool* pSrcPool, SfxItemPool* pDestPool, SdrModel* pNewModel = nullptr) override;
+            virtual void MoveToItemPool(SfxItemPool* pSrcPool, SfxItemPool* pDestPool, SdrModel* pNewModel) override;
 
             // Set new model.
             virtual void SetModel(SdrModel* pOldModel, SdrModel* pNewModel) override;

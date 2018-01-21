@@ -34,15 +34,6 @@ enum class Disposal
     Previous
 };
 
-enum CycleMode
-{
-    CYCLE_NOT,
-    CYCLE_NORMAL,
-    CYCLE_FALLBACK,
-    CYCLE_REVERS,
-    CYCLE_REVERS_FALLBACK
-};
-
 struct VCL_DLLPUBLIC AnimationBitmap
 {
     BitmapEx        aBmpEx;
@@ -110,8 +101,8 @@ public:
                         OutputDevice* pOutDev,
                         const Point& rDestPt,
                         const Size& rDestSz,
-                        long nExtraData = 0,
-                        OutputDevice* pFirstFrameOutDev = nullptr);
+                        long nExtraData,
+                        OutputDevice* pFirstFrameOutDev);
 
     void            Stop( OutputDevice* pOutDev = nullptr, long nExtraData = 0 );
 
@@ -130,8 +121,6 @@ public:
     sal_uLong       GetLoopCount() const { return mnLoopCount; }
     void            SetLoopCount( const sal_uLong nLoopCount );
     void            ResetLoopCount();
-
-    CycleMode       GetCycleMode() const { return meCycleMode; }
 
     void            SetNotifyHdl( const Link<Animation*,void>& rLink ) { maNotifyLink = rLink; }
     const Link<Animation*,void>& GetNotifyHdl() const { return maNotifyLink; }
@@ -153,11 +142,11 @@ public:
     bool            Invert();
     bool            Mirror( BmpMirrorFlags nMirrorFlags );
     bool            Adjust(
-                        short nLuminancePercent = 0,
-                        short nContrastPercent = 0,
-                        short nChannelRPercent = 0,
-                        short nChannelGPercent = 0,
-                        short nChannelBPercent = 0,
+                        short nLuminancePercent,
+                        short nContrastPercent,
+                        short nChannelRPercent,
+                        short nChannelGPercent,
+                        short nChannelBPercent,
                         double fGamma = 1.0,
                         bool bInvert = false );
 
@@ -190,13 +179,11 @@ private:
     long            mnLoopCount;
     long            mnLoops;
     size_t          mnPos;
-    CycleMode       meCycleMode;
     bool            mbIsInAnimation;
     bool            mbLoopTerminated;
-    bool            mbIsWaiting;
 
     SAL_DLLPRIVATE void ImplRestartTimer( sal_uLong nTimeout );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplTimeoutHdl, Timer*, void );
+    DECL_DLLPRIVATE_LINK( ImplTimeoutHdl, Timer*, void );
 
 };
 

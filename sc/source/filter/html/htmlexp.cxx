@@ -28,6 +28,7 @@
 #include <editeng/boxitem.hxx>
 #include <editeng/brushitem.hxx>
 #include <editeng/colritem.hxx>
+#include <editeng/crossedoutitem.hxx>
 #include <editeng/fhgtitem.hxx>
 #include <editeng/fontitem.hxx>
 #include <editeng/postitem.hxx>
@@ -87,15 +88,9 @@ using namespace ::com::sun::star;
 
 const static sal_Char sMyBegComment[]   = "<!-- ";
 const static sal_Char sMyEndComment[]   = " -->";
-const static sal_Char sFontFamily[]     = "font-family:";
-const static sal_Char sFontSize[]       = "font-size:";
 const static sal_Char sDisplay[]        = "display:";
 const static sal_Char sBorder[]         = "border:";
-const static sal_Char sPadding[]        = "padding:";
-const static sal_Char sPosition[]       = "position:";
 const static sal_Char sBackground[]     = "background:";
-const static sal_Char sWidth[]          = "width:";
-const static sal_Char sHeight[]         = "height:";
 
 const sal_uInt16 ScHTMLExport::nDefaultFontSize[SC_HTML_FONTSIZES] =
 {
@@ -252,18 +247,6 @@ ScHTMLExport::ScHTMLExport( SvStream& rStrmP, const OUString& rBaseURL, ScDocume
         if ( !IsEmptyTable( nTab ) )
             nUsedTables++;
     }
-
-    // Content-Id for Mail export?
-    SfxObjectShell* pDocSh = pDoc->GetDocumentShell();
-    if ( pDocSh )
-    {
-        const SfxPoolItem* pItem = pDocSh->GetItem( SID_ORIGURL );
-        if( pItem )
-        {
-            aCId = static_cast<const SfxStringItem *>(pItem)->GetValue();
-            OSL_ENSURE( !aCId.isEmpty(), "CID without length!" );
-        }
-    }
 }
 
 ScHTMLExport::~ScHTMLExport()
@@ -296,7 +279,7 @@ sal_uInt16 ScHTMLExport::ToPixel( sal_uInt16 nVal )
     if( nVal )
     {
         nVal = (sal_uInt16)pAppWin->LogicToPixel(
-                    Size( nVal, nVal ), MapMode( MAP_TWIP ) ).Width();
+                    Size( nVal, nVal ), MapMode( MapUnit::MapTwip ) ).Width();
         if( !nVal ) // If there's a Twip there should also be a Pixel
             nVal = 1;
     }
@@ -306,7 +289,7 @@ sal_uInt16 ScHTMLExport::ToPixel( sal_uInt16 nVal )
 Size ScHTMLExport::MMToPixel( const Size& rSize )
 {
     Size aSize( rSize );
-    aSize = pAppWin->LogicToPixel( rSize, MapMode( MAP_100TH_MM ) );
+    aSize = pAppWin->LogicToPixel( rSize, MapMode( MapUnit::Map100thMM ) );
     // If there's something there should also be a Pixel
     if ( !aSize.Width() && rSize.Width() )
         aSize.Width() = 1;
@@ -371,7 +354,8 @@ void ScHTMLExport::WriteHeader()
     rStrm.WriteCharPtr( OOO_STRING_SVTOOLS_HTML_body ).WriteCharPtr( "," ).WriteCharPtr( OOO_STRING_SVTOOLS_HTML_division ).WriteCharPtr( "," ).WriteCharPtr( OOO_STRING_SVTOOLS_HTML_table ).WriteCharPtr( "," )
        .WriteCharPtr( OOO_STRING_SVTOOLS_HTML_thead ).WriteCharPtr( "," ).WriteCharPtr( OOO_STRING_SVTOOLS_HTML_tbody ).WriteCharPtr( "," ).WriteCharPtr( OOO_STRING_SVTOOLS_HTML_tfoot ).WriteCharPtr( "," )
        .WriteCharPtr( OOO_STRING_SVTOOLS_HTML_tablerow ).WriteCharPtr( "," ).WriteCharPtr( OOO_STRING_SVTOOLS_HTML_tableheader ).WriteCharPtr( "," )
-       .WriteCharPtr( OOO_STRING_SVTOOLS_HTML_tabledata ).WriteCharPtr( "," ).WriteCharPtr( OOO_STRING_SVTOOLS_HTML_parabreak ).WriteCharPtr( " { " ).WriteCharPtr( sFontFamily );
+       .WriteCharPtr( OOO_STRING_SVTOOLS_HTML_tabledata ).WriteCharPtr( "," ).WriteCharPtr( OOO_STRING_SVTOOLS_HTML_parabreak )
+       .WriteCharPtr( " { " ).WriteCharPtr( "font-family:" );
     sal_Int32 nFonts = comphelper::string::getTokenCount(aHTMLStyle.aFontFamilyName, ';');
     if ( nFonts == 1 )
     {
@@ -392,7 +376,7 @@ void ScHTMLExport::WriteHeader()
                 rStrm.WriteCharPtr( ", " );
         }
     }
-    rStrm.WriteCharPtr( "; " ).WriteCharPtr( sFontSize )
+    rStrm.WriteCharPtr( "; " ).WriteCharPtr( "font-size:" )
        .WriteCharPtr( GetFontSizeCss( ( sal_uInt16 ) aHTMLStyle.nFontHeight ) ).WriteCharPtr( " }" );
 
     OUT_LF();
@@ -402,10 +386,10 @@ void ScHTMLExport::WriteHeader()
     rStrm.WriteCharPtr( OOO_STRING_SVTOOLS_HTML_anchor ).WriteCharPtr(".comment-indicator:hover")
        .WriteCharPtr(" + ").WriteCharPtr( OOO_STRING_SVTOOLS_HTML_comment2 ).WriteCharPtr(" { ")
        .WriteCharPtr(sBackground).WriteCharPtr("#ffd").WriteCharPtr("; ")
-       .WriteCharPtr(sPosition).WriteCharPtr("absolute").WriteCharPtr("; ")
+       .WriteCharPtr("position:").WriteCharPtr("absolute").WriteCharPtr("; ")
        .WriteCharPtr(sDisplay).WriteCharPtr("block").WriteCharPtr("; ")
        .WriteCharPtr(sBorder).WriteCharPtr("1px solid black").WriteCharPtr("; ")
-       .WriteCharPtr(sPadding).WriteCharPtr("0.5em").WriteCharPtr("; ")
+       .WriteCharPtr("padding:").WriteCharPtr("0.5em").WriteCharPtr("; ")
        .WriteCharPtr(" } ");
 
     OUT_LF();
@@ -415,8 +399,8 @@ void ScHTMLExport::WriteHeader()
         .WriteCharPtr(sBackground).WriteCharPtr("red").WriteCharPtr("; ")
         .WriteCharPtr(sDisplay).WriteCharPtr("inline-block").WriteCharPtr("; ")
         .WriteCharPtr(sBorder).WriteCharPtr("1px solid black").WriteCharPtr("; ")
-        .WriteCharPtr(sWidth).WriteCharPtr("0.5em").WriteCharPtr("; ")
-        .WriteCharPtr(sHeight).WriteCharPtr("0.5em").WriteCharPtr("; ")
+        .WriteCharPtr("width:").WriteCharPtr("0.5em").WriteCharPtr("; ")
+        .WriteCharPtr("height:").WriteCharPtr("0.5em").WriteCharPtr("; ")
         .WriteCharPtr(" } ");
 
     OUT_LF();
@@ -996,6 +980,9 @@ void ScHTMLExport::WriteCell( SCCOL nCol, SCROW nRow, SCTAB nTab )
     const SvxUnderlineItem& rUnderlineItem = static_cast<const SvxUnderlineItem&>(
         pAttr->GetItem( ATTR_FONT_UNDERLINE, pCondItemSet ) );
 
+    const SvxCrossedOutItem& rCrossedOutItem = static_cast<const SvxCrossedOutItem&>(
+        pAttr->GetItem( ATTR_FONT_CROSSEDOUT, pCondItemSet ) );
+
     const SvxColorItem& rColorItem = static_cast<const SvxColorItem&>( pAttr->GetItem(
             ATTR_FONT_COLOR, pCondItemSet ) );
 
@@ -1014,10 +1001,11 @@ void ScHTMLExport::WriteCell( SCCOL nCol, SCROW nRow, SCTAB nTab )
     else
         aBgColor = rBrushItem.GetColor();
 
-    bool bBold          = ( WEIGHT_BOLD     <= rWeightItem.GetWeight() );
-    bool bItalic        = ( ITALIC_NONE     != rPostureItem.GetPosture() );
-    bool bUnderline     = ( LINESTYLE_NONE  != rUnderlineItem.GetLineStyle() );
-    bool bSetFontColor  = ( COL_AUTO        != rColorItem.GetValue().GetColor() );  // default is AUTO now
+    bool bBold          = ( WEIGHT_BOLD      <= rWeightItem.GetWeight() );
+    bool bItalic        = ( ITALIC_NONE      != rPostureItem.GetPosture() );
+    bool bUnderline     = ( LINESTYLE_NONE   != rUnderlineItem.GetLineStyle() );
+    bool bCrossedOut    = ( STRIKEOUT_SINGLE <= rCrossedOutItem.GetStrikeout() );
+    bool bSetFontColor  = ( COL_AUTO         != rColorItem.GetValue().GetColor() );  // default is AUTO now
     bool bSetFontName   = ( aHTMLStyle.aFontFamilyName  != rFontItem.GetFamilyName() );
     sal_uInt16 nSetFontSizeNumber = 0;
     sal_uInt32 nFontHeight = rFontHeightItem.GetHeight();
@@ -1119,6 +1107,7 @@ void ScHTMLExport::WriteCell( SCCOL nCol, SCROW nRow, SCTAB nTab )
     if ( bBold )        TAG_ON( OOO_STRING_SVTOOLS_HTML_bold );
     if ( bItalic )      TAG_ON( OOO_STRING_SVTOOLS_HTML_italic );
     if ( bUnderline )   TAG_ON( OOO_STRING_SVTOOLS_HTML_underline );
+    if ( bCrossedOut )  TAG_ON( OOO_STRING_SVTOOLS_HTML_strikethrough );
 
     if ( bSetFont )
     {
@@ -1216,6 +1205,7 @@ void ScHTMLExport::WriteCell( SCCOL nCol, SCROW nRow, SCTAB nTab )
         WriteGraphEntry( pGraphEntry );
 
     if ( bSetFont )     TAG_OFF( OOO_STRING_SVTOOLS_HTML_font );
+    if ( bCrossedOut )  TAG_OFF( OOO_STRING_SVTOOLS_HTML_strikethrough );
     if ( bUnderline )   TAG_OFF( OOO_STRING_SVTOOLS_HTML_underline );
     if ( bItalic )      TAG_OFF( OOO_STRING_SVTOOLS_HTML_italic );
     if ( bBold )        TAG_OFF( OOO_STRING_SVTOOLS_HTML_bold );

@@ -58,6 +58,12 @@ public:
         case svtools::RESTART_REASON_EXP_FEATURES:
             get(reason_,"reason_exp_features");
             break;
+        case svtools::RESTART_REASON_EXTENSION_INSTALL:
+            get(reason_, "reason_extension_install");
+            break;
+        case svtools::RESTART_REASON_OPENGL:
+            get(reason_, "reason_opengl");
+            break;
         default:
             assert(false); // this cannot happen
         }
@@ -65,7 +71,7 @@ public:
         btnYes_->SetClickHdl(LINK(this, RestartDialog, hdlYes));
         btnNo_->SetClickHdl(LINK(this, RestartDialog, hdlNo));
     }
-    virtual ~RestartDialog() { disposeOnce(); }
+    virtual ~RestartDialog() override { disposeOnce(); }
     virtual void dispose() override
     {
         reason_.clear();
@@ -74,20 +80,20 @@ public:
         ModalDialog::dispose();
     }
 private:
-    DECL_LINK_TYPED(hdlYes, Button*, void);
-    DECL_LINK_TYPED(hdlNo, Button*, void);
+    DECL_LINK(hdlYes, Button*, void);
+    DECL_LINK(hdlNo, Button*, void);
 
     VclPtr<vcl::Window> reason_;
     VclPtr<PushButton> btnYes_;
     VclPtr<PushButton> btnNo_;
 };
 
-IMPL_LINK_NOARG_TYPED(RestartDialog, hdlYes, Button*, void)
+IMPL_LINK_NOARG(RestartDialog, hdlYes, Button*, void)
 {
     EndDialog(RET_OK);
 }
 
-IMPL_LINK_NOARG_TYPED(RestartDialog, hdlNo, Button*, void)
+IMPL_LINK_NOARG(RestartDialog, hdlNo, Button*, void)
 {
     EndDialog();
 }

@@ -4,8 +4,8 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
 "POT-Creation-Date: 2016-04-16 21:40+0200\n"
-"PO-Revision-Date: 2017-03-18 05:38+0000\n"
-"Last-Translator: Christian Kühl <kuehl.christian@googlemail.com>\n"
+"PO-Revision-Date: 2017-10-20 13:16+0000\n"
+"Last-Translator: Sophia Schröder <sophia.schroeder@outlook.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Accelerator-Marker: ~\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1489815522.000000\n"
+"X-POOTLE-MTIME: 1508505382.000000\n"
 
 #: 00000001.xhp
 msgctxt ""
@@ -30,7 +30,7 @@ msgctxt ""
 "bm_id3143272\n"
 "help.text"
 msgid "<bookmark_value>support on the Web</bookmark_value>         <bookmark_value>getting support</bookmark_value>         <bookmark_value>forums and support</bookmark_value>         <bookmark_value>Web support</bookmark_value>"
-msgstr "<bookmark_value>Unterstützung im Internet</bookmark_value>  <bookmark_value>Hilfe erhalten</bookmark_value>  <bookmark_value>Foren und Unterstützung</bookmark_value>  <bookmark_value>Hilfe im Internet</bookmark_value>"
+msgstr "<bookmark_value>Unterstützung im Internet</bookmark_value><bookmark_value>Hilfe erhalten</bookmark_value><bookmark_value>Foren und Unterstützung</bookmark_value><bookmark_value>Hilfe im Internet</bookmark_value>"
 
 #: 00000001.xhp
 msgctxt ""
@@ -169,7 +169,7 @@ msgctxt ""
 "par_id0120200910361848\n"
 "help.text"
 msgid "If you want to take an active role in the worldwide %PRODUCTNAME community, you are very welcome to give feedback, discuss features, propose enhancements, write your own article in an FAQ, how-to, manual, create a video tutorial, etc."
-msgstr "Falls Sie aktiv an der %PRODUCTNAME-Community teilnehmen wollen, zögern Sie nicht, Rückmeldung zu geben, Funktionen zu diskutieren, Verbesserungen vorzuschlagen, einen eigenen Artikel für die FAQ, eine Anleitung oder ein Handbuch zu verfassen, eine Video-Anleitung zu erstellen usw."
+msgstr "Falls Sie aktiv an der weltweiten %PRODUCTNAME-Community teilnehmen wollen, sind Sie herzlich willkommen, Rückmeldungen zu geben, Funktionen zu diskutieren, Verbesserungen vorzuschlagen, einen eigenen Artikel für die FAQ, eine Anleitung oder ein Handbuch zu verfassen, eine Video-Anleitung zu erstellen und vieles mehr."
 
 #: 00000001.xhp
 msgctxt ""
@@ -230,7 +230,7 @@ msgctxt ""
 "11\n"
 "help.text"
 msgid "The \"Note\" icon points out extra information: for example, alternative ways to reach a certain goal."
-msgstr "Das \"Hinweis!\"-Symbol weist auf zusätzliche Informationen hin, z.B. eine Alternative, um ein bestimmtes Ziel zu erreichen."
+msgstr "Das Symbol \"Hinweis!\" weist auf zusätzliche Informationen hin, beispielsweise Alternativen, um ein bestimmtes Ziel zu erreichen."
 
 #: 00000002.xhp
 msgctxt ""
@@ -678,7 +678,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "Tips and Extended Tips"
-msgstr "Tipps und erweiterte Tipps"
+msgstr "Tipps und Erweiterte Tipps"
 
 #: 00000120.xhp
 msgctxt ""
@@ -686,7 +686,7 @@ msgctxt ""
 "bm_id3150672\n"
 "help.text"
 msgid "<bookmark_value>Help; Help tips</bookmark_value>      <bookmark_value>tooltips; help</bookmark_value>"
-msgstr "<bookmark_value>Hilfe;Tipps</bookmark_value>  <bookmark_value>Direkthilfe;Hilfe</bookmark_value>"
+msgstr "<bookmark_value>Hilfe; Tipps</bookmark_value><bookmark_value>Direkthilfe; Hilfe</bookmark_value>"
 
 #: 00000120.xhp
 msgctxt ""
@@ -695,7 +695,7 @@ msgctxt ""
 "1\n"
 "help.text"
 msgid "<variable id=\"00000120\"><link href=\"text/shared/05/00000120.xhp\" name=\"Tips and Extended Tips\">Tips and Extended Tips</link></variable>"
-msgstr "<variable id=\"00000120\"><link href=\"text/shared/05/00000120.xhp\" name=\"Tips and Extended Tips\">Tipps und erweiterte Tipps</link></variable>"
+msgstr "<variable id=\"00000120\"><link href=\"text/shared/05/00000120.xhp\" name=\"Tips and Extended Tips\">Tipps und Erweiterte Tipps</link></variable>"
 
 #: 00000120.xhp
 msgctxt ""
@@ -731,7 +731,7 @@ msgctxt ""
 "9\n"
 "help.text"
 msgid "Tips are also displayed for some elements in a document, such as chapter names when you scroll through a long document."
-msgstr "Es werden auch Tipps zu einigen Dokumentelementen angezeigt, z. B. die Kapitelnamen beim Durchlaufen eines umfangreichen Dokuments."
+msgstr "Es werden auch Tipps zu einigen Dokumentelementen angezeigt, beispielsweise die Namen der Kapitel beim Durchlaufen eines umfangreichen Dokuments."
 
 #: 00000120.xhp
 msgctxt ""
@@ -757,7 +757,7 @@ msgctxt ""
 "6\n"
 "help.text"
 msgid "Extended tips provide a brief description about buttons and commands. To display an extended tip, press Shift+F1, then point to a button or command."
-msgstr "Erweiterte Tipps bestehen in der Einblendung von Kurzbeschreibungen der Schaltflächen und Befehle. Um erweiterte Tipps einzublenden, wählen Sie Hilfe - Direkthilfe oder drücken Sie Umschalt+F1 und halten Sie den Mauszeiger über eine Schaltfläche oder einen Befehl."
+msgstr "Erweiterte Tipps bestehen in der Einblendung von Kurzbeschreibungen der Schaltflächen und Befehle. Um einen erweiterten Tipp einzublenden, wählen Sie Hilfe - Erweiterte Tipps oder drücken Sie Umschalt+F1 und halten Sie den Mauszeiger über eine Schaltfläche oder einen Befehl."
 
 #: 00000120.xhp
 msgctxt ""
@@ -781,7 +781,7 @@ msgctxt ""
 "bm_id3149428\n"
 "help.text"
 msgid "<bookmark_value>Index tab in Help</bookmark_value><bookmark_value>Help; keywords</bookmark_value>"
-msgstr "<bookmark_value>Index-Register in der Hilfe</bookmark_value>  <bookmark_value>Hilfe;Stichworte</bookmark_value>"
+msgstr "<bookmark_value>Index-Register in der Hilfe</bookmark_value><bookmark_value>Hilfe; Stichworte</bookmark_value>"
 
 #: 00000130.xhp
 msgctxt ""
@@ -851,7 +851,7 @@ msgctxt ""
 "bm_id3148532\n"
 "help.text"
 msgid "<bookmark_value>Find tab in Help</bookmark_value><bookmark_value>Help; full-text search</bookmark_value><bookmark_value>full-text search in Help</bookmark_value>"
-msgstr "<bookmark_value>Suchen-Register in der Hilfe</bookmark_value>  <bookmark_value>Hilfe;Volltextsuche</bookmark_value>  <bookmark_value>Volltextsuche in der Hilfe</bookmark_value>"
+msgstr "<bookmark_value>Suchen-Register in der Hilfe</bookmark_value><bookmark_value>Hilfe; Volltextsuche</bookmark_value><bookmark_value>Volltextsuche in der Hilfe</bookmark_value>"
 
 #: 00000140.xhp
 msgctxt ""
@@ -993,7 +993,7 @@ msgctxt ""
 "bm_id3153244\n"
 "help.text"
 msgid "<bookmark_value>Help; bookmarks</bookmark_value><bookmark_value>bookmarks; Help</bookmark_value>"
-msgstr "<bookmark_value>Hilfe;Lesezeichen</bookmark_value>  <bookmark_value>Lesezeichen;Hilfe</bookmark_value>"
+msgstr "<bookmark_value>Hilfe; Lesezeichen</bookmark_value><bookmark_value>Lesezeichen; Hilfe</bookmark_value>"
 
 #: 00000150.xhp
 msgctxt ""
@@ -1107,7 +1107,7 @@ msgctxt ""
 "bm_id3147090\n"
 "help.text"
 msgid "<bookmark_value>Help; topics</bookmark_value><bookmark_value>tree view of Help</bookmark_value>"
-msgstr "<bookmark_value>Hilfe;Themen</bookmark_value>  <bookmark_value>Baumstrukturansicht der Hilfe</bookmark_value>"
+msgstr "<bookmark_value>Hilfe; Themen</bookmark_value><bookmark_value>Baumstrukturansicht der Hilfe</bookmark_value>"
 
 #: 00000160.xhp
 msgctxt ""

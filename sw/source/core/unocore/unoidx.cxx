@@ -193,7 +193,7 @@ private:
     /// can be destroyed threadsafely, so no UnoImplPtr here
     ::rtl::Reference<SwXDocumentIndex> m_xParent;
 
-    virtual ~StyleAccess_Impl();
+    virtual ~StyleAccess_Impl() override;
 
 public:
     explicit StyleAccess_Impl(SwXDocumentIndex& rParentIdx);
@@ -238,7 +238,7 @@ private:
     /// can be destroyed threadsafely, so no UnoImplPtr here
     ::rtl::Reference<SwXDocumentIndex> m_xParent;
 
-    virtual ~TokenAccess_Impl();
+    virtual ~TokenAccess_Impl() override;
 
 public:
 
@@ -274,7 +274,7 @@ public:
 class SwDocIndexDescriptorProperties_Impl
 {
 private:
-    ::std::unique_ptr<SwTOXBase> m_pTOXBase;
+    std::unique_ptr<SwTOXBase> m_pTOXBase;
     OUString m_sUserTOXTypeName;
 
 public:
@@ -328,7 +328,7 @@ public:
     const TOXTypes              m_eTOXType;
     bool                        m_bIsDescriptor;
     SwDoc *                     m_pDoc;
-    ::std::unique_ptr<SwDocIndexDescriptorProperties_Impl> m_pProps;
+    std::unique_ptr<SwDocIndexDescriptorProperties_Impl> m_pProps;
     uno::WeakReference<container::XIndexReplace> m_wStyleAccess;
     uno::WeakReference<container::XIndexReplace> m_wTokenAccess;
 
@@ -513,20 +513,20 @@ throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard g;
 
-    sal_uInt16 nObjectType = SW_SERVICE_TYPE_INDEX;
+    SwServiceType nObjectType = SwServiceType::TypeIndex;
     switch (m_pImpl->m_eTOXType)
     {
-        case TOX_USER:          nObjectType = SW_SERVICE_USER_INDEX;
+        case TOX_USER:          nObjectType = SwServiceType::UserIndex;
         break;
-        case TOX_CONTENT:       nObjectType = SW_SERVICE_CONTENT_INDEX;
+        case TOX_CONTENT:       nObjectType = SwServiceType::ContentIndex;
         break;
-        case TOX_ILLUSTRATIONS: nObjectType = SW_SERVICE_INDEX_ILLUSTRATIONS;
+        case TOX_ILLUSTRATIONS: nObjectType = SwServiceType::IndexIllustrations;
         break;
-        case TOX_OBJECTS:       nObjectType = SW_SERVICE_INDEX_OBJECTS;
+        case TOX_OBJECTS:       nObjectType = SwServiceType::IndexObjects;
         break;
-        case TOX_TABLES:        nObjectType = SW_SERVICE_INDEX_TABLES;
+        case TOX_TABLES:        nObjectType = SwServiceType::IndexTables;
         break;
-        case TOX_AUTHORITIES:   nObjectType = SW_SERVICE_INDEX_BIBLIOGRAPHY;
+        case TOX_AUTHORITIES:   nObjectType = SwServiceType::IndexBibliography;
         break;
         default:
         break;
@@ -770,7 +770,7 @@ throw (beans::UnknownPropertyException, beans::PropertyVetoException,
         {
             OUString aString;
             SwStyleNameMapper::FillUIName(lcl_AnyToString(rValue),
-                aString, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT, true);
+                aString, SwGetPoolIdFromName::ChrFmt, true);
             rTOXBase.SetMainEntryCharStyle( aString );
         }
         break;
@@ -806,7 +806,7 @@ throw (beans::UnknownPropertyException, beans::PropertyVetoException,
         {
             OUString aString;
             SwStyleNameMapper::FillUIName( lcl_AnyToString(rValue),
-                aString, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, true);
+                aString, SwGetPoolIdFromName::TxtColl, true);
             bForm = true;
             // Header is on Pos 0
             aForm.SetTemplate( 0, aString );
@@ -821,7 +821,7 @@ throw (beans::UnknownPropertyException, beans::PropertyVetoException,
             OUString aString;
             bForm = true;
             SwStyleNameMapper::FillUIName( lcl_AnyToString(rValue),
-                aString, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, true);
+                aString, SwGetPoolIdFromName::TxtColl, true);
             aForm.SetTemplate( 1, aString );
         }
         break;
@@ -845,7 +845,7 @@ throw (beans::UnknownPropertyException, beans::PropertyVetoException,
             const sal_uInt16 nLPos = rTOXBase.GetType() == TOX_INDEX ? 2 : 1;
             OUString aString;
             SwStyleNameMapper::FillUIName( lcl_AnyToString(rValue),
-                aString, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, true);
+                aString, SwGetPoolIdFromName::TxtColl, true);
             aForm.SetTemplate(nLPos + pEntry->nWID - WID_PARA_LEV1, aString );
         }
         break;
@@ -1102,7 +1102,7 @@ throw (beans::UnknownPropertyException, lang::WrappedTargetException,
                 SwStyleNameMapper::FillProgName(
                         pTOXBase->GetMainEntryCharStyle(),
                         aString,
-                        nsSwGetPoolIdFromName::GET_POOLID_CHRFMT,
+                        SwGetPoolIdFromName::ChrFmt,
                         true);
                 aRet <<= aString;
             }
@@ -1143,7 +1143,7 @@ throw (beans::UnknownPropertyException, lang::WrappedTargetException,
                 //Header steht an Pos 0
                 OUString aString;
                 SwStyleNameMapper::FillProgName(rForm.GetTemplate( 0 ), aString,
-                        nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, true );
+                        SwGetPoolIdFromName::TxtColl, true );
                 aRet <<= aString;
             }
             break;
@@ -1153,7 +1153,7 @@ throw (beans::UnknownPropertyException, lang::WrappedTargetException,
                 SwStyleNameMapper::FillProgName(
                         rForm.GetTemplate( 1 ),
                         aString,
-                        nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL,
+                        SwGetPoolIdFromName::TxtColl,
                         true);
                 aRet <<= aString;
             }
@@ -1175,7 +1175,7 @@ throw (beans::UnknownPropertyException, lang::WrappedTargetException,
                 SwStyleNameMapper::FillProgName(
                         rForm.GetTemplate(nLPos + pEntry->nWID - WID_PARA_LEV1),
                         aString,
-                        nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL,
+                        SwGetPoolIdFromName::TxtColl,
                         true);
                 aRet <<= aString;
             }
@@ -1406,10 +1406,10 @@ SwXDocumentIndex::getAnchor() throw (uno::RuntimeException, std::exception)
     if (pIdx && pIdx->GetNode().GetNodes().IsDocNodes())
     {
         SwPaM aPaM(*pIdx);
-        aPaM.Move( fnMoveForward, fnGoContent );
+        aPaM.Move( fnMoveForward, GoInContent );
         aPaM.SetMark();
         aPaM.GetPoint()->nNode = *pIdx->GetNode().EndOfSectionNode();
-        aPaM.Move( fnMoveBackward, fnGoContent );
+        aPaM.Move( fnMoveBackward, GoInContent );
         xRet = SwXTextRange::CreateXTextRange(*pSectionFormat->GetDoc(),
             *aPaM.GetMark(), aPaM.GetPoint());
     }
@@ -1717,13 +1717,6 @@ throw (uno::RuntimeException, std::exception)
     return ::sw::UnoTunnelImpl<SwXDocumentIndexMark>(rId, this);
 }
 
-static const sal_Char cBaseMark[]      = "com.sun.star.text.BaseIndexMark";
-static const sal_Char cContentMark[]   = "com.sun.star.text.ContentIndexMark";
-static const sal_Char cIdxMark[]       = "com.sun.star.text.DocumentIndexMark";
-static const sal_Char cIdxMarkAsian[]  = "com.sun.star.text.DocumentIndexMarkAsian";
-static const sal_Char cUserMark[]      = "com.sun.star.text.UserIndexMark";
-static const sal_Char cTextContent[]   = "com.sun.star.text.TextContent";
-
 OUString SAL_CALL
 SwXDocumentIndexMark::getImplementationName() throw (uno::RuntimeException, std::exception)
 {
@@ -1744,19 +1737,19 @@ SwXDocumentIndexMark::getSupportedServiceNames() throw (uno::RuntimeException, s
     const sal_Int32 nCnt = (m_pImpl->m_eTOXType == TOX_INDEX) ? 4 : 3;
     uno::Sequence< OUString > aRet(nCnt);
     OUString* pArray = aRet.getArray();
-    pArray[0] = cBaseMark;
-    pArray[1] = cTextContent;
+    pArray[0] = "com.sun.star.text.BaseIndexMark";
+    pArray[1] = "com.sun.star.text.TextContent";
     switch (m_pImpl->m_eTOXType)
     {
         case TOX_USER:
-            pArray[2] = cUserMark;
+            pArray[2] = "com.sun.star.text.UserIndexMark";
         break;
         case TOX_CONTENT:
-            pArray[2] = cContentMark;
+            pArray[2] = "com.sun.star.text.ContentIndexMark";
         break;
         case TOX_INDEX:
-            pArray[2] = cIdxMark;
-            pArray[3] = cIdxMarkAsian;
+            pArray[2] = "com.sun.star.text.DocumentIndexMark";
+            pArray[3] = "com.sun.star.text.DocumentIndexMarkAsian";
         break;
 
         default:
@@ -1950,11 +1943,11 @@ throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
 
 template<typename T> struct NotContainedIn
 {
-    ::std::vector<T> const& m_rVector;
-    explicit NotContainedIn(::std::vector<T> const& rVector)
+    std::vector<T> const& m_rVector;
+    explicit NotContainedIn(std::vector<T> const& rVector)
         : m_rVector(rVector) { }
     bool operator() (T const& rT) {
-        return ::std::find(m_rVector.begin(), m_rVector.end(), rT)
+        return std::find(m_rVector.begin(), m_rVector.end(), rT)
                     == m_rVector.end();
     }
 };
@@ -1986,7 +1979,7 @@ void SwXDocumentIndexMark::Impl::InsertTOXMark(
             | SetAttrMode::DONTEXPAND)
         : SetAttrMode::DONTEXPAND;
 
-    ::std::vector<SwTextAttr *> oldMarks;
+    std::vector<SwTextAttr *> oldMarks;
     if (bMark)
     {
         oldMarks = rPam.GetNode().GetTextNode()->GetTextAttrsAt(
@@ -2005,11 +1998,11 @@ void SwXDocumentIndexMark::Impl::InsertTOXMark(
     {
         // #i107672#
         // ensure that we do not retrieve a different mark at the same position
-        ::std::vector<SwTextAttr *> const newMarks(
+        std::vector<SwTextAttr *> const newMarks(
             rPam.GetNode().GetTextNode()->GetTextAttrsAt(
                 rPam.GetPoint()->nContent.GetIndex(), RES_TXTATR_TOXMARK));
-        ::std::vector<SwTextAttr *>::const_iterator const iter(
-            ::std::find_if(newMarks.begin(), newMarks.end(),
+        std::vector<SwTextAttr *>::const_iterator const iter(
+            std::find_if(newMarks.begin(), newMarks.end(),
                 NotContainedIn<SwTextAttr *>(oldMarks)));
         OSL_ASSERT(newMarks.end() != iter);
         if (newMarks.end() != iter)
@@ -2690,10 +2683,10 @@ throw (lang::IllegalArgumentException, lang::IndexOutOfBoundsException,
     {
         if(i)
         {
-            sSetStyles += OUStringLiteral1<TOX_STYLE_DELIMITER>();
+            sSetStyles += OUStringLiteral1(TOX_STYLE_DELIMITER);
         }
         SwStyleNameMapper::FillUIName(pStyles[i], aString,
-                nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, true);
+                SwGetPoolIdFromName::TxtColl, true);
         sSetStyles +=  aString;
     }
     rTOXBase.SetStyleNames(sSetStyles, static_cast<sal_uInt16>(nIndex));
@@ -2731,7 +2724,7 @@ throw (lang::IndexOutOfBoundsException, lang::WrappedTargetException,
         SwStyleNameMapper::FillProgName(
             rStyles.getToken(0, TOX_STYLE_DELIMITER, nPos),
             aString,
-            nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL,
+            SwGetPoolIdFromName::TxtColl,
             true);
         pStyles[i] = aString;
     }
@@ -2861,17 +2854,17 @@ throw (lang::IllegalArgumentException, lang::IndexOutOfBoundsException,
                 SwStyleNameMapper::FillUIName(
                         lcl_AnyToString(pProperties[j].Value),
                         sCharStyleName,
-                        nsSwGetPoolIdFromName::GET_POOLID_CHRFMT,
+                        SwGetPoolIdFromName::ChrFmt,
                         true);
                 aToken.sCharStyleName = sCharStyleName;
                 aToken.nPoolId = SwStyleNameMapper::GetPoolIdFromUIName (
-                    sCharStyleName, nsSwGetPoolIdFromName::GET_POOLID_CHRFMT );
+                    sCharStyleName, SwGetPoolIdFromName::ChrFmt );
             }
             else if ( pProperties[j].Name == "TabStopRightAligned" )
             {
                 const bool bRight = lcl_AnyToBool(pProperties[j].Value);
                 aToken.eTabAlign = bRight ?
-                                    SVX_TAB_ADJUST_END : SVX_TAB_ADJUST_LEFT;
+                                    SvxTabAdjust::End : SvxTabAdjust::Left;
             }
             else if ( pProperties[j].Name == "TabStopPosition" )
             {
@@ -3034,7 +3027,7 @@ throw (lang::IndexOutOfBoundsException, lang::WrappedTargetException,
         SwStyleNameMapper::FillProgName(
                         aToken.sCharStyleName,
                         aProgCharStyle,
-                        nsSwGetPoolIdFromName::GET_POOLID_CHRFMT,
+                        SwGetPoolIdFromName::ChrFmt,
                         true );
         switch(aToken.eTokenType)
         {
@@ -3114,7 +3107,7 @@ throw (lang::IndexOutOfBoundsException, lang::WrappedTargetException,
                 pArr[0].Name = "TokenType";
                 pArr[0].Value <<= OUString("TokenTabStop");
 
-                if(SVX_TAB_ADJUST_END == aToken.eTabAlign)
+                if(SvxTabAdjust::End == aToken.eTabAlign)
                 {
                     pArr[1].Name = "TabStopRightAligned";
                     pArr[1].Value <<= true;

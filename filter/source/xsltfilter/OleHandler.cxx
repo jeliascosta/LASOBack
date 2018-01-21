@@ -102,7 +102,7 @@ namespace XSLT
                 return "Not Found:";// + streamName;
             }
         ;
-        Reference<XInputStream> subStream(*static_cast<Reference< XInterface > const *>(m_storage->getByName(streamName).getValue()), UNO_QUERY);
+        Reference<XInputStream> subStream(m_storage->getByName(streamName), UNO_QUERY);
         if (!subStream.is())
             {
                 return "Not Found:";// + streamName;
@@ -117,8 +117,14 @@ namespace XSLT
             {
                 return "Can not read the length.";
             }
-        int oleLength = (aLength[0] << 0) + (aLength[1] << 8)
-                + (aLength[2] << 16) + (aLength[3] << 24);
+        sal_Int32 const oleLength = (static_cast<sal_uInt8>(aLength[0]) <<  0U)
+                                  | (static_cast<sal_uInt8>(aLength[1]) <<  8U)
+                                  | (static_cast<sal_uInt8>(aLength[2]) << 16U)
+                                  | (static_cast<sal_uInt8>(aLength[3]) << 24U);
+        if (oleLength < 0)
+        {
+            return "invalid oleLength";
+        }
         Sequence<sal_Int8> content(oleLength);
         //Read all bytes. The compressed length should less then the uncompressed length
         readbytes = subStream->readBytes(content, oleLength);

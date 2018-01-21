@@ -24,7 +24,6 @@
 
 #include <comphelper/string.hxx>
 #include <svtools/colorcfg.hxx>
-#include <svl/smplhint.hxx>
 #include <sal/macros.h>
 #include <tools/poly.hxx>
 #include "scmod.hxx"
@@ -64,6 +63,7 @@ ScCsvGrid::ScCsvGrid( ScCsvControl& rParent ) :
     ScCsvControl( rParent ),
     mpBackgrDev( VclPtr<VirtualDevice>::Create() ),
     mpGridDev( VclPtr<VirtualDevice>::Create() ),
+    mpPopup( VclPtr<PopupMenu>::Create() ),
     mpColorConfig( nullptr ),
     mpEditEngine( new ScEditEngineDefaulter( EditEngine::CreatePool(), true ) ),
     maHeaderFont( GetFont() ),
@@ -75,10 +75,10 @@ ScCsvGrid::ScCsvGrid( ScCsvControl& rParent ) :
     mbMTSelecting( false )
 {
     mpEditEngine->SetRefDevice( mpBackgrDev.get() );
-    mpEditEngine->SetRefMapMode( MapMode( MAP_PIXEL ) );
+    mpEditEngine->SetRefMapMode( MapMode( MapUnit::MapPixel ) );
     maEdEngSize = mpEditEngine->GetPaperSize();
 
-    maPopup.SetMenuFlags( maPopup.GetMenuFlags() | MenuFlags::NoAutoMnemonics );
+    mpPopup->SetMenuFlags( mpPopup->GetMenuFlags() | MenuFlags::NoAutoMnemonics );
 
     EnableRTL( false ); // RTL
     InitFonts();
@@ -95,6 +95,7 @@ void ScCsvGrid::dispose()
     OSL_ENSURE(mpColorConfig, "the object hasn't been initialized properly");
     if (mpColorConfig)
         mpColorConfig->RemoveListener(this);
+    mpPopup.disposeAndClear();
     mpBackgrDev.disposeAndClear();
     mpGridDev.disposeAndClear();
     ScCsvControl::dispose();
@@ -135,17 +136,17 @@ void ScCsvGrid::UpdateOffsetX()
 void ScCsvGrid::ApplyLayout( const ScCsvLayoutData& rOldData )
 {
     ScCsvDiff nDiff = GetLayoutData().GetDiff( rOldData );
-    if( nDiff == CSV_DIFF_EQUAL ) return;
+    if( nDiff == ScCsvDiff::Equal ) return;
 
     DisableRepaint();
 
-    if( nDiff & CSV_DIFF_RULERCURSOR )
+    if( nDiff & ScCsvDiff::RulerCursor )
     {
         ImplInvertCursor( rOldData.mnPosCursor );
         ImplInvertCursor( GetRulerCursorPos() );
     }
 
-    if( nDiff & CSV_DIFF_POSCOUNT )
+    if( nDiff & ScCsvDiff::PosCount )
     {
         if( GetPosCount() < rOldData.mnPosCount )
         {
@@ -158,21 +159,21 @@ void ScCsvGrid::ApplyLayout( const ScCsvLayoutData& rOldData )
         maColStates.resize( maSplits.Count() - 1 );
     }
 
-    if( nDiff & CSV_DIFF_LINEOFFSET )
+    if( nDiff & ScCsvDiff::LineOffset )
     {
         Execute( CSVCMD_UPDATECELLTEXTS );
         UpdateOffsetX();
     }
 
-    ScCsvDiff nHVDiff = nDiff & (CSV_DIFF_HORIZONTAL | CSV_DIFF_VERTICAL);
-    if( nHVDiff == CSV_DIFF_POSOFFSET )
+    ScCsvDiff nHVDiff = nDiff & (ScCsvDiff::HorizontalMask | ScCsvDiff::VerticalMask);
+    if( nHVDiff == ScCsvDiff::PosOffset )
         ImplDrawHorzScrolled( rOldData.mnPosOffset );
-    else if( nHVDiff != CSV_DIFF_EQUAL )
+    else if( nHVDiff != ScCsvDiff::Equal )
         InvalidateGfx();
 
     EnableRepaint();
 
-    if( nDiff & (CSV_DIFF_POSOFFSET | CSV_DIFF_LINEOFFSET) )
+    if( nDiff & (ScCsvDiff::PosOffset | ScCsvDiff::LineOffset) )
         AccSendVisibleEvent();
 }
 
@@ -251,14 +252,23 @@ void ScCsvGrid::InitFonts()
 
     // copy other items from default font
     const SfxPoolItem& rWeightItem = aDefSet.Get( EE_CHAR_WEIGHT );
-    aDefSet.Put( rWeightItem, EE_CHAR_WEIGHT_CJK );
-    aDefSet.Put( rWeightItem, EE_CHAR_WEIGHT_CTL );
+    std::unique_ptr<SfxPoolItem> pNewItem(rWeightItem.Clone());
+    pNewItem->SetWhich(EE_CHAR_WEIGHT_CJK);
+    aDefSet.Put( *pNewItem );
+    pNewItem->SetWhich(EE_CHAR_WEIGHT_CTL);
+    aDefSet.Put( *pNewItem );
     const SfxPoolItem& rItalicItem = aDefSet.Get( EE_CHAR_ITALIC );
-    aDefSet.Put( rItalicItem, EE_CHAR_ITALIC_CJK );
-    aDefSet.Put( rItalicItem, EE_CHAR_ITALIC_CTL );
+    pNewItem.reset(rItalicItem.Clone());
+    pNewItem->SetWhich(EE_CHAR_ITALIC_CJK);
+    aDefSet.Put( *pNewItem );
+    pNewItem->SetWhich(EE_CHAR_ITALIC_CTL);
+    aDefSet.Put( *pNewItem );
     const SfxPoolItem& rLangItem = aDefSet.Get( EE_CHAR_LANGUAGE );
-    aDefSet.Put( rLangItem, EE_CHAR_LANGUAGE_CJK );
-    aDefSet.Put( rLangItem, EE_CHAR_LANGUAGE_CTL );
+    pNewItem.reset(rLangItem.Clone());
+    pNewItem->SetWhich(EE_CHAR_LANGUAGE_CJK);
+    aDefSet.Put( *pNewItem );
+    pNewItem->SetWhich(EE_CHAR_LANGUAGE_CTL);
+    aDefSet.Put( *pNewItem );
 
     mpEditEngine->SetDefaults( aDefSet );
     InvalidateGfx();
@@ -496,12 +506,12 @@ void ScCsvGrid::SetTypeNames( const std::vector<OUString>& rTypeNames )
     maTypeNames = rTypeNames;
     Repaint( true );
 
-    maPopup.Clear();
+    mpPopup->Clear();
     sal_uInt32 nCount = maTypeNames.size();
     sal_uInt32 nIx;
     sal_uInt16 nItemId;
     for( nIx = 0, nItemId = 1; nIx < nCount; ++nIx, ++nItemId )
-        maPopup.InsertItem( nItemId, maTypeNames[ nIx ] );
+        mpPopup->InsertItem( nItemId, maTypeNames[ nIx ] );
 
     ::std::for_each( maColStates.begin(), maColStates.end(), Func_SetType( CSV_TYPE_DEFAULT ) );
 }
@@ -573,9 +583,9 @@ void ScCsvGrid::ScrollVertRel( ScMoveMode eDir )
 
 void ScCsvGrid::ExecutePopup( const Point& rPos )
 {
-    sal_uInt16 nItemId = maPopup.Execute( this, rPos );
+    sal_uInt16 nItemId = mpPopup->Execute( this, rPos );
     if( nItemId )   // 0 = cancelled
-        Execute( CSVCMD_SETCOLUMNTYPE, maPopup.GetItemPos( nItemId ) );
+        Execute( CSVCMD_SETCOLUMNTYPE, mpPopup->GetItemPos( nItemId ) );
 }
 
 // selection handling ---------------------------------------------------------

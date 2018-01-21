@@ -78,12 +78,11 @@ private:
         sal_uInt32 nMillisecondsBetweenSteps,
         sal_uInt32 nMaxTimePerStep);
     ~TimerBasedTaskExecution();
-    void SetSelf (const std::shared_ptr<TimerBasedTaskExecution>& rpSelf);
 
     class Deleter;
     friend class Deleter;
 
-    DECL_LINK_TYPED(TimerCallback, Timer *, void);
+    DECL_LINK(TimerCallback, Timer *, void);
 };
 
 } } // end of namespace ::sd::tools

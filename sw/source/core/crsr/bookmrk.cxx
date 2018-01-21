@@ -31,10 +31,10 @@
 #include <swtypes.hxx>
 #include <UndoBookmark.hxx>
 #include <unobookmark.hxx>
-#include <rtl/random.h>
 #include <o3tl/make_unique.hxx>
 #include <xmloff/odffields.hxx>
 #include <libxml/xmlwriter.h>
+#include <comphelper/random.hxx>
 #include <comphelper/anytostring.hxx>
 
 using namespace ::sw::mark;
@@ -65,34 +65,39 @@ namespace
         }
     }
 
-    void lcl_AssureFieldMarksSet(Fieldmark* const pField,
+    void lcl_AssertFieldMarksSet(Fieldmark const * const pField,
+        const sal_Unicode aStartMark,
+        const sal_Unicode aEndMark)
+    {
+        if (aEndMark != CH_TXT_ATR_FORMELEMENT)
+        {
+            SwPosition const& rStart(pField->GetMarkStart());
+            assert(rStart.nNode.GetNode().GetTextNode()->GetText()[rStart.nContent.GetIndex()] == aStartMark); (void) rStart; (void) aStartMark;
+        }
+        SwPosition const& rEnd(pField->GetMarkEnd());
+        assert(rEnd.nNode.GetNode().GetTextNode()->GetText()[rEnd.nContent.GetIndex() - 1] == aEndMark); (void) rEnd;
+    }
+
+    void lcl_SetFieldMarks(Fieldmark* const pField,
         SwDoc* const io_pDoc,
         const sal_Unicode aStartMark,
         const sal_Unicode aEndMark)
     {
         io_pDoc->GetIDocumentUndoRedo().StartUndo(UNDO_UI_REPLACE, nullptr);
 
-        SwPosition rStart = pField->GetMarkStart();
-        SwTextNode const*const pStartTextNode = rStart.nNode.GetNode().GetTextNode();
-        sal_Unicode ch_start = 0;
-        if( pStartTextNode && ( rStart.nContent.GetIndex() < pStartTextNode->GetText().getLength() ) )
-            ch_start = pStartTextNode->GetText()[rStart.nContent.GetIndex()];
-        if( ( ch_start != aStartMark ) && ( aEndMark != CH_TXT_ATR_FORMELEMENT ) )
+        SwPosition start = pField->GetMarkStart();
+        if (aEndMark != CH_TXT_ATR_FORMELEMENT)
         {
-            SwPaM aStartPaM(rStart);
+            SwPaM aStartPaM(start);
             io_pDoc->getIDocumentContentOperations().InsertString(aStartPaM, OUString(aStartMark));
-            --rStart.nContent;
-            pField->SetMarkStartPos( rStart );
+            --start.nContent; // restore, it was moved by InsertString
+            // do not manipulate via reference directly but call SetMarkStartPos
+            // which works even if start and end pos were the same
+            pField->SetMarkStartPos( start );
         }
 
         SwPosition& rEnd = pField->GetMarkEnd();
-        SwTextNode const*const pEndTextNode = rEnd.nNode.GetNode().GetTextNode();
-        const sal_Int32 nEndPos = ( rEnd == rStart ||  rEnd.nContent.GetIndex() == 0 ) ?
-            rEnd.nContent.GetIndex() : rEnd.nContent.GetIndex() - 1;
-        sal_Unicode ch_end = 0;
-        if ( pEndTextNode && ( nEndPos < pEndTextNode->GetText().getLength() ) )
-            ch_end = pEndTextNode->GetText()[nEndPos];
-        if ( aEndMark && ( ch_end != aEndMark ) )
+        if (aEndMark)
         {
             SwPaM aEndPaM(rEnd);
             io_pDoc->getIDocumentContentOperations().InsertString(aEndPaM, OUString(aEndMark));
@@ -111,12 +116,12 @@ namespace
 
         const SwPosition& rStart = pField->GetMarkStart();
         SwTextNode const*const pStartTextNode = rStart.nNode.GetNode().GetTextNode();
-        sal_Unicode ch_start = 0;
-        if( pStartTextNode )
-            ch_start = pStartTextNode->GetText()[rStart.nContent.GetIndex()];
-
-        if( ch_start == aStartMark )
+        assert(pStartTextNode);
+        if (aEndMark != CH_TXT_ATR_FORMELEMENT)
         {
+            (void) aStartMark;
+            (void) pStartTextNode;
+            assert(pStartTextNode->GetText()[rStart.nContent.GetIndex()] == aStartMark);
             SwPaM aStart(rStart, rStart);
             ++aStart.End()->nContent;
             io_pDoc->getIDocumentContentOperations().DeleteRange(aStart);
@@ -124,18 +129,17 @@ namespace
 
         const SwPosition& rEnd = pField->GetMarkEnd();
         SwTextNode const*const pEndTextNode = rEnd.nNode.GetNode().GetTextNode();
-        const sal_Int32 nEndPos = ( rEnd == rStart ||  rEnd.nContent.GetIndex() == 0 )
+        assert(pEndTextNode);
+        const sal_Int32 nEndPos = (rEnd == rStart)
                                    ? rEnd.nContent.GetIndex()
                                    : rEnd.nContent.GetIndex() - 1;
-        sal_Unicode ch_end = 0;
-        if ( pEndTextNode )
-            ch_end = pEndTextNode->GetText()[nEndPos];
-        if ( ch_end == aEndMark )
-        {
-            SwPaM aEnd(rEnd, rEnd);
+        assert(pEndTextNode->GetText()[nEndPos] == aEndMark);
+        (void) pEndTextNode;
+        (void) nEndPos;
+        SwPaM aEnd(rEnd, rEnd);
+        if (aEnd.Start()->nContent > 0)
             --aEnd.Start()->nContent;
-            io_pDoc->getIDocumentContentOperations().DeleteRange(aEnd);
-        }
+        io_pDoc->getIDocumentContentOperations().DeleteRange(aEnd);
 
         io_pDoc->GetIDocumentUndoRedo().EndUndo(UNDO_UI_REPLACE, nullptr);
     };
@@ -187,7 +191,7 @@ namespace sw { namespace mark
 
     void MarkBase::dumpAsXml(xmlTextWriterPtr pWriter) const
     {
-        xmlTextWriterStartElement(pWriter, BAD_CAST("markBase"));
+        xmlTextWriterStartElement(pWriter, BAD_CAST("MarkBase"));
         xmlTextWriterWriteAttribute(pWriter, BAD_CAST("name"), BAD_CAST(m_aName.toUtf8().getStr()));
         xmlTextWriterStartElement(pWriter, BAD_CAST("markPos"));
         GetMarkPos().dumpAsXml(pWriter);
@@ -215,15 +219,14 @@ namespace sw { namespace mark
         }
         else
         {
-            static rtlRandomPool aPool = rtl_random_createPool();
             static OUString sUniquePostfix;
             static sal_Int32 nCount = SAL_MAX_INT32;
             OUStringBuffer aResult(rPrefix);
             if(nCount == SAL_MAX_INT32)
             {
-                sal_Int32 nRandom;
-                rtl_random_getBytes(aPool, &nRandom, sizeof(nRandom));
-                sUniquePostfix = OUStringBuffer(13).append('_').append(static_cast<sal_Int32>(abs(nRandom))).makeStringAndClear();
+                unsigned int const n(comphelper::rng::uniform_uint_distribution(0,
+                                    std::numeric_limits<unsigned int>::max()));
+                sUniquePostfix = "_" + OUString::number(n);
                 nCount = 0;
             }
             // putting the counter in front of the random parts will speed up string comparisons
@@ -262,7 +265,7 @@ namespace sw { namespace mark
     void DdeBookmark::DeregisterFromDoc(SwDoc* const pDoc)
     {
         if(m_aRefObj.Is())
-            pDoc->getIDocumentLinksAdministration().GetLinkManager().RemoveServer(m_aRefObj);
+            pDoc->getIDocumentLinksAdministration().GetLinkManager().RemoveServer(m_aRefObj.get());
     }
 
     DdeBookmark::~DdeBookmark()
@@ -271,7 +274,7 @@ namespace sw { namespace mark
         {
             if(m_aRefObj->HasDataLinks())
             {
-                ::sfx2::SvLinkSource* p = &m_aRefObj;
+                ::sfx2::SvLinkSource* p = m_aRefObj.get();
                 p->SendDataChanged();
             }
             m_aRefObj->SetNoServer();
@@ -290,7 +293,7 @@ namespace sw { namespace mark
         m_aName = rName;
     }
 
-    void Bookmark::InitDoc(SwDoc* const io_pDoc)
+    void Bookmark::InitDoc(SwDoc* const io_pDoc, sw::mark::InsertMode const)
     {
         if (io_pDoc->GetIDocumentUndoRedo().DoesUndo())
         {
@@ -389,7 +392,7 @@ namespace sw { namespace mark
 
     void Fieldmark::dumpAsXml(xmlTextWriterPtr pWriter) const
     {
-        xmlTextWriterStartElement(pWriter, BAD_CAST("fieldmark"));
+        xmlTextWriterStartElement(pWriter, BAD_CAST("Fieldmark"));
         xmlTextWriterWriteAttribute(pWriter, BAD_CAST("fieldname"), BAD_CAST(m_aFieldname.toUtf8().getStr()));
         xmlTextWriterWriteAttribute(pWriter, BAD_CAST("fieldHelptext"), BAD_CAST(m_aFieldHelptext.toUtf8().getStr()));
         MarkBase::dumpAsXml(pWriter);
@@ -409,9 +412,16 @@ namespace sw { namespace mark
         : Fieldmark(rPaM)
     { }
 
-    void TextFieldmark::InitDoc(SwDoc* const io_pDoc)
+    void TextFieldmark::InitDoc(SwDoc* const io_pDoc, sw::mark::InsertMode const eMode)
     {
-        lcl_AssureFieldMarksSet(this, io_pDoc, CH_TXT_ATR_FIELDSTART, CH_TXT_ATR_FIELDEND);
+        if (eMode == sw::mark::InsertMode::New)
+        {
+            lcl_SetFieldMarks(this, io_pDoc, CH_TXT_ATR_FIELDSTART, CH_TXT_ATR_FIELDEND);
+        }
+        else
+        {
+            lcl_AssertFieldMarksSet(this, CH_TXT_ATR_FIELDSTART, CH_TXT_ATR_FIELDEND);
+        }
     }
 
     void TextFieldmark::ReleaseDoc(SwDoc* const pDoc)
@@ -423,15 +433,22 @@ namespace sw { namespace mark
         : Fieldmark(rPaM)
     { }
 
-    void CheckboxFieldmark::InitDoc(SwDoc* const io_pDoc)
+    void CheckboxFieldmark::InitDoc(SwDoc* const io_pDoc, sw::mark::InsertMode const eMode)
     {
-        lcl_AssureFieldMarksSet(this, io_pDoc, CH_TXT_ATR_FIELDSTART, CH_TXT_ATR_FORMELEMENT);
+        if (eMode == sw::mark::InsertMode::New)
+        {
+            lcl_SetFieldMarks(this, io_pDoc, CH_TXT_ATR_FIELDSTART, CH_TXT_ATR_FORMELEMENT);
 
-        // For some reason the end mark is moved from 1 by the Insert: we don't
-        // want this for checkboxes
-        SwPosition aNewEndPos = this->GetMarkEnd();
-        aNewEndPos.nContent--;
-        SetMarkEndPos( aNewEndPos );
+            // For some reason the end mark is moved from 1 by the Insert:
+            // we don't want this for checkboxes
+            SwPosition aNewEndPos = this->GetMarkEnd();
+            aNewEndPos.nContent--;
+            SetMarkEndPos( aNewEndPos );
+        }
+        else
+        {
+            lcl_AssertFieldMarksSet(this, CH_TXT_ATR_FIELDSTART, CH_TXT_ATR_FORMELEMENT);
+        }
     }
 
     void CheckboxFieldmark::ReleaseDoc(SwDoc* const pDoc)

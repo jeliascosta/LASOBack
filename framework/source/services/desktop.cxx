@@ -173,6 +173,7 @@ Desktop::Desktop( const css::uno::Reference< css::uno::XComponentContext >& xCon
         ,   m_xDispatchRecorderSupplier(                                            )
         ,   m_xPipeTerminator       (                                               )
         ,   m_xQuickLauncher        (                                               )
+        ,   m_xStarBasicQuitGuard   (                                               )
         ,   m_xSWThreadManager      (                                               )
         ,   m_xSfxTerminator        (                                               )
         ,   m_xTitleNumberGenerator (                                               )
@@ -216,6 +217,7 @@ sal_Bool SAL_CALL Desktop::terminate()
 
     css::uno::Reference< css::frame::XTerminateListener > xPipeTerminator    = m_xPipeTerminator;
     css::uno::Reference< css::frame::XTerminateListener > xQuickLauncher     = m_xQuickLauncher;
+    css::uno::Reference< css::frame::XTerminateListener > xStarBasicQuitGuard = m_xStarBasicQuitGuard;
     css::uno::Reference< css::frame::XTerminateListener > xSWThreadManager   = m_xSWThreadManager;
     css::uno::Reference< css::frame::XTerminateListener > xSfxTerminator     = m_xSfxTerminator;
 
@@ -224,9 +226,14 @@ sal_Bool SAL_CALL Desktop::terminate()
 
     aReadLock.clear();
 
-    // Ask normal terminate listener. They could stop terminate without closing any open document.
+    // try to close all open frames.
+    // Allow using of any UI ... because Desktop.terminate() was designed as UI functionality in the past.
+    bool bIsEventTestingMode = Application::IsEventTestingModeEnabled();
+    bool bFramesClosed = impl_closeFrames(!bIsEventTestingMode);
+
+    // Ask normal terminate listener. They could stop terminating the process.
     Desktop::TTerminateListenerList lCalledTerminationListener;
-    bool                      bVeto = false;
+    bool bVeto = false;
     impl_sendQueryTerminationEvent(lCalledTerminationListener, bVeto);
     if ( bVeto )
     {
@@ -234,10 +241,6 @@ sal_Bool SAL_CALL Desktop::terminate()
         return false;
     }
 
-    // try to close all open frames.
-    // Allow using of any UI ... because Desktop.terminate() was designed as UI functionality in the past.
-    bool bIsEventTestingMode = Application::IsEventTestingModeEnabled();
-    bool bFramesClosed = impl_closeFrames(!bIsEventTestingMode);
     if (bIsEventTestingMode)
     {
         Application::Quit();
@@ -275,6 +278,12 @@ sal_Bool SAL_CALL Desktop::terminate()
         {
             xQuickLauncher->queryTermination( aEvent );
             lCalledTerminationListener.push_back( xQuickLauncher );
+        }
+
+        if ( xStarBasicQuitGuard.is() )
+        {
+            xStarBasicQuitGuard->queryTermination( aEvent );
+            lCalledTerminationListener.push_back( xStarBasicQuitGuard );
         }
 
         if ( xSWThreadManager.is() )
@@ -329,6 +338,9 @@ sal_Bool SAL_CALL Desktop::terminate()
             xQuickLauncher->notifyTermination( aEvent );
         }
 
+        if ( xStarBasicQuitGuard.is() )
+            xStarBasicQuitGuard->notifyTermination( aEvent );
+
         if ( xSWThreadManager.is() )
             xSWThreadManager->notifyTermination( aEvent );
 
@@ -359,7 +371,7 @@ namespace
         Desktop* const m_pDesktop;
         css::uno::Reference< css::frame::XTerminateListener > m_xQuickLauncher;
         public:
-            QuickstartSuppressor(Desktop* const pDesktop, css::uno::Reference< css::frame::XTerminateListener > xQuickLauncher)
+            QuickstartSuppressor(Desktop* const pDesktop, css::uno::Reference< css::frame::XTerminateListener > const & xQuickLauncher)
                 : m_pDesktop(pDesktop)
                 , m_xQuickLauncher(xQuickLauncher)
             {
@@ -410,6 +422,11 @@ void SAL_CALL Desktop::addTerminateListener( const css::uno::Reference< css::fra
             m_xQuickLauncher = xListener;
             return;
         }
+        if( sImplementationName == "com.sun.star.comp.svx.StarBasicQuitGuard" )
+        {
+            m_xStarBasicQuitGuard = xListener;
+            return;
+        }
         if( sImplementationName == "com.sun.star.util.comp.FinalThreadManager" )
         {
             m_xSWThreadManager = xListener;
@@ -453,6 +470,12 @@ void SAL_CALL Desktop::removeTerminateListener( const css::uno::Reference< css::
         if( sImplementationName == "com.sun.star.comp.desktop.QuickstartWrapper" )
         {
             m_xQuickLauncher.clear();
+            return;
+        }
+
+        if( sImplementationName == "com.sun.star.comp.svx.StarBasicQuitGuard" )
+        {
+            m_xStarBasicQuitGuard.clear();
             return;
         }
 
@@ -1095,6 +1118,7 @@ void SAL_CALL Desktop::disposing()
 
     m_xPipeTerminator.clear();
     m_xQuickLauncher.clear();
+    m_xStarBasicQuitGuard.clear();
     m_xSWThreadManager.clear();
 
     // we need a copy because the notifyTermination might call the removeEventListener method
@@ -1129,7 +1153,7 @@ void SAL_CALL Desktop::addEventListener( const css::uno::Reference< css::lang::X
     /* UNSAFE AREA --------------------------------------------------------------------------------------------- */
     // Safe impossible cases
     // Method not defined for all incoming parameter.
-    SAL_WARN_IF( implcp_addEventListener( xListener ), "fwk", "Desktop::addEventListener(): Invalid parameter detected!" );
+    SAL_WARN_IF( !xListener.is(), "fwk", "Desktop::addEventListener(): Invalid parameter detected!" );
     // Register transaction and reject wrong calls.
     TransactionGuard aTransaction( m_aTransactionManager, E_HARDEXCEPTIONS );
 
@@ -1141,7 +1165,7 @@ void SAL_CALL Desktop::removeEventListener( const css::uno::Reference< css::lang
     /* UNSAFE AREA --------------------------------------------------------------------------------------------- */
     // Safe impossible cases
     // Method not defined for all incoming parameter.
-    SAL_WARN_IF( implcp_removeEventListener( xListener ), "fwk", "Desktop::removeEventListener(): Invalid parameter detected!" );
+    SAL_WARN_IF( !xListener.is(), "fwk", "Desktop::removeEventListener(): Invalid parameter detected!" );
     // Register transaction and reject wrong calls.
     TransactionGuard aTransaction( m_aTransactionManager, E_SOFTEXCEPTIONS );
 
@@ -1532,7 +1556,7 @@ css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL Desktop::getPropert
     @seealso    method getCurrentComponent();
 
     @param      "xFrame", reference to valid frame in hierarchy. Method is not defined for invalid values.
-                But we don't check these. Its an IMPL-method and caller must use it right!
+                But we don't check these. It's an IMPL-method and caller must use it right!
     @return     A reference to found component.
 
     @onerror    A null reference is returned.
@@ -1748,18 +1772,6 @@ bool Desktop::impl_closeFrames(bool bAllowUI)
     }
 
     return (nNonClosedFrames < 1);
-}
-
-//  We work with valid listener only.
-bool Desktop::implcp_addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener )
-{
-    return !xListener.is();
-}
-
-//  We work with valid listener only.
-bool Desktop::implcp_removeEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener )
-{
-    return !xListener.is();
 }
 
 }   // namespace framework

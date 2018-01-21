@@ -24,7 +24,6 @@
 #include <com/sun/star/awt/XControlContainer.hpp>
 #include <com/sun/star/form/XBoundComponent.hpp>
 #include <com/sun/star/sdbc/XRowSetListener.hpp>
-#include <svtools/stdctrl.hxx>
 
 #include <vcl/layout.hxx>
 #include <vcl/lstbox.hxx>
@@ -57,7 +56,7 @@ public:
 
 };
 
-class BibGeneralPage: public BibTabPage
+class BibGeneralPage : public TabPage, public BibShortCutHandler
 {
     VclPtr<VclGrid>            pGrid;
     VclPtr<VclScrolledWindow>  pScrolledWindow;
@@ -141,7 +140,7 @@ protected:
 
 public:
                                 BibGeneralPage(vcl::Window* pParent, BibDataManager* pDatMan);
-    virtual                     ~BibGeneralPage();
+    virtual                     ~BibGeneralPage() override;
     virtual void                dispose() override;
 
     inline const OUString&      GetErrorString() const;

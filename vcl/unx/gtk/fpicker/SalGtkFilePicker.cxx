@@ -50,8 +50,6 @@
 
 #include "gtk/fpicker/SalGtkFilePicker.hxx"
 
-// namespace directives
-
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::ui::dialogs;
 using namespace ::com::sun::star::ui::dialogs::TemplateDescription;
@@ -788,8 +786,6 @@ uno::Sequence<OUString> SAL_CALL SalGtkFilePicker::getSelectedFiles() throw( uno
 
                     if( sExtension.getLength() >= 3 ) // 3 = typical/minimum extension length
                     {
-                        static const char aStarDot[] = "*.";
-
                         OUString aNewFilter;
                         OUString aOldFilter = getCurrentFilter();
                         bool bChangeFilter = true;
@@ -799,7 +795,7 @@ uno::Sequence<OUString> SAL_CALL SalGtkFilePicker::getSelectedFiles() throw( uno
                                   ++aListIter
                                 )
                         {
-                            if( lcl_matchFilter( aListIter->getFilter(), aStarDot+sExtension ) )
+                            if( lcl_matchFilter( aListIter->getFilter(), "*." + sExtension ) )
                             {
                                 if( aNewFilter.isEmpty() )
                                     aNewFilter = aListIter->getTitle();
@@ -1669,6 +1665,13 @@ void SAL_CALL SalGtkFilePicker::initialize( const uno::Sequence<uno::Any>& aArgu
             mbButtonVisibility[PLAY] = true;
             // TODO
                 break;
+        case FILEOPEN_LINK_PLAY:
+            eAction = GTK_FILE_CHOOSER_ACTION_OPEN;
+            first_button_text = GTK_STOCK_OPEN;
+            mbToggleVisibility[LINK] = true;
+            mbButtonVisibility[PLAY] = true;
+            // TODO
+                break;
         case FILEOPEN_READONLY_VERSION:
             eAction = GTK_FILE_CHOOSER_ACTION_OPEN;
             first_button_text = GTK_STOCK_OPEN;
@@ -1686,6 +1689,12 @@ void SAL_CALL SalGtkFilePicker::initialize( const uno::Sequence<uno::Any>& aArgu
             eAction = GTK_FILE_CHOOSER_ACTION_SAVE;
             first_button_text = GTK_STOCK_SAVE;
             OSL_TRACE( "7all true" );
+            // TODO
+                break;
+        case FILEOPEN_PREVIEW:
+            eAction = GTK_FILE_CHOOSER_ACTION_OPEN;
+            first_button_text = GTK_STOCK_OPEN;
+            mbToggleVisibility[PREVIEW] = true;
             // TODO
                 break;
         default:
@@ -1820,7 +1829,6 @@ GtkFileFilter* SalGtkFilePicker::implAddFilter( const OUString& rFilter, const O
     OString aFilterName = OUStringToOString( aShrunkName, RTL_TEXTENCODING_UTF8 );
     gtk_file_filter_set_name( filter, aFilterName.getStr() );
 
-    static const char aStarDot[] = "*.";
     OUString aTokens;
 
     bool bAllGlob = rType == "*.*" || rType == "*";
@@ -1834,7 +1842,7 @@ GtkFileFilter* SalGtkFilePicker::implAddFilter( const OUString& rFilter, const O
         {
             aToken = rType.getToken( 0, ';', nIndex );
             // Assume all have the "*.<extn>" syntax
-            sal_Int32 nStarDot = aToken.lastIndexOf( aStarDot );
+            sal_Int32 nStarDot = aToken.lastIndexOf( "*." );
             if (nStarDot >= 0)
                 aToken = aToken.copy( nStarDot + 2 );
             if (!aToken.isEmpty())

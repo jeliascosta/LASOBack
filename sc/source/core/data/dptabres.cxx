@@ -48,7 +48,7 @@
 #include <com/sun/star/sheet/DataPilotFieldReferenceItemType.hpp>
 #include <com/sun/star/sheet/DataPilotFieldShowItemsMode.hpp>
 #include <com/sun/star/sheet/DataPilotFieldSortMode.hpp>
-#include <com/sun/star/sheet/DataPilotFieldFilter.hpp>
+#include <com/sun/star/sheet/GeneralFunction2.hpp>
 
 using namespace com::sun::star;
 using ::std::vector;
@@ -57,7 +57,7 @@ using ::com::sun::star::uno::Sequence;
 
 namespace {
 
-sal_uInt16 nFuncStrIds[12] =     // matching enum ScSubTotalFunc
+sal_uInt16 nFuncStrIds[] =     // matching enum ScSubTotalFunc
 {
     0,                              // SUBTOTAL_FUNC_NONE
     STR_FUN_TEXT_AVG,               // SUBTOTAL_FUNC_AVE
@@ -70,7 +70,9 @@ sal_uInt16 nFuncStrIds[12] =     // matching enum ScSubTotalFunc
     STR_FUN_TEXT_STDDEV,            // SUBTOTAL_FUNC_STDP
     STR_FUN_TEXT_SUM,               // SUBTOTAL_FUNC_SUM
     STR_FUN_TEXT_VAR,               // SUBTOTAL_FUNC_VAR
-    STR_FUN_TEXT_VAR                // SUBTOTAL_FUNC_VARP
+    STR_FUN_TEXT_VAR,               // SUBTOTAL_FUNC_VARP
+    STR_FUN_TEXT_MEDIAN,            // SUBTOTAL_FUNC_MED
+    0                               // SUBTOTAL_FUNC_SELECTION_COUNT - not used for pivot table
 };
 
 bool lcl_SearchMember( const std::vector <ScDPResultMember *>& list, SCROW nOrder, SCROW& rIndex)
@@ -110,9 +112,10 @@ public:
         mrFilters.push_back(ScDPResultFilter(rName, bDataLayout));
     }
 
-    void pushDimValue(const OUString& rValue)
+    void pushDimValue(const OUString& rValueName, const OUString& rValue)
     {
         ScDPResultFilter& rFilter = mrFilters.back();
+        rFilter.maValueName = rValueName;
         rFilter.maValue = rValue;
         rFilter.mbHasValue = true;
     }
@@ -265,8 +268,8 @@ void ScDPInitState::RemoveMember()
 
 namespace {
 
-#if DEBUG_PIVOT_TABLE
-void lcl_DumpRow(
+#if DUMP_PIVOT_TABLE
+void dumpRow(
     const OUString& rType, const OUString& rName, const ScDPAggData* pAggData,
     ScDocument* pDoc, ScAddress& rPos )
 {
@@ -283,7 +286,7 @@ void lcl_DumpRow(
     rPos.SetRow( nRow + 1 );
 }
 
-void lcl_Indent( ScDocument* pDoc, SCROW nStartRow, const ScAddress& rPos )
+void indent( ScDocument* pDoc, SCROW nStartRow, const ScAddress& rPos )
 {
     SCCOL nCol = rPos.Col();
     SCTAB nTab = rPos.Tab();
@@ -438,6 +441,15 @@ void ScDPAggData::Update( const ScDPValue& rNext, ScSubTotalFunc eFunc, const Sc
                     nCount = -1;                            // -1 for error
             }
             break;
+        case SUBTOTAL_FUNC_MED:
+            {
+                auto aIter = std::upper_bound(mSortedValues.begin(), mSortedValues.end(), rNext.mfValue);
+                if (aIter == mSortedValues.end())
+                    mSortedValues.push_back(rNext.mfValue);
+                else
+                    mSortedValues.insert(aIter, rNext.mfValue);
+            }
+            break;
         default:
             OSL_FAIL("invalid function");
     }
@@ -474,6 +486,7 @@ void ScDPAggData::Calculate( ScSubTotalFunc eFunc, const ScDPSubTotalState& rSub
             break;
 
         case SUBTOTAL_FUNC_AVE:
+        case SUBTOTAL_FUNC_MED:
         case SUBTOTAL_FUNC_MAX:
         case SUBTOTAL_FUNC_MIN:
         case SUBTOTAL_FUNC_STDP:
@@ -532,6 +545,19 @@ void ScDPAggData::Calculate( ScSubTotalFunc eFunc, const ScDPSubTotalState& rSub
             case SUBTOTAL_FUNC_VARP:
                 if ( nCount > 0 )
                     fResult = (fAux - fVal*fVal/(double)(nCount)) / (double)nCount;
+                break;
+            case SUBTOTAL_FUNC_MED:
+                {
+                    size_t nSize = mSortedValues.size();
+                    if (nSize > 0)
+                    {
+                        assert(nSize == static_cast<size_t>(nCount));
+                        if ((nSize % 2) == 1)
+                            fResult = mSortedValues[nSize / 2];
+                        else
+                            fResult = (mSortedValues[nSize / 2 - 1] + mSortedValues[nSize / 2]) / 2.0;
+                    }
+                }
                 break;
             default:
                 OSL_FAIL("invalid function");
@@ -642,7 +668,7 @@ void ScDPAggData::Reset()
     pChild = nullptr;
 }
 
-#if DEBUG_PIVOT_TABLE
+#if DUMP_PIVOT_TABLE
 void ScDPAggData::Dump(int nIndent) const
 {
     std::string aIndent(nIndent*2, ' ');
@@ -704,9 +730,9 @@ static ScSubTotalFunc lcl_GetForceFunc( const ScDPLevel* pLevel, long nFuncNo )
     {
         //TODO: direct access via ScDPLevel
 
-        uno::Sequence<sheet::GeneralFunction> aSeq = pLevel->getSubTotals();
+        uno::Sequence<sal_Int16> aSeq = pLevel->getSubTotals();
         long nSequence = aSeq.getLength();
-        if ( nSequence && aSeq[0] != sheet::GeneralFunction_AUTO )
+        if ( nSequence && aSeq[0] != sheet::GeneralFunction2::AUTO )
         {
             // For manual subtotals, "automatic" is added as first function.
             // ScDPResultMember::GetSubTotalCount adds to the count, here NONE has to be
@@ -717,8 +743,8 @@ static ScSubTotalFunc lcl_GetForceFunc( const ScDPLevel* pLevel, long nFuncNo )
 
         if ( nFuncNo >= 0 && nFuncNo < nSequence )
         {
-            sheet::GeneralFunction eUser = aSeq.getConstArray()[nFuncNo];
-            if (eUser != sheet::GeneralFunction_AUTO)
+            sal_Int16 eUser = aSeq.getConstArray()[nFuncNo];
+            if (eUser != sheet::GeneralFunction2::AUTO)
                 eRet = ScDPUtil::toSubTotalFunc(eUser);
         }
     }
@@ -815,6 +841,7 @@ OUString ScDPResultData::GetMeasureString(long nMeasure, bool bForce, ScSubTotal
     {
         //  for user-specified subtotal function with all measures,
         //  display only function name
+        assert(eForceFunc < SAL_N_ELEMENTS(nFuncStrIds));
         if ( eForceFunc != SUBTOTAL_FUNC_NONE )
             return ScGlobal::GetRscString(nFuncStrIds[eForceFunc]);
 
@@ -953,35 +980,33 @@ OUString ScDPResultMember::GetName() const
 {
   const ScDPMember* pMemberDesc = GetDPMember();
     if (pMemberDesc)
-        return pMemberDesc->GetNameStr();
+        return pMemberDesc->GetNameStr( false );
     else
         return ScGlobal::GetRscString(STR_PIVOT_TOTAL);         // root member
 }
 
-OUString ScDPResultMember::GetDisplayName() const
+OUString ScDPResultMember::GetDisplayName( bool bLocaleIndependent ) const
 {
     const ScDPMember* pDPMember = GetDPMember();
     if (!pDPMember)
         return OUString();
 
-    ScDPItemData aItem;
-    pDPMember->FillItemData(aItem);
+    ScDPItemData aItem(pDPMember->FillItemData());
     if (aParentDimData.mpParentDim)
     {
         long nDim = aParentDimData.mpParentDim->GetDimension();
-        return pResultData->GetSource().GetData()->GetFormattedString(nDim, aItem);
+        return pResultData->GetSource().GetData()->GetFormattedString(nDim, aItem, bLocaleIndependent);
     }
 
     return aItem.GetString();
 }
 
-void ScDPResultMember::FillItemData( ScDPItemData& rData ) const
+ScDPItemData ScDPResultMember::FillItemData() const
 {
-    const ScDPMember*   pMemberDesc = GetDPMember();
+    const ScDPMember* pMemberDesc = GetDPMember();
     if (pMemberDesc)
-        pMemberDesc->FillItemData( rData );
-    else
-        rData.SetString( ScGlobal::GetRscString(STR_PIVOT_TOTAL) );     // root member
+        return pMemberDesc->FillItemData();
+    return ScDPItemData(ScGlobal::GetRscString(STR_PIVOT_TOTAL));     // root member
 }
 
 bool ScDPResultMember::IsNamedItem( SCROW nIndex ) const
@@ -1213,9 +1238,9 @@ long ScDPResultMember::GetSubTotalCount( long* pUserSubStart ) const
     {
         //TODO: direct access via ScDPLevel
 
-        uno::Sequence<sheet::GeneralFunction> aSeq = pParentLevel->getSubTotals();
+        uno::Sequence<sal_Int16> aSeq = pParentLevel->getSubTotals();
         long nSequence = aSeq.getLength();
-        if ( nSequence && aSeq[0] != sheet::GeneralFunction_AUTO )
+        if ( nSequence && aSeq[0] != sheet::GeneralFunction2::AUTO )
         {
             // For manual subtotals, always add "automatic" as first function
             // (used for calculation, but not for display, needed for sorting, see lcl_GetForceFunc)
@@ -1312,6 +1337,8 @@ void ScDPResultMember::FillMemberResults(
     OSL_ENSURE( rPos+nSize <= pSequences->getLength(), "bumm" );
 
     bool bIsNumeric = false;
+    double fValue;
+    rtl::math::setNan(&fValue);
     OUString aName;
     if ( pMemberName )          // if pMemberName != NULL, use instead of real member name
     {
@@ -1319,12 +1346,11 @@ void ScDPResultMember::FillMemberResults(
     }
     else
     {
-        ScDPItemData aItemData;
-        FillItemData( aItemData );
+        ScDPItemData aItemData(FillItemData());
         if (aParentDimData.mpParentDim)
         {
             long nDim = aParentDimData.mpParentDim->GetDimension();
-            aName = pResultData->GetSource().GetData()->GetFormattedString(nDim, aItemData);
+            aName = pResultData->GetSource().GetData()->GetFormattedString(nDim, aItemData, false);
         }
         else
         {
@@ -1332,11 +1358,16 @@ void ScDPResultMember::FillMemberResults(
             const ScDPMember* pMem = GetDPMember();
             if (pMem)
                 nDim = pMem->GetDim();
-            aName = pResultData->GetSource().GetData()->GetFormattedString(nDim, aItemData);
+            aName = pResultData->GetSource().GetData()->GetFormattedString(nDim, aItemData, false);
         }
 
         ScDPItemData::Type eType = aItemData.GetType();
         bIsNumeric = eType == ScDPItemData::Value || eType == ScDPItemData::GroupValue;
+        // IsValue() is not identical to bIsNumeric, i.e.
+        // ScDPItemData::GroupValue is excluded and not stored in the double,
+        // so even if the item is numeric the Value may be NaN.
+        if (aItemData.IsValue())
+            fValue = aItemData.GetValue();
     }
 
     const ScDPDimension*        pParentDim = GetParentDim();
@@ -1375,6 +1406,7 @@ void ScDPResultMember::FillMemberResults(
         pArray[rPos].Name    = aName;
         pArray[rPos].Caption = aCaption;
         pArray[rPos].Flags  |= sheet::MemberResultFlags::HASMEMBER;
+        pArray[rPos].Value   = fValue;
 
         //  set "continue" flag (removed for subtotals later)
         for (long i=1; i<nSize; i++)
@@ -1389,6 +1421,7 @@ void ScDPResultMember::FillMemberResults(
                 pArray[rPos+i].Name = aName;
                 pArray[rPos+i].Caption = aCaption;
                 pArray[rPos+i].Flags  |= sheet::MemberResultFlags::HASMEMBER;
+                pArray[rPos+i].Value   = fValue;
             }
         }
     }
@@ -1466,11 +1499,13 @@ void ScDPResultMember::FillMemberResults(
                     }
                 }
 
+                rtl::math::setNan(&fValue); /* TODO: any numeric value to obtain? */
                 pArray[rPos].Name    = aName;
                 pArray[rPos].Caption = aSubStr;
                 pArray[rPos].Flags = ( pArray[rPos].Flags |
                                     ( sheet::MemberResultFlags::HASMEMBER | sheet::MemberResultFlags::SUBTOTAL) ) &
                                     ~sheet::MemberResultFlags::CONTINUE;
+                pArray[rPos].Value   = fValue;
 
                 if ( nMeasure == SC_DPMEASURE_ALL )
                 {
@@ -1511,9 +1546,8 @@ void ScDPResultMember::FillDataResults(
     if (pDPMember)
     {
         // Root result has no corresponding DP member. Only take the non-root results.
-        OUString aMemStr = GetDisplayName();
         pFilterStack.reset(new FilterStack(rFilterCxt.maFilters));
-        pFilterStack->pushDimValue(aMemStr);
+        pFilterStack->pushDimValue( GetDisplayName( false), GetDisplayName( true));
     }
 
     //  IsVisible() test is in ScDPResultDimension::FillDataResults
@@ -1755,10 +1789,10 @@ void ScDPResultMember::UpdateRunningTotals( const ScDPResultMember* pRefMember, 
     }
 }
 
-#if DEBUG_PIVOT_TABLE
+#if DUMP_PIVOT_TABLE
 void ScDPResultMember::DumpState( const ScDPResultMember* pRefMember, ScDocument* pDoc, ScAddress& rPos ) const
 {
-    lcl_DumpRow( OUString("ScDPResultMember"), GetName(), NULL, pDoc, rPos );
+    dumpRow("ScDPResultMember", GetName(), nullptr, pDoc, rPos);
     SCROW nStartRow = rPos.Row();
 
     if (pDataRoot)
@@ -1767,7 +1801,7 @@ void ScDPResultMember::DumpState( const ScDPResultMember* pRefMember, ScDocument
     if (pChildDimension)
         pChildDimension->DumpState( pRefMember, pDoc, rPos );
 
-    lcl_Indent( pDoc, nStartRow, rPos );
+    indent(pDoc, nStartRow, rPos);
 }
 
 void ScDPResultMember::Dump(int nIndent) const
@@ -2017,7 +2051,7 @@ void ScDPDataMember::FillDataRow(
         // since its immediate parent result member is linked to the same
         // dimension member.
         pFilterStack.reset(new FilterStack(rFilterCxt.maFilters));
-        pFilterStack->pushDimValue(pResultMember->GetDisplayName());
+        pFilterStack->pushDimValue( pResultMember->GetDisplayName( false), pResultMember->GetDisplayName( true));
     }
 
     OSL_ENSURE( pRefMember == pResultMember || !pResultMember, "bla" );
@@ -2617,10 +2651,10 @@ void ScDPDataMember::UpdateRunningTotals(
     }
 }
 
-#if DEBUG_PIVOT_TABLE
+#if DUMP_PIVOT_TABLE
 void ScDPDataMember::DumpState( const ScDPResultMember* pRefMember, ScDocument* pDoc, ScAddress& rPos ) const
 {
-    lcl_DumpRow( OUString("ScDPDataMember"), GetName(), &aAggregate, pDoc, rPos );
+    dumpRow("ScDPDataMember", GetName(), &aAggregate, pDoc, rPos);
     SCROW nStartRow = rPos.Row();
 
     const ScDPDataDimension* pDataChild = GetChildDimension();
@@ -2628,7 +2662,7 @@ void ScDPDataMember::DumpState( const ScDPResultMember* pRefMember, ScDocument* 
     if ( pDataChild && pRefChild )
         pDataChild->DumpState( pRefChild, pDoc, rPos );
 
-    lcl_Indent( pDoc, nStartRow, rPos );
+    indent(pDoc, nStartRow, rPos);
 }
 
 void ScDPDataMember::Dump(int nIndent) const
@@ -2683,8 +2717,7 @@ bool ScDPGroupCompare::TestIncluded( const ScDPMember& rMember )
     {
         // need to check all previous groups
         //TODO: get array of groups (or indexes) before loop?
-        ScDPItemData aMemberData;
-        rMember.FillItemData( aMemberData );
+        ScDPItemData aMemberData(rMember.FillItemData());
 
         const std::vector<ScDPInitState::Member>& rMemStates = rInitState.GetMembers();
         std::vector<ScDPInitState::Member>::const_iterator it = rMemStates.begin(), itEnd = rMemStates.end();
@@ -2703,8 +2736,7 @@ bool ScDPGroupCompare::TestIncluded( const ScDPMember& rMember )
         // -> look for other groups using the same base
 
         //TODO: get array of groups (or indexes) before loop?
-        ScDPItemData aMemberData;
-        rMember.FillItemData( aMemberData );
+        ScDPItemData aMemberData(rMember.FillItemData());
         const std::vector<ScDPInitState::Member>& rMemStates = rInitState.GetMembers();
         std::vector<ScDPInitState::Member>::const_iterator it = rMemStates.begin(), itEnd = rMemStates.end();
         for (; it != itEnd && bInclude; ++it)
@@ -3434,11 +3466,11 @@ ScDPDataMember* ScDPResultDimension::GetColReferenceMember(
     return pColMember;
 }
 
-#if DEBUG_PIVOT_TABLE
+#if DUMP_PIVOT_TABLE
 void ScDPResultDimension::DumpState( const ScDPResultMember* pRefMember, ScDocument* pDoc, ScAddress& rPos ) const
 {
     OUString aDimName = bIsDataLayout ? OUString("(data layout)") : OUString(GetName());
-    lcl_DumpRow( OUString("ScDPResultDimension"), aDimName, NULL, pDoc, rPos );
+    dumpRow("ScDPResultDimension", aDimName, nullptr, pDoc, rPos);
 
     SCROW nStartRow = rPos.Row();
 
@@ -3449,7 +3481,7 @@ void ScDPResultDimension::DumpState( const ScDPResultMember* pRefMember, ScDocum
         pMember->DumpState( pRefMember, pDoc, rPos );
     }
 
-    lcl_Indent( pDoc, nStartRow, rPos );
+    indent(pDoc, nStartRow, rPos);
 }
 
 void ScDPResultDimension::Dump(int nIndent) const
@@ -3499,8 +3531,7 @@ void ScDPResultDimension::FillVisibilityData(ScDPResultVisibilityData& rData) co
         ScDPResultMember* pMember = *itr;
         if (pMember->IsValid())
         {
-            ScDPItemData aItem;
-            pMember->FillItemData(aItem);
+            ScDPItemData aItem(pMember->FillItemData());
             rData.addVisibleMember(GetName(), aItem);
             pMember->FillVisibilityData(rData);
         }
@@ -3815,11 +3846,11 @@ void ScDPDataDimension::UpdateRunningTotals( const ScDPResultDimension* pRefDim,
     }
 }
 
-#if DEBUG_PIVOT_TABLE
+#if DUMP_PIVOT_TABLE
 void ScDPDataDimension::DumpState( const ScDPResultDimension* pRefDim, ScDocument* pDoc, ScAddress& rPos ) const
 {
     OUString aDimName = bIsDataLayout ? OUString("(data layout)") : OUString("(unknown)");
-    lcl_DumpRow( OUString("ScDPDataDimension"), aDimName, NULL, pDoc, rPos );
+    dumpRow("ScDPDataDimension", aDimName, nullptr, pDoc, rPos);
 
     SCROW nStartRow = rPos.Row();
 
@@ -3831,7 +3862,7 @@ void ScDPDataDimension::DumpState( const ScDPResultDimension* pRefDim, ScDocumen
         pDataMember->DumpState( pRefMember, pDoc, rPos );
     }
 
-    lcl_Indent( pDoc, nStartRow, rPos );
+    indent(pDoc, nStartRow, rPos);
 }
 
 void ScDPDataDimension::Dump(int nIndent) const

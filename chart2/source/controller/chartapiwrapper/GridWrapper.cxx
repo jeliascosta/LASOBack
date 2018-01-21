@@ -21,7 +21,6 @@
 #include "macros.hxx"
 #include "AxisHelper.hxx"
 #include "Chart2ModelContact.hxx"
-#include "ContainerHelper.hxx"
 #include "AxisIndexDefines.hxx"
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 
@@ -43,7 +42,6 @@ using ::com::sun::star::uno::Sequence;
 
 namespace
 {
-static const char lcl_aServiceName[] = "com.sun.star.comp.chart.Grid";
 
 struct StaticGridWrapperPropertyArray_Initializer
 {
@@ -77,11 +75,10 @@ namespace chart
 namespace wrapper
 {
 
-GridWrapper::GridWrapper(
-    tGridType eType, std::shared_ptr< Chart2ModelContact > spChart2ModelContact ) :
-        m_spChart2ModelContact( spChart2ModelContact ),
-        m_aEventListenerContainer( m_aMutex ),
-        m_eType( eType )
+GridWrapper::GridWrapper(tGridType eType, const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
+    : m_spChart2ModelContact(spChart2ModelContact)
+    , m_aEventListenerContainer(m_aMutex)
+    , m_eType(eType)
 {
 }
 
@@ -172,27 +169,10 @@ const std::vector< WrappedProperty* > GridWrapper::createWrappedProperties()
     return aWrappedProperties;
 }
 
-Sequence< OUString > GridWrapper::getSupportedServiceNames_Static()
-{
-    Sequence< OUString > aServices( 4 );
-    aServices[ 0 ] = "com.sun.star.chart.ChartGrid";
-    aServices[ 1 ] = "com.sun.star.xml.UserDefinedAttributesSupplier";
-    aServices[ 2 ] = "com.sun.star.drawing.LineProperties";
-    aServices[ 3 ] = "com.sun.star.beans.PropertySet";
-
-    return aServices;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL GridWrapper::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString GridWrapper::getImplementationName_Static()
-{
-    return OUString(lcl_aServiceName);
+    return OUString("com.sun.star.comp.chart.Grid");
 }
 
 sal_Bool SAL_CALL GridWrapper::supportsService( const OUString& rServiceName )
@@ -204,7 +184,12 @@ sal_Bool SAL_CALL GridWrapper::supportsService( const OUString& rServiceName )
 css::uno::Sequence< OUString > SAL_CALL GridWrapper::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        "com.sun.star.chart.ChartGrid",
+        "com.sun.star.xml.UserDefinedAttributesSupplier",
+        "com.sun.star.drawing.LineProperties",
+        "com.sun.star.beans.PropertySet"\
+    };
 }
 
 } //  namespace wrapper

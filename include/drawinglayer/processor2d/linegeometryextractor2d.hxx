@@ -42,7 +42,6 @@ namespace drawinglayer
             basegfx::B2DPolygonVector               maExtractedHairlines;
             basegfx::B2DPolyPolygonVector           maExtractedLineFills;
 
-            /// bitfield
             bool                                    mbInLineGeometry : 1;
 
             /// tooling methods
@@ -50,7 +49,7 @@ namespace drawinglayer
 
         public:
             LineGeometryExtractor2D(const geometry::ViewInformation2D& rViewInformation);
-            virtual ~LineGeometryExtractor2D();
+            virtual ~LineGeometryExtractor2D() override;
 
             const basegfx::B2DPolygonVector& getExtractedHairlines() const { return maExtractedHairlines; }
             const basegfx::B2DPolyPolygonVector& getExtractedLineFills() const { return maExtractedLineFills; }

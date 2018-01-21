@@ -37,10 +37,7 @@ class VCLXAccessibleHeaderBar : public VCLXAccessibleComponent
 
 public:
     VclPtr<HeaderBar>  m_pHeadBar;
-    virtual ~VCLXAccessibleHeaderBar();
-
-    virtual void ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent ) override;
-    virtual void FillAccessibleStateSet( utl::AccessibleStateSetHelper& rStateSet ) override;
+    virtual ~VCLXAccessibleHeaderBar() override;
 
     VCLXAccessibleHeaderBar( VCLXWindow* pVCLXindow );
 
@@ -68,7 +65,7 @@ class VCLXHeaderBar :  public VCLXWindow
 {
 public:
     VCLXHeaderBar(vcl::Window* pHeaderBar);
-    virtual ~VCLXHeaderBar();
+    virtual ~VCLXHeaderBar() override;
 
     virtual css::uno::Reference< css::accessibility::XAccessibleContext > CreateAccessibleContext() override;
 

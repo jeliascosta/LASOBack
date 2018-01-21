@@ -153,7 +153,7 @@ public:
 #endif
     }
 
-    virtual ~ReaderThread()
+    virtual ~ReaderThread() override
     {
         delete mpStream;
         emptyLineQueue(maPendingLines);
@@ -585,7 +585,7 @@ bool DataStream::ImportData()
     return mbRunning;
 }
 
-IMPL_LINK_NOARG_TYPED(DataStream, ImportTimerHdl, Timer *, void)
+IMPL_LINK_NOARG(DataStream, ImportTimerHdl, Timer *, void)
 {
     if (ImportData())
         maImportTimer.Start();

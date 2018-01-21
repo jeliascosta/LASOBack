@@ -34,8 +34,8 @@ class SwDPage : public FmFormPage, public SdrObjUserCall
     SwDoc*                  pDoc;
 
 public:
-    explicit SwDPage(SwDrawModel& rNewModel, bool bMasterPage=false);
-    virtual ~SwDPage();
+    explicit SwDPage(SwDrawModel& rNewModel, bool bMasterPage);
+    virtual ~SwDPage() override;
 
     virtual SwDPage* Clone() const override;
     virtual SwDPage* Clone(SdrModel* pNewModel) const override;
@@ -53,7 +53,7 @@ public:
     virtual css::uno::Reference< css::uno::XInterface > createUnoPage() override;
 
 protected:
-    void lateInit(const SwDPage& rPage, SwDrawModel* pNewModel = nullptr);
+    void lateInit(const SwDPage& rPage, SwDrawModel* pNewModel);
 
 private:
     SwDPage(const SwDPage& rSrcPage);

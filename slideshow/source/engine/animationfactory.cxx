@@ -82,7 +82,7 @@ namespace slideshow
                                       "TupleAnimation::TupleAnimation(): One of the method pointers is NULL" );
                 }
 
-                virtual ~TupleAnimation()
+                virtual ~TupleAnimation() override
                 {
                     end_();
                 }
@@ -236,7 +236,7 @@ namespace slideshow
                     maPathPoly = ::basegfx::tools::adaptiveSubdivideByAngle(aPolyPoly.getB2DPolygon(0) );
                 }
 
-                virtual ~PathAnimation()
+                virtual ~PathAnimation() override
                 {
                     end_();
                 }
@@ -436,7 +436,7 @@ namespace slideshow
 
                 ~GenericAnimation()
                 {
-                    end_();
+                    end();
                 }
 
                 // Animation interface
@@ -472,8 +472,7 @@ namespace slideshow
                     }
                 }
 
-                virtual void end() { end_(); }
-                void end_()
+                void end()
                 {
                     // TODO(Q2): Factor out common code (most
                     // prominently start() and end()) into base class

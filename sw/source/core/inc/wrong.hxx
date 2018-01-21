@@ -64,25 +64,25 @@ public:
 
     SwWrongArea( const OUString& rType,
                  WrongListType listType,
-                 css::uno::Reference< css::container::XStringKeyMap > xPropertyBag,
+                 css::uno::Reference< css::container::XStringKeyMap > const & xPropertyBag,
                  sal_Int32 nPos,
                  sal_Int32 nLen);
 
     SwWrongArea( const OUString& rType,
-                 css::uno::Reference< css::container::XStringKeyMap > xPropertyBag,
+                 css::uno::Reference< css::container::XStringKeyMap > const & xPropertyBag,
                  sal_Int32 nPos,
                  sal_Int32 nLen,
                  SwWrongList* pSubList);
 private:
 
-    static Color getSmartColor ( css::uno::Reference< css::container::XStringKeyMap > xPropertyBag)
+    static Color getSmartColor ( css::uno::Reference< css::container::XStringKeyMap > const & xPropertyBag)
     {
         try
         {
             if (xPropertyBag.is())
             {
                 const OUString colorKey("LineColor");
-                css::uno::Any aLineColor = xPropertyBag->getValue(colorKey).get< css::uno::Any>();
+                css::uno::Any aLineColor = xPropertyBag->getValue(colorKey);
                 css::util::Color lineColor = 0;
 
                 if (aLineColor >>= lineColor)
@@ -101,14 +101,14 @@ private:
         return SwViewOption::GetSmarttagColor( );
     }
 
-    static WrongAreaLineType getSmartLineType( css::uno::Reference< css::container::XStringKeyMap > xPropertyBag )
+    static WrongAreaLineType getSmartLineType( css::uno::Reference< css::container::XStringKeyMap > const & xPropertyBag )
     {
         try
         {
             if (xPropertyBag.is())
             {
                 const OUString typeKey("LineType");
-                css::uno::Any aLineType = xPropertyBag->getValue(typeKey).get< css::uno::Any>();
+                css::uno::Any aLineType = xPropertyBag->getValue(typeKey);
                 ::sal_Int16 lineType = 0;
 
                 if (!(aLineType >>= lineType))
@@ -136,7 +136,7 @@ private:
     }
 
     static Color getWrongAreaColor(WrongListType listType,
-                            css::uno::Reference< css::container::XStringKeyMap > xPropertyBag )
+                            css::uno::Reference< css::container::XStringKeyMap > const & xPropertyBag )
     {
         if (WRONGLIST_SPELL == listType)
         {
@@ -155,7 +155,7 @@ private:
     }
 
     static WrongAreaLineType getWrongAreaLineType(WrongListType listType,
-                                           css::uno::Reference< css::container::XStringKeyMap > xPropertyBag )
+                                           css::uno::Reference< css::container::XStringKeyMap > const & xPropertyBag )
     {
         if (WRONGLIST_SPELL == listType)
         {
@@ -187,7 +187,7 @@ class SwWrongList
     { if( rPos > nStart ) rPos = rPos > nEnd ? rPos - nEnd + nStart : nStart; }
     void Invalidate_( sal_Int32 nBegin, sal_Int32 nEnd );
 
-    void Insert(sal_uInt16 nWhere, std::vector<SwWrongArea>::iterator startPos, std::vector<SwWrongArea>::iterator endPos);
+    void Insert(sal_uInt16 nWhere, std::vector<SwWrongArea>::iterator startPos, std::vector<SwWrongArea>::iterator const & endPos);
     void Remove( sal_uInt16 nIdx, sal_uInt16 nLen );
 
     SwWrongList& operator= (const SwWrongList &) = delete;
@@ -239,7 +239,7 @@ public:
     inline sal_uInt16 Count() const { return (sal_uInt16)maList.size(); }
 
     inline void Insert( const OUString& rType,
-                        css::uno::Reference< css::container::XStringKeyMap > xPropertyBag,
+                        css::uno::Reference< css::container::XStringKeyMap > const & xPropertyBag,
                         sal_Int32 nNewPos, sal_Int32 nNewLen, sal_uInt16 nWhere )
     {
         std::vector<SwWrongArea>::iterator i = maList.begin();
@@ -252,7 +252,7 @@ public:
     }
 
     void Insert( const OUString& rType,
-                 css::uno::Reference< css::container::XStringKeyMap > xPropertyBag,
+                 css::uno::Reference< css::container::XStringKeyMap > const & xPropertyBag,
                  sal_Int32 nNewPos, sal_Int32 nNewLen );
 
     inline SwWrongList* SubList( sal_uInt16 nIdx ) const

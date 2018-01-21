@@ -150,8 +150,8 @@ void  DrawViewShell::ExecCtrl(SfxRequest& rReq)
                     const SfxUInt32Item* pWhatKind = rReq.GetArg<SfxUInt32Item>(ID_VAL_WHATKIND);
 
                     sal_Int32 nWhatPage = (sal_Int32)pWhatPage->GetValue ();
-                    sal_Int32 nWhatKind = (sal_Int32)pWhatKind->GetValue ();
-                    if (! CHECK_RANGE (PK_STANDARD, nWhatKind, PK_HANDOUT))
+                    PageKind nWhatKind = (PageKind)pWhatKind->GetValue ();
+                    if (! (nWhatKind >= PageKind::Standard && nWhatKind <= PageKind::Handout))
                     {
 #if HAVE_FEATURE_SCRIPTING
                         StarBASIC::FatalError (ERRCODE_BASIC_BAD_PROP_VALUE);
@@ -159,9 +159,9 @@ void  DrawViewShell::ExecCtrl(SfxRequest& rReq)
                         rReq.Ignore ();
                         break;
                     }
-                    else if (meEditMode != EM_MASTERPAGE)
+                    else if (meEditMode != EditMode::MasterPage)
                     {
-                        if (! CHECK_RANGE (0, nWhatPage, GetDoc()->GetSdPageCount((PageKind)nWhatKind)))
+                        if (! CHECK_RANGE (0, nWhatPage, GetDoc()->GetSdPageCount(nWhatKind)))
                         {
 #if HAVE_FEATURE_SCRIPTING
                             StarBASIC::FatalError (ERRCODE_BASIC_BAD_PROP_VALUE);
@@ -237,25 +237,25 @@ void  DrawViewShell::ExecCtrl(SfxRequest& rReq)
         case SID_PAGEMODE:  // BASIC
         {
 
-            const SfxItemSet *pArgs = rReq.GetArgs ();
+            const SfxItemSet *pArgs = rReq.GetArgs();
 
-            if ( pArgs && pArgs->Count () == 2)
+            if (pArgs && pArgs->Count () == 2)
             {
                 const SfxBoolItem* pIsActive = rReq.GetArg<SfxBoolItem>(ID_VAL_ISACTIVE);
                 const SfxUInt32Item* pWhatKind = rReq.GetArg<SfxUInt32Item>(ID_VAL_WHATKIND);
 
-                sal_Int32 nWhatKind = (sal_Int32)pWhatKind->GetValue ();
-                if (CHECK_RANGE (PK_STANDARD, nWhatKind, PK_HANDOUT))
+                PageKind nWhatKind = (PageKind)pWhatKind->GetValue();
+                if ( nWhatKind >= PageKind::Standard && nWhatKind <= PageKind::Handout)
                 {
-                    mbIsLayerModeActive = pIsActive->GetValue ();
-                    mePageKind = (PageKind) nWhatKind;
+                    mbIsLayerModeActive = pIsActive->GetValue();
+                    mePageKind = nWhatKind;
                 }
             }
 
             // turn on default layer of page
             mpDrawView->SetActiveLayer(SD_RESSTR(STR_LAYER_LAYOUT));
 
-            ChangeEditMode(EM_PAGE, mbIsLayerModeActive);
+            ChangeEditMode(EditMode::Page, mbIsLayerModeActive);
 
             Invalidate();
             rReq.Done ();
@@ -265,25 +265,23 @@ void  DrawViewShell::ExecCtrl(SfxRequest& rReq)
 
         case SID_LAYERMODE:  // BASIC
         {
-            const SfxItemSet *pArgs = rReq.GetArgs ();
+            const SfxItemSet *pArgs = rReq.GetArgs();
 
-            if ( pArgs && pArgs->Count () == 2)
+            if (pArgs && pArgs->Count() == 2)
             {
-                const SfxBoolItem* pWhatLayerMode = rReq.GetArg<SfxBoolItem>(ID_VAL_ISACTIVE);
                 const SfxUInt32Item* pWhatLayer = rReq.GetArg<SfxUInt32Item>(ID_VAL_WHATLAYER);
-
-                sal_Int32 nWhatLayer = (sal_Int32)pWhatLayer->GetValue ();
-                if (CHECK_RANGE (EM_PAGE, nWhatLayer, EM_MASTERPAGE))
+                EditMode nWhatLayer = (EditMode)pWhatLayer->GetValue();
+                if (nWhatLayer == EditMode::Page || nWhatLayer == EditMode::MasterPage)
                 {
-                    mbIsLayerModeActive = pWhatLayerMode->GetValue ();
-                    meEditMode = (EditMode) nWhatLayer;
+                    mbIsLayerModeActive = rReq.GetArg<SfxBoolItem>(ID_VAL_ISACTIVE)->GetValue();
+                    meEditMode = nWhatLayer;
                 }
             }
 
             ChangeEditMode(meEditMode, !mbIsLayerModeActive);
 
             Invalidate();
-            rReq.Done ();
+            rReq.Done();
 
             break;
         }
@@ -293,11 +291,11 @@ void  DrawViewShell::ExecCtrl(SfxRequest& rReq)
         case SID_INSERT_DATE_TIME:
         {
             SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-            std::unique_ptr<AbstractHeaderFooterDialog> pDlg(pFact ? pFact->CreateHeaderFooterDialog( this, GetActiveWindow(), GetDoc(), mpActualPage ) : nullptr);
+            ScopedVclPtr<AbstractHeaderFooterDialog> pDlg(pFact ? pFact->CreateHeaderFooterDialog( this, GetActiveWindow(), GetDoc(), mpActualPage ) : nullptr);
             if( pDlg )
             {
                 pDlg->Execute();
-                pDlg.reset();
+                pDlg.disposeAndClear();
 
                 GetActiveWindow()->Invalidate();
                 UpdatePreview( mpActualPage );
@@ -312,16 +310,15 @@ void  DrawViewShell::ExecCtrl(SfxRequest& rReq)
         case SID_MASTER_LAYOUTS:
         {
             SdPage* pPage = GetActualPage();
-            if (meEditMode == EM_MASTERPAGE)
+            if (meEditMode == EditMode::MasterPage)
                 // Use the master page of the current page.
                 pPage = static_cast<SdPage*>(&pPage->TRG_GetMasterPage());
 
             SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
-            std::unique_ptr<VclAbstractDialog> pDlg(pFact ? pFact->CreateMasterLayoutDialog( GetActiveWindow(), GetDoc(), pPage ) : nullptr);
-            if( pDlg )
+            if (pFact)
             {
+                ScopedVclPtr<VclAbstractDialog> pDlg(pFact->CreateMasterLayoutDialog( GetActiveWindow(), GetDoc(), pPage ));
                 pDlg->Execute();
-                pDlg.reset();
                 Invalidate();
             }
             rReq.Done ();
@@ -900,7 +897,7 @@ void  DrawViewShell::GetRulerState(SfxItemSet& rSet)
         if( mpDrawView->IsTextEdit() )
         {
             SdrObject* pObj = mpDrawView->GetMarkedObjectList().GetMark( 0 )->GetMarkedSdrObj();
-            if( pObj->GetObjInventor() == SdrInventor)
+            if( pObj->GetObjInventor() == SdrInventor::Default)
             {
                 SfxItemSet aEditAttr( GetDoc()->GetPool() );
                 mpDrawView->GetAttributes( aEditAttr );
@@ -1043,7 +1040,7 @@ void  DrawViewShell::GetSnapItemState( SfxItemSet &rSet )
     {
         const SdrHelpLine& rHelpLine = (pPV->GetHelpLines())[nHelpLine];
 
-        if ( rHelpLine.GetKind() == SDRHELPLINE_POINT )
+        if ( rHelpLine.GetKind() == SdrHelpLineKind::Point )
         {
             rSet.Put( SfxStringItem( SID_SET_SNAPITEM,
                                 SD_RESSTR( STR_POPUP_EDIT_SNAPPOINT)) );

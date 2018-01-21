@@ -70,11 +70,12 @@ using lang::IndexOutOfBoundsException;
 // SwAccessibleDocumentBase: base class for SwAccessibleDocument and
 // SwAccessiblePreview
 
-SwAccessibleDocumentBase::SwAccessibleDocumentBase ( SwAccessibleMap *_pMap ) :
-    SwAccessibleContext( _pMap, AccessibleRole::DOCUMENT_TEXT,
-                         _pMap->GetShell()->GetLayout() ),
-    mxParent( _pMap->GetShell()->GetWin()->GetAccessibleParentWindow()->GetAccessible() ),
-    mpChildWin( nullptr )
+SwAccessibleDocumentBase::SwAccessibleDocumentBase(
+        std::shared_ptr<SwAccessibleMap> const& pMap)
+    : SwAccessibleContext(pMap, AccessibleRole::DOCUMENT_TEXT,
+                          pMap->GetShell()->GetLayout())
+    , mxParent(pMap->GetShell()->GetWin()->GetAccessibleParentWindow()->GetAccessible())
+    , mpChildWin(nullptr)
 {
 }
 
@@ -220,15 +221,10 @@ OUString SAL_CALL SwAccessibleDocumentBase::getAccessibleName()
                 sFileName = pDocSh->GetTitle( SFX_TITLE_APINAME );
             }
         }
-        OUString sReadOnly;
-        if(pDoc->getDocReadOnly())
-        {
-            sReadOnly = GetResource( STR_ACCESS_DOC_WORDPROCESSING_READONLY );
-        }
 
         if ( !sFileName.isEmpty() )
         {
-            sAccName = sFileName + sReadOnly + " - " + sAccName;
+            sAccName = sFileName + " - " + sAccName;
         }
     }
 
@@ -353,9 +349,10 @@ void SwAccessibleDocument::GetStates(
     rStateSet.AddState( AccessibleStateType::MANAGES_DESCENDANTS );
 }
 
-SwAccessibleDocument::SwAccessibleDocument ( SwAccessibleMap* pInitMap ) :
-    SwAccessibleDocumentBase( pInitMap ),
-    maSelectionHelper( *this )
+SwAccessibleDocument::SwAccessibleDocument(
+        std::shared_ptr<SwAccessibleMap> const& pInitMap)
+    : SwAccessibleDocumentBase(pInitMap)
+    , maSelectionHelper(*this)
 {
     SetName( GetResource( STR_ACCESS_DOC_NAME ) );
     vcl::Window *pWin = pInitMap->GetShell()->GetWin();
@@ -380,17 +377,17 @@ SwAccessibleDocument::~SwAccessibleDocument()
         pWin->RemoveChildEventListener( LINK( this, SwAccessibleDocument, WindowChildEventListener ));
 }
 
-void SwAccessibleDocument::Dispose( bool bRecursive )
+void SwAccessibleDocument::Dispose(bool bRecursive, bool bCanSkipInvisible)
 {
     OSL_ENSURE( GetFrame() && GetMap(), "already disposed" );
 
     vcl::Window *pWin = GetMap() ? GetMap()->GetShell()->GetWin() : nullptr;
     if( pWin )
         pWin->RemoveChildEventListener( LINK( this, SwAccessibleDocument, WindowChildEventListener ));
-    SwAccessibleContext::Dispose( bRecursive );
+    SwAccessibleContext::Dispose(bRecursive, bCanSkipInvisible);
 }
 
-IMPL_LINK_TYPED( SwAccessibleDocument, WindowChildEventListener, VclWindowEvent&, rEvent, void )
+IMPL_LINK( SwAccessibleDocument, WindowChildEventListener, VclWindowEvent&, rEvent, void )
 {
     OSL_ENSURE( rEvent.GetWindow(), "Window???" );
     switch ( rEvent.GetId() )
@@ -592,7 +589,7 @@ uno::Any SAL_CALL SwAccessibleDocument::getExtendedAttributes()
         sal_uLong nLineNum = 0;
         SwTextFrame* pTextFrame = nullptr;
         SwTextFrame* pCurrTextFrame = nullptr;
-        pTextFrame = static_cast< SwTextFrame* >(static_cast< SwPageFrame* > (pCurrPage)->ContainsContent());
+        pTextFrame = static_cast< SwTextFrame* >(pCurrPage->ContainsContent());
         if (pCurrFrame->IsInFly())//such as, graphic,chart
         {
             SwFlyFrame *pFlyFrame = pCurrFrame->FindFlyFrame();

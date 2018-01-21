@@ -75,7 +75,6 @@ public:
                             const ScRange* pAdvSource, bool bRecord, bool bApi );
 
     void            DoSubTotals( SCTAB nTab, const ScSubTotalParam& rParam,
-                                    const ScSortParam* pForceNewSort,
                                     bool bRecord, bool bApi );
 
     bool AddDBRange( const OUString& rName, const ScRange& rRange, bool bApi );
@@ -85,7 +84,7 @@ public:
 
     void ModifyAllDBData( const ScDBCollection& rNewColl, const std::vector<ScRange>& rDelAreaList );
 
-    bool RepeatDB( const OUString& rDBName, bool bApi, bool bIsUnnamed=false, SCTAB aTab = 0);
+    bool RepeatDB( const OUString& rDBName, bool bApi, bool bIsUnnamed, SCTAB aTab = 0);
 
     bool DataPilotUpdate( ScDPObject* pOldObj, const ScDPObject* pNewObj,
                           bool bRecord, bool bApi, bool bAllowMove = false );

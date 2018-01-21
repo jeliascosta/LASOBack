@@ -20,6 +20,7 @@
 #include <basegfx/curve/b2dcubicbezier.hxx>
 #include <basegfx/vector/b2dvector.hxx>
 #include <basegfx/polygon/b2dpolygon.hxx>
+#include <basegfx/matrix/b2dhommatrix.hxx>
 #include <basegfx/numeric/ftools.hxx>
 
 #include <osl/diagnose.h>
@@ -550,12 +551,12 @@ namespace basegfx
         }
     }
 
-    void B2DCubicBezier::adaptiveSubdivideByAngle(B2DPolygon& rTarget, double fAngleBound, bool bAllowUnsharpen) const
+    void B2DCubicBezier::adaptiveSubdivideByAngle(B2DPolygon& rTarget, double fAngleBound) const
     {
         if(isBezier())
         {
             // use support method #i37443# and allow unsharpen the criteria
-            ImpSubDivAngleStart(maStartPoint, maControlPointA, maControlPointB, maEndPoint, rTarget, fAngleBound * F_PI180, bAllowUnsharpen);
+            ImpSubDivAngleStart(maStartPoint, maControlPointA, maControlPointB, maEndPoint, rTarget, fAngleBound * F_PI180, true/*bAllowUnsharpen*/);
         }
         else
         {
@@ -669,7 +670,7 @@ namespace basegfx
 
     double B2DCubicBezier::getSmallestDistancePointToBezierSegment(const B2DPoint& rTestPoint, double& rCut) const
     {
-        const sal_uInt32 nInitialDivisions(3L);
+        const sal_uInt32 nInitialDivisions(3);
         B2DPolygon aInitialPolygon;
 
         // as start make a fix division, creates nInitialDivisions + 2L points
@@ -683,7 +684,7 @@ namespace basegfx
         double fNewQuadDist;
         sal_uInt32 nSmallestIndex(0);
 
-        for(sal_uInt32 a(1L); a < nPointCount; a++)
+        for(sal_uInt32 a(1); a < nPointCount; a++)
         {
             aVector = B2DVector(rTestPoint - aInitialPolygon.getB2DPoint(a));
             fNewQuadDist = aVector.getX() * aVector.getX() + aVector.getY() * aVector.getY();
@@ -696,8 +697,8 @@ namespace basegfx
         }
 
         // look right and left for even smaller distances
-        double fStepValue(1.0 / (double)((nPointCount - 1L) * 2L)); // half the edge step width
-        double fPosition((double)nSmallestIndex / (double)(nPointCount - 1L));
+        double fStepValue(1.0 / (double)((nPointCount - 1) * 2)); // half the edge step width
+        double fPosition((double)nSmallestIndex / (double)(nPointCount - 1));
         bool bDone(false);
 
         while(!bDone)
@@ -1021,6 +1022,66 @@ namespace basegfx
         }
     }
 
+    void B2DCubicBezier::transform(const basegfx::B2DHomMatrix& rMatrix)
+    {
+        if(!rMatrix.isIdentity())
+        {
+            if(maControlPointA == maStartPoint)
+            {
+                maControlPointA = maStartPoint = rMatrix * maStartPoint;
+            }
+            else
+            {
+                maStartPoint *= rMatrix;
+                maControlPointA *= rMatrix;
+            }
+
+            if(maControlPointB == maEndPoint)
+            {
+                maControlPointB = maEndPoint = rMatrix * maEndPoint;
+            }
+            else
+            {
+                maEndPoint *= rMatrix;
+                maControlPointB *= rMatrix;
+            }
+        }
+    }
+
+    void B2DCubicBezier::fround()
+    {
+        if(maControlPointA == maStartPoint)
+        {
+            maControlPointA = maStartPoint = basegfx::B2DPoint(
+                basegfx::fround(maStartPoint.getX()),
+                basegfx::fround(maStartPoint.getY()));
+        }
+        else
+        {
+            maStartPoint = basegfx::B2DPoint(
+                basegfx::fround(maStartPoint.getX()),
+                basegfx::fround(maStartPoint.getY()));
+            maControlPointA = basegfx::B2DPoint(
+                basegfx::fround(maControlPointA.getX()),
+                basegfx::fround(maControlPointA.getY()));
+        }
+
+        if(maControlPointB == maEndPoint)
+        {
+            maControlPointB = maEndPoint = basegfx::B2DPoint(
+                basegfx::fround(maEndPoint.getX()),
+                basegfx::fround(maEndPoint.getY()));
+        }
+        else
+        {
+            maEndPoint = basegfx::B2DPoint(
+                basegfx::fround(maEndPoint.getX()),
+                basegfx::fround(maEndPoint.getY()));
+            maControlPointB = basegfx::B2DPoint(
+                basegfx::fround(maControlPointB.getX()),
+                basegfx::fround(maControlPointB.getY()));
+        }
+    }
 } // end of namespace basegfx
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -74,7 +74,7 @@ class SoundHandler  :   // interfaces
 
         // constructor / destructor
                  SoundHandler();
-        virtual ~SoundHandler(                                                                        );
+        virtual ~SoundHandler(                                                                        ) override;
 
         //  XInterface, XTypeProvider, XServiceInfo
         virtual css::uno::Any  SAL_CALL queryInterface( const css::uno::Type& aType   ) throw( css::uno::RuntimeException, std::exception ) override;
@@ -110,7 +110,7 @@ class SoundHandler  :   // interfaces
 
     //  private methods
     private:
-        DECL_LINK_TYPED( implts_PlayerNotify, Idle*, void );
+        DECL_LINK( implts_PlayerNotify, Idle*, void );
 
     //  variables
     //  (should be private everyway!)

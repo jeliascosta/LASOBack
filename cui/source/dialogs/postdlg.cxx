@@ -64,11 +64,8 @@ SvxPostItDialog::SvxPostItDialog(vcl::Window* pParent, const SfxItemSet& rCoreSe
     bool bNew = true;
     sal_uInt16 nWhich = 0;
 
-    if ( !bPrevNext )
-    {
-        m_pPrevBtn->Hide();
-        m_pNextBtn->Hide();
-    }
+    m_pPrevBtn->Show(bPrevNext);
+    m_pNextBtn->Show(bPrevNext);
 
     nWhich = rSet.GetPool()->GetWhich( SID_ATTR_POSTIT_AUTHOR );
     OUString aAuthorStr, aDateStr;
@@ -142,9 +139,7 @@ void SvxPostItDialog::dispose()
 
 void SvxPostItDialog::ShowLastAuthor(const OUString& rAuthor, const OUString& rDate)
 {
-    OUString sTxt( rAuthor );
-    sTxt += ", ";
-    sTxt += rDate;
+    OUString sTxt = rAuthor + ", " + rDate;
     m_pLastEditFT->SetText( sTxt );
 }
 
@@ -168,17 +163,17 @@ void SvxPostItDialog::EnableTravel(bool bNext, bool bPrev)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxPostItDialog, PrevHdl, Button*, void)
+IMPL_LINK_NOARG(SvxPostItDialog, PrevHdl, Button*, void)
 {
     aPrevHdlLink.Call( *this );
 }
 
-IMPL_LINK_NOARG_TYPED(SvxPostItDialog, NextHdl, Button*, void)
+IMPL_LINK_NOARG(SvxPostItDialog, NextHdl, Button*, void)
 {
     aNextHdlLink.Call( *this );
 }
 
-IMPL_LINK_NOARG_TYPED(SvxPostItDialog, Stamp, Button*, void)
+IMPL_LINK_NOARG(SvxPostItDialog, Stamp, Button*, void)
 {
     Date aDate( Date::SYSTEM );
     tools::Time aTime( tools::Time::SYSTEM );
@@ -189,14 +184,9 @@ IMPL_LINK_NOARG_TYPED(SvxPostItDialog, Stamp, Button*, void)
 
     if ( !aTmp.isEmpty() )
     {
-        aStr += aTmp;
-        aStr += ", ";
+     aStr += aTmp + ", ";
     }
-    aStr += rLocaleWrapper.getDate(aDate);
-    aStr += ", ";
-    aStr += rLocaleWrapper.getTime(aTime, false);
-    aStr += " ----\n";
-
+    aStr += rLocaleWrapper.getDate(aDate) + ", " + rLocaleWrapper.getTime(aTime, false) + " ----\n";
     aStr = convertLineEnd(aStr, GetSystemLineEnd());
 
     m_pEditED->SetText(aStr);
@@ -206,7 +196,7 @@ IMPL_LINK_NOARG_TYPED(SvxPostItDialog, Stamp, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxPostItDialog, OKHdl, Button*, void)
+IMPL_LINK_NOARG(SvxPostItDialog, OKHdl, Button*, void)
 {
     const LocaleDataWrapper& rLocaleWrapper( Application::GetSettings().GetLocaleDataWrapper() );
     pOutSet = new SfxItemSet( rSet );

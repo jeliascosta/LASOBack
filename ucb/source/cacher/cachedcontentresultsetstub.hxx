@@ -84,9 +84,9 @@ private:
         throw ( css::uno::RuntimeException );
 
 public:
-    CachedContentResultSetStub( css::uno::Reference< css::sdbc::XResultSet > xOrigin );
+    CachedContentResultSetStub( css::uno::Reference< css::sdbc::XResultSet > const & xOrigin );
 
-    virtual ~CachedContentResultSetStub();
+    virtual ~CachedContentResultSetStub() override;
 
 
     // XInterface
@@ -122,9 +122,6 @@ public:
         throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
         throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // XFetchProvider
 
@@ -168,7 +165,7 @@ public:
     CachedContentResultSetStubFactory(
         const css::uno::Reference< css::lang::XMultiServiceFactory > & rSMgr);
 
-    virtual ~CachedContentResultSetStubFactory();
+    virtual ~CachedContentResultSetStubFactory() override;
 
 
     // XInterface

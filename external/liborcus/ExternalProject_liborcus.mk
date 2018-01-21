@@ -70,7 +70,7 @@ ifeq ($(COM),MSC)
 liborcus_CXXFLAGS+=$(BOOST_CXXFLAGS)
 endif
 ifeq ($(SYSTEM_BOOST),)
-liborcus_CXXFLAGS+=-I$(WORKDIR)/UnpackedTarball/boost
+liborcus_CXXFLAGS+=${BOOST_CPPFLAGS}
 else
 liborcus_LDFLAGS+=$(BOOST_LDFLAGS)
 endif
@@ -107,14 +107,15 @@ $(call gb_ExternalProject_get_state_target,liborcus,build) :
 				--with-boost=$(WORKDIR)/UnpackedTarball/boost \
 				boost_cv_lib_iostreams=yes \
 				boost_cv_lib_system=yes \
+				boost_cv_lib_filesystem=yes \
 			) \
 			$(if $(CROSS_COMPILING),--build=$(BUILD_PLATFORM) --host=$(HOST_PLATFORM)) \
 		&& $(if $(verbose),V=1) \
 		   $(MAKE) \
 		$(if $(filter MACOSX,$(OS)),\
 			&& $(PERL) $(SRCDIR)/solenv/bin/macosx-change-install-names.pl shl OOO \
-				$(gb_Package_SOURCEDIR_liborcus)/src/liborcus/.libs/liborcus-0.11.0.dylib \
-				$(gb_Package_SOURCEDIR_liborcus)/src/parser/.libs/liborcus-parser-0.11.0.dylib \
+				$(gb_Package_SOURCEDIR_liborcus)/src/liborcus/.libs/liborcus-0.12.0.dylib \
+				$(gb_Package_SOURCEDIR_liborcus)/src/parser/.libs/liborcus-parser-0.12.0.dylib \
 		) \
 	)
 

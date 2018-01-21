@@ -32,6 +32,14 @@ String RID_SVXSTR_BITMAP
 {
     Text [ en-US ] = "Bitmap" ;
 };
+String RID_SVXSTR_PATTERN
+{
+    Text [ en-US ] = "Pattern";
+};
+String RID_SVXSTR_PATTERN_UNTITLED
+{
+    Text [ en-US ] = "Untitled Pattern";
+};
 String RID_SVXSTR_LINESTYLE
 {
     Text [ en-US ] = "Line Style" ;
@@ -944,7 +952,7 @@ String RID_SVXSTR_GRDT77_DEF
 /* do not translate */
 String RID_SVXSTR_GRDT78_DEF
 {
-    Text = "Argile";
+    Text = "Clay";
 };
 
 /* do not translate */
@@ -956,7 +964,7 @@ String RID_SVXSTR_GRDT79_DEF
 /* do not translate */
 String RID_SVXSTR_GRDT80_DEF
 {
-    Text = "Grison";
+    Text = "Silver";
 };
 
 /* do not translate */
@@ -974,7 +982,7 @@ String RID_SVXSTR_GRDT82_DEF
 /* do not translate */
 String RID_SVXSTR_GRDT83_DEF
 {
-    Text = "Sun-Set";
+    Text = "Sunset";
 };
 
 /* do not translate */
@@ -1500,43 +1508,43 @@ String RID_SVXSTR_HATCH10_DEF
 
 String RID_SVXSTR_HATCH0
 {
-    Text [ en-US ] = "Black 45 degrees wide";
+    Text [ en-US ] = "Black 45 Degrees Wide";
 };
 String RID_SVXSTR_HATCH1
 {
-    Text [ en-US ] = "Black 45 degrees";
+    Text [ en-US ] = "Black 45 Degrees";
 };
 String RID_SVXSTR_HATCH2
 {
-    Text [ en-US ] = "Black -45 degrees";
+    Text [ en-US ] = "Black -45 Degrees";
 };
 String RID_SVXSTR_HATCH3
 {
-    Text [ en-US ] = "Black 90 degrees";
+    Text [ en-US ] = "Black 90 Degrees";
 };
 String RID_SVXSTR_HATCH4
 {
-    Text [ en-US ] = "Red crossed 45 degrees";
+    Text [ en-US ] = "Red Crossed 45 Degrees";
 };
 String RID_SVXSTR_HATCH5
 {
-    Text [ en-US ] = "Red crossed 0 degrees";
+    Text [ en-US ] = "Red Crossed 0 Degrees";
 };
 String RID_SVXSTR_HATCH6
 {
-    Text [ en-US ] = "Blue crossed 45 degrees";
+    Text [ en-US ] = "Blue Crossed 45 Degrees";
 };
 String RID_SVXSTR_HATCH7
 {
-    Text [ en-US ] = "Blue crossed 0 degrees";
+    Text [ en-US ] = "Blue Crossed 0 Degrees";
 };
 String RID_SVXSTR_HATCH8
 {
-    Text [ en-US ] = "Blue triple 90 degrees";
+    Text [ en-US ] = "Blue Triple 90 Degrees";
 };
 String RID_SVXSTR_HATCH9
 {
-    Text [ en-US ] = "Black 0 degrees";
+    Text [ en-US ] = "Black 0 Degrees";
 };
 String RID_SVXSTR_HATCH10
 {
@@ -1659,7 +1667,7 @@ String RID_SVXSTR_BMP21_DEF
 
 String RID_SVXSTR_BMP0
 {
-    Text [ en-US ] = "Blank";
+    Text [ en-US ] = "Empty";
 };
 String RID_SVXSTR_BMP1
 {
@@ -2349,12 +2357,12 @@ String RID_SVXSTR_NOTRECOVYET
 
 String RID_SVXSTR_RECOVERY_INPROGRESS
 {
-    Text[ en-US ] = "%PRODUCTNAME %PRODUCTVERSION will start to recover your documents. Depending on the size of the documents this process can take some time." ;
+    Text[ en-US ] = "%PRODUCTNAME %PRODUCTVERSION has begun recovering your documents. Depending on the size of the documents this process can take some time." ;
 };
 
 String RID_SVXSTR_RECOVERYONLY_FINISH_DESCR
 {
-    Text[ en-US ] = "Recovery of your documents was finished.\nClick 'Finish' to see your documents.";
+    Text[ en-US ] = "Recovery of your documents was finished. Click 'Finish' to see your documents.";
 };
 
 String RID_SVXSTR_RECOVERYONLY_FINISH

@@ -15,7 +15,12 @@
 #include <rtl/bootstrap.hxx>
 #include <desktop/crashreport.hxx>
 #include <desktop/minidump.hxx>
+#include <sfx2/safemode.hxx>
+#include <comphelper/processfactory.hxx>
 #include <osl/file.hxx>
+
+#include <com/sun/star/task/OfficeRestartManager.hpp>
+#include <com/sun/star/task/XInteractionHandler.hpp>
 
 CrashReportDialog::CrashReportDialog(vcl::Window* pParent):
     Dialog(pParent, "CrashReportDialog",
@@ -27,13 +32,14 @@ CrashReportDialog::CrashReportDialog(vcl::Window* pParent):
     get(mpEditPreUpload, "ed_pre");
     get(mpEditPostUpload, "ed_post");
     get(mpFtBugReport, "ed_bugreport");
+    get(mpCBSafeMode, "check_safemode");
 
     maSuccessMsg = mpEditPostUpload->GetText();
 
     mpBtnSend->SetClickHdl(LINK(this, CrashReportDialog, BtnHdl));
     mpBtnCancel->SetClickHdl(LINK(this, CrashReportDialog, BtnHdl));
     mpBtnClose->SetClickHdl(LINK(this, CrashReportDialog, BtnHdl));
-    mpEditPostUpload->SetReadOnly(true);
+    mpEditPostUpload->SetReadOnly();
 }
 
 CrashReportDialog::~CrashReportDialog()
@@ -49,11 +55,25 @@ void CrashReportDialog::dispose()
     mpEditPreUpload.clear();
     mpEditPostUpload.clear();
     mpFtBugReport.clear();
+    mpCBSafeMode.clear();
 
     Dialog::dispose();
 }
 
-IMPL_LINK_TYPED(CrashReportDialog, BtnHdl, Button*, pBtn, void)
+bool CrashReportDialog::Close()
+{
+    // Check whether to go to safe mode
+    if (mpCBSafeMode->IsChecked())
+    {
+        sfx2::SafeMode::putFlag();
+        css::task::OfficeRestartManager::get(comphelper::getProcessComponentContext())->requestRestart(
+            css::uno::Reference< css::task::XInteractionHandler >());
+    }
+
+    return Dialog::Close();
+}
+
+IMPL_LINK(CrashReportDialog, BtnHdl, Button*, pBtn, void)
 {
     if (pBtn == mpBtnSend.get())
     {

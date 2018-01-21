@@ -39,7 +39,7 @@
 #define VECT_POLY_OUTLINE_INNER 4UL
 #define VECT_POLY_OUTLINE_OUTER 8UL
 
-#define VECT_MAP( _def_pIn, _def_pOut, _def_nVal )  _def_pOut[_def_nVal]=(_def_pIn[_def_nVal]=((_def_nVal)*4L)+1L)+5L;
+#define VECT_MAP( _def_pIn, _def_pOut, _def_nVal )  _def_pOut[_def_nVal]=(_def_pIn[_def_nVal]=((_def_nVal)*4)+1)+5;
 #define BACK_MAP( _def_nVal )                       ((((_def_nVal)+2)>>2)-1)
 #define VECT_PROGRESS( _def_pProgress, _def_nVal ) \
   if(_def_pProgress)      \
@@ -51,7 +51,7 @@ class ImplChain;
 namespace ImplVectorizer
 {
     ImplVectMap* ImplExpand( BitmapReadAccess* pRAcc, const Color& rColor );
-    void     ImplCalculate( ImplVectMap* pMap, tools::PolyPolygon& rPolyPoly, sal_uInt8 cReduce, BmpVectorizeFlags nFlags );
+    void     ImplCalculate( ImplVectMap* pMap, tools::PolyPolygon& rPolyPoly, sal_uInt8 cReduce );
     bool     ImplGetChain( ImplVectMap* pMap, const Point& rStartPt, ImplChain& rChain );
     bool     ImplIsUp( ImplVectMap* pMap, long nY, long nX );
     void     ImplLimitPolyPoly( tools::PolyPolygon& rPolyPoly );
@@ -60,36 +60,36 @@ namespace ImplVectorizer
 struct ChainMove { long nDX; long nDY; };
 
 static const ChainMove aImplMove[ 8 ] =   {
-                                        { 1L, 0L },
-                                        { 0L, -1L },
-                                        { -1L, 0L },
-                                        { 0L, 1L },
-                                        { 1L, -1L },
-                                        { -1, -1L },
-                                        { -1L, 1L },
-                                        { 1L, 1L }
+                                        { 1, 0 },
+                                        { 0, -1 },
+                                        { -1, 0 },
+                                        { 0, 1 },
+                                        { 1, -1 },
+                                        { -1, -1 },
+                                        { -1, 1 },
+                                        { 1, 1 }
                                     };
 
 static const ChainMove aImplMoveInner[ 8 ] =  {
-                                            { 0L, 1L },
-                                            { 1L, 0L },
-                                            { 0L, -1L },
-                                            { -1L, 0L },
-                                            { 0L, 1L },
-                                            { 1L, 0L },
-                                            { 0L, -1L },
-                                            { -1L, 0L }
+                                            { 0, 1 },
+                                            { 1, 0 },
+                                            { 0, -1 },
+                                            { -1, 0 },
+                                            { 0, 1 },
+                                            { 1, 0 },
+                                            { 0, -1 },
+                                            { -1, 0 }
                                         };
 
 static const ChainMove aImplMoveOuter[ 8 ] =  {
-                                            { 0L, -1L },
-                                            { -1L, 0L },
-                                            { 0L, 1L },
-                                            { 1L, 0L },
-                                            { -1L, 0L },
-                                            { 0L, 1L },
-                                            { 1L, 0L },
-                                            { 0L, -1L }
+                                            { 0, -1 },
+                                            { -1, 0 },
+                                            { 0, 1 },
+                                            { 1, 0 },
+                                            { -1, 0 },
+                                            { 0, 1 },
+                                            { 1, 0 },
+                                            { 0, -1 }
                                         };
 
 struct ImplColorSet
@@ -172,13 +172,13 @@ void ImplPointArray::ImplSetSize( sal_uLong nSize )
 
 inline Point& ImplPointArray::operator[]( sal_uLong nPos )
 {
-    DBG_ASSERT( nPos < mnSize, "ImplPointArray::operator[]: nPos out of range!" );
+    SAL_WARN_IF( nPos >= mnSize, "vcl", "ImplPointArray::operator[]: nPos out of range!" );
     return mpArray[ nPos ];
 }
 
 inline const Point& ImplPointArray::operator[]( sal_uLong nPos ) const
 {
-    DBG_ASSERT( nPos < mnSize, "ImplPointArray::operator[]: nPos out of range!" );
+    SAL_WARN_IF( nPos >= mnSize, "vcl", "ImplPointArray::operator[]: nPos out of range!" );
     return mpArray[ nPos ];
 }
 
@@ -217,14 +217,14 @@ ImplVectMap::ImplVectMap( long nWidth, long nHeight ) :
     mnWidth ( nWidth ),
     mnHeight( nHeight )
 {
-    const long  nWidthAl = ( nWidth >> 2L ) + 1L;
+    const long  nWidthAl = ( nWidth >> 2 ) + 1;
     const long  nSize = nWidthAl * nHeight;
     Scanline    pTmp = mpBuf = static_cast<Scanline>(rtl_allocateMemory( nSize ));
 
     memset( mpBuf, 0, nSize );
     mpScan = static_cast<Scanline*>(rtl_allocateMemory( nHeight * sizeof( Scanline ) ));
 
-    for( long nY = 0L; nY < nHeight; pTmp += nWidthAl )
+    for( long nY = 0; nY < nHeight; pTmp += nWidthAl )
         mpScan[ nY++ ] = pTmp;
 }
 
@@ -273,6 +273,9 @@ private:
     void            ImplGetSpace();
 
     void            ImplPostProcess( const ImplPointArray& rArr );
+
+    ImplChain(const ImplChain&) = delete;
+    ImplChain& operator=(const ImplChain&) = delete;
 
 public:
 
@@ -434,8 +437,8 @@ void ImplChain::ImplEndAdd( sal_uLong nFlag )
                 }
             }
 
-            aArr[ nPolyPos ].X() = nFirstX + 1L;
-            aArr[ nPolyPos++ ].Y() = nFirstY + 1L;
+            aArr[ nPolyPos ].X() = nFirstX + 1;
+            aArr[ nPolyPos++ ].Y() = nFirstY + 1;
             aArr.ImplSetRealSize( nPolyPos );
         }
         else if( nFlag & VECT_POLY_INLINE_OUTER )
@@ -541,8 +544,8 @@ void ImplChain::ImplEndAdd( sal_uLong nFlag )
                 }
             }
 
-            aArr[ nPolyPos ].X() = nFirstX - 1L;
-            aArr[ nPolyPos++ ].Y() = nFirstY - 1L;
+            aArr[ nPolyPos ].X() = nFirstX - 1;
+            aArr[ nPolyPos++ ].Y() = nFirstY - 1;
             aArr.ImplSetRealSize( nPolyPos );
         }
         else
@@ -629,7 +632,7 @@ void ImplChain::ImplPostProcess( const ImplPointArray& rArr )
 namespace ImplVectorizer {
 
 bool ImplVectorize( const Bitmap& rColorBmp, GDIMetaFile& rMtf,
-                                    sal_uInt8 cReduce, BmpVectorizeFlags nFlags, const Link<long,void>* pProgress )
+                    sal_uInt8 cReduce, const Link<long,void>* pProgress )
 {
     bool bRet = false;
 
@@ -659,8 +662,8 @@ bool ImplVectorize( const Bitmap& rColorBmp, GDIMetaFile& rMtf,
             pColorSet[ n ].maColor = pRAcc->GetPaletteColor( n );
         }
 
-        for( long nY = 0L; nY < nHeight; nY++ )
-            for( long nX = 0L; nX < nWidth; nX++ )
+        for( long nY = 0; nY < nHeight; nY++ )
+            for( long nX = 0; nX < nWidth; nX++ )
                 pColorSet[ pRAcc->GetPixel( nY, nX ).GetIndex() ].mbSet = true;
 
         qsort( pColorSet, 256, sizeof( ImplColorSet ), ImplColorSetCmpFnc );
@@ -685,15 +688,14 @@ bool ImplVectorize( const Bitmap& rColorBmp, GDIMetaFile& rMtf,
             if( xMap )
             {
                 aPolyPoly.Clear();
-                ImplCalculate( xMap.get(), aPolyPoly, cReduce, nFlags );
+                ImplCalculate( xMap.get(), aPolyPoly, cReduce );
                 xMap.reset();
 
                 if( aPolyPoly.Count() )
                 {
                     ImplLimitPolyPoly( aPolyPoly );
 
-                    if( nFlags & BmpVectorizeFlags::ReduceEdges )
-                        aPolyPoly.Optimize( PolyOptimizeFlags::EDGES );
+                    aPolyPoly.Optimize( PolyOptimizeFlags::EDGES );
 
                     if( aPolyPoly.Count() )
                     {
@@ -711,7 +713,7 @@ bool ImplVectorize( const Bitmap& rColorBmp, GDIMetaFile& rMtf,
 
         if( rMtf.GetActionSize() )
         {
-            MapMode         aMap( MAP_100TH_MM );
+            MapMode         aMap( MapUnit::Map100thMM );
             ScopedVclPtrInstance< VirtualDevice > aVDev;
             const Size      aLogSize1( aVDev->PixelToLogic( Size( 1, 1 ), aMap ) );
 
@@ -731,8 +733,7 @@ bool ImplVectorize( const Bitmap& rColorBmp, GDIMetaFile& rMtf,
 }
 
 bool ImplVectorize( const Bitmap& rMonoBmp,
-                                    tools::PolyPolygon& rPolyPoly,
-                                    BmpVectorizeFlags nFlags )
+                                    tools::PolyPolygon& rPolyPoly )
 {
     std::unique_ptr<Bitmap> xBmp(new Bitmap( rMonoBmp ));
     BitmapReadAccess*   pRAcc;
@@ -749,12 +750,11 @@ bool ImplVectorize( const Bitmap& rMonoBmp,
     if( xMap )
     {
         rPolyPoly.Clear();
-        ImplCalculate( xMap.get(), rPolyPoly, 0, nFlags );
+        ImplCalculate( xMap.get(), rPolyPoly, 0 );
         xMap.reset();
         ImplLimitPolyPoly( rPolyPoly );
 
-        if( nFlags & BmpVectorizeFlags::ReduceEdges )
-            rPolyPoly.Optimize( PolyOptimizeFlags::EDGES );
+        rPolyPoly.Optimize( PolyOptimizeFlags::EDGES );
 
         // #i14895#:setting the correct direction for polygons
         // that represent holes and non-holes; non-hole polygons
@@ -856,8 +856,8 @@ ImplVectMap* ImplExpand( BitmapReadAccess* pRAcc, const Color& rColor )
     {
         const long          nOldWidth = pRAcc->Width();
         const long          nOldHeight = pRAcc->Height();
-        const long          nNewWidth = ( nOldWidth << 2L ) + 4L;
-        const long          nNewHeight = ( nOldHeight << 2L ) + 4L;
+        const long          nNewWidth = ( nOldWidth << 2 ) + 4;
+        const long          nNewHeight = ( nOldHeight << 2 ) + 4;
         const BitmapColor   aTest( pRAcc->GetBestMatchingColor( rColor ) );
         std::unique_ptr<long[]> pMapIn(new long[ std::max( nOldWidth, nOldHeight ) ]);
         std::unique_ptr<long[]> pMapOut(new long[ std::max( nOldWidth, nOldHeight ) ]);
@@ -865,17 +865,17 @@ ImplVectMap* ImplExpand( BitmapReadAccess* pRAcc, const Color& rColor )
 
         pMap = new ImplVectMap( nNewWidth, nNewHeight );
 
-        for( nX = 0L; nX < nOldWidth; nX++ )
+        for( nX = 0; nX < nOldWidth; nX++ )
             VECT_MAP( pMapIn, pMapOut, nX );
 
-        for( nY = 0L, nTmpY = 5L; nY < nOldHeight; nY++, nTmpY += 4L )
+        for( nY = 0, nTmpY = 5; nY < nOldHeight; nY++, nTmpY += 4 )
         {
-            for( nX = 0L; nX < nOldWidth; )
+            for( nX = 0; nX < nOldWidth; )
             {
                 if( pRAcc->GetPixel( nY, nX ) == aTest )
                 {
                     nTmpX = pMapIn[ nX++ ];
-                    nTmpY -= 3L;
+                    nTmpY -= 3;
 
                     pMap->Set( nTmpY++, nTmpX, VECT_CONT_INDEX );
                     pMap->Set( nTmpY++, nTmpX, VECT_CONT_INDEX );
@@ -885,8 +885,8 @@ ImplVectMap* ImplExpand( BitmapReadAccess* pRAcc, const Color& rColor )
                     while( nX < nOldWidth && pRAcc->GetPixel( nY, nX ) == aTest )
                          nX++;
 
-                    nTmpX = pMapOut[ nX - 1L ];
-                    nTmpY -= 3L;
+                    nTmpX = pMapOut[ nX - 1 ];
+                    nTmpY -= 3;
 
                     pMap->Set( nTmpY++, nTmpX, VECT_CONT_INDEX );
                     pMap->Set( nTmpY++, nTmpX, VECT_CONT_INDEX );
@@ -898,16 +898,16 @@ ImplVectMap* ImplExpand( BitmapReadAccess* pRAcc, const Color& rColor )
             }
         }
 
-        for( nY = 0L; nY < nOldHeight; nY++ )
+        for( nY = 0; nY < nOldHeight; nY++ )
             VECT_MAP( pMapIn, pMapOut, nY );
 
-        for( nX = 0L, nTmpX = 5L; nX < nOldWidth; nX++, nTmpX += 4L )
+        for( nX = 0, nTmpX = 5; nX < nOldWidth; nX++, nTmpX += 4 )
         {
-            for( nY = 0L; nY < nOldHeight; )
+            for( nY = 0; nY < nOldHeight; )
             {
                 if( pRAcc->GetPixel( nY, nX ) == aTest )
                 {
-                    nTmpX -= 3L;
+                    nTmpX -= 3;
                     nTmpY = pMapIn[ nY++ ];
 
                     pMap->Set( nTmpY, nTmpX++, VECT_CONT_INDEX );
@@ -918,8 +918,8 @@ ImplVectMap* ImplExpand( BitmapReadAccess* pRAcc, const Color& rColor )
                     while( nY < nOldHeight && pRAcc->GetPixel( nY, nX ) == aTest )
                         nY++;
 
-                    nTmpX -= 3L;
-                    nTmpY = pMapOut[ nY - 1L ];
+                    nTmpX -= 3;
+                    nTmpY = pMapOut[ nY - 1 ];
 
                     pMap->Set( nTmpY, nTmpX++, VECT_CONT_INDEX );
                     pMap->Set( nTmpY, nTmpX++, VECT_CONT_INDEX );
@@ -935,13 +935,13 @@ ImplVectMap* ImplExpand( BitmapReadAccess* pRAcc, const Color& rColor )
     return pMap;
 }
 
-void ImplCalculate( ImplVectMap* pMap, tools::PolyPolygon& rPolyPoly, sal_uInt8 cReduce, BmpVectorizeFlags nFlags )
+void ImplCalculate( ImplVectMap* pMap, tools::PolyPolygon& rPolyPoly, sal_uInt8 cReduce )
 {
     const long nWidth = pMap->Width(), nHeight= pMap->Height();
 
-    for( long nY = 0L; nY < nHeight; nY++ )
+    for( long nY = 0; nY < nHeight; nY++ )
     {
-        long    nX = 0L;
+        long    nX = 0;
         bool    bInner = true;
 
         while( nX < nWidth )
@@ -963,10 +963,7 @@ void ImplCalculate( ImplVectMap* pMap, tools::PolyPolygon& rPolyPoly, sal_uInt8 
                 aChain.ImplBeginAdd( aStartPt );
                 ImplGetChain( pMap, aStartPt, aChain );
 
-                if( nFlags & BmpVectorizeFlags::Inner )
-                    aChain.ImplEndAdd( bInner ? VECT_POLY_INLINE_INNER : VECT_POLY_INLINE_OUTER );
-                else
-                    aChain.ImplEndAdd( bInner ? VECT_POLY_OUTLINE_INNER : VECT_POLY_OUTLINE_OUTER );
+                aChain.ImplEndAdd( bInner ? VECT_POLY_OUTLINE_INNER : VECT_POLY_OUTLINE_OUTER );
 
                 const tools::Polygon& rPoly = aChain.ImplGetPoly();
 
@@ -995,7 +992,7 @@ void ImplCalculate( ImplVectMap* pMap, tools::PolyPolygon& rPolyPoly, sal_uInt8 
                 while( pMap->IsDone( nY, nX ) )
                     nX++;
 
-                if( ( ( nX - nStartSegX ) == 1L ) || ( ImplIsUp( pMap, nY, nStartSegX ) != ImplIsUp( pMap, nY, nX - 1L ) ) )
+                if( ( ( nX - nStartSegX ) == 1 ) || ( ImplIsUp( pMap, nY, nStartSegX ) != ImplIsUp( pMap, nY, nX - 1 ) ) )
                     bInner = !bInner;
             }
         }
@@ -1054,11 +1051,11 @@ bool ImplGetChain(  ImplVectMap* pMap, const Point& rStartPt, ImplChain& rChain 
 
 bool ImplIsUp( ImplVectMap* pMap, long nY, long nX )
 {
-    if( pMap->IsDone( nY - 1L, nX ) )
+    if( pMap->IsDone( nY - 1, nX ) )
         return true;
-    else if( pMap->IsDone( nY + 1L, nX ) )
+    else if( pMap->IsDone( nY + 1, nX ) )
         return false;
-    else if( pMap->IsDone( nY - 1L, nX - 1L ) || pMap->IsDone( nY - 1L, nX + 1L ) )
+    else if( pMap->IsDone( nY - 1, nX - 1 ) || pMap->IsDone( nY - 1, nX + 1 ) )
         return true;
     else
         return false;

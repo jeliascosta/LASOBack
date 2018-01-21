@@ -95,7 +95,7 @@ private:
 
 public:
     explicit            XPMReader( SvStream& rStm );
-    virtual             ~XPMReader();
+    virtual             ~XPMReader() override;
 
     ReadState           ReadXPM( Graphic& rGraphic );
 };
@@ -643,7 +643,7 @@ bool XPMReader::ImplGetString()
     {
         if ( mnTempAvail == 0 )
         {
-            mnTempAvail = mrIStm.Read( mpTempBuf, XPMTEMPBUFSIZE );
+            mnTempAvail = mrIStm.ReadBytes( mpTempBuf, XPMTEMPBUFSIZE );
             if ( mnTempAvail == 0 )
                 break;
 
@@ -728,25 +728,25 @@ bool XPMReader::ImplGetString()
 
 VCL_DLLPUBLIC bool ImportXPM( SvStream& rStm, Graphic& rGraphic )
 {
-    XPMReader*  pXPMReader = static_cast<XPMReader*>(rGraphic.GetContext());
-    ReadState   eReadState;
-    bool        bRet = true;
+    std::shared_ptr<GraphicReader> pContext = rGraphic.GetContext();
+    rGraphic.SetContext(nullptr);
+    XPMReader* pXPMReader = dynamic_cast<XPMReader*>( pContext.get() );
+    if (!pXPMReader)
+    {
+        pContext = std::make_shared<XPMReader>( rStm );
+        pXPMReader = static_cast<XPMReader*>( pContext.get() );
+    }
 
-    if( !pXPMReader )
-        pXPMReader = new XPMReader( rStm );
+    bool bRet = true;
 
-    rGraphic.SetContext( nullptr );
-    eReadState = pXPMReader->ReadXPM( rGraphic );
+    ReadState eReadState = pXPMReader->ReadXPM( rGraphic );
 
     if( eReadState == XPMREAD_ERROR )
     {
         bRet = false;
-        delete pXPMReader;
     }
-    else if( eReadState == XPMREAD_OK )
-        delete pXPMReader;
-    else
-        rGraphic.SetContext( pXPMReader );
+    else if( eReadState == XPMREAD_NEED_MORE )
+        rGraphic.SetContext( pContext );
 
     return bRet;
 }

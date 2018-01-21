@@ -96,7 +96,7 @@ namespace connectivity
                 ::osl::MutexGuard aGuard( m_pDerivedImplementation->rBHelper.rMutex );
                 m_xParent = NULL;
             }
-            void relase_ChildImpl()
+            void release_ChildImpl()
             {
                 release(m_pDerivedImplementation->m_refCount,
                                         m_pDerivedImplementation->rBHelper,
@@ -117,17 +117,7 @@ namespace connectivity
 
         public:
             OPropertyArrayUsageHelper();
-            virtual ~OPropertyArrayUsageHelper()
-            {   // ARGHHHHHHH ..... would like to implement this in proparrhlp_impl.hxx (as we do with all other methods)
-                // but SUNPRO 5 compiler (linker) doesn't like this
-                ::osl::MutexGuard aGuard(s_aMutex);
-                OSL_ENSURE(s_nRefCount > 0, "OPropertyArrayUsageHelper::~OPropertyArrayUsageHelper : suspicious call : have a refcount of 0 !");
-                if (!--s_nRefCount)
-                {
-                    delete s_pProps;
-                    s_pProps = NULL;
-                }
-            }
+            virtual ~OPropertyArrayUsageHelper();
 
             /** call this in the getInfoHelper method of your derived class. The method returns the array helper of the
                 class, which is created if necessary.
@@ -139,9 +129,6 @@ namespace connectivity
                 This method needs to be implemented in derived classes.
                 <BR>
                 The method gets called with s_aMutex acquired.
-                <BR>
-                as long as IPropertyArrayHelper has no virtual destructor, the implementation of ~OPropertyArrayUsageHelper
-                assumes that you created an ::cppu::OPropertyArrayHelper when deleting s_pProps.
                 @return                         an pointer to the newly created array helper. Must not be NULL.
             */
             virtual ::cppu::IPropertyArrayHelper* createArrayHelper( ) const = 0;
@@ -161,6 +148,18 @@ namespace connectivity
         {
             ::osl::MutexGuard aGuard(s_aMutex);
             ++s_nRefCount;
+        }
+
+        template <class TYPE>
+        OPropertyArrayUsageHelper<TYPE>::~OPropertyArrayUsageHelper()
+        {
+            ::osl::MutexGuard aGuard(s_aMutex);
+            OSL_ENSURE(s_nRefCount > 0, "OPropertyArrayUsageHelper::~OPropertyArrayUsageHelper : suspicious call : have a refcount of 0 !");
+            if (!--s_nRefCount)
+            {
+                delete s_pProps;
+                s_pProps = NULL;
+            }
         }
 
         template <class TYPE>

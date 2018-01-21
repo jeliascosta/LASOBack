@@ -9,8 +9,12 @@
 #include <filter/msfilter/mstoolbar.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <stdarg.h>
+#include <com/sun/star/container/XIndexContainer.hpp>
+#include <com/sun/star/ui/XUIConfigurationManager.hpp>
+#include <com/sun/star/ui/XUIConfigurationManagerSupplier.hpp>
 #include <com/sun/star/ui/XUIConfigurationPersistence.hpp>
 #include <com/sun/star/ui/XImageManager.hpp>
+#include <com/sun/star/ui/ImageType.hpp>
 #include <com/sun/star/ui/ItemType.hpp>
 #include <com/sun/star/ui/ItemStyle.hpp>
 #include <com/sun/star/frame/XLayoutManager.hpp>
@@ -95,11 +99,9 @@ CustomToolBarImportHelper::getCfgManager()
 uno::Any
 CustomToolBarImportHelper::createCommandFromMacro( const OUString& sCmd )
 {
-//"vnd.sun.star.script:Standard.Module1.Main?language=Basic&location=document"
-    static const char scheme[] = "vnd.sun.star.script:";
-    static const char part2 [] = "?language=Basic&location=document";
+    //"vnd.sun.star.script:Standard.Module1.Main?language=Basic&location=document"
     // create script url
-    OUString scriptURL = scheme + sCmd + part2;
+    OUString scriptURL = "vnd.sun.star.script:" + sCmd + "?language=Basic&location=document";
     return uno::makeAny( scriptURL );
 }
 
@@ -120,7 +122,7 @@ OUString CustomToolBarImportHelper::MSOTCIDToOOCommand( sal_Int16 msoTCID )
 }
 
 bool
-CustomToolBarImportHelper::createMenu( const OUString& rName, const uno::Reference< container::XIndexAccess >& xMenuDesc, bool bPersist )
+CustomToolBarImportHelper::createMenu( const OUString& rName, const uno::Reference< container::XIndexAccess >& xMenuDesc )
 {
     bool bRes = true;
     try
@@ -145,12 +147,9 @@ CustomToolBarImportHelper::createMenu( const OUString& rName, const uno::Referen
             aPopupMenu[3].Value <<= sal_Int32( 0 );
 
             xPopup->insertByIndex( xPopup->getCount(), uno::makeAny( aPopupMenu ) );
-            if ( bPersist )
-            {
-                xCfgManager->insertSettings( sMenuBar, uno::Reference< container::XIndexAccess >( xPopup, uno::UNO_QUERY ) );
-                uno::Reference< ui::XUIConfigurationPersistence > xPersistence( xCfgManager, uno::UNO_QUERY_THROW );
-                xPersistence->store();
-            }
+            xCfgManager->insertSettings( sMenuBar, uno::Reference< container::XIndexAccess >( xPopup, uno::UNO_QUERY ) );
+            uno::Reference< ui::XUIConfigurationPersistence > xPersistence( xCfgManager, uno::UNO_QUERY_THROW );
+            xPersistence->store();
         }
     }
     catch( const uno::Exception& )

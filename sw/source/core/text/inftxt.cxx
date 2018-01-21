@@ -88,7 +88,7 @@ using namespace ::com::sun::star::beans;
 SwLineInfo::SwLineInfo()
     : pRuler( nullptr ),
       pSpace( nullptr ),
-      nVertAlign( 0 ),
+      nVertAlign( SvxParaVertAlignItem::Align::Automatic ),
       nDefTabStop( 0 ),
       bListTabStopIncluded( false ),
       nListTabStopPosition( 0 )
@@ -110,14 +110,14 @@ void SwLineInfo::CtorInitLineInfo( const SwAttrSet& rAttrSet,
 
         // insert the list tab stop into SvxTabItem instance <pRuler>
         const SvxTabStop aListTabStop( nListTabStopPosition,
-                                       SVX_TAB_ADJUST_LEFT );
+                                       SvxTabAdjust::Left );
         pRuler->Insert( aListTabStop );
 
         // remove default tab stops, which are before the inserted list tab stop
         for ( sal_uInt16 i = 0; i < pRuler->Count(); i++ )
         {
             if ( (*pRuler)[i].GetTabPos() < nListTabStopPosition &&
-                 (*pRuler)[i].GetAdjustment() == SVX_TAB_ADJUST_DEFAULT )
+                 (*pRuler)[i].GetAdjustment() == SvxTabAdjust::Default )
             {
                 pRuler->Remove(i);
                 continue;
@@ -131,7 +131,7 @@ void SwLineInfo::CtorInitLineInfo( const SwAttrSet& rAttrSet,
         for ( sal_uInt16 i = 0; i < pRuler->Count(); i++ )
         {
             if ( (*pRuler)[i].GetTabPos() == 0 &&
-                 (*pRuler)[i].GetAdjustment() == SVX_TAB_ADJUST_DEFAULT )
+                 (*pRuler)[i].GetAdjustment() == SvxTabAdjust::Default )
             {
                 pRuler->Remove(i);
                 break;
@@ -246,8 +246,8 @@ SwTextSizeInfo::SwTextSizeInfo( const SwTextSizeInfo &rNew )
 #endif
 }
 
-void SwTextSizeInfo::CtorInitTextSizeInfo( OutputDevice* pRenderContext, SwTextFrame *pFrame, SwFont *pNewFnt,
-                   const sal_Int32 nNewIdx, const sal_Int32 nNewLen )
+void SwTextSizeInfo::CtorInitTextSizeInfo( OutputDevice* pRenderContext, SwTextFrame *pFrame,
+                   const sal_Int32 nNewIdx )
 {
     m_pKanaComp = nullptr;
     m_nKanaIdx = 0;
@@ -284,14 +284,14 @@ void SwTextSizeInfo::CtorInitTextSizeInfo( OutputDevice* pRenderContext, SwTextF
     // Set default layout mode ( LTR or RTL ).
     if ( m_pFrame->IsRightToLeft() )
     {
-        m_pOut->SetLayoutMode( TEXT_LAYOUT_BIDI_STRONG | TEXT_LAYOUT_BIDI_RTL );
-        m_pRef->SetLayoutMode( TEXT_LAYOUT_BIDI_STRONG | TEXT_LAYOUT_BIDI_RTL );
+        m_pOut->SetLayoutMode( ComplexTextLayoutFlags::BiDiStrong | ComplexTextLayoutFlags::BiDiRtl );
+        m_pRef->SetLayoutMode( ComplexTextLayoutFlags::BiDiStrong | ComplexTextLayoutFlags::BiDiRtl );
         m_nDirection = DIR_RIGHT2LEFT;
     }
     else
     {
-        m_pOut->SetLayoutMode( TEXT_LAYOUT_BIDI_STRONG );
-        m_pRef->SetLayoutMode( TEXT_LAYOUT_BIDI_STRONG );
+        m_pOut->SetLayoutMode( ComplexTextLayoutFlags::BiDiStrong );
+        m_pRef->SetLayoutMode( ComplexTextLayoutFlags::BiDiStrong );
         m_nDirection = DIR_LEFT2RIGHT;
     }
 
@@ -308,12 +308,12 @@ void SwTextSizeInfo::CtorInitTextSizeInfo( OutputDevice* pRenderContext, SwTextF
     SetSnapToGrid( pNd->GetSwAttrSet().GetParaGrid().GetValue() &&
                    m_pFrame->IsInDocBody() );
 
-    m_pFnt = pNewFnt;
+    m_pFnt = nullptr;
     m_pUnderFnt = nullptr;
     m_pText = &pNd->GetText();
 
     m_nIdx = nNewIdx;
-    m_nLen = nNewLen;
+    m_nLen = COMPLETE_STRING;
     m_bNotEOL = false;
     m_bStopUnderflow = m_bFootnoteInside = m_bOtherThanFootnoteInside = false;
     m_bMulti = m_bFirstMulti = m_bRuby = m_bHanging = m_bScriptSpace =
@@ -323,7 +323,7 @@ void SwTextSizeInfo::CtorInitTextSizeInfo( OutputDevice* pRenderContext, SwTextF
 }
 
 SwTextSizeInfo::SwTextSizeInfo( const SwTextSizeInfo &rNew, const OUString* pText,
-                              const sal_Int32 nIndex, const sal_Int32 nLength )
+                              const sal_Int32 nIndex )
     : SwTextInfo( rNew ),
       m_pKanaComp(rNew.GetpKanaComp()),
       m_pVsh(const_cast<SwTextSizeInfo&>(rNew).GetVsh()),
@@ -335,7 +335,7 @@ SwTextSizeInfo::SwTextSizeInfo( const SwTextSizeInfo &rNew, const OUString* pTex
       m_pOpt(&rNew.GetOpt()),
       m_pText(pText),
       m_nIdx(nIndex),
-      m_nLen(nLength),
+      m_nLen(COMPLETE_STRING),
       m_nKanaIdx( rNew.GetKanaIdx() ),
       m_bOnWin( rNew.OnWin() ),
       m_bNotEOL( rNew.NotEOL() ),
@@ -358,12 +358,10 @@ SwTextSizeInfo::SwTextSizeInfo( const SwTextSizeInfo &rNew, const OUString* pTex
     SetLen( GetMinLen( *this ) );
 }
 
-SwTextSizeInfo::SwTextSizeInfo( SwTextFrame *pTextFrame, SwFont *pTextFnt,
-               const sal_Int32 nIndex,
-               const sal_Int32 nLength )
+SwTextSizeInfo::SwTextSizeInfo( SwTextFrame *pTextFrame, const sal_Int32 nIndex )
     : m_bOnWin(false)
 {
-    CtorInitTextSizeInfo( pTextFrame->getRootFrame()->GetCurrShell()->GetOut(), pTextFrame, pTextFnt, nIndex, nLength );
+    CtorInitTextSizeInfo( pTextFrame->getRootFrame()->GetCurrShell()->GetOut(), pTextFrame, nIndex );
 }
 
 void SwTextSizeInfo::SelectFont()
@@ -483,7 +481,7 @@ bool SwTextSizeInfo::HasHint_( const SwTextNode* pTextNode, sal_Int32 nPos )
 
 void SwTextPaintInfo::CtorInitTextPaintInfo( OutputDevice* pRenderContext, SwTextFrame *pFrame, const SwRect &rPaint )
 {
-    CtorInitTextSizeInfo( pRenderContext, pFrame );
+    CtorInitTextSizeInfo( pRenderContext, pFrame, 0 );
     aTextFly.CtorInitTextFly( pFrame );
     aPaintRect = rPaint;
     nSpaceIdx = 0;
@@ -591,7 +589,7 @@ void SwTextPaintInfo::DrawText_( const OUString &rText, const SwLinePortion &rPo
             if ( GetTextFrame()->IsRightToLeft() )
                 GetTextFrame()->SwitchLTRtoRTL( aPoint );
 
-            if ( TEXT_LAYOUT_BIDI_STRONG != GetOut()->GetLayoutMode() )
+            if ( ComplexTextLayoutFlags::BiDiStrong != GetOut()->GetLayoutMode() )
                 aPoint.X() -= rPor.Width();
 
             if ( GetTextFrame()->IsVertical() )
@@ -1350,7 +1348,6 @@ void SwTextFormatInfo::CtorInitTextFormatInfo( OutputDevice* pRenderContext, SwT
     //! needs to be done in this order
     m_nMinLeading     = 2;
     m_nMinTrailing    = 2;
-    m_nMinWordLength  = 0;
     m_bAutoHyph = InitHyph();
 
     m_bIgnoreFly = false;
@@ -1441,7 +1438,6 @@ void SwTextFormatInfo::Init()
     m_pRoot = nullptr;
     m_pLast = nullptr;
     m_pFly = nullptr;
-    m_pLastField = nullptr;
     m_pLastTab = nullptr;
     m_pUnderflow = nullptr;
     m_cTabDecimal = 0;
@@ -1476,7 +1472,6 @@ SwTextFormatInfo::SwTextFormatInfo( const SwTextFormatInfo& rInf,
     m_pRoot = &rLay;
     m_pLast = &rLay;
     m_pFly = nullptr;
-    m_pLastField = nullptr;
     m_pUnderflow = nullptr;
     m_pRest = nullptr;
     m_pLastTab = nullptr;
@@ -1495,7 +1490,6 @@ SwTextFormatInfo::SwTextFormatInfo( const SwTextFormatInfo& rInf,
 
     m_nMinLeading = 0;
     m_nMinTrailing = 0;
-    m_nMinWordLength = 0;
     m_bFull = false;
     m_bFootnoteDone = true;
     m_bErgoDone = true;
@@ -1799,7 +1793,7 @@ SwFontSave::~SwFontSave()
         if( pIter )
         {
             pIter->SetFnt( pFnt );
-            pIter->nPos = COMPLETE_STRING;
+            pIter->m_nPosition = COMPLETE_STRING;
         }
     }
 }

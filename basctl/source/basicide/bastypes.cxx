@@ -90,7 +90,7 @@ void BaseWindow::GrabScrollBars( ScrollBar* pHScroll, ScrollBar* pVScroll )
 }
 
 
-IMPL_LINK_TYPED( BaseWindow, ScrollHdl, ScrollBar *, pCurScrollBar, void )
+IMPL_LINK( BaseWindow, ScrollHdl, ScrollBar *, pCurScrollBar, void )
 {
     DoScroll( pCurScrollBar );
 }
@@ -334,7 +334,7 @@ void DockingWindow::Hide ()
 
 bool DockingWindow::Docking( const Point& rPos, Rectangle& rRect )
 {
-    if (!IsDockingPrevented() && aDockingRect.IsInside(rPos))
+    if (aDockingRect.IsInside(rPos))
     {
         rRect.SetSize(aDockingRect.GetSize());
         return false; // dock
@@ -414,38 +414,29 @@ void DockingWindow::DockThis ()
     }
 }
 
-
-// ExtendedEdit
-
-
-ExtendedEdit::ExtendedEdit( vcl::Window* pParent, IDEResId nRes ) :
-    Edit( pParent, nRes )
+ExtendedEdit::ExtendedEdit(vcl::Window* pParent, WinBits nStyle)
+    : Edit(pParent, nStyle)
 {
     aAcc.SetSelectHdl( LINK( this, ExtendedEdit, EditAccHdl ) );
     Control::SetGetFocusHdl( LINK( this, ExtendedEdit, ImplGetFocusHdl ) );
     Control::SetLoseFocusHdl( LINK( this, ExtendedEdit, ImplLoseFocusHdl ) );
 }
 
-IMPL_LINK_NOARG_TYPED(ExtendedEdit, ImplGetFocusHdl, Control&, void)
+IMPL_LINK_NOARG(ExtendedEdit, ImplGetFocusHdl, Control&, void)
 {
     Application::InsertAccel( &aAcc );
     aLoseFocusHdl.Call( this );
 }
 
-
-IMPL_LINK_NOARG_TYPED(ExtendedEdit, ImplLoseFocusHdl, Control&, void)
+IMPL_LINK_NOARG(ExtendedEdit, ImplLoseFocusHdl, Control&, void)
 {
     Application::RemoveAccel( &aAcc );
 }
 
-
-IMPL_LINK_TYPED( ExtendedEdit, EditAccHdl, Accelerator&, rAcc, void )
+IMPL_LINK( ExtendedEdit, EditAccHdl, Accelerator&, rAcc, void )
 {
     aAccHdl.Call( rAcc );
 }
-
-//  TabBar
-
 
 TabBar::TabBar( vcl::Window* pParent ) :
     ::TabBar( pParent, WinBits( WB_3DLOOK | WB_SCROLL | WB_BORDER | WB_SIZEABLE | WB_DRAG ) )
@@ -480,19 +471,19 @@ void TabBar::Command( const CommandEvent& rCEvt )
             ::TabBar::MouseButtonDown( aMouseEvent ); // base class
         }
 
-        PopupMenu aPopup( IDEResId( RID_POPUP_TABBAR ) );
+        ScopedVclPtrInstance<PopupMenu> aPopup( IDEResId( RID_POPUP_TABBAR ) );
         if ( GetPageCount() == 0 )
         {
-            aPopup.EnableItem(SID_BASICIDE_DELETECURRENT, false);
-            aPopup.EnableItem(SID_BASICIDE_RENAMECURRENT, false);
-            aPopup.EnableItem(SID_BASICIDE_HIDECURPAGE, false);
+            aPopup->EnableItem(SID_BASICIDE_DELETECURRENT, false);
+            aPopup->EnableItem(SID_BASICIDE_RENAMECURRENT, false);
+            aPopup->EnableItem(SID_BASICIDE_HIDECURPAGE, false);
         }
 
         if ( StarBASIC::IsRunning() )
         {
-            aPopup.EnableItem(SID_BASICIDE_DELETECURRENT, false);
-            aPopup.EnableItem(SID_BASICIDE_RENAMECURRENT, false);
-            aPopup.EnableItem(SID_BASICIDE_MODULEDLG, false);
+            aPopup->EnableItem(SID_BASICIDE_DELETECURRENT, false);
+            aPopup->EnableItem(SID_BASICIDE_RENAMECURRENT, false);
+            aPopup->EnableItem(SID_BASICIDE_MODULEDLG, false);
         }
 
         if (Shell* pShell = GetShell())
@@ -504,10 +495,10 @@ void TabBar::Command( const CommandEvent& rCEvt )
             if ( ( xModLibContainer.is() && xModLibContainer->hasByName( aOULibName ) && xModLibContainer->isLibraryReadOnly( aOULibName ) ) ||
                  ( xDlgLibContainer.is() && xDlgLibContainer->hasByName( aOULibName ) && xDlgLibContainer->isLibraryReadOnly( aOULibName ) ) )
             {
-                aPopup.EnableItem(aPopup.GetItemId( 0 ), false);
-                aPopup.EnableItem(SID_BASICIDE_DELETECURRENT, false);
-                aPopup.EnableItem(SID_BASICIDE_RENAMECURRENT, false);
-                aPopup.RemoveDisabledEntries();
+                aPopup->EnableItem(aPopup->GetItemId( 0 ), false);
+                aPopup->EnableItem(SID_BASICIDE_DELETECURRENT, false);
+                aPopup->EnableItem(SID_BASICIDE_RENAMECURRENT, false);
+                aPopup->RemoveDisabledEntries();
             }
              if ( aDocument.isInVBAMode() )
             {
@@ -523,8 +514,8 @@ void TabBar::Command( const CommandEvent& rCEvt )
                             SbModule* pActiveModule = pBasic->FindModule( it->second->GetName() );
                             if( pActiveModule && ( pActiveModule->GetModuleType() == script::ModuleType::DOCUMENT ) )
                             {
-                                aPopup.EnableItem(SID_BASICIDE_DELETECURRENT, false);
-                                aPopup.EnableItem(SID_BASICIDE_RENAMECURRENT, false);
+                                aPopup->EnableItem(SID_BASICIDE_DELETECURRENT, false);
+                                aPopup->EnableItem(SID_BASICIDE_RENAMECURRENT, false);
                             }
                         }
                     }
@@ -532,7 +523,7 @@ void TabBar::Command( const CommandEvent& rCEvt )
             }
         }
         if (SfxDispatcher* pDispatcher = GetDispatcher())
-            pDispatcher->Execute(aPopup.Execute(this, aPos));
+            pDispatcher->Execute(aPopup->Execute(this, aPos));
     }
 }
 
@@ -777,7 +768,7 @@ bool QueryDel( const OUString& rName, const ResId& rId, vcl::Window* pParent )
     aNameBuf.append('\'');
     aNameBuf.insert(0, '\'');
     aQuery = aQuery.replaceAll("XX", aNameBuf.makeStringAndClear());
-    ScopedVclPtrInstance< MessageDialog > aQueryBox(pParent, aQuery, VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
+    ScopedVclPtrInstance< MessageDialog > aQueryBox(pParent, aQuery, VclMessageType::Question, VCL_BUTTONS_YES_NO);
     return ( aQueryBox->Execute() == RET_YES );
 }
 

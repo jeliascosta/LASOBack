@@ -47,7 +47,7 @@ OUString getXPath(
     OUStringBuffer aBuf;
     for (const SvTreeListEntry* p = &rEntry; p; p = rTree.GetParent(p))
     {
-        const SvLBoxItem* pItem = p->GetFirstItem(SV_ITEM_ID_LBOXSTRING);
+        const SvLBoxItem* pItem = p->GetFirstItem(SvLBoxItemType::String);
         if (!pItem)
             continue;
 
@@ -78,7 +78,7 @@ ScXMLSourceDlg::ScXMLSourceDlg(
     get(mpFtSourceFile, "sourcefile");
     get(mpMapGrid, "mapgrid");
     get(mpLbTree, "tree");
-    Size aTreeSize(mpLbTree->LogicToPixel(Size(130, 120), MAP_APPFONT));
+    Size aTreeSize(mpLbTree->LogicToPixel(Size(130, 120), MapUnit::MapAppFont));
     mpLbTree->set_width_request(aTreeSize.Width());
     mpLbTree->set_height_request(aTreeSize.Height());
     get(mpRefEdit, "edit");
@@ -597,7 +597,7 @@ void ScXMLSourceDlg::OkPressed()
 
     // Don't forget to broadcast the change.
     SfxObjectShell* pShell = mpDoc->GetDocumentShell();
-    pShell->Broadcast(SfxSimpleHint(FID_DATACHANGED));
+    pShell->Broadcast(SfxHint(FID_DATACHANGED));
 
     // Repaint the grid to force repaint the cell values.
     ScTabViewShell* pViewShell = ScTabViewShell::GetActiveViewShell();
@@ -662,12 +662,12 @@ void ScXMLSourceDlg::RefEditModified()
     mpBtnOk->Enable(bHasLink);
 }
 
-IMPL_LINK_TYPED(ScXMLSourceDlg, GetFocusHdl, Control&, rCtrl, void)
+IMPL_LINK(ScXMLSourceDlg, GetFocusHdl, Control&, rCtrl, void)
 {
     HandleGetFocus(&rCtrl);
 }
 
-IMPL_LINK_TYPED(ScXMLSourceDlg, BtnPressedHdl, Button*, pBtn, void)
+IMPL_LINK(ScXMLSourceDlg, BtnPressedHdl, Button*, pBtn, void)
 {
     if (pBtn == mpBtnSelectSource)
         SelectSourceFile();
@@ -677,12 +677,12 @@ IMPL_LINK_TYPED(ScXMLSourceDlg, BtnPressedHdl, Button*, pBtn, void)
         CancelPressed();
 }
 
-IMPL_LINK_NOARG_TYPED(ScXMLSourceDlg, TreeItemSelectHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(ScXMLSourceDlg, TreeItemSelectHdl, SvTreeListBox*, void)
 {
     TreeItemSelected();
 }
 
-IMPL_LINK_NOARG_TYPED(ScXMLSourceDlg, RefModifiedHdl, Edit&, void)
+IMPL_LINK_NOARG(ScXMLSourceDlg, RefModifiedHdl, Edit&, void)
 {
     RefEditModified();
 }

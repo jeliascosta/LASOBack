@@ -40,7 +40,7 @@
 #include <ndole.hxx>
 
 SwUndoFlyBase::SwUndoFlyBase( SwFrameFormat* pFormat, SwUndoId nUndoId )
-    : SwUndo(nUndoId)
+    : SwUndo(nUndoId, pFormat->GetDoc())
     , pFrameFormat(pFormat)
     , nNdPgPos(0)
     , nCntPos(0)
@@ -52,7 +52,13 @@ SwUndoFlyBase::SwUndoFlyBase( SwFrameFormat* pFormat, SwUndoId nUndoId )
 SwUndoFlyBase::~SwUndoFlyBase()
 {
     if( bDelFormat )       // delete during an Undo?
+    {
+        if (pFrameFormat->GetOtherTextBoxFormat())
+        {   // clear that before delete
+            pFrameFormat->SetOtherTextBoxFormat(nullptr);
+        }
         delete pFrameFormat;
+    }
 }
 
 void SwUndoFlyBase::InsFly(::sw::UndoRedoContext & rContext, bool bShowSelFrame)
@@ -114,7 +120,14 @@ void SwUndoFlyBase::InsFly(::sw::UndoRedoContext & rContext, bool bShowSelFrame)
         SwContentNode* pCNd = aAnchor.GetContentAnchor()->nNode.GetNode().GetContentNode();
         OSL_ENSURE( pCNd->IsTextNode(), "no Text Node at position." );
         SwFormatFlyCnt aFormat( pFrameFormat );
-        pCNd->GetTextNode()->InsertItem( aFormat, nCntPos, nCntPos );
+        pCNd->GetTextNode()->InsertItem(aFormat, nCntPos, nCntPos, SetAttrMode::NOHINTEXPAND);
+    }
+
+    if (pFrameFormat->GetOtherTextBoxFormat())
+    {
+        // recklessly assume that this thing will live longer than the
+        // SwUndoFlyBase - not sure what could be done if that isn't the case...
+        pFrameFormat->GetOtherTextBoxFormat()->SetOtherTextBoxFormat(pFrameFormat);
     }
 
     pFrameFormat->MakeFrames();
@@ -154,6 +167,11 @@ void SwUndoFlyBase::DelFly( SwDoc* pDoc )
 {
     bDelFormat = true;                 // delete Format in DTOR
     pFrameFormat->DelFrames();                 // destroy Frames
+
+    if (pFrameFormat->GetOtherTextBoxFormat())
+    {   // tdf#108867 clear that pointer
+        pFrameFormat->GetOtherTextBoxFormat()->SetOtherTextBoxFormat(nullptr);
+    }
 
     // all Uno objects should now log themselves off
     {
@@ -220,7 +238,7 @@ void SwUndoFlyBase::DelFly( SwDoc* pDoc )
 
     // delete from array
     SwFrameFormats& rFlyFormats = *pDoc->GetSpzFrameFormats();
-    rFlyFormats.erase( std::find( rFlyFormats.begin(), rFlyFormats.end(), pFrameFormat ));
+    rFlyFormats.erase( pFrameFormat );
 }
 
 SwUndoInsLayFormat::SwUndoInsLayFormat( SwFrameFormat* pFormat, sal_uLong nNodeIdx, sal_Int32 nCntIdx )
@@ -454,7 +472,7 @@ void SwUndoDelLayFormat::RedoForRollback()
 }
 
 SwUndoSetFlyFormat::SwUndoSetFlyFormat( SwFrameFormat& rFlyFormat, SwFrameFormat& rNewFrameFormat )
-    : SwUndo( UNDO_SETFLYFRMFMT ), SwClient( &rFlyFormat ), pFrameFormat( &rFlyFormat ),
+    : SwUndo( UNDO_SETFLYFRMFMT, rFlyFormat.GetDoc() ), SwClient( &rFlyFormat ), pFrameFormat( &rFlyFormat ),
     pOldFormat( static_cast<SwFrameFormat*>(rFlyFormat.DerivedFrom()) ), pNewFormat( &rNewFrameFormat ),
     pItemSet( new SfxItemSet( *rFlyFormat.GetAttrSet().GetPool(),
                                 rFlyFormat.GetAttrSet().GetRanges() )),

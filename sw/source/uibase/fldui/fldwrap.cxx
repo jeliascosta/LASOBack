@@ -46,7 +46,7 @@ SwChildWinWrapper::SwChildWinWrapper(vcl::Window *pParentWindow, sal_uInt16 nId)
     m_aUpdateTimer.SetTimeoutHdl(LINK(this, SwChildWinWrapper, UpdateHdl));
 }
 
-IMPL_LINK_NOARG_TYPED(SwChildWinWrapper, UpdateHdl, Timer *, void)
+IMPL_LINK_NOARG(SwChildWinWrapper, UpdateHdl, Timer *, void)
 {
     GetWindow()->Activate();    // update dialog
 }
@@ -81,7 +81,7 @@ SwFieldDlgWrapper::SwFieldDlgWrapper( vcl::Window* _pParent, sal_uInt16 nId,
 {
     SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
     assert(pFact && "SwAbstractDialogFactory fail!");
-    AbstractSwFieldDlg* pDlg = pFact->CreateSwFieldDlg(pB, this, _pParent);
+    VclPtr<AbstractSwFieldDlg> pDlg = pFact->CreateSwFieldDlg(pB, this, _pParent);
     assert(pDlg && "Dialog creation failed!");
     pDlgInterface = pDlg;
     SetWindow( pDlg->GetWindow() );
@@ -125,7 +125,7 @@ SwFieldDataOnlyDlgWrapper::SwFieldDataOnlyDlgWrapper( vcl::Window* _pParent, sal
     SwAbstractDialogFactory* pFact = SwAbstractDialogFactory::Create();
     OSL_ENSURE(pFact, "SwAbstractDialogFactory fail!");
 
-    AbstractSwFieldDlg* pDlg = pFact->CreateSwFieldDlg(pB, this, _pParent);
+    VclPtr<AbstractSwFieldDlg> pDlg = pFact->CreateSwFieldDlg(pB, this, _pParent);
     OSL_ENSURE(pDlg, "Dialog creation failed!");
     pDlgInterface = pDlg;
 

@@ -44,7 +44,7 @@ public:
         : ::sfx2::SvBaseLink( ::SfxLinkUpdateMode::ONCALL, SotClipboardFormatId::SIMPLE_FILE ),
             pSdrObj( pObj1 )
     {}
-    virtual ~ImpSdrObjTextLink();
+    virtual ~ImpSdrObjTextLink() override;
 
     virtual void Closed() override;
     virtual ::sfx2::SvBaseLink::UpdateResult DataChanged(
@@ -101,7 +101,7 @@ void ImpSdrObjTextLink::Closed()
 
 
 ImpSdrObjTextLinkUserData::ImpSdrObjTextLinkUserData():
-    SdrObjUserData(SdrInventor,SDRUSERDATA_OBJTEXTLINK),
+    SdrObjUserData(SdrInventor::Default,SDRUSERDATA_OBJTEXTLINK),
     aFileDate0( DateTime::EMPTY ),
     pLink(nullptr),
     eCharSet(RTL_TEXTENCODING_DONTKNOW)
@@ -149,7 +149,7 @@ void SdrTextObj::ReleaseTextLink()
     for (sal_uInt16 nNum=nCount; nNum>0;) {
         nNum--;
         SdrObjUserData* pData=GetUserData(nNum);
-        if (pData->GetInventor()==SdrInventor && pData->GetId()==SDRUSERDATA_OBJTEXTLINK) {
+        if (pData->GetInventor()==SdrInventor::Default && pData->GetId()==SDRUSERDATA_OBJTEXTLINK) {
             DeleteUserData(nNum);
         }
     }
@@ -227,7 +227,7 @@ bool SdrTextObj::LoadText(const OUString& rFileName, const OUString& /*rFilterNa
 
         char cRTF[5];
         cRTF[4] = 0;
-        pIStm->Read(cRTF, 5);
+        pIStm->ReadBytes(cRTF, 5);
 
         bool bRTF = cRTF[0] == '{' && cRTF[1] == '\\' && cRTF[2] == 'r' && cRTF[3] == 't' && cRTF[4] == 'f';
 
@@ -249,7 +249,7 @@ ImpSdrObjTextLinkUserData* SdrTextObj::GetLinkUserData() const
     for (sal_uInt16 nNum=nCount; nNum>0;) {
         nNum--;
         SdrObjUserData * pData=GetUserData(nNum);
-        if (pData->GetInventor() == SdrInventor
+        if (pData->GetInventor() == SdrInventor::Default
             && pData->GetId() == SDRUSERDATA_OBJTEXTLINK)
         {
             return static_cast<ImpSdrObjTextLinkUserData *>(pData);

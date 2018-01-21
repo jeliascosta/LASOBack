@@ -73,7 +73,7 @@ OutlineBulletDlg::OutlineBulletDlg(
         for(size_t nNum = 0; nNum < nCount; ++nNum)
         {
             SdrObject* pObj = rMarkList.GetMark(nNum)->GetMarkedSdrObj();
-            if( pObj->GetObjInventor() == SdrInventor )
+            if( pObj->GetObjInventor() == SdrInventor::Default )
             {
 
                 switch(pObj->GetObjIdentifier())
@@ -106,7 +106,8 @@ OutlineBulletDlg::OutlineBulletDlg(
 
         DBG_ASSERT( pItem, "No EE_PARA_NUMBULLET in Pool! [CL]" );
 
-        aInputSet.Put(*pItem, EE_PARA_NUMBULLET);
+        std::unique_ptr<SfxPoolItem> pNewItem(pItem->CloneSetWhich(EE_PARA_NUMBULLET));
+        aInputSet.Put(*pNewItem);
     }
 
     if(bTitle && aInputSet.GetItemState(EE_PARA_NUMBULLET) == SfxItemState::SET )

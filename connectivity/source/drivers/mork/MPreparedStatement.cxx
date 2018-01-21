@@ -62,9 +62,8 @@ void SAL_CALL OPreparedStatement::disposing()
     m_xParamColumns = nullptr;
 }
 
-
 OCommonStatement::StatementType OPreparedStatement::parseSql( const OUString& sql , bool bAdjusted )
-    throw ( ::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException )
+    throw (css::sdbc::SQLException, css::uno::RuntimeException, std::exception)
 {
     StatementType eStatementType = OCommonStatement::parseSql( sql, bAdjusted );
     if ( eStatementType != eSelect )
@@ -80,7 +79,6 @@ OCommonStatement::StatementType OPreparedStatement::parseSql( const OUString& sq
 
     return eStatementType;
 }
-
 
 void OPreparedStatement::initializeResultSet( OResultSet* _pResult )
 {
@@ -123,7 +121,7 @@ Any SAL_CALL OPreparedStatement::queryInterface( const Type & rType ) throw(Runt
     return aRet;
 }
 
-::com::sun::star::uno::Sequence< ::com::sun::star::uno::Type > SAL_CALL OPreparedStatement::getTypes(  ) throw(::com::sun::star::uno::RuntimeException, std::exception)
+css::uno::Sequence< css::uno::Type > SAL_CALL OPreparedStatement::getTypes(  ) throw(css::uno::RuntimeException, std::exception)
 {
     return ::comphelper::concatSequences(OPreparedStatement_BASE::getTypes(),OCommonStatement::getTypes());
 }
@@ -179,7 +177,7 @@ Reference< XConnection > SAL_CALL OPreparedStatement::getConnection(  ) throw(SQ
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OCommonStatement_IBASE::rBHelper.bDisposed);
 
-    return Reference< XConnection >(m_pConnection);
+    return Reference< XConnection >(m_pConnection.get());
 }
 
 
@@ -313,13 +311,13 @@ void SAL_CALL OPreparedStatement::setBytes( sal_Int32 /*parameterIndex*/, const 
 }
 
 
-void SAL_CALL OPreparedStatement::setCharacterStream( sal_Int32 /*parameterIndex*/, const Reference< ::com::sun::star::io::XInputStream >& /*x*/, sal_Int32 /*length*/ ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL OPreparedStatement::setCharacterStream( sal_Int32 /*parameterIndex*/, const Reference< css::io::XInputStream >& /*x*/, sal_Int32 /*length*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XParameters::setCharacterStream", *this );
 }
 
 
-void SAL_CALL OPreparedStatement::setBinaryStream( sal_Int32 /*parameterIndex*/, const Reference< ::com::sun::star::io::XInputStream >& /*x*/, sal_Int32 /*length*/ ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL OPreparedStatement::setBinaryStream( sal_Int32 /*parameterIndex*/, const Reference< css::io::XInputStream >& /*x*/, sal_Int32 /*length*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XParameters::setBinaryStream", *this );
 }
@@ -478,17 +476,17 @@ void OPreparedStatement::scanParameter(OSQLParseNode* pParseNode,::std::vector< 
         scanParameter(pParseNode->getChild(i),_rParaNodes);
 }
 
-::com::sun::star::uno::Reference< ::com::sun::star::sdbc::XResultSet > SAL_CALL OPreparedStatement::getResultSet(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
+css::uno::Reference< css::sdbc::XResultSet > SAL_CALL OPreparedStatement::getResultSet(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception)
 {
     return nullptr;
 }
 
-sal_Int32 SAL_CALL OPreparedStatement::getUpdateCount(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
+sal_Int32 SAL_CALL OPreparedStatement::getUpdateCount(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception)
 {
     return 0;
 }
 
-sal_Bool SAL_CALL OPreparedStatement::getMoreResults(  ) throw(::com::sun::star::sdbc::SQLException, ::com::sun::star::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL OPreparedStatement::getMoreResults(  ) throw(css::sdbc::SQLException, css::uno::RuntimeException, std::exception)
 {
     return false;
 }

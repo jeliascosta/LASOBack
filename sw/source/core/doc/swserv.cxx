@@ -51,6 +51,7 @@ bool SwServerObject::GetData( uno::Any & rData,
         break;
 
     case SotClipboardFormatId::RTF:
+    case SotClipboardFormatId::RICHTEXT:
         // mba: no BaseURL for data exchange
         ::GetRTFWriter( OUString(), OUString(), xWrt );
         break;
@@ -309,7 +310,7 @@ SwDataChanged::~SwDataChanged()
             // Any one else interested in the Object?
             if( refObj->HasDataLinks() && dynamic_cast<const SwServerObject*>( refObj.get() ) !=  nullptr)
             {
-                SwServerObject& rObj = *static_cast<SwServerObject*>(&refObj);
+                SwServerObject& rObj = *static_cast<SwServerObject*>( refObj.get() );
                 if( pPos )
                     rObj.SendDataChanged( *pPos );
                 else

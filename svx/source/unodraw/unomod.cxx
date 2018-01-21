@@ -73,7 +73,7 @@ private:
 
 public:
     explicit SvxUnoDrawPagesAccess( SvxUnoDrawingModel& rMyModel ) throw();
-    virtual ~SvxUnoDrawPagesAccess() throw();
+    virtual ~SvxUnoDrawPagesAccess() throw() override;
 
     // XDrawPages
     virtual css::uno::Reference< css::drawing::XDrawPage > SAL_CALL insertNewByIndex( sal_Int32 nIndex ) throw(css::uno::RuntimeException, std::exception) override;
@@ -120,8 +120,8 @@ bool SvxUnoDrawMSFactory::createEvent( const SdrModel* pDoc, const SdrHint* pSdr
 
     switch( pSdrHint->GetKind() )
     {
-//              case HINT_LAYERCHG:             // layer definition changed
-//              case HINT_LAYERORDERCHG:        // layer order changed (Insert/Remove/ChangePos)
+//              case SdrHintKind::LayerChange:             // layer definition changed
+//              case SdrHintKind::LayerOrderChange:        // layer order changed (Insert/Remove/ChangePos)
 //              case HINT_LAYERSETCHG:          // layer set changed
 //              case HINT_LAYERSETORDERCHG:     // layer set order changed (Insert/Remove/ChangePos)
 
@@ -129,25 +129,25 @@ bool SvxUnoDrawMSFactory::createEvent( const SdrModel* pDoc, const SdrHint* pSdr
 //          aEvent.EventName = "PageModified";
 //          pPage = pSdrHint->GetPage();
 //          break;
-        case HINT_PAGEORDERCHG:         // draw or master page order changed (Insert/Remove/ChangePos)
+        case SdrHintKind::PageOrderChange:         // draw or master page order changed (Insert/Remove/ChangePos)
             aEvent.EventName = "PageOrderModified";
             pPage = pSdrHint->GetPage();
             break;
-        case HINT_OBJCHG:               // object changed
+        case SdrHintKind::ObjectChange:               // object changed
             aEvent.EventName = "ShapeModified";
             pObj = pSdrHint->GetObject();
             break;
-        case HINT_OBJINSERTED:          // add new draw object
+        case SdrHintKind::ObjectInserted:          // add new draw object
             aEvent.EventName = "ShapeInserted";
             pObj = pSdrHint->GetObject();
             break;
-        case HINT_OBJREMOVED:           // removed draw object from list
+        case SdrHintKind::ObjectRemoved:           // removed draw object from list
             aEvent.EventName = "ShapeRemoved";
             pObj = pSdrHint->GetObject();
             break;
-//                HINT_DEFAULTTABCHG,   // default tab width changed
-//                HINT_DEFFONTHGTCHG,   // default FontHeight changed
-//                HINT_SWITCHTOPAGE,    // #94278# UNDO/REDO at an object evtl. on another page
+//                SdrHintKind::DefaultTabChange,   // default tab width changed
+//                SdrHintKind::DefaultFontHeightChange,   // default FontHeight changed
+//                SdrHintKind::SwitchToPage,    // #94278# UNDO/REDO at an object evtl. on another page
 //                HINT_OBJLISTCLEAR     // Is called before an SdrObjList will be cleared
         default:
             return false;
@@ -174,14 +174,14 @@ css::uno::Reference<css::uno::XInterface> create(
         if( nType != UHASHMAP_NOTFOUND )
         {
             sal_uInt16 nT = (sal_uInt16)(nType & ~E3D_INVENTOR_FLAG);
-            sal_uInt32 nI = (nType & E3D_INVENTOR_FLAG)?E3dInventor:SdrInventor;
+            SdrInventor nI = (nType & E3D_INVENTOR_FLAG) ? SdrInventor::E3d : SdrInventor::Default;
 
             return uno::Reference< uno::XInterface >( static_cast<drawing::XShape*>(SvxDrawPage::CreateShapeByTypeAndInventor( nT, nI, nullptr, nullptr, referer )) );
         }
     }
     else if ( rServiceSpecifier == "com.sun.star.document.ImportGraphicObjectResolver" )
     {
-        SvXMLGraphicHelper* pGraphicHelper = SvXMLGraphicHelper::Create( GRAPHICHELPER_MODE_READ );
+        SvXMLGraphicHelper* pGraphicHelper = SvXMLGraphicHelper::Create( SvXMLGraphicHelperMode::Read );
         uno::Reference< uno::XInterface> xRet( static_cast< ::cppu::OWeakObject* >( pGraphicHelper ) );
         pGraphicHelper->release();
         return xRet;
@@ -492,7 +492,7 @@ uno::Reference< uno::XInterface > SAL_CALL SvxUnoDrawingModel::createInstance( c
         }
 
         // create the API wrapper
-        pShape = CreateSvxShapeByTypeAndInventor( nType, SdrInventor, "" );
+        pShape = CreateSvxShapeByTypeAndInventor( nType, SdrInventor::Default, "" );
 
         // set shape type
         if( pShape )
@@ -691,7 +691,6 @@ void SAL_CALL SvxUnoDrawPagesAccess::remove( const uno::Reference< drawing::XDra
 }
 
 // XServiceInfo
-const char pSvxUnoDrawPagesAccessService[] = "com.sun.star.drawing.DrawPages";
 
 OUString SAL_CALL SvxUnoDrawPagesAccess::getImplementationName(  ) throw(uno::RuntimeException, std::exception)
 {
@@ -705,7 +704,7 @@ sal_Bool SAL_CALL SvxUnoDrawPagesAccess::supportsService( const OUString& Servic
 
 uno::Sequence< OUString > SAL_CALL SvxUnoDrawPagesAccess::getSupportedServiceNames(  ) throw(uno::RuntimeException, std::exception)
 {
-    OUString aService( pSvxUnoDrawPagesAccessService );
+    OUString aService( "com.sun.star.drawing.DrawPages" );
     uno::Sequence< OUString > aSeq( &aService, 1 );
     return aSeq;
 }

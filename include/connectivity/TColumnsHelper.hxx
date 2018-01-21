@@ -33,7 +33,7 @@ namespace connectivity
     */
     class OOO_DLLPUBLIC_DBTOOLS OColumnsHelper : public sdbcx::OCollection
     {
-        OColumnsHelperImpl* m_pImpl;
+        std::unique_ptr<OColumnsHelperImpl> m_pImpl;
     protected:
         OTableHelper*   m_pTable;
 
@@ -49,7 +49,7 @@ namespace connectivity
                         ,const TStringVector &_rVector
                         ,bool _bUseHardRef = true
                     );
-        virtual ~OColumnsHelper();
+        virtual ~OColumnsHelper() override;
 
         /** set the parent of the columns. Can also be <NULL/>.
             @param  _pTable

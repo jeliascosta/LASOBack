@@ -143,6 +143,32 @@ extern "C" typedef vcl::Window* (SAL_CALL *FN_SvtCreateWindow)(
         vcl::Window* pParent,
         WinBits nWinBits );
 
+class Pause : public Idle
+{
+public:
+    explicit Pause(sal_Int32 nPauseMilliseconds) :
+        Idle("pause"),
+        m_nPauseMilliseconds(nPauseMilliseconds)
+    {
+        SetPriority(SchedulerPriority::HIGHEST);
+        Start();
+    }
+
+    virtual ~Pause() override
+    {
+    }
+
+    virtual void Invoke() override
+    {
+        SolarMutexGuard aSolarGuard;
+        osl::Thread::wait(std::chrono::milliseconds(m_nPauseMilliseconds));
+        Stop();
+        delete this;
+    }
+
+    sal_Int32 m_nPauseMilliseconds;
+};
+
 class VCLXToolkitMutexHelper
 {
 protected:
@@ -169,9 +195,9 @@ class VCLXToolkit : public VCLXToolkitMutexHelper,
     bool m_bEventListener;
     bool m_bKeyListener;
 
-    DECL_LINK_TYPED(eventListenerHandler, ::VclSimpleEvent&, void);
+    DECL_LINK(eventListenerHandler, ::VclSimpleEvent&, void);
 
-    DECL_LINK_TYPED(keyListenerHandler, ::VclWindowEvent&, bool);
+    DECL_LINK(keyListenerHandler, ::VclWindowEvent&, bool);
 
     void callTopWindowListeners(
         ::VclSimpleEvent const * pEvent,
@@ -193,7 +219,7 @@ protected:
 public:
 
     VCLXToolkit();
-    virtual ~VCLXToolkit();
+    virtual ~VCLXToolkit() override;
 
     // css::awt::XToolkitExperimental
     virtual void SAL_CALL processEventsToIdle()
@@ -203,6 +229,9 @@ public:
         throw (css::uno::RuntimeException, std::exception) override;
 
     virtual void SAL_CALL setDeterministicScheduling(sal_Bool bDeterministicMode)
+        throw (css::uno::RuntimeException, std::exception) override;
+
+    virtual void SAL_CALL pause(sal_Int32 nMilliseconds)
         throw (css::uno::RuntimeException, std::exception) override;
 
     // css::awt::XToolkit
@@ -1477,7 +1506,7 @@ css::uno::Reference< css::awt::XMessageBox > SAL_CALL VCLXToolkit::createMessage
     css::uno::Reference< css::awt::XWindow > xWindow( xMsgBox, css::uno::UNO_QUERY );
     if ( xMsgBox.is() && xWindow.is() )
     {
-        vcl::Window * pWindow = VCLUnoHelper::GetWindow( xWindow );
+        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
         if ( pWindow )
         {
             SolarMutexGuard aGuard;
@@ -1493,7 +1522,7 @@ css::uno::Reference< css::datatransfer::dnd::XDragGestureRecognizer > SAL_CALL V
 {
     SolarMutexGuard g;
 
-    vcl::Window * pWindow = VCLUnoHelper::GetWindow( window );
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( window );
 
     if( pWindow )
         return pWindow->GetDragGestureRecognizer();
@@ -1505,7 +1534,7 @@ css::uno::Reference< css::datatransfer::dnd::XDragSource > SAL_CALL VCLXToolkit:
 {
     SolarMutexGuard g;
 
-    vcl::Window * pWindow = VCLUnoHelper::GetWindow( window );
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( window );
 
     if( pWindow )
         return pWindow->GetDragSource();
@@ -1517,7 +1546,7 @@ css::uno::Reference< css::datatransfer::dnd::XDropTarget > SAL_CALL VCLXToolkit:
 {
     SolarMutexGuard g;
 
-    vcl::Window * pWindow = VCLUnoHelper::GetWindow( window );
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( window );
 
     if( pWindow )
         return pWindow->GetDropTarget();
@@ -1722,7 +1751,7 @@ void SAL_CALL VCLXToolkit::fireFocusLost(
 }
 
 
-IMPL_LINK_TYPED(VCLXToolkit, eventListenerHandler, ::VclSimpleEvent&, rEvent, void)
+IMPL_LINK(VCLXToolkit, eventListenerHandler, ::VclSimpleEvent&, rEvent, void)
 {
     switch (rEvent.GetId())
     {
@@ -1763,7 +1792,7 @@ IMPL_LINK_TYPED(VCLXToolkit, eventListenerHandler, ::VclSimpleEvent&, rEvent, vo
     }
 }
 
-IMPL_LINK_TYPED(VCLXToolkit, keyListenerHandler, ::VclWindowEvent&, rEvent, bool)
+IMPL_LINK(VCLXToolkit, keyListenerHandler, ::VclWindowEvent&, rEvent, bool)
 {
     switch (rEvent.GetId())
     {
@@ -1942,6 +1971,12 @@ void SAL_CALL VCLXToolkit::setDeterministicScheduling(sal_Bool bDeterministicMod
     Scheduler::SetDeterministicMode(bDeterministicMode);
 }
 
+void SAL_CALL VCLXToolkit::pause(sal_Int32 nMilliseconds)
+    throw (css::uno::RuntimeException, std::exception)
+{
+    new Pause(nMilliseconds);
+}
+
 // css:awt:XToolkitRobot
 
 void SAL_CALL VCLXToolkit::keyPress( const css::awt::KeyEvent & aKeyEvent )
@@ -1951,7 +1986,7 @@ void SAL_CALL VCLXToolkit::keyPress( const css::awt::KeyEvent & aKeyEvent )
     if( !xWindow.is() )
         throw css::uno::RuntimeException( "invalid event source" );
 
-    vcl::Window * pWindow = VCLUnoHelper::GetWindow( xWindow );
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
     if( !pWindow )
         throw css::uno::RuntimeException( "invalid event source" );
 
@@ -1966,7 +2001,7 @@ void SAL_CALL VCLXToolkit::keyRelease( const css::awt::KeyEvent & aKeyEvent )
     if( !xWindow.is() )
         throw css::uno::RuntimeException( "invalid event source" );
 
-    vcl::Window * pWindow = VCLUnoHelper::GetWindow( xWindow );
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
     if( !pWindow )
         throw css::uno::RuntimeException( "invalid event source" );
 
@@ -1982,7 +2017,7 @@ void SAL_CALL VCLXToolkit::mousePress( const css::awt::MouseEvent & aMouseEvent 
     if( !xWindow.is() )
         throw css::uno::RuntimeException( "invalid event source" );
 
-    vcl::Window * pWindow = VCLUnoHelper::GetWindow( xWindow );
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
     if( !pWindow )
         throw css::uno::RuntimeException( "invalid event source" );
 
@@ -1997,7 +2032,7 @@ void SAL_CALL VCLXToolkit::mouseRelease( const css::awt::MouseEvent & aMouseEven
     if( !xWindow.is() )
         throw css::uno::RuntimeException( "invalid event source" );
 
-    vcl::Window * pWindow = VCLUnoHelper::GetWindow( xWindow );
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
     if( !pWindow )
         throw css::uno::RuntimeException( "invalid event source" );
 
@@ -2012,7 +2047,7 @@ void SAL_CALL VCLXToolkit::mouseMove( const css::awt::MouseEvent & aMouseEvent )
     if( !xWindow.is() )
         throw css::uno::RuntimeException( "invalid event source" );
 
-    vcl::Window * pWindow = VCLUnoHelper::GetWindow( xWindow );
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
     if( !pWindow )
         throw css::uno::RuntimeException( "invalid event source" );
 

@@ -105,7 +105,7 @@ public:
     /** If there still are managed children these are disposed and
         released.
     */
-    virtual ~ChildrenManagerImpl();
+    virtual ~ChildrenManagerImpl() override;
 
     /** Do that part of the initialization that you can not or should not do
         in the constructor like registering at broadcasters.
@@ -131,7 +131,7 @@ public:
             requested accessible child.  This reference is empty if it has
             not been possible to create the accessible object of the
             corresponding shape.
-        @raises
+        @throws
             Throws an IndexOutOfBoundsException if the index is not valid.
     */
     css::uno::Reference<css::accessibility::XAccessible>
@@ -181,7 +181,7 @@ public:
             before this method returns and events are sent to inform the
             listeners of the new object.
     */
-    void Update (bool bCreateNewObjectsOnDemand = true);
+    void Update (bool bCreateNewObjectsOnDemand);
 
     /** Set the list of UNO shapes to the given list.  This removes the old
         list and does not add to it.  The list of accessible shapes that is
@@ -262,8 +262,7 @@ public:
         @param pViewForwarder
             The modified view forwarder.  Use this one from now on.
     */
-    virtual void ViewForwarderChanged (ChangeType aChangeType,
-        const IAccessibleViewForwarder* pViewForwarder) override;
+    virtual void ViewForwarderChanged() override;
 
     // IAccessibleParent
     /** Replace the specified child with a replacement.
@@ -344,11 +343,6 @@ protected:
     void impl_dispose();
 
 private:
-    /** Names of new accessible objects are disambiguated with this index.
-        It gets increased every time a new object is created and (at the
-        moment) never reset.
-    */
-    sal_Int32 mnNewNameIndex;
 
     ChildrenManagerImpl (const ChildrenManagerImpl&) = delete;
     ChildrenManagerImpl& operator= (const ChildrenManagerImpl&) = delete;
@@ -398,7 +392,7 @@ private:
             Events are sent to all entries of this list that already contain
             an accessible object.
     */
-    void SendVisibleAreaEvents (ChildDescriptorListType& raChildList);
+    static void SendVisibleAreaEvents (ChildDescriptorListType& raChildList);
 
     /** If children have to be created immediately and not on demand the
         create the missing accessible objects now.

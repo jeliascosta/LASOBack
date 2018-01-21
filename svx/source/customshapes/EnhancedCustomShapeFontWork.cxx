@@ -167,7 +167,7 @@ void CalculateHorizontalScalingFactor( const SdrObject* pCustomShape,
     // initializing virtual device
 
     ScopedVclPtrInstance< VirtualDevice > pVirDev(DeviceFormat::BITMASK);
-    pVirDev->SetMapMode( MAP_100TH_MM );
+    pVirDev->SetMapMode( MapUnit::Map100thMM );
     pVirDev->SetFont( aFont );
 
     if ( nOutlinesCount2d & 1 )
@@ -261,11 +261,11 @@ void GetTextAreaOutline( const FWData& rFWData, const SdrObject* pCustomShape, F
 
             // initializing virtual device
             ScopedVclPtrInstance< VirtualDevice > pVirDev(DeviceFormat::BITMASK);
-            pVirDev->SetMapMode( MAP_100TH_MM );
+            pVirDev->SetMapMode( MapUnit::Map100thMM );
             pVirDev->SetFont( aFont );
             pVirDev->EnableRTL();
             if ( aParagraphIter->nFrameDirection == FRMDIR_HORI_RIGHT_TOP )
-                pVirDev->SetLayoutMode( TEXT_LAYOUT_BIDI_RTL );
+                pVirDev->SetLayoutMode( ComplexTextLayoutFlags::BiDiRtl );
 
             const SvxCharScaleWidthItem& rCharScaleWidthItem = static_cast<const SvxCharScaleWidthItem&>(pCustomShape->GetMergedItem( EE_CHAR_FONTWIDTH ));
             sal_uInt16 nCharScaleWidth = rCharScaleWidthItem.GetValue();
@@ -433,7 +433,10 @@ void GetFontWorkOutline( FWData& rFWData, const SdrObject* pCustomShape )
     while ( aTextAreaIter != aTextAreaIEnd )
     {
         GetTextAreaOutline( rFWData, pCustomShape, *aTextAreaIter, bSameLetterHeights );
-        if ( eFTS == SDRTEXTFIT_ALLLINES )
+        if (eFTS == SdrFitToSizeType::AllLines ||
+            // tdf#97630 interpret PROPORTIONAL same as ALLLINES so we don't
+            // need another ODF attribute!
+            eFTS == SdrFitToSizeType::Proportional)
         {
             std::vector< FWParagraphData >::iterator aParagraphIter( aTextAreaIter->vParagraphs.begin() );
             std::vector< FWParagraphData >::const_iterator aParagraphIEnd( aTextAreaIter->vParagraphs.end() );
@@ -510,7 +513,7 @@ basegfx::B2DPolyPolygon GetOutlinesFromShape2d( const SdrObject* pShape2d )
 {
     basegfx::B2DPolyPolygon aOutlines2d;
 
-    SdrObjListIter aObjListIter( *pShape2d, IM_DEEPWITHGROUPS );
+    SdrObjListIter aObjListIter( *pShape2d, SdrIterMode::DeepWithGroups );
     while( aObjListIter.IsMore() )
     {
         SdrObject* pPartObj = aObjListIter.Next();
@@ -833,7 +836,7 @@ SdrObject* CreateSdrObjectFromParagraphOutlines( const FWData& rFWData, const Sd
 
 Reference < i18n::XBreakIterator > EnhancedCustomShapeFontWork::mxBreakIterator = nullptr;
 
-Reference < i18n::XBreakIterator > EnhancedCustomShapeFontWork::GetBreakIterator()
+Reference < i18n::XBreakIterator > const & EnhancedCustomShapeFontWork::GetBreakIterator()
 {
     if ( !mxBreakIterator.is() )
     {

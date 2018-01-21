@@ -77,7 +77,7 @@ void SwMailMergeOutputTypePage::dispose()
 }
 
 
-IMPL_LINK_NOARG_TYPED(SwMailMergeOutputTypePage, TypeHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SwMailMergeOutputTypePage, TypeHdl_Impl, Button*, void)
 {
     bool bLetter = m_pLetterRB->IsChecked();
     m_pLetterHint->Show(bLetter);
@@ -92,7 +92,7 @@ struct SwSendMailDialog_Impl
     friend class SwSendMailDialog;
     ::osl::Mutex                                aDescriptorMutex;
 
-    ::std::vector< SwMailDescriptor >           aDescriptors;
+    std::vector< SwMailDescriptor >             aDescriptors;
     sal_uInt32                                  nCurrentDescriptor;
     sal_uInt32                                  nDocumentCount;
     ::rtl::Reference< MailDispatcher >          xMailDispatcher;
@@ -139,7 +139,7 @@ class SwMailDispatcherListener_Impl : public IMailDispatcherListener
 
 public:
     explicit SwMailDispatcherListener_Impl(SwSendMailDialog& rParentDlg);
-    virtual ~SwMailDispatcherListener_Impl();
+    virtual ~SwMailDispatcherListener_Impl() override;
 
     virtual void started(::rtl::Reference<MailDispatcher> xMailDispatcher) override;
     virtual void stopped(::rtl::Reference<MailDispatcher> xMailDispatcher) override;
@@ -226,7 +226,7 @@ class SwSendWarningBox_Impl : public MessageDialog
     VclPtr<VclMultiLineEdit> m_pDetailED;
 public:
     SwSendWarningBox_Impl(vcl::Window* pParent, const OUString& rDetails);
-    virtual ~SwSendWarningBox_Impl() { disposeOnce(); }
+    virtual ~SwSendWarningBox_Impl() override { disposeOnce(); }
     virtual void dispose() override
     {
         m_pDetailED.clear();
@@ -271,7 +271,7 @@ SwSendMailDialog::SwSendMailDialog(vcl::Window *pParent, SwMailMergeConfigItem& 
     m_nSendCount(0),
     m_nErrorCount(0)
 {
-    Size aSize = m_pContainer->LogicToPixel(Size(226, 80), MAP_APPFONT);
+    Size aSize = m_pContainer->LogicToPixel(Size(226, 80), MapUnit::MapAppFont);
     m_pContainer->set_width_request(aSize.Width());
     m_pContainer->set_height_request(aSize.Height());
     m_pStatus = VclPtr<SvSimpleTable>::Create(*m_pContainer);
@@ -295,8 +295,8 @@ SwSendMailDialog::SwSendMailDialog(vcl::Window *pParent, SwMailMergeConfigItem& 
 
     static long nTabs[] = {2, 0, nPos1};
     m_pStatus->SetStyle( m_pStatus->GetStyle() | WB_SORT | WB_HSCROLL | WB_CLIPCHILDREN | WB_TABSTOP );
-    m_pStatus->SetSelectionMode( SINGLE_SELECTION );
-    m_pStatus->SetTabs(&nTabs[0], MAP_PIXEL);
+    m_pStatus->SetSelectionMode( SelectionMode::Single );
+    m_pStatus->SetTabs(&nTabs[0], MapUnit::MapPixel);
     m_pStatus->SetSpaceBetweenEntries(3);
 
     UpdateTransferStatus();
@@ -363,7 +363,7 @@ void SwSendMailDialog::SetDocumentCount( sal_Int32 nAllDocuments )
     UpdateTransferStatus();
 }
 
-IMPL_LINK_TYPED( SwSendMailDialog, StopHdl_Impl, Button*, pButton, void )
+IMPL_LINK( SwSendMailDialog, StopHdl_Impl, Button*, pButton, void )
 {
     m_bCancel = true;
     if(m_pImpl->xMailDispatcher.is())
@@ -383,17 +383,17 @@ IMPL_LINK_TYPED( SwSendMailDialog, StopHdl_Impl, Button*, pButton, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwSendMailDialog, CloseHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SwSendMailDialog, CloseHdl_Impl, Button*, void)
 {
     ModelessDialog::Show( false );
 }
 
-IMPL_STATIC_LINK_TYPED( SwSendMailDialog, StartSendMails, void*, pDialog, void )
+IMPL_STATIC_LINK( SwSendMailDialog, StartSendMails, void*, pDialog, void )
 {
     static_cast<SwSendMailDialog*>(pDialog)->SendMails();
 }
 
-IMPL_LINK_TYPED( SwSendMailDialog, RemoveThis, Idle*, pTimer, void )
+IMPL_LINK( SwSendMailDialog, RemoveThis, Idle*, pTimer, void )
 {
     if( m_pImpl->xMailDispatcher.is() )
     {
@@ -415,7 +415,7 @@ IMPL_LINK_TYPED( SwSendMailDialog, RemoveThis, Idle*, pTimer, void )
     }
 }
 
-IMPL_STATIC_LINK_TYPED( SwSendMailDialog, StopSendMails, void*, p, void )
+IMPL_STATIC_LINK( SwSendMailDialog, StopSendMails, void*, p, void )
 {
     SwSendMailDialog* pDialog = static_cast<SwSendMailDialog*>(p);
     if(pDialog->m_pImpl->xMailDispatcher.is() &&
@@ -549,7 +549,7 @@ void  SwSendMailDialog::StateChanged( StateChangedType nStateChange )
     }
 }
 
-void SwSendMailDialog::DocumentSent( uno::Reference< mail::XMailMessage> xMessage,
+void SwSendMailDialog::DocumentSent( uno::Reference< mail::XMailMessage> const & xMessage,
                                         bool bResult,
                                         const OUString* pError )
 {

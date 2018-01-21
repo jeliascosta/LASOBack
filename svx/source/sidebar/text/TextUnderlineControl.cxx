@@ -18,7 +18,6 @@
  */
 #include "TextUnderlineControl.hxx"
 #include "TextPropertyPanel.hrc"
-#include <sfx2/sidebar/ResourceDefinitions.hrc>
 #include <svx/dialogs.hrc>
 #include <svx/dialmgr.hxx>
 #include <sfx2/dispatch.hxx>
@@ -127,7 +126,7 @@ Color GetUnderlineColor()
 
 }
 
-IMPL_LINK_TYPED(TextUnderlineControl, PBClickHdl, Button*, pButton, void)
+IMPL_LINK(TextUnderlineControl, PBClickHdl, Button*, pButton, void)
 {
     if(pButton == maMoreOptions)
     {

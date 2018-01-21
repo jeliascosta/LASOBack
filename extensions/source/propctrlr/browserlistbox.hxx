@@ -59,7 +59,7 @@ namespace pcr
         css::uno::Reference< css::inspection::XPropertyHandler >
                                                 xHandler;
 
-        ListBoxLine( const OUString& rName, BrowserLinePointer _pLine, const css::uno::Reference< css::inspection::XPropertyHandler >& _rxHandler )
+        ListBoxLine( const OUString& rName, const BrowserLinePointer& _pLine, const css::uno::Reference< css::inspection::XPropertyHandler >& _rxHandler )
             : aName( rName ),
               pLine( _pLine ),
               xHandler( _rxHandler )
@@ -102,12 +102,10 @@ namespace pcr
         void    Resize() override;
 
     public:
-                                    OBrowserListBox( vcl::Window* pParent, WinBits nWinStyle = WB_DIALOGCONTROL );
+        explicit                    OBrowserListBox( vcl::Window* pParent );
 
-                                    virtual ~OBrowserListBox();
+                                    virtual ~OBrowserListBox() override;
         virtual void                dispose() override;
-
-        void                        UpdateAll();
 
         void                        ActivateListBox( bool _bActive );
 
@@ -127,7 +125,7 @@ namespace pcr
 
         void                        Clear();
 
-        void                        InsertEntry( const OLineDescriptor&, sal_uInt16 nPos = EDITOR_LIST_APPEND );
+        void                        InsertEntry( const OLineDescriptor&, sal_uInt16 nPos );
         bool                        RemoveEntry( const OUString& _rName );
         void                        ChangeEntry( const OLineDescriptor&, sal_uInt16 nPos );
 
@@ -155,7 +153,7 @@ namespace pcr
 
         using Window::SetHelpText;
     private:
-        DECL_LINK_TYPED( ScrollHdl, ScrollBar*, void );
+        DECL_LINK( ScrollHdl, ScrollBar*, void );
 
         /** retrieves the index of a given control in our line list
             @param _rxControl

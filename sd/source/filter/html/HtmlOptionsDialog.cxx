@@ -66,7 +66,7 @@ class SdHtmlOptionsDialog : public cppu::WeakImplHelper
 public:
 
     SdHtmlOptionsDialog();
-    virtual ~SdHtmlOptionsDialog();
+    virtual ~SdHtmlOptionsDialog() override;
 
     // XInterface
     virtual void SAL_CALL acquire() throw() override;
@@ -100,7 +100,7 @@ public:
 };
 
 SdHtmlOptionsDialog::SdHtmlOptionsDialog() :
-    meDocType   ( DOCUMENT_TYPE_DRAW )
+    meDocType   ( DocumentType::Draw )
 {
 }
 
@@ -196,7 +196,7 @@ sal_Int16 SdHtmlOptionsDialog::execute()
     SdAbstractDialogFactory* pFact = SdAbstractDialogFactory::Create();
     if( pFact )
     {
-        std::unique_ptr<AbstractSdPublishingDlg> pDlg(pFact->CreateSdPublishingDlg( Application::GetDefDialogParent(), meDocType ));
+        ScopedVclPtr<AbstractSdPublishingDlg> pDlg(pFact->CreateSdPublishingDlg( Application::GetDefDialogParent(), meDocType ));
         if( pDlg )
         {
             if( pDlg->Execute() )
@@ -223,12 +223,12 @@ void SdHtmlOptionsDialog::setSourceDocument( const Reference< XComponent >& xDoc
     {
         if ( xServiceInfo->supportsService( "com.sun.star.presentation.PresentationDocument" ) )
         {
-            meDocType = DOCUMENT_TYPE_IMPRESS;
+            meDocType = DocumentType::Impress;
             return;
         }
         else if ( xServiceInfo->supportsService( "com.sun.star.drawing.DrawingDocument" ) )
         {
-            meDocType = DOCUMENT_TYPE_DRAW;
+            meDocType = DocumentType::Draw;
             return;
         }
     }

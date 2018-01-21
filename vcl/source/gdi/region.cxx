@@ -90,7 +90,7 @@ namespace
 
         // Create a new RegionBand object as container of the bands.
         RegionBand* pRegionBand = new RegionBand();
-        long nLineId = 0L;
+        long nLineId = 0;
 
         // Iterate over all polygons.
         const sal_uInt16 nPolyCount = rPolyPoly.Count();
@@ -184,7 +184,7 @@ namespace
     */
     RegionBand* ImplGeneralPolygonToBands(const tools::PolyPolygon& rPolyPoly, const Rectangle& rPolygonBoundingBox)
     {
-        long nLineID = 0L;
+        long nLineID = 0;
 
         // initialisation and creation of Bands
         RegionBand* pRegionBand = new RegionBand();
@@ -370,6 +370,15 @@ Region::Region(const vcl::Region& rRegion)
     mpRegionBand(rRegion.mpRegionBand),
     mbIsNull(rRegion.mbIsNull)
 {
+}
+
+Region::Region(vcl::Region&& rRegion)
+:   mpB2DPolyPolygon(std::move(rRegion.mpB2DPolyPolygon)),
+    mpPolyPolygon(std::move(rRegion.mpPolyPolygon)),
+    mpRegionBand(std::move(rRegion.mpRegionBand)),
+    mbIsNull(rRegion.mbIsNull)
+{
+    rRegion.mbIsNull = true;
 }
 
 Region::~Region()
@@ -1450,6 +1459,17 @@ Region& vcl::Region::operator=( const vcl::Region& rRegion )
     mpPolyPolygon = rRegion.mpPolyPolygon;
     mpRegionBand = rRegion.mpRegionBand;
     mbIsNull = rRegion.mbIsNull;
+
+    return *this;
+}
+
+Region& vcl::Region::operator=( vcl::Region&& rRegion )
+{
+    mpB2DPolyPolygon = std::move(rRegion.mpB2DPolyPolygon);
+    mpPolyPolygon = std::move(rRegion.mpPolyPolygon);
+    mpRegionBand = std::move(rRegion.mpRegionBand);
+    mbIsNull = rRegion.mbIsNull;
+    rRegion.mbIsNull = true;
 
     return *this;
 }

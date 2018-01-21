@@ -71,8 +71,7 @@ SdrObjGroup::SdrObjGroup()
 {
     pSub=new SdrObjList(nullptr,nullptr);
     pSub->SetOwnerObj(this);
-    pSub->SetListKind(SDROBJLIST_GROUPOBJ);
-    bRefPoint=false;
+    pSub->SetListKind(SdrObjListKind::GroupObj);
     bClosedObj=false;
 }
 
@@ -265,7 +264,6 @@ SdrObjGroup& SdrObjGroup::operator=(const SdrObjGroup& rObj)
 
     // copy local parameters
     aRefPoint  = rObj.aRefPoint;
-    bRefPoint  = rObj.bRefPoint;
     return *this;
 }
 
@@ -527,7 +525,7 @@ void SdrObjGroup::SetSnapRect(const Rectangle& rRect)
 
     SetChanged();
     BroadcastObjectChange();
-    SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+    SendUserCall(SdrUserCallType::Resize,aBoundRect0);
 }
 
 
@@ -561,7 +559,7 @@ void SdrObjGroup::Move(const Size& rSiz)
 
         SetChanged();
         BroadcastObjectChange();
-        SendUserCall(SDRUSERCALL_MOVEONLY,aBoundRect0);
+        SendUserCall(SdrUserCallType::MoveOnly,aBoundRect0);
     }
 }
 
@@ -605,7 +603,7 @@ void SdrObjGroup::Resize(const Point& rRef, const Fraction& xFact, const Fractio
 
         SetChanged();
         BroadcastObjectChange();
-        SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+        SendUserCall(SdrUserCallType::Resize,aBoundRect0);
     }
 }
 
@@ -631,7 +629,7 @@ void SdrObjGroup::Rotate(const Point& rRef, long nAngle, double sn, double cs)
         SetGlueReallyAbsolute(false);
         SetChanged();
         BroadcastObjectChange();
-        SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+        SendUserCall(SdrUserCallType::Resize,aBoundRect0);
     }
 }
 
@@ -656,7 +654,7 @@ void SdrObjGroup::Mirror(const Point& rRef1, const Point& rRef2)
     SetGlueReallyAbsolute(false);
     SetChanged();
     BroadcastObjectChange();
-    SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+    SendUserCall(SdrUserCallType::Resize,aBoundRect0);
 }
 
 
@@ -681,7 +679,7 @@ void SdrObjGroup::Shear(const Point& rRef, long nAngle, double tn, bool bVShear)
         SetGlueReallyAbsolute(false);
         SetChanged();
         BroadcastObjectChange();
-        SendUserCall(SDRUSERCALL_RESIZE,aBoundRect0);
+        SendUserCall(SdrUserCallType::Resize,aBoundRect0);
     }
 }
 
@@ -707,7 +705,7 @@ void SdrObjGroup::SetAnchorPos(const Point& rPnt)
     if (bChg) {
         SetChanged();
         BroadcastObjectChange();
-        SendUserCall(SDRUSERCALL_MOVEONLY,aBoundRect0);
+        SendUserCall(SdrUserCallType::MoveOnly,aBoundRect0);
     }
 }
 
@@ -756,7 +754,7 @@ SdrObject* SdrObjGroup::DoConvertToPolyObj(bool bBezier, bool bAddText) const
 
 void SdrObjGroup::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("sdrObjGroup"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SdrObjGroup"));
     xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("ptr"), "%p", this);
 
     SdrObject::dumpAsXml(pWriter);

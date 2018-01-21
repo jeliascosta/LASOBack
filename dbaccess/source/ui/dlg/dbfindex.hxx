@@ -82,24 +82,23 @@ protected:
     VclPtr<PushButton>     m_pAddAll;
     VclPtr<PushButton>     m_pRemoveAll;
 
-    DECL_LINK_TYPED( TableSelectHdl, ComboBox&, void );
-    DECL_LINK_TYPED( AddClickHdl, Button*, void );
-    DECL_LINK_TYPED( RemoveClickHdl, Button*, void );
-    DECL_LINK_TYPED( AddAllClickHdl, Button*, void );
-    DECL_LINK_TYPED( RemoveAllClickHdl, Button*, void );
-    DECL_LINK_TYPED( OKClickHdl, Button*, void );
-    DECL_LINK_TYPED( OnListEntrySelected, ListBox&, void );
+    DECL_LINK( TableSelectHdl, ComboBox&, void );
+    DECL_LINK( AddClickHdl, Button*, void );
+    DECL_LINK( RemoveClickHdl, Button*, void );
+    DECL_LINK( AddAllClickHdl, Button*, void );
+    DECL_LINK( RemoveAllClickHdl, Button*, void );
+    DECL_LINK( OKClickHdl, Button*, void );
+    DECL_LINK( OnListEntrySelected, ListBox&, void );
 
     OUString            m_aDSN;
     TableInfoList       m_aTableInfoList;
     TableIndexList      m_aFreeIndexList;
-    bool                m_bCaseSensitiv;
 
     void        Init();
     void        SetCtrls();
     bool    GetTable(const OUString& rName, TableInfoList::iterator& _rPosition);
 
-    OTableIndex implRemoveIndex(const OUString& _rName, TableIndexList& _rList, ListBox& _rDisplay, bool _bMustExist);
+    static OTableIndex implRemoveIndex(const OUString& _rName, TableIndexList& _rList, ListBox& _rDisplay, bool _bMustExist);
     static void implInsertIndex(const OTableIndex& _rIndex, TableIndexList& _rList, ListBox& _rDisplay);
 
     OTableIndex RemoveFreeIndex( const OUString& _rName, bool _bMustExist ) { return implRemoveIndex(_rName, m_aFreeIndexList, *m_pLB_FreeIndexes, _bMustExist); }
@@ -111,7 +110,7 @@ protected:
 
 public:
     ODbaseIndexDialog( vcl::Window * pParent, const OUString& aDataSrcName );
-    virtual ~ODbaseIndexDialog();
+    virtual ~ODbaseIndexDialog() override;
     virtual void dispose() override;
 };
 

@@ -31,7 +31,7 @@
 
 #include <sfx2/recentdocsview.hxx>
 #include <sfx2/templatedefaultview.hxx>
-#include <sfx2/templateabstractview.hxx>
+#include <sfx2/templatelocalview.hxx>
 #include <sfx2/templateviewitem.hxx>
 
 #include <svtools/acceleratorexecute.hxx>
@@ -59,9 +59,9 @@ class BackingWindow : public vcl::Window, public VclBuilderContainer
     css::uno::Reference<css::datatransfer::dnd::XDropTargetListener> mxDropTargetListener;
 
     VclPtr<PushButton> mpOpenButton;
-    VclPtr<PushButton> mpRecentButton;
+    VclPtr<MenuToggleButton> mpRecentButton;
     VclPtr<PushButton> mpRemoteButton;
-    VclPtr<MenuButton> mpTemplateButton;
+    VclPtr<MenuToggleButton> mpTemplateButton;
 
     VclPtr<FixedText>  mpCreateLabel;
 
@@ -79,7 +79,7 @@ class BackingWindow : public vcl::Window, public VclBuilderContainer
     VclPtr<VclBox> mpButtonsBox;
     VclPtr<VclBox> mpSmallButtonsBox;
 
-    VclPtr<RecentDocsView> mpAllRecentThumbnails;
+    VclPtr<sfx2::RecentDocsView> mpAllRecentThumbnails;
     VclPtr<TemplateDefaultView> mpLocalView;
     bool mbLocalViewInitialized;
 
@@ -93,27 +93,29 @@ class BackingWindow : public vcl::Window, public VclBuilderContainer
     std::unique_ptr<svt::AcceleratorExecute> mpAccExec;
 
     void setupButton(PushButton* pButton);
-    void setupButton(MenuButton* pButton);
+    void setupButton(MenuToggleButton* pButton);
 
     void dispatchURL(const OUString& i_rURL,
                      const OUString& i_rTarget = OUString("_default"),
                      const css::uno::Reference<css::frame::XDispatchProvider >& i_xProv = css::uno::Reference<css::frame::XDispatchProvider>(),
                      const css::uno::Sequence<css::beans::PropertyValue >& = css::uno::Sequence<css::beans::PropertyValue>());
 
-    DECL_LINK_TYPED(ClickHdl, Button*, void);
-    DECL_LINK_TYPED(MenuSelectHdl, MenuButton*, void);
-    DECL_LINK_TYPED(ExtLinkClickHdl, Button*, void);
-    DECL_LINK_TYPED(CreateContextMenuHdl, ThumbnailViewItem*, void);
-    DECL_LINK_TYPED(OpenTemplateHdl, ThumbnailViewItem*, void);
-    DECL_LINK_TYPED(EditTemplateHdl, ThumbnailViewItem*, void);
+    DECL_LINK(ClickHdl, Button*, void);
+    DECL_LINK(MenuSelectHdl, MenuButton*, void);
+    DECL_LINK(ExtLinkClickHdl, Button*, void);
+    DECL_LINK(CreateContextMenuHdl, ThumbnailViewItem*, void);
+    DECL_LINK(OpenTemplateHdl, ThumbnailViewItem*, void);
+    DECL_LINK(EditTemplateHdl, ThumbnailViewItem*, void);
 
     void initControls();
 
     void initializeLocalView();
 
+    void checkInstalledModules();
+
 public:
     explicit BackingWindow(vcl::Window* pParent);
-    virtual ~BackingWindow();
+    virtual ~BackingWindow() override;
     virtual void dispose() override;
 
     virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;

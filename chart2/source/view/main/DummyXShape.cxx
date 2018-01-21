@@ -304,17 +304,12 @@ OUString SAL_CALL DummyXShape::getImplementationName()
 
 namespace {
 
-uno::Sequence< OUString > listSupportedServices()
+uno::Sequence< OUString > const & listSupportedServices()
 {
-    static uno::Sequence< OUString > aSupportedServices;
-    if(aSupportedServices.getLength() == 0)
-    {
-        aSupportedServices.realloc(3);
-        aSupportedServices[0] = "com.sun.star.drawing.Shape";
-        aSupportedServices[1] = "com.sun.star.container.Named";
-        aSupportedServices[2] = "com.sun.star.beans.PropertySet";
-    }
-
+    static const uno::Sequence< OUString > aSupportedServices{
+        "com.sun.star.drawing.Shape",
+        "com.sun.star.container.Named",
+        "com.sun.star.beans.PropertySet"};
     return aSupportedServices;
 }
 
@@ -794,7 +789,7 @@ private:
 }
 
 DummyText::DummyText(const OUString& rText, const tNameSequence& rNames,
-        const tAnySequence& rValues, const uno::Any& rTrans, uno::Reference< drawing::XShapes > xTarget, double nRotation ):
+        const tAnySequence& rValues, const uno::Any& rTrans, uno::Reference< drawing::XShapes > const & xTarget, double nRotation ):
     maText(rText),
     maTrans(rTrans),
     mnRotation(nRotation)
@@ -1012,33 +1007,23 @@ DummyChart* DummyChart::getRootShape()
     return this;
 }
 
-#define QUERYINT( xint ) \
-    if( rType == cppu::UnoType<xint>::get() ) \
-        aAny <<= uno::Reference< xint >(this)
-
-#define QUERY_INTERFACE( xint ) \
-    if( rType == cppu::UnoType<xint>::get() ) \
-        return uno::makeAny(uno::Reference<xint>(this));
-
 uno::Any SAL_CALL DummyXShapes::queryInterface( const uno::Type& rType )
     throw(uno::RuntimeException, std::exception)
 {
-    QUERY_INTERFACE( drawing::XShapes );
-    QUERY_INTERFACE( container::XIndexAccess );
+    if( rType == cppu::UnoType<drawing::XShapes>::get() )
+        return uno::makeAny(uno::Reference<drawing::XShapes>(this));
+    if( rType == cppu::UnoType<container::XIndexAccess>::get() )
+        return uno::makeAny(uno::Reference<container::XIndexAccess>(this));
     return DummyXShape::queryInterface(rType);
 }
 
 uno::Any SAL_CALL DummyXShapes::queryAggregation( const uno::Type & rType )
     throw(uno::RuntimeException, std::exception)
 {
-    uno::Any aAny;
-
-    //QUERYINT( drawing::XShapeGroup );
-    QUERYINT( drawing::XShapes );
+    if( rType == cppu::UnoType<drawing::XShapes>::get() )
+        return uno::makeAny(uno::Reference< drawing::XShapes >(this));
     else
         return DummyXShape::queryAggregation( rType );
-
-    return aAny;
 }
 
 void SAL_CALL DummyXShapes::acquire()
@@ -1083,7 +1068,7 @@ uno::Type SAL_CALL DummyXShapes::getElementType()
     return cppu::UnoType<drawing::XShape>::get();
 }
 
-sal_Bool SAL_CALL SAL_CALL DummyXShapes::hasElements()
+sal_Bool SAL_CALL DummyXShapes::hasElements()
     throw(uno::RuntimeException, std::exception)
 {
     return !maUNOShapes.empty();

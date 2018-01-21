@@ -99,7 +99,7 @@ static sal_Int32 lcl_AddSpace( const SwTextSizeInfo &rInf, const OUString* pStr,
                            pPor->IsPostItsPortion() ) )
                 pPor = pPor->GetPortion();
 
-            nCnt += nEnd - nPos;
+            nCnt += SwScriptInfo::CountCJKCharacters( *pStr, nPos, nEnd, aLang );
 
             if ( !pPor || pPor->IsHolePortion() || pPor->InFixMargGrp() ||
                   pPor->IsBreakPortion() )
@@ -649,8 +649,6 @@ void SwTextPortion::HandlePortion( SwPortionHandler& rPH ) const
 
 SwTextInputFieldPortion::SwTextInputFieldPortion()
     : SwTextPortion()
-    , mbContainsInputFieldStart( false )
-    , mbContainsInputFieldEnd( false )
 {
     SetWhichPor( POR_INPUTFLD );
 }
@@ -665,8 +663,7 @@ void SwTextInputFieldPortion::Paint( const SwTextPaintInfo &rInf ) const
     if ( Width() )
     {
         rInf.DrawViewOpt( *this, POR_INPUTFLD );
-        SwTextSlot aPaintText( &rInf, this, true, true,
-                             ContainsOnlyDummyChars() ? OUString(" ") : OUString() );
+        SwTextSlot aPaintText( &rInf, this, true, true, OUString() );
         SwTextPortion::Paint( rInf );
     }
 }
@@ -698,27 +695,6 @@ SwPosSize SwTextInputFieldPortion::GetTextSize( const SwTextSizeInfo &rInf ) con
     }
 
     return rInf.GetTextSize();
-}
-
-sal_uInt16 SwTextInputFieldPortion::GetViewWidth( const SwTextSizeInfo &rInf ) const
-{
-    if( !Width()
-        && ContainsOnlyDummyChars()
-        && !rInf.GetOpt().IsPagePreview()
-        && !rInf.GetOpt().IsReadonly()
-        && SwViewOption::IsFieldShadings() )
-    {
-        return rInf.GetTextSize( " " ).Width();
-    }
-
-    return SwTextPortion::GetViewWidth( rInf );
-}
-
-bool SwTextInputFieldPortion::ContainsOnlyDummyChars() const
-{
-    return GetLen() <= 2
-           && mbContainsInputFieldStart
-           && mbContainsInputFieldEnd;
 }
 
 SwHolePortion::SwHolePortion( const SwTextPortion &rPor )

@@ -37,10 +37,10 @@ class HeaderFooterTabPage;
 class HeaderFooterDialog : public TabDialog
 {
 private:
-    DECL_LINK_TYPED( ActivatePageHdl, TabControl*, void );
-    DECL_LINK_TYPED( ClickApplyToAllHdl, Button*, void );
-    DECL_LINK_TYPED( ClickApplyHdl, Button*, void );
-    DECL_LINK_TYPED( ClickCancelHdl, Button*, void );
+    DECL_LINK( ActivatePageHdl, TabControl*, void );
+    DECL_LINK( ClickApplyToAllHdl, Button*, void );
+    DECL_LINK( ClickApplyHdl, Button*, void );
+    DECL_LINK( ClickCancelHdl, Button*, void );
 
     VclPtr<TabControl>      mpTabCtrl;
 
@@ -66,12 +66,11 @@ private:
 
 public:
     HeaderFooterDialog( ViewShell* pViewShell, vcl::Window* pParent, SdDrawDocument* pDoc, SdPage* pCurrentPage );
-    virtual ~HeaderFooterDialog();
+    virtual ~HeaderFooterDialog() override;
     virtual void dispose() override;
 
     void ApplyToAll();
     void Apply();
-    void Cancel();
 
     virtual short Execute() override;
 };

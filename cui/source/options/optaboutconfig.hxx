@@ -59,18 +59,18 @@ private:
     static std::vector< OUString > commaStringToSequence( const OUString& rCommaSepString );
     void InsertEntry( SvTreeListEntry *pEntry);
 
-    DECL_LINK_TYPED( StandardHdl_Impl, Button*, void );
-    DECL_LINK_TYPED( DoubleClickHdl_Impl, SvTreeListBox*, bool );
-    DECL_LINK_TYPED( ResetBtnHdl_Impl, Button*, void );
-    DECL_LINK_TYPED( SearchHdl_Impl, Button*, void );
-    DECL_LINK_TYPED( ExpandingHdl_Impl, SvTreeListBox*, bool );
+    DECL_LINK( StandardHdl_Impl, Button*, void );
+    DECL_LINK( DoubleClickHdl_Impl, SvTreeListBox*, bool );
+    DECL_LINK( ResetBtnHdl_Impl, Button*, void );
+    DECL_LINK( SearchHdl_Impl, Button*, void );
+    DECL_LINK( ExpandingHdl_Impl, SvTreeListBox*, bool );
 
 public:
    explicit CuiAboutConfigTabPage(vcl::Window* pParent);
-   virtual ~CuiAboutConfigTabPage();
+   virtual ~CuiAboutConfigTabPage() override;
    virtual void dispose() override;
    void     InsertEntry(const OUString &rPropertyPath, const OUString& rProp, const OUString& rStatus, const OUString& rType, const OUString& rValue,
-                        SvTreeListEntry *pParentEntry = nullptr, bool bInsertToPrefBox = true);
+                        SvTreeListEntry *pParentEntry, bool bInsertToPrefBox);
    void     Reset();
    void     FillItems(const css::uno::Reference<css::container::XNameAccess>& xNameAccess,
                       SvTreeListEntry *pParentEntry = nullptr, int lineage = 0, bool bLoadAll = false);
@@ -85,7 +85,7 @@ private:
 
 public:
     CuiAboutConfigValueDialog( vcl::Window* pWindow, const OUString& rValue , int limit = 0);
-    virtual ~CuiAboutConfigValueDialog();
+    virtual ~CuiAboutConfigValueDialog() override;
     virtual void dispose() override;
 
     OUString getValue()

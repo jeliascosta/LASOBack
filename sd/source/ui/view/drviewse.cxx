@@ -60,6 +60,7 @@
 #include <avmedia/mediawindow.hxx>
 #include <svl/urihelper.hxx>
 #include <sfx2/docfile.hxx>
+#include <sfx2/notebookbar/SfxNotebookBar.hxx>
 
 #include "DrawViewShell.hxx"
 #include "slideshow.hxx"
@@ -722,8 +723,12 @@ void DrawViewShell::FuSupport(SfxRequest& rReq)
         case SID_PRESENTATION_CURRENT_SLIDE:
         case SID_REHEARSE_TIMINGS:
         {
-            ShowSlideShow(rReq);
+            sfx2::SfxNotebookBar::LockNotebookBar();
+
+            slideshowhelp::ShowSlideShow(rReq, *GetDoc());
             rReq.Ignore ();
+
+            sfx2::SfxNotebookBar::UnlockNotebookBar();
         }
         break;
 
@@ -933,7 +938,7 @@ void DrawViewShell::FuSupport(SfxRequest& rReq)
                         ( aDataHelper.HasFormat( SotClipboardFormatId::UNIFORMRESOURCELOCATOR ) &&
                           aDataHelper.GetINetBookmark( SotClipboardFormatId::UNIFORMRESOURCELOCATOR, aINetBookmark ) ) )
                     {
-                        InsertURLField( aINetBookmark.GetURL(), aINetBookmark.GetDescription(), "", nullptr );
+                        InsertURLField( aINetBookmark.GetURL(), aINetBookmark.GetDescription(), "" );
                     }
                 }
             }
@@ -1002,7 +1007,7 @@ void DrawViewShell::FuSupport(SfxRequest& rReq)
             // turn on default layer of MasterPage
             mpDrawView->SetActiveLayer( SD_RESSTR(STR_LAYER_BCKGRNDOBJ) );
 
-            ChangeEditMode(EM_MASTERPAGE, mbIsLayerModeActive);
+            ChangeEditMode(EditMode::MasterPage, mbIsLayerModeActive);
 
             if(HasCurrentFunction(SID_BEZIER_EDIT))
                 GetViewFrame()->GetDispatcher()->Execute(SID_OBJECT_SELECT, SfxCallMode::ASYNCHRON);
@@ -1026,7 +1031,7 @@ void DrawViewShell::FuSupport(SfxRequest& rReq)
             // crash.  This seems to be some bug in the edit mode switching
             // and page switching methods.
             SwitchPage (0);
-            ChangeEditMode(EM_PAGE, IsLayerModeActive());
+            ChangeEditMode(EditMode::Page, IsLayerModeActive());
             Broadcast (
                 ViewShellHint(ViewShellHint::HINT_CHANGE_EDIT_MODE_END));
 
@@ -1418,7 +1423,7 @@ void DrawViewShell::FuSupportRotate(SfxRequest &rReq)
 }
 
 void DrawViewShell::InsertURLField(const OUString& rURL, const OUString& rText,
-                                   const OUString& rTarget, const Point* pPos)
+                                   const OUString& rTarget)
 {
     OutlinerView* pOLV = mpDrawView->GetTextEditOutlinerView();
 
@@ -1453,19 +1458,11 @@ void DrawViewShell::InsertURLField(const OUString& rURL, const OUString& rText,
         pOutl->SetUpdateMode( false );
 
         Point aPos;
-
-        if (pPos)
-        {
-            aPos = *pPos;
-        }
-        else
-        {
-            Rectangle aRect(aPos, GetActiveWindow()->GetOutputSizePixel() );
-            aPos = aRect.Center();
-            aPos = GetActiveWindow()->PixelToLogic(aPos);
-            aPos.X() -= aSize.Width() / 2;
-            aPos.Y() -= aSize.Height() / 2;
-        }
+        Rectangle aRect(aPos, GetActiveWindow()->GetOutputSizePixel() );
+        aPos = aRect.Center();
+        aPos = GetActiveWindow()->PixelToLogic(aPos);
+        aPos.X() -= aSize.Width() / 2;
+        aPos.Y() -= aSize.Height() / 2;
 
         Rectangle aLogicRect(aPos, aSize);
         pRectObj->SetLogicRect(aLogicRect);
@@ -1489,7 +1486,7 @@ void DrawViewShell::InsertURLButton(const OUString& rURL, const OUString& rText,
         if( pMarkedObj ) try
         {
             // change first marked object
-            if( (FmFormInventor == pMarkedObj->GetObjInventor() && pMarkedObj->GetObjIdentifier() == OBJ_FM_BUTTON) )
+            if( (SdrInventor::FmForm == pMarkedObj->GetObjInventor() && pMarkedObj->GetObjIdentifier() == OBJ_FM_BUTTON) )
             {
                 bNewObj = false;
 
@@ -1527,7 +1524,7 @@ void DrawViewShell::InsertURLButton(const OUString& rURL, const OUString& rText,
 
     if (bNewObj) try
     {
-        SdrUnoObj* pUnoCtrl = static_cast< SdrUnoObj* >( SdrObjFactory::MakeNewObject(FmFormInventor, OBJ_FM_BUTTON,
+        SdrUnoObj* pUnoCtrl = static_cast< SdrUnoObj* >( SdrObjFactory::MakeNewObject(SdrInventor::FmForm, OBJ_FM_BUTTON,
                                 mpDrawView->GetSdrPageView()->GetPage(), GetDoc()) );
 
         Reference< awt::XControlModel > xControlModel( pUnoCtrl->GetUnoControlModel(), uno::UNO_QUERY_THROW );
@@ -1620,11 +1617,6 @@ namespace slideshowhelp
             }
         }
     }
-}
-
-void DrawViewShell::ShowSlideShow(SfxRequest& rReq)
-{
-    slideshowhelp::ShowSlideShow(rReq, *GetDoc());
 }
 
 void DrawViewShell::StopSlideShow (bool /*bCloseFrame*/)

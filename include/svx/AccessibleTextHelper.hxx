@@ -106,7 +106,7 @@ namespace accessibility
         @see SvxViewForwarder
         @see SvxEditViewForwarder
     */
-    class SVX_DLLPUBLIC AccessibleTextHelper
+    class SVX_DLLPUBLIC AccessibleTextHelper final
     {
 
     public:
@@ -124,16 +124,11 @@ namespace accessibility
         */
         explicit AccessibleTextHelper( ::std::unique_ptr< SvxEditSource > && pEditSource );
 
-        virtual ~AccessibleTextHelper();
+        ~AccessibleTextHelper();
 
-    protected:
+        AccessibleTextHelper( const AccessibleTextHelper& ) = delete;
+        AccessibleTextHelper& operator= ( const AccessibleTextHelper& ) = delete;
 
-        // declared, but not defined
-        AccessibleTextHelper( const AccessibleTextHelper& );
-        // declared, but not defined
-        AccessibleTextHelper& operator= ( const AccessibleTextHelper& );
-
-    public:
         /** Query the current edit source
 
             @attention This method returns by reference, so you are
@@ -166,9 +161,9 @@ namespace accessibility
             edit/non-edit mode (i.e. there are times when
             SvxEditSource::GetEditViewForwarder(sal_False) returns
             NULL), then the two additional hints are required:
-            HINT_BEGEDIT and HINT_ENDEDIT. When the
-            AccessibleTextHelper receives a HINT_BEGEDIT, it expects
-            the SvxEditSource already in edit mode. On a HINT_ENDEDIT,
+            SdrHintKind::BeginEdit and SdrHintKind::EndEdit. When the
+            AccessibleTextHelper receives a SdrHintKind::BeginEdit, it expects
+            the SvxEditSource already in edit mode. On a SdrHintKind::EndEdit,
             edit mode must already been left. The rationale for these
             events are the fact that focus and selection have to be
             updated in edit mode, and completely relinquished and

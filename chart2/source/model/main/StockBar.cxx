@@ -23,7 +23,6 @@
 #include "UserDefinedProperties.hxx"
 #include "PropertyHelper.hxx"
 #include "macros.hxx"
-#include "ContainerHelper.hxx"
 #include "ModifyListenerHelper.hxx"
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <com/sun/star/style/XStyle.hpp>
@@ -212,11 +211,6 @@ void SAL_CALL StockBar::disposing( const lang::EventObject& /* Source */ )
 
 // ____ OPropertySet ____
 void StockBar::firePropertyChangeEvent()
-{
-    fireModifyEvent();
-}
-
-void StockBar::fireModifyEvent()
 {
     m_xModifyEventForwarder->modified( lang::EventObject( static_cast< uno::XWeak* >( this )));
 }

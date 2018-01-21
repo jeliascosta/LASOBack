@@ -41,6 +41,9 @@
         <prop oor:name="Label" oor:type="xs:string">
           <value xml:lang="en-US">Clear ~Direct Formatting</value>
         </prop>
+        <prop oor:name="Properties" oor:type="xs:int">
+          <value>1</value>
+        </prop>
       </node>
       <node oor:name=".uno:ClearArrowPrecedents" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
@@ -198,11 +201,6 @@
         </prop>
         <prop oor:name="Properties" oor:type="xs:int">
           <value>9</value>
-        </prop>
-      </node>
-      <node oor:name=".uno:ObjectTitleDescription" oor:op="replace">
-        <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Description...</value>
         </prop>
       </node>
       <node oor:name=".uno:RenameObject" oor:op="replace">
@@ -383,13 +381,27 @@
       </node>
       <node oor:name=".uno:DataDataPilotRun" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Insert Pivot Table...</value>
+          <value xml:lang="en-US">Pivot Table</value>
         </prop>
         <prop oor:name="ContextLabel" oor:type="xs:string">
           <value xml:lang="en-US">Pi~vot Table...</value>
         </prop>
+        <prop oor:name="TooltipLabel" oor:type="xs:string">
+          <value xml:lang="en-US">Insert Pivot Table</value>
+        </prop>
         <prop oor:name="PopupLabel" oor:type="xs:string">
           <value xml:lang="en-US">~Edit Layout...</value>
+        </prop>
+        <prop oor:name="Properties" oor:type="xs:int">
+          <value>1</value>
+        </prop>
+      </node>
+      <node oor:name=".uno:InsertPivotTable" oor:op="replace">
+        <prop oor:name="Label" oor:type="xs:string">
+          <value xml:lang="en-US">~Create...</value>
+        </prop>
+        <prop oor:name="TargetURL" oor:type="xs:string">
+          <value>.uno:DataDataPilotRun</value>
         </prop>
         <prop oor:name="Properties" oor:type="xs:int">
           <value>1</value>
@@ -436,16 +448,6 @@
       <node oor:name=".uno:JumpToPrevTable" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
           <value xml:lang="en-US">To Previous Sheet</value>
-        </prop>
-      </node>
-      <node oor:name=".uno:InsertObjectChart" oor:op="replace">
-        <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Ch~art...</value>
-        </prop>
-      </node>
-      <node oor:name=".uno:InsertObjectChartFromFile" oor:op="replace">
-        <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Chart From File...</value>
         </prop>
       </node>
       <node oor:name=".uno:StarChartDialog" oor:op="replace">
@@ -567,7 +569,7 @@
       </node>
       <node oor:name=".uno:SetInputMode" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Toggle Edit Mode</value>
+          <value xml:lang="en-US">Cell Edit Mode</value>
         </prop>
       </node>
       <node oor:name=".uno:ClearContents" oor:op="replace">
@@ -610,10 +612,13 @@
       </node>
       <node oor:name=".uno:DefinePrintArea" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">~Define Print Area</value>
+          <value xml:lang="en-US">Print Area</value>
         </prop>
         <prop oor:name="ContextLabel" oor:type="xs:string">
           <value xml:lang="en-US">~Define</value>
+        </prop>
+        <prop oor:name="TooltipLabel" oor:type="xs:string">
+          <value xml:lang="en-US">Define Print Area</value>
         </prop>
         <prop oor:name="Properties" oor:type="xs:int">
           <value>1</value>
@@ -621,10 +626,13 @@
       </node>
       <node oor:name=".uno:DeletePrintArea" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">~Clear Print Area</value>
+          <value xml:lang="en-US">Clear</value>
         </prop>
         <prop oor:name="ContextLabel" oor:type="xs:string">
           <value xml:lang="en-US">~Clear</value>
+        </prop>
+        <prop oor:name="TooltipLabel" oor:type="xs:string">
+          <value xml:lang="en-US">Clear Print Ranges</value>
         </prop>
         <prop oor:name="Properties" oor:type="xs:int">
           <value>1</value>
@@ -632,10 +640,27 @@
       </node>
       <node oor:name=".uno:EditPrintArea" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">~Edit Print Area...</value>
+          <value xml:lang="en-US">Edit</value>
         </prop>
         <prop oor:name="ContextLabel" oor:type="xs:string">
           <value xml:lang="en-US">~Edit...</value>
+        </prop>
+        <prop oor:name="TooltipLabel" oor:type="xs:string">
+          <value xml:lang="en-US">Edit Print Ranges</value>
+        </prop>
+        <prop oor:name="Properties" oor:type="xs:int">
+          <value>1</value>
+        </prop>
+      </node>
+      <node oor:name=".uno:AddPrintArea" oor:op="replace">
+        <prop oor:name="Label" oor:type="xs:string">
+          <value xml:lang="en-US">Add</value>
+        </prop>
+        <prop oor:name="ContextLabel" oor:type="xs:string">
+          <value xml:lang="en-US">~Add</value>
+        </prop>
+        <prop oor:name="TooltipLabel" oor:type="xs:string">
+          <value xml:lang="en-US">Add Print Range</value>
         </prop>
         <prop oor:name="Properties" oor:type="xs:int">
           <value>1</value>
@@ -643,7 +668,7 @@
       </node>
       <node oor:name=".uno:ToggleRelative" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Relative/Absolute References</value>
+          <value xml:lang="en-US">Cycle Cell Reference Types</value>
         </prop>
       </node>
       <node oor:name=".uno:PasteSpecial" oor:op="replace">
@@ -1061,17 +1086,6 @@
           <value>1</value>
         </prop>
       </node>
-      <node oor:name=".uno:AddPrintArea" oor:op="replace">
-        <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">~Add Print Area</value>
-        </prop>
-        <prop oor:name="ContextLabel" oor:type="xs:string">
-          <value xml:lang="en-US">~Add</value>
-        </prop>
-        <prop oor:name="Properties" oor:type="xs:int">
-          <value>1</value>
-        </prop>
-      </node>
       <node oor:name=".uno:InsertColumnBreak" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
           <value xml:lang="en-US">Insert ~Column Break</value>
@@ -1249,10 +1263,10 @@
       </node>
       <node oor:name=".uno:InsertName" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">~Insert Name...</value>
+          <value xml:lang="en-US">~Insert Named Range or Expression...</value>
         </prop>
         <prop oor:name="ContextLabel" oor:type="xs:string">
-          <value xml:lang="en-US">~Insert...</value>
+          <value xml:lang="en-US">~Named Range or Expression...</value>
         </prop>
       </node>
       <node oor:name=".uno:CreateNames" oor:op="replace">
@@ -1685,7 +1699,7 @@
       </node>
       <node oor:name=".uno:Add" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Append Sheet</value>
+          <value xml:lang="en-US">Insert Sheet At End...</value>
         </prop>
       </node>
       <node oor:name=".uno:AlignLeft" oor:op="replace">
@@ -1772,10 +1786,24 @@
       </node>
       <node oor:name=".uno:NumberFormatCurrency" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
+          <value xml:lang="en-US">Currency</value>
+        </prop>
+        <prop oor:name="TooltipLabel" oor:type="xs:string">
           <value xml:lang="en-US">Format as Currency</value>
         </prop>
-        <prop oor:name="ContextLabel" oor:type="xs:string">
+        <prop oor:name="Properties" oor:type="xs:int">
+          <value>1</value>
+        </prop>
+      </node>
+      <node oor:name=".uno:NumberFormatCurrencySimple" oor:op="replace">
+        <prop oor:name="Label" oor:type="xs:string">
           <value xml:lang="en-US">Currency</value>
+        </prop>
+        <prop oor:name="TooltipLabel" oor:type="xs:string">
+          <value xml:lang="en-US">Format as Currency</value>
+        </prop>
+        <prop oor:name="TargetURL" oor:type="xs:string">
+          <value>.uno:NumberFormatCurrency</value>
         </prop>
         <prop oor:name="Properties" oor:type="xs:int">
           <value>1</value>
@@ -1783,10 +1811,10 @@
       </node>
       <node oor:name=".uno:NumberFormatPercent" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Format as Percent</value>
-        </prop>
-        <prop oor:name="ContextLabel" oor:type="xs:string">
           <value xml:lang="en-US">Percent</value>
+        </prop>
+        <prop oor:name="TooltipLabel" oor:type="xs:string">
+          <value xml:lang="en-US">Format as Percent</value>
         </prop>
         <prop oor:name="Properties" oor:type="xs:int">
           <value>1</value>
@@ -1794,10 +1822,10 @@
       </node>
       <node oor:name=".uno:NumberFormatStandard" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Format as General</value>
-        </prop>
-        <prop oor:name="ContextLabel" oor:type="xs:string">
           <value xml:lang="en-US">General</value>
+        </prop>
+        <prop oor:name="TooltipLabel" oor:type="xs:string">
+          <value xml:lang="en-US">Format as General</value>
         </prop>
         <prop oor:name="Properties" oor:type="xs:int">
           <value>1</value>
@@ -1805,10 +1833,10 @@
       </node>
       <node oor:name=".uno:NumberFormatDate" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Format as Date</value>
-        </prop>
-        <prop oor:name="ContextLabel" oor:type="xs:string">
           <value xml:lang="en-US">Date</value>
+        </prop>
+        <prop oor:name="TooltipLabel" oor:type="xs:string">
+          <value xml:lang="en-US">Format as Date</value>
         </prop>
         <prop oor:name="Properties" oor:type="xs:int">
           <value>1</value>
@@ -1816,10 +1844,10 @@
       </node>
       <node oor:name=".uno:NumberFormatDecimal" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Format as Number</value>
-        </prop>
-        <prop oor:name="ContextLabel" oor:type="xs:string">
           <value xml:lang="en-US">Number</value>
+        </prop>
+        <prop oor:name="TooltipLabel" oor:type="xs:string">
+          <value xml:lang="en-US">Format as Number</value>
         </prop>
         <prop oor:name="Properties" oor:type="xs:int">
           <value>1</value>
@@ -1827,10 +1855,10 @@
       </node>
       <node oor:name=".uno:NumberFormatScientific" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Format as Scientific</value>
-        </prop>
-        <prop oor:name="ContextLabel" oor:type="xs:string">
           <value xml:lang="en-US">Scientific</value>
+        </prop>
+        <prop oor:name="TooltipLabel" oor:type="xs:string">
+          <value xml:lang="en-US">Format as Scientific</value>
         </prop>
         <prop oor:name="Properties" oor:type="xs:int">
           <value>1</value>
@@ -1838,10 +1866,10 @@
       </node>
       <node oor:name=".uno:NumberFormatTime" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Format as Time</value>
-        </prop>
-        <prop oor:name="ContextLabel" oor:type="xs:string">
           <value xml:lang="en-US">Time</value>
+        </prop>
+        <prop oor:name="TooltipLabel" oor:type="xs:string">
+          <value xml:lang="en-US">Format as Time</value>
         </prop>
         <prop oor:name="Properties" oor:type="xs:int">
           <value>1</value>
@@ -1999,7 +2027,7 @@
       </node>
       <node oor:name=".uno:NamesMenu" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">~Named Expressions</value>
+          <value xml:lang="en-US">~Named Ranges and Expressions</value>
         </prop>
       </node>
       <node oor:name=".uno:EditAnnotation" oor:op="replace">
@@ -2044,12 +2072,12 @@
       </node>
       <node oor:name=".uno:RowMenu" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Ro~w</value>
+          <value xml:lang="en-US">Ro~ws</value>
         </prop>
       </node>
       <node oor:name=".uno:ColumnMenu" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Colu~mn</value>
+          <value xml:lang="en-US">Colu~mns</value>
         </prop>
       </node>
       <node oor:name=".uno:SheetMenu" oor:op="replace">
@@ -2096,10 +2124,16 @@
         <prop oor:name="Label" oor:type="xs:string">
           <value xml:lang="en-US">Insert Current Date</value>
         </prop>
+        <prop oor:name="ContextLabel" oor:type="xs:string">
+          <value xml:lang="en-US">~Date</value>
+        </prop>
       </node>
       <node oor:name=".uno:InsertCurrentTime" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
           <value xml:lang="en-US">Insert Current Time</value>
+        </prop>
+        <prop oor:name="ContextLabel" oor:type="xs:string">
+          <value xml:lang="en-US">~Time</value>
         </prop>
       </node>
       <node oor:name=".uno:ExportAsGraphic" oor:op="replace">
@@ -2109,12 +2143,12 @@
       </node>
       <node oor:name=".uno:EditShapeHyperlink" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Edit Hyperlink</value>
+          <value xml:lang="en-US">Edit Link</value>
         </prop>
       </node>
       <node oor:name=".uno:DeleteShapeHyperlink" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Remove Hyperlink</value>
+          <value xml:lang="en-US">Remove Link</value>
         </prop>
       </node>
       <node oor:name=".uno:ColorScaleDialog" oor:op="replace">
@@ -2150,10 +2184,37 @@
       </node>
       <node oor:name=".uno:PasteOnlyValue" oor:op="replace">
         <prop oor:name="Label" oor:type="xs:string">
-          <value xml:lang="en-US">Paste Only Value</value>
+          <value xml:lang="en-US">Paste Only Numbers</value>
         </prop>
         <prop oor:name="PopupLabel" oor:type="xs:string">
           <value xml:lang="en-US">~Number</value>
+        </prop>
+      </node>
+      <node oor:name=".uno:ColumnOperations" oor:op="replace">
+        <prop oor:name="Label" oor:type="xs:string">
+          <value xml:lang="en-US">Column Operations</value>
+        </prop>
+        <prop oor:name="Properties" oor:type="xs:int">
+          <value>1</value>
+        </prop>
+      </node>
+      <node oor:name=".uno:RowOperations" oor:op="replace">
+        <prop oor:name="Label" oor:type="xs:string">
+          <value xml:lang="en-US">Row Operations</value>
+        </prop>
+        <prop oor:name="Properties" oor:type="xs:int">
+          <value>1</value>
+        </prop>
+      </node>
+      <node oor:name=".uno:SheetInsertName" oor:op="replace">
+        <prop oor:name="Label" oor:type="xs:string">
+          <value xml:lang="en-US">~Insert...</value>
+        </prop>
+        <prop oor:name="TargetURL" oor:type="xs:string">
+          <value>.uno:InsertName</value>
+        </prop>
+        <prop oor:name="Properties" oor:type="xs:int">
+          <value>1</value>
         </prop>
       </node>
     </node>

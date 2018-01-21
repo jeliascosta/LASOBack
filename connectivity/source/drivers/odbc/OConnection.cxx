@@ -50,7 +50,7 @@ OConnection::OConnection(const SQLHANDLE _pDriverHandle,ODBCDriver* _pDriver)
                          ,m_aConnectionHandle(nullptr)
                          ,m_pDriverHandleCopy(_pDriverHandle)
                          ,m_nStatementCount(0)
-                         ,m_bClosed(true)
+                         ,m_bClosed(false)
                          ,m_bUseCatalog(false)
                          ,m_bUseOldDateFormat(false)
                          ,m_bParameterSubstitution(false)
@@ -86,7 +86,7 @@ OConnection::~OConnection()
 
 void SAL_CALL OConnection::release() throw()
 {
-    relase_ChildImpl();
+    release_ChildImpl();
 }
 
 oslGenericFunction OConnection::getOdbcFunction(ODBC3SQLFunctionId _nIndex)  const
@@ -452,7 +452,7 @@ sal_Int32 SAL_CALL OConnection::getTransactionIsolation(  ) throw(SQLException, 
     return nTxn;
 }
 
-Reference< ::com::sun::star::container::XNameAccess > SAL_CALL OConnection::getTypeMap(  ) throw(SQLException, RuntimeException, std::exception)
+Reference< css::container::XNameAccess > SAL_CALL OConnection::getTypeMap(  ) throw(SQLException, RuntimeException, std::exception)
 {
     ::osl::MutexGuard aGuard( m_aMutex );
     checkDisposed(OConnection_BASE::rBHelper.bDisposed);
@@ -461,7 +461,7 @@ Reference< ::com::sun::star::container::XNameAccess > SAL_CALL OConnection::getT
     return nullptr;
 }
 
-void SAL_CALL OConnection::setTypeMap( const Reference< ::com::sun::star::container::XNameAccess >& /*typeMap*/ ) throw(SQLException, RuntimeException, std::exception)
+void SAL_CALL OConnection::setTypeMap( const Reference< css::container::XNameAccess >& /*typeMap*/ ) throw(SQLException, RuntimeException, std::exception)
 {
     ::dbtools::throwFeatureNotImplementedSQLException( "XConnection::setTypeMap", *this );
 }
@@ -505,11 +505,6 @@ void OConnection::disposing()
     dispose_ChildImpl();
 }
 
-OConnection* OConnection::cloneConnection()
-{
-    return new OConnection(m_pDriverHandleCopy,m_pDriver);
-}
-
 SQLHANDLE OConnection::createStatementHandle()
 {
     OConnection* pConnectionTemp = this;
@@ -519,7 +514,7 @@ SQLHANDLE OConnection::createStatementHandle()
         sal_Int32 nMaxStatements = getMetaData()->getMaxStatements();
         if(nMaxStatements && nMaxStatements <= m_nStatementCount)
         {
-            OConnection* pConnection = cloneConnection();
+            OConnection* pConnection = new OConnection(m_pDriverHandleCopy,m_pDriver);
             pConnection->acquire();
             pConnection->Construct(m_sURL,getConnectionInfo());
             pConnectionTemp = pConnection;

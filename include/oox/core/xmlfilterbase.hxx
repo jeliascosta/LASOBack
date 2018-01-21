@@ -87,7 +87,7 @@ public:
                             const css::uno::Reference< css::uno::XComponentContext >& rxContext )
                             throw( css::uno::RuntimeException );
 
-    virtual             ~XmlFilterBase();
+    virtual             ~XmlFilterBase() override;
 
     /** Has to be implemented by each filter, returns the current theme. */
     virtual const ::oox::drawingml::Theme*
@@ -224,10 +224,8 @@ public:
     /** Write the document properties into into the current OPC package.
 
         @param xProperties  The document properties to export.
-
-        @return *this
      */
-    XmlFilterBase& exportDocumentProperties( const css::uno::Reference< css::document::XDocumentProperties >& xProperties );
+    void exportDocumentProperties( const css::uno::Reference< css::document::XDocumentProperties >& xProperties );
 
     void importDocumentProperties();
 

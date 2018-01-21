@@ -72,7 +72,7 @@ namespace connectivity
     };
     typedef connectivity::sdbcx::OTable OTable_TYPEDEF;
 
-    typedef std::map<OUString, sdbcx::TKeyProperties> TKeyMap;
+    typedef std::map<OUString, std::shared_ptr<sdbcx::KeyProperties>> TKeyMap;
 
     struct OTableHelperImpl;
 
@@ -112,7 +112,7 @@ namespace connectivity
         */
         virtual OUString getRenameStart() const;
 
-        virtual ~OTableHelper();
+        virtual ~OTableHelper() override;
 
     public:
         virtual void refreshColumns() override;
@@ -138,9 +138,6 @@ namespace connectivity
         virtual css::uno::Reference< css::sdbc::XDatabaseMetaData> getMetaData() const override;
         css::uno::Reference< css::sdbc::XConnection> getConnection() const;
 
-        virtual void SAL_CALL acquire() throw() override;
-        virtual void SAL_CALL release() throw() override;
-
         // XRename
         virtual void SAL_CALL rename( const OUString& newName ) throw(css::sdbc::SQLException, css::container::ElementExistException, css::uno::RuntimeException, std::exception) override;
 
@@ -150,8 +147,8 @@ namespace connectivity
         virtual OUString SAL_CALL getName() throw(css::uno::RuntimeException, std::exception) override;
 
         // helper method to get key properties
-        sdbcx::TKeyProperties getKeyProperties(const OUString& _sName) const;
-        void addKey(const OUString& _sName,const sdbcx::TKeyProperties& _aKeyProperties);
+        std::shared_ptr<sdbcx::KeyProperties> getKeyProperties(const OUString& _sName) const;
+        void addKey(const OUString& _sName,const std::shared_ptr<sdbcx::KeyProperties>& _aKeyProperties);
 
         virtual OUString getTypeCreatePattern() const;
 

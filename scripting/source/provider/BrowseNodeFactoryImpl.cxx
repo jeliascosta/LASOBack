@@ -66,7 +66,7 @@ public:
         m_Nodes[ 0 ] = node;
     }
 
-    virtual ~BrowseNodeAggregator()
+    virtual ~BrowseNodeAggregator() override
     {
     }
 
@@ -186,7 +186,7 @@ public:
         m_origNode.set( node );
     }
 
-    virtual ~LocationBrowseNode()
+    virtual ~LocationBrowseNode() override
     {
         if (m_hBNA)
         {
@@ -414,7 +414,7 @@ public:
         }
     }
 
-    virtual ~DefaultBrowseNode()
+    virtual ~DefaultBrowseNode() override
     {
         if ( m_xAggProxy.is() )
         {
@@ -496,20 +496,6 @@ public:
         }
     }
 
-    virtual void SAL_CALL acquire()
-        throw () override
-
-    {
-        osl_atomic_increment( &m_refCount );
-    }
-    virtual void SAL_CALL release()
-        throw () override
-    {
-        if ( osl_atomic_decrement( &m_refCount ) == 0 )
-        {
-            delete this;
-        }
-    }
     // XTypeProvider (implemnented by base, but needs to be overridden for
     //                delegating to aggregate)
     virtual Sequence< Type > SAL_CALL getTypes()
@@ -545,7 +531,7 @@ public:
         m_Name = "Root";
     }
 
-    virtual ~DefaultRootBrowseNode()
+    virtual ~DefaultRootBrowseNode() override
     {
     }
 
@@ -603,7 +589,7 @@ public:
     {
     }
 
-    virtual ~SelectorBrowseNode()
+    virtual ~SelectorBrowseNode() override
     {
     }
 
@@ -669,23 +655,12 @@ BrowseNodeFactoryImpl::createView( sal_Int16 viewType )
     switch( viewType )
     {
         case browse::BrowseNodeFactoryViewTypes::MACROSELECTOR:
-            return getSelectorHierarchy();
+            return new SelectorBrowseNode( m_xComponentContext );
         case browse::BrowseNodeFactoryViewTypes::MACROORGANIZER:
             return getOrganizerHierarchy();
         default:
             throw RuntimeException( "Unknown view type" );
     }
-}
-
-Reference< browse::XBrowseNode >
-BrowseNodeFactoryImpl::getSelectorHierarchy()
-    throw (RuntimeException)
-{
-    /*if ( !m_xSelectorBrowseNode.is() )
-    {
-        m_xSelectorBrowseNode = new SelectorBrowseNode( m_xComponentContext );
-    }*/
-    return new SelectorBrowseNode( m_xComponentContext );
 }
 
 Reference< browse::XBrowseNode >

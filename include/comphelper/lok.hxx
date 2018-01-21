@@ -36,10 +36,22 @@ COMPHELPER_DLLPUBLIC void setStatusIndicatorCallback(void (*callback)(void *data
 // Check whether the code is running as invoked through LibreOfficeKit.
 COMPHELPER_DLLPUBLIC bool isActive();
 
-/// Check whether clients register a callback for each view.
-COMPHELPER_DLLPUBLIC bool isViewCallback();
-/// Set whether clients register a callback for each view.
-COMPHELPER_DLLPUBLIC void setViewCallback(bool bViewCallback);
+/// Shift the coordinates before rendering each bitmap.
+/// Used by Calc to render each tile separately.
+/// This should be unnecessary (and removed) once Calc
+/// moves to using 100MM Unit.
+COMPHELPER_DLLPUBLIC void setLocalRendering(bool bLocalRendering = true);
+COMPHELPER_DLLPUBLIC bool isLocalRendering();
+
+/// Check whether clients want a part number in an invalidation payload.
+COMPHELPER_DLLPUBLIC bool isPartInInvalidation();
+/// Set whether clients want a part number in an invalidation payload.
+COMPHELPER_DLLPUBLIC void setPartInInvalidation(bool bPartInInvalidation);
+
+/// Check if we are doing tiled painting.
+COMPHELPER_DLLPUBLIC bool isTiledPainting();
+/// Set if we are doing tiled painting.
+COMPHELPER_DLLPUBLIC void setTiledPainting(bool bTiledPainting);
 
 // Status indicator handling. Even if in theory there could be several status indicators active at
 // the same time, in practice there is only one at a time, so we don't handle any identification of

@@ -70,7 +70,7 @@ protected:
 
     void registerInMark( SwXBookmark& rXMark, ::sw::mark::IMark* const pMarkBase );
 
-    virtual ~SwXBookmark();
+    virtual ~SwXBookmark() override;
 
     /// @param pDoc and pMark != 0, but not & because of ImplInheritanceHelper
     SwXBookmark(::sw::mark::IMark *const pMark, SwDoc *const pDoc);
@@ -220,7 +220,7 @@ private:
 protected:
 
     SwXFieldmark(bool isReplacementObject,
-            ::sw::mark::IMark* pBkm = nullptr, SwDoc* pDoc = nullptr);
+            ::sw::mark::IMark* pBkm, SwDoc* pDoc = nullptr);
 
 public:
 

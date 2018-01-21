@@ -48,7 +48,7 @@ $(eval $(call gb_Module_add_l10n_targets,filter,\
 	AllLangResTarget_pdffilter \
 	AllLangResTarget_t602filter \
 	AllLangResTarget_xsltdlg \
-	UIConfig_xsltdlg \
+	UIConfig_filter \
 ))
 
 ifneq (,$(filter DESKTOP,$(BUILD_TYPE)))
@@ -82,6 +82,11 @@ endif
 # TODO
 #$(eval $(call gb_Module_add_subsequentcheck_targets,filter,\
 	JunitTest_filter_complex \
+))
+
+# screenshots
+$(eval $(call gb_Module_add_screenshot_targets,filter,\
+    CppunitTest_filter_dialogs_test \
 ))
 
 # vim: set noet sw=4 ts=4:

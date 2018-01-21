@@ -52,39 +52,27 @@ class SvStringHashEntry : public SvRefBase
 {
 friend class SvStringHashTable;
     OString     aName;
-    sal_uInt32  nHashId;
     sal_uLong   nValue;
     bool        bHasId;
 public:
     SvStringHashEntry()
-        : nHashId(0)
-        , nValue(0)
+        : nValue(0)
         , bHasId(false)
     {
     }
-    SvStringHashEntry( const OString& rName, sal_uInt32 nIdx )
+
+    SvStringHashEntry( const OString& rName )
         : aName(rName)
-        , nHashId(nIdx)
         , nValue(0)
         , bHasId(true)
     {
     }
-    virtual ~SvStringHashEntry();
 
     const OString&  GetName() const { return aName; }
     bool            HasId() const { return bHasId; }
 
     void            SetValue( sal_uLong n ) { nValue = n; }
     sal_uLong       GetValue() const { return nValue; }
-
-    SvStringHashEntry & operator = ( const SvStringHashEntry & rRef )
-        { SvRefBase::operator=( rRef );
-          aName   = rRef.aName;
-          nHashId = rRef.nHashId;
-          nValue  = rRef.nValue;
-          bHasId  = rRef.bHasId;
-          return *this;
-        }
 };
 
 class SvStringHashTable : public SvHashTable
@@ -95,7 +83,7 @@ protected:
     virtual bool equals( const OString &rElement, sal_uInt32 nIndex ) const override;
 public:
             SvStringHashTable( sal_uInt32 nMaxEntries );   // max size of hash-tabel
-            virtual ~SvStringHashTable();
+            virtual ~SvStringHashTable() override;
 
     OString GetNearString( const OString& rName ) const;
     virtual bool    IsEntry( sal_uInt32 nIndex ) const override;

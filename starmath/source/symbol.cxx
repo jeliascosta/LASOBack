@@ -17,14 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <osl/mutex.hxx>
-#include <ucbhelper/content.hxx>
-#include <vcl/msgbox.hxx>
-
-#include <sfx2/dispatch.hxx>
-#include <sfx2/docfile.hxx>
-
-#include <map>
 #include <vector>
 #include <iterator>
 
@@ -36,12 +28,6 @@
 #include "smmod.hxx"
 #include "starmath.hrc"
 
-
-using namespace ::com::sun::star::ucb;
-using namespace ::com::sun::star::uno;
-
-
-/**************************************************************************/
 
 SmSym::SmSym() :
     m_aName(OUString("unknown")),
@@ -105,10 +91,6 @@ bool SmSym::IsEqualInUI( const SmSym& rSymbol ) const
 
 /**************************************************************************/
 
-void SmSymbolManager::Notify(SfxBroadcaster& /*rBC*/, const SfxHint& /*rHint*/)
-{
-}
-
 
 SmSymbolManager::SmSymbolManager()
 {
@@ -116,8 +98,7 @@ SmSymbolManager::SmSymbolManager()
 }
 
 
-SmSymbolManager::SmSymbolManager(const SmSymbolManager& rSymbolSetManager) :
-    SfxListener()
+SmSymbolManager::SmSymbolManager(const SmSymbolManager& rSymbolSetManager)
 {
     m_aSymbols      = rSymbolSetManager.m_aSymbols;
     m_bModified     = true;

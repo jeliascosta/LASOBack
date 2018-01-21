@@ -40,7 +40,7 @@
 
 const char* StringContainer::putString( const char* pString )
 {
-    OString aString( static_cast<const sal_Char*>(pString) );
+    OString aString( pString );
     std::pair<
         std::unordered_set< OString, OStringHash >::iterator,
         bool > aInsert =
@@ -386,13 +386,13 @@ void IncludeParser( RscFileInst * pFileInst )
                 {
                     lKey = pTypCon->aFileTab.NewIncFile( aYYSType.string,
                                                          aYYSType.string );
-                    pFName->InsertDependFile( lKey, ULONG_MAX );
+                    pFName->InsertDependFile( lKey );
                 }
                 else if( INCLUDE_STRING == nToken )
                 {
                     lKey = pTypCon->aFileTab.NewIncFile( aYYSType.string,
                                                          OString() );
-                    pFName->InsertDependFile( lKey, ULONG_MAX );
+                    pFName->InsertDependFile( lKey );
                 }
             }
         }
@@ -413,7 +413,7 @@ ERRTYPE parser( RscFileInst * pFileInst )
     EndParser();
 
     // yyparser returns 0 on success
-    if( 0 == aError )
+    if( 0 == aError.GetError() )
         aError.Clear();
     if( pFileInst->pTypCont->pEH->nErrors )
         aError = ERR_ERROR;

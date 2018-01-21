@@ -26,7 +26,7 @@
 #include "dbustrings.hrc"
 #include "dsitems.hxx"
 #include "dsselect.hxx"
-#include "localresaccess.hxx"
+#include "moduledbu.hxx"
 #include "odbcconfig.hxx"
 #include "optionalboolitem.hxx"
 #include "sqlmessage.hxx"
@@ -66,16 +66,16 @@ namespace dbaui
         SetExchangeSupport();
     }
 
-    SfxTabPage::sfxpg OGenericAdministrationPage::DeactivatePage(SfxItemSet* _pSet)
+    DeactivateRC OGenericAdministrationPage::DeactivatePage(SfxItemSet* _pSet)
     {
         if (_pSet)
         {
             if (!prepareLeave())
-                return KEEP_PAGE;
+                return DeactivateRC::KeepPage;
             FillItemSet(_pSet);
         }
 
-        return LEAVE_PAGE;
+        return DeactivateRC::LeavePage;
     }
 
     void OGenericAdministrationPage::Reset(const SfxItemSet* _rCoreAttrs)
@@ -102,19 +102,19 @@ namespace dbaui
         _rReadonly = !_rValid || (pReadonly && pReadonly->GetValue());
     }
 
-    IMPL_LINK_TYPED(OGenericAdministrationPage, OnControlModified, void*, pCtrl, void)
+    IMPL_LINK(OGenericAdministrationPage, OnControlModified, void*, pCtrl, void)
     {
         callModifiedHdl(pCtrl);
     }
-    IMPL_LINK_TYPED(OGenericAdministrationPage, OnControlModifiedClick, Button*, pCtrl, void)
+    IMPL_LINK(OGenericAdministrationPage, OnControlModifiedClick, Button*, pCtrl, void)
     {
         callModifiedHdl(pCtrl);
     }
-    IMPL_LINK_TYPED(OGenericAdministrationPage, ControlModifiedCheckBoxHdl, CheckBox&, rCtrl, void)
+    IMPL_LINK(OGenericAdministrationPage, ControlModifiedCheckBoxHdl, CheckBox&, rCtrl, void)
     {
         callModifiedHdl(&rCtrl);
     }
-    IMPL_LINK_TYPED(OGenericAdministrationPage, OnControlEditModifyHdl, Edit&, rCtrl, void)
+    IMPL_LINK(OGenericAdministrationPage, OnControlEditModifyHdl, Edit&, rCtrl, void)
     {
         callModifiedHdl(&rCtrl);
     }
@@ -229,7 +229,7 @@ namespace dbaui
         }
     }
 
-    IMPL_LINK_NOARG_TYPED(OGenericAdministrationPage, OnTestConnectionClickHdl, Button*, void)
+    IMPL_LINK_NOARG(OGenericAdministrationPage, OnTestConnectionClickHdl, Button*, void)
     {
         OSL_ENSURE(m_pAdminDialog,"No Admin dialog set! ->GPF");
         bool bSuccess = false;
@@ -278,7 +278,7 @@ namespace dbaui
         aReference.Y() += _rReference.GetSizePixel().Height();
 
         const vcl::Window* pConverter = _rControl.GetParent();
-        Size aOffset = pConverter->LogicToPixel( Size( _nIndentAppFont, ( _eRelation == RelatedControls ? 3 : 6 ) ), MAP_APPFONT );
+        Size aOffset = pConverter->LogicToPixel( Size( _nIndentAppFont, ( _eRelation == RelatedControls ? 3 : 6 ) ), MapUnit::MapAppFont );
 
         Point aControlPos( aReference.X() + aOffset.Width(), aReference.Y() + aOffset.Height() );
         _rControl.SetPosPixel( aControlPos );

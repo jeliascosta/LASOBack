@@ -73,7 +73,6 @@ void FmFormPage::lateInit(const FmFormPage& rPage, FmFormModel* const pNewModel)
 
 FmFormPage::~FmFormPage()
 {
-    delete m_pImpl;
 }
 
 
@@ -134,7 +133,7 @@ void FmFormPage::InsertObject(SdrObject* pObj, size_t nPos,
                               const SdrInsertReason* pReason)
 {
     SdrPage::InsertObject( pObj, nPos, pReason );
-    if (GetModel() && (!pReason || pReason->GetReason() != SDRREASON_STREAMING))
+    if (GetModel() && (!pReason || pReason->GetReason() != SdrInsertReasonKind::Streaming))
         static_cast<FmFormModel*>(GetModel())->GetUndoEnv().Inserted(pObj);
 }
 
@@ -161,9 +160,9 @@ bool FmFormPage::RequestHelp( vcl::Window* pWindow, SdrView* pView,
     aPos = pWindow->ScreenToOutputPixel( aPos );
     aPos = pWindow->PixelToLogic( aPos );
 
-    SdrObject* pObj = nullptr;
     SdrPageView* pPV = nullptr;
-    if ( !pView->PickObj( aPos, 0, pObj, pPV, SdrSearchOptions::DEEP ) )
+    SdrObject* pObj = pView->PickObj(aPos, 0, pPV, SdrSearchOptions::DEEP);
+    if (!pObj)
         return false;
 
     FmFormObj* pFormObject = FmFormObj::GetFormObject( pObj );

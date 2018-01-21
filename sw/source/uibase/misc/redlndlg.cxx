@@ -159,7 +159,6 @@ SwRedlineAcceptDlg::SwRedlineAcceptDlg(vcl::Window *pParent, VclBuilderContainer
     m_sFormatCollSet     (SW_RES(STR_REDLINE_FMTCOLLSET)),
     m_sAutoFormat     (SW_RES(STR_REDLINE_AUTOFMT)),
     m_bOnlyFormatedRedlines( false ),
-    m_bHasReadonlySel ( false ),
     m_bRedlnAutoFormat   (bAutoFormat),
     m_bInhibitActivate( false ),
     m_aInserted       (SW_RES(IMG_REDLINE_INSERTED)),
@@ -206,7 +205,7 @@ SwRedlineAcceptDlg::SwRedlineAcceptDlg(vcl::Window *pParent, VclBuilderContainer
 
     m_pTable->SetStyle(m_pTable->GetStyle()|WB_HASLINES|WB_CLIPCHILDREN|WB_HASBUTTONS|WB_HASBUTTONSATROOT|WB_HSCROLL);
     m_pTable->SetNodeDefaultImages();
-    m_pTable->SetSelectionMode(MULTIPLE_SELECTION);
+    m_pTable->SetSelectionMode(SelectionMode::Multiple);
     m_pTable->SetHighlightRange(1);
 
     m_pTable->SortByCol(nSortMode, bSortDir);
@@ -273,7 +272,6 @@ void SwRedlineAcceptDlg::InitAuthors()
     sal_uInt16 nCount = pSh->GetRedlineCount();
 
     m_bOnlyFormatedRedlines = true;
-    m_bHasReadonlySel = false;
     bool bIsNotFormated = false;
     sal_uInt16 i;
 
@@ -322,8 +320,8 @@ void SwRedlineAcceptDlg::InitAuthors()
 
     m_pTPView->EnableAccept( bEnable && bSel );
     m_pTPView->EnableReject( bEnable && bIsNotFormated && bSel );
-    m_pTPView->EnableAcceptAll( bEnable && !m_bHasReadonlySel );
-    m_pTPView->EnableRejectAll( bEnable && !m_bHasReadonlySel &&
+    m_pTPView->EnableAcceptAll( bEnable );
+    m_pTPView->EnableRejectAll( bEnable &&
                                 !m_bOnlyFormatedRedlines );
 }
 
@@ -878,34 +876,34 @@ void SwRedlineAcceptDlg::CallAcceptReject( bool bSelect, bool bAccept )
     m_pTPView->EnableUndo();
 }
 
-sal_uInt16 SwRedlineAcceptDlg::GetRedlinePos( const SvTreeListEntry& rEntry ) const
+sal_uInt16 SwRedlineAcceptDlg::GetRedlinePos( const SvTreeListEntry& rEntry )
 {
     SwWrtShell* pSh = ::GetActiveView()->GetWrtShellPtr();
     return pSh->FindRedlineOfData( *static_cast<SwRedlineDataParent*>(static_cast<RedlinData *>(
                                     rEntry.GetUserData())->pData)->pData );
 }
 
-IMPL_LINK_NOARG_TYPED(SwRedlineAcceptDlg, AcceptHdl, SvxTPView*, void)
+IMPL_LINK_NOARG(SwRedlineAcceptDlg, AcceptHdl, SvxTPView*, void)
 {
     CallAcceptReject( true, true );
 }
 
-IMPL_LINK_NOARG_TYPED(SwRedlineAcceptDlg, AcceptAllHdl, SvxTPView*, void)
+IMPL_LINK_NOARG(SwRedlineAcceptDlg, AcceptAllHdl, SvxTPView*, void)
 {
     CallAcceptReject( false, true );
 }
 
-IMPL_LINK_NOARG_TYPED(SwRedlineAcceptDlg, RejectHdl, SvxTPView*, void)
+IMPL_LINK_NOARG(SwRedlineAcceptDlg, RejectHdl, SvxTPView*, void)
 {
     CallAcceptReject( true, false );
 }
 
-IMPL_LINK_NOARG_TYPED(SwRedlineAcceptDlg, RejectAllHdl, SvxTPView*, void)
+IMPL_LINK_NOARG(SwRedlineAcceptDlg, RejectAllHdl, SvxTPView*, void)
 {
     CallAcceptReject( false, false );
 }
 
-IMPL_LINK_NOARG_TYPED(SwRedlineAcceptDlg, UndoHdl, SvxTPView*, void)
+IMPL_LINK_NOARG(SwRedlineAcceptDlg, UndoHdl, SvxTPView*, void)
 {
     SwView * pView = ::GetActiveView();
     pView->GetViewFrame()->GetDispatcher()->
@@ -915,7 +913,7 @@ IMPL_LINK_NOARG_TYPED(SwRedlineAcceptDlg, UndoHdl, SvxTPView*, void)
     Activate();
 }
 
-IMPL_LINK_NOARG_TYPED(SwRedlineAcceptDlg, FilterChangedHdl, SvxTPFilter*, void)
+IMPL_LINK_NOARG(SwRedlineAcceptDlg, FilterChangedHdl, SvxTPFilter*, void)
 {
     SvxTPFilter *pFilterTP = m_aTabPagesCTRL->GetFilterPage();
 
@@ -927,24 +925,24 @@ IMPL_LINK_NOARG_TYPED(SwRedlineAcceptDlg, FilterChangedHdl, SvxTPFilter*, void)
     Init();
 }
 
-IMPL_LINK_NOARG_TYPED(SwRedlineAcceptDlg, DeselectHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(SwRedlineAcceptDlg, DeselectHdl, SvTreeListBox*, void)
 {
     // avoid flickering of buttons:
     m_aDeselectTimer.Start();
 }
 
-IMPL_LINK_NOARG_TYPED(SwRedlineAcceptDlg, SelectHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(SwRedlineAcceptDlg, SelectHdl, SvTreeListBox*, void)
 {
     SelectTimerHdl(nullptr);
 }
 
-IMPL_LINK_NOARG_TYPED(SwRedlineAcceptDlg, SelectTimerHdl, Timer *, void)
+IMPL_LINK_NOARG(SwRedlineAcceptDlg, SelectTimerHdl, Timer *, void)
 {
     m_aDeselectTimer.Stop();
     m_aSelectTimer.Start();
 }
 
-IMPL_LINK_NOARG_TYPED(SwRedlineAcceptDlg, GotoHdl, Timer *, void)
+IMPL_LINK_NOARG(SwRedlineAcceptDlg, GotoHdl, Timer *, void)
 {
     SwWrtShell* pSh = ::GetActiveView()->GetWrtShellPtr();
     m_aSelectTimer.Stop();
@@ -1008,10 +1006,10 @@ IMPL_LINK_NOARG_TYPED(SwRedlineAcceptDlg, GotoHdl, Timer *, void)
     bool bEnable = !pSh->getIDocumentRedlineAccess().GetRedlinePassword().getLength();
     m_pTPView->EnableAccept( bEnable && bSel /*&& !bReadonlySel*/ );
     m_pTPView->EnableReject( bEnable && bSel && bIsNotFormated /*&& !bReadonlySel*/ );
-    m_pTPView->EnableRejectAll( bEnable && !m_bOnlyFormatedRedlines && !m_bHasReadonlySel );
+    m_pTPView->EnableRejectAll( bEnable && !m_bOnlyFormatedRedlines );
 }
 
-IMPL_LINK_NOARG_TYPED(SwRedlineAcceptDlg, CommandHdl, SvSimpleTable*, void)
+IMPL_LINK_NOARG(SwRedlineAcceptDlg, CommandHdl, SvSimpleTable*, void)
 {
     const CommandEvent aCEvt(m_pTable->GetCommandEvent());
 
@@ -1041,19 +1039,19 @@ IMPL_LINK_NOARG_TYPED(SwRedlineAcceptDlg, CommandHdl, SvSimpleTable*, void)
                 }
             }
 
-            m_aPopup.EnableItem( MN_EDIT_COMMENT, pEntry && pRed &&
+            m_aPopup->EnableItem( MN_EDIT_COMMENT, pEntry && pRed &&
                                             !m_pTable->GetParent(pEntry) &&
                                             !m_pTable->NextSelected(pEntry)
 //JP 27.9.2001: make no sense if we handle readonly sections
 //                                          && pRed->HasReadonlySel()
                                             );
 
-            m_aPopup.EnableItem( MN_SUB_SORT, m_pTable->First() != nullptr );
+            m_aPopup->EnableItem( MN_SUB_SORT, m_pTable->First() != nullptr );
             sal_uInt16 nColumn = m_pTable->GetSortedCol();
             if (nColumn == 0xffff)
                 nColumn = 4;
 
-            PopupMenu *pSubMenu = m_aPopup.GetPopupMenu(MN_SUB_SORT);
+            PopupMenu *pSubMenu = m_aPopup->GetPopupMenu(MN_SUB_SORT);
             if (pSubMenu)
             {
                 for (sal_uInt16 i = MN_SORT_ACTION; i < MN_SORT_ACTION + 5; i++)
@@ -1062,7 +1060,7 @@ IMPL_LINK_NOARG_TYPED(SwRedlineAcceptDlg, CommandHdl, SvSimpleTable*, void)
                 pSubMenu->CheckItem(nColumn + MN_SORT_ACTION);
             }
 
-            sal_uInt16 nRet = m_aPopup.Execute(m_pTable, aCEvt.GetMousePosPixel());
+            sal_uInt16 nRet = m_aPopup->Execute(m_pTable, aCEvt.GetMousePosPixel());
 
             switch( nRet )
             {
@@ -1101,7 +1099,7 @@ IMPL_LINK_NOARG_TYPED(SwRedlineAcceptDlg, CommandHdl, SvSimpleTable*, void)
                                     rRedline.GetRedlineData().GetTimeStamp() ),
                                     SID_ATTR_POSTIT_DATE ));
 
-                        std::unique_ptr<AbstractSvxPostItDialog> pDlg(pFact->CreateSvxPostItDialog( m_pParentDlg, aSet ));
+                        ScopedVclPtr<AbstractSvxPostItDialog> pDlg(pFact->CreateSvxPostItDialog( m_pParentDlg, aSet ));
                         OSL_ENSURE(pDlg, "Dialog creation failed!");
 
                         pDlg->HideAuthor();
@@ -1141,7 +1139,7 @@ IMPL_LINK_NOARG_TYPED(SwRedlineAcceptDlg, CommandHdl, SvSimpleTable*, void)
                             m_pTable->SetEntryText(sMsg.replace('\n', ' '), pEntry, 3);
                         }
 
-                        pDlg.reset();
+                        pDlg.disposeAndClear();
                         SwViewShell::SetCareWin(nullptr);
                     }
 
@@ -1206,7 +1204,7 @@ void SwRedlineAcceptDlg::Initialize(const OUString& rExtraData)
                         {
                             sal_Int32 n3 = aStr.indexOf(';');
                             aStr = aStr.copy(n3 + 1);
-                            m_pTable->SetTab(i, aStr.toInt32(), MAP_PIXEL);
+                            m_pTable->SetTab(i, aStr.toInt32(), MapUnit::MapPixel);
                         }
                     }
                 }
@@ -1256,8 +1254,7 @@ void SwRedlineAcceptPanel::dispose()
 
 void SwRedlineAcceptPanel::Notify(SfxBroadcaster& /*rBC*/, const SfxHint& rHint)
 {
-    const SfxSimpleHint *pHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if (mpImplDlg && pHint && pHint->GetId() == SFX_HINT_DOCCHANGED)
+    if (mpImplDlg && rHint.GetId() == SFX_HINT_DOCCHANGED)
         mpImplDlg->Activate();
 }
 

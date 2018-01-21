@@ -29,7 +29,7 @@
 #include <comphelper/processfactory.hxx>
 #include <editeng/outliner.hxx>
 
-#include "../ui/inc/DrawDocShell.hxx"
+#include "DrawDocShell.hxx"
 #include <editeng/eeitem.hxx>
 
 #include <vcl/settings.hxx>
@@ -85,7 +85,6 @@
 #include <svx/svditer.hxx>
 #include <svx/svdogrp.hxx>
 #include <svx/svdlayer.hxx>
-#include <tools/shl.hxx>
 #include <editeng/numitem.hxx>
 #include <editeng/editeng.hxx>
 #include <editeng/unolingu.hxx>
@@ -217,7 +216,7 @@ void SdDrawDocument::CreateLayoutTemplates()
     rISet.Put(SvxCrossedOutItem(STRIKEOUT_NONE, EE_CHAR_STRIKEOUT ));
     rISet.Put(SvxCaseMapItem(SVX_CASEMAP_NOT_MAPPED, EE_CHAR_CASEMAP ));
     rISet.Put(SvxEmphasisMarkItem(FontEmphasisMark::NONE, EE_CHAR_EMPHASISMARK));
-    rISet.Put(SvxCharReliefItem(RELIEF_NONE, EE_CHAR_RELIEF));
+    rISet.Put(SvxCharReliefItem(FontRelief::NONE, EE_CHAR_RELIEF));
     rISet.Put(SvxColorItem(Color(COL_AUTO), EE_CHAR_COLOR ));
 
     // Paragraph attributes (Edit Engine)
@@ -744,7 +743,7 @@ void SdDrawDocument::StartOnlineSpelling(bool bForceSpelling)
     {
         StopOnlineSpelling();
 
-        ::sd::Outliner* pOutl = GetInternalOutliner();
+        SdOutliner* pOutl = GetInternalOutliner();
 
         Reference< XSpellChecker1 > xSpellChecker( LinguMgr::GetSpellChecker() );
         if ( xSpellChecker.is() )
@@ -782,7 +781,7 @@ void SdDrawDocument::StartOnlineSpelling(bool bForceSpelling)
 // Fill OnlineSpelling list
 void SdDrawDocument::FillOnlineSpellingList(SdPage* pPage)
 {
-    SdrObjListIter aIter(*pPage, IM_FLAT);
+    SdrObjListIter aIter(*pPage, SdrIterMode::Flat);
 
     while (aIter.IsMore())
     {
@@ -800,7 +799,7 @@ void SdDrawDocument::FillOnlineSpellingList(SdPage* pPage)
         {
             // Found a group object
             SdrObjListIter aGroupIter(*static_cast<SdrObjGroup*>(pObj)->GetSubList(),
-                                      IM_DEEPNOGROUPS);
+                                      SdrIterMode::DeepNoGroups);
 
             bool bSubTextObjFound = false;
 
@@ -822,7 +821,7 @@ void SdDrawDocument::FillOnlineSpellingList(SdPage* pPage)
 }
 
 // OnlineSpelling in the background
-IMPL_LINK_NOARG_TYPED(SdDrawDocument, OnlineSpellingHdl, Idle *, void)
+IMPL_LINK_NOARG(SdDrawDocument, OnlineSpellingHdl, Idle *, void)
 {
     if (mpOnlineSpellingList!=nullptr
         && ( !mbOnlineSpell || mpOnlineSpellingList->hasMore()))
@@ -841,7 +840,7 @@ IMPL_LINK_NOARG_TYPED(SdDrawDocument, OnlineSpellingHdl, Idle *, void)
             {
                 // Found a group object
                 SdrObjListIter aGroupIter(*static_cast<SdrObjGroup*>(pObj)->GetSubList(),
-                                          IM_DEEPNOGROUPS);
+                                          SdrIterMode::DeepNoGroups);
 
 
                 while (aGroupIter.IsMore())
@@ -879,14 +878,14 @@ void SdDrawDocument::SpellObject(SdrTextObj* pObj)
     if (pObj && pObj->GetOutlinerParaObject() /* && pObj != pView->GetTextEditObject() */)
     {
         mbHasOnlineSpellErrors = false;
-        ::sd::Outliner* pOutl = GetInternalOutliner();
+        SdOutliner* pOutl = GetInternalOutliner();
         pOutl->SetUpdateMode(true);
         Link<EditStatus&,void> aEvtHdl = pOutl->GetStatusEventHdl();
         pOutl->SetStatusEventHdl(LINK(this, SdDrawDocument, OnlineSpellEventHdl));
 
         OutlinerMode nOldOutlMode = pOutl->GetMode();
         OutlinerMode nOutlMode = OutlinerMode::TextObject;
-        if (pObj->GetObjInventor() == SdrInventor &&
+        if (pObj->GetObjInventor() == SdrInventor::Default &&
             pObj->GetObjIdentifier() == OBJ_OUTLINETEXT)
         {
             nOutlMode = OutlinerMode::OutlineObject;
@@ -954,7 +953,7 @@ void SdDrawDocument::RemoveObject(SdrObject* pObj, SdPage* /*pPage*/)
 }
 
 // Callback for ExecuteSpellPopup()
-IMPL_LINK_TYPED(SdDrawDocument, OnlineSpellEventHdl, EditStatus&, rEditStat, void)
+IMPL_LINK(SdDrawDocument, OnlineSpellEventHdl, EditStatus&, rEditStat, void)
 {
     EditStatusFlags nStat = rEditStat.GetStatusWord();
     mbHasOnlineSpellErrors = bool(nStat & EditStatusFlags::WRONGWORDCHANGED);
@@ -1039,19 +1038,19 @@ OUString SdDrawDocument::CreatePageNumValue(sal_uInt16 nNum) const
 
     switch (mePageNumType)
     {
-        case SVX_CHARS_UPPER_LETTER:
-            aPageNumValue += OUString( (sal_Unicode)(char)((nNum - 1) % 26 + 'A') );
+        case css::style::NumberingType::CHARS_UPPER_LETTER:
+            aPageNumValue += OUStringLiteral1( (nNum - 1) % 26 + 'A' );
             break;
-        case SVX_CHARS_LOWER_LETTER:
-            aPageNumValue += OUString( (sal_Unicode)(char)((nNum - 1) % 26 + 'a') );
+        case css::style::NumberingType::CHARS_LOWER_LETTER:
+            aPageNumValue += OUStringLiteral1( (nNum - 1) % 26 + 'a' );
             break;
-        case SVX_ROMAN_UPPER:
+        case css::style::NumberingType::ROMAN_UPPER:
             bUpper = true;
             SAL_FALLTHROUGH;
-        case SVX_ROMAN_LOWER:
+        case css::style::NumberingType::ROMAN_LOWER:
             aPageNumValue += SvxNumberFormat::CreateRomanString(nNum, bUpper);
             break;
-        case SVX_NUMBER_NONE:
+        case css::style::NumberingType::NUMBER_NONE:
             aPageNumValue = " ";
             break;
         default:
@@ -1121,7 +1120,7 @@ void SdDrawDocument::RenameLayoutTemplate(const OUString& rOldLayoutName, const 
             {
                 SdrObject* pObj = pPage->GetObj(nObj);
 
-                if (pObj->GetObjInventor() == SdrInventor)
+                if (pObj->GetObjInventor() == SdrInventor::Default)
                 {
                     switch( pObj->GetObjIdentifier() )
                     {
@@ -1164,7 +1163,7 @@ void SdDrawDocument::RenameLayoutTemplate(const OUString& rOldLayoutName, const 
             {
                 SdrObject* pObj = pPage->GetObj(nObj);
 
-                if (pObj->GetObjInventor() == SdrInventor)
+                if (pObj->GetObjInventor() == SdrInventor::Default)
                 {
                     switch(pObj->GetObjIdentifier())
                     {

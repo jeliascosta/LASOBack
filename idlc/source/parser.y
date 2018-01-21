@@ -24,27 +24,27 @@
 %{
 #include <string.h>
 
-#include <idlc/idlc.hxx>
-#include <idlc/errorhandler.hxx>
-#include <idlc/fehelper.hxx>
-#include <idlc/astexpression.hxx>
-#include <idlc/astconstants.hxx>
-#include <idlc/astconstant.hxx>
-#include <idlc/astbasetype.hxx>
-#include <idlc/asttypedef.hxx>
-#include <idlc/astexception.hxx>
-#include <idlc/astmember.hxx>
-#include <idlc/astenum.hxx>
-#include <idlc/astsequence.hxx>
-#include <idlc/astattribute.hxx>
-#include <idlc/astoperation.hxx>
-#include <idlc/astparameter.hxx>
-#include <idlc/astinterfacemember.hxx>
-#include <idlc/astservicemember.hxx>
-#include <idlc/astobserves.hxx>
-#include <idlc/astneeds.hxx>
+#include <idlc.hxx>
+#include <errorhandler.hxx>
+#include <fehelper.hxx>
+#include <astexpression.hxx>
+#include <astconstants.hxx>
+#include <astconstant.hxx>
+#include <astbasetype.hxx>
+#include <asttypedef.hxx>
+#include <astexception.hxx>
+#include <astmember.hxx>
+#include <astenum.hxx>
+#include <astsequence.hxx>
+#include <astattribute.hxx>
+#include <astoperation.hxx>
+#include <astparameter.hxx>
+#include <astinterfacemember.hxx>
+#include <astservicemember.hxx>
+#include <astobserves.hxx>
+#include <astneeds.hxx>
 
-#include "idlc/aststructinstance.hxx"
+#include "aststructinstance.hxx"
 
 #include "attributeexceptions.hxx"
 
@@ -235,7 +235,7 @@ bool includes(AstDeclaration const * type1, AstDeclaration const * type2) {
     sal_uInt32          ulval;      /* sal_uInt32 value */
     double                  dval;       /* double value */
     float                   fval;       /* float value */
-    StringList*         slval;      /* StringList value */
+    std::list< OString >*         slval;      /* StringList value */
     AttributeExceptions::Part attexcpval;
     AttributeExceptions attexcval;
 }
@@ -1624,8 +1624,8 @@ service_export :
              */
             if ( pScope && $2 )
             {
-                StringList::iterator iter = $2->begin();
-                StringList::iterator end = $2->end();
+                std::list< OString >::iterator iter = $2->begin();
+                std::list< OString >::iterator end = $2->end();
 
                 while ( iter != end )
                 {
@@ -1668,8 +1668,8 @@ service_export :
          */
         if ( pScope && $2 )
         {
-            StringList::iterator iter = $2->begin();
-            StringList::iterator end = $2->end();
+            std::list< OString >::iterator iter = $2->begin();
+            std::list< OString >::iterator end = $2->end();
 
             while ( iter != end )
             {
@@ -1714,8 +1714,8 @@ service_export :
              */
             if ( pScope && $2 )
             {
-                StringList::iterator iter = $2->begin();
-                StringList::iterator end = $2->end();
+                std::list< OString >::iterator iter = $2->begin();
+                std::list< OString >::iterator end = $2->end();
 
                 while ( iter != end )
                 {
@@ -1755,8 +1755,8 @@ service_export :
              */
             if ( pScope && $2 )
             {
-                StringList::iterator iter = $2->begin();
-                StringList::iterator end = $2->end();
+                std::list< OString >::iterator iter = $2->begin();
+                std::list< OString >::iterator end = $2->end();
 
                 while ( iter != end )
                 {
@@ -2140,7 +2140,7 @@ at_least_one_scoped_name :
             $$ = $2;
         } else
         {
-            StringList* pScopedNames = new StringList();
+            std::list< OString >* pScopedNames = new std::list< OString >();
             // coverity [copy_paste_error]
             pScopedNames->push_back(*$1);
             $$ = pScopedNames;
@@ -2164,7 +2164,7 @@ scoped_names :
             $$ = $1;
         } else
         {
-            StringList* pNames = new StringList();
+            std::list< OString >* pNames = new std::list< OString >();
             pNames->push_back(*$4);
             $$ = pNames;
         }

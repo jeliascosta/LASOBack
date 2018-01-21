@@ -74,8 +74,6 @@ class SwFormatHoriOrient;
 class SwFormatAnchor;
 class SvxBoxItem;
 class SvxBrushItem;
-class XFillStyleItem;
-class XFillGradientItem;
 class SvxShadowItem;
 class SwFormatPageDesc;
 class SvxFormatBreakItem;
@@ -162,7 +160,7 @@ private:
 public:
     SwAttrPool( SwDoc* pDoc );
 protected:
-    virtual ~SwAttrPool();
+    virtual ~SwAttrPool() override;
 public:
 
           SwDoc* GetDoc()           { return m_pDoc; }
@@ -197,7 +195,7 @@ public:
     int Intersect_BC( const SfxItemSet& rSet, SwAttrSet* pOld, SwAttrSet* pNew );
 
     void GetPresentation( SfxItemPresentation ePres,
-        SfxMapUnit eCoreMetric, SfxMapUnit ePresMetric, OUString &rText ) const;
+        MapUnit eCoreMetric, MapUnit ePresMetric, OUString &rText ) const;
 
     SwAttrPool* GetPool() const { return static_cast<SwAttrPool*>(SfxItemSet::GetPool()); }
 

@@ -29,7 +29,7 @@
 #include <vcl/layout.hxx>
 #include <vcl/lstbox.hxx>
 #include <vcl/msgbox.hxx>
-#include <vcl/scrbar.hxx>
+#include <vcl/slider.hxx>
 #include <com/sun/star/document/XExporter.hpp>
 #include <com/sun/star/drawing/XShape.hpp>
 #include <com/sun/star/drawing/XShapes.hpp>
@@ -66,7 +66,7 @@ private:
     VclPtr<VclContainer>       mpJPGQuality;
     VclPtr<VclContainer>       mpPNGCompression;
 
-    VclPtr<ScrollBar>          mpSbCompression;
+    VclPtr<Slider>             mpSbCompression;
     VclPtr<NumericField>       mpNfCompression;
 
     VclPtr<VclContainer>       mpMode;
@@ -124,7 +124,6 @@ private:
 
     bool                mbIsPixelFormat;
     bool                mbExportSelection;
-    bool                mbPreserveAspectRatio;
 
     sal_Int32           mnInitialResolutionUnit;
 
@@ -139,15 +138,15 @@ private:
                         mxPage;
 
 
-                        DECL_LINK_TYPED( UpdateHdl, Button*, void );
-                        DECL_LINK_TYPED( SelectListBoxHdl, ListBox&, void );
-                        DECL_LINK_TYPED( SelectHdl, Edit&, void );
-                        DECL_LINK_TYPED( UpdateHdlMtfSizeX, Edit&, void );
-                        DECL_LINK_TYPED( UpdateHdlMtfSizeY, Edit&, void );
-                        DECL_LINK_TYPED( UpdateHdlNfResolution, Edit&, void );
-                        DECL_LINK_TYPED( SbCompressionUpdateHdl, ScrollBar*, void );
+                        DECL_LINK( UpdateHdl, Button*, void );
+                        DECL_LINK( SelectListBoxHdl, ListBox&, void );
+                        DECL_LINK( SelectHdl, Edit&, void );
+                        DECL_LINK( UpdateHdlMtfSizeX, Edit&, void );
+                        DECL_LINK( UpdateHdlMtfSizeY, Edit&, void );
+                        DECL_LINK( UpdateHdlNfResolution, Edit&, void );
+                        DECL_LINK( SbCompressionUpdateHdl, Slider*, void );
 
-                        DECL_LINK_TYPED( OK, Button*, void );
+                        DECL_LINK( OK, Button*, void );
 
                         void setupSizeControls();
                         void createFilterOptions();
@@ -173,7 +172,7 @@ public:
                             const css::uno::Reference< css::uno::XComponentContext >& rxContext,
                             const css::uno::Reference< css::lang::XComponent >& rxSourceDocument,
                             bool bExportSelection, bool bIsExportVectorFormat );
-                        virtual ~ExportDialog();
+                        virtual ~ExportDialog() override;
                         virtual void dispose() override;
 };
 

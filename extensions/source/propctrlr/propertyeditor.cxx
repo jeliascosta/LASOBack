@@ -41,8 +41,8 @@ namespace pcr
     // class OPropertyEditor
 
 
-    OPropertyEditor::OPropertyEditor( vcl::Window* pParent, WinBits nWinStyle)
-            :Control(pParent, nWinStyle)
+    OPropertyEditor::OPropertyEditor( vcl::Window* pParent)
+            :Control(pParent, WB_DIALOGCONTROL)
             ,m_aTabControl( VclPtr<TabControl>::Create(this) )
             ,m_pListener(nullptr)
             ,m_pObserver(nullptr)
@@ -505,13 +505,13 @@ namespace pcr
     }
 
 
-    IMPL_LINK_NOARG_TYPED(OPropertyEditor, OnPageActivate, TabControl*, void)
+    IMPL_LINK_NOARG(OPropertyEditor, OnPageActivate, TabControl*, void)
     {
         m_aPageActivationHandler.Call(nullptr);
     }
 
 
-    IMPL_LINK_NOARG_TYPED(OPropertyEditor, OnPageDeactivate, TabControl *, bool)
+    IMPL_LINK_NOARG(OPropertyEditor, OnPageDeactivate, TabControl *, bool)
     {
         // commit the data on the current (to-be-deactivated) tab page
         // (79404)

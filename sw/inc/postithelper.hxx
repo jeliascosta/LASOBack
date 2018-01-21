@@ -114,7 +114,6 @@ public:
     virtual const SwFormatField& GetFormatField() const = 0;
     virtual const SfxBroadcaster* GetBroadCaster() const = 0;
     virtual VclPtr<sw::sidebarwindows::SwSidebarWin> GetSidebarWindow( SwEditWin& rEditWin,
-                                                                WinBits nBits,
                                                                 SwPostItMgr& aMgr) = 0;
 };
 
@@ -129,7 +128,7 @@ public:
     {
     }
 
-    virtual ~SwAnnotationItem()
+    virtual ~SwAnnotationItem() override
     {
     }
 
@@ -145,7 +144,6 @@ public:
     }
     virtual VclPtr<sw::sidebarwindows::SwSidebarWin> GetSidebarWindow(
         SwEditWin& rEditWin,
-        WinBits nBits,
         SwPostItMgr& aMgr ) override;
 
 private:

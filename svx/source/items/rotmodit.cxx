@@ -66,19 +66,19 @@ SfxPoolItem* SvxRotateModeItem::Create( SvStream& rStream, sal_uInt16 ) const
 
 bool SvxRotateModeItem::GetPresentation(
                                 SfxItemPresentation ePres,
-                                SfxMapUnit /*eCoreUnit*/, SfxMapUnit /*ePresUnit*/,
+                                MapUnit /*eCoreUnit*/, MapUnit /*ePresUnit*/,
                                 OUString& rText, const IntlWrapper * )  const
 {
     rText.clear();
 
     switch ( ePres )
     {
-        case SFX_ITEM_PRESENTATION_COMPLETE:
+        case SfxItemPresentation::Complete:
             rText += "...: ";
             SAL_FALLTHROUGH; // break; // FALL THROUGH!!!
 
-        case SFX_ITEM_PRESENTATION_NAMELESS:
-            rText += OUString( sal_Unicode(GetValue()) );
+        case SfxItemPresentation::Nameless:
+            rText += OUStringLiteral1( GetValue() );
             return true;
             break;
         default: ;//prevent warning

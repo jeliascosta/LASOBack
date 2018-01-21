@@ -38,7 +38,7 @@ class FileViewContainer : public vcl::Window
     {
     }
 
-    virtual ~FileViewContainer()
+    virtual ~FileViewContainer() override
     {
         disposeOnce();
     }
@@ -279,7 +279,9 @@ RemoteFilesDialog::RemoteFilesDialog( vcl::Window* pParent, PickerFlags nBits )
     m_pName_ed->SetGetFocusHdl( LINK( this, RemoteFilesDialog, FileNameGetFocusHdl ) );
     m_pName_ed->SetModifyHdl( LINK( this, RemoteFilesDialog, FileNameModifyHdl ) );
 
-    m_pAddService_btn->SetMenuMode( MENUBUTTON_MENUMODE_TIMED );
+    m_pAddService_btn->SetDelayMenu(true);
+    m_pAddService_btn->SetDropDown(PushButtonDropdownStyle::SplitMenuButton);
+
     m_pAddMenu = m_pAddService_btn->GetPopupMenu();
     m_pAddService_btn->SetClickHdl( LINK( this, RemoteFilesDialog, AddServiceHdl ) );
     m_pAddService_btn->SetSelectHdl( LINK( this, RemoteFilesDialog, EditServiceMenuHdl ) );
@@ -355,6 +357,7 @@ void RemoteFilesDialog::dispose()
     m_pNewFolder.clear();
     m_pIconView_btn.clear();
     m_pListView_btn.clear();
+    m_pAddMenu.clear();
 
     ModalDialog::dispose();
 }
@@ -732,17 +735,17 @@ void RemoteFilesDialog::SavePassword( const OUString& rURL, const OUString& rUse
     {}
 }
 
-IMPL_LINK_NOARG_TYPED ( RemoteFilesDialog, IconViewHdl, Button*, void )
+IMPL_LINK_NOARG ( RemoteFilesDialog, IconViewHdl, Button*, void )
 {
     m_pFileView->SetViewMode( eIcon );
 }
 
-IMPL_LINK_NOARG_TYPED ( RemoteFilesDialog, ListViewHdl, Button*, void )
+IMPL_LINK_NOARG ( RemoteFilesDialog, ListViewHdl, Button*, void )
 {
     m_pFileView->SetViewMode( eDetailedList );
 }
 
-IMPL_LINK_NOARG_TYPED ( RemoteFilesDialog, AddServiceHdl, Button*, void )
+IMPL_LINK_NOARG ( RemoteFilesDialog, AddServiceHdl, Button*, void )
 {
     ScopedVclPtrInstance< PlaceEditDialog > aDlg( this );
     aDlg->ShowPasswordControl();
@@ -785,7 +788,7 @@ IMPL_LINK_NOARG_TYPED ( RemoteFilesDialog, AddServiceHdl, Button*, void )
     };
 }
 
-IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, SelectServiceHdl, ListBox&, void )
+IMPL_LINK_NOARG( RemoteFilesDialog, SelectServiceHdl, ListBox&, void )
 {
     int nPos = GetSelectedServicePos();
 
@@ -799,7 +802,7 @@ IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, SelectServiceHdl, ListBox&, void )
     }
 }
 
-IMPL_LINK_TYPED ( RemoteFilesDialog, EditServiceMenuHdl, MenuButton *, pButton, void )
+IMPL_LINK ( RemoteFilesDialog, EditServiceMenuHdl, MenuButton *, pButton, void )
 {
     OString sIdent( pButton->GetCurItemIdent() );
     if( sIdent == "edit_service"  && m_pServices_lb->GetEntryCount() > 0 )
@@ -851,7 +854,7 @@ IMPL_LINK_TYPED ( RemoteFilesDialog, EditServiceMenuHdl, MenuButton *, pButton, 
         {
             OUString sMsg = fpicker::SvtResId( STR_SVT_DELETESERVICE );
             sMsg = sMsg.replaceFirst( "$servicename$", m_pServices_lb->GetSelectEntry() );
-            ScopedVclPtrInstance< MessageDialog > aBox( this, sMsg, VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO );
+            ScopedVclPtrInstance< MessageDialog > aBox( this, sMsg, VclMessageType::Question, VCL_BUTTONS_YES_NO );
 
             if( aBox->Execute() == RET_YES )
             {
@@ -939,7 +942,7 @@ IMPL_LINK_TYPED ( RemoteFilesDialog, EditServiceMenuHdl, MenuButton *, pButton, 
     EnableControls();
 }
 
-IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, DoubleClickHdl, SvTreeListBox*, bool )
+IMPL_LINK_NOARG( RemoteFilesDialog, DoubleClickHdl, SvTreeListBox*, bool )
 {
     if( m_pFileView->GetSelectionCount() )
     {
@@ -966,7 +969,7 @@ IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, DoubleClickHdl, SvTreeListBox*, bool )
     return true;
 }
 
-IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, SelectHdl, SvTreeListBox*, void )
+IMPL_LINK_NOARG( RemoteFilesDialog, SelectHdl, SvTreeListBox*, void )
 {
     SvTreeListEntry* pEntry = m_pFileView->FirstSelected();
 
@@ -1003,19 +1006,19 @@ IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, SelectHdl, SvTreeListBox*, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, FileNameGetFocusHdl, Control&, void )
+IMPL_LINK_NOARG( RemoteFilesDialog, FileNameGetFocusHdl, Control&, void )
 {
     m_pFileView->SetNoSelection();
 }
 
-IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, FileNameModifyHdl, Edit&, void )
+IMPL_LINK_NOARG( RemoteFilesDialog, FileNameModifyHdl, Edit&, void )
 {
     m_pFileView->SetNoSelection();
     if( !m_pOk_btn->IsEnabled() )
         EnableControls();
 }
 
-IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, SplitHdl, Splitter*, void )
+IMPL_LINK_NOARG( RemoteFilesDialog, SplitHdl, Splitter*, void )
 {
     sal_Int32 nSplitPos = m_pSplitter->GetSplitPosPixel();
 
@@ -1037,7 +1040,7 @@ IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, SplitHdl, Splitter*, void )
     m_pSplitter->SetPosPixel( Point( placeSize.Width(), m_pSplitter->GetPosPixel().Y() ) );
 }
 
-IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, SelectFilterHdl, ListBox&, void )
+IMPL_LINK_NOARG( RemoteFilesDialog, SelectFilterHdl, ListBox&, void )
 {
     unsigned int nPos = m_pFilter_lb->GetSelectEntryPos();
 
@@ -1052,7 +1055,7 @@ IMPL_LINK_NOARG_TYPED( RemoteFilesDialog, SelectFilterHdl, ListBox&, void )
     }
 }
 
-IMPL_LINK_TYPED( RemoteFilesDialog, TreeSelectHdl, SvTreeListBox *, pBox, void )
+IMPL_LINK( RemoteFilesDialog, TreeSelectHdl, SvTreeListBox *, pBox, void )
 {
     OUString* sURL = static_cast< OUString* >( pBox->GetHdlEntry()->GetUserData() );
 
@@ -1063,16 +1066,23 @@ IMPL_LINK_TYPED( RemoteFilesDialog, TreeSelectHdl, SvTreeListBox *, pBox, void )
     }
 }
 
-IMPL_LINK_TYPED ( RemoteFilesDialog, SelectBreadcrumbHdl, Breadcrumb*, pPtr, void )
+IMPL_LINK ( RemoteFilesDialog, SelectBreadcrumbHdl, Breadcrumb*, pPtr, void )
 {
     OpenURL( pPtr->GetHdlURL() );
 }
 
-IMPL_LINK_NOARG_TYPED ( RemoteFilesDialog, NewFolderHdl, Button*, void )
+IMPL_LINK_NOARG ( RemoteFilesDialog, NewFolderHdl, Button*, void )
 {
     m_pFileView->EndInplaceEditing();
 
-    SmartContent aContent( m_pFileView->GetViewURL() );
+    // will be bound after InteractionHandler is enabled
+    SmartContent aContent;
+    aContent.enableDefaultInteractionHandler();
+    // now it can be bound
+    aContent.bindTo( m_pFileView->GetViewURL() );
+    if( !aContent.canCreateFolder() )
+        return;
+
     OUString aTitle;
     aContent.getTitle( aTitle );
     ScopedVclPtrInstance< QueryFolderNameDialog > aDlg( this, aTitle, fpicker::SVT_RESSTR( STR_SVT_NEW_FOLDER ) );
@@ -1094,7 +1104,7 @@ IMPL_LINK_NOARG_TYPED ( RemoteFilesDialog, NewFolderHdl, Button*, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED ( RemoteFilesDialog, OkHdl, Button*, void )
+IMPL_LINK_NOARG ( RemoteFilesDialog, OkHdl, Button*, void )
 {
     OUString sNameNoExt = m_pName_ed->GetText();
     OUString sPathNoExt;
@@ -1149,7 +1159,7 @@ IMPL_LINK_NOARG_TYPED ( RemoteFilesDialog, OkHdl, Button*, void )
         {
             OUString sMsg = fpicker::SvtResId( STR_SVT_ALREADYEXISTOVERWRITE );
             sMsg = sMsg.replaceFirst( "$filename$", sName );
-            ScopedVclPtrInstance< MessageDialog > aBox( this, sMsg, VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO );
+            ScopedVclPtrInstance< MessageDialog > aBox( this, sMsg, VclMessageType::Question, VCL_BUTTONS_YES_NO );
             if( aBox->Execute() != RET_YES )
                 return;
         }
@@ -1174,7 +1184,7 @@ IMPL_LINK_NOARG_TYPED ( RemoteFilesDialog, OkHdl, Button*, void )
     EndDialog( RET_OK );
 }
 
-IMPL_LINK_NOARG_TYPED ( RemoteFilesDialog, CancelHdl, Button*, void )
+IMPL_LINK_NOARG ( RemoteFilesDialog, CancelHdl, Button*, void )
 {
     if( m_pCurrentAsyncAction.is() )
     {

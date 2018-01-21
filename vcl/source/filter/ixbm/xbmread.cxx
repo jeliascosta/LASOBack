@@ -48,15 +48,14 @@ class XBMReader : public GraphicReader
     bool                bStatus;
 
     void            InitTable();
-    OString         FindTokenLine( SvStream* pInStm, const char* pTok1,
-                                       const char* pTok2 = nullptr, const char* pTok3 = nullptr );
+    OString         FindTokenLine( SvStream* pInStm, const char* pTok1, const char* pTok2 );
     long            ParseDefine( const sal_Char* pDefine );
     bool            ParseData( SvStream* pInStm, const OString& aLastLine, XBMFormat eFormat );
 
 public:
 
     explicit        XBMReader( SvStream& rStm );
-    virtual         ~XBMReader();
+    virtual         ~XBMReader() override;
 
     ReadState       ReadXBM( Graphic& rGraphic );
 };
@@ -119,10 +118,10 @@ void XBMReader::InitTable()
 }
 
 OString XBMReader::FindTokenLine( SvStream* pInStm, const char* pTok1,
-                                 const char* pTok2, const char* pTok3 )
+                                 const char* pTok2 )
 {
     OString aRet;
-    sal_Int32 nPos1, nPos2, nPos3;
+    sal_Int32 nPos1, nPos2;
 
     bStatus = false;
 
@@ -145,14 +144,6 @@ OString XBMReader::FindTokenLine( SvStream* pInStm, const char* pTok1,
                          ( nPos2 > nPos1 ) )
                     {
                         bStatus = true;
-
-                        if( pTok3 )
-                        {
-                            bStatus = false;
-
-                            if( ( ( nPos3 = aRet.indexOf( pTok3 ) ) != -1 ) && ( nPos3 > nPos2 ) )
-                                bStatus = true;
-                        }
                     }
                 }
             }
@@ -381,25 +372,25 @@ ReadState XBMReader::ReadXBM( Graphic& rGraphic )
 
 VCL_DLLPUBLIC bool ImportXBM( SvStream& rStm, Graphic& rGraphic )
 {
-    XBMReader*  pXBMReader = static_cast<XBMReader*>( rGraphic.GetContext() );
-    ReadState   eReadState;
-    bool        bRet = true;
+    std::shared_ptr<GraphicReader> pContext = rGraphic.GetContext();
+    rGraphic.SetContext(nullptr);
+    XBMReader* pXBMReader = dynamic_cast<XBMReader*>( pContext.get() );
+    if (!pXBMReader)
+    {
+        pContext = std::make_shared<XBMReader>( rStm );
+        pXBMReader = static_cast<XBMReader*>( pContext.get() );
+    }
 
-    if( !pXBMReader )
-        pXBMReader = new XBMReader( rStm );
+    bool bRet = true;
 
-    rGraphic.SetContext( nullptr );
-    eReadState = pXBMReader->ReadXBM( rGraphic );
+    ReadState eReadState = pXBMReader->ReadXBM( rGraphic );
 
     if( eReadState == XBMREAD_ERROR )
     {
         bRet = false;
-        delete pXBMReader;
     }
-    else if( eReadState == XBMREAD_OK )
-        delete pXBMReader;
-    else
-        rGraphic.SetContext( pXBMReader );
+    else if( eReadState == XBMREAD_NEED_MORE )
+        rGraphic.SetContext( pContext );
 
     return bRet;
 }

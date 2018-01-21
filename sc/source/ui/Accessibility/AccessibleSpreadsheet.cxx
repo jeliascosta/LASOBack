@@ -286,7 +286,6 @@ void ScAccessibleSpreadsheet::ConstructScAccessibleSpreadsheet(
 {
     mpViewShell = pViewShell;
     mpMarkedRanges = nullptr;
-    mpSortedMarkedCells = nullptr;
     mpAccDoc = pAccDoc;
     mpAccCell.clear();
     meSplitPos = eSplitPos;
@@ -418,246 +417,7 @@ void ScAccessibleSpreadsheet::VisAreaChanged()
 
 void ScAccessibleSpreadsheet::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if (pSimpleHint)
-    {
-        if (pSimpleHint->GetId() == SC_HINT_ACC_CURSORCHANGED)
-        {
-            if (mpViewShell)
-            {
-                ScViewData& rViewData = mpViewShell->GetViewData();
-
-                m_bFormulaMode = rViewData.IsRefMode() || SC_MOD()->IsFormulaMode();
-                if ( m_bFormulaMode )
-                {
-                    NotifyRefMode();
-                    m_bFormulaLastMode = true;
-                    return;
-                }
-                if (m_bFormulaLastMode)
-                {//Last Notify Mode  Is Formula Mode.
-                    m_vecFormulaLastMyAddr.clear();
-                    RemoveFormulaSelection(true);
-                    m_pAccFormulaCell.clear();
-                    //Remove All Selection
-                }
-                m_bFormulaLastMode = m_bFormulaMode;
-
-                AccessibleEventObject aEvent;
-                aEvent.Source = uno::Reference< XAccessible >(this);
-                ScAddress aNewCell = rViewData.GetCurPos();
-                if(aNewCell.Tab() != maActiveCell.Tab())
-                {
-                    aEvent.EventId = AccessibleEventId::PAGE_CHANGED;
-                    ScAccessibleDocument *pAccDoc =
-                        static_cast<ScAccessibleDocument*>(getAccessibleParent().get());
-                    if(pAccDoc)
-                    {
-                        pAccDoc->CommitChange(aEvent);
-                    }
-                }
-                bool bNewPosCell = (aNewCell != maActiveCell) || mpViewShell->GetForceFocusOnCurCell(); // #i123629#
-                bool bNewPosCellFocus=false;
-                if ( bNewPosCell && IsFocused() && aNewCell.Tab() == maActiveCell.Tab() )
-                {//single Focus
-                    bNewPosCellFocus=true;
-                }
-                ScMarkData &refScMarkData = rViewData.GetMarkData();
-                // MT IA2: Not used
-                // int nSelCount = refScMarkData.GetSelectCount();
-                bool bIsMark =refScMarkData.IsMarked();
-                bool bIsMultMark = refScMarkData.IsMultiMarked();
-                bool bNewMarked = refScMarkData.GetTableSelect(aNewCell.Tab()) && ( bIsMark || bIsMultMark );
-//              sal_Bool bNewCellSelected = isAccessibleSelected(aNewCell.Row(), aNewCell.Col());
-                sal_uInt16 nTab = rViewData.GetTabNo();
-                ScRange aMarkRange;
-                refScMarkData.GetMarkArea(aMarkRange);
-                aEvent.OldValue <<= css::uno::Any();
-                //Mark All
-                if ( !bNewPosCellFocus &&
-                    (bNewMarked || bIsMark || bIsMultMark ) &&
-                    aMarkRange == ScRange( 0,0,nTab, MAXCOL,MAXROW,nTab ) )
-                {
-                    aEvent.EventId = AccessibleEventId::SELECTION_CHANGED_WITHIN;
-                    aEvent.NewValue <<= css::uno::Any();
-                    CommitChange(aEvent);
-                    return ;
-                }
-                if (!mpMarkedRanges)
-                {
-                    mpMarkedRanges = new ScRangeList();
-                }
-                refScMarkData.FillRangeListWithMarks(mpMarkedRanges, true);
-
-                //For Whole Col Row
-                bool bWholeRow = ::labs(aMarkRange.aStart.Row() - aMarkRange.aEnd.Row()) == MAXROW ;
-                bool bWholeCol = ::abs(aMarkRange.aStart.Col() - aMarkRange.aEnd.Col()) == MAXCOL ;
-                if ((bNewMarked || bIsMark || bIsMultMark ) && (bWholeCol || bWholeRow))
-                {
-                    if ( aMarkRange != m_aLastWithInMarkRange )
-                    {
-                        RemoveSelection(refScMarkData);
-                        if(bNewPosCell)
-                        {
-                            CommitFocusCell(aNewCell);
-                        }
-                        bool bLastIsWholeColRow =
-                            (::labs(m_aLastWithInMarkRange.aStart.Row() - m_aLastWithInMarkRange.aEnd.Row()) == MAXROW && bWholeRow) ||
-                            (::abs(m_aLastWithInMarkRange.aStart.Col() - m_aLastWithInMarkRange.aEnd.Col()) == MAXCOL && bWholeCol);
-                        bool bSelSmaller=
-                            bLastIsWholeColRow &&
-                            !aMarkRange.In(m_aLastWithInMarkRange) &&
-                            aMarkRange.Intersects(m_aLastWithInMarkRange);
-                        if( !bSelSmaller )
-                        {
-                            aEvent.EventId = AccessibleEventId::SELECTION_CHANGED_WITHIN;
-                            aEvent.NewValue <<= css::uno::Any();
-                            CommitChange(aEvent);
-                        }
-                        m_aLastWithInMarkRange = aMarkRange;
-                    }
-                    return ;
-                }
-                m_aLastWithInMarkRange = aMarkRange;
-                int nNewMarkCount = mpMarkedRanges->GetCellCount();
-                bool bSendSingle= (0 == nNewMarkCount) && bNewPosCell;
-                if (bSendSingle)
-                {
-                    RemoveSelection(refScMarkData);
-                    if(bNewPosCellFocus)
-                    {
-                        CommitFocusCell(aNewCell);
-                    }
-                    uno::Reference< XAccessible > xChild ;
-                    if (bNewPosCellFocus)
-                    {
-                        xChild = mpAccCell.get();
-                    }
-                    else
-                    {
-                        mpAccCell = GetAccessibleCellAt(aNewCell.Row(),aNewCell.Col());
-                        xChild = mpAccCell.get();
-
-                        maActiveCell = aNewCell;
-                        aEvent.EventId = AccessibleEventId::ACTIVE_DESCENDANT_CHANGED_NOFOCUS;
-                        aEvent.NewValue <<= xChild;
-                        aEvent.OldValue <<= uno::Reference< XAccessible >();
-                        CommitChange(aEvent);
-                    }
-                    aEvent.EventId = AccessibleEventId::SELECTION_CHANGED;
-                    aEvent.NewValue <<= xChild;
-                    CommitChange(aEvent);
-                    OSL_ASSERT(m_mapSelectionSend.count(aNewCell) == 0 );
-                    m_mapSelectionSend.insert(MAP_ADDR_XACC::value_type(aNewCell,xChild));
-
-                }
-                else
-                {
-                    ScRange aDelRange;
-                    bool bIsDel = rViewData.GetDelMark( aDelRange );
-                    if ( (!bIsDel || aMarkRange != aDelRange) &&
-                        bNewMarked &&
-                        nNewMarkCount > 0 &&
-                        !IsSameMarkCell() )
-                    {
-                        RemoveSelection(refScMarkData);
-                        if(bNewPosCellFocus)
-                        {
-                            CommitFocusCell(aNewCell);
-                        }
-                        VEC_MYADDR vecNew;
-                        if(CalcScRangeListDifferenceMax(mpMarkedRanges,&m_LastMarkedRanges,10,vecNew))
-                        {
-                            aEvent.EventId = AccessibleEventId::SELECTION_CHANGED_WITHIN;
-                            aEvent.NewValue <<= css::uno::Any();
-                            CommitChange(aEvent);
-                        }
-                        else
-                        {
-                            VEC_MYADDR::iterator viAddr = vecNew.begin();
-                            for(; viAddr < vecNew.end() ; ++viAddr )
-                            {
-                                uno::Reference< XAccessible > xChild = getAccessibleCellAt(viAddr->Row(),viAddr->Col());
-                                if (!(bNewPosCellFocus && *viAddr == aNewCell) )
-                                {
-                                    aEvent.EventId = AccessibleEventId::ACTIVE_DESCENDANT_CHANGED_NOFOCUS;
-                                    aEvent.NewValue <<= xChild;
-                                    CommitChange(aEvent);
-                                }
-                                aEvent.EventId = AccessibleEventId::SELECTION_CHANGED_ADD;
-                                aEvent.NewValue <<= xChild;
-                                CommitChange(aEvent);
-                                m_mapSelectionSend.insert(MAP_ADDR_XACC::value_type(*viAddr,xChild));
-                            }
-                        }
-                    }
-                }
-                if (bNewPosCellFocus && maActiveCell != aNewCell)
-                {
-                    CommitFocusCell(aNewCell);
-                }
-                m_LastMarkedRanges = *mpMarkedRanges;
-            }
-        }
-        else if (pSimpleHint->GetId() == SC_HINT_DATACHANGED)
-        {
-            if (!mbDelIns)
-                CommitTableModelChange(maRange.aStart.Row(), maRange.aStart.Col(), maRange.aEnd.Row(), maRange.aEnd.Col(), AccessibleTableModelChangeType::UPDATE);
-            else
-                mbDelIns = false;
-            ScViewData& rViewData = mpViewShell->GetViewData();
-            ScAddress aNewCell = rViewData.GetCurPos();
-            if( maActiveCell == aNewCell)
-            {
-                ScDocument* pScDoc= GetDocument(mpViewShell);
-                if (pScDoc)
-                {
-                    OUString valStr(pScDoc->GetString(aNewCell.Col(),aNewCell.Row(),aNewCell.Tab()));
-                    if(m_strCurCellValue != valStr)
-                    {
-                        AccessibleEventObject aEvent;
-                        aEvent.EventId = AccessibleEventId::VALUE_CHANGED;
-                        mpAccCell->CommitChange(aEvent);
-                        m_strCurCellValue=valStr;
-                    }
-                    OUString tabName;
-                    pScDoc->GetName( maActiveCell.Tab(), tabName );
-                    if( m_strOldTabName != tabName )
-                    {
-                        AccessibleEventObject aEvent;
-                        aEvent.EventId = AccessibleEventId::NAME_CHANGED;
-                        OUString sOldName(ScResId(STR_ACC_TABLE_NAME));
-                        sOldName = sOldName.replaceFirst("%1", m_strOldTabName);
-                        aEvent.OldValue <<= sOldName;
-                        OUString sNewName(ScResId(STR_ACC_TABLE_NAME));
-                        sOldName = sNewName.replaceFirst("%1", tabName);
-                        aEvent.NewValue <<= sNewName;
-                        CommitChange( aEvent );
-                        m_strOldTabName = tabName;
-                    }
-                }
-            }
-        }
-        // commented out, because to use a ModelChangeEvent is not the right way
-        // at the moment there is no way, but the Java/Gnome Api should be extended sometime
-/*          if (mpViewShell)
-            {
-                Rectangle aNewVisCells(GetVisCells(GetVisArea(mpViewShell, meSplitPos)));
-
-                Rectangle aNewPos(aNewVisCells);
-
-                if (aNewVisCells.IsOver(maVisCells))
-                    aNewPos.Union(maVisCells);
-                else
-                    CommitTableModelChange(maVisCells.Top(), maVisCells.Left(), maVisCells.Bottom(), maVisCells.Right(), AccessibleTableModelChangeType::UPDATE);
-
-                maVisCells = aNewVisCells;
-
-                CommitTableModelChange(aNewPos.Top(), aNewPos.Left(), aNewPos.Bottom(), aNewPos.Right(), AccessibleTableModelChangeType::UPDATE);
-            }
-        }*/
-    }
-    else if ( dynamic_cast<const ScUpdateRefHint*>(&rHint) )
+    if ( dynamic_cast<const ScUpdateRefHint*>(&rHint) )
     {
         const ScUpdateRefHint& rRef = static_cast<const ScUpdateRefHint&>(rHint);
         if (rRef.GetMode() == URM_INSDEL && rRef.GetDz() == 0) //test whether table is inserted or deleted
@@ -717,6 +477,244 @@ void ScAccessibleSpreadsheet::Notify( SfxBroadcaster& rBC, const SfxHint& rHint 
             }
         }
     }
+    else
+    {
+        if (rHint.GetId() == SC_HINT_ACC_CURSORCHANGED)
+        {
+            if (mpViewShell)
+            {
+                ScViewData& rViewData = mpViewShell->GetViewData();
+
+                m_bFormulaMode = rViewData.IsRefMode() || SC_MOD()->IsFormulaMode();
+                if ( m_bFormulaMode )
+                {
+                    NotifyRefMode();
+                    m_bFormulaLastMode = true;
+                    return;
+                }
+                if (m_bFormulaLastMode)
+                {//Last Notify Mode  Is Formula Mode.
+                    m_vecFormulaLastMyAddr.clear();
+                    RemoveFormulaSelection(true);
+                    m_pAccFormulaCell.clear();
+                    //Remove All Selection
+                }
+                m_bFormulaLastMode = m_bFormulaMode;
+
+                AccessibleEventObject aEvent;
+                aEvent.Source = uno::Reference< XAccessible >(this);
+                ScAddress aNewCell = rViewData.GetCurPos();
+                if(aNewCell.Tab() != maActiveCell.Tab())
+                {
+                    aEvent.EventId = AccessibleEventId::PAGE_CHANGED;
+                    ScAccessibleDocument *pAccDoc =
+                        static_cast<ScAccessibleDocument*>(getAccessibleParent().get());
+                    if(pAccDoc)
+                    {
+                        pAccDoc->CommitChange(aEvent);
+                    }
+                }
+                bool bNewPosCell = (aNewCell != maActiveCell) || mpViewShell->GetForceFocusOnCurCell(); // #i123629#
+                bool bNewPosCellFocus=false;
+                if ( bNewPosCell && IsFocused() && aNewCell.Tab() == maActiveCell.Tab() )
+                {//single Focus
+                    bNewPosCellFocus=true;
+                }
+                ScMarkData &refScMarkData = rViewData.GetMarkData();
+                // MT IA2: Not used
+                // int nSelCount = refScMarkData.GetSelectCount();
+                bool bIsMark =refScMarkData.IsMarked();
+                bool bIsMultMark = refScMarkData.IsMultiMarked();
+                bool bNewMarked = refScMarkData.GetTableSelect(aNewCell.Tab()) && ( bIsMark || bIsMultMark );
+//              sal_Bool bNewCellSelected = isAccessibleSelected(aNewCell.Row(), aNewCell.Col());
+                sal_uInt16 nTab = rViewData.GetTabNo();
+                ScRange aMarkRange;
+                refScMarkData.GetMarkArea(aMarkRange);
+                aEvent.OldValue.clear();
+                //Mark All
+                if ( !bNewPosCellFocus &&
+                    (bNewMarked || bIsMark || bIsMultMark ) &&
+                    aMarkRange == ScRange( 0,0,nTab, MAXCOL,MAXROW,nTab ) )
+                {
+                    aEvent.EventId = AccessibleEventId::SELECTION_CHANGED_WITHIN;
+                    aEvent.NewValue.clear();
+                    CommitChange(aEvent);
+                    return ;
+                }
+                if (!mpMarkedRanges)
+                {
+                    mpMarkedRanges = new ScRangeList();
+                }
+                refScMarkData.FillRangeListWithMarks(mpMarkedRanges, true);
+
+                //For Whole Col Row
+                bool bWholeRow = ::labs(aMarkRange.aStart.Row() - aMarkRange.aEnd.Row()) == MAXROW ;
+                bool bWholeCol = ::abs(aMarkRange.aStart.Col() - aMarkRange.aEnd.Col()) == MAXCOL ;
+                if ((bNewMarked || bIsMark || bIsMultMark ) && (bWholeCol || bWholeRow))
+                {
+                    if ( aMarkRange != m_aLastWithInMarkRange )
+                    {
+                        RemoveSelection(refScMarkData);
+                        if(bNewPosCell)
+                        {
+                            CommitFocusCell(aNewCell);
+                        }
+                        bool bLastIsWholeColRow =
+                            (::labs(m_aLastWithInMarkRange.aStart.Row() - m_aLastWithInMarkRange.aEnd.Row()) == MAXROW && bWholeRow) ||
+                            (::abs(m_aLastWithInMarkRange.aStart.Col() - m_aLastWithInMarkRange.aEnd.Col()) == MAXCOL && bWholeCol);
+                        bool bSelSmaller=
+                            bLastIsWholeColRow &&
+                            !aMarkRange.In(m_aLastWithInMarkRange) &&
+                            aMarkRange.Intersects(m_aLastWithInMarkRange);
+                        if( !bSelSmaller )
+                        {
+                            aEvent.EventId = AccessibleEventId::SELECTION_CHANGED_WITHIN;
+                            aEvent.NewValue.clear();
+                            CommitChange(aEvent);
+                        }
+                        m_aLastWithInMarkRange = aMarkRange;
+                    }
+                    return ;
+                }
+                m_aLastWithInMarkRange = aMarkRange;
+                int nNewMarkCount = mpMarkedRanges->GetCellCount();
+                bool bSendSingle= (0 == nNewMarkCount) && bNewPosCell;
+                if (bSendSingle)
+                {
+                    RemoveSelection(refScMarkData);
+                    if(bNewPosCellFocus)
+                    {
+                        CommitFocusCell(aNewCell);
+                    }
+                    uno::Reference< XAccessible > xChild ;
+                    if (bNewPosCellFocus)
+                    {
+                        xChild = mpAccCell.get();
+                    }
+                    else
+                    {
+                        mpAccCell = GetAccessibleCellAt(aNewCell.Row(),aNewCell.Col());
+                        xChild = mpAccCell.get();
+
+                        maActiveCell = aNewCell;
+                        aEvent.EventId = AccessibleEventId::ACTIVE_DESCENDANT_CHANGED_NOFOCUS;
+                        aEvent.NewValue <<= xChild;
+                        aEvent.OldValue <<= uno::Reference< XAccessible >();
+                        CommitChange(aEvent);
+                    }
+                    aEvent.EventId = AccessibleEventId::SELECTION_CHANGED;
+                    aEvent.NewValue <<= xChild;
+                    CommitChange(aEvent);
+                    OSL_ASSERT(m_mapSelectionSend.count(aNewCell) == 0 );
+                    m_mapSelectionSend.insert(MAP_ADDR_XACC::value_type(aNewCell,xChild));
+
+                }
+                else
+                {
+                    ScRange aDelRange;
+                    bool bIsDel = rViewData.GetDelMark( aDelRange );
+                    if ( (!bIsDel || aMarkRange != aDelRange) &&
+                        bNewMarked &&
+                        nNewMarkCount > 0 &&
+                        m_LastMarkedRanges != *mpMarkedRanges )
+                    {
+                        RemoveSelection(refScMarkData);
+                        if(bNewPosCellFocus)
+                        {
+                            CommitFocusCell(aNewCell);
+                        }
+                        VEC_MYADDR vecNew;
+                        if(CalcScRangeListDifferenceMax(mpMarkedRanges,&m_LastMarkedRanges,10,vecNew))
+                        {
+                            aEvent.EventId = AccessibleEventId::SELECTION_CHANGED_WITHIN;
+                            aEvent.NewValue.clear();
+                            CommitChange(aEvent);
+                        }
+                        else
+                        {
+                            VEC_MYADDR::iterator viAddr = vecNew.begin();
+                            for(; viAddr < vecNew.end() ; ++viAddr )
+                            {
+                                uno::Reference< XAccessible > xChild = getAccessibleCellAt(viAddr->Row(),viAddr->Col());
+                                if (!(bNewPosCellFocus && *viAddr == aNewCell) )
+                                {
+                                    aEvent.EventId = AccessibleEventId::ACTIVE_DESCENDANT_CHANGED_NOFOCUS;
+                                    aEvent.NewValue <<= xChild;
+                                    CommitChange(aEvent);
+                                }
+                                aEvent.EventId = AccessibleEventId::SELECTION_CHANGED_ADD;
+                                aEvent.NewValue <<= xChild;
+                                CommitChange(aEvent);
+                                m_mapSelectionSend.insert(MAP_ADDR_XACC::value_type(*viAddr,xChild));
+                            }
+                        }
+                    }
+                }
+                if (bNewPosCellFocus && maActiveCell != aNewCell)
+                {
+                    CommitFocusCell(aNewCell);
+                }
+                m_LastMarkedRanges = *mpMarkedRanges;
+            }
+        }
+        else if (rHint.GetId() == SC_HINT_DATACHANGED)
+        {
+            if (!mbDelIns)
+                CommitTableModelChange(maRange.aStart.Row(), maRange.aStart.Col(), maRange.aEnd.Row(), maRange.aEnd.Col(), AccessibleTableModelChangeType::UPDATE);
+            else
+                mbDelIns = false;
+            ScViewData& rViewData = mpViewShell->GetViewData();
+            ScAddress aNewCell = rViewData.GetCurPos();
+            if( maActiveCell == aNewCell)
+            {
+                ScDocument* pScDoc= GetDocument(mpViewShell);
+                if (pScDoc)
+                {
+                    OUString valStr(pScDoc->GetString(aNewCell.Col(),aNewCell.Row(),aNewCell.Tab()));
+                    if(m_strCurCellValue != valStr)
+                    {
+                        AccessibleEventObject aEvent;
+                        aEvent.EventId = AccessibleEventId::VALUE_CHANGED;
+                        mpAccCell->CommitChange(aEvent);
+                        m_strCurCellValue=valStr;
+                    }
+                    OUString tabName;
+                    pScDoc->GetName( maActiveCell.Tab(), tabName );
+                    if( m_strOldTabName != tabName )
+                    {
+                        AccessibleEventObject aEvent;
+                        aEvent.EventId = AccessibleEventId::NAME_CHANGED;
+                        OUString sOldName(ScResId(STR_ACC_TABLE_NAME));
+                        sOldName = sOldName.replaceFirst("%1", m_strOldTabName);
+                        aEvent.OldValue <<= sOldName;
+                        OUString sNewName(ScResId(STR_ACC_TABLE_NAME));
+                        sOldName = sNewName.replaceFirst("%1", tabName);
+                        aEvent.NewValue <<= sNewName;
+                        CommitChange( aEvent );
+                        m_strOldTabName = tabName;
+                    }
+                }
+            }
+        }
+        // commented out, because to use a ModelChangeEvent is not the right way
+        // at the moment there is no way, but the Java/Gnome Api should be extended sometime
+/*          if (mpViewShell)
+            {
+                Rectangle aNewVisCells(GetVisCells(GetVisArea(mpViewShell, meSplitPos)));
+
+                Rectangle aNewPos(aNewVisCells);
+
+                if (aNewVisCells.IsOver(maVisCells))
+                    aNewPos.Union(maVisCells);
+                else
+                    CommitTableModelChange(maVisCells.Top(), maVisCells.Left(), maVisCells.Bottom(), maVisCells.Right(), AccessibleTableModelChangeType::UPDATE);
+
+                maVisCells = aNewVisCells;
+
+                CommitTableModelChange(aNewPos.Top(), aNewPos.Left(), aNewPos.Bottom(), aNewPos.Right(), AccessibleTableModelChangeType::UPDATE);
+            }
+        }*/
+    }
 
     ScAccessibleTableBase::Notify(rBC, rHint);
 }
@@ -725,7 +723,6 @@ void ScAccessibleSpreadsheet::RemoveSelection(ScMarkData &refScMarkData)
 {
     AccessibleEventObject aEvent;
     aEvent.Source = uno::Reference< XAccessible >(this);
-    aEvent.OldValue <<= css::uno::Any();
     MAP_ADDR_XACC::iterator miRemove = m_mapSelectionSend.begin();
     for(;  miRemove != m_mapSelectionSend.end() ;)
     {
@@ -765,11 +762,6 @@ void ScAccessibleSpreadsheet::CommitFocusCell(const ScAddress &aNewCell)
         m_strCurCellValue = pScDoc->GetString(maActiveCell.Col(),maActiveCell.Row(),maActiveCell.Tab());
     }
     CommitChange(aEvent);
-}
-
-bool ScAccessibleSpreadsheet::IsSameMarkCell()
-{
-    return m_LastMarkedRanges == *mpMarkedRanges;
 }
 
 //=====  XAccessibleTable  ================================================
@@ -1612,7 +1604,7 @@ void ScAccessibleSpreadsheet::NotifyRefMode()
             if ( nNewSize > 10 )
             {
                 aEvent.EventId = AccessibleEventId::SELECTION_CHANGED_WITHIN;
-                aEvent.NewValue <<= css::uno::Any();
+                aEvent.NewValue.clear();
                 CommitChange(aEvent);
             }
             else
@@ -1648,7 +1640,6 @@ void ScAccessibleSpreadsheet::RemoveFormulaSelection(bool bRemoveAll )
 {
     AccessibleEventObject aEvent;
     aEvent.Source = uno::Reference< XAccessible >(this);
-    aEvent.OldValue <<= css::uno::Any();
     MAP_ADDR_XACC::iterator miRemove = m_mapFormulaSelectionSend.begin();
     for(;  miRemove != m_mapFormulaSelectionSend.end() ;)
     {

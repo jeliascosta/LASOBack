@@ -41,8 +41,8 @@ private:
     VclPtr<VclContainer>       m_pQuickStarterFrame;
     VclPtr<CheckBox>           m_pQuickLaunchCB;
 
-    DECL_LINK_TYPED(GraphicCacheConfigHdl, SpinField&, void);
-    DECL_LINK_TYPED(GraphicCacheLoseFocusHdl, Control&, void);
+    DECL_LINK(GraphicCacheConfigHdl, SpinField&, void);
+    DECL_LINK(GraphicCacheLoseFocusHdl, Control&, void);
 
     sal_Int32 GetNfGraphicCacheVal() const; // returns # of Bytes
     inline void         SetNfGraphicCacheVal( long nSizeInBytes );
@@ -52,11 +52,11 @@ private:
     inline void         SetNfGraphicObjectCacheMax( long nSizeInBytes );
     inline void         SetNfGraphicObjectCacheLast( long nSizeInBytes );
 protected:
-    virtual sfxpg       DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC   DeactivatePage( SfxItemSet* pSet ) override;
 
 public:
     OfaMemoryOptionsPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~OfaMemoryOptionsPage();
+    virtual ~OfaMemoryOptionsPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent, const SfxItemSet* rAttrSet );

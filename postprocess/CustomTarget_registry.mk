@@ -122,7 +122,6 @@ postprocess_FILES_lingucomponent := \
 	$(SRCDIR)/lingucomponent/config/Linguistic-lingucomponent-thesaurus.xcu \
 
 postprocess_FILES_main := \
-	$(postprocess_XCS)/FirstStartWizard.xcs \
 	$(postprocess_XCS)/Inet.xcs \
 	$(postprocess_XCS)/Interaction.xcs \
 	$(postprocess_XCS)/LDAP.xcs \
@@ -160,7 +159,6 @@ postprocess_FILES_main := \
 	$(postprocess_XCS)/Office/Recovery.xcs \
 	$(postprocess_XCS)/Office/Scripting.xcs \
 	$(postprocess_XCS)/Office/Security.xcs \
-	$(postprocess_XCS)/Office/Substitution.xcs \
 	$(postprocess_XCS)/Office/TabBrowse.xcs \
 	$(postprocess_XCS)/Office/TableWizard.xcs \
 	$(postprocess_XCS)/Office/TypeDetection.xcs \
@@ -185,9 +183,11 @@ postprocess_FILES_main := \
 	$(postprocess_XCS)/Office/UI/GenericCategories.xcs \
 	$(postprocess_XCS)/Office/UI/GenericCommands.xcs \
 	$(postprocess_XCS)/Office/UI/GlobalSettings.xcs \
+	$(postprocess_XCS)/Office/UI/Notebookbar.xcs \
 	$(postprocess_XCS)/Office/UI/Sidebar.xcs \
 	$(postprocess_XCS)/Office/UI/StartModuleCommands.xcs \
 	$(postprocess_XCS)/Office/UI/StartModuleWindowState.xcs \
+	$(postprocess_XCS)/Office/UI/ToolbarMode.xcs \
 	$(postprocess_XCS)/Office/UI/WindowContentFactories.xcs \
 	$(postprocess_XCS)/Office/UI/WindowState.xcs \
 	$(postprocess_XCS)/Office/UI.xcs \
@@ -208,7 +208,6 @@ postprocess_FILES_main := \
 	$(postprocess_XCS)/ucb/Hierarchy.xcs \
 	$(postprocess_XCS)/ucb/InteractionHandler.xcs \
 	$(postprocess_XCS)/ucb/Store.xcs \
-	$(postprocess_XCU)/FirstStartWizard.xcu \
 	$(postprocess_XCU)/Inet.xcu \
 	$(postprocess_XCU)/Interaction.xcu \
 	$(postprocess_XCU)/Office/Accelerators.xcu \
@@ -249,9 +248,11 @@ postprocess_FILES_main := \
 	$(postprocess_XCU)/Office/UI/Factories.xcu \
 	$(postprocess_XCU)/Office/UI/GenericCategories.xcu \
 	$(postprocess_XCU)/Office/UI/GenericCommands.xcu \
+	$(postprocess_XCU)/Office/UI/Notebookbar.xcu \
 	$(postprocess_XCU)/Office/UI/Sidebar.xcu \
 	$(postprocess_XCU)/Office/UI/StartModuleCommands.xcu \
 	$(postprocess_XCU)/Office/UI/StartModuleWindowState.xcu \
+	$(postprocess_XCU)/Office/UI/ToolbarMode.xcu \
 	$(postprocess_XCU)/Office/UI.xcu \
 	$(postprocess_XCU)/Office/Views.xcu \
 	$(postprocess_XCU)/Office/WebWizard.xcu \
@@ -443,7 +444,7 @@ postprocess_FILES_onlineupdate := \
 	$(call gb_XcuModuleTarget_get_target,extensions/source/update/check)/org/openoffice/Office/Jobs-onlineupdate.xcu
 endif
 
-ifeq ($(ENABLE_OPENGL),TRUE)
+ifeq ($(ENABLE_OPENGL_TRANSITIONS),TRUE)
 postprocess_XCDS += ogltrans.xcd
 postprocess_DEPS_ogltrans := main
 postprocess_FILES_ogltrans := \

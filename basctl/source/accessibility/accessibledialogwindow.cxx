@@ -222,7 +222,7 @@ bool AccessibleDialogWindow::IsChildVisible( const ChildDescriptor& rDesc )
                     aRect.Move( aOrg.X(), aOrg.Y() );
 
                     // convert logic units to pixel
-                    aRect = m_pDialogWindow->LogicToPixel( aRect, MapMode(MAP_100TH_MM) );
+                    aRect = m_pDialogWindow->LogicToPixel( aRect, MapMode(MapUnit::Map100thMM) );
 
                     // check, if the shape's bounding box intersects with the bounding box of its parent
                     Rectangle aParentRect( Point( 0, 0 ), m_pDialogWindow->GetSizePixel() );
@@ -328,7 +328,7 @@ void AccessibleDialogWindow::SortChildren()
 }
 
 
-IMPL_LINK_TYPED( AccessibleDialogWindow, WindowEventListener, VclWindowEvent&, rEvent, void )
+IMPL_LINK( AccessibleDialogWindow, WindowEventListener, VclWindowEvent&, rEvent, void )
 {
     DBG_ASSERT(rEvent.GetWindow(), "AccessibleDialogWindow::WindowEventListener: no window!");
     if (!rEvent.GetWindow()->IsAccessibilityEventsSuppressed() || rEvent.GetId() == VCLEVENT_OBJECT_DYING)
@@ -477,7 +477,7 @@ void AccessibleDialogWindow::Notify( SfxBroadcaster&, const SfxHint& rHint )
     {
         switch ( pSdrHint->GetKind() )
         {
-            case HINT_OBJINSERTED:
+            case SdrHintKind::ObjectInserted:
             {
                 if (DlgEdObj const* pDlgEdObj = dynamic_cast<DlgEdObj const*>(pSdrHint->GetObject()))
                 {
@@ -487,7 +487,7 @@ void AccessibleDialogWindow::Notify( SfxBroadcaster&, const SfxHint& rHint )
                 }
             }
             break;
-            case HINT_OBJREMOVED:
+            case SdrHintKind::ObjectRemoved:
             {
                 if (DlgEdObj const* pDlgEdObj = dynamic_cast<DlgEdObj const*>(pSdrHint->GetObject()))
                     RemoveChild( ChildDescriptor(const_cast<DlgEdObj*>(pDlgEdObj)) );
@@ -585,8 +585,7 @@ sal_Bool AccessibleDialogWindow::supportsService( const OUString& rServiceName )
 
 Sequence< OUString > AccessibleDialogWindow::getSupportedServiceNames() throw (RuntimeException, std::exception)
 {
-    Sequence<OUString> aNames { "com.sun.star.awt.AccessibleWindow" };
-    return aNames;
+    return { "com.sun.star.awt.AccessibleWindow" };
 }
 
 // XAccessible

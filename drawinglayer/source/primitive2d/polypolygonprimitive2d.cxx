@@ -40,25 +40,17 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer PolyPolygonHairlinePrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
+        void PolyPolygonHairlinePrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
             const basegfx::B2DPolyPolygon aPolyPolygon(getB2DPolyPolygon());
             const sal_uInt32 nCount(aPolyPolygon.count());
 
             if(nCount)
             {
-                Primitive2DContainer aRetval(nCount);
-
                 for(sal_uInt32 a(0L); a < nCount; a++)
                 {
-                    aRetval[a] = Primitive2DReference(new PolygonHairlinePrimitive2D(aPolyPolygon.getB2DPolygon(a), getBColor()));
+                    rContainer.push_back(new PolygonHairlinePrimitive2D(aPolyPolygon.getB2DPolygon(a), getBColor()));
                 }
-
-                return aRetval;
-            }
-            else
-            {
-                return Primitive2DContainer();
             }
         }
 
@@ -99,30 +91,22 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer PolyPolygonMarkerPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
+        void PolyPolygonMarkerPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
             const basegfx::B2DPolyPolygon aPolyPolygon(getB2DPolyPolygon());
             const sal_uInt32 nCount(aPolyPolygon.count());
 
             if(nCount)
             {
-                Primitive2DContainer aRetval(nCount);
-
                 for(sal_uInt32 a(0L); a < nCount; a++)
                 {
-                    aRetval[a] = Primitive2DReference(
+                    rContainer.push_back(
                         new PolygonMarkerPrimitive2D(
                             aPolyPolygon.getB2DPolygon(a),
                             getRGBColorA(),
                             getRGBColorB(),
                             getDiscreteDashLength()));
                 }
-
-                return aRetval;
-            }
-            else
-            {
-                return Primitive2DContainer();
             }
         }
 
@@ -171,27 +155,19 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer PolyPolygonStrokePrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
+        void PolyPolygonStrokePrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
             const basegfx::B2DPolyPolygon aPolyPolygon(getB2DPolyPolygon());
             const sal_uInt32 nCount(aPolyPolygon.count());
 
             if(nCount)
             {
-                Primitive2DContainer aRetval(nCount);
-
                 for(sal_uInt32 a(0L); a < nCount; a++)
                 {
-                    aRetval[a] = Primitive2DReference(
+                    rContainer.push_back(
                         new PolygonStrokePrimitive2D(
                             aPolyPolygon.getB2DPolygon(a), getLineAttribute(), getStrokeAttribute()));
                 }
-
-                return aRetval;
-            }
-            else
-            {
-                return Primitive2DContainer();
             }
         }
 
@@ -294,7 +270,7 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer PolyPolygonGradientPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
+        void PolyPolygonGradientPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
             if(!getFillGradient().isDefault())
             {
@@ -308,14 +284,7 @@ namespace drawinglayer
                 const Primitive2DContainer aSubSequence { xSubRef };
 
                 // create mask primitive
-                MaskPrimitive2D* pNewMask = new MaskPrimitive2D(getB2DPolyPolygon(), aSubSequence);
-                const Primitive2DReference xRef(pNewMask);
-
-                return Primitive2DContainer { xRef };
-            }
-            else
-            {
-                return Primitive2DContainer();
+                rContainer.push_back(new MaskPrimitive2D(getB2DPolyPolygon(), aSubSequence));
             }
         }
 
@@ -365,7 +334,7 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer PolyPolygonHatchPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
+        void PolyPolygonHatchPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
             if(!getFillHatch().isDefault())
             {
@@ -380,14 +349,7 @@ namespace drawinglayer
                 const Primitive2DContainer aSubSequence { xSubRef };
 
                 // create mask primitive
-                MaskPrimitive2D* pNewMask = new MaskPrimitive2D(getB2DPolyPolygon(), aSubSequence);
-                const Primitive2DReference xRef(pNewMask);
-
-                return Primitive2DContainer { xRef };
-            }
-            else
-            {
-                return Primitive2DContainer();
+                rContainer.push_back(new MaskPrimitive2D(getB2DPolyPolygon(), aSubSequence));
             }
         }
 
@@ -442,7 +404,7 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer PolyPolygonGraphicPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
+        void PolyPolygonGraphicPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
             if(!getFillGraphic().isDefault())
             {
@@ -450,7 +412,7 @@ namespace drawinglayer
                 const GraphicType aType(rGraphic.GetType());
 
                 // is there a bitmap or a metafile (do we have content)?
-                if(GRAPHIC_BITMAP == aType || GRAPHIC_GDIMETAFILE == aType)
+                if(GraphicType::Bitmap == aType || GraphicType::GdiMetafile == aType)
                 {
                     const Size aPrefSize(rGraphic.GetPrefSize());
 
@@ -510,17 +472,13 @@ namespace drawinglayer
                         }
 
                         // embed to mask primitive
-                        const Primitive2DReference xRef(
+                        rContainer.push_back(
                             new MaskPrimitive2D(
                                 getB2DPolyPolygon(),
                                 Primitive2DContainer { xSubRef }));
-
-                        return Primitive2DContainer { xRef };
                     }
                 }
             }
-
-            return Primitive2DContainer();
         }
 
         PolyPolygonGraphicPrimitive2D::PolyPolygonGraphicPrimitive2D(
@@ -569,49 +527,49 @@ namespace drawinglayer
 {
     namespace primitive2d
     {
-        Primitive2DContainer PolyPolygonSelectionPrimitive2D::create2DDecomposition(const geometry::ViewInformation2D& /*rViewInformation*/) const
+        void PolyPolygonSelectionPrimitive2D::create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& /*rViewInformation*/) const
         {
+            if(getTransparence() >= 1.0 || !getB2DPolyPolygon().count())
+                return;
+
             Primitive2DContainer aRetval;
 
-            if(getTransparence() < 1.0 && getB2DPolyPolygon().count())
+            if(getFill() && getB2DPolyPolygon().isClosed())
             {
-                if(getFill() && getB2DPolyPolygon().isClosed())
-                {
-                    // create fill primitive
-                    const Primitive2DReference aFill(
-                        new PolyPolygonColorPrimitive2D(
-                            getB2DPolyPolygon(),
-                            getColor()));
+                // create fill primitive
+                const Primitive2DReference aFill(
+                    new PolyPolygonColorPrimitive2D(
+                        getB2DPolyPolygon(),
+                        getColor()));
 
-                    aRetval = Primitive2DContainer { aFill };
-                }
-
-                if(getDiscreteGrow() > 0.0)
-                {
-                    const attribute::LineAttribute aLineAttribute(
-                        getColor(),
-                        getDiscreteGrow() * getDiscreteUnit() * 2.0);
-                    const Primitive2DReference aFatLine(
-                        new PolyPolygonStrokePrimitive2D(
-                            getB2DPolyPolygon(),
-                            aLineAttribute));
-
-                    aRetval.push_back(aFatLine);
-                }
-
-                // embed filled to transparency (if used)
-                if(!aRetval.empty() && getTransparence() > 0.0)
-                {
-                    const Primitive2DReference aTrans(
-                        new UnifiedTransparencePrimitive2D(
-                            aRetval,
-                            getTransparence()));
-
-                    aRetval = Primitive2DContainer { aTrans };
-                }
+                aRetval = Primitive2DContainer { aFill };
             }
 
-            return aRetval;
+            if(getDiscreteGrow() > 0.0)
+            {
+                const attribute::LineAttribute aLineAttribute(
+                    getColor(),
+                    getDiscreteGrow() * getDiscreteUnit() * 2.0);
+                const Primitive2DReference aFatLine(
+                    new PolyPolygonStrokePrimitive2D(
+                        getB2DPolyPolygon(),
+                        aLineAttribute));
+
+                aRetval.push_back(aFatLine);
+            }
+
+            // embed filled to transparency (if used)
+            if(!aRetval.empty() && getTransparence() > 0.0)
+            {
+                const Primitive2DReference aTrans(
+                    new UnifiedTransparencePrimitive2D(
+                        aRetval,
+                        getTransparence()));
+
+                aRetval = Primitive2DContainer { aTrans };
+            }
+
+            rContainer.insert(rContainer.end(), aRetval.begin(), aRetval.end());
         }
 
         PolyPolygonSelectionPrimitive2D::PolyPolygonSelectionPrimitive2D(

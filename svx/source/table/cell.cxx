@@ -28,11 +28,13 @@
 
 #include <cppuhelper/supportsservice.hxx>
 #include <cppuhelper/typeprovider.hxx>
+#include <o3tl/any.hxx>
 #include <svl/style.hxx>
 #include <svl/itemset.hxx>
 
 #include <osl/mutex.hxx>
 #include <vcl/svapp.hxx>
+#include <libxml/xmlwriter.h>
 
 #include "sdr/properties/textproperties.hxx"
 #include "editeng/outlobj.hxx"
@@ -158,7 +160,7 @@ namespace sdr
             CellProperties(const CellProperties& rProps, SdrObject& rObj, sdr::table::Cell* pCell);
 
             // destructor
-            virtual ~CellProperties();
+            virtual ~CellProperties() override;
 
             // Clone() operator, normally just calls the local copy constructor
             BaseProperties& Clone(SdrObject& rObj) const override;
@@ -167,9 +169,7 @@ namespace sdr
 
             void ItemSetChanged(const SfxItemSet& rSet) override;
 
-            void ItemChange(const sal_uInt16 nWhich, const SfxPoolItem* pNewItem) override;
-
-            void SetStyleSheet(SfxStyleSheet* pNewStyleSheet, bool bDontRemoveHardAttr) override;
+            void ItemChange(const sal_uInt16 nWhich, const SfxPoolItem* pNewItem = nullptr) override;
 
             sdr::table::CellRef mxCell;
 
@@ -238,7 +238,7 @@ namespace sdr
             {
                 OutlinerParaObject* pParaObj = mxCell->GetEditOutlinerParaObject();
 
-                bool bOwnParaObj = pParaObj != nullptr;
+                const bool bOwnParaObj = pParaObj != nullptr;
 
                 if( pParaObj == nullptr )
                     pParaObj = mxCell->GetOutlinerParaObject();
@@ -319,23 +319,25 @@ namespace sdr
 
                 // Set a cell vertical property
                 OutlinerParaObject* pParaObj = mxCell->GetEditOutlinerParaObject();
+
+                const bool bOwnParaObj = pParaObj != nullptr;
+
                 if( pParaObj == nullptr )
                     pParaObj = mxCell->GetOutlinerParaObject();
+
                 if(pParaObj)
                 {
                     pParaObj->SetVertical(bVertical);
-                }
 
+                    if( bOwnParaObj )
+                        delete pParaObj;
+                }
             }
 
             // call parent
             AttributeProperties::ItemChange( nWhich, pNewItem );
         }
 
-        void CellProperties::SetStyleSheet(SfxStyleSheet* pNewStyleSheet, bool bDontRemoveHardAttr)
-        {
-            TextProperties::SetStyleSheet( pNewStyleSheet, bDontRemoveHardAttr );
-        }
     } // end of namespace properties
 } // end of namespace sdr
 
@@ -1011,11 +1013,8 @@ void SAL_CALL Cell::setPropertyValue( const OUString& rPropertyName, const Any& 
         }
         case OWN_ATTR_TABLEBORDER:
         {
-            if(rValue.getValueType() != cppu::UnoType<TableBorder>::get())
-                break;
-
-            const TableBorder* pBorder = static_cast<const TableBorder*>(rValue.getValue());
-            if( pBorder == nullptr )
+            auto pBorder = o3tl::tryAccess<TableBorder>(rValue);
+            if(!pBorder)
                 break;
 
             SvxBoxItem aBox( SDRATTR_TABLE_BORDER );
@@ -1046,7 +1045,7 @@ void SAL_CALL Cell::setPropertyValue( const OUString& rPropertyName, const Any& 
             aBoxInfo.SetLine(bSet ? &aLine : nullptr, SvxBoxInfoItemLine::VERT);
             aBoxInfo.SetValid(SvxBoxInfoItemValidFlags::VERT, pBorder->IsVerticalLineValid);
 
-            aBox.SetDistance(pBorder->Distance); //TODO
+            aBox.SetAllDistances(pBorder->Distance); //TODO
             aBoxInfo.SetValid(SvxBoxInfoItemValidFlags::DISTANCE, pBorder->IsDistanceValid);
 
             mpProperties->SetObjectItem(aBox);
@@ -1162,7 +1161,7 @@ Any SAL_CALL Cell::getPropertyValue( const OUString& PropertyName ) throw(Unknow
             aTableBorder.IsHorizontalLineValid  = rBoxInfoItem.IsValid(SvxBoxInfoItemValidFlags::HORI);
             aTableBorder.VerticalLine           = SvxBoxItem::SvxLineToLine(rBoxInfoItem.GetVert(), false);
             aTableBorder.IsVerticalLineValid    = rBoxInfoItem.IsValid(SvxBoxInfoItemValidFlags::VERT);
-            aTableBorder.Distance               = rBox.GetDistance();
+            aTableBorder.Distance               = rBox.GetSmallestDistance();
             aTableBorder.IsDistanceValid        = rBoxInfoItem.IsValid(SvxBoxInfoItemValidFlags::DISTANCE);
 
             return Any( aTableBorder );
@@ -1606,18 +1605,6 @@ void SAL_CALL Cell::removeTextContent( const Reference< XTextContent >& xContent
 // XSimpleText
 
 
-Reference< XTextCursor > SAL_CALL Cell::createTextCursor(  ) throw (RuntimeException, std::exception)
-{
-    return SvxUnoTextBase::createTextCursor();
-}
-
-
-Reference< XTextCursor > SAL_CALL Cell::createTextCursorByRange( const Reference< XTextRange >& aTextPosition ) throw (RuntimeException, std::exception)
-{
-    return SvxUnoTextBase::createTextCursorByRange( aTextPosition );
-}
-
-
 void SAL_CALL Cell::insertString( const Reference< XTextRange >& xRange, const OUString& aString, sal_Bool bAbsorb ) throw (RuntimeException, std::exception)
 {
     SvxUnoTextBase::insertString( xRange, aString, bAbsorb );
@@ -1633,24 +1620,6 @@ void SAL_CALL Cell::insertControlCharacter( const Reference< XTextRange >& xRang
 
 
 // XTextRange
-
-
-Reference< XText > SAL_CALL Cell::getText(  ) throw (RuntimeException, std::exception)
-{
-    return SvxUnoTextBase::getText();
-}
-
-
-Reference< XTextRange > SAL_CALL Cell::getStart(  ) throw (RuntimeException, std::exception)
-{
-    return SvxUnoTextBase::getStart();
-}
-
-
-Reference< XTextRange > SAL_CALL Cell::getEnd(  ) throw (RuntimeException, std::exception)
-{
-    return SvxUnoTextBase::getEnd();
-}
 
 
 OUString SAL_CALL Cell::getString(  ) throw (RuntimeException, std::exception)
@@ -1671,6 +1640,18 @@ void SAL_CALL Cell::disposing( const EventObject& /*Source*/ ) throw (RuntimeExc
 {
     mxTable.clear();
     dispose();
+}
+
+void Cell::dumpAsXml(struct _xmlTextWriter * pWriter, sal_Int32 nRow, sal_Int32 nCol) const
+{
+    xmlTextWriterStartElement(pWriter, BAD_CAST("Cell"));
+    xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("row"), "%" SAL_PRIdINT32, nRow);
+    xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("col"), "%" SAL_PRIdINT32, nCol);
+    SdrText::dumpAsXml(pWriter);
+    //SvxUnoTextBase::dumpAsXml(pWriter);
+    //mpPropSet->dumpAsXml(pWriter);
+    mpProperties->dumpAsXml(pWriter);
+    xmlTextWriterEndElement(pWriter);
 }
 
 } }

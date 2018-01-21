@@ -44,12 +44,12 @@
 #include "View.hxx"
 #include "AccessibleOutlineView.hxx"
 #include "AccessibleOutlineEditSource.hxx"
-
-#include <memory>
-
+#include <drawdoc.hxx>
 #include "accessibility.hrc"
 #include "sdresid.hxx"
 #include <osl/mutex.hxx>
+
+#include <memory>
 
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::accessibility;
@@ -103,10 +103,9 @@ void AccessibleOutlineView::Init()
     AccessibleDocumentViewBase::Init ();
 }
 
-void AccessibleOutlineView::ViewForwarderChanged (ChangeType aChangeType,
-    const IAccessibleViewForwarder* pViewForwarder)
+void AccessibleOutlineView::ViewForwarderChanged()
 {
-    AccessibleDocumentViewBase::ViewForwarderChanged (aChangeType, pViewForwarder);
+    AccessibleDocumentViewBase::ViewForwarderChanged();
 
     UpdateChildren();
 }
@@ -131,8 +130,6 @@ uno::Reference<XAccessible> SAL_CALL
     // Forward request to children manager.
     return maTextHelper.GetChild(nIndex);
 }
-
-#include <drawdoc.hxx>
 
 OUString SAL_CALL
     AccessibleOutlineView::getAccessibleName()
@@ -190,13 +187,6 @@ OUString SAL_CALL
 }
 
 //=====  XEventListener  ======================================================
-
-void SAL_CALL
-    AccessibleOutlineView::disposing (const lang::EventObject& rEventObject)
-    throw (css::uno::RuntimeException, std::exception)
-{
-    AccessibleDocumentViewBase::disposing (rEventObject);
-}
 
 //=====  protected internal  ==================================================
 

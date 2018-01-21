@@ -31,6 +31,9 @@ void InitSystemTimer(ImplSVData* pSVData);
 
 void ImplSchedulerData::Invoke()
 {
+    DBG_TESTSOLARMUTEX();
+
+    assert(!mbInScheduler);
     if (mbDelete || mbInScheduler )
         return;
 
@@ -54,7 +57,7 @@ ImplSchedulerData *ImplSchedulerData::GetMostImportantTask( bool bTimerOnly )
     sal_uInt64 nTimeNow = tools::Time::GetSystemTicks();
     for ( ImplSchedulerData *pSchedulerData = pSVData->mpFirstSchedulerData; pSchedulerData; pSchedulerData = pSchedulerData->mpNext )
     {
-        if ( !pSchedulerData->mpScheduler || pSchedulerData->mbDelete ||
+        if ( !pSchedulerData->mpScheduler || pSchedulerData->mbDelete || pSchedulerData->mbInScheduler ||
              !pSchedulerData->mpScheduler->ReadyForSchedule( bTimerOnly, nTimeNow ) ||
              !pSchedulerData->mpScheduler->IsActive())
             continue;
@@ -127,6 +130,9 @@ void Scheduler::ImplStartTimer(sal_uInt64 nMS, bool bForce)
         // ImplSalStopTimer() on WNT the timer queue is restarted and never ends
         return;
     }
+
+    DBG_TESTSOLARMUTEX();
+
     InitSystemTimer(pSVData);
 
     if ( !nMS )
@@ -169,6 +175,8 @@ bool Scheduler::ProcessTaskScheduling( bool bTimerOnly )
 {
     ImplSchedulerData* pSchedulerData;
 
+    DBG_TESTSOLARMUTEX();
+
     if ((pSchedulerData = ImplSchedulerData::GetMostImportantTask(bTimerOnly)))
     {
         SAL_INFO("vcl.schedule", "Invoke task " << pSchedulerData->GetDebugName());
@@ -202,6 +210,8 @@ sal_uInt64 Scheduler::CalculateMinimumTimeout( bool &bHasActiveIdles )
     ImplSVData*        pSVData = ImplGetSVData();
     sal_uInt64         nTime = tools::Time::GetSystemTicks();
     sal_uInt64         nMinPeriod = MaximumTimeoutMs;
+
+    DBG_TESTSOLARMUTEX();
 
     SAL_INFO("vcl.schedule", "Calculating minimum timeout:");
     pSchedulerData = pSVData->mpFirstSchedulerData;
@@ -274,6 +284,8 @@ void Scheduler::Start()
     {
         return;
     }
+
+    DBG_TESTSOLARMUTEX();
 
     // Mark timer active
     mbActive = true;

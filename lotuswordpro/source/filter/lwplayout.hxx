@@ -83,6 +83,8 @@
 #include "xfilter/xfframe.hxx"
 #include "xfilter/xfbgimage.hxx"
 #include "lwpusewhen.hxx"
+#include "lwplaypiece.hxx"
+
 
 #define FIRST_LAYOUTPAGENO  0x0001
 #define LAST_LAYOUTPAGENO       0xffff
@@ -95,7 +97,7 @@ class LwpVirtualLayout : public LwpDLNFPVList
 {
 public:
     LwpVirtualLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpVirtualLayout(){}
+    virtual ~LwpVirtualLayout() override {}
     inline virtual sal_uInt16 GetNumCols(){return 1;}
     virtual double GetColWidth(sal_uInt16 nIndex);
     virtual double GetColGap(sal_uInt16 nIndex);
@@ -144,7 +146,7 @@ public:
         m_bGettingHasProtection = false;
         return bRet;
     }
-    double GetMarginsValue(const sal_uInt8& nWhichSide)
+    double GetMarginsValue(sal_uInt8 nWhichSide)
     {
         if (m_bGettingMarginsValue)
             throw std::runtime_error("recursion in layout");
@@ -153,7 +155,7 @@ public:
         m_bGettingMarginsValue = false;
         return fRet;
     }
-    double GetExtMarginsValue(const sal_uInt8& nWhichSide)
+    double GetExtMarginsValue(sal_uInt8 nWhichSide)
     {
         if (m_bGettingExtMarginsValue)
             throw std::runtime_error("recursion in layout");
@@ -182,7 +184,7 @@ public:
     virtual bool IsUseOnAllEvenPages(){ return false;}
     virtual bool IsUseOnAllOddPages(){ return false;}
     virtual bool IsUseOnPage(){ return false;}
-    virtual sal_Int32 GetPageNumber(sal_uInt16 /*nLayoutNumber*/ = 0){ return -1;}
+    virtual sal_Int32 GetPageNumber(sal_uInt16 /*nLayoutNumber*/) { return -1;}
     bool IsMinimumHeight();
     virtual bool IsForWaterMark(){ return false;}
     virtual LwpPara* GetLastParaOfPreviousStory() { return nullptr; }
@@ -214,8 +216,8 @@ protected:
     bool HasProtection();
     virtual bool HonorProtection();
     virtual bool IsProtected();
-    virtual double MarginsValue(const sal_uInt8& /*nWhichSide*/){return 0;}
-    virtual double ExtMarginsValue(const sal_uInt8& /*nWhichSide*/){return 0;}
+    virtual double MarginsValue(sal_uInt8 /*nWhichSide*/){return 0;}
+    virtual double ExtMarginsValue(sal_uInt8 /*nWhichSide*/){return 0;}
     virtual bool MarginsSameAsParent();
 protected:
     bool m_bGettingHonorProtection;
@@ -294,7 +296,7 @@ class LwpHeadLayout : public LwpVirtualLayout
 {
 public:
     LwpHeadLayout(LwpObjectHeader &objHdr, LwpSvStream* pStrm);
-    virtual ~LwpHeadLayout(){}
+    virtual ~LwpHeadLayout() override {}
     void RegisterStyle() override;
     rtl::Reference<LwpVirtualLayout> FindEnSuperTableLayout();
 protected:
@@ -302,11 +304,11 @@ protected:
     virtual LWP_LAYOUT_TYPE GetLayoutType () override { return LWP_HEAD_LAYOUT;}
 };
 
-class LwpLayoutStyle
+class LwpLayoutStyle final
 {
 public:
     LwpLayoutStyle();
-    virtual ~LwpLayoutStyle();
+    ~LwpLayoutStyle();
     void Read(LwpObjectStream* pStrm);
 private:
     sal_uInt32      m_nStyleDefinition;
@@ -314,11 +316,11 @@ private:
     sal_uInt16      m_nKey;
 };
 
-class LwpLayoutMisc
+class LwpLayoutMisc final
 {
 public:
     LwpLayoutMisc();
-    virtual ~LwpLayoutMisc();
+    ~LwpLayoutMisc();
     void Read(LwpObjectStream* pStrm);
 private:
     sal_Int32   m_nGridDistance;
@@ -326,13 +328,11 @@ private:
     LwpAtomHolder* m_pContentStyle;
 };
 
-#include "lwplaypiece.hxx"
-
 class LwpMiddleLayout : public LwpVirtualLayout
 {
 public:
     LwpMiddleLayout( LwpObjectHeader &objHdr, LwpSvStream* pStrm );
-    virtual ~LwpMiddleLayout();
+    virtual ~LwpMiddleLayout() override;
     LwpLayoutGeometry* GetGeometry()
     {
         if (m_bGettingGeometry)
@@ -387,8 +387,8 @@ public:
 protected:
     void Read() override;
     virtual bool MarginsSameAsParent() override;
-    virtual double MarginsValue(const sal_uInt8& nWhichSide) override;
-    virtual double ExtMarginsValue(const sal_uInt8& nWhichSide) override;
+    virtual double MarginsValue(sal_uInt8 nWhichSide) override;
+    virtual double ExtMarginsValue(sal_uInt8 nWhichSide) override;
 private:
     LwpObjectID m_BasedOnStyle;
     LwpLayoutGeometry* Geometry();
@@ -420,7 +420,7 @@ class LwpLayout : public LwpMiddleLayout
 {
 public:
     LwpLayout( LwpObjectHeader &objHdr, LwpSvStream* pStrm );
-    virtual ~LwpLayout();
+    virtual ~LwpLayout() override;
     XFColumns* GetXFColumns();
     XFColumnSep* GetColumnSep();
     LwpShadow* GetShadow();
@@ -465,7 +465,7 @@ class LwpPlacableLayout : public LwpLayout
 {
 public:
     LwpPlacableLayout( LwpObjectHeader &objHdr, LwpSvStream* pStrm );
-    virtual ~LwpPlacableLayout();
+    virtual ~LwpPlacableLayout() override;
     sal_uInt8 GetWrapType();
     LwpLayoutRelativity* GetRelativityPiece();
     virtual sal_uInt8 GetRelativeType() override;

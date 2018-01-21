@@ -50,39 +50,63 @@
 namespace
 {
 
-#define EmfPlusRecordTypeHeader 16385
-#define EmfPlusRecordTypeEndOfFile 16386
-#define EmfPlusRecordTypeGetDC 16388
-#define EmfPlusRecordTypeObject 16392
-#define EmfPlusRecordTypeFillRects 16394
-#define EmfPlusRecordTypeFillPolygon 16396
-#define EmfPlusRecordTypeDrawLines 16397
-#define EmfPlusRecordTypeFillEllipse 16398
-#define EmfPlusRecordTypeDrawEllipse 16399
-#define EmfPlusRecordTypeFillPie 16400
-#define EmfPlusRecordTypeFillPath 16404
-#define EmfPlusRecordTypeDrawPath 16405
-#define EmfPlusRecordTypeDrawImage 16410
-#define EmfPlusRecordTypeDrawImagePoints 16411
-#define EmfPlusRecordTypeDrawString 16412
-#define EmfPlusRecordTypeSetRenderingOrigin 16413
-#define EmfPlusRecordTypeSetAntiAliasMode 16414
-#define EmfPlusRecordTypeSetTextRenderingHint 16415
-#define EmfPlusRecordTypeSetInterpolationMode 16417
-#define EmfPlusRecordTypeSetPixelOffsetMode 16418
-#define EmfPlusRecordTypeSetCompositingQuality 16420
-#define EmfPlusRecordTypeSave 16421
-#define EmfPlusRecordTypeRestore 16422
-#define EmfPlusRecordTypeBeginContainerNoParams 16424
-#define EmfPlusRecordTypeEndContainer 16425
-#define EmfPlusRecordTypeSetWorldTransform 16426
-#define EmfPlusRecordTypeResetWorldTransform 16427
-#define EmfPlusRecordTypeMultiplyWorldTransform 16428
-#define EmfPlusRecordTypeSetPageTransform 16432
-#define EmfPlusRecordTypeSetClipRect 16434
-#define EmfPlusRecordTypeSetClipPath 16435
-#define EmfPlusRecordTypeSetClipRegion 16436
-#define EmfPlusRecordTypeDrawDriverString 16438
+#define EmfPlusRecordTypeHeader 0x4001
+#define EmfPlusRecordTypeEndOfFile 0x4002
+//TODO EmfPlusRecordTypeComment 0x4003
+#define EmfPlusRecordTypeGetDC 0x4004
+//TODO EmfPlusRecordTypeMultiFormatStart 0x4005
+//TODO EmfPlusRecordTypeMultiFormatSection 0x4006
+//TODO EmfPlusRecordTypeMultiFormatEnd 0x4007
+#define EmfPlusRecordTypeObject 0x4008
+//TODO EmfPlusRecordTypeClear 0x4009
+#define EmfPlusRecordTypeFillRects 0x400A
+#define EmfPlusRecordTypeDrawRects 0x400B
+#define EmfPlusRecordTypeFillPolygon 0x400C
+#define EmfPlusRecordTypeDrawLines 0x400D
+#define EmfPlusRecordTypeFillEllipse 0x400E
+#define EmfPlusRecordTypeDrawEllipse 0x400F
+#define EmfPlusRecordTypeFillPie 0x4010
+#define EmfPlusRecordTypeDrawPie 0x4011
+#define EmfPlusRecordTypeDrawArc 0x4012
+//TODO EmfPlusRecordTypeFillRegion 0x4013
+#define EmfPlusRecordTypeFillPath 0x4014
+#define EmfPlusRecordTypeDrawPath 0x4015
+//TODO EmfPlusRecordTypeFillClosedCurve 0x4016
+//TODO EmfPlusRecordTypeDrawClosedCurve 0x4017
+//TODO EmfPlusRecordTypeDrawCurve 0x4018
+//TODO EmfPlusRecordTypeDrawBeziers 0x4019
+#define EmfPlusRecordTypeDrawImage 0x401A
+#define EmfPlusRecordTypeDrawImagePoints 0x401B
+#define EmfPlusRecordTypeDrawString 0x401C
+#define EmfPlusRecordTypeSetRenderingOrigin 0x401D
+#define EmfPlusRecordTypeSetAntiAliasMode 0x401E
+#define EmfPlusRecordTypeSetTextRenderingHint 0x401F
+#define EmfPlusRecordTypeSetInterpolationMode 0x4021
+#define EmfPlusRecordTypeSetPixelOffsetMode 0x4022
+//TODO EmfPlusRecordTypeSetCompositingMode 0x4023
+#define EmfPlusRecordTypeSetCompositingQuality 0x4024
+#define EmfPlusRecordTypeSave 0x4025
+#define EmfPlusRecordTypeRestore 0x4026
+//TODO EmfPlusRecordTypeBeginContainer 0x4027
+#define EmfPlusRecordTypeBeginContainerNoParams 0x4028
+#define EmfPlusRecordTypeEndContainer 0x4027
+#define EmfPlusRecordTypeSetWorldTransform 0x402A
+#define EmfPlusRecordTypeResetWorldTransform 0x402B
+#define EmfPlusRecordTypeMultiplyWorldTransform 0x402C
+#define EmfPlusRecordTypeTranslateWorldTransform 0x402D
+//TODO EmfPlusRecordTypeScaleWorldTransform 0x402E
+//TODO EmfPlusRecordTypeRotateWorldTransform 0x402F
+#define EmfPlusRecordTypeSetPageTransform 0x4030
+//TODO EmfPlusRecordTypeResetClip 0x4031
+#define EmfPlusRecordTypeSetClipRect 0x4032
+#define EmfPlusRecordTypeSetClipPath 0x4033
+#define EmfPlusRecordTypeSetClipRegion 0x4034
+//TODO EmfPlusRecordTypeOffsetClip 0x4035
+#define EmfPlusRecordTypeDrawDriverString 0x4036
+//TODO EmfPlusRecordTypeStrokeFillPath 0x4037
+//TODO EmfPlusRecordTypeSerializableObject 0x4038
+//TODO EmfPlusRecordTypeSetTSGraphics 0x4039
+//TODO EmfPlusRecordTypeSetTSClip 0x403A
 
 #define EmfPlusObjectTypeBrush 0x100
 #define EmfPlusObjectTypePen 0x200
@@ -193,11 +217,14 @@ const char* emfTypeToName(sal_uInt16 type)
         case EmfPlusRecordTypeGetDC: return "EmfPlusRecordTypeGetDC";
         case EmfPlusRecordTypeObject: return "EmfPlusRecordTypeObject";
         case EmfPlusRecordTypeFillRects: return "EmfPlusRecordTypeFillRects";
+        case EmfPlusRecordTypeDrawRects: return "EmfPlusRecordTypeDrawRects";
         case EmfPlusRecordTypeFillPolygon: return "EmfPlusRecordTypeFillPolygon";
         case EmfPlusRecordTypeDrawLines: return "EmfPlusRecordTypeDrawLines";
         case EmfPlusRecordTypeFillEllipse: return "EmfPlusRecordTypeFillEllipse";
         case EmfPlusRecordTypeDrawEllipse: return "EmfPlusRecordTypeDrawEllipse";
         case EmfPlusRecordTypeFillPie: return "EmfPlusRecordTypeFillPie";
+        case EmfPlusRecordTypeDrawPie: return "EmfPlusRecordTypeDrawPie";
+        case EmfPlusRecordTypeDrawArc: return "EmfPlusRecordTypeDrawArc";
         case EmfPlusRecordTypeFillPath: return "EmfPlusRecordTypeFillPath";
         case EmfPlusRecordTypeDrawPath: return "EmfPlusRecordTypeDrawPath";
         case EmfPlusRecordTypeDrawImage: return "EmfPlusRecordTypeDrawImage";
@@ -216,6 +243,7 @@ const char* emfTypeToName(sal_uInt16 type)
         case EmfPlusRecordTypeSetWorldTransform: return "EmfPlusRecordTypeSetWorldTransform";
         case EmfPlusRecordTypeResetWorldTransform: return "EmfPlusRecordTypeResetWorldTransform";
         case EmfPlusRecordTypeMultiplyWorldTransform: return "EmfPlusRecordTypeMultiplyWorldTransform";
+        case EmfPlusRecordTypeTranslateWorldTransform: return "EmfPlusRecordTypeTranslateWorldTransform";
         case EmfPlusRecordTypeSetPageTransform: return "EmfPlusRecordTypeSetPageTransform";
         case EmfPlusRecordTypeSetClipRect: return "EmfPlusRecordTypeSetClipRect";
         case EmfPlusRecordTypeSetClipPath: return "EmfPlusRecordTypeSetClipPath";
@@ -254,7 +282,7 @@ namespace cppcanvas
                     pPointTypes = nullptr;
             }
 
-            virtual ~EMFPPath ()
+            virtual ~EMFPPath () override
             {
                 delete [] pPoints;
                 delete [] pPointTypes;
@@ -387,14 +415,12 @@ namespace cppcanvas
             sal_Int32 parts;
             sal_Int32 *combineMode;
             sal_Int32 initialState;
-            EMFPPath *initialPath;
             float ix, iy, iw, ih;
 
             EMFPRegion ()
                 : parts(0)
                 , combineMode(nullptr)
                 , initialState(0)
-                , initialPath(nullptr)
                 , ix(0.0)
                 , iy(0.0)
                 , iw(0.0)
@@ -402,15 +428,11 @@ namespace cppcanvas
             {
             }
 
-            virtual ~EMFPRegion ()
+            virtual ~EMFPRegion () override
             {
                 if (combineMode) {
                     delete [] combineMode;
                     combineMode = nullptr;
-                }
-                if (initialPath) {
-                    delete initialPath;
-                    initialPath = nullptr;
                 }
             }
 
@@ -486,7 +508,7 @@ namespace cppcanvas
             {
             }
 
-            virtual ~EMFPBrush ()
+            virtual ~EMFPBrush () override
             {
                 if (blendPositions != nullptr) {
                     delete[] blendPositions;
@@ -584,7 +606,7 @@ namespace cppcanvas
                             s.ReadInt32( pathLength );
                             SAL_INFO("cppcanvas.emf", "EMF+\tpath length: " << pathLength);
 
-                            sal_Size pos = s.Tell ();
+                            sal_uInt64 const pos = s.Tell ();
 
                             sal_uInt32 pathHeader;
                             sal_Int32 pathPoints, pathFlags;
@@ -780,7 +802,7 @@ namespace cppcanvas
             {
             }
 
-            virtual ~EMFPCustomLineCap()
+            virtual ~EMFPCustomLineCap() override
             {
             }
 
@@ -922,7 +944,7 @@ namespace cppcanvas
             {
             }
 
-            virtual ~EMFPPen()
+            virtual ~EMFPPen() override
             {
                 delete[] dashPattern;
                 delete[] compoundArray;
@@ -1068,7 +1090,7 @@ namespace cppcanvas
                 {
                     s.ReadInt32( customStartCapLen );
                     SAL_INFO("cppcanvas.emf", "EMF+\t\tcustomStartCapLen: " << customStartCapLen);
-                    sal_Size pos = s.Tell();
+                    sal_uInt64 const pos = s.Tell();
 
                     customStartCap = new EMFPCustomLineCap();
                     customStartCap->Read(s, rR);
@@ -1083,7 +1105,7 @@ namespace cppcanvas
                 {
                     s.ReadInt32( customEndCapLen );
                     SAL_INFO("cppcanvas.emf", "EMF+\t\tcustomEndCapLen: " << customEndCapLen);
-                    sal_Size pos = s.Tell();
+                    sal_uInt64 const pos = s.Tell();
 
                     customEndCap = new EMFPCustomLineCap();
                     customEndCap->Read(s, rR);
@@ -1822,7 +1844,7 @@ namespace cppcanvas
             while (length >= 12) {
                 sal_uInt16 type, flags;
                 sal_uInt32 size, dataSize;
-                sal_Size next;
+                sal_uInt64 next;
 
                 rMF.ReadUInt16( type ).ReadUInt16( flags ).ReadUInt32( size ).ReadUInt32( dataSize );
 
@@ -1848,7 +1870,7 @@ namespace cppcanvas
 
                     OSL_ENSURE(dataSize >= 4, "No room for TotalObjectSize in EmfPlusContinuedObjectRecord");
                     // 1st 4 bytes are TotalObjectSize
-                    mMStream.Write (static_cast<const char *>(rMF.GetData()) + rMF.Tell() + 4, dataSize - 4);
+                    mMStream.WriteBytes(static_cast<const char *>(rMF.GetData()) + rMF.Tell() + 4, dataSize - 4);
                     SAL_INFO("cppcanvas.emf", "EMF+ read next object part size: " << size << " type: " << type << " flags: " << flags << " data size: " << dataSize);
                 } else {
                     if (mbMultipart) {
@@ -1882,19 +1904,34 @@ namespace cppcanvas
                         processObjectRecord (rMF, flags, dataSize);
                         break;
                     case EmfPlusRecordTypeFillPie:
+                    case EmfPlusRecordTypeDrawPie:
+                    case EmfPlusRecordTypeDrawArc:
                         {
-                            sal_uInt32 brushIndexOrColor;
                             float startAngle, sweepAngle;
 
-                            rMF.ReadUInt32( brushIndexOrColor ).ReadFloat( startAngle ).ReadFloat( sweepAngle );
+                            // Silent MSVC warning C4701: potentially uninitialized local variable 'brushIndexOrColor' used
+                            sal_uInt32 brushIndexOrColor = 999;
 
-                            SAL_INFO("cppcanvas.emf", "EMF+ FillPie colorOrIndex: " << brushIndexOrColor << " startAngle: " << startAngle << " sweepAngle: " << sweepAngle);
+                            if ( type == EmfPlusRecordTypeFillPie )
+                            {
+                                rMF.ReadUInt32( brushIndexOrColor );
+                                SAL_INFO("cppcanvas.emf", "EMF+ FillPie colorOrIndex: " << brushIndexOrColor);
+                            }
+                            else if ( type == EmfPlusRecordTypeDrawPie )
+                            {
+                                SAL_INFO("cppcanvas.emf", "EMF+ DrawPie");
+                            }
+                            else
+                            {
+                                SAL_INFO("cppcanvas.emf", "EMF+ DrawArc");
+                            }
+                            rMF.ReadFloat( startAngle ).ReadFloat( sweepAngle );
 
                             float dx, dy, dw, dh;
 
                             ReadRectangle (rMF, dx, dy, dw, dh, bool(flags & 0x4000));
 
-                            SAL_INFO("cppcanvas.emf", "EMF+ RectData: " << dx << "," << dy << " " << dw << "x" << dh);
+                            SAL_INFO("cppcanvas.emf", "EMF+\t RectData: " << dx << "," << dy << " " << dw << "x" << dh);
 
                             startAngle = 2*M_PI*startAngle/360;
                             sweepAngle = 2*M_PI*sweepAngle/360;
@@ -1913,15 +1950,24 @@ namespace cppcanvas
                             if (sweepAngle < 0)
                                 std::swap (endAngle, startAngle);
 
-                            SAL_INFO("cppcanvas.emf", "EMF+ adjusted angles: start " <<
-                                     (360.0*startAngle/M_PI) << ", end: " << (360.0*endAngle/M_PI));
+                            SAL_INFO("cppcanvas.emf", "EMF+\t adjusted angles: start " <<
+                                     (360.0*startAngle/M_PI) << ", end: " << (360.0*endAngle/M_PI) <<
+                                     " startAngle: " << startAngle << " sweepAngle: " << sweepAngle);
 
                             B2DPolygon polygon = basegfx::tools::createPolygonFromEllipseSegment (mappedCenter, mappedSize.getX (), mappedSize.getY (), startAngle, endAngle);
-                            polygon.append (mappedCenter);
-                            polygon.setClosed (true);
+                            if ( type != EmfPlusRecordTypeDrawArc )
+                            {
+                                polygon.append (mappedCenter);
+                                polygon.setClosed (true);
+                            }
 
                             B2DPolyPolygon polyPolygon (polygon);
-                            EMFPPlusFillPolygon (polyPolygon, rFactoryParms, rState, rCanvas, flags & 0x8000, brushIndexOrColor);
+                            if ( type == EmfPlusRecordTypeFillPie )
+                                EMFPPlusFillPolygon( polyPolygon,
+                                                     rFactoryParms, rState, rCanvas, flags & 0x8000, brushIndexOrColor );
+                            else
+                                EMFPPlusDrawPolygon( polyPolygon,
+                                                     rFactoryParms, rState, rCanvas, flags & 0xff );
                         }
                         break;
                     case EmfPlusRecordTypeFillPath:
@@ -1969,48 +2015,46 @@ namespace cppcanvas
                         }
                         break;
                     case EmfPlusRecordTypeFillRects:
+                    case EmfPlusRecordTypeDrawRects:
                         {
-                            SAL_INFO("cppcanvas.emf", "EMF+ FillRects");
-
-                            sal_uInt32 brushIndexOrColor;
+                            // Silent MSVC warning C4701: potentially uninitialized local variable 'brushIndexOrColor' used
+                            sal_uInt32 brushIndexOrColor = 999;
                             sal_Int32 rectangles;
                             bool isColor = (flags & 0x8000);
                             ::basegfx::B2DPolygon polygon;
 
-                            rMF.ReadUInt32( brushIndexOrColor ).ReadInt32( rectangles );
+                            if ( type == EmfPlusRecordTypeFillRects )
+                            {
+                                SAL_INFO("cppcanvas.emf", "EMF+ FillRects");
+                                rMF.ReadUInt32( brushIndexOrColor );
+                                SAL_INFO("cppcanvas.emf", "EMF+\t" << (isColor ? "color" : "brush index") << ": 0x" << std::hex << brushIndexOrColor << std::dec);
+                            }
+                            else
+                            {
+                                SAL_INFO("cppcanvas.emf", "EMF+ DrawRects");
+                            }
 
-                            SAL_INFO("cppcanvas.emf", "EMF+\t" << ((flags & 0x8000) ? "color" : "brush index") << ": 0x" << std::hex << brushIndexOrColor << std::dec);
+                            rMF.ReadInt32( rectangles );
 
                             for (int i=0; i < rectangles; i++) {
-                                if (flags & 0x4000) {
-                                    /* 16bit integers */
-                                    sal_Int16 x, y, width, height;
+                                float x, y, width, height;
+                                ReadRectangle (rMF, x, y, width, height, bool(flags & 0x4000));
 
-                                    rMF.ReadInt16( x ).ReadInt16( y ).ReadInt16( width ).ReadInt16( height );
+                                polygon.append (Map (x, y));
+                                polygon.append (Map (x + width, y));
+                                polygon.append (Map (x + width, y + height));
+                                polygon.append (Map (x, y + height));
+                                polygon.append (Map (x, y));
 
-                                    polygon.append (Map (x, y));
-                                    polygon.append (Map (x + width, y));
-                                    polygon.append (Map (x + width, y + height));
-                                    polygon.append (Map (x, y + height));
-
-                                    SAL_INFO("cppcanvas.emf", "EMF+\trectangle: " << x << ", " << width << "x" << height);
-                                } else {
-                                    /* Single's */
-                                    float x, y, width, height;
-
-                                    rMF.ReadFloat( x ).ReadFloat( y ).ReadFloat( width ).ReadFloat( height );
-
-                                    polygon.append (Map (x, y));
-                                    polygon.append (Map (x + width, y));
-                                    polygon.append (Map (x + width, y + height));
-                                    polygon.append (Map (x, y + height));
-
-                                    SAL_INFO("cppcanvas.emf", "EMF+\trectangle: " << x << ", " << width << "x" << height);
-                                }
+                                SAL_INFO("cppcanvas.emf", "EMF+\trectangle: " << x << ", " << width << "x" << height);
 
                                 ::basegfx::B2DPolyPolygon polyPolygon (polygon);
-
-                                EMFPPlusFillPolygon (polyPolygon, rFactoryParms, rState, rCanvas, isColor, brushIndexOrColor);
+                                if( type == EmfPlusRecordTypeFillRects )
+                                    EMFPPlusFillPolygon( polyPolygon,
+                                                         rFactoryParms, rState, rCanvas, isColor, brushIndexOrColor );
+                                else
+                                    EMFPPlusDrawPolygon( polyPolygon,
+                                                         rFactoryParms, rState, rCanvas, flags & 0xff );
                             }
                             break;
                         }
@@ -2326,6 +2370,30 @@ namespace cppcanvas
                                 "EMF+\tdx: "  << aWorldTransform.eDx  << "dy: "  << aWorldTransform.eDy);
                         break;
                     }
+                    case EmfPlusRecordTypeTranslateWorldTransform:
+                        {
+                            SAL_INFO("cppcanvas.emf", "EMF+ TranslateWorldTransform");
+
+                            XForm transform = XForm();
+                            rMF.ReadFloat( transform.eDx ).ReadFloat( transform.eDy );
+
+                            SAL_INFO("cppcanvas.emf",
+                                     "EMF+\t m11: " << transform.eM11 << ", m12: " << transform.eM12 <<
+                                     "EMF+\t m21: " << transform.eM21 << ", m22: " << transform.eM22 <<
+                                     "EMF+\t dx: "  << transform.eDx  << ", dy: "  << transform.eDy);
+
+                            if (flags & 0x2000)  // post multiply
+                                aWorldTransform.Multiply (transform);
+                            else {               // pre multiply
+                                transform.Multiply (aWorldTransform);
+                                aWorldTransform.Set (transform);
+                            }
+                            SAL_INFO("cppcanvas.emf",
+                                     "EMF+\t m11: " << aWorldTransform.eM11 << ", m12: " << aWorldTransform.eM12 <<
+                                     "EMF+\t m21: " << aWorldTransform.eM21 << ", m22: " << aWorldTransform.eM22 <<
+                                     "EMF+\t dx: "  << aWorldTransform.eDx  << ", dy: "  << aWorldTransform.eDy);
+                            break;
+                        }
                     case EmfPlusRecordTypeSetClipRect:
                         {
                             int combineMode = (flags >> 8) & 0xf;
@@ -2474,7 +2542,7 @@ namespace cppcanvas
                         break;
                     }
                     default:
-                        SAL_INFO("cppcanvas.emf", "EMF+ unhandled record type: " << type);
+                        SAL_INFO("cppcanvas.emf", "EMF+ unhandled record type: 0x" << std::hex << type << std::dec);
                         SAL_INFO("cppcanvas.emf", "EMF+\tTODO");
                     }
                 }

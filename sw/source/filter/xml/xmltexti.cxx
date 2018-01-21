@@ -27,6 +27,7 @@
 #include <com/sun/star/embed/XVisualObject.hpp>
 #include <com/sun/star/embed/Aspects.hpp>
 #include <com/sun/star/task/XInteractionHandler.hpp>
+#include <o3tl/any.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <comphelper/classids.hxx>
 #include <com/sun/star/lang/XUnoTunnel.hpp>
@@ -146,10 +147,10 @@ SwXMLTextImportHelper::SwXMLTextImportHelper(
         const uno::Reference < XModel>& rModel,
         SvXMLImport& rImport,
         const uno::Reference<XPropertySet> & rInfoSet,
-        bool bInsertM, bool bStylesOnlyM, bool _bProgress,
+        bool bInsertM, bool bStylesOnlyM,
         bool bBlockM, bool bOrganizerM,
-        bool /*bPreserveRedlineMode*/ ) :
-    XMLTextImportHelper( rModel, rImport, bInsertM, bStylesOnlyM, _bProgress,
+        bool /*bPreserveRedlineFlags*/ ) :
+    XMLTextImportHelper( rModel, rImport, bInsertM, bStylesOnlyM, true/*bProgress*/,
                          bBlockM, bOrganizerM ),
     pRedlineHelper( nullptr )
 {
@@ -285,16 +286,14 @@ uno::Reference< XPropertySet > SwXMLTextImportHelper::createAndInsertOLEObject(
                 if ( xObj.is() )
                 {
                     //TODO/LATER: is it enough to only set the VisAreaSize?
-                    lcl_setObjectVisualArea( xObj, nAspect, aTwipSize, MAP_TWIP );
+                    lcl_setObjectVisualArea( xObj, nAspect, aTwipSize, MapUnit::MapTwip );
                 }
 
                 if( pTextCursor )
                 {
                     pFrameFormat = pDoc->getIDocumentContentOperations().Insert( *pTextCursor->GetPaM(),
                                             ::svt::EmbeddedObjectRef( xObj, embed::Aspects::MSOLE_CONTENT ),
-                                            &aItemSet,
-                                            nullptr,
-                                            nullptr );
+                                            &aItemSet );
                     pOLENd = lcl_GetOLENode( pFrameFormat );
                 }
 
@@ -346,7 +345,7 @@ uno::Reference< XPropertySet > SwXMLTextImportHelper::createAndInsertOLEObject(
         // TODO/LATER: Actually it should be set here
         if( pTextCursor )
         {
-            pFrameFormat = pDoc->getIDocumentContentOperations().InsertOLE( *pTextCursor->GetPaM(), aName, embed::Aspects::MSOLE_CONTENT, &aItemSet, nullptr, nullptr );
+            pFrameFormat = pDoc->getIDocumentContentOperations().InsertOLE( *pTextCursor->GetPaM(), aName, embed::Aspects::MSOLE_CONTENT, &aItemSet, nullptr );
             pOLENd = lcl_GetOLENode( pFrameFormat );
         }
         aObjName = aName;
@@ -526,7 +525,7 @@ uno::Reference< XPropertySet > SwXMLTextImportHelper::createAndInsertOLEObject(
                     pDoc->GetPersist()->GetEmbeddedObjectContainer().GetEmbeddedObject( aObjName );
         if( xObj.is() )
             lcl_setObjectVisualArea( xObj, ( nDrawAspect ? nDrawAspect : embed::Aspects::MSOLE_CONTENT ),
-                                     aVisArea.GetSize(), MAP_100TH_MM );
+                                     aVisArea.GetSize(), MapUnit::Map100thMM );
     }
 
     return xPropSet;
@@ -597,9 +596,7 @@ uno::Reference< XPropertySet > SwXMLTextImportHelper::createAndInsertOOoLink(
         {
             SwFrameFormat *pFrameFormat = pDoc->getIDocumentContentOperations().Insert( *pTextCursor->GetPaM(),
                                             ::svt::EmbeddedObjectRef( xObj, embed::Aspects::MSOLE_CONTENT ),
-                                            &aItemSet,
-                                            nullptr,
-                                            nullptr );
+                                            &aItemSet );
 
             // TODO/LATER: in future may need a way to set replacement image url to the link ( may be even to the object ), needs oasis cws???
 
@@ -655,13 +652,11 @@ uno::Reference< XPropertySet > SwXMLTextImportHelper::createAndInsertApplet(
     lcl_setObjectVisualArea( aAppletImpl.GetApplet(),
                             embed::Aspects::MSOLE_CONTENT,
                             Size( nWidth, nHeight ),
-                            MAP_100TH_MM );
+                            MapUnit::Map100thMM );
 
     SwFrameFormat *pFrameFormat = pDoc->getIDocumentContentOperations().Insert( *pTextCursor->GetPaM(),
                                        ::svt::EmbeddedObjectRef( aAppletImpl.GetApplet(), embed::Aspects::MSOLE_CONTENT ),
-                                       &aAppletImpl.GetItemSet(),
-                                       nullptr,
-                                       nullptr);
+                                       &aAppletImpl.GetItemSet());
     xPropSet.set(SwXTextEmbeddedObject::CreateXTextEmbeddedObject(
                 *pDoc, pFrameFormat), uno::UNO_QUERY);
     if( pDoc->getIDocumentDrawModelAccess().GetDrawModel() )
@@ -717,7 +712,7 @@ uno::Reference< XPropertySet > SwXMLTextImportHelper::createAndInsertPlugin(
         lcl_setObjectVisualArea( xObj,
                                 embed::Aspects::MSOLE_CONTENT,
                                 Size( nWidth, nHeight ),
-                                MAP_100TH_MM );
+                                MapUnit::Map100thMM );
 
         if ( svt::EmbeddedObjectRef::TryRunningState( xObj ) )
         {
@@ -734,9 +729,7 @@ uno::Reference< XPropertySet > SwXMLTextImportHelper::createAndInsertPlugin(
 
             SwFrameFormat *pFrameFormat = pDoc->getIDocumentContentOperations().Insert( *pTextCursor->GetPaM(),
                                             ::svt::EmbeddedObjectRef( xObj, embed::Aspects::MSOLE_CONTENT ),
-                                            &aItemSet,
-                                            nullptr,
-                                            nullptr);
+                                            &aItemSet);
             xPropSet.set(SwXTextEmbeddedObject::CreateXTextEmbeddedObject(
                             *pDoc, pFrameFormat), uno::UNO_QUERY);
             if( pDoc->getIDocumentDrawModelAccess().GetDrawModel() )
@@ -804,13 +797,13 @@ uno::Reference< XPropertySet > SwXMLTextImportHelper::createAndInsertFloatingFra
                     {
                     case CTF_FRAME_DISPLAY_SCROLLBAR:
                         {
-                            bool bYes = *static_cast<sal_Bool const *>(rProp.maValue.getValue());
+                            bool bYes = *o3tl::doAccess<bool>(rProp.maValue);
                             eScrollMode = bYes ? ScrollingYes : ScrollingNo;
                         }
                         break;
                     case CTF_FRAME_DISPLAY_BORDER:
                         {
-                            bHasBorder = *static_cast<sal_Bool const *>(rProp.maValue.getValue());
+                            bHasBorder = *o3tl::doAccess<bool>(rProp.maValue);
                             bIsBorderSet = true;
                         }
                         break;
@@ -850,7 +843,7 @@ uno::Reference< XPropertySet > SwXMLTextImportHelper::createAndInsertFloatingFra
         lcl_setObjectVisualArea( xObj,
                                 embed::Aspects::MSOLE_CONTENT,
                                 Size( nWidth, nHeight ),
-                                MAP_100TH_MM );
+                                MapUnit::Map100thMM );
 
         if ( svt::EmbeddedObjectRef::TryRunningState( xObj ) )
         {
@@ -887,9 +880,7 @@ uno::Reference< XPropertySet > SwXMLTextImportHelper::createAndInsertFloatingFra
 
             SwFrameFormat *pFrameFormat = pDoc->getIDocumentContentOperations().Insert( *pTextCursor->GetPaM(),
                                             ::svt::EmbeddedObjectRef( xObj, embed::Aspects::MSOLE_CONTENT ),
-                                            &aItemSet,
-                                            nullptr,
-                                            nullptr);
+                                            &aItemSet);
             xPropSet.set(SwXTextEmbeddedObject::CreateXTextEmbeddedObject(
                             *pDoc, pFrameFormat), uno::UNO_QUERY);
             if( pDoc->getIDocumentDrawModelAccess().GetDrawModel() )
@@ -909,7 +900,7 @@ uno::Reference< XPropertySet > SwXMLTextImportHelper::createAndInsertFloatingFra
 
 void SwXMLTextImportHelper::endAppletOrPlugin(
         const uno::Reference < XPropertySet > &rPropSet,
-        ::std::map < const OUString, OUString > &rParamMap)
+        std::map < const OUString, OUString > &rParamMap)
 {
     // this method will modify the document directly -> lock SolarMutex
     SolarMutexGuard aGuard;
@@ -934,8 +925,8 @@ void SwXMLTextImportHelper::endAppletOrPlugin(
             const sal_Int32 nCount = rParamMap.size();
             uno::Sequence< beans::PropertyValue > aCommandSequence( nCount );
 
-            ::std::map < const OUString, OUString > ::iterator aIter = rParamMap.begin();
-            ::std::map < const OUString, OUString > ::iterator aEnd = rParamMap.end();
+            std::map < const OUString, OUString > ::iterator aIter = rParamMap.begin();
+            std::map < const OUString, OUString > ::iterator aEnd = rParamMap.end();
             sal_Int32 nIndex=0;
             while (aIter != aEnd )
             {

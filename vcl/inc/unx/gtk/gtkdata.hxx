@@ -20,8 +20,6 @@
 #ifndef INCLUDED_VCL_INC_UNX_GTK_GTKDATA_HXX
 #define INCLUDED_VCL_INC_UNX_GTK_GTKDATA_HXX
 
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
 #define GLIB_DISABLE_DEPRECATION_WARNINGS
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
@@ -29,7 +27,6 @@
 
 #include <unx/gendata.hxx>
 #include <unx/saldisp.hxx>
-#include <unx/saldata.hxx>
 #include <unx/gtk/gtksys.hxx>
 #include <vcl/ptrstyle.hxx>
 #include <osl/conditn.h>
@@ -87,7 +84,7 @@ class GtkSalTimer : public SalTimer
     struct SalGtkTimeoutSource *m_pTimeout;
 public:
     GtkSalTimer();
-    virtual ~GtkSalTimer();
+    virtual ~GtkSalTimer() override;
     virtual void Start( sal_uLong nMS ) override;
     virtual void Stop() override;
     bool         Expired();
@@ -100,11 +97,12 @@ class GtkData : public SalGenericData
     GSource*     m_pUserEvent;
     osl::Mutex   m_aDispatchMutex;
     oslCondition m_aDispatchCondition;
+    css::uno::Any m_aException;
     bool         blockIdleTimeout;
 
 public:
     GtkData( SalInstance *pInstance );
-    virtual ~GtkData();
+    virtual ~GtkData() override;
 
     void Init();
     virtual void Dispose() override;
@@ -119,10 +117,11 @@ public:
     inline GdkDisplay *GetGdkDisplay();
 
     virtual void ErrorTrapPush() override;
-    virtual bool ErrorTrapPop( bool bIgnoreError ) override;
+    virtual bool ErrorTrapPop( bool bIgnoreError = true ) override;
 
     inline GtkSalDisplay *GetGtkDisplay() const;
     bool BlockIdleTimeout() const { return blockIdleTimeout; }
+    void setException(const css::uno::Any& rException) { m_aException = rException; }
 };
 
 class GtkSalFrame;
@@ -143,7 +142,7 @@ class GtkSalDisplay : public SalDisplay
                            int nWidth, int nHeight, int nXHot, int nYHot );
 public:
              GtkSalDisplay( GdkDisplay* pDisplay );
-    virtual ~GtkSalDisplay();
+    virtual ~GtkSalDisplay() override;
 
     GdkDisplay* GetGdkDisplay() const { return m_pGdkDisplay; }
     bool        IsX11Display() const { return m_bX11Display; }

@@ -96,6 +96,8 @@ cmd/sc_spellingandgrammardialog.png cmd/sc_spelling.png
 # Calc
 cmd/lc_numberformatcurrency.png cmd/lc_insertcurrencyfield.png
 cmd/sc_numberformatcurrency.png cmd/sc_insertcurrencyfield.png
+cmd/lc_numberformatcurrencysimple.png cmd/lc_insertcurrencyfield.png
+cmd/sc_numberformatcurrencysimple.png cmd/sc_insertcurrencyfield.png
 cmd/lc_linestyle.png cmd/lc_borderdialog.png
 cmd/sc_linestyle.png cmd/sc_borderdialog.png
 
@@ -162,6 +164,9 @@ cmd/sc_insertcolumnsafter.png cmd/sc_insertcolumns.png
 cmd/lc_savesimple.png cmd/lc_save.png
 cmd/sc_savesimple.png cmd/sc_save.png
 
+cmd/lc_underlinesimple.png cmd/lc_underline.png
+cmd/sc_underlinesimple.png cmd/sc_underline.png
+
 # anchor menu
 cmd/lc_anchormenu.png cmd/lc_toggleanchortype.png
 cmd/sc_anchormenu.png cmd/sc_toggleanchortype.png
@@ -192,3 +197,8 @@ cmd/sc_deleteslide.png cmd/sc_deletepage.png
 cmd/sc_firstslide.png cmd/sc_firstpage.png
 cmd/sc_lastslide.png cmd/sc_lastpage.png
 cmd/sc_slidesetup.png cmd/sc_pagesetup.png
+
+cmd/lc_columnoperations.png cmd/lc_entirecolumn.png
+cmd/sc_columnoperations.png cmd/sc_entirecolumn.png 
+cmd/lc_rowoperations.png cmd/lc_entirerow.png 
+cmd/sc_rowoperations.png cmd/sc_entirerow.png

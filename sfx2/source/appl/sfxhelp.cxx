@@ -98,7 +98,7 @@ void NoHelpErrorBox::RequestHelp( const HelpEvent& )
 static bool impl_hasHelpInstalled( const OUString &rLang );
 
 /// Return the locale we prefer for displaying help
-static OUString HelpLocaleString()
+static OUString const & HelpLocaleString()
 {
     static OUString aLocaleStr;
     if (aLocaleStr.isEmpty())
@@ -217,8 +217,7 @@ OUString SfxHelp_Impl::GetHelpText( const OUString& aCommandURL, const OUString&
 }
 
 SfxHelp::SfxHelp() :
-    bIsDebug( false ),
-    pImp    ( nullptr )
+    bIsDebug( false )
 {
     // read the environment variable "HELP_DEBUG"
     // if it's set, you will see debug output on active help
@@ -228,13 +227,10 @@ SfxHelp::SfxHelp() :
         osl_getEnvironment( sEnvVarName.pData, &sHelpDebug.pData );
         bIsDebug = !sHelpDebug.isEmpty();
     }
-
-    pImp = new SfxHelp_Impl();
 }
 
 SfxHelp::~SfxHelp()
 {
-    delete pImp;
 }
 
 OUString getDefaultModule_Impl()
@@ -410,7 +406,7 @@ SfxHelpWindow_Impl* impl_createHelp(Reference< XFrame2 >& rHelpTask   ,
 
     // create all internal windows and sub frames ...
     Reference< css::awt::XWindow >      xParentWindow = xHelpTask->getContainerWindow();
-    vcl::Window*                        pParentWindow = VCLUnoHelper::GetWindow( xParentWindow );
+    VclPtr<vcl::Window>                 pParentWindow = VCLUnoHelper::GetWindow( xParentWindow );
     VclPtrInstance<SfxHelpWindow_Impl>  pHelpWindow( xHelpTask, pParentWindow, WB_DOCKBORDER );
     Reference< css::awt::XWindow >      xHelpWindow   = VCLUnoHelper::GetInterface( pHelpWindow );
 
@@ -662,7 +658,7 @@ bool SfxHelp::Start_Impl(const OUString& rURL, const vcl::Window* pWindow, const
 OUString SfxHelp::CreateHelpURL(const OUString& aCommandURL, const OUString& rModuleName)
 {
     SfxHelp* pHelp = static_cast< SfxHelp* >(Application::GetHelp());
-    return pHelp ? pHelp->CreateHelpURL_Impl( aCommandURL, rModuleName ) : OUString();
+    return pHelp ? SfxHelp::CreateHelpURL_Impl( aCommandURL, rModuleName ) : OUString();
 }
 
 OUString SfxHelp::GetDefaultHelpModule()

@@ -63,8 +63,11 @@ private:
 
 public:
     explicit                    ScCsvTableBox( vcl::Window* pParent, WinBits nBits );
-    virtual                     ~ScCsvTableBox();
+    virtual                     ~ScCsvTableBox() override;
     virtual void                dispose() override;
+
+    // workaround VS2013 bug in handling virtual bases
+                                ScCsvTableBox( const ScCsvTableBox& ) = delete;
 
     /** Finishes initialization. Must be called after constructing a new object. */
     void Init();
@@ -123,9 +126,9 @@ protected:
     virtual Size                GetOptimalSize() const override;
 
 private:
-    DECL_DLLPRIVATE_LINK_TYPED( CsvCmdHdl, ScCsvControl&, void );
-    DECL_DLLPRIVATE_LINK_TYPED( ScrollHdl, ScrollBar*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( ScrollEndHdl, ScrollBar*, void );
+    DECL_DLLPRIVATE_LINK( CsvCmdHdl, ScCsvControl&, void );
+    DECL_DLLPRIVATE_LINK( ScrollHdl, ScrollBar*, void );
+    DECL_DLLPRIVATE_LINK( ScrollEndHdl, ScrollBar*, void );
 
     // accessibility ----------------------------------------------------------
 public:

@@ -190,7 +190,7 @@ ModulWindow::ModulWindow (ModulWindowLayout* pParent, ScriptDocument const& rDoc
     SetBackground();
 }
 
-SbModuleRef ModulWindow::XModule()
+SbModuleRef const & ModulWindow::XModule()
 {
     // ModuleWindows can now be created as a result of the
     // modules getting created via the api. This is a result of an
@@ -285,7 +285,7 @@ void ModulWindow::CheckCompileBasic()
 
             if ( bDone )
             {
-                GetBreakPoints().SetBreakPointsInBasic( m_xModule );
+                GetBreakPoints().SetBreakPointsInBasic( m_xModule.get() );
             }
 
             GetShell()->GetViewFrame()->GetWindow().LeaveWait();
@@ -304,7 +304,7 @@ void ModulWindow::BasicExecute()
     {
         if ( !aDocument.allowMacros() )
         {
-            ScopedVclPtrInstance<MessageDialog>(this, IDE_RESSTR(RID_STR_CANNOTRUNMACRO), VCL_MESSAGE_WARNING)->Execute();
+            ScopedVclPtrInstance<MessageDialog>(this, IDE_RESSTR(RID_STR_CANNOTRUNMACRO), VclMessageType::Warning)->Execute();
             return;
         }
     }
@@ -560,7 +560,7 @@ void ModulWindow::BasicToggleBreakPointEnabled()
 {
     AssertValidEditEngine();
 
-    ExtTextView* pView = GetEditView();
+    TextView* pView = GetEditView();
     if ( pView )
     {
         TextSelection aSel = pView->GetSelection();
@@ -592,7 +592,7 @@ void ModulWindow::ManageBreakPoints()
 
 bool ModulWindow::BasicErrorHdl( StarBASIC * pBasic )
 {
-    GoOnTop();
+    GetShell()->GetViewFrame()->ToTop();
 
     // ReturnWert: BOOL
     //  FALSE:  cancel
@@ -617,7 +617,7 @@ bool ModulWindow::BasicErrorHdl( StarBASIC * pBasic )
     ErrorHandler::HandleError( StarBASIC::GetErrorCode() );
 
     // #i47002#
-    vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
     if ( !pWindow )
         return false;
 
@@ -778,7 +778,7 @@ void ModulWindow::UpdateData()
 
 sal_Int32 ModulWindow::countPages( Printer* pPrinter )
 {
-    return FormatAndPrint( pPrinter );
+    return FormatAndPrint( pPrinter, -1 );
 }
 
 void ModulWindow::printPage( sal_Int32 nPage, Printer* pPrinter )
@@ -804,7 +804,7 @@ sal_Int32 ModulWindow::FormatAndPrint( Printer* pPrinter, sal_Int32 nPrintPage )
     aFont.SetTransparent( true );
     aFont.SetFontSize( Size( 0, 360 ) );
     pPrinter->SetFont( aFont );
-    pPrinter->SetMapMode( MAP_100TH_MM );
+    pPrinter->SetMapMode( MapUnit::Map100thMM );
 
     OUString aTitle( CreateQualifiedName() );
 
@@ -1152,11 +1152,6 @@ bool ModulWindow::IsModified()
     return GetEditEngine() && GetEditEngine()->IsModified();
 }
 
-void ModulWindow::GoOnTop()
-{
-    GetShell()->GetViewFrame()->ToTop();
-}
-
 OUString ModulWindow::GetSbModuleName()
 {
     OUString aModuleName;
@@ -1211,7 +1206,7 @@ sal_uInt16 ModulWindow::StartSearchAndReplace( const SvxSearchItem& rSearchItem,
 
     // one could also relinquish syntaxhighlighting/formatting instead of the stupid replace-everything...
     AssertValidEditEngine();
-    ExtTextView* pView = GetEditView();
+    TextView* pView = GetEditView();
     TextSelection aSel;
     if ( bFromStart )
     {
@@ -1280,7 +1275,7 @@ void ModulWindow::BasicStarted()
         if ( rList.size() )
         {
             rList.ResetHitCount();
-            rList.SetBreakPointsInBasic( m_xModule );
+            rList.SetBreakPointsInBasic( m_xModule.get() );
             for ( sal_uInt16 nMethod = 0; nMethod < m_xModule->GetMethods()->Count(); nMethod++ )
             {
                 SbMethod* pMethod = static_cast<SbMethod*>(m_xModule->GetMethods()->Get( nMethod ));
@@ -1400,7 +1395,7 @@ void ModulWindow::UpdateModule ()
     OUString const aModule = getTextEngineText(*GetEditEngine());
 
     // update module in basic
-    assert(m_xModule);
+    assert(m_xModule.Is());
 
     // update module in module window
     SetModule(aModule);
@@ -1442,14 +1437,6 @@ void ModulWindowLayout::UpdateDebug (bool bBasicStopped)
 void ModulWindowLayout::Paint (vcl::RenderContext& rRenderContext, Rectangle const&)
 {
     rRenderContext.DrawText(Point(), IDEResId(RID_STR_NOMODULE).toString());
-}
-
-// virtual
-void ModulWindowLayout::DataChanged (DataChangedEvent const& rDCEvt)
-{
-    Layout::DataChanged(rDCEvt);
-    if (rDCEvt.GetType() == DataChangedEventType::SETTINGS && (rDCEvt.GetFlags() & AllSettingsFlags::STYLE))
-        aSyntaxColors.SettingsChanged();
 }
 
 void ModulWindowLayout::Activating (BaseWindow& rChild)
@@ -1511,31 +1498,12 @@ ModulWindowLayout::SyntaxColors::SyntaxColors () :
 {
     aConfig.AddListener(this);
 
-    aColors[TokenType::Unknown] =
-    aColors[TokenType::Whitespace] =
-    aColors[TokenType::EOL] =
-        Application::GetSettings().GetStyleSettings().GetFieldTextColor();
-
     NewConfig(true);
 }
 
 ModulWindowLayout::SyntaxColors::~SyntaxColors ()
 {
     aConfig.RemoveListener(this);
-}
-
-void ModulWindowLayout::SyntaxColors::SettingsChanged ()
-{
-    Color const aColor = Application::GetSettings().GetStyleSettings().GetFieldTextColor();
-    if (aColor != aColors[TokenType::Unknown])
-    {
-        aColors[TokenType::Unknown] =
-        aColors[TokenType::Whitespace] =
-        aColors[TokenType::EOL] =
-            aColor;
-        if (pEditor)
-            pEditor->UpdateSyntaxHighlighting();
-    }
 }
 
 // virtual
@@ -1554,14 +1522,36 @@ void ModulWindowLayout::SyntaxColors::NewConfig (bool bFirst)
     }
     const vIds[] =
     {
+        { TokenType::Unknown,     svtools::FONTCOLOR },
         { TokenType::Identifier,  svtools::BASICIDENTIFIER },
+        { TokenType::Whitespace,  svtools::FONTCOLOR },
         { TokenType::Number,      svtools::BASICNUMBER },
         { TokenType::String,      svtools::BASICSTRING },
+        { TokenType::EOL,         svtools::FONTCOLOR },
         { TokenType::Comment,     svtools::BASICCOMMENT },
         { TokenType::Error,       svtools::BASICERROR },
         { TokenType::Operator,    svtools::BASICOPERATOR },
         { TokenType::Keywords,    svtools::BASICKEYWORD },
     };
+
+    Color aDocColor = aConfig.GetColorValue(svtools::DOCCOLOR).nColor;
+    if (bFirst || aDocColor != m_aBackgroundColor)
+    {
+        m_aBackgroundColor = aDocColor;
+        if (!bFirst && pEditor)
+        {
+            pEditor->SetBackground(Wallpaper(m_aBackgroundColor));
+            pEditor->Invalidate();
+        }
+    }
+
+    Color aFontColor = aConfig.GetColorValue(svtools::FONTCOLOR).nColor;
+    if (bFirst || aFontColor != m_aFontColor)
+    {
+        m_aFontColor = aFontColor;
+        if (!bFirst && pEditor)
+            pEditor->ChangeFontColor(m_aFontColor);
+    }
 
     bool bChanged = false;
     for (unsigned i = 0; i != SAL_N_ELEMENTS(vIds); ++i)

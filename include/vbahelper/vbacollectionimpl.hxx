@@ -20,19 +20,41 @@
 #ifndef INCLUDED_VBAHELPER_VBACOLLECTIONIMPL_HXX
 #define INCLUDED_VBAHELPER_VBACOLLECTIONIMPL_HXX
 
+#include <exception>
+#include <vector>
+
+#include <com/sun/star/container/NoSuchElementException.hpp>
+#include <com/sun/star/container/XEnumeration.hpp>
+#include <com/sun/star/lang/IndexOutOfBoundsException.hpp>
+#include <com/sun/star/lang/WrappedTargetException.hpp>
+#include <com/sun/star/script/BasicErrorException.hpp>
+#include <com/sun/star/uno/Any.hxx>
+#include <com/sun/star/uno/Reference.hxx>
+#include <com/sun/star/uno/RuntimeException.hpp>
+#include <com/sun/star/uno/Sequence.hxx>
+#include <com/sun/star/uno/Type.hxx>
+#include <com/sun/star/uno/TypeClass.hpp>
+#include <cppu/unotype.hxx>
+#include <cppuhelper/implbase.hxx>
+#include <cppuhelper/weakref.hxx>
 #include <ooo/vba/XCollection.hpp>
-#include <com/sun/star/container/XEnumerationAccess.hpp>
-#include <com/sun/star/uno/XComponentContext.hpp>
-#include <com/sun/star/script/XDefaultMethod.hpp>
 #include <com/sun/star/container/XIndexAccess.hpp>
 #include <com/sun/star/container/XNameAccess.hpp>
 #include <com/sun/star/container/XNamed.hpp>
-
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+#include <vbahelper/vbadllapi.h>
 #include <vbahelper/vbahelper.hxx>
 #include <vbahelper/vbahelperinterface.hxx>
 
-#include <vector>
+namespace com { namespace sun { namespace star {
+    namespace container { class XEnumerationAccess; }
+    namespace uno { class XComponentContext; }
+} } }
 
+namespace ooo { namespace vba {
+    class XHelperInterface;
+} }
 
 typedef ::cppu::WeakImplHelper< css::container::XEnumeration > EnumerationHelper_BASE;
 
@@ -80,10 +102,6 @@ private:
 class VBAHELPER_DLLPUBLIC SimpleEnumerationBase : public EnumerationHelper_BASE
 {
 public:
-    explicit SimpleEnumerationBase(
-            const css::uno::Reference< css::container::XEnumeration >& rxEnumeration ) throw (css::uno::RuntimeException) :
-        mxEnumeration( rxEnumeration ) {}
-
     explicit SimpleEnumerationBase(
             const css::uno::Reference< css::container::XIndexAccess >& rxIndexAccess ) throw (css::uno::RuntimeException) :
         mxEnumeration( new SimpleIndexAccessToEnumeration( rxIndexAccess ) ) {}
@@ -255,7 +273,7 @@ protected:
         return createCollectionObject( m_xIndexAccess->getByIndex( nIndex - 1 ) );
     }
 
-    virtual void UpdateCollectionIndex( const css::uno::Reference< css::container::XIndexAccess >& xIndexAccess )
+    void UpdateCollectionIndex( const css::uno::Reference< css::container::XIndexAccess >& xIndexAccess )
     {
         css::uno::Reference< css::container::XNameAccess > xNameAccess( xIndexAccess, css::uno::UNO_QUERY_THROW );
         m_xIndexAccess = xIndexAccess;
@@ -316,7 +334,7 @@ typedef ScVbaCollectionBase< XCollection_InterfacesBASE > CollImplBase;
 class VBAHELPER_DLLPUBLIC ScVbaCollectionBaseImpl : public CollImplBase
 {
 public:
-    ScVbaCollectionBaseImpl( const css::uno::Reference< ov::XHelperInterface > xParent, const css::uno::Reference< css::uno::XComponentContext >& xContext, const css::uno::Reference< css::container::XIndexAccess >& xIndexAccess ) throw( css::uno::RuntimeException ) : CollImplBase( xParent, xContext, xIndexAccess){}
+    ScVbaCollectionBaseImpl( const css::uno::Reference< ov::XHelperInterface > & xParent, const css::uno::Reference< css::uno::XComponentContext >& xContext, const css::uno::Reference< css::container::XIndexAccess >& xIndexAccess ) throw( css::uno::RuntimeException ) : CollImplBase( xParent, xContext, xIndexAccess){}
 
 };
 

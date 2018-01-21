@@ -34,18 +34,18 @@ SfxVisibilityItem::SfxVisibilityItem(sal_uInt16 which, SvStream & rStream):
 // virtual
 bool SfxVisibilityItem::operator ==(const SfxPoolItem & rItem) const
 {
-    DBG_ASSERT(SfxPoolItem::operator ==(rItem), "unequal type");
+    assert(SfxPoolItem::operator==(rItem));
     return m_nValue.bVisible == (static_cast< const SfxVisibilityItem * >(&rItem))->
                         m_nValue.bVisible;
 }
 
 // virtual
 bool SfxVisibilityItem::GetPresentation(SfxItemPresentation,
-                                                  SfxMapUnit, SfxMapUnit,
-                                                  OUString & rText,
-                                                  const IntlWrapper *) const
+                                        MapUnit, MapUnit,
+                                        OUString & rText,
+                                        const IntlWrapper *) const
 {
-    rText = GetValueTextByVal(m_nValue.bVisible);
+    rText = m_nValue.bVisible ? OUString("TRUE") : OUString("FALSE");
     return true;
 }
 
@@ -84,12 +84,6 @@ SvStream & SfxVisibilityItem::Store(SvStream & rStream, sal_uInt16) const
 SfxPoolItem * SfxVisibilityItem::Clone(SfxItemPool *) const
 {
     return new SfxVisibilityItem(*this);
-}
-
-// virtual
-OUString SfxVisibilityItem::GetValueTextByVal(bool bTheValue) const
-{
-    return bTheValue ? OUString("TRUE") : OUString("FALSE");
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

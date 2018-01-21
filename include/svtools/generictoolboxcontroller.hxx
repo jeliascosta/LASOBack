@@ -36,7 +36,7 @@ class SVT_DLLPUBLIC GenericToolboxController : public svt::ToolboxController
                                   ToolBox* pToolBox,
                                   sal_uInt16   nID,
                                   const OUString& aCommand );
-        virtual ~GenericToolboxController();
+        virtual ~GenericToolboxController() override;
 
         // XComponent
         virtual void SAL_CALL dispose() throw ( css::uno::RuntimeException, std::exception ) override;
@@ -47,7 +47,7 @@ class SVT_DLLPUBLIC GenericToolboxController : public svt::ToolboxController
         // XStatusListener
         virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& Event ) throw ( css::uno::RuntimeException, std::exception ) override;
 
-         DECL_STATIC_LINK_TYPED( GenericToolboxController, ExecuteHdl_Impl, void*, void );
+         DECL_STATIC_LINK( GenericToolboxController, ExecuteHdl_Impl, void*, void );
 
     private:
         VclPtr<ToolBox>    m_pToolbox;

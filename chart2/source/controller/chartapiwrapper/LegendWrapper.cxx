@@ -21,7 +21,6 @@
 #include "macros.hxx"
 #include "Chart2ModelContact.hxx"
 #include "LegendHelper.hxx"
-#include "ContainerHelper.hxx"
 #include <cppuhelper/supportsservice.hxx>
 #include <com/sun/star/beans/PropertyAttribute.hpp>
 #include <com/sun/star/chart2/XTitled.hpp>
@@ -57,7 +56,7 @@ class WrappedLegendAlignmentProperty : public WrappedProperty
 {
 public:
     WrappedLegendAlignmentProperty();
-    virtual ~WrappedLegendAlignmentProperty();
+    virtual ~WrappedLegendAlignmentProperty() override;
 
     virtual void setPropertyValue( const Any& rOuterValue, const Reference< beans::XPropertySet >& xInnerPropertySet ) const
                                     throw (beans::UnknownPropertyException, beans::PropertyVetoException, lang::IllegalArgumentException, lang::WrappedTargetException, uno::RuntimeException) override;
@@ -210,7 +209,6 @@ Any WrappedLegendAlignmentProperty::convertOuterToInnerValue( const Any& rOuterV
 
 namespace
 {
-static const char lcl_aServiceName[] = "com.sun.star.comp.chart.Legend";
 
 enum
 {
@@ -274,9 +272,9 @@ namespace chart
 namespace wrapper
 {
 
-LegendWrapper::LegendWrapper( std::shared_ptr< Chart2ModelContact > spChart2ModelContact ) :
-        m_spChart2ModelContact( spChart2ModelContact ),
-        m_aEventListenerContainer( m_aMutex )
+LegendWrapper::LegendWrapper(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
+    : m_spChart2ModelContact(spChart2ModelContact)
+    , m_aEventListenerContainer(m_aMutex)
 {
 }
 
@@ -420,27 +418,10 @@ const std::vector< WrappedProperty* > LegendWrapper::createWrappedProperties()
     return aWrappedProperties;
 }
 
-Sequence< OUString > LegendWrapper::getSupportedServiceNames_Static()
-{
-    Sequence< OUString > aServices( 4 );
-    aServices[ 0 ] = "com.sun.star.chart.ChartLegend";
-    aServices[ 1 ] = "com.sun.star.drawing.Shape";
-    aServices[ 2 ] = "com.sun.star.xml.UserDefinedAttributesSupplier";
-    aServices[ 3 ] = "com.sun.star.style.CharacterProperties";
-
-    return aServices;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL LegendWrapper::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString LegendWrapper::getImplementationName_Static()
-{
-    return OUString(lcl_aServiceName);
+    return OUString("com.sun.star.comp.chart.Legend");
 }
 
 sal_Bool SAL_CALL LegendWrapper::supportsService( const OUString& rServiceName )
@@ -452,7 +433,12 @@ sal_Bool SAL_CALL LegendWrapper::supportsService( const OUString& rServiceName )
 css::uno::Sequence< OUString > SAL_CALL LegendWrapper::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        "com.sun.star.chart.ChartLegend",
+        "com.sun.star.drawing.Shape",
+        "com.sun.star.xml.UserDefinedAttributesSupplier",
+        "com.sun.star.style.CharacterProperties"
+    };
 }
 
 } //  namespace wrapper

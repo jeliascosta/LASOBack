@@ -19,7 +19,7 @@
 
 #include "datauno.hxx"
 
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <svl/zforlist.hxx>
 #include <svl/sharedstringpool.hxx>
 #include <vcl/svapp.hxx>
@@ -179,12 +179,12 @@ void ScImportDescriptor::FillProperties( uno::Sequence<beans::PropertyValue>& rS
 
     svx::ODataAccessDescriptor aDescriptor;
     aDescriptor.setDataSource(rParam.aDBName);
-    if (aDescriptor.has( svx::daDataSource ))
+    if (aDescriptor.has( svx::DataAccessDescriptorProperty::DataSource ))
     {
         pArray[0].Name = SC_UNONAME_DBNAME;
         pArray[0].Value <<= rParam.aDBName;
     }
-    else if (aDescriptor.has( svx::daConnectionResource ))
+    else if (aDescriptor.has( svx::DataAccessDescriptorProperty::ConnectionResource ))
     {
         pArray[0].Name = SC_UNONAME_CONRES;
         pArray[0].Value <<= rParam.aDBName;
@@ -806,28 +806,24 @@ void ScSubTotalDescriptor::SetParam( const ScSubTotalParam& rNew )
 }
 
 ScRangeSubTotalDescriptor::ScRangeSubTotalDescriptor(ScDatabaseRangeObj* pPar) :
-    pParent(pPar)
+    mxParent(pPar)
 {
-    if (pParent)
-        pParent->acquire();
 }
 
 ScRangeSubTotalDescriptor::~ScRangeSubTotalDescriptor()
 {
-    if (pParent)
-        pParent->release();
 }
 
 void ScRangeSubTotalDescriptor::GetData( ScSubTotalParam& rParam ) const
 {
-    if (pParent)
-        pParent->GetSubTotalParam( rParam );
+    if (mxParent.is())
+        mxParent->GetSubTotalParam( rParam );
 }
 
 void ScRangeSubTotalDescriptor::PutData( const ScSubTotalParam& rParam )
 {
-    if (pParent)
-        pParent->SetSubTotalParam( rParam );
+    if (mxParent.is())
+        mxParent->SetSubTotalParam( rParam );
 }
 
 ScConsolidationDescriptor::ScConsolidationDescriptor()
@@ -987,8 +983,7 @@ ScFilterDescriptorBase::~ScFilterDescriptorBase()
 
 void ScFilterDescriptorBase::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
     {
         pDocSh = nullptr;          // invalid
     }
@@ -1544,49 +1539,41 @@ void ScFilterDescriptor::SetParam( const ScQueryParam& rNew )
 
 ScRangeFilterDescriptor::ScRangeFilterDescriptor(ScDocShell* pDocShell, ScDatabaseRangeObj* pPar) :
     ScFilterDescriptorBase(pDocShell),
-    pParent(pPar)
+    mxParent(pPar)
 {
-    if (pParent)
-        pParent->acquire();
 }
 
 ScRangeFilterDescriptor::~ScRangeFilterDescriptor()
 {
-    if (pParent)
-        pParent->release();
 }
 
 void ScRangeFilterDescriptor::GetData( ScQueryParam& rParam ) const
 {
-    if (pParent)
-        pParent->GetQueryParam( rParam );
+    if (mxParent.is())
+        mxParent->GetQueryParam( rParam );
 }
 
 void ScRangeFilterDescriptor::PutData( const ScQueryParam& rParam )
 {
-    if (pParent)
-        pParent->SetQueryParam( rParam );
+    if (mxParent.is())
+        mxParent->SetQueryParam( rParam );
 }
 
 ScDataPilotFilterDescriptor::ScDataPilotFilterDescriptor(ScDocShell* pDocShell, ScDataPilotDescriptorBase* pPar) :
     ScFilterDescriptorBase(pDocShell),
-    pParent(pPar)
+    mxParent(pPar)
 {
-    if (pParent)
-        pParent->acquire();
 }
 
 ScDataPilotFilterDescriptor::~ScDataPilotFilterDescriptor()
 {
-    if (pParent)
-        pParent->release();
 }
 
 void ScDataPilotFilterDescriptor::GetData( ScQueryParam& rParam ) const
 {
-    if (pParent)
+    if (mxParent.is())
     {
-        ScDPObject* pDPObj = pParent->GetDPObject();
+        ScDPObject* pDPObj = mxParent->GetDPObject();
         if (pDPObj && pDPObj->IsSheetData())
             rParam = pDPObj->GetSheetDesc()->GetQueryParam();
     }
@@ -1594,17 +1581,17 @@ void ScDataPilotFilterDescriptor::GetData( ScQueryParam& rParam ) const
 
 void ScDataPilotFilterDescriptor::PutData( const ScQueryParam& rParam )
 {
-    if (pParent)
+    if (mxParent.is())
     {
-        ScDPObject* pDPObj = pParent->GetDPObject();
+        ScDPObject* pDPObj = mxParent->GetDPObject();
         if (pDPObj)
         {
-            ScSheetSourceDesc aSheetDesc(&pParent->GetDocShell()->GetDocument());
+            ScSheetSourceDesc aSheetDesc(&mxParent->GetDocShell()->GetDocument());
             if (pDPObj->IsSheetData())
                 aSheetDesc = *pDPObj->GetSheetDesc();
             aSheetDesc.SetQueryParam(rParam);
             pDPObj->SetSheetDesc(aSheetDesc);
-            pParent->SetDPObject(pDPObj);
+            mxParent->SetDPObject(pDPObj);
         }
     }
 }
@@ -1640,8 +1627,7 @@ ScDatabaseRangeObj::~ScDatabaseRangeObj()
 void ScDatabaseRangeObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
 
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
         pDocShell = nullptr;       // ungueltig geworden
     else if ( dynamic_cast<const ScDBRangeRefreshedHint*>(&rHint) )
     {
@@ -1654,7 +1640,7 @@ void ScDatabaseRangeObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
     }
 }
 
-// Hilfsfuntionen
+// Help functions
 
 ScDBData* ScDatabaseRangeObj::GetDBData_Impl() const
 {
@@ -2025,7 +2011,7 @@ void SAL_CALL ScDatabaseRangeObj::setPropertyValue(
                                      aRange.aStart.Tab(), ScMF::Auto );
             ScRange aPaintRange(aRange.aStart, aRange.aEnd);
             aPaintRange.aEnd.SetRow(aPaintRange.aStart.Row());
-            pDocShell->PostPaint(aPaintRange, PAINT_GRID);
+            pDocShell->PostPaint(aPaintRange, PaintPartFlags::Grid);
         }
         else if (aPropertyName == SC_UNONAME_USEFLTCRT )
         {
@@ -2185,11 +2171,8 @@ sal_Bool SAL_CALL ScDatabaseRangeObj::supportsService( const OUString& rServiceN
 uno::Sequence<OUString> SAL_CALL ScDatabaseRangeObj::getSupportedServiceNames()
                                                     throw(uno::RuntimeException, std::exception)
 {
-    uno::Sequence<OUString> aRet(2);
-    OUString* pArray = aRet.getArray();
-    pArray[0] = "com.sun.star.sheet.DatabaseRange";
-    pArray[1] = SCLINKTARGET_SERVICE;
-    return aRet;
+    return {"com.sun.star.sheet.DatabaseRange",
+            SCLINKTARGET_SERVICE};
 }
 
 ScDatabaseRangesObj::ScDatabaseRangesObj(ScDocShell* pDocSh) :
@@ -2210,8 +2193,7 @@ void ScDatabaseRangesObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
     //  Referenz-Update interessiert hier nicht
 
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
     {
         pDocShell = nullptr;       // ungueltig geworden
     }
@@ -2404,8 +2386,7 @@ void ScUnnamedDatabaseRangesObj::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
     //  Referenz-Update interessiert hier nicht
 
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
     {
         pDocShell = nullptr;       // ungueltig geworden
     }

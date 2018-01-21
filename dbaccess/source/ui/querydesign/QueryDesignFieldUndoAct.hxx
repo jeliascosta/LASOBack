@@ -38,7 +38,7 @@ namespace dbaui
 
     public:
         OQueryDesignFieldUndoAct(OSelectionBrowseBox* pSelBrwBox, sal_uInt16 nCommentID);
-        virtual ~OQueryDesignFieldUndoAct();
+        virtual ~OQueryDesignFieldUndoAct() override;
 
         inline void SetColumnPosition(sal_uInt16 _nColumnPostion)
         {
@@ -94,7 +94,7 @@ namespace dbaui
     public:
         OTabFieldUndoAct(OSelectionBrowseBox* pSelBrwBox, sal_uInt16 nCommentID) : OQueryDesignFieldUndoAct(pSelBrwBox, nCommentID) { }
 
-        void SetTabFieldDescr(OTableFieldDescRef pDescription) { pDescr = pDescription; }
+        void SetTabFieldDescr(OTableFieldDescRef const & pDescription) { pDescr = pDescription; }
     };
 
     // OTabFieldDelUndoAct - undo class to delete a field

@@ -110,7 +110,7 @@ class SW_DLLPUBLIC SwTextNode: public SwContentNode, public ::sfx2::Metadatable
     /// pointer to the list, to whose the text node is added to
     SwList* mpList;
 
-    ::std::unique_ptr< OUString > m_pNumStringCache;
+    std::unique_ptr< OUString > m_pNumStringCache;
 
     css::uno::WeakReference<css::text::XTextContent> m_wXParagraph;
 
@@ -150,7 +150,7 @@ class SW_DLLPUBLIC SwTextNode: public SwContentNode, public ::sfx2::Metadatable
 
     SAL_DLLPRIVATE void CalcHiddenCharFlags() const;
 
-    SAL_DLLPRIVATE SwNumRule * GetNumRule_(bool bInParent = true) const;
+    SAL_DLLPRIVATE SwNumRule * GetNumRule_(bool bInParent) const;
 
     SAL_DLLPRIVATE void SetLanguageAndFont( const SwPaM &rPaM,
             LanguageType nLang, sal_uInt16 nLangWhichId,
@@ -158,14 +158,6 @@ class SW_DLLPUBLIC SwTextNode: public SwContentNode, public ::sfx2::Metadatable
 
     /// Start: Data collected during idle time
 
-    SAL_DLLPRIVATE void SetParaNumberOfWords( sal_uLong nTmpWords ) const;
-    SAL_DLLPRIVATE sal_uLong GetParaNumberOfWords() const;
-    SAL_DLLPRIVATE void SetParaNumberOfAsianWords( sal_uLong nTmpAsianWords ) const;
-    SAL_DLLPRIVATE sal_uLong GetParaNumberOfAsianWords() const;
-    SAL_DLLPRIVATE void SetParaNumberOfChars( sal_uLong nTmpChars ) const;
-    SAL_DLLPRIVATE sal_uLong GetParaNumberOfChars() const;
-    SAL_DLLPRIVATE void SetParaNumberOfCharsExcludingSpaces( sal_uLong nTmpChars ) const;
-    SAL_DLLPRIVATE sal_uLong GetParaNumberOfCharsExcludingSpaces() const;
     SAL_DLLPRIVATE void InitSwParaStatistics( bool bNew );
 
     /** create number for this text node, if not already existing
@@ -228,7 +220,7 @@ public:
     inline       bool   HasHints() const { return m_pSwpHints != nullptr; }
     inline       SwpHints &GetOrCreateSwpHints();
 
-    virtual ~SwTextNode();
+    virtual ~SwTextNode() override;
 
     virtual sal_Int32 Len() const override;
 
@@ -329,7 +321,7 @@ public:
     void CopyText( SwTextNode * const pDest,
                const SwIndex &rStart,
                const sal_Int32 nLen,
-               const bool bForceCopyOfAllAttrs = false );
+               const bool bForceCopyOfAllAttrs );
     void CopyText( SwTextNode * const pDest,
                const SwIndex &rDestStart,
                const SwIndex &rStart,
@@ -385,7 +377,7 @@ public:
         @param nWhich   only attributes with this id are returned.
         @param eMode    the predicate for matching (@see GetTextAttrMode).
      */
-    ::std::vector<SwTextAttr *> GetTextAttrsAt(
+    std::vector<SwTextAttr *> GetTextAttrsAt(
         sal_Int32 const nIndex,
         RES_TXTATR const nWhich ) const;
 
@@ -688,8 +680,8 @@ public:
                             const bool bAddSpaceAfterListLabelStr = false,
                             const bool bWithSpacesForLevel = false,
                             const bool bWithFootnote = true ) const;
-    bool GetExpandText( SwTextNode& rDestNd, const SwIndex* pDestIdx = nullptr,
-                           sal_Int32 nIdx = 0, sal_Int32 nLen = -1,
+    bool GetExpandText( SwTextNode& rDestNd, const SwIndex* pDestIdx,
+                           sal_Int32 nIdx, sal_Int32 nLen,
                            bool bWithNum = false, bool bWithFootnote = true,
                            bool bReplaceTabsWithSpaces = false ) const;
 
@@ -743,7 +735,7 @@ public:
     /// change text to Upper/Lower/Hiragana/Katagana/...
     void TransliterateText( utl::TransliterationWrapper& rTrans,
                             sal_Int32 nStart, sal_Int32 nEnd,
-                            SwUndoTransliterate* pUndo = nullptr );
+                            SwUndoTransliterate* pUndo );
 
     /// count words in given range - returns true if we refreshed out count
     bool CountWords( SwDocStat& rStat, sal_Int32 nStart, sal_Int32 nEnd ) const;
@@ -801,7 +793,7 @@ public:
     //UUUU Access to DrawingLayer FillAttributes in a preprocessed form for primitive usage
     virtual drawinglayer::attribute::SdrAllFillAttributesHelperPtr getSdrAllFillAttributesHelper() const override;
 
-    /// In MS Word, the font underline setting of the paragraph end position wont affect the formatting of numbering, so we ignore it
+    /// In MS Word, the font underline setting of the paragraph end position won't affect the formatting of numbering, so we ignore it
     static bool IsIgnoredCharFormatForNumbering(const sal_uInt16 nWhich);
 };
 

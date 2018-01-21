@@ -84,7 +84,7 @@ public:
         const css::uno::Reference<css::rendering::XCanvas>& rxCanvas,
         const ::rtl::Reference<PresenterController>& rpPresenterController,
         const Anchor eAnchor);
-    virtual ~PresenterToolBar();
+    virtual ~PresenterToolBar() override;
     PresenterToolBar(const PresenterToolBar&) = delete;
     PresenterToolBar& operator=(const PresenterToolBar&) = delete;
 
@@ -98,7 +98,7 @@ public:
         const bool bSynchronous);
 
     void RequestLayout();
-    css::geometry::RealSize2D GetMinimalSize();
+    css::geometry::RealSize2D const & GetMinimalSize();
     const ::rtl::Reference<PresenterController>& GetPresenterController() const;
     const css::uno::Reference<css::uno::XComponentContext>& GetComponentContext() const;
 
@@ -228,7 +228,7 @@ public:
         const css::uno::Reference<css::drawing::framework::XResourceId>& rxViewId,
         const css::uno::Reference<css::frame::XController>& rxController,
         const ::rtl::Reference<PresenterController>& rpPresenterController);
-    virtual ~PresenterToolBarView();
+    virtual ~PresenterToolBarView() override;
     PresenterToolBarView(const PresenterToolBarView&) = delete;
     PresenterToolBarView& operator=(const PresenterToolBarView&) = delete;
 

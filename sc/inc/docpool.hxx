@@ -30,7 +30,6 @@ class ScDocument;
 class SC_DLLPUBLIC ScDocumentPool: public SfxItemPool
 {
     SfxPoolItem**   ppPoolDefaults;
-    SfxItemPool*    pSecondary;
     static sal_uInt16*  pVersionMap1;
     static sal_uInt16*  pVersionMap2;
     static sal_uInt16*  pVersionMap3;
@@ -44,26 +43,25 @@ class SC_DLLPUBLIC ScDocumentPool: public SfxItemPool
     static sal_uInt16*  pVersionMap11;
     static sal_uInt16*  pVersionMap12;
 
+    sal_uInt64 mnCurrentMaxKey;
+
 public:
-            ScDocumentPool( SfxItemPool* pSecPool = nullptr );
+            ScDocumentPool();
 protected:
-            virtual ~ScDocumentPool();
+            virtual ~ScDocumentPool() override;
 public:
 
     virtual SfxItemPool*        Clone() const override;
-    virtual SfxMapUnit          GetMetric( sal_uInt16 nWhich ) const override;
+    virtual MapUnit             GetMetric( sal_uInt16 nWhich ) const override;
 
     virtual const SfxPoolItem&  Put( const SfxPoolItem&, sal_uInt16 nWhich = 0 ) override;
-    virtual void                Remove( const SfxPoolItem& ) override;
-    static void                 CheckRef( const SfxPoolItem& );
 
     void StyleDeleted( ScStyleSheet* pStyle );      // delete templates(?) in organizer
     void CellStyleCreated( const OUString& rName, ScDocument* pDoc );
-    virtual bool GetPresentation(
-                                        const SfxPoolItem&  rItem,
-                                        SfxMapUnit          ePresentationMetric,
-                                        OUString&           rText,
-                                        const IntlWrapper* pIntl = nullptr ) const override;
+    virtual bool GetPresentation( const SfxPoolItem&  rItem,
+                                  MapUnit          ePresentationMetric,
+                                  OUString&           rText,
+                                  const IntlWrapper* pIntl = nullptr ) const override;
 
     static void InitVersionMaps();
     static void DeleteVersionMaps();

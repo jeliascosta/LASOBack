@@ -43,7 +43,7 @@ class SwTable;
 class SwUndoTableMerge;
 class SwCellFrame;
 
-typedef ::std::deque< SwCellFrame* > SwCellFrames;
+typedef std::deque< SwCellFrame* > SwCellFrames;
 
 struct CompareSwSelBoxes
 {
@@ -104,7 +104,7 @@ bool IsFrameInTableSel( const SwRect& rUnion, const SwFrame* pCell );
 // i.e. boxes are added if some overlap at the sides.
 // Additionally a new box is created and filled with the relevant content.
 void GetMergeSel( const SwPaM& rPam, SwSelBoxes& rBoxes,
-                  SwTableBox** ppMergeBox, SwUndoTableMerge* pUndo = nullptr );
+                  SwTableBox** ppMergeBox, SwUndoTableMerge* pUndo );
 
 // Check if selected boxes allow for a valid merge.
 sal_uInt16 CheckMergeSel( const SwPaM& rPam );
@@ -200,7 +200,7 @@ class FndLine_
     FndLine_& operator=(FndLine_ const&) = delete;
 
 public:
-    FndLine_(SwTableLine* pL, FndBox_* pFB=nullptr) : pLine(pL), pUpper(pFB) {}
+    FndLine_(SwTableLine* pL, FndBox_* pFB) : pLine(pL), pUpper(pFB) {}
     const FndBoxes_t&   GetBoxes() const    { return m_Boxes; }
         FndBoxes_t&     GetBoxes()          { return m_Boxes; }
     const SwTableLine*  GetLine() const     { return pLine; }

@@ -4,8 +4,8 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
 "POT-Creation-Date: 2016-12-27 21:50+0100\n"
-"PO-Revision-Date: 2017-03-10 20:44+0000\n"
-"Last-Translator: Christian Kühl <kuehl.christian@googlemail.com>\n"
+"PO-Revision-Date: 2017-10-22 11:46+0000\n"
+"Last-Translator: Sophia Schröder <sophia.schroeder@outlook.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Accelerator-Marker: ~\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1489178650.000000\n"
+"X-POOTLE-MTIME: 1508672785.000000\n"
 
 #: 02080000.xhp
 msgctxt ""
@@ -424,7 +424,7 @@ msgctxt ""
 "bm_id3150342\n"
 "help.text"
 msgid "<bookmark_value>unary operators</bookmark_value><bookmark_value>binary operators</bookmark_value><bookmark_value>operators; unary and binary</bookmark_value><bookmark_value>plus signs</bookmark_value><bookmark_value>plus/minus signs</bookmark_value><bookmark_value>minus/plus signs</bookmark_value><bookmark_value>multiplication signs</bookmark_value><bookmark_value>NOT operator</bookmark_value><bookmark_value>AND operator</bookmark_value><bookmark_value>logical operators</bookmark_value><bookmark_value>Boolean operators</bookmark_value><bookmark_value>OR operator</bookmark_value><bookmark_value>concatenating math symbols</bookmark_value><bookmark_value>addition signs</bookmark_value><bookmark_value>subtraction signs</bookmark_value><bookmark_value>minus signs</bookmark_value><bookmark_value>slash division sign</bookmark_value><bookmark_value>backslash division sign</bookmark_value><bookmark_value>indexes; adding to formulas</bookmark_value><bookmark_value>powers</bookmark_value><bookmark_value>division signs</bookmark_value><bookmark_value>user-defined operators;unary and binary</bookmark_value>"
-msgstr "<bookmark_value>Unärer Operator</bookmark_value><bookmark_value>Binärer Operator</bookmark_value><bookmark_value>Operator; unär und binär</bookmark_value><bookmark_value>Pluszeichen</bookmark_value><bookmark_value>Plus/Minus-Zeichen</bookmark_value><bookmark_value>Minus/Plus-Zeichen</bookmark_value><bookmark_value>Multiplikationszeichen</bookmark_value><bookmark_value>NOT (Operator)</bookmark_value><bookmark_value>AND (Operator)</bookmark_value><bookmark_value>Logische Operatoren</bookmark_value><bookmark_value>Boolesche Operatoren</bookmark_value><bookmark_value>OR (Operator)</bookmark_value><bookmark_value>Verketten von mathematischen Symbolen</bookmark_value><bookmark_value>Additionszeichen</bookmark_value><bookmark_value>Subtraktionszeichen</bookmark_value><bookmark_value>Minuszeichen</bookmark_value><bookmark_value>Schrägstrich diagonal von links unten nach rechts oben</bookmark_value><bookmark_value>Schrägstrich diagonal von rechts unten nach links oben</bookmark_value><bookmark_value>Indexe; Formeln anfügen</bookmark_value><bookmark_value>Potenzieren</bookmark_value><bookmark_value>Divisionszeichen</bookmark_value><bookmark_value>Benutzerdefinierte Operatoren;unär und binär</bookmark_value>"
+msgstr "<bookmark_value>Unärer Operator</bookmark_value><bookmark_value>Binärer Operator</bookmark_value><bookmark_value>Operator; unär und binär</bookmark_value><bookmark_value>Pluszeichen</bookmark_value><bookmark_value>Plus/Minus-Zeichen</bookmark_value><bookmark_value>Minus/Plus-Zeichen</bookmark_value><bookmark_value>Multiplikationszeichen</bookmark_value><bookmark_value>NOT (Operator)</bookmark_value><bookmark_value>AND (Operator)</bookmark_value><bookmark_value>Logische Operatoren</bookmark_value><bookmark_value>Boolesche Operatoren</bookmark_value><bookmark_value>OR (Operator)</bookmark_value><bookmark_value>Verketten von mathematischen Symbolen</bookmark_value><bookmark_value>Additionszeichen</bookmark_value><bookmark_value>Subtraktionszeichen</bookmark_value><bookmark_value>Minuszeichen</bookmark_value><bookmark_value>Schrägstrich diagonal von links unten nach rechts oben</bookmark_value><bookmark_value>Schrägstrich diagonal von rechts unten nach links oben</bookmark_value><bookmark_value>Indexe; Formeln anfügen</bookmark_value><bookmark_value>Potenzieren</bookmark_value><bookmark_value>Divisionszeichen</bookmark_value><bookmark_value>Benutzerdefinierte Operatoren; unär und binär</bookmark_value>"
 
 #: 03090100.xhp
 msgctxt ""
@@ -883,7 +883,7 @@ msgctxt ""
 "27\n"
 "help.text"
 msgid "You can also insert user-defined unary operators by typing <emph>uoper</emph> in the <emph>Commands</emph> window, followed by the syntax for the character. This function is useful for incorporating special characters into a formula. For example, the command <emph>uoper %theta x</emph> produces a small Greek letter theta (a component of the <emph>$[officename] Math</emph> character set). You can also insert characters not in the $[officename] character set by choosing <emph>Tools - Symbols - Edit</emph>."
-msgstr "Mit <emph>uoper</emph> können Sie selbstdefinierte unäre Operatoren im Fenster <emph>Kommandos</emph> einfügen, gefolgt von der Syntax eines Zeichens. Dies ist u.a. nützlich, um Sonderzeichen in eine Formel einzubauen. Z.B. erzeugt <emph>uoper %theta x</emph> ein kleines griechisches Theta (das Bestandteil des Zeichensatzes von <emph>$[officename] Math</emph> ist). Sie können auch Zeichen einzufügen, die nicht Bestandteil des Zeichensatzes von $[officename] Math sind, indem Sie das gewünschte Zeichen zunächst über das Menü <emph>Extras - Symbole - Katalog...</emph> definieren."
+msgstr "Mit <emph>uoper</emph> können Sie selbstdefinierte unäre Operatoren im Fenster <emph>Kommandos</emph> einfügen, gefolgt von der Syntax eines Zeichens. Dies ist unter anderem nützlich, um Sonderzeichen in eine Formel einzubauen. Beispielsweise erzeugt <emph>uoper %theta x</emph> ein kleines griechisches Theta (das Bestandteil des Zeichensatzes von <emph>$[officename] Math</emph> ist). Sie können auch Zeichen einzufügen, die nicht Bestandteil des Zeichensatzes von $[officename] Math sind, indem Sie das gewünschte Zeichen zunächst über das Menü <emph>Extras - Symbole - Katalog...</emph> definieren."
 
 #: 03090100.xhp
 msgctxt ""
@@ -892,7 +892,7 @@ msgctxt ""
 "31\n"
 "help.text"
 msgid "You can also insert user-defined binary commands by typing <emph>boper</emph> into the <emph>Commands</emph> window. For example, the command <emph>y boper %theta x</emph> produces the small Greek letter theta preceded by a <emph>y</emph> and followed by an <emph>x</emph>. You can also insert characters not in the $[officename] character set by choosing <emph>Tools - Symbols - Edit</emph>."
-msgstr "Mit <emph>boper</emph> können sie selbstdefinierte binäre Operatoren im Fenster <emph>Kommandos</emph> einfügen. Z.B. erzeugt <emph>x boper %theta y</emph> ein kleines griechisches Theta mit einem vorangestellten <emph>x</emph> und gefolgt von einem <emph>y</emph>. Sie können auch Zeichen einfügen, die nicht Bestandteil des Zeichensatzes von $[officename] Math sind, indem Sie das gewünschte Zeichen zunächst über das Menü <emph>Extras - Symbole - Katalog...</emph> definieren."
+msgstr "Mit <emph>boper</emph> können sie selbstdefinierte binäre Operatoren im Fenster <emph>Kommandos</emph> einfügen. Beispielsweise erzeugt <emph>x boper %theta y</emph> ein kleines griechisches Theta mit einem vorangestellten <emph>x</emph> und gefolgt von einem <emph>y</emph>. Sie können auch Zeichen einfügen, die nicht Bestandteil des Zeichensatzes von $[officename] Math sind, indem Sie das gewünschte Zeichen zunächst über das Menü <emph>Extras - Symbole - Katalog...</emph> definieren."
 
 #: 03090100.xhp
 msgctxt ""
@@ -955,7 +955,7 @@ msgctxt ""
 "36\n"
 "help.text"
 msgid "Type <emph>sub</emph> or <emph>sup</emph> in the Commands window to add indexes and powers to the characters in your formula; for example, a sub 2."
-msgstr "Geben Sie <emph>sub</emph> oder <emph>sup</emph> direkt in das Fenster <emph>Kommandos</emph> ein, um Indizes und Potenzen an die Zeichen Ihrer Formel anzufügen; z.B. <emph>a sub 2</emph>."
+msgstr "Geben Sie <emph>sub</emph> oder <emph>sup</emph> direkt in das Fenster Kommandos ein, um Indizes und Potenzen an die Zeichen Ihrer Formel anzufügen; beispielsweise a sub 2."
 
 #: 03090100.xhp
 msgctxt ""
@@ -964,7 +964,7 @@ msgctxt ""
 "41\n"
 "help.text"
 msgid "If you want to use a colon ':' as division sign, choose <emph>Tools - Symbols</emph> or click the <emph>Symbols</emph> icon on the Tools bar. Click the <emph>Edit</emph> button in the dialog that appears, then select the <emph>Special</emph> symbol set. Enter a meaningful name next to <emph>Symbol</emph>, for example, \"divide\" and then click the colon in the set of symbols. Click <emph>Add</emph> and then <emph>OK</emph>. Click <emph>OK</emph> to close the <emph>Symbols</emph> dialog,too. Now you can use the new symbol, in this case the colon, by entering its name in the Commands window, for example, <emph>a %divide b = c</emph>."
-msgstr "Wenn Sie lieber den Doppelpunkt ':' als Divisionszeichen verwenden möchten, wählen Sie <emph>Extras - Katalog...</emph> oder klicken auf das Symbol <emph>Katalog</emph> in der Symbolleiste Extras. Ein Klick auf die Schaltfläche <emph>Bearbeiten...</emph> öffnet den Dialog Symbole bearbeiten, wo Sie einen Symbolsatz, sinnvoller Weise den Symbolsatz <emph>Spezial</emph>, auswählen. Geben Sie im Kombinationsfeld <emph>Symbol</emph> einen möglichst einprägsamen Namen, beispielsweise \"geteilt\", ein und klicken Sie auf das gewünschte Zeichen im Anzeigefeld des Symbolsatzes. Bestätigen Sie Ihre Änderungen mit Klicks nacheinander auf die Schaltflächen <emph>Hinzufügen</emph> und <emph>OK</emph>. Schließen Sie ebenfalls den <emph>Katalog</emph> mit einem Klick auf <emph>OK</emph>. Jetzt können Sie das neue Symbol, in diesem Fall den Divisions-Doppelpunkt, nach dem Muster <emph>a %geteilt b = c</emph> verwenden."
+msgstr "Wenn Sie lieber den Doppelpunkt ':' als Divisionszeichen verwenden möchten, wählen Sie <emph>Extras - Katalog...</emph> oder klicken auf das Symbol <emph>Katalog</emph> in der Symbolleiste Extras. Ein Klick auf die Schaltfläche <emph>Bearbeiten...</emph> öffnet den Dialog Symbole bearbeiten, wo Sie den Symbolsatz <emph>Spezial</emph> auswählen. Geben Sie im Kombinationsfeld <emph>Symbol</emph> einen möglichst einprägsamen Namen, beispielsweise \"geteilt\", ein und klicken Sie auf das gewünschte Zeichen im Anzeigefeld des Symbolsatzes. Bestätigen Sie Ihre Änderungen mit Klicks nacheinander auf die Schaltflächen <emph>Hinzufügen</emph> und anschließend <emph>OK</emph>. Schließen Sie ebenfalls den <emph>Katalog</emph> mit einem Klick auf <emph>OK</emph>. Jetzt können Sie das neue Symbol, in diesem Fall den Divisions-Doppelpunkt, nach dem Muster <emph>a %geteilt b = c</emph> verwenden."
 
 #: 03090100.xhp
 msgctxt ""
@@ -973,7 +973,7 @@ msgctxt ""
 "37\n"
 "help.text"
 msgid "When entering information manually in the Commands window, please note that a number of operators require spaces between the elements for the correct structure. This is especially true if you are using values instead of placeholders in your operators, for example, to construct a division 4 div 3 or a div b."
-msgstr "Beachten Sie bei der manuellen Eingabe in das Kommandofenster, dass bei einer Vielzahl von Operatoren die Leerzeichen für den korrekten Aufbau unerlässlich sind. Besonders gilt dies, wenn Sie Ihre Operatoren statt mit Platzhaltern mit Werten versehen, z. B. eine Division 4 div 3 oder a div b aufbauen."
+msgstr "Beachten Sie bei der manuellen Eingabe in das Kommandofenster, dass bei einer Vielzahl von Operatoren die Leerzeichen für den korrekten Aufbau unerlässlich sind. Besonders gilt dies, wenn Sie Ihre Operatoren statt mit Platzhaltern mit Werten versehen, beispielsweise eine Division 4 div 3 oder a div b aufbauen."
 
 #: 03090200.xhp
 msgctxt ""
@@ -1833,7 +1833,7 @@ msgctxt ""
 "52\n"
 "help.text"
 msgid "When entering information manually in the <emph>Commands</emph> window, note that a number of operators require spaces for the correct structure. This is especially true if you are working with values instead of placeholders. For example, for the \"is considerably greater\" relation, type either <emph>10 gg 1</emph> or <emph>a gg b</emph>."
-msgstr "Beachten Sie bei der manuellen Eingabe in das Fenster <emph>Kommandos</emph>, dass bei einer Vielzahl von Operatoren die Leerzeichen für den korrekten Aufbau unerlässlich sind. Besonders gilt dies, wenn Sie statt der Platzhalter mit Werten arbeiten. Z.B. müssen Sie bei der Relation \"ist wesentlich größer\" <emph>10 gg 1</emph> oder <emph>a gg b</emph> eingeben."
+msgstr "Beachten Sie bei der manuellen Eingabe in das Fenster <emph>Kommandos</emph>, dass bei einer Vielzahl von Operatoren die Leerzeichen für den korrekten Aufbau unerlässlich sind. Besonders gilt dies, wenn Sie statt der Platzhalter mit Werten arbeiten. Beispielsweise müssen Sie bei der Relation \"ist wesentlich größer\" <emph>10 gg 1</emph> oder <emph>a gg b</emph> eingeben."
 
 #: 03090300.xhp
 msgctxt ""
@@ -2266,7 +2266,7 @@ msgctxt ""
 "48\n"
 "help.text"
 msgid "Limits can be arranged in ways other than centered above/below the operator. Use the options provided by $[officename] Math for working with superscript and subscript indexes. For example, type <emph>sum_a^b c</emph> in the Commands window to arrange the limits to the right of the sum symbol. If your limit entries contain longer expressions, you must put them in group brackets, for example, sum_{i=1}^{2*n} b. When formulas are imported from older versions this is done automatically. To change the spacing (gaps) between the characters choose <emph>Format - Spacing - Category - </emph><link href=\"text/smath/01/05030000.xhp\" name=\"Indexes\"><emph>Indexes</emph></link> or <emph>Format - Spacing - Category - </emph><link href=\"text/smath/01/05030000.xhp\" name=\"Limits\"><emph>Limits</emph></link>. Additional basic information about indexes is given elsewhere in the <link href=\"text/smath/01/03091200.xhp\" name=\"Help\">Help</link>."
-msgstr "Grenzen lassen sich auch anders als zentriert über/unter dem Operator anordnen. Nutzen Sie dazu die Möglichkeiten, die Ihnen $[officename] Math für das Arbeiten mit hoch- und tiefgestellten Indizes bietet. Geben Sie also beispielsweise im Fenster Kommandos <emph>sum_a^b c</emph> ein, um die Grenzen am Summenzeichen rechts auszurichten. Bestehen Ihre Grenzangaben aus längeren Ausdrücken, müssen Sie diese jeweils in Gruppenklammern setzen, z. B. sum_{i=1}^{2*n} b. Beim Import von Formeln älterer Versionen geschieht dies übrigens automatisch. Die Abstände der Zeichen zueinander lassen sich in den Menüs <emph>Format - Abstände - Kategorien - </emph><link href=\"text/smath/01/05030000.xhp\" name=\"Indizes\">Indizes</link> und <emph>Format - Abstände - Kategorien - </emph><link href=\"text/smath/01/05030000.xhp\" name=\"Grenzen\">Grenzen</link> verändern. Grundsätzliche Informationen zu Indizes erhalten Sie an anderer Stelle in der <link href=\"text/smath/01/03091200.xhp\" name=\"Hilfe\">Hilfe</link>."
+msgstr "Grenzen lassen sich auch anders als zentriert über/unter dem Operator anordnen. Nutzen Sie dazu die Möglichkeiten, die Ihnen $[officename] Math für das Arbeiten mit hoch- und tiefgestellten Indizes bietet. Geben Sie also beispielsweise im Fenster Kommandos <emph>sum_a^b c</emph> ein, um die Grenzen am Summenzeichen rechts auszurichten. Bestehen Ihre Grenzangaben aus längeren Ausdrücken, müssen Sie diese jeweils in Gruppenklammern setzen, beispielsweise sum_{i=1}^{2*n} b. Beim Import von Formeln älterer Versionen geschieht dies übrigens automatisch. Die Abstände der Zeichen zueinander lassen sich unter <emph>Format - Abstände - Kategorien - </emph><link href=\"text/smath/01/05030000.xhp\" name=\"Indizes\"><emph>Indizes</emph></link> und <emph>Format - Abstände - Kategorien - </emph><link href=\"text/smath/01/05030000.xhp\" name=\"Grenzen\"><emph>Grenzen</emph></link> verändern. Grundsätzliche Informationen zu Indizes erhalten Sie an anderer Stelle in der <link href=\"text/smath/01/03091200.xhp\" name=\"Hilfe\">Hilfe</link>."
 
 #: 03090300.xhp
 msgctxt ""
@@ -2275,7 +2275,7 @@ msgctxt ""
 "46\n"
 "help.text"
 msgid "When you type information manually in the Commands window, note that a number of operators require spaces for correct structure. This is especially true when your operators are supplied with values instead of placeholders, for example, lim a_{n}=a."
-msgstr "Beachten Sie bei manueller Eingabe im Kommandofenster, dass bei einer Vielzahl von Operatoren die Leerzeichen für den korrekten Aufbau unerlässlich sind. Besonders gilt dies, wenn Sie Ihre Operatoren statt mit Platzhaltern mit Werten versehen, z. B. lim a_{n}=a."
+msgstr "Beachten Sie bei manueller Eingabe im Kommandofenster, dass bei einer Vielzahl von Operatoren die Leerzeichen für den korrekten Aufbau unerlässlich sind. Besonders gilt dies, wenn Sie Ihre Operatoren statt mit Platzhaltern mit Werten versehen, beispielsweise lim a_{n}=a."
 
 #: 03090400.xhp
 msgctxt ""
@@ -2586,7 +2586,7 @@ msgctxt ""
 "53\n"
 "help.text"
 msgid "<ahelp hid=\"HID_SMA_SINHX\">Inserts a hyperbolic sine with one placeholder.</ahelp> You can also type <emph>sinh(<?>)</emph> in the <emph>Commands</emph> window."
-msgstr "<ahelp hid=\"HID_SMA_SINHX\">Fügt eine Sinus Hyperbolikus-Funktion mit einem Platzhalter ein.</ahelp> Sie können auch <emph>sinh(<?>)</emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
+msgstr "<ahelp hid=\"HID_SMA_SINHX\">Fügt eine Funktion Sinus Hyperbolicus mit einem Platzhalter ein.</ahelp> Sie können auch <emph>sinh(<?>)</emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
 
 #: 03090400.xhp
 msgctxt ""
@@ -2638,7 +2638,7 @@ msgctxt ""
 "54\n"
 "help.text"
 msgid "<ahelp hid=\"HID_SMA_COSHX\">Inserts a hyperbolic cosine symbol with one placeholder.</ahelp> You can also type <emph>cosh(<?>)</emph> in the <emph>Commands</emph> window."
-msgstr "<ahelp hid=\"HID_SMA_COSHX\">Fügt eine Kosinus Hyperbolikus-Funktion mit einem Platzhalter ein.</ahelp> Sie können auch <emph>cosh(<?>)</emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
+msgstr "<ahelp hid=\"HID_SMA_COSHX\">Fügt eine Funktion Kosinus Hyperbolicus mit einem Platzhalter ein.</ahelp> Sie können auch <emph>cosh(<?>)</emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
 
 #: 03090400.xhp
 msgctxt ""
@@ -2664,7 +2664,7 @@ msgctxt ""
 "55\n"
 "help.text"
 msgid "<ahelp hid=\"HID_SMA_TANHX\">Inserts a hyperbolic tangent symbol with one placeholder.</ahelp> You can also type <emph>tanh(<?>)</emph> in the <emph>Commands</emph> window."
-msgstr "<ahelp hid=\"HID_SMA_TANHX\">Fügt eine Tangens Hyperbolikus-Funktion mit einem Platzhalter ein.</ahelp> Sie können auch <emph>tanh(<?>)</emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
+msgstr "<ahelp hid=\"HID_SMA_TANHX\">Fügt eine Funktion Tangens Hyperbolicus mit einem Platzhalter ein.</ahelp> Sie können auch <emph>tanh(<?>)</emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
 
 #: 03090400.xhp
 msgctxt ""
@@ -2690,7 +2690,7 @@ msgctxt ""
 "56\n"
 "help.text"
 msgid "<ahelp hid=\"HID_SMA_COTHX\">Inserts a hyperbolic cotangent symbol with one placeholder.</ahelp> You can directly type <emph>coth(<?>)</emph> in the <emph>Commands</emph> window."
-msgstr "<ahelp hid=\"HID_SMA_COTHX\">Fügt eine Kotangens Hyperbolikus-Funktion mit einem Platzhalter ein.</ahelp> Sie können auch <emph>coth(<?>)</emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
+msgstr "<ahelp hid=\"HID_SMA_COTHX\">Fügt eine Funktion Kotangens Hyperbolicus mit einem Platzhalter ein.</ahelp> Sie können auch <emph>coth(<?>)</emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
 
 #: 03090400.xhp
 msgctxt ""
@@ -2872,7 +2872,7 @@ msgctxt ""
 "61\n"
 "help.text"
 msgid "<ahelp hid=\"HID_SMA_ARSINHX\">Inserts an area hyperbolic sine function with one placeholder.</ahelp> You can also type <emph>arsinh(<?>)</emph> in the <emph>Commands</emph> window."
-msgstr "<ahelp hid=\"HID_SMA_ARSINHX\">Fügt eine Sinus Hyperbolikus-Funktion mit einem Platzhalter ein.</ahelp> Sie können auch <emph>arsinh(<?>)</emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
+msgstr "<ahelp hid=\"HID_SMA_ARSINHX\">Fügt eine Funktion Sinus Hyperbolicus mit einem Platzhalter ein.</ahelp> Sie können auch <emph>arsinh(<?>)</emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
 
 #: 03090400.xhp
 msgctxt ""
@@ -2898,7 +2898,7 @@ msgctxt ""
 "63\n"
 "help.text"
 msgid "<ahelp hid=\"HID_SMA_ARCOSHX\">Inserts an area hyperbolic cosine function with one placeholder.</ahelp> You can also type <emph>arcosh(<?>)</emph> in the <emph>Commands</emph> window."
-msgstr "<ahelp hid=\"HID_SMA_ARCOSHX\">Fügt eine Kosinus Hyperbolikus-Funktion mit einem Platzhalter ein.</ahelp> Sie können auch <emph>arcosh(<?>)</emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
+msgstr "<ahelp hid=\"HID_SMA_ARCOSHX\">Fügt eine Funktion Kosinus Hyperbolicus mit einem Platzhalter ein.</ahelp> Sie können auch <emph>arcosh(<?>)</emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
 
 #: 03090400.xhp
 msgctxt ""
@@ -2924,7 +2924,7 @@ msgctxt ""
 "65\n"
 "help.text"
 msgid "<ahelp hid=\"HID_SMA_ARTANHX\">Inserts an area hyperbolic tangent function with one placeholder.</ahelp> You can also type <emph>artanh(<?>)</emph> in the <emph>Commands</emph> window."
-msgstr "<ahelp hid=\"HID_SMA_ARTANHX\">Fügt eine Tangens Hyperbolikus-Funktion mit einem Platzhalter ein.</ahelp> Sie können auch <emph>artanh(<?>)</emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
+msgstr "<ahelp hid=\"HID_SMA_ARTANHX\">Fügt eine Funktion Tangens Hyperbolicus mit einem Platzhalter ein.</ahelp> Sie können auch <emph>artanh(<?>)</emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
 
 #: 03090400.xhp
 msgctxt ""
@@ -2950,7 +2950,7 @@ msgctxt ""
 "67\n"
 "help.text"
 msgid "<ahelp hid=\"HID_SMA_ARCOTHX\">Inserts an area hyperbolic cotangent function with one placeholder.</ahelp> You can also type <emph>arcoth(<?>)</emph> in the <emph>Commands</emph> window."
-msgstr "<ahelp hid=\"HID_SMA_ARCOTHX\">Fügt eine Kotangens Hyperbolikus-Funktion mit einem Platzhalter ein.</ahelp> Sie können auch <emph>arcoth(<?>)</emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
+msgstr "<ahelp hid=\"HID_SMA_ARCOTHX\">Fügt eine Funktion Kotangens Hyperbolicus mit einem Platzhalter ein.</ahelp> Sie können auch <emph>arcoth(<?>)</emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
 
 #: 03090400.xhp
 msgctxt ""
@@ -2994,7 +2994,7 @@ msgctxt ""
 "69\n"
 "help.text"
 msgid "When typing functions manually in the Commands window, note that spaces are required for some functions (for example, abs 5=5 ; abs -3=3)."
-msgstr "Bei einer manuellen Eingabe im Kommandofenster achten Sie darauf, dass bei einigen Funktionen Leerzeichen für den korrekten Aufbau unerlässlich sind (z.B. abs 5=5 ; abs -3=3)."
+msgstr "Bei einer manuellen Eingabe im Kommandofenster achten Sie darauf, dass bei einigen Funktionen Leerzeichen für den korrekten Aufbau unerlässlich sind (beispielsweise abs 5=5 ; abs -3=3)."
 
 #: 03090500.xhp
 msgctxt ""
@@ -3010,7 +3010,7 @@ msgctxt ""
 "bm_id3153153\n"
 "help.text"
 msgid "<bookmark_value>brackets; in $[officename] Math</bookmark_value><bookmark_value>brackets; round (Math)</bookmark_value><bookmark_value>parentheses (Math)</bookmark_value><bookmark_value>brackets; square (Math)</bookmark_value><bookmark_value>brackets; double square (Math)</bookmark_value><bookmark_value>braces in %PRODUCTNAME Math</bookmark_value><bookmark_value>brackets; angle (Math)</bookmark_value><bookmark_value>brackets; operator (Math)</bookmark_value><bookmark_value>brackets; angle with operator</bookmark_value><bookmark_value>brackets; group</bookmark_value><bookmark_value>grouping brackets</bookmark_value><bookmark_value>round brackets</bookmark_value><bookmark_value>square brackets</bookmark_value><bookmark_value>double square brackets; scalable</bookmark_value><bookmark_value>scalable braces</bookmark_value><bookmark_value>scalable round brackets</bookmark_value><bookmark_value>scalable lines with ceiling</bookmark_value><bookmark_value>vertical bars</bookmark_value><bookmark_value>brackets; scalable</bookmark_value><bookmark_value>operator brackets</bookmark_value><bookmark_value>floor brackets</bookmark_value><bookmark_value>lines; with edges</bookmark_value><bookmark_value>ceiling brackets; lines with</bookmark_value><bookmark_value>lines; scalable</bookmark_value><bookmark_value>ceiling brackets;scalable lines with</bookmark_value><bookmark_value>brackets; single, without group function</bookmark_value><bookmark_value>single brackets without group function</bookmark_value><bookmark_value>brackets;widowed</bookmark_value><bookmark_value>widowed brackets</bookmark_value><bookmark_value>orphaned brackets</bookmark_value>"
-msgstr "<bookmark_value>Klammern; in $[officename]Math</bookmark_value><bookmark_value>Klammern; rund (Math)</bookmark_value><bookmark_value>Runde Klammern; einfach (Math)</bookmark_value><bookmark_value>Eckige Klammern; einfach (Math)</bookmark_value><bookmark_value>Eckige Klammern; doppelt (Math)</bookmark_value><bookmark_value>Klammern in %PRODUCTNAME Math</bookmark_value><bookmark_value>Spitze Klammern; einfach (Math)</bookmark_value><bookmark_value>Operator-Klammern; einfach (Math)</bookmark_value><bookmark_value>Spitze Klammern; Operator-Klammern</bookmark_value><bookmark_value>Gruppierungsklammern</bookmark_value><bookmark_value>Klammern zum Gruppieren</bookmark_value><bookmark_value>Runde Klammern</bookmark_value><bookmark_value>Eckige Klammern</bookmark_value><bookmark_value>eckige Klammern; doppelte eckige Klammern</bookmark_value><bookmark_value>Skalierbare Mengenklammern</bookmark_value><bookmark_value>Skalierbare runde Klammern</bookmark_value><bookmark_value>Skalierbare Linien mit Kanten oben</bookmark_value><bookmark_value>Vertikale Linien</bookmark_value><bookmark_value>Klammern; skalierbar</bookmark_value><bookmark_value>Operatorklammern</bookmark_value><bookmark_value>Kanten unten-Klammern</bookmark_value><bookmark_value>Linien; mit Kanten</bookmark_value><bookmark_value>Kanten oben-Klammern; Linien mit</bookmark_value><bookmark_value>Linien; skalierbar</bookmark_value><bookmark_value>Kanten oben-Klammern;skalierbare Linien mit</bookmark_value><bookmark_value>Klammern; einzelne Klammer ohne Gruppierungsfunktion</bookmark_value><bookmark_value>Einzelne Klammern ohne Gruppierungsfunktion</bookmark_value><bookmark_value>Klammern;verwaist</bookmark_value><bookmark_value>Verwaiste Klammern</bookmark_value><bookmark_value>Einsame Klammern</bookmark_value>"
+msgstr "<bookmark_value>Klammern; in $[officename] Math</bookmark_value><bookmark_value>Klammern; rund (Math)</bookmark_value><bookmark_value>Runde Klammern; einfach (Math)</bookmark_value><bookmark_value>Eckige Klammern; einfach (Math)</bookmark_value><bookmark_value>Eckige Klammern; doppelt (Math)</bookmark_value><bookmark_value>Klammern in %PRODUCTNAME Math</bookmark_value><bookmark_value>Spitze Klammern; einfach (Math)</bookmark_value><bookmark_value>Operator-Klammern; einfach (Math)</bookmark_value><bookmark_value>Spitze Klammern; Operator-Klammern</bookmark_value><bookmark_value>Gruppierungsklammern</bookmark_value><bookmark_value>Klammern zum Gruppieren</bookmark_value><bookmark_value>Runde Klammern</bookmark_value><bookmark_value>Eckige Klammern</bookmark_value><bookmark_value>Eckige Klammern; doppelte eckige Klammern</bookmark_value><bookmark_value>Skalierbare Mengenklammern</bookmark_value><bookmark_value>Skalierbare runde Klammern</bookmark_value><bookmark_value>Skalierbare Linien mit Kanten oben</bookmark_value><bookmark_value>Vertikale Linien</bookmark_value><bookmark_value>Klammern; skalierbar</bookmark_value><bookmark_value>Operatorklammern</bookmark_value><bookmark_value>Kanten unten-Klammern</bookmark_value><bookmark_value>Linien; mit Kanten</bookmark_value><bookmark_value>Kanten oben-Klammern; Linien mit</bookmark_value><bookmark_value>Linien; skalierbar</bookmark_value><bookmark_value>Kanten oben-Klammern; skalierbare Linien mit</bookmark_value><bookmark_value>Klammern; einzelne Klammer ohne Gruppierungsfunktion</bookmark_value><bookmark_value>Einzelne Klammern ohne Gruppierungsfunktion</bookmark_value><bookmark_value>Klammern; verwaist</bookmark_value><bookmark_value>Verwaiste Klammern</bookmark_value><bookmark_value>Einsame Klammern</bookmark_value>"
 
 #: 03090500.xhp
 msgctxt ""
@@ -3583,7 +3583,7 @@ msgctxt ""
 "44\n"
 "help.text"
 msgid "Brackets are automatically sized when you type <emph>left</emph> and <emph>right</emph> in front of the bracket command, for example, <emph>left(a over b right)</emph>. You can also set the size and spacing of brackets by choosing <emph>Format - Spacing - Category - Brackets</emph> and setting the desired percentages. Mark the <emph>Scale all brackets</emph> check box to apply the changes to all brackets in the formula."
-msgstr "Klammern werden automatisch skaliert, wenn Sie <emph>left</emph> und <emph>right</emph> den Klammern voranstellen, z.B. <emph>left ( a over b right )</emph>. Sie können außerdem die Größe und die Abstände für skalierbare Klammern festlegen, indem Sie im Menü unter <emph>Format - Abstände... - Kategorie - Klammern</emph> die entsprechenden Prozentwerte eingeben. Wenn Sie die Option <emph>Alle Klammern skalieren</emph> aktivieren, werden alle Klammern in allen Formeln automatisch skaliert."
+msgstr "Klammern werden automatisch skaliert, wenn Sie <emph>left</emph> und <emph>right</emph> den Klammern voranstellen, beispielsweise <emph>left ( a over b right )</emph>. Sie können außerdem die Größe und die Abstände für skalierbare Klammern festlegen, indem Sie im Menü unter <emph>Format - Abstände... - Kategorie - Klammern</emph> die entsprechenden Prozentwerte eingeben. Wenn Sie die Option <emph>Alle Klammern skalieren</emph> aktivieren, werden alle Klammern in allen Formeln automatisch skaliert."
 
 #: 03090500.xhp
 msgctxt ""
@@ -3592,7 +3592,7 @@ msgctxt ""
 "43\n"
 "help.text"
 msgid "You can also use single brackets. To do this, type a backslash <emph>\\</emph> in front of the command. For example, when you type <emph>\\[</emph>, the left square bracket appears without its counterpart. This is useful for creating reverse brackets or for constructing intervals. Note that only non-scalable brackets can be used individually. To change the size, use the <emph>size</emph> command."
-msgstr "Alle Klammern können Sie auch ohne eine Gruppierungsfunktion, d.h. einzeln, nutzen. Dazu muss nur vor den jeweiligen Befehl der nach links gekippte Schrägstrich <emph>\\</emph> (Backslash) gesetzt werden. Geben Sie beispielsweise <emph>\\[</emph> ein, erscheint die linke eckige Klammer ohne ihr rechtes Gegenstück. Durch den Schrägstrich können Sie somit auch Klammern vertauschen. Die Eingabe \\] \\[ setzt die eckigen Klammern mit ihrer Rückseite aneinander. Das ist u.a. beim Aufbau von Intervallen sehr hilfreich. Probieren Sie das folgende Beispiel für ein offenes Intervall aus: <emph>\\]a;b\\[=lbrace x \\lline a<x<b rbrace</emph>. (Sie können die Formel hier kopieren und in das Kommandofenster einfügen.) Allerdings sind nur die nicht skalierbaren Klammern einzeln setzbar. Um die Größe zu verändern, müssen Sie ggf. den Befehl <emph>size</emph> nach dem Muster <emph>size 50 \\[</emph> benutzen."
+msgstr "Alle Klammern können Sie auch ohne eine Gruppierungsfunktion, das heißt einzeln, nutzen. Dazu muss nur vor den jeweiligen Befehl der nach links gekippte Schrägstrich <emph>\\</emph> (Backslash) gesetzt werden. Geben Sie beispielsweise <emph>\\[</emph> ein, erscheint die linke eckige Klammer ohne ihr rechtes Gegenstück. Durch den Schrägstrich können Sie somit auch Klammern vertauschen. Die Eingabe \\] \\[ setzt die eckigen Klammern mit ihrer Rückseite aneinander. Das ist unter anderem beim Aufbau von Intervallen sehr hilfreich. Probieren Sie das folgende Beispiel für ein offenes Intervall aus: <emph>\\]a;b\\[=lbrace x \\lline a<x<b rbrace</emph>. (Sie können die Formel hier kopieren und in das Kommandofenster einfügen.) Allerdings sind nur die nicht skalierbaren Klammern einzeln setzbar. Um die Größe zu verändern, müssen Sie gegebenenfalls den Befehl <emph>size</emph> nach dem Muster <emph>size 50 \\[</emph> benutzen."
 
 #: 03090500.xhp
 msgctxt ""
@@ -3665,7 +3665,7 @@ msgctxt ""
 "29\n"
 "help.text"
 msgid "Be sure to put spaces (gaps) between elements when entering them directly in the Commands window. This ensures that the correct structure is recognized."
-msgstr "Beachten Sie bei einer direkten Eingabe im Kommandofenster, dass bei einigen Klammerungen Leerzeichen für den korrekten Aufbau unerlässlich sind, z. B. left ldline<?> right rdline."
+msgstr "Beachten Sie bei einer direkten Eingabe im Kommandofenster, dass bei einigen Klammerungen Leerzeichen für den korrekten Aufbau unerlässlich sind, beispielsweise bei left ldline<?> right rdline."
 
 #: 03090500.xhp
 msgctxt ""
@@ -3863,7 +3863,7 @@ msgctxt ""
 "15\n"
 "help.text"
 msgid "<ahelp hid=\"HID_SMA_CIRCLEX\">Inserts a placeholder with a circle over it.</ahelp> You can also type <emph>circle <?></emph> in the <emph>Commands</emph> window."
-msgstr "<ahelp hid=\"HID_SMA_CIRCLEX\">Fügt einen Platzhalter mit einme <emph>Überkreis (Kroužek)</emph> ein.</ahelp> Sie können auch <emph>circle <?></emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
+msgstr "<ahelp hid=\"HID_SMA_CIRCLEX\">Fügt einen Platzhalter mit einem Überkreis (Kroužek) ein.</ahelp> Sie können auch <emph>circle <?></emph> direkt in das <emph>Kommando</emph>fenster eingeben."
 
 #: 03090600.xhp
 msgctxt ""
@@ -4305,7 +4305,7 @@ msgctxt ""
 "45\n"
 "help.text"
 msgid "<ahelp hid=\"HID_SMA_SIZEXY\">Inserts a command for modifying the font size with two placeholders. The first placeholder refers to the font size (for example, 12) and the second one contains the text.</ahelp> For proper structure, insert a space between the values. You can also directly enter <emph>size <?> <?></emph> in the <emph>Commands</emph> window."
-msgstr "<ahelp hid=\"HID_SMA_SIZEXY\">Fügt einen Befehl zur Änderung der <emph>Schriftgröße</emph> mit zwei Platzhaltern ein. Der erste Platzhalter bezieht sich auf die Schriftgröße (z.B. 12) und der zweite enthält den Text.</ahelp> Um eine ordentliche Struktur zu erhalten, setzen Sie ein Leerzeichen zwischen die Werte. Sie können auch <emph>size <?> <?></emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
+msgstr "<ahelp hid=\"HID_SMA_SIZEXY\">Fügt einen Befehl zur Änderung der Schriftgröße mit zwei Platzhaltern ein. Der erste Platzhalter bezieht sich auf die Schriftgröße (beispielsweise 12) und der zweite enthält den Text.</ahelp> Um eine ordentliche Struktur zu erhalten, setzen Sie ein Leerzeichen zwischen die Werte. Sie können auch <emph>size <?> <?></emph> direkt in das Fenster <emph>Kommandos</emph> eingeben."
 
 #: 03090600.xhp
 msgctxt ""
@@ -4349,7 +4349,7 @@ msgctxt ""
 "51\n"
 "help.text"
 msgid "The <emph>nbold</emph> and <emph>nitalic</emph> commands remove the bold or italic default fonts of formula components. For example, remove italics from the x in the formula 5 x + 3=28 by typing <emph>nitalic</emph> before the x as in <emph>5 nitalic x + 3=28</emph>."
-msgstr "Um programmmäßig fett oder kursiv formatierten Formelbestandteilen diese Attribute zu nehmen, können Sie die Befehle <emph>nbold</emph> und <emph>nitalic</emph> nutzen. Soll z.B. das x in der Formel 5 x + 3=28 nicht mehr kursiv sein, muss vor x <emph>nitalic</emph> gesetzt werden, d.h. Sie müssen dann <emph>5 nitalic x + 3=28</emph> eingeben."
+msgstr "Um programmmäßig fett oder kursiv formatierten Formelbestandteilen diese Attribute zu nehmen, können Sie die Befehle <emph>nbold</emph> und <emph>nitalic</emph> nutzen. Soll beispielsweise das x in der Formel 5 x + 3=28 nicht mehr kursiv sein, muss vor x <emph>nitalic</emph> gesetzt werden, das heißt Sie müssen dann <emph>5 nitalic x + 3=28</emph> eingeben."
 
 #: 03090600.xhp
 msgctxt ""
@@ -4358,7 +4358,7 @@ msgctxt ""
 "46\n"
 "help.text"
 msgid "The <link href=\"text/smath/01/03091300.xhp\" name=\"attributes\">attributes</link> \"acute\", \"bar\", \"breve\", \"check\", \"circle\", \"dot\", \"ddot\", \"dddot\", \"grave\", \"hat\", \"tilde\" and \"vec\" have fixed sizes. Their width or length cannot be adjusted when positioned over a long symbol."
-msgstr "Die <link href=\"text/smath/01/03091300.xhp\" name=\"Attribute\">Attribute</link> \"acute\", \"bar\", \"breve\", \"check\", \"circle\", \"dot\", \"ddot\", \"dddot\", \"grave\", \"hat\", \"tilde\" und \"vec\" haben feste Größen. Sie werden nicht breiter bzw. länger, wenn sie über einem langen Symbol stehen."
+msgstr "Die <link href=\"text/smath/01/03091300.xhp\" name=\"Attribute\">Attribute</link> \"acute\", \"bar\", \"breve\", \"check\", \"circle\", \"dot\", \"ddot\", \"dddot\", \"grave\", \"hat\", \"tilde\" und \"vec\" haben feste Größen. Sie werden nicht breiter beziehungsweise länger, wenn sie über einem langen Symbol stehen."
 
 #: 03090600.xhp
 msgctxt ""
@@ -4367,7 +4367,7 @@ msgctxt ""
 "52\n"
 "help.text"
 msgid "For size changes you can use <emph>size n</emph>,<emph> +n</emph>,<emph> -n</emph>,<emph> *n</emph> and<emph> /n </emph>, where <emph>n</emph> is a placeholder. This method is useful when the base size of the formula is subject to change. The commands <emph>size +n</emph> and <emph>size -n</emph> change point size, and <emph>size *n</emph> and <emph>size /n</emph> change the size by a percentage. For example, the command <emph>size *1.17</emph> increases the size of a character by exactly 17%."
-msgstr "Zur Größenveränderung lässt sich <emph>size n</emph>,<emph> +n</emph>,<emph> -n</emph>,<emph> *n</emph> und<emph> /n </emph>verwenden, wobei <emph>n</emph> hier als Platzhalter zu sehen ist. Besonders die Formen mit \"Vorzeichen\" sind für eventuelle Änderungen der Basisgröße geeignet. Sie lassen sich kopieren und an anderer Stelle einfügen, ohne ihr Erscheinungsbild zu verändern. Bei <emph>size +n</emph> und <emph>size -n</emph> wird die Größe in Points (pt) verändert. Prozentuelle Veränderungen erzielen Sie mit <emph>size *n</emph> und <emph>size /n</emph>, wobei der Schrägstrich proportionale Verhältnisse erhält. Wollen Sie ein Zeichen z. B. um genau 17 % vergrößern, müssen Sie <emph>size *1.17</emph> eingeben."
+msgstr "Zur Größenveränderung lässt sich <emph>size n</emph>,<emph> +n</emph>,<emph> -n</emph>,<emph> *n</emph> und<emph> /n </emph>verwenden, wobei <emph>n</emph> hier als Platzhalter zu sehen ist. Besonders die Formen mit \"Vorzeichen\" sind für eventuelle Änderungen der Basisgröße geeignet. Sie lassen sich kopieren und an anderer Stelle einfügen, ohne ihr Erscheinungsbild zu verändern. Bei <emph>size +n</emph> und <emph>size -n</emph> wird die Größe in Points (pt) verändert. Prozentuelle Veränderungen erzielen Sie mit <emph>size *n</emph> und <emph>size /n</emph>, wobei der Schrägstrich proportionale Verhältnisse erhält. Wollen Sie ein Zeichen beispielsweise um genau 17 % vergrößern, müssen Sie <emph>size *1.17</emph> eingeben."
 
 #: 03090600.xhp
 msgctxt ""
@@ -4376,7 +4376,7 @@ msgctxt ""
 "49\n"
 "help.text"
 msgid "Note that some entries require spaces for the correct structure. This is especially true when you specify attributes with fixed values instead of placeholders."
-msgstr "Bei einer manuellen Eingabe in das Kommandofenster ist darauf zu achten, dass Leerzeichen teilweise für den korrekten Aufbau unerlässlich sind. Besonders gilt dies, wenn Sie Ihre Attribute statt mit Platzhaltern mit Werten versehen, z. B. font sans 20."
+msgstr "Bei einer manuellen Eingabe in das Kommandofenster ist darauf zu achten, dass Leerzeichen teilweise für den korrekten Aufbau unerlässlich sind. Besonders gilt dies, wenn Sie Ihre Attribute statt mit Platzhaltern mit Werten versehen, beispielsweise font sans 20."
 
 #: 03090600.xhp
 msgctxt ""
@@ -4410,7 +4410,7 @@ msgctxt ""
 "bm_id3153150\n"
 "help.text"
 msgid "<bookmark_value>formatting;in $[officename] Math</bookmark_value><bookmark_value>$[officename] Math; formatting</bookmark_value><bookmark_value>superscripts</bookmark_value><bookmark_value>binomials</bookmark_value><bookmark_value>vertical elements</bookmark_value><bookmark_value>lines; inserting in formulas</bookmark_value><bookmark_value>subscripts</bookmark_value><bookmark_value>stacks</bookmark_value><bookmark_value>vertical arrangement of elements</bookmark_value><bookmark_value>small gaps</bookmark_value><bookmark_value>alignment; left (Math)</bookmark_value><bookmark_value>left-justified alignment (Math)</bookmark_value><bookmark_value>alignment; horizontally centered (Math)</bookmark_value><bookmark_value>centered horizontally; alignment (Math)</bookmark_value><bookmark_value>alignment; right (Math)</bookmark_value><bookmark_value>right-justified alignment in %PRODUCTNAME Math</bookmark_value><bookmark_value>matrices; arranging</bookmark_value><bookmark_value>spaces in formulas</bookmark_value><bookmark_value>gaps in formulas</bookmark_value><bookmark_value>inserting; gaps</bookmark_value><bookmark_value>arranging;matrices</bookmark_value><bookmark_value>formulas;aligning</bookmark_value><bookmark_value>aligning formulas</bookmark_value>"
-msgstr "<bookmark_value>Formatierung; bei $[officename] Math</bookmark_value><bookmark_value>$[officename] Math; formatieren</bookmark_value><bookmark_value>Hochgestellt</bookmark_value><bookmark_value>Binomen</bookmark_value><bookmark_value>Vertikalelemente</bookmark_value><bookmark_value>Linien; in Formeln einfügen</bookmark_value><bookmark_value>Tiefgestellt</bookmark_value><bookmark_value>Stacks</bookmark_value><bookmark_value>Vertikale Anordnung von Elementen</bookmark_value><bookmark_value>Kleiner Zwischenraum</bookmark_value><bookmark_value>Ausrichtung; links (Math)</bookmark_value><bookmark_value>Linksbündig ausrichten (Math)</bookmark_value><bookmark_value>Ausrichtung; horizontal zentriert (Math)</bookmark_value><bookmark_value>Zentriert horizontal; Ausrichtung (Math)</bookmark_value><bookmark_value>Ausrichtung; rechts (Math)</bookmark_value><bookmark_value>Rechtsbündige Ausrichtung in %PRODUCTNAME Math</bookmark_value><bookmark_value>Matrizen; anordnen</bookmark_value><bookmark_value>Leerstellen in Formeln</bookmark_value><bookmark_value>Zwischenräume in Formeln</bookmark_value><bookmark_value>Einfügen; Zwischenräume</bookmark_value><bookmark_value>Anordnen;Matrizen</bookmark_value><bookmark_value>Formeln;ausrichten</bookmark_value><bookmark_value>Ausrichten von Formeln</bookmark_value>"
+msgstr "<bookmark_value>Formatierung; bei $[officename] Math</bookmark_value><bookmark_value>$[officename] Math; formatieren</bookmark_value><bookmark_value>Hochgestellt</bookmark_value><bookmark_value>Binomen</bookmark_value><bookmark_value>Vertikalelemente</bookmark_value><bookmark_value>Linien; in Formeln einfügen</bookmark_value><bookmark_value>Tiefgestellt</bookmark_value><bookmark_value>Stacks</bookmark_value><bookmark_value>Vertikale Anordnung von Elementen</bookmark_value><bookmark_value>Kleiner Zwischenraum</bookmark_value><bookmark_value>Ausrichtung; links (Math)</bookmark_value><bookmark_value>Linksbündig ausrichten (Math)</bookmark_value><bookmark_value>Ausrichtung; horizontal zentriert (Math)</bookmark_value><bookmark_value>Zentriert horizontal; Ausrichtung (Math)</bookmark_value><bookmark_value>Ausrichtung; rechts (Math)</bookmark_value><bookmark_value>Rechtsbündige Ausrichtung in %PRODUCTNAME Math</bookmark_value><bookmark_value>Matrizen; anordnen</bookmark_value><bookmark_value>Leerstellen in Formeln</bookmark_value><bookmark_value>Zwischenräume in Formeln</bookmark_value><bookmark_value>Einfügen; Zwischenräume</bookmark_value><bookmark_value>Anordnen; Matrizen</bookmark_value><bookmark_value>Formeln; ausrichten</bookmark_value><bookmark_value>Ausrichten von Formeln</bookmark_value>"
 
 #: 03090700.xhp
 msgctxt ""
@@ -4863,7 +4863,7 @@ msgctxt ""
 "49\n"
 "help.text"
 msgid "aligning numerators and denominators, for example <emph>{alignl a}over{b+c}</emph>"
-msgstr "Zähler und Nenner ausrichten, z.B. <emph>{alignl a} over {b+c}</emph>,"
+msgstr "Zähler und Nenner ausrichten, beispielsweise <emph>{alignl a} over {b+c}</emph>,"
 
 #: 03090700.xhp
 msgctxt ""
@@ -4872,7 +4872,7 @@ msgctxt ""
 "50\n"
 "help.text"
 msgid "constructing binomials or stacks, for example <emph>binom{2*n}{alignr k}</emph>"
-msgstr "vertikale Anordnungen aufbauen, z.B. <emph>binom{2*n}{alignr k}</emph>,"
+msgstr "vertikale Anordnungen aufbauen, beispielsweise <emph>binom{2*n}{alignr k}</emph>,"
 
 #: 03090700.xhp
 msgctxt ""
@@ -4881,7 +4881,7 @@ msgctxt ""
 "51\n"
 "help.text"
 msgid "aligning the elements in a matrix, for example <emph>matrix{alignr a#b+2##c+1/3#alignl d}</emph> and"
-msgstr "die Elemente einer Matrix ausrichten, z.B. <emph>matrix{alignr a # b+2 ## c+1/3 # alignl d}</emph> und"
+msgstr "die Elemente einer Matrix ausrichten, beispielsweise <emph>matrix{alignr a # b+2 ## c+1/3 # alignl d}</emph> und"
 
 #: 03090700.xhp
 msgctxt ""
@@ -4890,7 +4890,7 @@ msgctxt ""
 "52\n"
 "help.text"
 msgid "beginning a new line, for example <emph>a+b-c newline alignr x/y</emph>"
-msgstr "eine neue Zeile beginnen, z.B. <emph>a+b-c newline alignr x/y</emph>."
+msgstr "eine neue Zeile beginnen, beispielsweise <emph>a+b-c newline alignr x/y</emph>."
 
 #: 03090700.xhp
 msgctxt ""
@@ -4951,7 +4951,7 @@ msgctxt ""
 "57\n"
 "help.text"
 msgid "The standard centralized formulas can be aligned to the left without using the <emph>Format - Alignment</emph> menu. To do this, place an empty character string, that is, the inverted commas which surround any text \"\", before the section of formula that you want to align. For example, typing <emph>\"\" a+b newline \"\" c+d</emph> results in both equations being left-aligned instead of centered."
-msgstr "Eine interessante Möglichkeit zur Ausrichtung bietet sich mit der Nutzung leerer Gruppen oder Zeichenketten. Setzen Sie eine leere Zeichenkette, d.h. die jeden Text umschließenden Anführungszeichen \"\", vor den Formelteil, den Sie linksbündig ausrichten wollen. Die standardmäßig zentrierten Formeln können nach links ausgerichtet werden, ohne das Menü <emph>Format - Ausrichtung</emph> dafür zu benutzen, vgl. <emph>\"Ein Beispiel\" newline a+b newline \"\" c+d</emph>. Analog gehen Sie mit leeren Gruppen um, vgl. <emph>b+b+b+b+{}\"Dies ist ein weiteres Beispiel\" newline a+a+a+a+a+a</emph>. Hier wird der Text, vorausgesetzt, die standardmäßige Einstellung wurde nicht verändert, ebenfalls zentriert."
+msgstr "Eine interessante Möglichkeit zur Ausrichtung bietet sich mit der Nutzung leerer Gruppen oder Zeichenketten. Setzen Sie eine leere Zeichenkette, das heißt die jeden Text umschließenden Anführungszeichen \"\", vor den Formelteil, den Sie linksbündig ausrichten wollen. Die standardmäßig zentrierten Formeln können nach links ausgerichtet werden, ohne das Menü <emph>Format - Ausrichtung</emph> dafür zu benutzen, siehe <emph>\"Ein Beispiel\" newline a+b newline \"\" c+d</emph>. Analog gehen Sie mit leeren Gruppen um, siehe <emph>b+b+b+b+{}\"Dies ist ein weiteres Beispiel\" newline a+a+a+a+a+a</emph>. Hier wird der Text ebenfalls zentriert, vorausgesetzt, die standardmäßige Einstellung wurde nicht verändert."
 
 #: 03090700.xhp
 msgctxt ""
@@ -5627,7 +5627,7 @@ msgctxt ""
 "bm_id3151265\n"
 "help.text"
 msgid "<bookmark_value>examples;$[officename] Math formulas</bookmark_value><bookmark_value>$[officename] Math;examples</bookmark_value><bookmark_value>formulas;examples</bookmark_value>"
-msgstr "<bookmark_value>Beispiele;$[officename] Math-Formeln</bookmark_value>  <bookmark_value>$[officename] Math;Beispiele</bookmark_value>  <bookmark_value>Formeln;Beispiele</bookmark_value>"
+msgstr "<bookmark_value>Beispiele; $[officename] Math-Formeln</bookmark_value><bookmark_value>$[officename] Math; Beispiele</bookmark_value><bookmark_value>Formeln; Beispiele</bookmark_value>"
 
 #: 03090900.xhp
 msgctxt ""
@@ -5978,7 +5978,7 @@ msgctxt ""
 "bm_id7562181\n"
 "help.text"
 msgid "<bookmark_value>font sizes;example</bookmark_value><bookmark_value>sum range example</bookmark_value><bookmark_value>examples ;integral</bookmark_value><bookmark_value>range of integral example</bookmark_value><bookmark_value>integrals;example</bookmark_value>"
-msgstr "<bookmark_value>Schriftgrößen;Beispiel</bookmark_value>  <bookmark_value>Summenbereich-Beispiel</bookmark_value>  <bookmark_value>Beispiele;Integral</bookmark_value>  <bookmark_value>Integralbereich-Beispiel</bookmark_value>  <bookmark_value>Integrale;Beispiel</bookmark_value>"
+msgstr "<bookmark_value>Schriftgrößen; Beispiel</bookmark_value><bookmark_value>Summenbereich-Beispiel</bookmark_value><bookmark_value>Beispiele; Integral</bookmark_value><bookmark_value>Integralbereich-Beispiel</bookmark_value><bookmark_value>Integrale; Beispiel</bookmark_value>"
 
 #: 03090909.xhp
 msgctxt ""
@@ -6063,7 +6063,7 @@ msgctxt ""
 "bm_id3147341\n"
 "help.text"
 msgid "<bookmark_value>brackets and grouping in $[officename] Math</bookmark_value><bookmark_value>grouping and brackets in $[officename] Math</bookmark_value>"
-msgstr "<bookmark_value>Klammer und Gruppierung bei $[officename] Math</bookmark_value>  <bookmark_value>Gruppierung und Klammer bei $[officename] Math</bookmark_value>"
+msgstr "<bookmark_value>Klammer und Gruppierung bei $[officename] Math</bookmark_value><bookmark_value>Gruppierung und Klammer bei $[officename] Math</bookmark_value>"
 
 #: 03091100.xhp
 msgctxt ""
@@ -6162,7 +6162,7 @@ msgctxt ""
 "10\n"
 "help.text"
 msgid "Brackets do not adjust their size to the enclosed expression. For example, if you want \"( a over b )\" with a bracket size adjusted to a and b you must insert \"left\" and \"right\". Entering \"left(a over b right)\" produces appropriate sizing. If, however, the brackets themselves are part of the expression whose size is changed, they are included the size change: \"size 3(a over b)\" and \"size 12(a over b)\". The sizing of the bracket-to-expression ratio does not change in any way."
-msgstr "Eine weitere Gemeinsamkeit all dieser Klammern ist es, dass sie ihre Größe nicht dem umschlossenen Ausdruck anpassen und umgekehrt. Wollen Sie z.B. \"( a over b )\" mit einer a und b angepassten Klammergröße darstellen, müssen Sie \"left\" und \"right\" einfügen. Die Eingabe von size18(\" stellt angemessene Größenverhältnisse her. Dasselbe gilt für die unterschiedliche Eingabe und somit entsprechenden Ergebnisse von \"(size 3{a over b})\" und \"left(size 3{a over b}right)\". Sind die Klammern selbst Teil des Ausdrucks, dessen Größe geändert wird, sind sie von der Größenveränderung auch betroffen: \"size 3(a over b)\" und \"size 12(a over b)\". Dies ändert nichts an dem Größenverhältnis von Klammer zu geklammertem Ausdruck."
+msgstr "Eine weitere Gemeinsamkeit all dieser Klammern ist es, dass sie ihre Größe nicht dem umschlossenen Ausdruck anpassen und umgekehrt. Wollen Sie beispielsweise \"( a over b )\" mit einer a und b angepassten Klammergröße darstellen, müssen Sie \"left\" und \"right\" einfügen. Die Eingabe von size18(\" stellt angemessene Größenverhältnisse her. Dasselbe gilt für die unterschiedliche Eingabe und somit entsprechenden Ergebnisse von \"(size 3{a over b})\" und \"left(size 3{a over b}right)\". Sind die Klammern selbst Teil des Ausdrucks, dessen Größe geändert wird, sind sie von der Größenveränderung auch betroffen: \"size 3(a over b)\" und \"size 12(a over b)\". Dies ändert nichts an dem Größenverhältnis von Klammer zu geklammertem Ausdruck."
 
 #: 03091100.xhp
 msgctxt ""
@@ -6243,7 +6243,7 @@ msgctxt ""
 "23\n"
 "help.text"
 msgid "Using \"left\" and \"right\" makes the above expression valid in $[officename] Math: \"left [2, 3 right )\". However, the brackets do not have any fixed size because they adjust to the argument. Setting a single bracket is a bit cumbersome. Therefore, there you can display single brackets with a fixed size by placing a \"\\\" (backslash) in front of normal brackets. These brackets then act like any other symbol and no longer have the special functionality of brackets; that is they do not work as group builders and their orientation corresponds to that of other symbols. See \"size *2 \\langle x \\rangle\" and \"size *2 langle x rangle\"."
-msgstr "Mit \"left\" und \"right\" können Sie zwar einzelne Klammern setzen, jedoch haben die Klammern dann keine feste Größe, da sie sich dem Argument anpassen. Um eine einzelne Klammer zu setzen, ist das etwas zu umständlich. Aus diesem Grund gibt es nun die Möglichkeit, einzelne Klammern mit fester Größe darzustellen, indem man den normalen Klammern einen Rückstrich \"\\\" (Backslash) voranstellt. Diese Klammern verhalten sich dann wie jedes andere Symbol und haben nicht mehr die besondere Funktionalität von Klammern, d.h. sie wirken nicht gruppierend und die Ausrichtung ist wie bei anderen Symbolen, vgl. \"size *2 \\langle x \\rangle\" und \"size *2 langle x rangle\"."
+msgstr "Mit \"left\" und \"right\" können Sie zwar einzelne Klammern setzen, jedoch haben die Klammern dann keine feste Größe, da sie sich dem Argument anpassen. Um eine einzelne Klammer zu setzen, ist das etwas zu umständlich. Aus diesem Grund gibt es nun die Möglichkeit, einzelne Klammern mit fester Größe darzustellen, indem man den normalen Klammern einen Rückstrich \"\\\" (Backslash) voranstellt. Diese Klammern verhalten sich dann wie jedes andere Symbol und haben nicht mehr die besondere Funktionalität von Klammern, das heißt sie wirken nicht gruppierend und die Ausrichtung ist wie bei anderen Symbolen. Siehe \"size *2 \\langle x \\rangle\" und \"size *2 langle x rangle\"."
 
 #: 03091100.xhp
 msgctxt ""
@@ -6360,7 +6360,7 @@ msgctxt ""
 "36\n"
 "help.text"
 msgid "This differs slightly for competing or mutually influencing attributes. This is often the case with font attributes. For example, which color does the b have in \"color yellow color red (a + color green b)\", or which size does it have in \"size *4 (a + size /2 b)\"? Given a base size of 12, does it have the size 48, 6 or even 24 (which could be seen as a combination)? The following are basic resolution rules, which will be followed consistently in the future. In general, the rules apply to all group operations. This only has a visible effect on the font attributes, like \"bold\", \"ital\", \"phantom\", \"size\", \"color\" and \"font\":"
-msgstr "Etwas anders liegt die Sache allerdings bei Attributen, die miteinander konkurrieren oder sich zumindest direkt gegenseitig beeinflussen. Dies ist oft bei den Schriftattributen der Fall. Welche Farbe hat z.B. in \"color yellow color red (a + color green b)\" das b oder welche Größe hat es in \"size *4 (a + size /2 b)\"? Eine Basisgröße von 12 vorausgesetzt, hat es dann die Größe 48, 6 oder gar 24 (was als Kombination gelten könnte)? Was gleich beschrieben wird, galt im wesentlichen bereits für $[officename] 4.0, stellt jetzt aber die grundsätzliche Auflösungsregel dar, nach der in Zukunft alles einheitlich funktioniert. Prinzipiell gilt diese Regel für alle Gruppen-Operationen. Einen zu beobachtenden Effekt hat dies jedoch nur bei den Schriftattributen, also \"bold\", \"ital\", \"phantom\", \"size\", \"color\" und \"font\":"
+msgstr "Etwas anders liegt die Sache allerdings bei Attributen, die miteinander konkurrieren oder sich zumindest direkt gegenseitig beeinflussen. Dies ist oft bei den Schriftattributen der Fall. Welche Farbe hat beispielsweise in \"color yellow color red (a + color green b)\" das b oder welche Größe hat es in \"size *4 (a + size /2 b)\"? Eine Basisgröße von 12 vorausgesetzt, hat es dann die Größe 48, 6 oder gar 24 (was als Kombination gelten könnte)? Im folgenden werden die grundsätzlichen Auflösungsregeln beschrieben, nach denen in Zukunft alles einheitlich funktioniert. Prinzipiell gelten diese Regeln für alle Gruppen-Operationen. Einen zu beobachtenden Effekt hat dies jedoch nur bei den Schriftattributen, wie \"bold\", \"ital\", \"phantom\", \"size\", \"color\" und \"font\":"
 
 #: 03091100.xhp
 msgctxt ""
@@ -6387,7 +6387,7 @@ msgctxt ""
 "39\n"
 "help.text"
 msgid "A group operation does not have any effect on higher-level operations but rather affects only lower-level groups and expressions, including their brackets and super-/subscripts. For example, \"a + size *2 (b * size -8 c_1)^2\""
-msgstr "Eine Gruppenoperation wirkt sich nicht auf übergeordnete Gruppierungen aus, sondern lediglich auf die untergeordneten Gruppierungen und Ausdrücke, wozu auch deren Klammern sowie \"super-/subscripts\" gehören, vgl. \"a + size *2 (b * size -8 c_1)^2\""
+msgstr "Eine Gruppenoperation wirkt sich nicht auf übergeordnete Gruppierungen aus, sondern lediglich auf die untergeordneten Gruppierungen und Ausdrücke, wozu auch deren Klammern sowie Hoch- und Tiefstellungen gehören. Beispielsweise \"a + size *2 (b * size -8 c_1)^2\""
 
 #: 03091100.xhp
 msgctxt ""
@@ -6441,7 +6441,7 @@ msgctxt ""
 "50\n"
 "help.text"
 msgid "To change the size of a formula, use \"size +\" or -,*,/. Do not use \"size n\". These can easily be used in any context. This enables you to copy to other areas by using Copy and Paste, and the result remains the same. Furthermore, such expressions survive a change of base size in the menu better than when using \"size n\". If you use only \"size *\" and \"size /\" (for example, \"size *1.24 a or size /0.86 a\") the proportions remain intact."
-msgstr "Zur Größenänderung verwenden Sie \"size +\", oder die Versionen mit -,*,/ statt \"size n\". Diese lassen sich gut in beliebigem Kontext verwenden. So können Sie sie mit Kopieren und Einfügen an andere Stellen kopieren und das Ergebnis ist immer noch ähnlich. Auch überstehen solche Ausdrücke besser eine Änderung der Basisgröße im Menü als bei Verwendung von \"size n\". Benutzen Sie nur \"size *\" und \"size /\" (z. B. \"size *1.24 a oder size /0.86 a\"), bleiben die Proportionen erhalten."
+msgstr "Zur Größenänderung verwenden Sie \"size +\", oder die Versionen mit -,*,/ statt \"size n\". Diese lassen sich gut in beliebigem Kontext verwenden. So können Sie sie mit Kopieren und Einfügen an andere Stellen kopieren und das Ergebnis ist immer noch ähnlich. Auch überstehen solche Ausdrücke besser eine Änderung der Basisgröße im Menü als bei Verwendung von \"size n\". Benutzen Sie nur \"size *\" und \"size /\" (beispielsweise \"size *1.24 a oder size /0.86 a\"), bleiben die Proportionen erhalten."
 
 #: 03091100.xhp
 msgctxt ""
@@ -6565,7 +6565,7 @@ msgctxt ""
 "bm_id3150746\n"
 "help.text"
 msgid "<bookmark_value>indexes and exponents in $[officename] Math</bookmark_value><bookmark_value>exponents and indexes in $[officename] Math</bookmark_value>"
-msgstr "<bookmark_value>Indexe und Exponenten in $[officename] Math</bookmark_value>  <bookmark_value>Exponenten und Indexe in $[officename] Math</bookmark_value>"
+msgstr "<bookmark_value>Indexe und Exponenten in $[officename] Math</bookmark_value><bookmark_value>Exponenten und Indexe in $[officename] Math</bookmark_value>"
 
 #: 03091200.xhp
 msgctxt ""
@@ -6592,7 +6592,7 @@ msgctxt ""
 "3\n"
 "help.text"
 msgid "The index and exponent for a character are displayed one on top of the other, left-justified to the base character. For example, type <emph>a_2^3</emph> or <emph>a^3_2</emph>. This can be in any order. Instead of <emph>'_'</emph> and <emph>'^'</emph>, you can use <emph>'sub'</emph> and <emph>'sup'</emph>."
-msgstr "Index und Exponent an einem Zeichen werden übereinander dargestellt, und zwar linksbündig am Basiszeichen, z. B. <emph>a_2^3</emph> oder <emph>a^3_2</emph>. Die Reihenfolge ist dabei unerheblich. Statt <emph>'_'</emph> und <emph>'^'</emph> können Sie auch <emph>'sub'</emph> und <emph>'sup'</emph> verwenden."
+msgstr "Index und Exponent an einem Zeichen werden übereinander dargestellt, und zwar linksbündig am Basiszeichen, beispielsweise <emph>a_2^3</emph> oder <emph>a^3_2</emph>. Die Reihenfolge ist dabei unerheblich. Statt <emph>'_'</emph> und <emph>'^'</emph> können Sie auch <emph>'sub'</emph> und <emph>'sup'</emph> verwenden."
 
 #: 03091200.xhp
 msgctxt ""
@@ -6682,7 +6682,7 @@ msgctxt ""
 "13\n"
 "help.text"
 msgid "Unlike other formula editors where \"<emph>_</emph>\" and \" <emph>^</emph> \" only refer to the next character (\"a_24\" refers only to the \"2\"), $[officename] Math refers to the entire number(s)/name(s)/text. If you want to put superscripts and subscripts in sequence, the expression can be written as follows: a_2{}^3 or a^3{}_2"
-msgstr "Im Gegensatz zu anderen Formel-Editoren, wo sich \"<emph>_</emph>\" und \"<emph>^</emph>\" nur auf das nächste Zeichen beziehen (also bei \"a_24\" nur auf die 2), bezieht sich $[officename] Math auf den/die ganze(n) Zahl/Namen/Text. Ist es jedoch ausdrücklich erwünscht, dass super- und subscript hintereinander stehen, so kann man dies folgendermaßen schreiben: a_2{}^3 bzw. a^3{}_2"
+msgstr "Im Gegensatz zu anderen Formel-Editoren, wo sich \"<emph>_</emph>\" und \"<emph>^</emph>\" nur auf das nächste Zeichen beziehen (also bei \"a_24\" nur auf die 2), bezieht sich $[officename] Math auf den/die ganze(n) Zahl/Namen/Text. Ist es jedoch ausdrücklich erwünscht, dass super- und subscript hintereinander stehen, so kann man dies folgendermaßen schreiben: a_2{}^3 beziehungsweise a^3{}_2"
 
 #: 03091200.xhp
 msgctxt ""
@@ -6727,7 +6727,7 @@ msgctxt ""
 "20\n"
 "help.text"
 msgid "Using the \"csub\" and \"csup\" commands, you can write super- and subscripts directly above or below a character. An example is \"a csub y csup x\". Combinations of indexes and exponents together are also possible: \"abc_1^2 lsub 3 lsup 4 csub 55555 csup 66666\"."
-msgstr "Mit den Befehlen \"csub\" und \"csup\" können Sie super- und subscripts direkt über bzw. direkt unter einem Zeichen anordnen, Probieren Sie \"a csub y csup x\" aus. Auch alle Arten Indizes und Exponenten gemeinsam sind möglich: \"abc_1^2 lsub 3 lsup 4 csub 55555 csup 66666\"."
+msgstr "Mit den Befehlen \"csub\" und \"csup\" können Sie die Tief- beziehungsweise Hochstellung direkt unter oder über einem Zeichen anordnen, Probieren Sie \"a csub y csup x\" aus. Auch alle Arten von Indizes und Exponenten gemeinsam sind möglich: \"abc_1^2 lsub 3 lsup 4 csub 55555 csup 66666\"."
 
 #: 03091200.xhp
 msgctxt ""
@@ -6761,7 +6761,7 @@ msgctxt ""
 "bm_id3148839\n"
 "help.text"
 msgid "<bookmark_value>attributes; additional information</bookmark_value>"
-msgstr "<bookmark_value>Attribute;weitere Informationen</bookmark_value>"
+msgstr "<bookmark_value>Attribute; weitere Informationen</bookmark_value>"
 
 #: 03091300.xhp
 msgctxt ""
@@ -6822,7 +6822,7 @@ msgctxt ""
 "bm_id3153923\n"
 "help.text"
 msgid "<bookmark_value>scaling; in %PRODUCTNAME Math</bookmark_value>"
-msgstr "<bookmark_value>Skalieren;in %PRODUCTNAME Math</bookmark_value>"
+msgstr "<bookmark_value>Skalieren; in %PRODUCTNAME Math</bookmark_value>"
 
 #: 03091400.xhp
 msgctxt ""
@@ -6849,7 +6849,7 @@ msgctxt ""
 "3\n"
 "help.text"
 msgid "The factorial is not scaled (example: \"fact stack{a#b}\" and \"fact {a over b}\") but is oriented using the baseline or center of the arguments."
-msgstr "Das Fakultätszeichen wird nicht skaliert, vgl. \"fact stack{a#b}\" und \"fact {a over b}\", sondern an der Grundlinie oder Mitte des Arguments ausgerichtet."
+msgstr "Das Fakultätszeichen wird nicht skaliert (beispielsweise \"fact stack{a#b}\" und \"fact {a over b}\"), sondern an der Grundlinie oder Mitte des Arguments ausgerichtet."
 
 #: 03091400.xhp
 msgctxt ""
@@ -6867,7 +6867,7 @@ msgctxt ""
 "7\n"
 "help.text"
 msgid "Brackets preceded by \"left\" or \"right\", however, are always adjusted to the argument. See \"left(left(left(a right)right)right)\", \"left(stack{a#b#c}right)\", \"left(a over b right)\"."
-msgstr "Mit \"left\" bzw. \"right\" eingeleitete Klammern werden jedoch immer dem Argument angepasst, vergleichen Sie \"left(left(left(a right)right)right)\", \"left(stack{a#b#c}right)\", \"left(a over b right)\"."
+msgstr "Mit \"left\" beziehungsweise \"right\" eingeleitete Klammern werden jedoch immer dem Argument angepasst, vergleichen Sie \"left(left(left(a right)right)right)\", \"left(stack{a#b#c}right)\", \"left(a over b right)\"."
 
 #: 03091400.xhp
 msgctxt ""
@@ -6901,7 +6901,7 @@ msgctxt ""
 "bm_id3155961\n"
 "help.text"
 msgid "<bookmark_value>$[officename] Math;reference list</bookmark_value><bookmark_value>formulas;reference tables</bookmark_value><bookmark_value>reference tables; formulas</bookmark_value><bookmark_value>operators;in Math</bookmark_value>"
-msgstr "<bookmark_value>$[officename] Math;Referenzliste</bookmark_value>  <bookmark_value>Formeln;Referenztabellen</bookmark_value>  <bookmark_value>Referenztabellen;Formeln</bookmark_value>  <bookmark_value>Operatoren;in Math</bookmark_value>"
+msgstr "<bookmark_value>$[officename] Math; Referenzliste</bookmark_value><bookmark_value>Formeln; Referenztabellen</bookmark_value><bookmark_value>Referenztabellen; Formeln</bookmark_value><bookmark_value>Operatoren; in Math</bookmark_value>"
 
 #: 03091500.xhp
 msgctxt ""
@@ -6935,7 +6935,7 @@ msgctxt ""
 "bm_id3149126\n"
 "help.text"
 msgid "<bookmark_value>unary operators; list of</bookmark_value><bookmark_value>binary operators; list of</bookmark_value>"
-msgstr "<bookmark_value>Unärer Operator;Referenz der Operatoren</bookmark_value>  <bookmark_value>Binärer Operator;Referenz der Operatoren</bookmark_value>"
+msgstr "<bookmark_value>Unärer Operator; Referenz der Operatoren</bookmark_value><bookmark_value>Binärer Operator; Referenz der Operatoren</bookmark_value>"
 
 #: 03091501.xhp
 msgctxt ""
@@ -7441,7 +7441,7 @@ msgctxt ""
 "bm_id3149650\n"
 "help.text"
 msgid "<bookmark_value>relations operators;list of</bookmark_value>"
-msgstr "<bookmark_value>Operatoren für Relationen;Liste der</bookmark_value>"
+msgstr "<bookmark_value>Operatoren für Relationen; Liste der</bookmark_value>"
 
 #: 03091502.xhp
 msgctxt ""
@@ -8084,7 +8084,7 @@ msgctxt ""
 "bm_id3157991\n"
 "help.text"
 msgid "<bookmark_value>set operators;list of</bookmark_value>"
-msgstr "<bookmark_value>Mengenoperatoren;Liste der</bookmark_value>"
+msgstr "<bookmark_value>Mengenoperatoren; Liste der</bookmark_value>"
 
 #: 03091503.xhp
 msgctxt ""
@@ -8523,7 +8523,7 @@ msgctxt ""
 "bm_id3156617\n"
 "help.text"
 msgid "<bookmark_value>functions operators;list of</bookmark_value>"
-msgstr "<bookmark_value>Funktionsoperatoren;Liste der</bookmark_value>"
+msgstr "<bookmark_value>Funktionsoperatoren; Liste der</bookmark_value>"
 
 #: 03091504.xhp
 msgctxt ""
@@ -9015,7 +9015,7 @@ msgctxt ""
 "bm_id3156617\n"
 "help.text"
 msgid "<bookmark_value>operators;list of</bookmark_value>"
-msgstr "<bookmark_value>Operatoren;Liste der</bookmark_value>"
+msgstr "<bookmark_value>Operatoren; Liste der</bookmark_value>"
 
 #: 03091505.xhp
 msgctxt ""
@@ -9455,7 +9455,7 @@ msgctxt ""
 "bm_id3161843\n"
 "help.text"
 msgid "<bookmark_value>formulas;in color</bookmark_value><bookmark_value>colors;in formulas</bookmark_value>"
-msgstr "<bookmark_value>Formeln;Farben in</bookmark_value>  <bookmark_value>Farben;in Formeln</bookmark_value>"
+msgstr "<bookmark_value>Formeln; Farben in</bookmark_value><bookmark_value>Farben; in Formeln</bookmark_value>"
 
 #: 03091506.xhp
 msgctxt ""
@@ -9753,7 +9753,7 @@ msgctxt ""
 "bm_id3156617\n"
 "help.text"
 msgid "<bookmark_value>other operators;list of</bookmark_value>"
-msgstr "<bookmark_value>Sonstige Operatoren;Liste der</bookmark_value>"
+msgstr "<bookmark_value>Sonstige Operatoren; Liste der</bookmark_value>"
 
 #: 03091507.xhp
 msgctxt ""
@@ -10167,7 +10167,7 @@ msgctxt ""
 "bm_id3180620\n"
 "help.text"
 msgid "<bookmark_value>brackets; reference list</bookmark_value>"
-msgstr "<bookmark_value>Klammern;Liste der</bookmark_value>"
+msgstr "<bookmark_value>Klammern; Liste der</bookmark_value>"
 
 #: 03091508.xhp
 msgctxt ""
@@ -10535,7 +10535,7 @@ msgctxt ""
 "par_id3183648\n"
 "help.text"
 msgid "Left curly bracket or right curly bracket"
-msgstr "linke bzw. rechte geschweifte Klammer"
+msgstr "linke beziehungsweise rechte geschweifte Klammer"
 
 #: 03091508.xhp
 msgctxt ""
@@ -10543,7 +10543,7 @@ msgctxt ""
 "par_id3183733\n"
 "help.text"
 msgid "Left and right round bracket"
-msgstr "linke bzw. rechte runde Klammer"
+msgstr "linke beziehungsweise rechte runde Klammer"
 
 #: 03091508.xhp
 msgctxt ""
@@ -10551,7 +10551,7 @@ msgctxt ""
 "par_id3183817\n"
 "help.text"
 msgid "Left and right square bracket"
-msgstr "linke bzw. rechte eckige Klammer"
+msgstr "linke beziehungsweise rechte eckige Klammer"
 
 #: 03091508.xhp
 msgctxt ""
@@ -10559,7 +10559,7 @@ msgctxt ""
 "par_id3183901\n"
 "help.text"
 msgid "Left and right pointed bracket"
-msgstr "linke bzw. rechte spitze Klammer"
+msgstr "linke beziehungsweise rechte spitze Klammer"
 
 #: 03091508.xhp
 msgctxt ""
@@ -10567,7 +10567,7 @@ msgctxt ""
 "par_id3183985\n"
 "help.text"
 msgid "Left and right vertical line"
-msgstr "linke bzw. rechte senkrechte Linie"
+msgstr "linke beziehungsweise rechte senkrechte Linie"
 
 #: 03091508.xhp
 msgctxt ""
@@ -10575,7 +10575,7 @@ msgctxt ""
 "par_id3184069\n"
 "help.text"
 msgid "Left and right double line"
-msgstr "linke bzw. rechte doppelte senkrechte Linie"
+msgstr "linke beziehungsweise rechte doppelte senkrechte Linie"
 
 #: 03091508.xhp
 msgctxt ""
@@ -10583,7 +10583,7 @@ msgctxt ""
 "par_id3184153\n"
 "help.text"
 msgid "Left and right line with lower edges"
-msgstr "linke bzw. rechte Abrundungsklammer"
+msgstr "linke beziehungsweise rechte Abrundungsklammer"
 
 #: 03091508.xhp
 msgctxt ""
@@ -10591,7 +10591,7 @@ msgctxt ""
 "par_id3184237\n"
 "help.text"
 msgid "Left and right line with upper edges"
-msgstr "linke bzw. rechte Aufrundungsklammer"
+msgstr "linke beziehungsweise rechte Aufrundungsklammer"
 
 #: 03091508.xhp
 msgctxt ""
@@ -10623,7 +10623,7 @@ msgctxt ""
 "bm_id3184255\n"
 "help.text"
 msgid "<bookmark_value>formatting; reference list (Math)</bookmark_value>"
-msgstr "<bookmark_value>Formatierungen;Liste mit (Math)</bookmark_value>"
+msgstr "<bookmark_value>Formatierungen; Liste mit (Math)</bookmark_value>"
 
 #: 03091509.xhp
 msgctxt ""
@@ -10656,7 +10656,7 @@ msgctxt ""
 "498\n"
 "help.text"
 msgid "Meaning"
-msgstr "<emph>Bedeutung (in Klammern: Befehl im Kommandos-Fenster)</emph>"
+msgstr "Bedeutung"
 
 #: 03091509.xhp
 msgctxt ""
@@ -10951,7 +10951,7 @@ msgctxt ""
 "bm_id3149261\n"
 "help.text"
 msgid "<bookmark_value>mathematical symbols; other</bookmark_value><bookmark_value>real part of complex numbers</bookmark_value><bookmark_value>symbols;for complex numbers</bookmark_value><bookmark_value>partial differentiation symbol</bookmark_value><bookmark_value>infinity symbol</bookmark_value><bookmark_value>Nabla operator</bookmark_value><bookmark_value>there exists symbol</bookmark_value><bookmark_value>there does not exist symbol</bookmark_value><bookmark_value>existence quantor symbol</bookmark_value><bookmark_value>for all symbol</bookmark_value><bookmark_value>universal quantifier symbol</bookmark_value><bookmark_value>h-bar symbol</bookmark_value><bookmark_value>lambda-bar symbol</bookmark_value><bookmark_value>imaginary part of a complex number</bookmark_value><bookmark_value>complex numbers; symbols</bookmark_value><bookmark_value>weierstrass p symbol</bookmark_value><bookmark_value>left arrow symbol</bookmark_value><bookmark_value>right arrow symbol</bookmark_value><bookmark_value>up arrow symbol</bookmark_value><bookmark_value>down arrow symbol</bookmark_value><bookmark_value>arrows;symbols in %PRODUCTNAME Math</bookmark_value><bookmark_value>center dots symbol</bookmark_value><bookmark_value>axis-ellipsis</bookmark_value><bookmark_value>vertical dots symbol</bookmark_value><bookmark_value>diagonal upward dots;symbol</bookmark_value><bookmark_value>diagonal downward dots;symbol</bookmark_value><bookmark_value>epsilon; back</bookmark_value><bookmark_value>back epsilon symbol</bookmark_value><bookmark_value>placeholders; inserting in formulas</bookmark_value><bookmark_value>ellipsis symbols</bookmark_value>"
-msgstr "<bookmark_value>Mathematische Symbole; Sonstige</bookmark_value><bookmark_value>Realteil komplexer Zahlen</bookmark_value><bookmark_value>Symbole; für komplexe Zahlen</bookmark_value><bookmark_value>Partielle Differentiation (Symbol)</bookmark_value><bookmark_value>Unendlich (Symbol)</bookmark_value><bookmark_value>Nabla (Operator)</bookmark_value><bookmark_value>Es existiert (Symbol)</bookmark_value><bookmark_value>Existenzquantor (Symbol)</bookmark_value><bookmark_value>Für alle (Symbol)</bookmark_value><bookmark_value>Allquantor (Symbol)</bookmark_value><bookmark_value>h quer (Plancksche Konstante) (Symbol)</bookmark_value><bookmark_value>Lambda quer (Symbol)</bookmark_value><bookmark_value>Imaginärteil einer komplexen Zahl</bookmark_value><bookmark_value>Komplexe Zahlen; Symbole</bookmark_value><bookmark_value>Weierstraß'sche p-Funktion (Symbol)</bookmark_value><bookmark_value>Pfeil nach links (Symbol)</bookmark_value><bookmark_value>Pfeil nach rechts (Symbol)</bookmark_value><bookmark_value>Pfeil nach oben (Symbol)</bookmark_value><bookmark_value>Pfeil nach unten (Symbol)</bookmark_value><bookmark_value>Pfeile; Symbole in %PRODUCTNAME Math</bookmark_value><bookmark_value>Zentrierte Punkte (Symbol)</bookmark_value><bookmark_value>Achse-Ellipse</bookmark_value><bookmark_value>Vertikale Punkte (Symbol)</bookmark_value><bookmark_value>Punkte nach oben; Symbol</bookmark_value><bookmark_value>Punkte nach unten; Symbol</bookmark_value><bookmark_value>Epsilon; Umgekehrtes</bookmark_value><bookmark_value>Umgekehrtes Epsilon (Symbol)</bookmark_value><bookmark_value>Platzhalter; in Formeln einfügen</bookmark_value><bookmark_value>Ellipsen (Symbole)</bookmark_value>"
+msgstr "<bookmark_value>Mathematische Symbole; Sonstige</bookmark_value><bookmark_value>Realteil komplexer Zahlen</bookmark_value><bookmark_value>Symbole; für komplexe Zahlen</bookmark_value><bookmark_value>Partielle Differentiation (Symbol)</bookmark_value><bookmark_value>Unendlich (Symbol)</bookmark_value><bookmark_value>Nabla (Operator)</bookmark_value><bookmark_value>Es existiert (Symbol)</bookmark_value><bookmark_value>Es existiert nicht (Symbol)</bookmark_value><bookmark_value>Existenzquantor (Symbol)</bookmark_value><bookmark_value>Für alle (Symbol)</bookmark_value><bookmark_value>Allquantor (Symbol)</bookmark_value><bookmark_value>h quer (Plancksche Konstante) (Symbol)</bookmark_value><bookmark_value>Lambda quer (Symbol)</bookmark_value><bookmark_value>Imaginärteil einer komplexen Zahl</bookmark_value><bookmark_value>Komplexe Zahlen; Symbole</bookmark_value><bookmark_value>Weierstraß'sche p-Funktion (Symbol)</bookmark_value><bookmark_value>Pfeil nach links (Symbol)</bookmark_value><bookmark_value>Pfeil nach rechts (Symbol)</bookmark_value><bookmark_value>Pfeil nach oben (Symbol)</bookmark_value><bookmark_value>Pfeil nach unten (Symbol)</bookmark_value><bookmark_value>Pfeile; Symbole in %PRODUCTNAME Math</bookmark_value><bookmark_value>Zentrierte Punkte (Symbol)</bookmark_value><bookmark_value>Achse-Ellipse</bookmark_value><bookmark_value>Vertikale Punkte (Symbol)</bookmark_value><bookmark_value>Punkte nach oben; Symbol</bookmark_value><bookmark_value>Punkte nach unten; Symbol</bookmark_value><bookmark_value>Epsilon; Umgekehrtes</bookmark_value><bookmark_value>Umgekehrtes Epsilon (Symbol)</bookmark_value><bookmark_value>Platzhalter; in Formeln einfügen</bookmark_value><bookmark_value>Ellipsen (Symbole)</bookmark_value>"
 
 #: 03091600.xhp
 msgctxt ""
@@ -11703,7 +11703,7 @@ msgctxt ""
 "23\n"
 "help.text"
 msgid "<ahelp hid=\"modules/smath/ui/fonttypedialog/serifCB\">You can specify the font to be used for the <emph>font serif</emph> format.</ahelp> Serifs are the small \"guides\" that can be seen, for example, at the bottom of a capital A when the Times serif font is used. Using serifs is quite helpful since it guides a reader's eye in a straight line and can speed up reading."
-msgstr "<ahelp hid=\"modules/smath/ui/fonttypedialog/serifCB\">Wählen Sie hier die Schriftart für die manuelle Formatierung <emph>font serif</emph>.</ahelp> Serifen sind kleine An- und Abstriche, die z.B. unten am Buchstaben A sichtbar sind, wenn Sie die Serifenschriftart Times verwenden. Das Verwenden von Serifen unterstützt und beschleunigt das Lesen, da sie das Auge des Leser in einer geraden Linie führen."
+msgstr "<ahelp hid=\"modules/smath/ui/fonttypedialog/serifCB\">Wählen Sie hier die Schriftart für die manuelle Formatierung <emph>font serif</emph>.</ahelp> Serifen sind kleine An- und Abstriche, wie sie beispielsweise unten am Buchstaben A sichtbar sind, wenn Sie die Serifenschriftart Times verwenden. Das Verwenden von Serifen unterstützt und beschleunigt das Lesen, da sie das Auge des Leser in einer geraden Linie führen."
 
 #: 05010000.xhp
 msgctxt ""
@@ -12094,7 +12094,7 @@ msgctxt ""
 "bm_id3154658\n"
 "help.text"
 msgid "<bookmark_value>spacing; formula elements</bookmark_value><bookmark_value>formulas;element spacing</bookmark_value>"
-msgstr "<bookmark_value>Abstände; Formelelemente</bookmark_value><bookmark_value>Formeln;Abstand zwischen Elementen</bookmark_value>"
+msgstr "<bookmark_value>Abstände; Formelelemente</bookmark_value><bookmark_value>Formeln; Abstand zwischen Elementen</bookmark_value>"
 
 #: 05030000.xhp
 msgctxt ""
@@ -13010,7 +13010,7 @@ msgctxt ""
 "par_id3153917\n"
 "help.text"
 msgid "When a symbol is selected, its command name appears below the symbol list and a magnified version appears in a box to the right. Note that the name must be typed in the <emph>Commands</emph> window exactly as displayed here (case-sensitive)."
-msgstr "Der Befehlsname des ausgewählten Symbols wird unter der Symbolliste eingeblendet und eine vergrößerte Version des Symbols im Feld rechts daneben angezeigt. Beachten Sie bitte, dass der Name exakt so in das Fenster <emph>Kommandos</emph> eingegeben werden muss, wie Sie ihn hier sehen (Groß-/Kleinschreibung beachten)."
+msgstr "Der Befehlsname des ausgewählten Symbols wird unter der Symbolliste eingeblendet und eine vergrößerte Version des Symbols im Feld rechts daneben angezeigt. Beachten Sie bitte, dass der Name exakt so in das Fenster <emph>Kommandos</emph> eingegeben werden muss, wie Sie ihn hier sehen (Groß- und Kleinschreibung beachten)."
 
 #: 06010000.xhp
 msgctxt ""
@@ -13018,7 +13018,7 @@ msgctxt ""
 "par_id3149126\n"
 "help.text"
 msgid "To insert a symbol, select it from the list and click <emph>Insert</emph>. The corresponding command name appears in the <emph>Commands</emph> window."
-msgstr "Zum Einfügen eines Symbols wählen Sie es aus der Liste klicken auf <emph>Übernehmen</emph>. Das entsprechende Symbol wird in das Fenster <emph>Kommandos</emph> eingefügt."
+msgstr "Zum Einfügen eines Symbols wählen Sie es aus der Liste und klicken auf <emph>Einfügen</emph>. Das entsprechende Symbol wird in das Fenster <emph>Kommandos</emph> eingefügt."
 
 #: 06010000.xhp
 msgctxt ""

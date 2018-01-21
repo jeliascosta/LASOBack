@@ -30,6 +30,7 @@
 #include <comphelper/sequence.hxx>
 #include <ooxml/resourceids.hxx>
 #include <ConversionHelper.hxx>
+#include <DomainMapper.hxx>
 #include "util.hxx"
 
 using namespace com::sun::star;
@@ -64,7 +65,9 @@ struct SettingsTable_Impl
     bool                m_bWidowControl;
     bool                m_bSplitPgBreakAndParaMark;
     bool                m_bMirrorMargin;
+    bool                m_bDoNotExpandShiftReturn;
     bool                m_bProtectForm;
+    bool                m_bDisplayBackgroundShape;
 
     uno::Sequence<beans::PropertyValue> m_pThemeFontLangProps;
 
@@ -90,19 +93,23 @@ struct SettingsTable_Impl
     , m_bWidowControl(false)
     , m_bSplitPgBreakAndParaMark(false)
     , m_bMirrorMargin(false)
+    , m_bDoNotExpandShiftReturn(false)
     , m_bProtectForm(false)
+    , m_bDisplayBackgroundShape(false)
     , m_pThemeFontLangProps(3)
     , m_pCurrentCompatSetting(3)
     {}
 
 };
 
-SettingsTable::SettingsTable()
+SettingsTable::SettingsTable(const DomainMapper& rDomainMapper)
 : LoggedProperties("SettingsTable")
 , LoggedTable("SettingsTable")
 , m_pImpl( new SettingsTable_Impl )
 {
-
+    // HTML paragraph auto-spacing is opt-in for RTF, opt-out for OOXML.
+    if (rDomainMapper.IsRTFImport())
+        m_pImpl->m_bDoNotUseHTMLParagraphAutoSpacing = true;
 }
 
 SettingsTable::~SettingsTable()
@@ -274,6 +281,12 @@ void SettingsTable::lcl_sprm(Sprm& rSprm)
     case NS_ooxml::LN_CT_Settings_widowControl:
         m_pImpl->m_bWidowControl = nIntValue;
         break;
+    case NS_ooxml::LN_CT_Compat_doNotExpandShiftReturn:
+        m_pImpl->m_bDoNotExpandShiftReturn = true;
+        break;
+    case NS_ooxml::LN_CT_Settings_displayBackgroundShape:
+        m_pImpl->m_bDisplayBackgroundShape = nIntValue;
+        break;
     default:
     {
 #ifdef DEBUG_WRITERFILTER
@@ -347,6 +360,16 @@ bool SettingsTable::GetSplitPgBreakAndParaMark() const
 bool SettingsTable::GetMirrorMarginSettings() const
 {
     return m_pImpl->m_bMirrorMargin;
+}
+
+bool SettingsTable::GetDisplayBackgroundShape() const
+{
+    return m_pImpl->m_bDisplayBackgroundShape;
+}
+
+bool SettingsTable::GetDoNotExpandShiftReturn() const
+{
+    return m_pImpl->m_bDoNotExpandShiftReturn;
 }
 
 bool SettingsTable::GetProtectForm() const

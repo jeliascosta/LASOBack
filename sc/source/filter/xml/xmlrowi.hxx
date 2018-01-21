@@ -23,17 +23,15 @@
 #include <xmloff/xmlimp.hxx>
 #include "address.hxx"
 #include "xmlimprt.hxx"
+#include "importcontext.hxx"
 
 
-class ScXMLTableRowContext : public SvXMLImportContext
+class ScXMLTableRowContext : public ScXMLImportContext
 {
     OUString sStyleName;
     OUString sVisibility;
     sal_Int32 nRepeatedRows;
     bool bHasCell;
-
-    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
-    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
 
@@ -41,7 +39,7 @@ public:
                        const OUString& rLName,
                        const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList );
 
-    virtual ~ScXMLTableRowContext();
+    virtual ~ScXMLTableRowContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -50,16 +48,13 @@ public:
     virtual void EndElement() override;
 };
 
-class ScXMLTableRowsContext : public SvXMLImportContext
+class ScXMLTableRowsContext : public ScXMLImportContext
 {
     SCROW nHeaderStartRow;
     SCROW nGroupStartRow;
     bool bHeader;
     bool bGroup;
     bool bGroupDisplay;
-
-    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
-    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
 
@@ -68,7 +63,7 @@ public:
                        const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
                        const bool bHeader, const bool bGroup);
 
-    virtual ~ScXMLTableRowsContext();
+    virtual ~ScXMLTableRowsContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,

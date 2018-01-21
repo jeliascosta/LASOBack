@@ -36,7 +36,7 @@ using ::com::sun::star::lang::XMultiServiceFactory;
 
 static MozillaBootstrap *pMozillaBootstrap=nullptr;
 static Reference<XMozillaBootstrap> xMozillaBootstrap;
-extern "C" SAL_DLLPUBLIC_EXPORT void*  SAL_CALL OMozillaBootstrap_CreateInstance(const ::com::sun::star::uno::Reference< ::com::sun::star::lang::XMultiServiceFactory >& )
+extern "C" SAL_DLLPUBLIC_EXPORT void*  SAL_CALL OMozillaBootstrap_CreateInstance(const css::uno::Reference< css::lang::XMultiServiceFactory >& )
 {
     if (!pMozillaBootstrap)
     {
@@ -60,7 +60,7 @@ MozillaBootstrap::~MozillaBootstrap()
 void MozillaBootstrap::Init()
 {
     m_ProfileAccess = new ProfileAccess();
-    bootupProfile(::com::sun::star::mozilla::MozillaProductType_Mozilla,OUString());
+    bootupProfile(css::mozilla::MozillaProductType_Mozilla,OUString());
 }
 
 
@@ -70,25 +70,9 @@ void MozillaBootstrap::disposing()
     OMozillaBootstrap_BASE::disposing();
 }
 
-// static ServiceInfo
-
-OUString MozillaBootstrap::getImplementationName_Static(  ) throw(RuntimeException)
-{
-    return OUString(MOZAB_MozillaBootstrap_IMPL_NAME);
-}
-
-Sequence< OUString > MozillaBootstrap::getSupportedServiceNames_Static(  ) throw (RuntimeException)
-{
-    // which service is supported
-    // for more information @see com.sun.star.mozilla.MozillaBootstrap
-    Sequence<OUString> aSNS { "com.sun.star.mozilla.MozillaBootstrap" };
-    return aSNS;
-}
-
-
 OUString SAL_CALL MozillaBootstrap::getImplementationName(  ) throw(RuntimeException, std::exception)
 {
-    return getImplementationName_Static();
+    return OUString(MOZAB_MozillaBootstrap_IMPL_NAME);
 }
 
 sal_Bool SAL_CALL MozillaBootstrap::supportsService( const OUString& _rServiceName ) throw(RuntimeException, std::exception)
@@ -96,63 +80,64 @@ sal_Bool SAL_CALL MozillaBootstrap::supportsService( const OUString& _rServiceNa
     return cppu::supportsService(this, _rServiceName);
 }
 
-
 Sequence< OUString > SAL_CALL MozillaBootstrap::getSupportedServiceNames(  ) throw(RuntimeException, std::exception)
 {
-    return getSupportedServiceNames_Static();
+    // which service is supported
+    // for more information @see com.sun.star.mozilla.MozillaBootstrap
+    return { "com.sun.star.mozilla.MozillaBootstrap" };
 }
 
 
 // XProfileDiscover
-::sal_Int32 SAL_CALL MozillaBootstrap::getProfileCount( ::com::sun::star::mozilla::MozillaProductType product) throw (::com::sun::star::uno::RuntimeException, std::exception)
+::sal_Int32 SAL_CALL MozillaBootstrap::getProfileCount( css::mozilla::MozillaProductType product) throw (css::uno::RuntimeException, std::exception)
 {
     return m_ProfileAccess->getProfileCount(product);
 }
-::sal_Int32 SAL_CALL MozillaBootstrap::getProfileList( ::com::sun::star::mozilla::MozillaProductType product, ::com::sun::star::uno::Sequence< OUString >& list ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+::sal_Int32 SAL_CALL MozillaBootstrap::getProfileList( css::mozilla::MozillaProductType product, css::uno::Sequence< OUString >& list ) throw (css::uno::RuntimeException, std::exception)
 {
     return m_ProfileAccess->getProfileList(product,list);
 }
-OUString SAL_CALL MozillaBootstrap::getDefaultProfile( ::com::sun::star::mozilla::MozillaProductType product ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+OUString SAL_CALL MozillaBootstrap::getDefaultProfile( css::mozilla::MozillaProductType product ) throw (css::uno::RuntimeException, std::exception)
 {
     return m_ProfileAccess->getDefaultProfile(product);
 }
-OUString SAL_CALL MozillaBootstrap::getProfilePath( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+OUString SAL_CALL MozillaBootstrap::getProfilePath( css::mozilla::MozillaProductType product, const OUString& profileName ) throw (css::uno::RuntimeException, std::exception)
 {
     return m_ProfileAccess->getProfilePath(product,profileName);
 }
-sal_Bool SAL_CALL MozillaBootstrap::isProfileLocked( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL MozillaBootstrap::isProfileLocked( css::mozilla::MozillaProductType product, const OUString& profileName ) throw (css::uno::RuntimeException, std::exception)
 {
     return m_ProfileAccess->isProfileLocked(product,profileName);
 }
-sal_Bool SAL_CALL MozillaBootstrap::getProfileExists( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL MozillaBootstrap::getProfileExists( css::mozilla::MozillaProductType product, const OUString& profileName ) throw (css::uno::RuntimeException, std::exception)
 {
     return m_ProfileAccess->getProfileExists(product,profileName);
 }
 
 // XProfileManager
-::sal_Int32 SAL_CALL MozillaBootstrap::bootupProfile( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+::sal_Int32 SAL_CALL MozillaBootstrap::bootupProfile( css::mozilla::MozillaProductType product, const OUString& profileName ) throw (css::uno::RuntimeException, std::exception)
 {
     (void)product; /* avoid warning about unused parameter */
     (void)profileName; /* avoid warning about unused parameter */
         return -1;
 }
-::sal_Int32 SAL_CALL MozillaBootstrap::shutdownProfile(  ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+::sal_Int32 SAL_CALL MozillaBootstrap::shutdownProfile(  ) throw (css::uno::RuntimeException, std::exception)
 {
     return -1;
 }
-::com::sun::star::mozilla::MozillaProductType SAL_CALL MozillaBootstrap::getCurrentProduct(  ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+css::mozilla::MozillaProductType SAL_CALL MozillaBootstrap::getCurrentProduct(  ) throw (css::uno::RuntimeException, std::exception)
 {
-    return ::com::sun::star::mozilla::MozillaProductType_Default;
+    return css::mozilla::MozillaProductType_Default;
 }
-OUString SAL_CALL MozillaBootstrap::getCurrentProfile(  ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+OUString SAL_CALL MozillaBootstrap::getCurrentProfile(  ) throw (css::uno::RuntimeException, std::exception)
 {
     return OUString();
 }
-sal_Bool SAL_CALL MozillaBootstrap::isCurrentProfileLocked(  ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+sal_Bool SAL_CALL MozillaBootstrap::isCurrentProfileLocked(  ) throw (css::uno::RuntimeException, std::exception)
 {
     return true;
 }
-OUString SAL_CALL MozillaBootstrap::setCurrentProfile( ::com::sun::star::mozilla::MozillaProductType product, const OUString& profileName ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+OUString SAL_CALL MozillaBootstrap::setCurrentProfile( css::mozilla::MozillaProductType product, const OUString& profileName ) throw (css::uno::RuntimeException, std::exception)
 {
     (void)product; /* avoid warning about unused parameter */
     (void)profileName; /* avoid warning about unused parameter */
@@ -160,7 +145,7 @@ OUString SAL_CALL MozillaBootstrap::setCurrentProfile( ::com::sun::star::mozilla
 }
 
 // XProxyRunner
-::sal_Int32 SAL_CALL MozillaBootstrap::Run( const ::com::sun::star::uno::Reference< ::com::sun::star::mozilla::XCodeProxy >& aCode ) throw (::com::sun::star::uno::RuntimeException, std::exception)
+::sal_Int32 SAL_CALL MozillaBootstrap::Run( const css::uno::Reference< css::mozilla::XCodeProxy >& aCode ) throw (css::uno::RuntimeException, std::exception)
 {
     (void)aCode; /* avoid warning about unused parameter */
     return -1;

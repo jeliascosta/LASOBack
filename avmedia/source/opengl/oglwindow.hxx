@@ -28,7 +28,7 @@ class OGLWindow : public ::cppu::WeakImplHelper< css::media::XPlayerWindow, css:
 {
 public:
     OGLWindow( libgltf::glTFHandle& rHandle, const rtl::Reference<OpenGLContext> & rContext, vcl::Window& rEventHandlerParent );
-    virtual ~OGLWindow();
+    virtual ~OGLWindow() override;
 
     virtual void SAL_CALL update() throw (css::uno::RuntimeException, std::exception) override;
     virtual sal_Bool SAL_CALL setZoomLevel( css::media::ZoomLevel ZoomLevel ) throw (css::uno::RuntimeException, std::exception) override;
@@ -39,7 +39,7 @@ public:
     virtual sal_Bool SAL_CALL supportsService( const OUString& rServiceName ) throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames() throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void SAL_CALL dispose() throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL dispose() throw (css::uno::RuntimeException, std::exception) final override;
     virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 
@@ -62,8 +62,8 @@ public:
     virtual void SAL_CALL removePaintListener( const css::uno::Reference< css::awt::XPaintListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
 
 private:
-    DECL_LINK_TYPED( FocusGrabber, VclWindowEvent&, void );
-    DECL_LINK_TYPED( CameraHandler, VclWindowEvent&, void );
+    DECL_LINK( FocusGrabber, VclWindowEvent&, void );
+    DECL_LINK( CameraHandler, VclWindowEvent&, void );
 
     libgltf::glTFHandle& m_rHandle;
     rtl::Reference<OpenGLContext> m_xContext;

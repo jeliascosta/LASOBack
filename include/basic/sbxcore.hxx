@@ -33,30 +33,27 @@ class SvStream;
 // Load() and Store() must not be overridden.
 
 // This version of the Macros does not define Load/StorePrivateData()-methods
-#define SBX_DECL_PERSIST_NODATA( nCre, nSbxId, nVer )       \
-    virtual sal_uInt32 GetCreator() const override { return nCre;   }    \
+#define SBX_DECL_PERSIST_NODATA( nSbxId, nVer )       \
     virtual sal_uInt16 GetVersion() const override { return nVer;   }    \
     virtual sal_uInt16 GetSbxId() const override   { return nSbxId; }
 
-class SbxBase;
 class SbxFactory;
 class SbxObject;
 
 class BASIC_DLLPUBLIC SbxBase : virtual public SvRefBase
 {
-    virtual bool LoadData( SvStream&, sal_uInt16 );
-    virtual bool StoreData( SvStream& ) const;
+    virtual bool LoadData( SvStream&, sal_uInt16 ) = 0;
+    virtual bool StoreData( SvStream& ) const = 0;
 protected:
     SbxFlagBits nFlags;          // Flag-Bits
 
     SbxBase();
     SbxBase( const SbxBase& );
     SbxBase& operator=( const SbxBase& );
-    virtual ~SbxBase();
+    virtual ~SbxBase() override;
 
-    virtual sal_uInt32 GetCreator() const { return 0;   }
-    virtual sal_uInt16 GetVersion() const { return 0;   }
-    virtual sal_uInt16 GetSbxId() const   { return 0; }
+    virtual sal_uInt16 GetVersion() const = 0;
+    virtual sal_uInt16 GetSbxId() const = 0;
 
 public:
     inline void         SetFlags( SbxFlagBits n );
@@ -77,7 +74,7 @@ public:
     virtual SbxDataType GetType()  const;
     virtual SbxClassType GetClass() const;
 
-    virtual void    Clear();
+    virtual void    Clear() = 0;
 
     static SbxBase* Load( SvStream& );
     bool            Store( SvStream& );
@@ -92,7 +89,7 @@ public:
     static void AddFactory( SbxFactory* );
     static void RemoveFactory( SbxFactory* );
 
-    static SbxBase* Create( sal_uInt16, sal_uInt32=SBXCR_SBX );
+    static SbxBase* Create( sal_uInt16, sal_uInt32 );
     static SbxObject* CreateObject( const OUString& );
 };
 

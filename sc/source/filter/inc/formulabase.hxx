@@ -234,12 +234,8 @@ struct BinSingleRef2d
     explicit            BinSingleRef2d();
 
     void                setBiff12Data( sal_uInt16 nCol, sal_Int32 nRow, bool bRelativeAsOffset );
-    void                setBiff2Data( sal_uInt8 nCol, sal_uInt16 nRow, bool bRelativeAsOffset );
-    void                setBiff8Data( sal_uInt16 nCol, sal_uInt16 nRow, bool bRelativeAsOffset );
 
     void                readBiff12Data( SequenceInputStream& rStrm, bool bRelativeAsOffset );
-    void                readBiff2Data( BiffInputStream& rStrm, bool bRelativeAsOffset );
-    void                readBiff8Data( BiffInputStream& rStrm, bool bRelativeAsOffset );
 };
 
 /** A 2D formula cell range reference struct with relative flags. */
@@ -249,8 +245,6 @@ struct BinComplexRef2d
     BinSingleRef2d      maRef2;             /// End (bottom-right) cell address.
 
     void                readBiff12Data( SequenceInputStream& rStrm, bool bRelativeAsOffset );
-    void                readBiff2Data( BiffInputStream& rStrm, bool bRelativeAsOffset );
-    void                readBiff8Data( BiffInputStream& rStrm, bool bRelativeAsOffset );
 };
 
 // Token vector, token sequence ===============================================
@@ -380,17 +374,6 @@ enum FuncParamValidity
     FUNC_PARAM_REGULAR,         /// Parameter supported by Calc and Excel.
     FUNC_PARAM_CALCONLY,        /// Parameter supported by Calc only.
     FUNC_PARAM_EXCELONLY        /// Parameter supported by Excel only.
-};
-
-/** Enumerates different types of token class conversion in function parameters. */
-enum FuncParamConversion
-{
-    FUNC_PARAMCONV_ORG,         /// Use original class of current token.
-    FUNC_PARAMCONV_VAL,         /// Convert tokens to VAL class.
-    FUNC_PARAMCONV_ARR,         /// Convert tokens to ARR class.
-    FUNC_PARAMCONV_RPT,         /// Repeat parent conversion in VALTYPE parameters.
-    FUNC_PARAMCONV_RPX,         /// Repeat parent conversion in REFTYPE parameters.
-    FUNC_PARAMCONV_RPO          /// Repeat parent conversion in operands of operators.
 };
 
 /** Structure that contains all needed information for a parameter in a
@@ -554,8 +537,7 @@ struct FunctionProviderImpl;
 class FunctionProvider  // not derived from WorkbookHelper to make it usable in file dumpers
 {
 public:
-    explicit            FunctionProvider( FilterType eFilter, BiffType eBiff, bool bImportFilter,
-                                          bool bCallerKnowsAboutMacroExport );
+    explicit            FunctionProvider(bool bImportFilter);
     virtual             ~FunctionProvider();
 
     /** Returns the function info for an OOXML function name, or 0 on error. */
@@ -563,9 +545,6 @@ public:
 
     /** Returns the function info for a BIFF12 function index, or 0 on error. */
     const FunctionInfo* getFuncInfoFromBiff12FuncId( sal_uInt16 nFuncId ) const;
-
-    /** Returns the function info for a BIFF2-BIFF8 function index, or 0 on error. */
-    const FunctionInfo* getFuncInfoFromBiffFuncId( sal_uInt16 nFuncId ) const;
 
     /** Returns the function info for a macro function referred by the
         EXTERN.CALL function, or 0 on error. */
@@ -594,10 +573,9 @@ struct OpCodeProviderImpl;
 class OpCodeProvider : public FunctionProvider // not derived from WorkbookHelper to make it usable as UNO service
 {
 public:
-    explicit            OpCodeProvider(
-                            const css::uno::Reference< css::lang::XMultiServiceFactory >& rxModelFactory,
-                            FilterType eFilter, BiffType eBiff, bool bImportFilter );
-    virtual             ~OpCodeProvider();
+    explicit            OpCodeProvider(const css::uno::Reference<css::lang::XMultiServiceFactory>& rxModelFactory,
+                                       bool bImportFilter);
+    virtual             ~OpCodeProvider() override;
 
     /** Returns the structure containing all token op-codes for operators and
         special tokens used by the Calc document and its formula parser. */
@@ -745,7 +723,7 @@ public:
                             ApiCellRangeList& orRanges,
                             const ApiTokenSequence& rTokens,
                             bool bAllowRelative,
-                            sal_Int32 nFilterBySheet = -1 ) const;
+                            sal_Int32 nFilterBySheet ) const;
 
     /** Tries to extract a string from a formula token sequence.
 

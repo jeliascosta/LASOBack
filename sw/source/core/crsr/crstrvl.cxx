@@ -528,7 +528,7 @@ bool SwCursorShell::GotoNxtPrvTOXMark( bool bNext )
                 ( IsReadOnlyAvailable() || !pCFrame->IsProtected() ))
             {
                 SwNodeIndex aNdIndex( *pTextNd ); // UNIX needs this object
-                SetGetExpField aCmp( aNdIndex, *pTextTOX, nullptr );
+                SetGetExpField aCmp( aNdIndex, *pTextTOX );
                 aCmp.SetBodyPos( *pCFrame );
 
                 if( bNext ? ( aCurGEF < aCmp && aCmp < aFndGEF )
@@ -1073,7 +1073,7 @@ bool SwCursorShell::MakeOutlineSel( sal_uInt16 nSttPos, sal_uInt16 nEndPos,
     m_pCurrentCursor->GetPoint()->nContent.Assign( pSttNd->GetContentNode(), 0 );
     m_pCurrentCursor->SetMark();
     m_pCurrentCursor->GetPoint()->nNode = *pEndNd;
-    m_pCurrentCursor->Move( fnMoveBackward, fnGoNode ); // end of predecessor
+    m_pCurrentCursor->Move( fnMoveBackward, GoInNode ); // end of predecessor
 
     // and everything is already selected
     bool bRet = !m_pCurrentCursor->IsSelOvr();
@@ -1346,7 +1346,7 @@ bool SwCursorShell::GetContentAtPos( const Point& rPt,
                     pTextAttr = nullptr;
                     if( SwContentAtPos::SW_TOXMARK & rContentAtPos.eContentAtPos )
                     {
-                        ::std::vector<SwTextAttr *> const marks(
+                        std::vector<SwTextAttr *> const marks(
                             pTextNd->GetTextAttrsAt(
                                aPos.nContent.GetIndex(), RES_TXTATR_TOXMARK));
                         if (marks.size())
@@ -1358,7 +1358,7 @@ bool SwCursorShell::GetContentAtPos( const Point& rPt,
                     if( !pTextAttr &&
                         SwContentAtPos::SW_REFMARK & rContentAtPos.eContentAtPos )
                     {
-                        ::std::vector<SwTextAttr *> const marks(
+                        std::vector<SwTextAttr *> const marks(
                             pTextNd->GetTextAttrsAt(
                                aPos.nContent.GetIndex(), RES_TXTATR_REFMARK));
                         if (marks.size())
@@ -1440,12 +1440,18 @@ bool SwCursorShell::GetContentAtPos( const Point& rPt,
 
                             if( pFieldRect && nullptr != ( pFrame = pTextNd->getLayoutFrame( GetLayout(), &aPt ) ) )
                             {
+                                //get bounding box of range
                                 SwRect aStart;
                                 SwPosition aStartPos(*pTextNd, nSt);
                                 pFrame->GetCharRect(aStart, aStartPos, &aTmpState);
                                 SwRect aEnd;
                                 SwPosition aEndPos(*pTextNd, nEnd);
                                 pFrame->GetCharRect(aEnd, aEndPos, &aTmpState);
+                                if (aStart.Top() != aEnd.Top() || aStart.Bottom() != aEnd.Bottom())
+                                {
+                                    aStart.Left(pFrame->Frame().Left());
+                                    aEnd.Right(pFrame->Frame().Right());
+                                }
                                 *pFieldRect = aStart.Union(aEnd);
                             }
                         }
@@ -1463,7 +1469,19 @@ bool SwCursorShell::GetContentAtPos( const Point& rPt,
                         bRet = true;
 
                         if( pFieldRect && nullptr != ( pFrame = pTextNd->getLayoutFrame( GetLayout(), &aPt ) ) )
-                            pFrame->GetCharRect( *pFieldRect, aPos, &aTmpState );
+                        {
+                            //get bounding box of range
+                            SwRect aStart;
+                            pFrame->GetCharRect(aStart, *pRedl->Start(), &aTmpState);
+                            SwRect aEnd;
+                            pFrame->GetCharRect(aEnd, *pRedl->End(), &aTmpState);
+                            if (aStart.Top() != aEnd.Top() || aStart.Bottom() != aEnd.Bottom())
+                            {
+                                aStart.Left(pFrame->Frame().Left());
+                                aEnd.Right(pFrame->Frame().Right());
+                            }
+                            *pFieldRect = aStart.Union(aEnd);
+                        }
                     }
                 }
             }
@@ -1610,7 +1628,7 @@ bool SwCursorShell::GetContentAtPos( const Point& rPt,
                         {
                             OUString aStr;
                             GetDoc()->GetAttrPool().GetPresentation( *pItem,
-                                SFX_MAPUNIT_CM, aStr );
+                                MapUnit::MapCM, aStr );
                             if (!sAttrs.isEmpty())
                                 sAttrs += ", ";
                             sAttrs += aStr;
@@ -1707,7 +1725,7 @@ bool SwContentAtPos::IsInRTLText()const
         {
             SwStartNode* pSttNd = pTextFootnote->GetStartNode()->GetNode().GetStartNode();
             SwPaM aTemp( *pSttNd );
-            aTemp.Move(fnMoveForward, fnGoNode);
+            aTemp.Move(fnMoveForward, GoInNode);
             SwContentNode* pContentNode = aTemp.GetContentNode();
             if(pContentNode && pContentNode->IsTextNode())
                 pNd = pContentNode->GetTextNode();
@@ -1900,7 +1918,7 @@ bool SwCursorShell::SetShadowCursorPos( const Point& rPt, SwFillMode eFillMode )
                 {
                     *m_pCurrentCursor->GetPoint() = aPos;
                     GetDoc()->getIDocumentContentOperations().InsertPoolItem( *m_pCurrentCursor,
-                            SvxFormatBreakItem( SVX_BREAK_COLUMN_BEFORE, RES_BREAK ) );
+                            SvxFormatBreakItem( SvxBreak::ColumnBefore, RES_BREAK ) );
                 }
             }
 
@@ -2156,7 +2174,7 @@ const SwRangeRedline* SwCursorShell::GotoRedline( sal_uInt16 nArrPos, bool bSele
                         if( bDel )
                         {
                             // not needed anymore
-                            SwPaM* pPrevPam = static_cast<SwPaM*>(pNextPam->GetPrev());
+                            SwPaM* pPrevPam = pNextPam->GetPrev();
                             delete pNextPam;
                             pNextPam = pPrevPam;
                         }
@@ -2235,7 +2253,7 @@ bool SwCursorShell::SelectNxtPrvHyperlink( bool bNext )
                         OUString sText( pTextNd->GetExpandText( rAttr.GetStart(),
                                         *rAttr.GetEnd() - rAttr.GetStart() ) );
 
-                        sText = comphelper::string::remove(sText, 0x0a);
+                        sText = sText.replaceAll(OUStringLiteral1(0x0a), "");
                         sText = comphelper::string::strip(sText, ' ');
 
                         if( !sText.isEmpty() )

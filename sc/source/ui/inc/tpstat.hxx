@@ -22,14 +22,13 @@
 
 #include <sfx2/tabdlg.hxx>
 #include <vcl/fixed.hxx>
-#include <svtools/stdctrl.hxx>
 
 class ScDocStatPage: public SfxTabPage
 {
     friend class VclPtr<ScDocStatPage>;
 public:
     static VclPtr<SfxTabPage> Create( vcl::Window* pParent, const SfxItemSet* rSet );
-    virtual         ~ScDocStatPage();
+    virtual         ~ScDocStatPage() override;
     virtual void    dispose() override;
 
 private:

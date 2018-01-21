@@ -67,9 +67,9 @@ SbError SbiDdeControl::GetLastErr( DdeConnection* pConv )
     return nDdeErrMap[ 2 * (nErr - DDE_FIRSTERR) + 1 ];
 }
 
-IMPL_LINK_TYPED( SbiDdeControl, Data, const DdeData*, pData, void )
+IMPL_LINK( SbiDdeControl, Data, const DdeData*, pData, void )
 {
-    aData = OUString::createFromAscii( static_cast<const char*>(static_cast<const void*>(*pData)) );
+    aData = OUString::createFromAscii( static_cast<const char*>(pData->getData()) );
 }
 
 SbiDdeControl::SbiDdeControl()
@@ -133,7 +133,7 @@ SbError SbiDdeControl::Terminate( size_t nChannel )
     delete pConv;
     aConvList[nChannel-1] = DDE_FREECHANNEL;
 
-    return 0L;
+    return 0;
 }
 
 SbError SbiDdeControl::TerminateAll()

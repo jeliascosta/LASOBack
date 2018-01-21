@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/extended/textwindowaccessibility.hxx>
+#include <extended/textwindowaccessibility.hxx>
 #include <comphelper/accessibleeventnotifier.hxx>
 #include <unotools/accessiblerelationsethelper.hxx>
 #include <unotools/accessiblestatesethelper.hxx>
@@ -32,7 +32,7 @@ namespace accessibility
 {
 void SfxListenerGuard::startListening(::SfxBroadcaster & rNotifier)
 {
-    OSL_ENSURE(m_pNotifier == nullptr, "called more than once");
+    assert(m_pNotifier == nullptr && "called more than once");
     m_pNotifier = &rNotifier;
     m_rListener.StartListening(*m_pNotifier, true);
 }
@@ -48,7 +48,7 @@ void SfxListenerGuard::endListening()
 
 void WindowListenerGuard::startListening(vcl::Window & rNotifier)
 {
-    OSL_ENSURE(m_pNotifier == nullptr, "called more than once");
+    assert(m_pNotifier == nullptr && "called more than once");
     m_pNotifier = &rNotifier;
     m_pNotifier->AddEventListener(m_aListener);
 }
@@ -267,7 +267,7 @@ css::awt::Size SAL_CALL Paragraph::getSize()
 void SAL_CALL Paragraph::grabFocus() throw (css::uno::RuntimeException, std::exception)
 {
     checkDisposed();
-    vcl::Window* pWindow = m_xDocument->GetWindow();
+    VclPtr<vcl::Window> pWindow = m_xDocument->GetWindow();
     if ( pWindow )
     {
         pWindow->GrabFocus();
@@ -278,11 +278,9 @@ void SAL_CALL Paragraph::grabFocus() throw (css::uno::RuntimeException, std::exc
     }
     catch (const css::lang::IndexOutOfBoundsException & rEx)
     {
-        OSL_TRACE(
-            "textwindowaccessibility.cxx: Paragraph::grabFocus:"
-            " caught unexpected %s\n",
-            OUStringToOString(rEx.Message, RTL_TEXTENCODING_UTF8).
-            getStr());
+        SAL_INFO("accessibility",
+                 "textwindowaccessibility.cxx: Paragraph::grabFocus: caught unexpected "
+                 << rEx.Message);
     }
 }
 
@@ -725,7 +723,7 @@ void Paragraph::implGetLineBoundary( css::i18n::Boundary& rBoundary,
     if ( implIsValidIndex( nIndex, nLength ) || nIndex == nLength )
     {
         css::i18n::Boundary aBoundary =
-            m_xDocument->retrieveParagraphLineBoundary( this, nIndex );
+            m_xDocument->retrieveParagraphLineBoundary( this, nIndex, nullptr );
         rBoundary.startPos = aBoundary.startPos;
         rBoundary.endPos = aBoundary.endPos;
     }
@@ -979,7 +977,7 @@ struct IndexCompare
         : pValues(pVals)
     {
     }
-    bool operator() ( const sal_Int32& a, const sal_Int32& b ) const
+    bool operator() ( sal_Int32 a, sal_Int32 b ) const
     {
         return pValues[a].Name < pValues[b].Name;
     }
@@ -1627,7 +1625,7 @@ void Document::Notify(::SfxBroadcaster &, ::SfxHint const & rHint)
     }
 }
 
-IMPL_LINK_TYPED(Document, WindowEventHandler, ::VclWindowEvent&, rEvent, void)
+IMPL_LINK(Document, WindowEventHandler, ::VclWindowEvent&, rEvent, void)
 {
     switch (rEvent.GetId())
     {
@@ -1879,8 +1877,7 @@ void Document::handleParagraphNotifications()
         case TEXT_HINT_PARAINSERTED:
             {
                 ::sal_uLong n = aHint.GetValue();
-                OSL_ENSURE(n <= m_xParagraphs->size(),
-                           "bad TEXT_HINT_PARAINSERTED event");
+                assert(n <= m_xParagraphs->size() && "bad TEXT_HINT_PARAINSERTED event");
 
                 // Save the values of old iterators (the iterators themselves
                 // will get invalidated), and adjust the old values so that they
@@ -1953,8 +1950,7 @@ void Document::handleParagraphNotifications()
                 }
                 else
                 {
-                    OSL_ENSURE(n < m_xParagraphs->size(),
-                               "Bad TEXT_HINT_PARAREMOVED event");
+                    assert(n < m_xParagraphs->size() && "Bad TEXT_HINT_PARAREMOVED event");
 
                     Paragraphs::iterator aIt(m_xParagraphs->begin() + n);
                         // numeric overflow cannot occur
@@ -1998,8 +1994,7 @@ void Document::handleParagraphNotifications()
                         --m_nSelectionLastPara;
                     else if (sal::static_int_cast<sal_Int32>(n) == m_nSelectionLastPara)
                     {
-                        OSL_ENSURE(m_nSelectionFirstPara < m_nSelectionLastPara,
-                                   "logic error");
+                        assert(m_nSelectionFirstPara < m_nSelectionLastPara && "logic error");
                         --m_nSelectionLastPara;
                         m_nSelectionLastPos = 0x7FFFFFFF;
                     }
@@ -2047,8 +2042,7 @@ void Document::handleParagraphNotifications()
         case TEXT_HINT_FORMATPARA:
             {
                 ::sal_uLong n = aHint.GetValue();
-                OSL_ENSURE(n < m_xParagraphs->size(),
-                           "Bad TEXT_HINT_FORMATPARA event");
+                assert(n < m_xParagraphs->size() && "Bad TEXT_HINT_FORMATPARA event");
 
                 (*m_xParagraphs)[static_cast< Paragraphs::size_type >(n)].
                     changeHeight(static_cast< ::sal_Int32 >(
@@ -2070,7 +2064,7 @@ void Document::handleParagraphNotifications()
                 break;
             }
         default:
-            OSL_FAIL( "bad buffered hint");
+            SAL_WARN("accessibility", "bad buffered hint");
             break;
         }
     }
@@ -2211,9 +2205,9 @@ void Document::sendEvent(::sal_Int32 start, ::sal_Int32 end, ::sal_Int16 nEventI
 void Document::handleSelectionChangeNotification()
 {
     ::TextSelection const & rSelection = m_rView.GetSelection();
-    OSL_ENSURE(rSelection.GetStart().GetPara() < m_xParagraphs->size()
-               && rSelection.GetEnd().GetPara() < m_xParagraphs->size(),
-               "bad TEXT_HINT_VIEWSELECTIONCHANGED event");
+    assert(rSelection.GetStart().GetPara() < m_xParagraphs->size() &&
+           rSelection.GetEnd().GetPara() < m_xParagraphs->size() &&
+           "bad TEXT_HINT_VIEWSELECTIONCHANGED event");
     ::sal_Int32 nNewFirstPara
           = static_cast< ::sal_Int32 >(rSelection.GetStart().GetPara());
     ::sal_Int32 nNewFirstPos = rSelection.GetStart().GetIndex();

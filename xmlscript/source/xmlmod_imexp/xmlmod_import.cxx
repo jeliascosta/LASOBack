@@ -33,7 +33,7 @@ namespace xmlscript
 Reference< xml::input::XElement > ModuleElement::getParent()
     throw (RuntimeException, std::exception)
 {
-    return static_cast< xml::input::XElement * >( _pParent );
+    return nullptr;
 }
 OUString ModuleElement::getLocalName()
     throw (RuntimeException, std::exception)
@@ -43,7 +43,7 @@ OUString ModuleElement::getLocalName()
 sal_Int32 ModuleElement::getUid()
     throw (RuntimeException, std::exception)
 {
-    return _pImport->XMLNS_SCRIPT_UID;
+    return mxImport->XMLNS_SCRIPT_UID;
 }
 Reference< xml::input::XAttributes > ModuleElement::getAttributes()
     throw (RuntimeException, std::exception)
@@ -73,7 +73,7 @@ void ModuleElement::processingInstruction(
 void ModuleElement::endElement()
     throw (xml::sax::SAXException, RuntimeException, std::exception)
 {
-    _pImport->mrModuleDesc.aCode = _strBuffer.makeStringAndClear();
+    mxImport->mrModuleDesc.aCode = _strBuffer.makeStringAndClear();
 }
 
 Reference< xml::input::XElement > ModuleElement::startChildElement(
@@ -87,29 +87,15 @@ Reference< xml::input::XElement > ModuleElement::startChildElement(
 ModuleElement::ModuleElement(
     OUString const & rLocalName,
     Reference< xml::input::XAttributes > const & xAttributes,
-    ModuleElement * pParent, ModuleImport * pImport )
-    : _pImport( pImport )
-    , _pParent( pParent )
+    ModuleImport * pImport )
+    : mxImport( pImport )
     , _aLocalName( rLocalName )
     , _xAttributes( xAttributes )
 {
-    _pImport->acquire();
-
-    if (_pParent)
-    {
-        _pParent->acquire();
-    }
 }
 
 ModuleElement::~ModuleElement()
 {
-    _pImport->release();
-
-    if (_pParent)
-    {
-        _pParent->release();
-    }
-
     SAL_INFO("xmlscript.xmlmod", "ModuleElement::~ModuleElement(): " << _aLocalName );
 }
 
@@ -158,7 +144,7 @@ Reference< xml::input::XElement > ModuleImport::startRootElement(
         mrModuleDesc.aLanguage = xAttributes->getValueByUidName( XMLNS_SCRIPT_UID, "language" );
         mrModuleDesc.aModuleType = xAttributes->getValueByUidName( XMLNS_SCRIPT_UID, "moduleType" );
 
-        return new ModuleElement( rLocalName, xAttributes, nullptr, this );
+        return new ModuleElement( rLocalName, xAttributes, this );
     }
     else
     {

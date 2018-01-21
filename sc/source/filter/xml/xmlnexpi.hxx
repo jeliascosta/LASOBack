@@ -23,17 +23,15 @@
 #include <xmloff/xmlimp.hxx>
 #include "address.hxx"
 #include "xmlimprt.hxx"
+#include "importcontext.hxx"
 
 #include <memory>
 
 struct ScMyNamedExpression;
 class ScRangeName;
 
-class ScXMLNamedExpressionsContext : public SvXMLImportContext
+class ScXMLNamedExpressionsContext : public ScXMLImportContext
 {
-    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
-    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
-
 public:
 
     class Inserter
@@ -76,7 +74,7 @@ public:
         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
         Inserter* pInserter );
 
-    virtual ~ScXMLNamedExpressionsContext();
+    virtual ~ScXMLNamedExpressionsContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -88,11 +86,8 @@ private:
     std::shared_ptr<Inserter> mpInserter;
 };
 
-class ScXMLNamedRangeContext : public SvXMLImportContext
+class ScXMLNamedRangeContext : public ScXMLImportContext
 {
-    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
-    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
-
 public:
 
     ScXMLNamedRangeContext(
@@ -100,7 +95,7 @@ public:
         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
         ScXMLNamedExpressionsContext::Inserter* pInserter );
 
-    virtual ~ScXMLNamedRangeContext();
+    virtual ~ScXMLNamedRangeContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,
@@ -112,11 +107,8 @@ private:
     ScXMLNamedExpressionsContext::Inserter* mpInserter;
 };
 
-class ScXMLNamedExpressionContext : public SvXMLImportContext
+class ScXMLNamedExpressionContext : public ScXMLImportContext
 {
-    const ScXMLImport& GetScImport() const { return static_cast<const ScXMLImport&>(GetImport()); }
-    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
-
 public:
 
     ScXMLNamedExpressionContext(
@@ -124,7 +116,7 @@ public:
         const css::uno::Reference<css::xml::sax::XAttributeList>& xAttrList,
         ScXMLNamedExpressionsContext::Inserter* pInserter );
 
-    virtual ~ScXMLNamedExpressionContext();
+    virtual ~ScXMLNamedExpressionContext() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
                                      const OUString& rLocalName,

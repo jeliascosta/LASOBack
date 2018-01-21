@@ -109,8 +109,8 @@ namespace dbaui
         ::dbaccess::ODsnTypeCollection
                                 m_aTypeCollection;
         OTableCopyHelper        m_aTableCopyHelper;
-        TransferableClipboardListener*
-                                m_pClipbordNotifier;        // notifier for changes in the clipboard
+        rtl::Reference<TransferableClipboardListener>
+                                m_pClipboardNotifier;        // notifier for changes in the clipboard
         ImplSVEvent *           m_nAsyncDrop;
         OAsynchronousLink       m_aSelectContainerEvent;
         PreviewMode             m_ePreviewMode;             // the mode of the preview
@@ -144,21 +144,6 @@ namespace dbaui
             @return the element type corresponding to the given container
         */
         static ElementType getElementType(const css::uno::Reference< css::container::XContainer >& _xContainer);
-
-        /** opens a new frame with either the table or the query or report or form or view
-            @param  _sName
-                The name of the object to open
-            @param  _eType
-                Defines the type to open
-            @param  _eOpenMode
-                denotes the mode in which to open the object
-            @return the form or report model will only be returned, otherwise <NULL/>
-        */
-        css::uno::Reference< css::lang::XComponent > openElement(
-            const OUString& _sName,
-            ElementType _eType,
-            ElementOpenMode _eOpenMode
-        );
 
         /** opens a new sub frame with a table/query/form/report/view, passing additional arguments
         */
@@ -289,21 +274,9 @@ namespace dbaui
 
         /** opens a uno dialog withthe currently selected data source as initialize argument
             @param  _sServiceName
-                The serivce name of the dialog to be executed.
+                The service name of the dialog to be executed.
         */
         void openDialog(const OUString& _sServiceName);
-
-        /** opens the administration dialog for the selected data source
-        */
-        void openDataSourceAdminDialog();
-
-        /** opens the table filter dialog for the selected data source
-        */
-        void openTableFilterDialog();
-
-        /** opens the DirectSQLDialog to execute hand made sql statements.
-        */
-        void openDirectSQLDialog();
 
         /** when the settings of the data source changed,
             it opens a dialog which ask to close all depending documents, then recreate the connection.
@@ -401,7 +374,7 @@ namespace dbaui
             return m_xModel;
         }
 
-        virtual ~OApplicationController();
+        virtual ~OApplicationController() override;
 
     public:
         explicit OApplicationController(const css::uno::Reference< css::uno::XComponentContext >& _rxORB);
@@ -512,18 +485,7 @@ namespace dbaui
         void containerFound( const css::uno::Reference< css::container::XContainer >& _xContainer);
 
         // IController
-        virtual void        executeUnChecked(const css::util::URL& _rCommand, const css::uno::Sequence< css::beans::PropertyValue>& aArgs) override;
-        virtual void        executeChecked(const css::util::URL& _rCommand, const css::uno::Sequence< css::beans::PropertyValue>& aArgs) override;
-        virtual void        executeUnChecked(sal_uInt16 _nCommandId, const css::uno::Sequence< css::beans::PropertyValue>& aArgs) override;
-        virtual void        executeChecked(sal_uInt16 _nCommandId, const css::uno::Sequence< css::beans::PropertyValue>& aArgs) override;
-        virtual bool        isCommandEnabled(sal_uInt16 _nCommandId) const override;
-        virtual bool        isCommandEnabled( const OUString& _rCompleteCommandURL ) const override;
-        virtual sal_uInt16  registerCommandURL( const OUString& _rCompleteCommandURL ) override;
-        virtual void        notifyHiContrastChanged() override;
         virtual bool        isDataSourceReadOnly() const override;
-        virtual css::uno::Reference< css::frame::XController >
-                            getXController() throw( css::uno::RuntimeException ) override;
-        virtual bool        interceptUserInput( const NotifyEvent& _rEvent ) override;
 
         // IControlActionListener overridables
         virtual bool        requestQuickHelp( const SvTreeListEntry* _pEntry, OUString& _rText ) const override;
@@ -532,7 +494,8 @@ namespace dbaui
         virtual sal_Int8    executeDrop( const ExecuteDropEvent& _rEvt ) override;
 
         // IContextMenuProvider
-        virtual PopupMenu*      getContextMenu( Control& _rControl ) const override;
+        virtual OUString          getContextMenuResourceName( Control& _rControl ) const override;
+        virtual VclPtr<PopupMenu> getContextMenu( Control& _rControl ) const override;
         virtual IController&    getCommandController() override;
         virtual ::comphelper::OInterfaceContainerHelper2*
                                 getContextMenuInterceptors() override;
@@ -540,10 +503,10 @@ namespace dbaui
                                 getCurrentSelection( Control& _rControl ) const override;
 
         void OnInvalidateClipboard();
-        DECL_LINK_TYPED( OnClipboardChanged, TransferableDataHelper*, void );
-        DECL_LINK_TYPED( OnAsyncDrop, void*, void );
-        DECL_LINK_TYPED( OnCreateWithPilot, void*, void );
-        DECL_LINK_TYPED( OnSelectContainer, void*, void );
+        DECL_LINK( OnClipboardChanged, TransferableDataHelper*, void );
+        DECL_LINK( OnAsyncDrop, void*, void );
+        DECL_LINK( OnCreateWithPilot, void*, void );
+        DECL_LINK( OnSelectContainer, void*, void );
         void OnFirstControllerConnected();
 
     protected:

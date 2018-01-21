@@ -26,8 +26,6 @@
 
 #include "fontinstance.hxx"
 
-#include <boost/intrusive_ptr.hpp>
-
 /* The following class is extraordinarily similar to FontAttributes. */
 
 class ImplFont
@@ -74,7 +72,6 @@ public:
 
     // device dependent functions
     int                 GetQuality() const                              { return mnQuality; }
-    const OUString&     GetMapNames() const                             { return maMapNames; }
 
     void                SetQuality( int nQuality )                      { mnQuality = nQuality; }
     void                IncreaseQualityBy( int nQualityAmount )         { mnQuality += nQualityAmount; }

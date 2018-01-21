@@ -293,7 +293,7 @@ size_t ImpSdrGDIMetaFileImport::DoImport(
     // insert all objects cached in aTmpList now into rOL from nInsPos
     nInsPos = std::min(nInsPos, rOL.GetObjCount());
 
-    SdrInsertReason aReason(SDRREASON_VIEWCALL);
+    SdrInsertReason aReason(SdrInsertReasonKind::ViewCall);
 
     for(SdrObject* pObj : maTmpList)
     {
@@ -510,7 +510,7 @@ void ImpSdrGDIMetaFileImport::InsertObj(SdrObject* pObj, bool bScale)
                 {
                     // recursively add created conversion; per definition this shall not
                     // contain further SdrTextObjs. Visit only non-group objects
-                    SdrObjListIter aIter(*pConverted, IM_DEEPNOGROUPS);
+                    SdrObjListIter aIter(*pConverted, SdrIterMode::DeepNoGroups);
 
                     // work with clones; the created conversion may contain group objects
                     // and when working with the original objects the loop itself could
@@ -519,7 +519,7 @@ void ImpSdrGDIMetaFileImport::InsertObj(SdrObject* pObj, bool bScale)
                     while(aIter.IsMore())
                     {
                         SdrObject* pCandidate = aIter.Next();
-                        OSL_ENSURE(pCandidate && dynamic_cast< SdrObjGroup* >(pCandidate) ==  nullptr, "SdrObjListIter with IM_DEEPNOGROUPS error (!)");
+                        OSL_ENSURE(pCandidate && dynamic_cast< SdrObjGroup* >(pCandidate) ==  nullptr, "SdrObjListIter with SdrIterMode::DeepNoGroups error (!)");
                         SdrObject* pNewClone = pCandidate->Clone();
 
                         if(pNewClone)
@@ -1009,7 +1009,7 @@ void ImpSdrGDIMetaFileImport::ImportText( const Point& rPos, const OUString& rSt
         pText->ClearMergedItem( SDRATTR_TEXT_AUTOGROWWIDTH );
         pText->SetMergedItem( makeSdrTextAutoGrowHeightItem( false ) );
         // don't let the margins eat the space needed for the text
-        pText->SetMergedItem( SdrTextFitToSizeTypeItem( SDRTEXTFIT_ALLLINES ) );
+        pText->SetMergedItem( SdrTextFitToSizeTypeItem( SdrFitToSizeType::AllLines ) );
     }
     else
     {
@@ -1131,13 +1131,13 @@ void ImpSdrGDIMetaFileImport::DoAction( MetaHatchAction& rAct )
 
             switch(rHatch.GetStyle())
             {
-                case HATCH_TRIPLE :
+                case HatchStyle::Triple :
                 {
                     eStyle = css::drawing::HatchStyle_TRIPLE;
                     break;
                 }
 
-                case HATCH_DOUBLE :
+                case HatchStyle::Double :
                 {
                     eStyle = css::drawing::HatchStyle_DOUBLE;
                     break;
@@ -1357,18 +1357,18 @@ namespace
 
         switch(rGradientStyle)
         {
-            case GradientStyle_LINEAR: aXGradientStyle = css::awt::GradientStyle_LINEAR; break;
-            case GradientStyle_AXIAL: aXGradientStyle = css::awt::GradientStyle_AXIAL; break;
-            case GradientStyle_RADIAL: aXGradientStyle = css::awt::GradientStyle_RADIAL; break;
-            case GradientStyle_ELLIPTICAL: aXGradientStyle = css::awt::GradientStyle_ELLIPTICAL; break;
-            case GradientStyle_SQUARE: aXGradientStyle = css::awt::GradientStyle_SQUARE; break;
-            case GradientStyle_RECT: aXGradientStyle = css::awt::GradientStyle_RECT; break;
+            case GradientStyle::Linear: aXGradientStyle = css::awt::GradientStyle_LINEAR; break;
+            case GradientStyle::Axial: aXGradientStyle = css::awt::GradientStyle_AXIAL; break;
+            case GradientStyle::Radial: aXGradientStyle = css::awt::GradientStyle_RADIAL; break;
+            case GradientStyle::Elliptical: aXGradientStyle = css::awt::GradientStyle_ELLIPTICAL; break;
+            case GradientStyle::Square: aXGradientStyle = css::awt::GradientStyle_SQUARE; break;
+            case GradientStyle::Rect: aXGradientStyle = css::awt::GradientStyle_RECT; break;
 
-            // Needed due to GradientStyle_FORCE_EQUAL_SIZE; this again is needed
+            // Needed due to GradientStyle::FORCE_EQUAL_SIZE; this again is needed
             // to force the enum defines in VCL to a defined size for the compilers,
             // so despite it is never used it cannot be removed (would break the
             // API implementation probably).
-            case GradientStyle_FORCE_EQUAL_SIZE: break;
+            case GradientStyle::FORCE_EQUAL_SIZE: break;
             default:
                 break;
         }
@@ -1586,11 +1586,11 @@ void ImpSdrGDIMetaFileImport::DoAction(MetaFloatTransparentAction& rAct)
                     {
                         aOldMask = aBitmapEx.GetAlpha();
                     }
-                    else if(TRANSPARENT_BITMAP == aBitmapEx.GetTransparentType())
+                    else if(TransparentType::Bitmap == aBitmapEx.GetTransparentType())
                     {
                         aOldMask = aBitmapEx.GetMask();
                     }
-                    else if(TRANSPARENT_COLOR == aBitmapEx.GetTransparentType())
+                    else if(TransparentType::Color == aBitmapEx.GetTransparentType())
                     {
                         aOldMask = aBitmapEx.GetBitmap().CreateMask(aBitmapEx.GetTransparentColor());
                     }

@@ -22,7 +22,12 @@
 #include <svl/itemset.hxx>
 #include <tools/solar.h>
 #include <vcl/keycod.hxx>
+#include <tox.hxx>
 
+#include <SwNumberTreeTypes.hxx>
+#include <IDocumentMarkAccess.hxx>
+
+#include <memory>
 #include <vector>
 #include <set>
 
@@ -32,7 +37,6 @@ namespace sfx2 {
 
 class SwDoc;
 class SwFormatColl;
-class SwHistoryHint;
 class SwTextAttr;
 class SfxPoolItem;
 class SwUndoSaveSection;
@@ -50,12 +54,6 @@ class SwFormatChain;
 class SwNode;
 class SwCharFormat;
 
-#include <tox.hxx>
-
-#include <SwNumberTreeTypes.hxx>
-#include <IDocumentMarkAccess.hxx>
-
-#include <memory>
 
 enum HISTORY_HINT {
     HSTRY_SETFMTHNT,
@@ -90,12 +88,12 @@ public:
 
 class SwHistorySetFormat : public SwHistoryHint
 {
-    ::std::unique_ptr<SfxPoolItem> m_pAttr;
+    std::unique_ptr<SfxPoolItem> m_pAttr;
     const sal_uLong m_nNodeIndex;
 
 public:
     SwHistorySetFormat( const SfxPoolItem* pFormatHt, sal_uLong nNode );
-    virtual ~SwHistorySetFormat();
+    virtual ~SwHistorySetFormat() override;
     virtual void SetInDoc( SwDoc* pDoc, bool bTmpSet ) override;
     virtual OUString GetDescription() const override;
 
@@ -114,7 +112,7 @@ public:
 
 class SwHistorySetText : public SwHistoryHint
 {
-    ::std::unique_ptr<SfxPoolItem> m_pAttr;
+    std::unique_ptr<SfxPoolItem> m_pAttr;
     const sal_uLong m_nNodeIndex;
     const sal_Int32 m_nStart;
     const sal_Int32 m_nEnd;
@@ -123,7 +121,7 @@ class SwHistorySetText : public SwHistoryHint
 
 public:
     SwHistorySetText( SwTextAttr* pTextHt, sal_uLong nNode );
-    virtual ~SwHistorySetText();
+    virtual ~SwHistorySetText() override;
     virtual void SetInDoc( SwDoc* pDoc, bool bTmpSet ) override;
 
 };
@@ -132,8 +130,8 @@ class SwHistorySetTextField : public SwHistoryHint
 {
     //!! beware of the order for the declaration of the unique_ptrs.
     //!! If they get destroyed in the wrong order sw may crash (namely mail-merge as well)
-    ::std::unique_ptr<SwFieldType> m_pFieldType;
-    const ::std::unique_ptr<SwFormatField> m_pField;
+    std::unique_ptr<SwFieldType> m_pFieldType;
+    const std::unique_ptr<SwFormatField> m_pField;
 
     sal_uLong m_nNodeIndex;
     sal_Int32 m_nPos;
@@ -141,7 +139,7 @@ class SwHistorySetTextField : public SwHistoryHint
 
 public:
     SwHistorySetTextField( SwTextField* pTextField, sal_uLong nNode );
-    virtual ~SwHistorySetTextField();
+    virtual ~SwHistorySetTextField() override;
     virtual void SetInDoc( SwDoc* pDoc, bool bTmpSet ) override;
 
     virtual OUString GetDescription() const override;
@@ -197,7 +195,7 @@ public:
 
 class SwHistorySetFootnote : public SwHistoryHint
 {
-    const ::std::unique_ptr<SwUndoSaveSection> m_pUndo;
+    const std::unique_ptr<SwUndoSaveSection> m_pUndo;
     const OUString m_FootnoteNumber;
     sal_uLong m_nNodeIndex;
     const sal_Int32 m_nStart;
@@ -206,7 +204,7 @@ class SwHistorySetFootnote : public SwHistoryHint
 public:
     SwHistorySetFootnote( SwTextFootnote* pTextFootnote, sal_uLong nNode );
     SwHistorySetFootnote( const SwTextFootnote& );
-    virtual ~SwHistorySetFootnote();
+    virtual ~SwHistorySetFootnote() override;
     virtual void SetInDoc( SwDoc* pDoc, bool bTmpSet ) override;
 
     virtual OUString GetDescription() const override;
@@ -227,11 +225,11 @@ public:
 
 class SwHistoryTextFlyCnt : public SwHistoryHint
 {
-    ::std::unique_ptr<SwUndoDelLayFormat> m_pUndo;
+    std::unique_ptr<SwUndoDelLayFormat> m_pUndo;
 
 public:
     SwHistoryTextFlyCnt( SwFrameFormat* const pFlyFormat );
-    virtual ~SwHistoryTextFlyCnt();
+    virtual ~SwHistoryTextFlyCnt() override;
     virtual void SetInDoc( SwDoc* pDoc, bool bTmpSet ) override;
     SwUndoDelLayFormat* GetUDelLFormat() { return m_pUndo.get(); }
 
@@ -330,7 +328,7 @@ public:
 
     void Add( const SfxPoolItem* pOldValue, const SfxPoolItem* pNewValue,
               sal_uLong nNodeIdx );
-    void Add( SwTextAttr* pTextHt, sal_uLong nNodeIdx, bool bNewAttr = true );
+    void Add( SwTextAttr* pTextHt, sal_uLong nNodeIdx, bool bNewAttr );
     void Add( SwFormatColl*, sal_uLong nNodeIdx, sal_uInt8 nWhichNd );
     void Add( const ::sw::mark::IMark&, bool bSavePos, bool bSaveOtherPos );
     void Add( SwFrameFormat& rFormat );
@@ -390,7 +388,7 @@ public:
         sal_Int32 const nStart, sal_Int32 const nEnd,
         SetAttrMode const nFlags );
 
-    void AddHint( SwTextAttr* pHt, const bool bNew = false );
+    void AddHint( SwTextAttr* pHt, const bool bNew );
 
     void RegisterInModify( SwModify* pRegIn, const SwNode& rNd );
     void ChangeNodeIndex( sal_uLong nNew ) { m_nNodeIndex = nNew; }

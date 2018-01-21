@@ -299,11 +299,9 @@ SwHTMLParser::SwHTMLParser( SwDoc* pD, SwPaM& rCursor, SvStream& rIn,
     m_pTempViewFrame(nullptr)
 {
     m_nEventId = nullptr;
-    m_bUpperSpace = m_bViewCreated = m_bChkJumpMark =
-    m_bSetCursor = false;
+    m_bUpperSpace = m_bViewCreated = m_bChkJumpMark = false;
 
     m_eScriptLang = HTML_SL_UNKNOWN;
-    m_bAnyStarBasic = true;
 
     rCursor.DeleteMark();
     m_pPam = &rCursor; // re-use existing cursor: avoids spurious ~SwIndexReg assert
@@ -379,8 +377,7 @@ SwHTMLParser::SwHTMLParser( SwDoc* pD, SwPaM& rCursor, SvStream& rIn,
                 OUString sCmp;
                 if (nPos)
                 {
-                    sCmp = comphelper::string::remove(
-                        m_sJmpMark.copy(nPos + 1), ' ');
+                    sCmp = m_sJmpMark.copy(nPos + 1).replaceAll(" ", "");
                 }
 
                 if( !sCmp.isEmpty() )
@@ -487,7 +484,7 @@ SwHTMLParser::~SwHTMLParser()
     }
 }
 
-IMPL_LINK_NOARG_TYPED( SwHTMLParser, AsyncCallback, void*, void )
+IMPL_LINK_NOARG( SwHTMLParser, AsyncCallback, void*, void )
 {
     m_nEventId=nullptr;
 
@@ -768,7 +765,7 @@ if( m_pSttNdIdx->GetIndex()+1 == m_pPam->GetBound( false ).nNode.GetIndex() )
                             pCursorSh->GetCursor()->GetPoint()
                                    ->nNode.GetIndex() == nNodeIdx )
                         {
-                            pCursorSh->MovePara(fnParaPrev, fnParaEnd );
+                            pCursorSh->MovePara(GoPrevPara, fnParaEnd );
                             pCursorSh->SetMark();
                             pCursorSh->ClearMark();
                         }
@@ -801,7 +798,7 @@ if( m_pSttNdIdx->GetIndex()+1 == m_pPam->GetBound( false ).nNode.GetIndex() )
         else if( !IsNewDoc() )
         {
             if( pPos->nContent.GetIndex() )     // dann gabs am Ende kein <P>,
-                m_pPam->Move( fnMoveForward, fnGoNode );  // als zum naechsten Node
+                m_pPam->Move( fnMoveForward, GoInNode );  // als zum naechsten Node
             SwTextNode* pTextNode = pPos->nNode.GetNode().GetTextNode();
             SwNodeIndex aPrvIdx( pPos->nNode );
             if( pTextNode && pTextNode->CanJoinPrev( &aPrvIdx ) &&
@@ -1058,7 +1055,7 @@ void SwHTMLParser::NextToken( int nToken )
             if( HTML_IFRAME_OFF == nToken )
             {
                 m_bCallNextToken = false;
-                EndFloatingFrame();
+                m_bInFloatingFrame = false;
             }
 
             return;
@@ -1412,7 +1409,7 @@ void SwHTMLParser::NextToken( int nToken )
         else
             bGetIDOption = true;
             // <BR>s in <PRE> resemble true LFs, hence no break
-        SAL_FALLTHROUGH; //TODO ???
+        SAL_FALLTHROUGH;
 
     case HTML_NEWPARA:
         // CR in PRE/LISTING/XMP
@@ -1443,8 +1440,8 @@ void SwHTMLParser::NextToken( int nToken )
             AppendTextNode();
         if( !m_pTable && !m_pDoc->IsInHeaderFooter( m_pPam->GetPoint()->nNode ) )
         {
-            NewAttr( &m_aAttrTab.pBreak, SvxFormatBreakItem(SVX_BREAK_PAGE_BEFORE, RES_BREAK) );
-            EndAttr( m_aAttrTab.pBreak, nullptr, false );
+            NewAttr( &m_aAttrTab.pBreak, SvxFormatBreakItem(SvxBreak::PageBefore, RES_BREAK) );
+            EndAttr( m_aAttrTab.pBreak, false );
         }
         break;
 
@@ -2268,7 +2265,7 @@ bool SwHTMLParser::AppendTextNode( SwHTMLAppendMode eMode, bool bUpdateNum )
             m_pPam->GetNode().GetTextNode()->ResetAttr( RES_PARATR_NUMRULE );
     }
 
-    // Attrubute im Absatz davor sollte man jetzt setzen (wegen JavaScript)
+    // We must set the attribute of the paragraph before now (because of JavaScript)
     SetAttr();
 
     // Now it is time to get rid of all script dependent hints that are
@@ -2583,17 +2580,6 @@ SwViewShell *SwHTMLParser::CallEndAction( bool bChkAction, bool bChkPtr )
     if( !m_pActionViewShell || (bChkAction && !m_pActionViewShell->ActionPend()) )
         return m_pActionViewShell;
 
-    if( m_bSetCursor )
-    {
-        // set the cursor to the doc begin in all CursorEditShells
-        for(SwViewShell& rSh : m_pActionViewShell->GetRingContainer())
-        {
-            if( dynamic_cast<const SwCursorShell *>(&rSh) != nullptr )
-                static_cast<SwCursorShell*>(&rSh)->SttEndDoc(true);
-        }
-
-        m_bSetCursor = false;
-    }
     if( dynamic_cast< const SwEditShell *>( m_pActionViewShell ) !=  nullptr )
     {
         //Schon gescrollt?, dann dafuer sorgen, dass die View sich nicht bewegt!
@@ -2829,7 +2815,8 @@ void SwHTMLParser::SetAttr_( bool bChkEnd, bool bBeforeTable,
                         const ::sw::mark::IMark* const pNewMark = pMarkAccess->makeMark(
                             *pAttrPam,
                             sName,
-                            IDocumentMarkAccess::MarkType::BOOKMARK );
+                            IDocumentMarkAccess::MarkType::BOOKMARK,
+                            ::sw::mark::InsertMode::New);
 
                         // jump to bookmark
                         if( JUMPTO_MARK == m_eJumpTo && pNewMark->GetName() == m_sJmpMark )
@@ -3008,12 +2995,10 @@ void SwHTMLParser::NewAttr( HTMLAttr **ppAttr, const SfxPoolItem& rItem )
         (*ppAttr) = new HTMLAttr( *m_pPam->GetPoint(), rItem, ppAttr );
 }
 
-bool SwHTMLParser::EndAttr( HTMLAttr* pAttr, HTMLAttr **ppDepAttr,
-                            bool bChkEmpty )
+bool SwHTMLParser::EndAttr( HTMLAttr* pAttr, bool bChkEmpty )
 {
     bool bRet = true;
 
-    OSL_ENSURE( !ppDepAttr, "SwHTMLParser::EndAttr: ppDepAttr-Feature ungetestet?" );
     // Der Listenkopf ist im Attribut gespeichert
     HTMLAttr **ppHead = pAttr->ppHead;
 
@@ -3122,15 +3107,10 @@ bool SwHTMLParser::EndAttr( HTMLAttr* pAttr, HTMLAttr **ppDepAttr,
             // dann koennen alle gesetzt werden, es sei denn
             // sie haengen noch von einem anderen Attribut ab,
             // dann werden sie dort angehaengt
-            if( ppDepAttr && *ppDepAttr )
-                (*ppDepAttr)->InsertPrev( pAttr );
+            if (pAttr->bInsAtStart)
+                m_aSetAttrTab.push_front( pAttr );
             else
-            {
-                if (pAttr->bInsAtStart)
-                    m_aSetAttrTab.push_front( pAttr );
-                else
-                    m_aSetAttrTab.push_back( pAttr );
-            }
+                m_aSetAttrTab.push_back( pAttr );
         }
         else
         {
@@ -4744,7 +4724,7 @@ void SwHTMLParser::SetTextCollAttrs( HTMLAttrContext *pContext )
             NewAttr( &m_aAttrTab.pLRSpace, aLRItem );
             m_aAttrTab.pLRSpace->SetLikePara();
             m_aParaAttrs.push_back( m_aAttrTab.pLRSpace );
-            EndAttr( m_aAttrTab.pLRSpace, nullptr, false );
+            EndAttr( m_aAttrTab.pLRSpace, false );
         }
     }
 
@@ -4913,7 +4893,7 @@ void SwHTMLParser::InsertSpacer()
             {
                 nSize = Application::GetDefaultDevice()
                             ->PixelToLogic( Size(0,nSize),
-                                            MapMode(MAP_TWIP) ).Height();
+                                            MapMode(MapUnit::MapTwip) ).Height();
             }
 
             // einen Absatz-Abstand setzen
@@ -4945,7 +4925,7 @@ void SwHTMLParser::InsertSpacer()
             else
             {
                 NewAttr( &m_aAttrTab.pULSpace, SvxULSpaceItem( 0, (sal_uInt16)nSize, RES_UL_SPACE ) );
-                EndAttr( m_aAttrTab.pULSpace, nullptr, false );
+                EndAttr( m_aAttrTab.pULSpace, false );
 
                 AppendTextNode();    // nicht am Abstand drehen!
             }
@@ -4961,7 +4941,7 @@ void SwHTMLParser::InsertSpacer()
             {
                 nSize = Application::GetDefaultDevice()
                             ->PixelToLogic( Size(nSize,0),
-                                            MapMode(MAP_TWIP) ).Width();
+                                            MapMode(MapUnit::MapTwip) ).Width();
             }
 
             if( !m_pPam->GetPoint()->nContent.GetIndex() )
@@ -4978,7 +4958,7 @@ void SwHTMLParser::InsertSpacer()
                 aLRItem.SetTextFirstLineOfst( nIndent );
 
                 NewAttr( &m_aAttrTab.pLRSpace, aLRItem );
-                EndAttr( m_aAttrTab.pLRSpace, nullptr, false );
+                EndAttr( m_aAttrTab.pLRSpace, false );
             }
             else
             {
@@ -4996,7 +4976,7 @@ sal_uInt16 SwHTMLParser::ToTwips( sal_uInt16 nPixel )
     if( nPixel && Application::GetDefaultDevice() )
     {
         long nTwips = Application::GetDefaultDevice()->PixelToLogic(
-                    Size( nPixel, nPixel ), MapMode( MAP_TWIP ) ).Width();
+                    Size( nPixel, nPixel ), MapMode( MapUnit::MapTwip ) ).Width();
         return nTwips <= USHRT_MAX ? (sal_uInt16)nTwips : USHRT_MAX;
     }
     else
@@ -5153,7 +5133,7 @@ void SwHTMLParser::InsertLineBreak()
     } // kein CLEAR
 
     // Styles parsen
-    SvxFormatBreakItem aBreakItem( SVX_BREAK_NONE, RES_BREAK );
+    SvxFormatBreakItem aBreakItem( SvxBreak::NONE, RES_BREAK );
     bool bBreakItem = false;
     if( HasStyleOptions( aStyle, aId, aClass ) )
     {
@@ -5167,15 +5147,15 @@ void SwHTMLParser::InsertLineBreak()
                 aBreakItem = static_cast<const SvxFormatBreakItem &>(aItemSet.Get( RES_BREAK ));
                 bBreakItem = true;
             }
-            if( !aPropInfo.aId.isEmpty() )
-                InsertBookmark( aPropInfo.aId );
+            if( !aPropInfo.m_aId.isEmpty() )
+                InsertBookmark( aPropInfo.m_aId );
         }
     }
 
-    if( bBreakItem && SVX_BREAK_PAGE_AFTER==aBreakItem.GetBreak() )
+    if( bBreakItem && SvxBreak::PageAfter==aBreakItem.GetBreak() )
     {
         NewAttr( &m_aAttrTab.pBreak, aBreakItem );
-        EndAttr( m_aAttrTab.pBreak, nullptr, false );
+        EndAttr( m_aAttrTab.pBreak, false );
     }
 
     if( !bCleared && !bBreakItem )
@@ -5194,10 +5174,10 @@ void SwHTMLParser::InsertLineBreak()
         // schief (>Netscape). Deshalb lassen wir das erstmal.
         AppendTextNode( AM_NOSPACE );
     }
-    if( bBreakItem && SVX_BREAK_PAGE_BEFORE==aBreakItem.GetBreak() )
+    if( bBreakItem && SvxBreak::PageBefore==aBreakItem.GetBreak() )
     {
         NewAttr( &m_aAttrTab.pBreak, aBreakItem );
-        EndAttr( m_aAttrTab.pBreak, nullptr, false );
+        EndAttr( m_aAttrTab.pBreak, false );
     }
 }
 
@@ -5399,8 +5379,7 @@ void SwHTMLParser::ParseMoreMetaOptions()
         aName.equalsIgnoreAsciiCase( OOO_STRING_SVTOOLS_HTML_META_content_script_type ) )
         return;
 
-    aContent = comphelper::string::remove(aContent, '\r');
-    aContent = comphelper::string::remove(aContent, '\n');
+    aContent = aContent.replaceAll("\r", "").replaceAll("\n", "");
 
     if( aName.equalsIgnoreAsciiCase( OOO_STRING_SVTOOLS_HTML_META_sdendnote ) )
     {

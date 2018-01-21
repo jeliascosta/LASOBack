@@ -20,7 +20,6 @@
 #include "excelhandlers.hxx"
 
 #include <oox/core/filterbase.hxx>
-#include "biffinputstream.hxx"
 
 namespace oox {
 namespace xls {
@@ -40,39 +39,6 @@ WorksheetFragmentBase::WorksheetFragmentBase(
     FragmentHandler2( rHelper.getOoxFilter(), rFragmentPath ),
     WorksheetHelper( rHelper )
 {
-}
-
-BiffWorksheetContextBase::BiffWorksheetContextBase( const WorksheetHelper& rHelper ) :
-    WorksheetHelper( rHelper )
-{
-}
-
-BiffFragmentHandler::BiffFragmentHandler( const FilterBase& rFilter, const OUString& rStrmName )
-{
-    // do not automatically close the root stream (indicated by empty stream name)
-    bool bRootStrm = rStrmName.isEmpty();
-    mxXInStrm.reset( new BinaryXInputStream( rFilter.openInputStream( rStrmName ), !bRootStrm ) );
-    mxBiffStrm.reset( new BiffInputStream( *mxXInStrm ) );
-}
-
-BiffFragmentHandler::~BiffFragmentHandler()
-{
-}
-
-bool BiffFragmentHandler::skipFragment()
-{
-    while( mxBiffStrm->startNextRecord() && (mxBiffStrm->getRecId() != BIFF_ID_EOF) )
-        if( BiffHelper::isBofRecord( *mxBiffStrm ) )
-            skipFragment();
-    return !mxBiffStrm->isEof() && (mxBiffStrm->getRecId() == BIFF_ID_EOF);
-}
-
-BiffWorkbookFragmentBase::BiffWorkbookFragmentBase( const WorkbookHelper& rHelper, const OUString& rStrmName, bool bCloneDecoder ) :
-    BiffFragmentHandler( rHelper.getBaseFilter(), rStrmName ),
-    WorkbookHelper( rHelper )
-{
-    if( bCloneDecoder )
-        getCodecHelper().cloneDecoder( getInputStream() );
 }
 
 } // namespace xls

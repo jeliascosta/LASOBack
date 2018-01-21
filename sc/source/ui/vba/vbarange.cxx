@@ -23,9 +23,11 @@
 
 #include <comphelper/unwrapargs.hxx>
 #include <comphelper/processfactory.hxx>
+#include <o3tl/any.hxx>
 #include <sfx2/objsh.hxx>
 
 #include <com/sun/star/script/ArrayWrapper.hpp>
+#include <com/sun/star/script/XTypeConverter.hpp>
 #include <com/sun/star/script/vba/VBAEventId.hpp>
 #include <com/sun/star/script/vba/XVBAEventProcessor.hpp>
 #include <com/sun/star/sheet/XDatabaseRange.hpp>
@@ -155,6 +157,7 @@
 #include "transobj.hxx"
 #include "queryentry.hxx"
 #include "markdata.hxx"
+#include <basic/sberrors.hxx>
 #include <comphelper/anytostring.hxx>
 #include <cppuhelper/implbase.hxx>
 
@@ -683,17 +686,13 @@ public:
 };
 
 static const char ISVISIBLE[] = "IsVisible";
-static const char POSITION[] = "Position";
 static const char EQUALS[] = "=";
 static const char NOTEQUALS[] = "<>";
 static const char GREATERTHAN[] = ">";
 static const char GREATERTHANEQUALS[] = ">=";
 static const char LESSTHAN[] = "<";
 static const char LESSTHANEQUALS[] = "<=";
-static const char CONTS_HEADER[] = "ContainsHeader";
-static const char INSERTPAGEBREAKS[] = "InsertPageBreaks";
 static const char STR_ERRORMESSAGE_APPLIESTOSINGLERANGEONLY[] = "The command you chose cannot be performed with multiple selections.\nSelect a single range and click the command again";
-static const char STR_ERRORMESSAGE_NOCELLSWEREFOUND[] = "No cells were found";
 static const char CELLSTYLE[] = "CellStyle";
 
 class CellValueSetter : public ValueSetter
@@ -872,11 +871,11 @@ protected:
         double aDblValue = 0.0;
         if ( aValue >>= sFormula )
         {
-            // convert to GRAM_PODF_A1 style grammar because XCell::setFormula
+            // convert to GRAM_API style grammar because XCell::setFormula
             // always compile it in that grammar. Perhaps
             // css.sheet.FormulaParser should be used in future to directly
             // pass formula tokens when that API stabilizes.
-            if ( m_eGrammar != formula::FormulaGrammar::GRAM_PODF_A1 && ( sFormula.trim().startsWith("=") ) )
+            if ( m_eGrammar != formula::FormulaGrammar::GRAM_API && ( sFormula.trim().startsWith("=") ) )
             {
                 uno::Reference< uno::XInterface > xIf( xCell, uno::UNO_QUERY_THROW );
                 ScCellRangesBase* pUnoRangesBase = dynamic_cast< ScCellRangesBase* >( xIf.get() );
@@ -888,7 +887,7 @@ protected:
                     // compile the string in the format passed in
                     std::unique_ptr<ScTokenArray> pArray(aCompiler.CompileString(sFormula));
                     // set desired convention to that of the document
-                    aCompiler.SetGrammar( formula::FormulaGrammar::GRAM_PODF_A1 );
+                    aCompiler.SetGrammar( formula::FormulaGrammar::GRAM_API );
                     OUString sConverted;
                     aCompiler.CreateStringFromTokenArray(sConverted);
                     sFormula = EQUALS + sConverted;
@@ -950,7 +949,7 @@ protected:
     ValueGetter& mValueGetter;
     void processValue( sal_Int32 x, sal_Int32 y, const uno::Any& aValue )
     {
-        uno::Sequence< uno::Sequence< uno::Any > >& aMatrix = *const_cast<css::uno::Sequence<css::uno::Sequence<css::uno::Any>> *>(static_cast<uno::Sequence< uno::Sequence< uno::Any > > const *>(maValue.getValue()));
+        uno::Sequence< uno::Sequence< uno::Any > >& aMatrix = const_cast<css::uno::Sequence<css::uno::Sequence<css::uno::Any>> &>(*o3tl::doAccess<uno::Sequence<uno::Sequence<uno::Any>>>(maValue));
         aMatrix[x][y] = aValue;
     }
 
@@ -1145,7 +1144,7 @@ ScVbaRange::getCellRangesForAddress( ScRefFlags& rResFlags, const OUString& sAdd
     if ( pDocSh )
     {
         ScDocument& rDoc = pDocSh->GetDocument();
-        rResFlags = rCellRanges.Parse( sAddress, &rDoc, ScRefFlags::VALID, eConv, 0, cDelimiter );
+        rResFlags = rCellRanges.Parse( sAddress, &rDoc, eConv, 0, cDelimiter );
         if ( rResFlags & ScRefFlags::VALID )
         {
             return true;
@@ -1345,7 +1344,7 @@ util::TriState lclGetMergedState( const uno::Reference< table::XCellRange >& rxC
         of a merged range is part of this range are not covered. */
     ScRange aScRange;
     ScUnoConversion::FillScRange( aScRange, aRangeAddr );
-    bool bHasMerged = getDocumentFromRange( rxCellRange ).HasAttrib( aScRange, HASATTR_MERGED | HASATTR_OVERLAPPED );
+    bool bHasMerged = getDocumentFromRange( rxCellRange ).HasAttrib( aScRange, HasAttrFlags::Merged | HasAttrFlags::Overlapped );
     return bHasMerged ? util::TriState_INDETERMINATE : util::TriState_NO;
 }
 
@@ -1704,9 +1703,9 @@ ScVbaRange::getCount() throw (uno::RuntimeException, std::exception)
     rowCount = xColumnRowRange->getRows()->getCount();
     colCount = xColumnRowRange->getColumns()->getCount();
 
-    if( IsRows() )
+    if( mbIsRows )
         return rowCount;
-    if( IsColumns() )
+    if( mbIsColumns )
         return colCount;
     return rowCount * colCount;
 }
@@ -1998,7 +1997,7 @@ ScVbaRange::setFormulaArray(const uno::Any& rFormula) throw (uno::RuntimeExcepti
     ScTokenArray aTokenArray;
     (void)ScTokenConversion::ConvertToTokenArray( getScDocument(), aTokenArray, aTokens );
 
-    getScDocShell()->GetDocFunc().EnterMatrix( *getScRangeList()[0], nullptr, &aTokenArray, OUString(), true, true, EMPTY_OUSTRING, formula::FormulaGrammar::GRAM_PODF_A1 );
+    getScDocShell()->GetDocFunc().EnterMatrix( *getScRangeList()[0], nullptr, &aTokenArray, OUString(), true, true, EMPTY_OUSTRING, formula::FormulaGrammar::GRAM_API );
 }
 
 OUString
@@ -2254,7 +2253,7 @@ ScVbaRange::Select() throw (uno::RuntimeException, std::exception)
     }
 }
 
-bool cellInRange( const table::CellRangeAddress& rAddr, const sal_Int32& nCol, const sal_Int32& nRow )
+bool cellInRange( const table::CellRangeAddress& rAddr, sal_Int32 nCol, sal_Int32 nRow )
 {
     if ( nCol >= rAddr.StartColumn && nCol <= rAddr.EndColumn &&
         nRow >= rAddr.StartRow && nRow <= rAddr.EndRow )
@@ -2262,7 +2261,7 @@ bool cellInRange( const table::CellRangeAddress& rAddr, const sal_Int32& nCol, c
     return false;
 }
 
-void setCursor(  const SCCOL& nCol, const SCROW& nRow, const uno::Reference< frame::XModel >& xModel,  bool bInSel = true )
+void setCursor( SCCOL nCol, SCROW nRow, const uno::Reference< frame::XModel >& xModel,  bool bInSel = true )
 {
     ScTabViewShell* pShell = excel::getBestViewShell( xModel );
     if ( pShell )
@@ -2907,7 +2906,7 @@ ScVbaRange::getEntireRow() throw (uno::RuntimeException, std::exception)
 uno::Reference< excel::XRange > SAL_CALL
 ScVbaRange::getEntireColumn() throw (uno::RuntimeException, std::exception)
 {
-    return getEntireColumnOrRow();
+    return getEntireColumnOrRow(true);
 }
 
 uno::Reference< excel::XComment > SAL_CALL
@@ -3080,7 +3079,7 @@ ScVbaRange::Replace( const OUString& What, const OUString& Replacement, const un
         }
 
         ScGlobal::SetSearchItem( newOptions );
-        // ignore MatchByte for the moment, its not supported in
+        // ignore MatchByte for the moment, it's not supported in
         // OOo.org afaik
 
         uno::Reference< util::XSearchDescriptor > xSearch( xDescriptor, uno::UNO_QUERY );
@@ -3514,7 +3513,7 @@ ScVbaRange::Sort( const uno::Any& Key1, const uno::Any& Order1, const uno::Any& 
     sal_Int32 nIndex =  findSortPropertyIndex( sortDescriptor,  "IsSortColumns" );
     sortDescriptor[ nIndex ].Value <<= bIsSortColumns;
 
-    nIndex =    findSortPropertyIndex( sortDescriptor, CONTS_HEADER );
+    nIndex =    findSortPropertyIndex( sortDescriptor, "ContainsHeader" );
     sortDescriptor[ nIndex ].Value <<= bContainsHeader;
 
     rDoc.SetSortParam( aSortParam, nTab );
@@ -3995,16 +3994,16 @@ ScVbaRange::getPageBreak() throw (uno::RuntimeException, std::exception)
         {
             ScDocument& rDoc = getDocumentFromRange( mxRange );
 
-            ScBreakType nBreak = BREAK_NONE;
+            ScBreakType nBreak = ScBreakType::NONE;
             if ( !bColumn )
                 nBreak = rDoc.HasRowBreak(thisAddress.StartRow, thisAddress.Sheet);
             else
                 nBreak = rDoc.HasColBreak(thisAddress.StartColumn, thisAddress.Sheet);
 
-            if (nBreak & BREAK_PAGE)
+            if (nBreak & ScBreakType::Page)
                 nPageBreak = excel::XlPageBreak::xlPageBreakAutomatic;
 
-            if (nBreak & BREAK_MANUAL)
+            if (nBreak & ScBreakType::Manual)
                 nPageBreak = excel::XlPageBreak::xlPageBreakManual;
         }
     }
@@ -4067,13 +4066,13 @@ ScVbaRange::getHeight() throw (uno::RuntimeException, std::exception)
 awt::Point
 ScVbaRange::getPosition() throw ( uno::RuntimeException )
 {
-        awt::Point aPoint;
+    awt::Point aPoint;
     uno::Reference< beans::XPropertySet > xProps;
     if ( mxRange.is() )
         xProps.set( mxRange, uno::UNO_QUERY_THROW );
     else
         xProps.set( mxRanges, uno::UNO_QUERY_THROW );
-    xProps->getPropertyValue( POSITION ) >>= aPoint;
+    xProps->getPropertyValue( "Position" ) >>= aPoint;
     return aPoint;
 }
 uno::Any SAL_CALL
@@ -4193,10 +4192,9 @@ ScVbaRange::ApplicationRange( const uno::Reference< uno::XComponentContext >& xC
     Cell1 >>= sRangeName;
     if ( Cell1.hasValue() && !Cell2.hasValue() && !sRangeName.isEmpty() )
     {
-        static const char sNamedRanges[] = "NamedRanges";
         uno::Reference< beans::XPropertySet > xPropSet( getCurrentExcelDoc(xContext), uno::UNO_QUERY_THROW );
 
-        uno::Reference< container::XNameAccess > xNamed( xPropSet->getPropertyValue( sNamedRanges ), uno::UNO_QUERY_THROW );
+        uno::Reference< container::XNameAccess > xNamed( xPropSet->getPropertyValue( "NamedRanges" ), uno::UNO_QUERY_THROW );
         uno::Reference< sheet::XCellRangeReferrer > xReferrer;
         try
         {
@@ -5186,7 +5184,7 @@ ScVbaRange::groupUnGroup( bool bUnGroup ) throw ( script::BasicErrorException, u
 void SAL_CALL
 ScVbaRange::Group(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
-    groupUnGroup();
+    groupUnGroup(false);
 }
 void SAL_CALL
 ScVbaRange::Ungroup(  ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)
@@ -5194,7 +5192,7 @@ ScVbaRange::Ungroup(  ) throw (script::BasicErrorException, uno::RuntimeExceptio
     groupUnGroup(true);
 }
 
-static void lcl_mergeCellsOfRange( const uno::Reference< table::XCellRange >& xCellRange, bool _bMerge = true ) throw ( uno::RuntimeException )
+static void lcl_mergeCellsOfRange( const uno::Reference< table::XCellRange >& xCellRange, bool _bMerge ) throw ( uno::RuntimeException )
 {
         uno::Reference< util::XMergeable > xMergeable( xCellRange, uno::UNO_QUERY_THROW );
         xMergeable->merge(_bMerge);
@@ -5216,7 +5214,7 @@ ScVbaRange::Merge( const uno::Any& Across ) throw (script::BasicErrorException, 
     bool bAcross = false;
     Across >>= bAcross;
     if ( !bAcross )
-        lcl_mergeCellsOfRange( mxRange );
+        lcl_mergeCellsOfRange( mxRange, true );
     else
     {
         uno::Reference< excel::XRange > oRangeRowsImpl = Rows( uno::Any() );
@@ -5272,7 +5270,8 @@ ScVbaRange::setStyle( const uno::Any& _style ) throw (uno::RuntimeException, std
     uno::Reference< beans::XPropertySet > xProps( mxRange, uno::UNO_QUERY_THROW );
     uno::Reference< excel::XStyle > xStyle;
     _style >>= xStyle;
-    xProps->setPropertyValue( CELLSTYLE, uno::makeAny( xStyle->getName() ) );
+    if ( xProps.is() && xStyle.is() )
+        xProps->setPropertyValue( CELLSTYLE, uno::makeAny( xStyle->getName() ) );
 }
 
 uno::Reference< excel::XRange >
@@ -5487,7 +5486,7 @@ ScVbaRange::SpecialCellsImpl( sal_Int32 nType, const uno::Any& _oValue) throw ( 
     }
     catch (uno::Exception& )
     {
-        DebugHelper::basicexception(ERRCODE_BASIC_METHOD_FAILED, STR_ERRORMESSAGE_NOCELLSWEREFOUND);
+        DebugHelper::basicexception(ERRCODE_BASIC_METHOD_FAILED, "No cells were found");
     }
     return xRange;
 }
@@ -5512,7 +5511,7 @@ ScVbaRange::Subtotal( ::sal_Int32 _nGroupBy, ::sal_Int32 _nFunction, const uno::
         uno::Reference< sheet::XSubTotalCalculatable> xSub(mxRange, uno::UNO_QUERY_THROW );
         uno::Reference< sheet::XSubTotalDescriptor > xSubDesc = xSub->createSubTotalDescriptor(true);
         uno::Reference< beans::XPropertySet > xSubDescPropertySet( xSubDesc, uno::UNO_QUERY_THROW );
-        xSubDescPropertySet->setPropertyValue(INSERTPAGEBREAKS, uno::makeAny( bAddPageBreaks));
+        xSubDescPropertySet->setPropertyValue("InsertPageBreaks", uno::makeAny( bAddPageBreaks));
         sal_Int32 nLen = _nTotalList.getLength();
         uno::Sequence< sheet::SubTotalColumn > aColumns( nLen );
         for (int i = 0; i < nLen; i++)
@@ -5595,13 +5594,12 @@ ScVbaRange::hasError() throw (uno::RuntimeException, std::exception)
     uno::Reference< excel::XApplication > xApplication( Application(), uno::UNO_QUERY_THROW );
     uno::Reference< script::XInvocation > xInvoc( xApplication->WorksheetFunction(), uno::UNO_QUERY_THROW );
 
-    static const char FunctionName[] = "IsError";
     uno::Sequence< uno::Any > Params(1);
     uno::Reference< excel::XRange > aRange( this );
     Params[0] = uno::makeAny( aRange );
     uno::Sequence< sal_Int16 > OutParamIndex;
     uno::Sequence< uno::Any > OutParam;
-    xInvoc->invoke( FunctionName, Params, OutParamIndex, OutParam ) >>= dResult;
+    xInvoc->invoke( "IsError", Params, OutParamIndex, OutParam ) >>= dResult;
     return dResult > 0.0;
 }
 

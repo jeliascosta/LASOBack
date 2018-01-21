@@ -48,7 +48,6 @@
 #include <xmloff/nmspmap.hxx>
 
 #include <sax/tools/converter.hxx>
-#include <com/sun/star/sheet/XSpreadsheetDocument.hpp>
 #include <sal/types.h>
 
 #include <memory>
@@ -60,7 +59,7 @@ ScXMLBodyContext::ScXMLBodyContext( ScXMLImport& rImport,
                                               sal_uInt16 nPrfx,
                                                    const OUString& rLName,
                                               const uno::Reference<xml::sax::XAttributeList>& xAttrList ) :
-    SvXMLImportContext( rImport, nPrfx, rLName ),
+    ScXMLImportContext( rImport, nPrfx, rLName ),
     sPassword(),
     meHash1(PASSHASH_SHA1),
     meHash2(PASSHASH_UNSPECIFIED),
@@ -236,8 +235,8 @@ void ScXMLBodyContext::EndElement()
     if (!bHadCalculationSettings)
     {
         // #111055#; set calculation settings defaults if there is no calculation settings element
-        ScXMLCalculationSettingsContext aContext( GetScImport(), XML_NAMESPACE_TABLE, GetXMLToken(XML_CALCULATION_SETTINGS), nullptr );
-        aContext.EndElement();
+        rtl::Reference<ScXMLCalculationSettingsContext> pContext( new ScXMLCalculationSettingsContext(GetScImport(), XML_NAMESPACE_TABLE, GetXMLToken(XML_CALCULATION_SETTINGS), nullptr) );
+        pContext->EndElement();
     }
 
     ScXMLImport::MutexGuard aGuard(GetScImport());

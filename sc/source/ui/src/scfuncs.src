@@ -2081,8 +2081,8 @@ Resource RID_SC_FUNCTION_DESCRIPTIONS1
             Text [ en-US ] = "Do not alter. Type = 1 denotes switch to linear depreciation, type = 0 do not switch." ;
         };
     };
-     // -=*# Resource for function EFFECTIVE #*=-
-    Resource SC_OPCODE_EFFECTIVE
+     // -=*# Resource for function EFFECT #*=-
+    Resource SC_OPCODE_EFFECT
     {
         String 1 // Description
         {
@@ -2297,8 +2297,8 @@ Resource RID_SC_FUNCTION_DESCRIPTIONS1
             Text [ en-US ] = "Amount of the investment.";
         };
     };
-     // -=*# Resource for function DURATION #*=-
-    Resource SC_OPCODE_DURATION
+     // -=*# Resource for function PDURATION #*=-
+    Resource SC_OPCODE_PDURATION
     {
         String 1 // Description
         {
@@ -3158,7 +3158,7 @@ Resource RID_SC_FUNCTION_DESCRIPTIONS1
     {
         String 1 // Description
         {
-            Text [ en-US ] = "Totals the arguments that meet the conditions." ;
+            Text [ en-US ] = "Totals the arguments that meet the condition." ;
         };
         ExtraData =
         {
@@ -4565,7 +4565,7 @@ Resource RID_SC_FUNCTION_DESCRIPTIONS1
     {
         String 1 // Description
         {
-            Text [ en-US ] = "Rounds a number up to the nearest multiple of significance.\nThis function exists for interoperability with Microsoft Excel 2007 or older versions." ;
+            Text [ en-US ] = "Rounds a number away from zero to the nearest multiple of significance.\nThis function exists for interoperability with Microsoft Excel 2007 or older versions." ;
         };
         ExtraData =
         {
@@ -7600,7 +7600,7 @@ Resource RID_SC_FUNCTION_DESCRIPTIONS2
             0;
             ID_FUNCTION_GRP_STATISTIC;
             HID_FUNC_LOGINV;
-            3;  0;  0;  0;
+            3;  0;  1;  1;
             0;
         };
         String 2 // Name of Parameter 1
@@ -8346,7 +8346,7 @@ Resource RID_SC_FUNCTION_DESCRIPTIONS2
             0;
             ID_FUNCTION_GRP_STATISTIC;
             HID_FUNC_HYPGEOMVERT;
-            4;  0;  0;  0;  0;
+            5;  0;  0;  0;  0; 1;
             0;
         };
         String 2 // Name of Parameter 1
@@ -8380,6 +8380,14 @@ Resource RID_SC_FUNCTION_DESCRIPTIONS2
         String 9 // Description of Parameter 4
         {
             Text [ en-US ] = "The population size." ;
+        };
+        String 10 // Name of Parameter 5
+        {
+            Text [ en-US ] = "Cumulative" ;
+        };
+        String 11 // Description of Parameter 5
+        {
+            Text [ en-US ] = "Cumulated. TRUE calculates the cumulative distribution function, FALSE the probability mass function." ;
         };
     };
      // -=*# Resource for function HYPGEOM.DIST #*=-
@@ -12397,8 +12405,8 @@ Resource RID_SC_FUNCTION_DESCRIPTIONS2
             Text [ en-US ] = "The base number for conversion must be in the range 2 - 36." ;
         };
     };
-     // -=*# Resource for function CONVERT #*=-
-    Resource SC_OPCODE_CONVERT
+     // -=*# Resource for function CONVERT_OOO #*=-
+    Resource SC_OPCODE_CONVERT_OOO
     {
         String 1 // Description
         {

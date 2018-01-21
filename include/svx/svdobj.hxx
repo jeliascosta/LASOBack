@@ -20,7 +20,6 @@
 #ifndef INCLUDED_SVX_SVDOBJ_HXX
 #define INCLUDED_SVX_SVDOBJ_HXX
 
-#include <typeinfo>
 #include <com/sun/star/uno/Any.hxx>
 #include <cppuhelper/weakref.hxx>
 #include <rtl/ustring.hxx>
@@ -35,6 +34,8 @@
 #include <tools/weakbase.hxx>
 #include <tools/mapunit.hxx>
 #include <tools/gen.hxx>
+#include <typeinfo>
+#include <functional>
 
 class SfxBroadcaster;
 class Pointer;
@@ -141,20 +142,36 @@ enum SdrObjKind {
     OBJ_MAXI
 };
 
-enum SdrUserCallType {SDRUSERCALL_MOVEONLY,         // only moved, size unchanged
-                      SDRUSERCALL_RESIZE,           // size and maybe position changed
-                      SDRUSERCALL_CHGATTR,          // attribute changed. Eventually new size, because of line width
-                      SDRUSERCALL_DELETE,           // object is going to be deleted soon, no attributes anymore
-                      SDRUSERCALL_COPY,             // assign operator called, everything can be changed
-                      SDRUSERCALL_INSERTED,         // inserted into an object list (e.g. Page)
-                      SDRUSERCALL_REMOVED,          // removed from an object list
-                      SDRUSERCALL_CHILD_MOVEONLY,   // a child within a group has changed
-                      SDRUSERCALL_CHILD_RESIZE,     // a child within a group has changed
-                      SDRUSERCALL_CHILD_CHGATTR,    // a child within a group has changed
-                      SDRUSERCALL_CHILD_DELETE,     // a child within a group has changed
-                      SDRUSERCALL_CHILD_COPY,       // a child within a group has changed
-                      SDRUSERCALL_CHILD_INSERTED,   // a child within a group has changed
-                      SDRUSERCALL_CHILD_REMOVED};   // a child within a group has changed
+enum class SdrInventor : sal_uInt32 {
+    Unknown          = 0,
+    BasicDialog      = sal_uInt32( 'D' | ('L' << 8) | ('G' << 16) | ('1' << 24) ),
+    Default          = sal_uInt32( 'S' | ('V' << 8) | ('D' << 16) | ('r' << 24) ),
+    E3d              = sal_uInt32( 'E' | ('3' << 8) | ('D' << 16) | ('1' << 24) ),
+    FmForm           = sal_uInt32( 'F' | ('M' << 8) | ('0' << 16) | ('1' << 24) ),
+    IMap             = sal_uInt32( 'I' | ('M' << 8) | ('A' << 16) | ('P' << 24) ),
+    ReportDesign     = sal_uInt32( 'R' | ('P' << 8) | ('T' << 16) | ('1' << 24) ),
+    ScOrSwDraw       = sal_uInt32( 'S' | ('C' << 8) | ('3' << 16) | ('0' << 24) ), // Used in sc/ and sw/
+    SgaImap          = sal_uInt32( 'S' | ('D' << 8) | ('U' << 16) | ('D' << 24) ),
+    StarDrawUserData = sal_uInt32( 'S' | ('D' << 8) | ('U' << 16) | ('D' << 24) ),
+    Swg              = sal_uInt32( 'S' | ('W' << 8) | ('G' << 16) ),
+};
+
+enum class SdrUserCallType {
+    MoveOnly,         // only moved, size unchanged
+    Resize,           // size and maybe position changed
+    ChangeAttr,       // attribute changed. Eventually new size, because of line width
+    Delete,           // object is going to be deleted soon, no attributes anymore
+    Copy,             // assign operator called, everything can be changed
+    Inserted,         // inserted into an object list (e.g. Page)
+    Removed,          // removed from an object list
+    ChildMoveOnly,    // a child within a group has changed
+    ChildResize,      // a child within a group has changed
+    ChildChangeAttr,  // a child within a group has changed
+    ChildDelete,      // a child within a group has changed
+    ChildCopy,        // a child within a group has changed
+    ChildInserted,    // a child within a group has changed
+    ChildRemoved      // a child within a group has changed
+};
 
 class SVX_DLLPUBLIC SdrObjUserCall
 {
@@ -185,7 +202,7 @@ public:
 class SVX_DLLPUBLIC SdrObjUserData
 {
 protected:
-    sal_uInt32                      nInventor;
+    SdrInventor                     nInventor;
     sal_uInt16                      nIdentifier;
 
 private:
@@ -194,12 +211,12 @@ private:
     bool operator!=(const SdrObjUserData& rData) const = delete;
 
 public:
-    SdrObjUserData(sal_uInt32 nInv, sal_uInt16 nId);
+    SdrObjUserData(SdrInventor nInv, sal_uInt16 nId);
     SdrObjUserData(const SdrObjUserData& rData);
     virtual ~SdrObjUserData();
 
     virtual SdrObjUserData* Clone(SdrObject* pObj1) const = 0; // #i71039# NULL -> 0
-    sal_uInt32 GetInventor() const { return nInventor;}
+    SdrInventor GetInventor() const { return nInventor;}
     sal_uInt16 GetId() const { return nIdentifier;}
 };
 
@@ -259,106 +276,24 @@ public:
 class SvxShape;
 class SVX_DLLPUBLIC SdrObject: public SfxListener, public tools::WeakBase< SdrObject >
 {
-private:
-    struct Impl;
-    Impl* mpImpl;
-
-    SdrObject( const SdrObject& ) = delete;
+    friend class                SdrObjListIter;
+    friend class                SdrVirtObj;
+    friend class                SdrRectObj;
+    friend class                SdrDelayBroadcastObjectChange;
 
 public:
+    SdrObject();
+
     void AddObjectUser(sdr::ObjectUser& rNewUser);
     void RemoveObjectUser(sdr::ObjectUser& rOldUser);
 
-    // BaseProperties section
-private:
-    sdr::properties::BaseProperties*                                mpProperties;
-protected:
-    virtual sdr::properties::BaseProperties* CreateObjectSpecificProperties();
-public:
-    virtual sdr::properties::BaseProperties& GetProperties() const;
-
-    // #110094# DrawContact section
-private:
-    sdr::contact::ViewContact*                                      mpViewContact;
-protected:
-    virtual sdr::contact::ViewContact* CreateObjectSpecificViewContact();
-public:
     sdr::contact::ViewContact& GetViewContact() const;
+
+    virtual sdr::properties::BaseProperties& GetProperties() const;
 
     // DrawContact support: Methods for handling Object changes
     void ActionChanged() const;
 
-private:
-    friend class                SdrObjListIter;
-    friend class                SdrVirtObj;
-    friend class                SdrRectObj;
-
-protected:
-    Rectangle                   aOutRect;     // surrounding rectangle for Paint (incl. LineWdt, ...)
-    Point                       aAnchor;      // anchor position (Writer)
-    Point                       aGridOffset;  // hack (Calc)
-    SdrObjList*                 pObjList;     // list that includes this object
-    SdrPage*                    pPage;
-    SdrModel*                   pModel;
-    SdrObjUserCall*             pUserCall;
-    SdrObjPlusData*             pPlusData;    // Broadcaster, UserData, connectors, ... (this is the Bitsack)
-
-    sal_uInt32                  nOrdNum;      // order number of the object in the list
-
-    SfxGrabBagItem*             pGrabBagItem; // holds the GrabBagItem property
-
-
-    // Position in the navigation order. SAL_MAX_UINT32 when not used.
-    sal_uInt32                  mnNavigationPosition;
-    SdrLayerID                  mnLayerID;
-
-    // object is only pointing to another one
-    bool                        bVirtObj : 1;
-    bool                        bSnapRectDirty : 1;
-    bool                        bNetLock : 1;   // ni
-    bool                        bInserted : 1;  // only if set to true, there are RepaintBroadcast & SetModify
-    bool                        bGrouped : 1;   // member of a group object?
-
-    // the following flags will be streamed
-    bool                        bMovProt : 1;   // if true, the position is protected
-    bool                        bSizProt : 1;   // if true, the size is protected
-    bool                        bNoPrint : 1;   // if true, the object is not printed.
-    bool                        mbVisible : 1;  // if false, the object is not visible on screen (but maybe on printer, depending on bNoprint
-
-    // If bEmptyPresObj is true, it is a presentation object that has no content yet.
-    // The flag's default value is false.
-    // The management is done by the application.
-    // Neither assign operator nor cloning copies the flag!
-    // The flag is persistent.
-    bool                        bEmptyPresObj : 1; // empty presentation object (Draw)
-
-    // if true, object is invisible as object of the MasterPage
-    bool                        bNotVisibleAsMaster : 1;
-
-    // if true, the object is closed, i.e. no line, arc...
-    bool                        bClosedObj : 1;
-
-    bool                        bIsEdge : 1;
-    bool                        bIs3DObj : 1;
-    bool                        bMarkProt : 1;  // marking forbidden, persistent
-    bool                        bIsUnoObj : 1;
-    bool                        bNotMasterCachable : 1;
-
-    // #i25616#
-    bool                        mbLineIsOutsideGeometry : 1;
-
-    // #i25616#
-    bool                        mbSupportTextIndentingOnLineWidthChange : 1;
-
-    // on import of OLE object from MS documents the BLIP size might be retrieved,
-    // in this case the following member is initialized as nonempty rectangle
-    Rectangle                   maBLIPSizeRectangle;
-
-    // global static ItemPool for not-yet-inserted items
-private:
-    static SdrItemPool*         mpGlobalItemPool;
-
-public:
     static SdrItemPool& GetGlobalDrawObjectItemPool();
     void SetRelativeWidth( double nValue );
     void SetRelativeWidthRelation( sal_Int16 eValue );
@@ -371,42 +306,12 @@ public:
     // evil calc grid/shape drawlayer syncing
     const Point& GetGridOffset() const { return aGridOffset; }
     void SetGridOffset( const Point& rGridOffset ){ aGridOffset = rGridOffset; }
-protected:
-    Rectangle ImpDragCalcRect(const SdrDragStat& rDrag) const;
-
-    // for GetDragComment
-    void ImpTakeDescriptionStr(sal_uInt16 nStrCacheID, OUString& rStr) const;
-
-    void ImpForcePlusData();
-
-    OUString GetAngleStr(long nAngle) const;
-    OUString GetMetrStr(long nVal) const;
 
     /// @param bNotMyself = true: set only ObjList to dirty, don't mark this object as dirty.
     ///
     /// This is needed for instance for NbcMove, because usually one moves SnapRect and aOutRect
     /// at the same time to avoid recomputation.
-public:
     virtual void SetRectsDirty(bool bNotMyself = false);
-protected:
-
-    // override if the class inherits from SdrObjPlusData:
-    static SdrObjPlusData* NewPlusData();
-
-protected:
-    /// A derived class must override these 3 methods if it has own geometric
-    /// data that must be saved for Undo.
-    /// NewGeoData() creates an empty instance of a class derived from
-    /// SdrObjGeoData.
-    virtual SdrObjGeoData* NewGeoData() const;
-    virtual void SaveGeoData(SdrObjGeoData& rGeo) const;
-    virtual void RestGeoData(const SdrObjGeoData& rGeo);
-
-protected:
-    virtual ~SdrObject();
-
-public:
-    SdrObject();
 
     // frees the SdrObject pointed to by the argument
     // In case the object has an SvxShape, which has the ownership of the object, it
@@ -428,11 +333,10 @@ public:
 
     void AddListener(SfxListener& rListener);
     void RemoveListener(SfxListener& rListener);
-    const SfxBroadcaster* GetBroadcaster() const;
 
     void AddReference(SdrVirtObj& rVrtObj);
     void DelReference(SdrVirtObj& rVrtObj);
-    virtual sal_uInt32 GetObjInventor() const;
+    virtual SdrInventor GetObjInventor() const;
     virtual sal_uInt16 GetObjIdentifier() const;
     virtual void TakeObjInfo(SdrObjTransformInfoRec& rInfo) const;
 
@@ -443,9 +347,6 @@ public:
     // renaming GetLayerSet -> getMergedHierarchyLayerSet to make clear what happens here. rSet needs to be empty.
     void getMergedHierarchyLayerSet(SetOfByte& rSet) const;
 
-    // UserCall interface
-    void SetUserCall(SdrObjUserCall* pUser);
-    SdrObjUserCall* GetUserCall() const { return pUserCall;}
     void SendUserCall(SdrUserCallType eUserCall, const Rectangle& rBoundRect) const;
 
     // #i68101#
@@ -472,9 +373,6 @@ public:
     /// SdrObjects in the SdrObjList.
     sal_uInt32 GetOrdNum() const;
 
-    // Warning: this method should only be used if you really know what you're doing
-    sal_uInt32 GetOrdNumDirect() const { return nOrdNum;}
-
     // setting the order number should only happen from the model or from the page
     void SetOrdNum(sal_uInt32 nNum);
 
@@ -492,14 +390,6 @@ public:
     //     result of GetOrdNum() is returned.
     sal_uInt32 GetNavigationPosition();
 
-    // Set the position in the navigation position to the given value.
-    // This method is typically used only by the model after a change to
-    // the navigation order.
-    // This method does not change the navigation position of other
-    // objects.
-    // Use SdrObjList::SetObjectNavigationPosition() instead.
-    void SetNavigationPosition (const sal_uInt32 nPosition);
-
     // To make clearer that this method may trigger RecalcBoundRect and thus may be
     // expensive and sometimes problematic (inside a bigger object change You will get
     // non-useful BoundRects sometimes) i rename that method from GetBoundRect() to
@@ -515,6 +405,8 @@ public:
     virtual void RecalcBoundRect();
 
     void BroadcastObjectChange() const;
+
+    const SfxBroadcaster* GetBroadcaster() const;
 
     // set modified-flag in the model
     virtual void SetChanged();
@@ -640,7 +532,6 @@ public:
     void ImpSetAnchorPos(const Point& rPnt);
     virtual void NbcSetAnchorPos(const Point& rPnt);
     virtual void SetAnchorPos(const Point& rPnt);
-    virtual const Point& GetAnchorPos() const;
 
     /// Snap is not done on the BoundRect but if possible on logic coordinates
     /// (i.e. without considering stroke width, ...)
@@ -693,17 +584,6 @@ public:
     void SetMergedItemSet(const SfxItemSet& rSet, bool bClearAllItems = false);
     const SfxPoolItem& GetMergedItem(const sal_uInt16 nWhich) const;
 
-    // internal versions
-protected:
-    const SfxItemSet& GetObjectItemSet() const;
-    void SetObjectItem(const SfxPoolItem& rItem);
-    void SetObjectItemSet(const SfxItemSet& rSet);
-    const SfxPoolItem& GetObjectItem(const sal_uInt16 nWhich) const;
-
-    // get SfxMapUnit the object is using
-    SfxMapUnit GetObjectMapUnit() const;
-
-public:
     // syntactical sugar for ItemSet accesses
     void SetMergedItemSetAndBroadcast(const SfxItemSet& rSet, bool bClearAllItems = false);
 
@@ -771,7 +651,6 @@ public:
 
     // list of all glue points, can be NULL
     virtual const SdrGluePointList* GetGluePointList() const;
-    //virtual SdrGluePointList* GetGluePointList();
 
     // after changing the GluePointList, one has to call the object's SendRepaintBroadcast!
     virtual SdrGluePointList* ForceGluePointList();
@@ -825,7 +704,7 @@ public:
     // when there is no filled new polygon created from line-to-polygon conversion,
     // specially used for XLINE_DASH and 3D conversion
     SdrObject* ConvertToContourObj(SdrObject* pRet, bool bForceLineDash = false) const;
-    static SdrObject* ImpConvertToContourObj(SdrObject* pRet, bool bForceLineDash = false);
+    static SdrObject* ImpConvertToContourObj(SdrObject* pRet, bool bForceLineDash);
 
     // if true, reference onto an object
     bool IsVirtualObj() const { return bVirtObj;}
@@ -838,8 +717,6 @@ public:
     bool IsEdgeObj() const { return bIsEdge;}
     bool Is3DObj() const { return bIs3DObj;}
     bool IsUnoObj() const { return bIsUnoObj;}
-    void SetMarkProtect(bool bProt);
-    bool IsMarkProtect() const { return bMarkProt;}
     void SetInserted(bool bIns);
     bool IsInserted() const { return bInserted;}
     void SetMoveProtect(bool bProt);
@@ -850,16 +727,8 @@ public:
     bool IsPrintable() const { return !bNoPrint;}
     void SetVisible(bool bVisible);
     bool IsVisible() const { return mbVisible;}
-    void SetEmptyPresObj(bool bEpt);
-    bool IsEmptyPresObj() const { return bEmptyPresObj;}
-    void SetNotVisibleAsMaster(bool bFlg);
-    bool IsNotVisibleAsMaster() const { return bNotVisibleAsMaster;}
-
-    // #i25616#
-    bool LineIsOutsideGeometry() const { return mbLineIsOutsideGeometry;}
-
-    // #i25616#
-    bool DoesSupportTextIndentingOnLineWidthChange() const { return mbSupportTextIndentingOnLineWidthChange;}
+    void SetMarkProtect(bool bProt);
+    bool IsMarkProtect() const { return bMarkProt;}
 
     // application specific data
     sal_uInt16 GetUserDataCount() const;
@@ -871,22 +740,12 @@ public:
     void DeleteUserData(sal_uInt16 nNum);
 
     // switch ItemPool for this object
-    void MigrateItemPool(SfxItemPool* pSrcPool, SfxItemPool* pDestPool, SdrModel* pNewModel = nullptr);
+    void MigrateItemPool(SfxItemPool* pSrcPool, SfxItemPool* pDestPool, SdrModel* pNewModel);
 
     // access to the UNO representation of the shape
     virtual css::uno::Reference< css::uno::XInterface > getUnoShape();
-    const css::uno::WeakReference< css::uno::XInterface >& getWeakUnoShape() const { return maWeakUnoShape; }
 
     static SdrObject* getSdrObjectFromXShape( const css::uno::Reference< css::uno::XInterface >& xInt );
-
-    // sets a new UNO representation of the shape
-    // This is only a public interface function. The actual work is
-    // done by impl_setUnoShape().
-    // Calling this function is only allowed for the UNO representation
-    // itself!
-    void setUnoShape(
-            const css::uno::Reference<
-                css::uno::XInterface>& _rxUnoShape);
 
     // retrieves the instance responsible for notifying changes in the properties of the shape associated with
     // the SdrObject
@@ -932,11 +791,6 @@ public:
     const Rectangle& GetBLIPSizeRectangle() const { return maBLIPSizeRectangle;}
     void SetBLIPSizeRectangle( const Rectangle& aRect );
 
-    /// @see mbDoNotInsertIntoPageAutomatically
-    void SetDoNotInsertIntoPageAutomatically(bool bSet);
-    /// @see mbDoNotInsertIntoPageAutomatically
-    bool IsDoNotInsertIntoPageAutomatically() const { return mbDoNotInsertIntoPageAutomatically;}
-
     // #i121917#
     virtual bool HasText() const;
 
@@ -944,7 +798,110 @@ public:
 
     virtual void dumpAsXml(struct _xmlTextWriter* pWriter) const;
 
+    void SetEmptyPresObj(bool bEpt);
+    bool IsEmptyPresObj() const { return bEmptyPresObj;}
+    void SetNotVisibleAsMaster(bool bFlg);
+    bool IsNotVisibleAsMaster() const { return bNotVisibleAsMaster;}
+    void SetUserCall(SdrObjUserCall* pUser);
+    SdrObjUserCall* GetUserCall() const { return pUserCall;}
+    /// @see mbDoNotInsertIntoPageAutomatically
+    void SetDoNotInsertIntoPageAutomatically(bool bSet);
+    /// @see mbDoNotInsertIntoPageAutomatically
+    bool IsDoNotInsertIntoPageAutomatically() const { return mbDoNotInsertIntoPageAutomatically;}
+
+    // Warning: this method should only be used if you really know what you're doing
+    sal_uInt32 GetOrdNumDirect() const { return nOrdNum;}
+
+    // #i25616#
+    bool DoesSupportTextIndentingOnLineWidthChange() const { return mbSupportTextIndentingOnLineWidthChange;}
+
+    const Point& GetAnchorPos() const;
+
+    // #i25616#
+    bool LineIsOutsideGeometry() const { return mbLineIsOutsideGeometry;}
+
+    // Set the position in the navigation position to the given value.
+    // This method is typically used only by the model after a change to
+    // the navigation order.
+    // This method does not change the navigation position of other
+    // objects.
+    // Use SdrObjList::SetObjectNavigationPosition() instead.
+    void SetNavigationPosition (const sal_uInt32 nPosition);
+
+    // sets a new UNO representation of the shape
+    // This is only a public interface function. The actual work is
+    // done by impl_setUnoShape().
+    // Calling this function is only allowed for the UNO representation
+    // itself!
+    void setUnoShape( const css::uno::Reference<css::uno::XInterface>& _rxUnoShape);
+
+    const css::uno::WeakReference< css::uno::XInterface >& getWeakUnoShape() const { return maWeakUnoShape; }
+
 protected:
+    Rectangle                   aOutRect;     // surrounding rectangle for Paint (incl. LineWdt, ...)
+    Point                       aAnchor;      // anchor position (Writer)
+    SdrPage*                    pPage;
+    SdrModel*                   pModel;
+    SdrObjUserCall*             pUserCall;
+    SdrObjPlusData*             pPlusData;    // Broadcaster, UserData, connectors, ... (this is the Bitsack)
+    // object is only pointing to another one
+    bool                        bVirtObj : 1;
+    bool                        bSnapRectDirty : 1;
+    // the following flags will be streamed
+    bool                        bMovProt : 1;   // if true, the position is protected
+    bool                        bSizProt : 1;   // if true, the size is protected
+    // If bEmptyPresObj is true, it is a presentation object that has no content yet.
+    // The flag's default value is false.
+    // The management is done by the application.
+    // Neither assign operator nor cloning copies the flag!
+    // The flag is persistent.
+    bool                        bEmptyPresObj : 1; // empty presentation object (Draw)
+    // if true, object is invisible as object of the MasterPage
+    bool                        bNotVisibleAsMaster : 1;
+    // if true, the object is closed, i.e. no line, arc...
+    bool                        bClosedObj : 1;
+    bool                        bIsEdge : 1;
+    bool                        bIs3DObj : 1;
+    bool                        bIsUnoObj : 1;
+    bool                        bNotMasterCachable : 1;
+    // #i25616#
+    bool                        mbLineIsOutsideGeometry : 1;
+    // #i25616#
+    bool                        mbSupportTextIndentingOnLineWidthChange : 1;
+
+    virtual ~SdrObject() override;
+
+    virtual sdr::properties::BaseProperties* CreateObjectSpecificProperties();
+
+    virtual sdr::contact::ViewContact* CreateObjectSpecificViewContact();
+
+    Rectangle ImpDragCalcRect(const SdrDragStat& rDrag) const;
+
+    // for GetDragComment
+    void ImpTakeDescriptionStr(sal_uInt16 nStrCacheID, OUString& rStr) const;
+
+    void ImpForcePlusData();
+
+    OUString GetAngleStr(long nAngle) const;
+    OUString GetMetrStr(long nVal) const;
+
+    /// A derived class must override these 3 methods if it has own geometric
+    /// data that must be saved for Undo.
+    /// NewGeoData() creates an empty instance of a class derived from
+    /// SdrObjGeoData.
+    virtual SdrObjGeoData* NewGeoData() const;
+    virtual void SaveGeoData(SdrObjGeoData& rGeo) const;
+    virtual void RestGeoData(const SdrObjGeoData& rGeo);
+
+    // internal versions
+    const SfxItemSet& GetObjectItemSet() const;
+    void SetObjectItem(const SfxPoolItem& rItem);
+    void SetObjectItemSet(const SfxItemSet& rSet);
+    const SfxPoolItem& GetObjectItem(const sal_uInt16 nWhich) const;
+
+    // get MapUnit the object is using
+    MapUnit GetObjectMapUnit() const;
+
     /// Sets a new UNO shape
     ///
     /// The default implementation of this function sets the new UNO
@@ -960,16 +917,68 @@ protected:
     template< typename T > T* CloneHelper() const;
 
 private:
+    struct Impl;
+    std::unique_ptr<Impl>             mpImpl;
+    Point                             aGridOffset;  // hack (Calc)
+    SdrObjList*                       pObjList;     // list that includes this object
+    sal_uInt32                        nOrdNum;      // order number of the object in the list
+    SfxGrabBagItem*                   pGrabBagItem; // holds the GrabBagItem property
+    // Position in the navigation order. SAL_MAX_UINT32 when not used.
+    sal_uInt32                        mnNavigationPosition;
+    SdrLayerID                        mnLayerID;
+    bool                              bInserted : 1;  // only if set to true, there are RepaintBroadcast & SetModify
+    bool                              bNoPrint : 1;   // if true, the object is not printed.
+    bool                              mbVisible : 1;  // if false, the object is not visible on screen (but maybe on printer, depending on bNoprint
+    bool                              bMarkProt : 1;  // marking forbidden, persistent
+    // on import of OLE object from MS documents the BLIP size might be retrieved,
+    // in this case the following member is initialized as nonempty rectangle
+    Rectangle                         maBLIPSizeRectangle;
+    sdr::properties::BaseProperties*  mpProperties;
+    sdr::contact::ViewContact*        mpViewContact;
+    bool                              mbDelayBroadcastObjectChange : 1;
+    mutable bool                      mbBroadcastObjectChangePending : 1;
+
+    // global static ItemPool for not-yet-inserted items
+    static SdrItemPool*         mpGlobalItemPool;
+
+    // do not use directly, always use getSvxShape() if you have to!
+    SvxShape*                   mpSvxShape;
+    css::uno::WeakReference< css::uno::XInterface >
+                                maWeakUnoShape;
+    // HACK: Do not automatically insert newly created object into a page.
+    // The user needs to do it manually later.
+    bool                        mbDoNotInsertIntoPageAutomatically;
+
     // only for internal use!
     SvxShape* getSvxShape();
 
-    // do not use directly, always use getSvxShape() if you have to!
-    SvxShape*   mpSvxShape;
-    css::uno::WeakReference< css::uno::XInterface >
-                maWeakUnoShape;
-    // HACK: Do not automatically insert newly created object into a page.
-    // The user needs to do it manually later.
-    bool mbDoNotInsertIntoPageAutomatically;
+    SdrObject( const SdrObject& ) = delete;
+};
+
+/** Suppress BroadcastObjectChange() until destruction of the (last) instance.
+    Prevents multiple broadcasts for a sequence of calls that would trigger a
+    broadcast each. Instances may be nested in levels, the outer instance will
+    trigger the final broadcast.
+ */
+class SVX_DLLPUBLIC SdrDelayBroadcastObjectChange
+{
+    SdrObject&  mrObj;
+    bool        mbOldDelayBroadcastObjectChange;
+public:
+    SdrDelayBroadcastObjectChange( SdrObject& rObj );
+    ~SdrDelayBroadcastObjectChange();
+};
+
+struct SdrObjCreatorParams
+{
+    SdrInventor nInventor;
+    sal_uInt16  nObjIdentifier;
+};
+struct SdrObjUserDataCreatorParams
+{
+    SdrInventor nInventor;
+    sal_uInt16  nObjIdentifier;
+    SdrObject*  pObject;
 };
 
 /**
@@ -983,32 +992,18 @@ private:
 class SVX_DLLPUBLIC SdrObjFactory
 {
 public:
-    sal_uInt32                  nInventor;
-    sal_uInt16                  nIdentifier;
-
-    // for MakeNewObj():
-    SdrPage*                    pPage;
-    SdrModel*                   pModel;
-    SdrObject*                  pNewObj;
-
-    // for MakeNewObjUserData():
-    SdrObject*                  pObj;
-    SdrObjUserData*             pNewData;
+    static SdrObject* MakeNewObject(SdrInventor nInventor, sal_uInt16 nObjIdentifier, SdrPage* pPage, SdrModel* pModel=nullptr);
+    static SdrObject* MakeNewObject(SdrInventor nInventor, sal_uInt16 nObjIdentifier, const Rectangle& rSnapRect, SdrPage* pPage);
+    static void InsertMakeObjectHdl(Link<SdrObjCreatorParams, SdrObject*> const & rLink);
+    static void RemoveMakeObjectHdl(Link<SdrObjCreatorParams, SdrObject*> const & rLink);
+    static void InsertMakeUserDataHdl(Link<SdrObjUserDataCreatorParams, SdrObjUserData*> const & rLink);
+    static void RemoveMakeUserDataHdl(Link<SdrObjUserDataCreatorParams, SdrObjUserData*> const & rLink);
 
 private:
-
     static SVX_DLLPRIVATE SdrObject* CreateObjectFromFactory(
-        sal_uInt32 nInventor, sal_uInt16 nIdentifier, SdrPage* pPage, SdrModel* pModel );
+        SdrInventor nInventor, sal_uInt16 nIdentifier, SdrPage* pPage, SdrModel* pModel );
 
-    SVX_DLLPRIVATE SdrObjFactory(sal_uInt32 nInvent, sal_uInt16 nIdent, SdrPage* pNewPage, SdrModel* pNewModel);
-
-public:
-    static SdrObject* MakeNewObject(sal_uInt32 nInvent, sal_uInt16 nIdent, SdrPage* pPage, SdrModel* pModel=nullptr);
-    static SdrObject* MakeNewObject( sal_uInt32 nInventor, sal_uInt16 nIdentifier, const Rectangle& rSnapRect, SdrPage* pPage );
-    static void InsertMakeObjectHdl(const Link<SdrObjFactory*,void>& rLink);
-    static void RemoveMakeObjectHdl(const Link<SdrObjFactory*,void>& rLink);
-    static void InsertMakeUserDataHdl(const Link<SdrObjFactory*,void>& rLink);
-    static void RemoveMakeUserDataHdl(const Link<SdrObjFactory*,void>& rLink);
+    SdrObjFactory() = delete;
 };
 
 typedef tools::WeakReference< SdrObject > SdrObjectWeakRef;

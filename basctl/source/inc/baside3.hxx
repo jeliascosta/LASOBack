@@ -73,7 +73,7 @@ protected:
     virtual void        Command( const CommandEvent& rCEvt ) override;
     virtual void        LoseFocus() override;
 
-    DECL_STATIC_LINK_TYPED( DialogWindow, NotifyUndoActionHdl, SdrUndoAction *, void );
+    DECL_STATIC_LINK( DialogWindow, NotifyUndoActionHdl, SdrUndoAction *, void );
     virtual void        DoInit() override;
     virtual void        DoScroll( ScrollBar* pCurScrollBar ) override;
     virtual void        DataChanged( const DataChangedEvent& rDCEvt ) override;
@@ -126,7 +126,7 @@ class DialogWindowLayout : public Layout
 {
 public:
     DialogWindowLayout (vcl::Window* pParent, ObjectCatalog&);
-    virtual ~DialogWindowLayout();
+    virtual ~DialogWindowLayout() override;
     virtual void dispose() override;
 public:
     void ShowPropertyBrowser ();

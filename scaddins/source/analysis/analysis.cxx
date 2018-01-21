@@ -24,6 +24,7 @@
 #include <comphelper/processfactory.hxx>
 #include <comphelper/random.hxx>
 #include <cppuhelper/supportsservice.hxx>
+#include <o3tl/any.hxx>
 #include <osl/diagnose.h>
 #include <rtl/ustrbuf.hxx>
 #include <rtl/math.hxx>
@@ -78,17 +79,12 @@ ResMgr& AnalysisAddIn::GetResMgr() throw( uno::RuntimeException, std::exception 
     return *pResMgr;
 }
 
-OUString AnalysisAddIn::GetDisplFuncStr( sal_uInt16 nFuncNum ) throw( uno::RuntimeException, std::exception )
-{
-    return AnalysisRscStrLoader( RID_ANALYSIS_FUNCTION_NAMES, nFuncNum, GetResMgr() ).GetString();
-}
-
 class AnalysisResourcePublisher : public Resource
 {
 public:
     explicit        AnalysisResourcePublisher( const AnalysisResId& rId ) : Resource( rId ) {}
-    bool            IsAvailableRes( const ResId& rId ) const { return Resource::IsAvailableRes( rId ); }
-    void            FreeResource() { Resource::FreeResource(); }
+    using Resource::IsAvailableRes;
+    using Resource::FreeResource;
 };
 
 class AnalysisFuncRes : public Resource
@@ -137,11 +133,8 @@ void AnalysisAddIn::InitData()
         pFD = nullptr;
     }
 
-    if( pDefLocales )
-    {
-        delete pDefLocales;
-        pDefLocales = nullptr;
-    }
+    delete pDefLocales;
+    pDefLocales = nullptr;
 }
 
 AnalysisAddIn::AnalysisAddIn( const uno::Reference< uno::XComponentContext >& xContext ) :
@@ -287,7 +280,7 @@ OUString SAL_CALL AnalysisAddIn::getDisplayFunctionName( const OUString& aProgra
     auto it = std::find_if(pFD->begin(), pFD->end(), FindFuncData( aProgrammaticName ) );
     if( it != pFD->end() )
     {
-        aRet = GetDisplFuncStr( it->GetUINameID() );
+        aRet = AnalysisRscStrLoader( RID_ANALYSIS_FUNCTION_NAMES, it->GetUINameID(), GetResMgr() ).GetString();
         if( it->IsDouble() )
         {
             const OUString& rSuffix = it->GetSuffix();
@@ -737,18 +730,22 @@ double SAL_CALL AnalysisAddIn::getLcm( const uno::Reference< beans::XPropertySet
     if( aValList.Count() == 0 )
         return 0.0;
 
-    double          f = aValList.Get(0);
+    double f = rtl::math::approxFloor( aValList.Get(0) );
+    if( f < 0.0 )
+        throw lang::IllegalArgumentException();
 
     if( f == 0.0 )
         return f;
 
     for( sal_uInt32 i = 1; i < aValList.Count(); ++i )
     {
-        double      fTmp = aValList.Get(i);
+        double fTmp = rtl::math::approxFloor( aValList.Get(i) );
+        if( fTmp < 0.0 )
+            throw lang::IllegalArgumentException();
+
+        f = fTmp * f / GetGcd( fTmp, f );
         if( f == 0.0 )
             return f;
-        else
-            f = fTmp * f / GetGcd( fTmp, f );
     }
 
     RETURN_FINITE( f );
@@ -1150,7 +1147,7 @@ OUString SAL_CALL AnalysisAddIn::getComplex( double fR, double fI, const uno::An
             break;
         case uno::TypeClass_STRING:
             {
-            const OUString*   pSuff = static_cast<const OUString*>(rSuff.getValue());
+            auto   pSuff = o3tl::forceAccess<OUString>(rSuff);
             bi = *pSuff == "i" || pSuff->isEmpty();
             if( !bi && *pSuff != "j" )
                 throw lang::IllegalArgumentException();

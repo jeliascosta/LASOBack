@@ -20,6 +20,8 @@ $(eval $(call gb_CppunitTest_use_libraries,desktop_lib, \
 	cppu \
 	cppuhelper \
 	sal \
+	sc \
+	scfilt \
 	sfx \
 	sofficeapp \
 	subsequenttest \
@@ -41,10 +43,7 @@ $(eval $(call gb_CppunitTest_set_include,desktop_lib,\
     $$(INCLUDE) \
 ))
 
-$(eval $(call gb_CppunitTest_use_api,desktop_lib,\
-	offapi \
-	udkapi \
-))
+$(eval $(call gb_CppunitTest_use_sdk_api,desktop_lib))
 
 $(eval $(call gb_CppunitTest_use_ure,desktop_lib))
 
@@ -74,6 +73,7 @@ $(eval $(call gb_CppunitTest_use_components,desktop_lib,\
     ucb/source/core/ucb1 \
     ucb/source/ucp/file/ucpfile1 \
     unoxml/source/service/unoxml \
+    uui/util/uui \
     xmloff/util/xo \
     i18npool/source/search/i18nsearch \
     filter/source/graphic/graphicfilter \

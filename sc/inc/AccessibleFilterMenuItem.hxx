@@ -40,7 +40,7 @@ public:
         const css::uno::Reference< css::accessibility::XAccessible>& rxParent,
         ScMenuFloatingWindow* pWin, const OUString& rName, size_t nMenuPos);
 
-    virtual ~ScAccessibleFilterMenuItem();
+    virtual ~ScAccessibleFilterMenuItem() override;
 
     /// XAccessibleContext
 
@@ -96,7 +96,6 @@ protected:
 
 private:
     bool isSelected() const;
-    bool isFocused() const;
     void updateStateSet();
 
 private:

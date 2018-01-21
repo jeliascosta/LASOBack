@@ -93,10 +93,10 @@ public:
     void                SetHeightSizeType(SwFrameSize eType);
 
     // space to content
-    void                SetLRSpace( long nLeft  = LONG_MAX,
-                                    long nRight = LONG_MAX );
-    void                SetULSpace( long nTop   = LONG_MAX,
-                                    long nBottom= LONG_MAX );
+    void                SetLRSpace( long nLeft,
+                                    long nRight );
+    void                SetULSpace( long nTop,
+                                    long nBottom );
 
     void                SetCol( const SwFormatCol &rCol);
 

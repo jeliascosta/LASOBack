@@ -30,7 +30,6 @@
 #include <comphelper/anytostring.hxx>
 #include <comphelper/make_shared_from_uno.hxx>
 #include <comphelper/scopeguard.hxx>
-#include <comphelper/optional.hxx>
 #include <comphelper/servicedecl.hxx>
 #include <comphelper/namecontainer.hxx>
 
@@ -374,7 +373,7 @@ private:
 
     /// Resets the current slide transition sound object with a new one:
     SoundPlayerSharedPtr resetSlideTransitionSound(
-        uno::Any const& url = uno::Any(), bool bLoopSound = false );
+        uno::Any const& url, bool bLoopSound );
 
     /// stops the current slide transition sound
     void stopSlideTransitionSound();
@@ -2102,9 +2101,12 @@ sal_Bool SlideShowImpl::update( double & nNextTimeout )
                 {
                     uno::Reference< presentation::XSlideShowView > xView( pView->getUnoView(),
                                                                           uno::UNO_QUERY_THROW );
-                    uno::Reference< util::XUpdatable >             xUpdatable( xView->getCanvas(),
-                                                                               uno::UNO_QUERY_THROW );
-                    xUpdatable->update();
+                    uno::Reference<util::XUpdatable> const xUpdatable(
+                            xView->getCanvas(), uno::UNO_QUERY);
+                    if (xUpdatable.is()) // not supported in PresenterCanvas
+                    {
+                        xUpdatable->update();
+                    }
                 }
                 catch( uno::RuntimeException& )
                 {

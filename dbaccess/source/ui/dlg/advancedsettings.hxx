@@ -77,7 +77,7 @@ namespace dbaui
         SpecialSettingsPage(vcl::Window* pParent, const SfxItemSet& _rCoreAttrs, const DataSourceMetaData& _rDSMeta );
 
     protected:
-        virtual ~SpecialSettingsPage();
+        virtual ~SpecialSettingsPage() override;
         virtual void dispose() override;
 
         // OGenericAdministrationPage overridables
@@ -91,7 +91,7 @@ namespace dbaui
 
     private:
         void    impl_initBooleanSettings();
-        DECL_LINK_TYPED(BooleanComparisonSelectHdl, ListBox&, void);
+        DECL_LINK(BooleanComparisonSelectHdl, ListBox&, void);
     };
 
     // GeneratedValuesPage
@@ -116,7 +116,7 @@ namespace dbaui
     protected:
 
         // nControlFlags is a combination of the CBTP_xxx-constants
-        virtual ~GeneratedValuesPage();
+        virtual ~GeneratedValuesPage() override;
         virtual void dispose() override;
 
         // subclasses must override this, but it isn't pure virtual

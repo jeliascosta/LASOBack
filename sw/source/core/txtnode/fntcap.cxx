@@ -282,9 +282,9 @@ void SwDoDrawCapital::DrawSpace( Point &rPos )
     if ( bSwitchL2R )
        rInf.GetFrame()->SwitchLTRtoRTL( aPos );
 
-    const ComplexTextLayoutMode nMode = rInf.GetpOut()->GetLayoutMode();
+    const ComplexTextLayoutFlags nMode = rInf.GetpOut()->GetLayoutMode();
     const bool bBidiPor = ( bSwitchL2R !=
-                            ( TEXT_LAYOUT_DEFAULT != ( TEXT_LAYOUT_BIDI_RTL & nMode ) ) );
+                            ( ComplexTextLayoutFlags::Default != ( ComplexTextLayoutFlags::BiDiRtl & nMode ) ) );
 
     if ( bBidiPor )
         nDiff = -nDiff;
@@ -401,7 +401,7 @@ public:
               nOrgWidth( rInfo.GetWidth() )
         { }
 
-    virtual ~SwDoDrawStretchCapital() {}
+    virtual ~SwDoDrawStretchCapital() override {}
 };
 
 void SwDoDrawStretchCapital::Do()

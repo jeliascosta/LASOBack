@@ -47,8 +47,6 @@ public:
     sal_Int32   getSize() const throw();
     void    forgetFromStart(sal_Int32 nBytesToForget) throw(css::io::BufferSizeExceededException);
 
-    virtual void shrink() throw();
-
 private:
 
     void resizeBuffer(sal_Int32 nMinSize) throw(css::io::BufferSizeExceededException);
@@ -80,8 +78,6 @@ public:
                   throw( css::io::BufferSizeExceededException );
     sal_Int32     getSize() const throw()
                   { return MemRingBuffer::getSize(); }
-    virtual void  shrink() throw() override
-                  { MemRingBuffer::shrink(); }
 
 };
 

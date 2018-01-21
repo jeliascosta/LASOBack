@@ -61,6 +61,7 @@
 #include "lwplayout.hxx"
 #include "lwpusewhen.hxx"
 #include "lwptools.hxx"
+#include "lwplaypiece.hxx"
 #include "xfilter/xfcolumns.hxx"
 #include "lwpstory.hxx"
 #include "lwpparastyle.hxx"
@@ -636,8 +637,6 @@ rtl::Reference<LwpObject> LwpMiddleLayout::GetBasedOnStyle()
     return xRet;
 }
 
-#include "lwplaypiece.hxx"
-
 /**
 * @descr:   Get the geometry of current layout
 *
@@ -711,7 +710,7 @@ bool LwpMiddleLayout::MarginsSameAsParent()
 * @descr:   Get margin
 * @param:   nWhichSide - 0: left, 1: right, 2:top, 3: bottom
 */
-double LwpMiddleLayout::MarginsValue(const sal_uInt8 &nWhichSide)
+double LwpMiddleLayout::MarginsValue(sal_uInt8 nWhichSide)
 {
     double fValue = 0;
     if((nWhichSide==MARGIN_LEFT)||(nWhichSide==MARGIN_RIGHT))
@@ -751,7 +750,7 @@ double LwpMiddleLayout::MarginsValue(const sal_uInt8 &nWhichSide)
  * @param:
  * @return:
 */
-double LwpMiddleLayout::ExtMarginsValue(const sal_uInt8 &nWhichSide)
+double LwpMiddleLayout::ExtMarginsValue(sal_uInt8 nWhichSide)
 {
     double fValue = 0;
     if(m_nOverrideFlag & OVER_MARGINS)

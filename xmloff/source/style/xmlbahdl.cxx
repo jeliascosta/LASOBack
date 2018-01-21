@@ -19,6 +19,7 @@
 
 #include <xmlbahdl.hxx>
 
+#include <o3tl/any.hxx>
 #include <tools/debug.hxx>
 #include <sax/tools/converter.hxx>
 #include <xmloff/xmluconv.hxx>
@@ -693,7 +694,7 @@ bool XMLIsTransparentPropHdl::exportXML( OUString& rStrExpValue, const Any& rVal
     // MIB: This looks a bit strange, because bTransPropValue == bValue should
     // do the same, but this only applies if 'true' is represented by the same
     // 8 bit value in bValue and bTransPropValue. Who will ensure this?
-    bool bValue = *static_cast<sal_Bool const *>(rValue.getValue());
+    bool bValue = *o3tl::doAccess<bool>(rValue);
     bool bIsTrans = bTransPropValue ? bValue : !bValue;
 
     if( bIsTrans )
@@ -799,13 +800,13 @@ XMLCompareOnlyPropHdl::~XMLCompareOnlyPropHdl()
 
 bool XMLCompareOnlyPropHdl::importXML( const OUString&, Any&, const SvXMLUnitConverter& ) const
 {
-    DBG_ASSERT( false, "importXML called for compare-only-property" );
+    SAL_WARN( "xmloff", "importXML called for compare-only-property" );
     return false;
 }
 
 bool XMLCompareOnlyPropHdl::exportXML( OUString&, const Any&, const SvXMLUnitConverter& ) const
 {
-    DBG_ASSERT( false, "exportXML called for compare-only-property" );
+    SAL_WARN( "xmloff", "exportXML called for compare-only-property" );
     return false;
 }
 

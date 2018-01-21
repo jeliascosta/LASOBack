@@ -1120,12 +1120,12 @@ void SvxSearchDialog::InitAttrList_Impl( const SfxItemSet* pSSet,
 }
 
 
-IMPL_LINK_TYPED( SvxSearchDialog, LBSelectHdl_Impl, ListBox&, rCtrl, void )
+IMPL_LINK( SvxSearchDialog, LBSelectHdl_Impl, ListBox&, rCtrl, void )
 {
     ClickHdl_Impl(&rCtrl);
 }
 
-IMPL_LINK_TYPED( SvxSearchDialog, FlagHdl_Impl, Button *, pCtrl, void )
+IMPL_LINK( SvxSearchDialog, FlagHdl_Impl, Button *, pCtrl, void )
 {
     ClickHdl_Impl(pCtrl);
 }
@@ -1267,7 +1267,7 @@ void SvxSearchDialog::ClickHdl_Impl(void* pCtrl)
 }
 
 
-IMPL_LINK_TYPED( SvxSearchDialog, CommandHdl_Impl, Button *, pBtn, void )
+IMPL_LINK( SvxSearchDialog, CommandHdl_Impl, Button *, pBtn, void )
 {
     bool bInclusive = ( m_pLayoutBtn->GetText() == aLayoutStr );
 
@@ -1390,7 +1390,7 @@ IMPL_LINK_TYPED( SvxSearchDialog, CommandHdl_Impl, Button *, pBtn, void )
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
         if(pFact)
         {
-            std::unique_ptr<AbstractSvxSearchSimilarityDialog> pDlg(pFact->CreateSvxSearchSimilarityDialog( this,
+            ScopedVclPtr<AbstractSvxSearchSimilarityDialog> pDlg(pFact->CreateSvxSearchSimilarityDialog( this,
                                                                         pSearchItem->IsLEVRelaxed(),
                                                                         pSearchItem->GetLEVOther(),
                                                                         pSearchItem->GetLEVShorter(),
@@ -1413,7 +1413,7 @@ IMPL_LINK_TYPED( SvxSearchDialog, CommandHdl_Impl, Button *, pBtn, void )
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
         if(pFact)
         {
-            std::unique_ptr<AbstractSvxJSearchOptionsDialog> aDlg(pFact->CreateSvxJSearchOptionsDialog( this, aSet,
+            ScopedVclPtr<AbstractSvxJSearchOptionsDialog> aDlg(pFact->CreateSvxJSearchOptionsDialog( this, aSet,
                     pSearchItem->GetTransliterationFlags() ));
             DBG_ASSERT(aDlg, "Dialog creation failed!");
             int nRet = aDlg->Execute();
@@ -1447,7 +1447,7 @@ IMPL_LINK_TYPED( SvxSearchDialog, CommandHdl_Impl, Button *, pBtn, void )
 }
 
 
-IMPL_LINK_TYPED( SvxSearchDialog, ModifyHdl_Impl, Edit&, rEd, void )
+IMPL_LINK( SvxSearchDialog, ModifyHdl_Impl, Edit&, rEd, void )
 {
     if ( !bSet )
         SetModifyFlag_Impl( &rEd );
@@ -1489,7 +1489,7 @@ IMPL_LINK_TYPED( SvxSearchDialog, ModifyHdl_Impl, Edit&, rEd, void )
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxSearchDialog, TemplateHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxSearchDialog, TemplateHdl_Impl, Button*, void)
 {
     if ( pImpl->bSaveToModule )
         SaveToModule_Impl();
@@ -1897,7 +1897,7 @@ void SvxSearchDialog::SetItem_Impl( const SvxSearchItem* pItem )
 }
 
 
-IMPL_LINK_TYPED( SvxSearchDialog, FocusHdl_Impl, Control&, rControl, void )
+IMPL_LINK( SvxSearchDialog, FocusHdl_Impl, Control&, rControl, void )
 {
     sal_Int32 nTxtLen = m_pSearchAttrText->GetText().getLength();
     Control* pCtrl = &rControl;
@@ -1956,13 +1956,13 @@ IMPL_LINK_TYPED( SvxSearchDialog, FocusHdl_Impl, Control&, rControl, void )
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxSearchDialog, LoseFocusHdl_Impl, Control&, void)
+IMPL_LINK_NOARG(SvxSearchDialog, LoseFocusHdl_Impl, Control&, void)
 {
     SaveToModule_Impl();
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxSearchDialog, FormatHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxSearchDialog, FormatHdl_Impl, Button*, void)
 {
     SfxObjectShell* pSh = SfxObjectShell::Current();
 
@@ -2018,7 +2018,7 @@ IMPL_LINK_NOARG_TYPED(SvxSearchDialog, FormatHdl_Impl, Button*, void)
     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
     if(pFact)
     {
-        std::unique_ptr<SfxAbstractTabDialog> pDlg(pFact->CreateTabItemDialog(this, aSet));
+        ScopedVclPtr<SfxAbstractTabDialog> pDlg(pFact->CreateTabItemDialog(this, aSet));
         DBG_ASSERT(pDlg, "Dialog creation failed!");
         aTxt = pDlg->GetText() + aTxt;
         pDlg->SetText( aTxt );
@@ -2053,7 +2053,7 @@ IMPL_LINK_NOARG_TYPED(SvxSearchDialog, FormatHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxSearchDialog, NoFormatHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxSearchDialog, NoFormatHdl_Impl, Button*, void)
 {
     SvtModuleOptions::EFactory eFactory = getModule(rBindings);
     bool bWriterApp =
@@ -2095,7 +2095,7 @@ IMPL_LINK_NOARG_TYPED(SvxSearchDialog, NoFormatHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(SvxSearchDialog, AttributeHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxSearchDialog, AttributeHdl_Impl, Button*, void)
 {
     if ( !pSearchList || !pImpl->pRanges )
         return;
@@ -2103,7 +2103,7 @@ IMPL_LINK_NOARG_TYPED(SvxSearchDialog, AttributeHdl_Impl, Button*, void)
     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
     if(pFact)
     {
-        std::unique_ptr<VclAbstractDialog> pDlg(pFact->CreateSvxSearchAttributeDialog( this, *pSearchList, pImpl->pRanges ));
+        ScopedVclPtr<VclAbstractDialog> pDlg(pFact->CreateSvxSearchAttributeDialog( this, *pSearchList, pImpl->pRanges ));
         DBG_ASSERT(pDlg, "Dialog creation failed!");
         pDlg->Execute();
     }
@@ -2111,7 +2111,7 @@ IMPL_LINK_NOARG_TYPED(SvxSearchDialog, AttributeHdl_Impl, Button*, void)
 }
 
 
-IMPL_LINK_TYPED( SvxSearchDialog, TimeoutHdl_Impl, Timer *, pTimer, void )
+IMPL_LINK( SvxSearchDialog, TimeoutHdl_Impl, Timer *, pTimer, void )
 {
     SfxViewShell* pViewShell = SfxViewShell::Current();
 
@@ -2148,21 +2148,21 @@ OUString& SvxSearchDialog::BuildAttrText_Impl( OUString& rStr,
         return rStr;
 
     // Metric query
-    SfxMapUnit eMapUnit = SFX_MAPUNIT_CM;
+    MapUnit eMapUnit = MapUnit::MapCM;
     FieldUnit eFieldUnit = pSh->GetModule()->GetFieldUnit();
     switch ( eFieldUnit )
     {
-        case FUNIT_MM:          eMapUnit = SFX_MAPUNIT_MM; break;
+        case FUNIT_MM:          eMapUnit = MapUnit::MapMM; break;
         case FUNIT_CM:
         case FUNIT_M:
-        case FUNIT_KM:          eMapUnit = SFX_MAPUNIT_CM; break;
-        case FUNIT_TWIP:        eMapUnit = SFX_MAPUNIT_TWIP; break;
+        case FUNIT_KM:          eMapUnit = MapUnit::MapCM; break;
+        case FUNIT_TWIP:        eMapUnit = MapUnit::MapTwip; break;
         case FUNIT_POINT:
-        case FUNIT_PICA:        eMapUnit = SFX_MAPUNIT_POINT; break;
+        case FUNIT_PICA:        eMapUnit = MapUnit::MapPoint; break;
         case FUNIT_INCH:
         case FUNIT_FOOT:
-        case FUNIT_MILE:        eMapUnit = SFX_MAPUNIT_INCH; break;
-        case FUNIT_100TH_MM:    eMapUnit = SFX_MAPUNIT_100TH_MM; break;
+        case FUNIT_MILE:        eMapUnit = MapUnit::MapInch; break;
+        case FUNIT_100TH_MM:    eMapUnit = MapUnit::Map100thMM; break;
         default: ;//prevent warning
     }
 
@@ -2401,13 +2401,13 @@ static vcl::Window* lcl_GetSearchLabelWindow()
 void SvxSearchDialogWrapper::SetSearchLabel(const SearchLabel& rSL)
 {
     OUString sStr;
-    if (rSL == SL_End)
+    if (rSL == SearchLabel::End)
         sStr = SVX_RESSTR(RID_SVXSTR_SEARCH_END);
-    else if (rSL == SL_Start)
+    else if (rSL == SearchLabel::Start)
         sStr = SVX_RESSTR(RID_SVXSTR_SEARCH_START);
-    else if (rSL == SL_EndSheet)
+    else if (rSL == SearchLabel::EndSheet)
         sStr = SVX_RESSTR(RID_SVXSTR_SEARCH_END_SHEET);
-    else if (rSL == SL_NotFound)
+    else if (rSL == SearchLabel::NotFound)
         sStr = SVX_RESSTR(RID_SVXSTR_SEARCH_NOT_FOUND);
 
     if (vcl::Window *pSearchLabel = lcl_GetSearchLabelWindow())

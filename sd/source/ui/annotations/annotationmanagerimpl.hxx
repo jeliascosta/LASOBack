@@ -95,16 +95,14 @@ public:
 
     void invalidateSlots();
 
-    DECL_LINK_TYPED(EventMultiplexerListener, tools::EventMultiplexerEvent&, void);
-    DECL_LINK_TYPED(UpdateTagsHdl, void *, void);
+    DECL_LINK(EventMultiplexerListener, tools::EventMultiplexerEvent&, void);
+    DECL_LINK(UpdateTagsHdl, void *, void);
 
     void UpdateTags(bool bSynchron = false);
     void CreateTags();
     void DisposeTags();
 
     SdPage* GetNextPage( SdPage* pPage, bool bForeward );
-    SdPage* GetFirstPage();
-    SdPage* GetLastPage();
 
     SdPage* GetCurrentPage();
 

@@ -51,6 +51,7 @@
 #include <editeng/svxfont.hxx>
 #include <editeng/brushitem.hxx>
 #include <svl/itempool.hxx>
+#include <libxml/xmlwriter.h>
 
 // calculate if it's RTL or not
 #include <unicode/ubidi.h>
@@ -88,10 +89,9 @@ Paragraph* Outliner::Insert(const OUString& rText, sal_Int32 nAbsPos, sal_Int16 
         if( pPara->GetDepth() != nDepth )
         {
             nDepthChangedHdlPrevDepth = pPara->GetDepth();
-            mnDepthChangeHdlPrevFlags = pPara->nFlags;
+            ParaFlag nPrevFlags = pPara->nFlags;
             pPara->SetDepth( nDepth );
-            pHdlParagraph = pPara;
-            DepthChangedHdl();
+            DepthChangedHdl(pPara, nPrevFlags);
         }
         pPara->nFlags |= ParaFlag::HOLDDEPTH;
         SetText( rText, pPara );
@@ -106,8 +106,7 @@ Paragraph* Outliner::Insert(const OUString& rText, sal_Int32 nAbsPos, sal_Int16 
         pEditEngine->InsertParagraph( nAbsPos, OUString() );
         DBG_ASSERT(pPara==pParaList->GetParagraph(nAbsPos),"Insert:Failed");
         ImplInitDepth( nAbsPos, nDepth, false );
-        pHdlParagraph = pPara;
-        ParagraphInsertedHdl();
+        ParagraphInsertedHdl(pPara);
         pPara->nFlags |= ParaFlag::HOLDDEPTH;
         SetText( rText, pPara );
         ImplBlockInsertionCallbacks( false );
@@ -150,8 +149,7 @@ void Outliner::ParagraphInserted( sal_Int32 nPara )
         if( !pEditEngine->IsInUndo() )
         {
             ImplCalcBulletText( nPara, true, false );
-            pHdlParagraph = pPara;
-            ParagraphInsertedHdl();
+            ParagraphInsertedHdl(pPara);
         }
     }
 }
@@ -170,8 +168,7 @@ void Outliner::ParagraphDeleted( sal_Int32 nPara )
 
     if( !pEditEngine->IsInUndo() )
     {
-        pHdlParagraph = pPara;
-        ParagraphRemovingHdl();
+        aParaRemovingHdl.Call( { this, pPara } );
     }
 
     pParaList->Remove( nPara );
@@ -252,8 +249,7 @@ void Outliner::SetDepth( Paragraph* pPara, sal_Int16 nNewDepth )
     if ( nNewDepth != pPara->GetDepth() )
     {
         nDepthChangedHdlPrevDepth = pPara->GetDepth();
-        mnDepthChangeHdlPrevFlags = pPara->nFlags;
-        pHdlParagraph = pPara;
+        ParaFlag nPrevFlags = pPara->nFlags;
 
         sal_Int32 nPara = GetAbsPos( pPara );
         ImplInitDepth( nPara, nNewDepth, true );
@@ -262,7 +258,7 @@ void Outliner::SetDepth( Paragraph* pPara, sal_Int16 nNewDepth )
         if ( ImplGetOutlinerMode() == OutlinerMode::OutlineObject )
             ImplSetLevelDependendStyleSheet( nPara );
 
-        DepthChangedHdl();
+        DepthChangedHdl(pPara, nPrevFlags);
     }
 }
 
@@ -321,7 +317,7 @@ sal_Int32 Outliner::GetBulletsNumberingStatus(
     if ( nParaStart > nParaEnd
          || nParaEnd >= pParaList->GetParagraphCount() )
     {
-        DBG_ASSERT( false,"<Outliner::GetBulletsNumberingStatus> - unexpected parameter values" );
+        SAL_WARN("editeng", "<Outliner::GetBulletsNumberingStatus> - unexpected parameter values" );
         return 2;
     }
 
@@ -471,8 +467,7 @@ void Outliner::SetText( const OUString& rText, Paragraph* pPara )
             {
                 pParaList->Insert( pPara, nInsPos );
                 pEditEngine->InsertParagraph( nInsPos, aStr );
-                pHdlParagraph = pPara;
-                ParagraphInsertedHdl();
+                ParagraphInsertedHdl(pPara);
             }
             else
             {
@@ -675,19 +670,19 @@ OUString Outliner::CalcFieldValue( const SvxFieldItem& rField, sal_Int32 nPara, 
 void Outliner::SetStyleSheet( sal_Int32 nPara, SfxStyleSheet* pStyle )
 {
     Paragraph* pPara = pParaList->GetParagraph( nPara );
-        if (pPara)
-        {
-            pEditEngine->SetStyleSheet( nPara, pStyle );
-            pPara->nFlags |= ParaFlag::SETBULLETTEXT;
-            ImplCheckNumBulletItem(  nPara );
-        }
+    if (pPara)
+    {
+        pEditEngine->SetStyleSheet( nPara, pStyle );
+        pPara->nFlags |= ParaFlag::SETBULLETTEXT;
+        ImplCheckNumBulletItem(  nPara );
+    }
 }
 
 void Outliner::ImplCheckNumBulletItem( sal_Int32 nPara )
 {
     Paragraph* pPara = pParaList->GetParagraph( nPara );
-        if (pPara)
-            pPara->aBulSize.Width() = -1;
+    if (pPara)
+        pPara->aBulSize.Width() = -1;
 }
 
 void Outliner::ImplSetLevelDependendStyleSheet( sal_Int32 nPara )
@@ -773,10 +768,8 @@ bool Outliner::Expand( Paragraph* pPara )
         {
             UndoActionStart( OLUNDO_EXPAND );
             pUndo = new OLUndoExpand( this, OLUNDO_EXPAND );
-            pUndo->pParas = nullptr;
             pUndo->nCount = pParaList->GetAbsPos( pPara );
         }
-        pHdlParagraph = pPara;
         pParaList->Expand( pPara );
         InvalidateBullet(pParaList->GetAbsPos(pPara));
         if( bUndo )
@@ -802,11 +795,9 @@ bool Outliner::Collapse( Paragraph* pPara )
         {
             UndoActionStart( OLUNDO_COLLAPSE );
             pUndo = new OLUndoExpand( this, OLUNDO_COLLAPSE );
-            pUndo->pParas = nullptr;
             pUndo->nCount = pParaList->GetAbsPos( pPara );
         }
 
-        pHdlParagraph = pPara;
         pParaList->Collapse( pPara );
         InvalidateBullet(pParaList->GetAbsPos(pPara));
         if( bUndo )
@@ -829,7 +820,7 @@ vcl::Font Outliner::ImpCalcBulletFont( sal_Int32 nPara ) const
     if ( !pEditEngine->IsFlatMode() )
     {
         ESelection aSel( nPara, 0, nPara, 0 );
-        aStdFont = EditEngine::CreateFontFromItemSet( pEditEngine->GetAttribs( aSel ), GetScriptType( aSel ) );
+        aStdFont = EditEngine::CreateFontFromItemSet( pEditEngine->GetAttribs( aSel ), pEditEngine->GetScriptType( aSel ) );
     }
     else
     {
@@ -854,7 +845,7 @@ vcl::Font Outliner::ImpCalcBulletFont( sal_Int32 nPara ) const
         aBulletFont.SetOverline( LINESTYLE_NONE );
         aBulletFont.SetStrikeout( STRIKEOUT_NONE );
         aBulletFont.SetEmphasisMark( FontEmphasisMark::NONE );
-        aBulletFont.SetRelief( RELIEF_NONE );
+        aBulletFont.SetRelief( FontRelief::NONE );
     }
 
     // Use original scale...
@@ -963,10 +954,10 @@ void Outliner::PaintBullet( sal_Int32 nPara, const Point& rStartPos,
                 }
 
                 // VCL will take care of brackets and so on...
-                ComplexTextLayoutMode nLayoutMode = pOutDev->GetLayoutMode();
-                nLayoutMode &= ~(TEXT_LAYOUT_BIDI_RTL|TEXT_LAYOUT_COMPLEX_DISABLED|TEXT_LAYOUT_BIDI_STRONG);
+                ComplexTextLayoutFlags nLayoutMode = pOutDev->GetLayoutMode();
+                nLayoutMode &= ~ComplexTextLayoutFlags(ComplexTextLayoutFlags::BiDiRtl|ComplexTextLayoutFlags::ComplexDisabled|ComplexTextLayoutFlags::BiDiStrong);
                 if ( bRightToLeftPara )
-                    nLayoutMode |= TEXT_LAYOUT_BIDI_RTL | TEXT_LAYOUT_TEXTORIGIN_LEFT | TEXT_LAYOUT_BIDI_STRONG;
+                    nLayoutMode |= ComplexTextLayoutFlags::BiDiRtl | ComplexTextLayoutFlags::TextOriginLeft | ComplexTextLayoutFlags::BiDiStrong;
                 pOutDev->SetLayoutMode( nLayoutMode );
 
                 if(bStrippingPortions)
@@ -1184,17 +1175,15 @@ void Outliner::ImpTextPasted( sal_Int32 nStartPara, sal_Int32 nCount )
         if( ImplGetOutlinerMode() != OutlinerMode::TextObject )
         {
             nDepthChangedHdlPrevDepth = pPara->GetDepth();
-            mnDepthChangeHdlPrevFlags = pPara->nFlags;
+            ParaFlag nPrevFlags = pPara->nFlags;
 
             ImpConvertEdtToOut( nStartPara );
-
-            pHdlParagraph = pPara;
 
             if( nStartPara == nStart )
             {
                 // the existing paragraph has changed depth or flags
-                if( (pPara->GetDepth() != nDepthChangedHdlPrevDepth) || (pPara->nFlags != mnDepthChangeHdlPrevFlags) )
-                    DepthChangedHdl();
+                if( (pPara->GetDepth() != nDepthChangedHdlPrevDepth) || (pPara->nFlags != nPrevFlags) )
+                    DepthChangedHdl(pPara, nPrevFlags);
             }
         }
         else // EditEngine mode
@@ -1253,10 +1242,8 @@ bool Outliner::ImpCanDeleteSelectedPages( OutlinerView* pCurView )
 }
 
 Outliner::Outliner(SfxItemPool* pPool, OutlinerMode nMode)
-    : pHdlParagraph(nullptr)
-    , mnFirstSelPage(0)
+    : mnFirstSelPage(0)
     , nDepthChangedHdlPrevDepth(0)
-    , mnDepthChangeHdlPrevFlags(ParaFlag::NONE)
     , nMaxDepth(9)
     , nMinDepth(-1)
     , nFirstPage(1)
@@ -1350,24 +1337,17 @@ size_t Outliner::GetViewCount() const
     return aViewList.size();
 }
 
-void Outliner::ParagraphInsertedHdl()
+void Outliner::ParagraphInsertedHdl(Paragraph* pPara)
 {
     if( !IsInUndo() )
-        aParaInsertedHdl.Call( this );
+        aParaInsertedHdl.Call( { this, pPara } );
 }
 
 
-void Outliner::ParagraphRemovingHdl()
+void Outliner::DepthChangedHdl(Paragraph* pPara, ParaFlag nPrevFlags)
 {
     if( !IsInUndo() )
-        aParaRemovingHdl.Call( this );
-}
-
-
-void Outliner::DepthChangedHdl()
-{
-    if( !IsInUndo() )
-        aDepthChangedHdl.Call( this );
+        aDepthChangedHdl.Call( { this, pPara, nPrevFlags } );
 }
 
 
@@ -1454,7 +1434,7 @@ Size Outliner::ImplGetBulletSize( sal_Int32 nPara )
         }
         else
         {
-            pPara->aBulSize = OutputDevice::LogicToLogic( pFmt->GetGraphicSize(), MAP_100TH_MM, pEditEngine->GetRefDevice()->GetMapMode() );
+            pPara->aBulSize = OutputDevice::LogicToLogic( pFmt->GetGraphicSize(), MapUnit::Map100thMM, pEditEngine->GetRefDevice()->GetMapMode() );
         }
     }
 
@@ -1487,26 +1467,24 @@ void Outliner::SetRefDevice( OutputDevice* pRefDev )
 
 void Outliner::ParaAttribsChanged( sal_Int32 nPara )
 {
-
     // The Outliner does not have an undo of its own, when paragraphs are
     // separated/merged. When ParagraphInserted the attribute EE_PARA_OUTLLEVEL
     // may not be set, this is however needed when the depth of the paragraph
     // is to be determined.
-    if( pEditEngine->IsInUndo() )
-    {
-        if ( pParaList->GetParagraphCount() == pEditEngine->GetParagraphCount() )
-        {
-            Paragraph* pPara = pParaList->GetParagraph( nPara );
-            // tdf#100734: force update of bullet
-            pPara->Invalidate();
-            const SfxInt16Item& rLevel = static_cast<const SfxInt16Item&>( pEditEngine->GetParaAttrib( nPara, EE_PARA_OUTLLEVEL ) );
-            if ( pPara && pPara->GetDepth() != rLevel.GetValue() )
-            {
-                pPara->SetDepth( rLevel.GetValue() );
-                ImplCalcBulletText( nPara, true, true );
-            }
-        }
-    }
+    if (!pEditEngine->IsInUndo())
+        return;
+    if (pParaList->GetParagraphCount() != pEditEngine->GetParagraphCount())
+        return;
+    Paragraph* pPara = pParaList->GetParagraph(nPara);
+    if (!pPara)
+        return;
+    // tdf#100734: force update of bullet
+    pPara->Invalidate();
+    const SfxInt16Item& rLevel = static_cast<const SfxInt16Item&>( pEditEngine->GetParaAttrib( nPara, EE_PARA_OUTLLEVEL ) );
+    if (pPara->GetDepth() == rLevel.GetValue())
+        return;
+    pPara->SetDepth(rLevel.GetValue());
+    ImplCalcBulletText(nPara, true, true);
 }
 
 void Outliner::StyleSheetChanged( SfxStyleSheet* pStyle )
@@ -1745,7 +1723,6 @@ bool Outliner::ImpCanDeleteSelectedPages( OutlinerView* pCurView, sal_Int32 _nFi
 
     nDepthChangedHdlPrevDepth = nPages;
     mnFirstSelPage = _nFirstPage;
-    pHdlParagraph = nullptr;
     return RemovingPagesHdl( pCurView );
 }
 
@@ -1754,25 +1731,25 @@ SfxItemSet Outliner::GetParaAttribs( sal_Int32 nPara )
     return pEditEngine->GetParaAttribs( nPara );
 }
 
-IMPL_LINK_TYPED( Outliner, ParaVisibleStateChangedHdl, Paragraph&, rPara, void )
+IMPL_LINK( Outliner, ParaVisibleStateChangedHdl, Paragraph&, rPara, void )
 {
     sal_Int32 nPara = pParaList->GetAbsPos( &rPara );
     pEditEngine->ShowParagraph( nPara, rPara.IsVisible() );
 }
 
-IMPL_LINK_NOARG_TYPED(Outliner, BeginMovingParagraphsHdl, MoveParagraphsInfo&, void)
+IMPL_LINK_NOARG(Outliner, BeginMovingParagraphsHdl, MoveParagraphsInfo&, void)
 {
     if( !IsInUndo() )
         aBeginMovingHdl.Call( this );
 }
 
-IMPL_LINK_TYPED( Outliner, BeginPasteOrDropHdl, PasteOrDropInfos&, rInfos, void )
+IMPL_LINK( Outliner, BeginPasteOrDropHdl, PasteOrDropInfos&, rInfos, void )
 {
     UndoActionStart( EDITUNDO_DRAGANDDROP );
     maBeginPasteOrDropHdl.Call(&rInfos);
 }
 
-IMPL_LINK_TYPED( Outliner, EndPasteOrDropHdl, PasteOrDropInfos&, rInfos, void )
+IMPL_LINK( Outliner, EndPasteOrDropHdl, PasteOrDropInfos&, rInfos, void )
 {
     bPasting = false;
     ImpTextPasted( rInfos.nStartPara, rInfos.nEndPara - rInfos.nStartPara + 1 );
@@ -1780,7 +1757,7 @@ IMPL_LINK_TYPED( Outliner, EndPasteOrDropHdl, PasteOrDropInfos&, rInfos, void )
     UndoActionEnd( EDITUNDO_DRAGANDDROP );
 }
 
-IMPL_LINK_TYPED( Outliner, EndMovingParagraphsHdl, MoveParagraphsInfo&, rInfos, void )
+IMPL_LINK( Outliner, EndMovingParagraphsHdl, MoveParagraphsInfo&, rInfos, void )
 {
     pParaList->MoveParagraphs( rInfos.nStartPara, rInfos.nDestPara, rInfos.nEndPara - rInfos.nStartPara + 1 );
     sal_Int32 nChangesStart = std::min( rInfos.nStartPara, rInfos.nDestPara );
@@ -1874,7 +1851,7 @@ void Outliner::ImplCalcBulletText( sal_Int32 nPara, bool bRecalcLevel, bool bRec
             aBulletText += pFmt->GetPrefix();
             if( pFmt->GetNumberingType() == SVX_NUM_CHAR_SPECIAL )
             {
-                aBulletText += OUString(pFmt->GetBulletChar());
+                aBulletText += OUStringLiteral1(pFmt->GetBulletChar());
             }
             else if( pFmt->GetNumberingType() != SVX_NUM_NUMBER_NONE )
             {
@@ -1986,7 +1963,7 @@ void Outliner::ImplBlockInsertionCallbacks( bool b )
     }
 }
 
-IMPL_LINK_TYPED( Outliner, EditEngineNotifyHdl, EENotify&, rNotify, void )
+IMPL_LINK( Outliner, EditEngineNotifyHdl, EENotify&, rNotify, void )
 {
     if ( !nBlockInsCallback )
         pEditEngine->aOutlinerNotifyHdl.Call( rNotify );
@@ -2193,6 +2170,29 @@ OverflowingText *Outliner::GetOverflowingText() const
 void Outliner::ClearOverflowingParaNum()
 {
     pEditEngine->ClearOverflowingParaNum();
+}
+
+void Outliner::dumpAsXml(struct _xmlTextWriter* pWriter) const
+{
+    bool bOwns = false;
+    if (!pWriter)
+    {
+        pWriter = xmlNewTextWriterFilename("outliner.xml", 0);
+        xmlTextWriterSetIndent(pWriter,1);
+        xmlTextWriterSetIndentString(pWriter, BAD_CAST("  "));
+        xmlTextWriterStartDocument(pWriter, nullptr, nullptr, nullptr);
+        bOwns = true;
+    }
+
+    xmlTextWriterStartElement(pWriter, BAD_CAST("Outliner"));
+    pParaList->dumpAsXml(pWriter);
+    xmlTextWriterEndElement(pWriter);
+
+    if (bOwns)
+    {
+       xmlTextWriterEndDocument(pWriter);
+       xmlFreeTextWriter(pWriter);
+    }
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

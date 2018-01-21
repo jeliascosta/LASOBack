@@ -50,12 +50,12 @@ protected:
     VclPtr<Dialog>          pDialog;
 
     Timer           aScrollTimer;           // for Autoscrolling
-    DECL_LINK_TYPED( ScrollHdl, Timer *, void );
+    DECL_LINK( ScrollHdl, Timer *, void );
     void ForceScroll(const Point& aPixPos);
 
     Timer           aDragTimer;             // for Drag&Drop
-    DECL_LINK_TYPED( DragTimerHdl, Timer *, void );
-    DECL_LINK_TYPED( DragHdl, void *, void );
+    DECL_LINK( DragTimerHdl, Timer *, void );
+    DECL_LINK( DragHdl, void *, void );
     bool            bIsInDragMode;
     Point           aMDPos;                 // Position of MouseButtonDown
 
@@ -83,7 +83,7 @@ public:
     // moved from inline to *.cxx
     virtual bool MouseButtonDown(const MouseEvent& rMEvt); // { return FALSE; }
 
-    virtual sal_uInt8 Command(const CommandEvent& rCEvt);
+    sal_uInt8 Command(const CommandEvent& rCEvt);
 
     virtual void Activate();
     virtual void Deactivate();

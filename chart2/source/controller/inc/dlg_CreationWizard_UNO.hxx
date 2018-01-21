@@ -50,7 +50,7 @@ public:
     CreationWizardUnoDlg() = delete;
 
     CreationWizardUnoDlg( const css::uno::Reference< css::uno::XComponentContext >& xContext );
-    virtual ~CreationWizardUnoDlg();
+    virtual ~CreationWizardUnoDlg() override;
 
     // XInterface
     virtual css::uno::Any SAL_CALL queryInterface( const css::uno::Type& aType ) throw (css::uno::RuntimeException, std::exception) override;
@@ -69,9 +69,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // XExecutableDialog
     virtual void SAL_CALL setTitle( const OUString& aTitle ) throw (css::uno::RuntimeException, std::exception) override;
@@ -95,7 +92,7 @@ public:
     virtual void SAL_CALL addVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
     virtual void SAL_CALL removeVetoableChangeListener( const OUString& PropertyName, const css::uno::Reference< css::beans::XVetoableChangeListener >& aListener ) throw (css::beans::UnknownPropertyException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
-    DECL_LINK_TYPED( DialogEventHdl, VclWindowEvent&, void );
+    DECL_LINK( DialogEventHdl, VclWindowEvent&, void );
 
 protected:
     // ____ OComponentHelper ____

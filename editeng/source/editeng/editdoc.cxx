@@ -63,6 +63,7 @@
 #include <tools/stream.hxx>
 #include <tools/debug.hxx>
 #include <com/sun/star/i18n/ScriptType.hpp>
+#include <libxml/xmlwriter.h>
 
 #include <cassert>
 #include <limits>
@@ -212,7 +213,6 @@ const SfxItemInfo aItemInfos[EDITITEMCOUNT] = {
         { 0, true },                           // EE_FEATURE_TAB
         { 0, true },                           // EE_FEATURE_LINEBR
         { SID_ATTR_CHAR_CHARSETCOLOR, true },  // EE_FEATURE_NOTCONV
-        { SID_FIELD, false }
 };
 
 const sal_uInt16 aV1Map[] = {
@@ -894,7 +894,7 @@ void ConvertItem( SfxPoolItem& rPoolItem, MapUnit eSourceUnit, MapUnit eDestUnit
             DBG_ASSERT( dynamic_cast<const SvxLineSpacingItem *>(&rPoolItem) != nullptr, "ConvertItem: Invalid Item!" );
             SvxLineSpacingItem& rItem = static_cast<SvxLineSpacingItem&>(rPoolItem);
             // SetLineHeight changes also eLineSpace!
-            if ( rItem.GetLineSpaceRule() == SVX_LINE_SPACE_MIN )
+            if ( rItem.GetLineSpaceRule() == SvxLineSpaceRule::Min )
                 rItem.SetLineHeight( sal::static_int_cast< sal_uInt16 >( OutputDevice::LogicToLogic( rItem.GetLineHeight(), eSourceUnit, eDestUnit ) ) );
         }
         break;
@@ -949,14 +949,15 @@ void ConvertAndPutItems( SfxItemSet& rDest, const SfxItemSet& rSource, const Map
             if ( eSourceUnit != eDestUnit )
             {
                 SfxPoolItem* pItem = rSource.Get( nSourceWhich ).Clone();
-//              pItem->SetWhich( nWhich );
                 ConvertItem( *pItem, eSourceUnit, eDestUnit );
-                rDest.Put( *pItem, nWhich );
+                pItem->SetWhich(nWhich);
+                rDest.Put( *pItem );
                 delete pItem;
             }
             else
             {
-                rDest.Put( rSource.Get( nSourceWhich ), nWhich );
+                std::unique_ptr<SfxPoolItem> pNewItem(rSource.Get( nSourceWhich ).CloneSetWhich(nWhich));
+                rDest.Put( *pNewItem );
             }
         }
     }
@@ -1276,8 +1277,7 @@ void ContentNode::ExpandAttribs( sal_Int32 nIndex, sal_Int32 nNew, SfxItemPool& 
 #endif
 
     // Since features are treated differently than normal character attributes,
-    // can also the order of the start list be change!
-    // In every if ...,  in the next (n) opportunities due to bFeature or
+    // but can also affect the order of the start list.    // In every if ...,  in the next (n) opportunities due to bFeature or
     // an existing special case, must (n-1) opportunities be provided with
     // bResort. The most likely possibility receives no bResort, so that is
     // not sorted anew when all attributes are the same.
@@ -1407,7 +1407,7 @@ void ContentNode::ExpandAttribs( sal_Int32 nIndex, sal_Int32 nNew, SfxItemPool& 
 #endif
 }
 
-void ContentNode::CollapsAttribs( sal_Int32 nIndex, sal_Int32 nDeleted, SfxItemPool& rItemPool )
+void ContentNode::CollapseAttribs( sal_Int32 nIndex, sal_Int32 nDeleted, SfxItemPool& rItemPool )
 {
     if ( !nDeleted )
         return;
@@ -1417,7 +1417,7 @@ void ContentNode::CollapsAttribs( sal_Int32 nIndex, sal_Int32 nDeleted, SfxItemP
 #endif
 
     // Since features are treated differently than normal character attributes,
-    // can also the order of the start list be change!
+    // but can also affect the order of the start list
     bool bResort = false;
     sal_Int32 nEndChanges = nIndex+nDeleted;
 
@@ -1474,8 +1474,8 @@ void ContentNode::CollapsAttribs( sal_Int32 nIndex, sal_Int32 nDeleted, SfxItemP
         }
         DBG_ASSERT( !pAttrib->IsFeature() || ( pAttrib->GetLen() == 1 ), "Expand: FeaturesLen != 1" );
 
-        DBG_ASSERT( pAttrib->GetStart() <= pAttrib->GetEnd(), "Collaps: Attribut distorted!" );
-        DBG_ASSERT( ( pAttrib->GetEnd() <= Len()) || bDelAttr, "Collaps: Attribute larger than paragraph!" );
+        DBG_ASSERT( pAttrib->GetStart() <= pAttrib->GetEnd(), "Collapse: Attribute distorted!" );
+        DBG_ASSERT( ( pAttrib->GetEnd() <= Len()) || bDelAttr, "Collapse: Attribute larger than paragraph!" );
         if ( bDelAttr )
         {
             bResort = true;
@@ -1651,7 +1651,7 @@ void ContentNode::SetStyleSheet( SfxStyleSheet* pS, const SvxFont& rFontFromStyl
     GetCharAttribs().GetDefFont() = rFontFromStyle;
     // ... then iron out the hard paragraph formatting...
     CreateFont( GetCharAttribs().GetDefFont(),
-        GetContentAttribs().GetItems(), pS == nullptr );
+                GetContentAttribs().GetItems(), pS == nullptr );
 }
 
 void ContentNode::SetStyleSheet( SfxStyleSheet* pS, bool bRecalcFont )
@@ -1857,6 +1857,16 @@ void ContentNode::DestroyWrongList()
     mpWrongList.reset();
 }
 
+void ContentNode::dumpAsXml(struct _xmlTextWriter* pWriter) const
+{
+    xmlTextWriterStartElement(pWriter, BAD_CAST("ContentNode"));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("maString"), BAD_CAST(maString.toUtf8().getStr()));
+    aContentAttribs.dumpAsXml(pWriter);
+    aCharAttribList.dumpAsXml(pWriter);
+    xmlTextWriterEndElement(pWriter);
+}
+
+
 ContentAttribs::ContentAttribs( SfxItemPool& rPool )
 : pStyle(nullptr)
 , aAttribSet( rPool, EE_PARA_START, EE_CHAR_END )
@@ -1929,6 +1939,14 @@ bool ContentAttribs::HasItem( sal_uInt16 nWhich ) const
         bHasItem = true;
 
     return bHasItem;
+}
+
+void ContentAttribs::dumpAsXml(struct _xmlTextWriter* pWriter) const
+{
+    xmlTextWriterStartElement(pWriter, BAD_CAST("ContentAttribs"));
+    xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("style"), "%s", pStyle->GetName().toUtf8().getStr());
+    aAttribSet.dumpAsXml(pWriter);
+    xmlTextWriterEndElement(pWriter);
 }
 
 
@@ -2322,7 +2340,7 @@ EditPaM EditDoc::InsertParaBreak( EditPaM aPaM, bool bKeepEndingAttribs )
     ContentAttribs aContentAttribs( aPaM.GetNode()->GetContentAttribs() );
 
     // for a new paragraph we like to have the bullet/numbering visible by default
-    aContentAttribs.GetItems().Put( SfxBoolItem( EE_PARA_BULLETSTATE, true), EE_PARA_BULLETSTATE );
+    aContentAttribs.GetItems().Put( SfxBoolItem( EE_PARA_BULLETSTATE, true) );
 
     // ContentNode constructor copies also the paragraph attributes
     ContentNode* pNode = new ContentNode( aStr, aContentAttribs );
@@ -2393,7 +2411,7 @@ void EditDoc::RemoveChars( EditPaM aPaM, sal_Int32 nChars )
 {
     // Maybe remove Features!
     aPaM.GetNode()->Erase( aPaM.GetIndex(), nChars );
-    aPaM.GetNode()->CollapsAttribs( aPaM.GetIndex(), nChars, GetItemPool() );
+    aPaM.GetNode()->CollapseAttribs( aPaM.GetIndex(), nChars, GetItemPool() );
 
     SetModified( true );
 }
@@ -2719,6 +2737,33 @@ void EditDoc::FindAttribs( ContentNode* pNode, sal_Int32 nStartPos, sal_Int32 nE
     }
 }
 
+void EditDoc::dumpAsXml(struct _xmlTextWriter* pWriter) const
+{
+    bool bOwns = false;
+    if (!pWriter)
+    {
+        pWriter = xmlNewTextWriterFilename("editdoc.xml", 0);
+        xmlTextWriterSetIndent(pWriter,1);
+        xmlTextWriterSetIndentString(pWriter, BAD_CAST("  "));
+        xmlTextWriterStartDocument(pWriter, nullptr, nullptr, nullptr);
+        bOwns = true;
+    }
+
+    xmlTextWriterStartElement(pWriter, BAD_CAST("EditDoc"));
+    for (auto const & i : maContents)
+    {
+        i->dumpAsXml(pWriter);
+    }
+    xmlTextWriterEndElement(pWriter);
+
+    if (bOwns)
+    {
+       xmlTextWriterEndDocument(pWriter);
+       xmlFreeTextWriter(pWriter);
+    }
+}
+
+
 namespace {
 
 struct LessByStart : std::binary_function<std::unique_ptr<EditCharAttrib>, std::unique_ptr<EditCharAttrib>, bool>
@@ -3018,6 +3063,14 @@ void CharAttribList::DbgCheckAttribs(CharAttribList const& rAttribs)
 }
 #endif
 
+void CharAttribList::dumpAsXml(struct _xmlTextWriter* pWriter) const
+{
+    xmlTextWriterStartElement(pWriter, BAD_CAST("CharAttribList"));
+    for (auto const & i : aAttribs) {
+        i->dumpAsXml(pWriter);
+    }
+    xmlTextWriterEndElement(pWriter);
+}
 
 EditEngineItemPool::EditEngineItemPool( bool bPersistenRefCounts )
     : SfxItemPool( "EditEngineItemPool", EE_ITEMS_START, EE_ITEMS_END,

@@ -293,7 +293,7 @@ bool AquaSalGraphics::IsNativeControlSupported( ControlType nType, ControlPart n
 }
 
 /*
- * HitTestNativeControl()
+ * HitTestNativeScrollbar()
  *
  *  If the return value is true, bIsInside contains information whether
  *  aPos was or was not inside the native widget specified by the
@@ -328,14 +328,8 @@ UInt32 AquaSalGraphics::getState( ControlState nState )
     const bool bDrawActive = mpFrame == nullptr || [mpFrame->getNSWindow() isKeyWindow];
     if( !(nState & ControlState::ENABLED) || ! bDrawActive )
     {
-        if( ! (nState & ControlState::HIDDEN) )
-            return kThemeStateInactive;
-        else
-            return kThemeStateUnavailableInactive;
+        return kThemeStateInactive;
     }
-
-    if( nState & ControlState::HIDDEN )
-        return kThemeStateUnavailable;
 
     if( nState & ControlState::PRESSED )
         return kThemeStatePressed;
@@ -539,7 +533,7 @@ bool AquaSalGraphics::drawNativeControl(ControlType nType,
                 aPushInfo.kind = kThemePushButtonMini;
                 nPaintHeight = PB_Mini_Height;
             }
-            else if( pPBVal->mbSingleLine || rc.size.height < (PB_Norm_Height + PB_Norm_Height/2) )
+            else if( (pPBVal && pPBVal->mbSingleLine) || rc.size.height < (PB_Norm_Height + PB_Norm_Height/2) )
             {
                 aPushInfo.kind = kThemePushButtonNormal;
                 nPaintHeight = PB_Norm_Height;

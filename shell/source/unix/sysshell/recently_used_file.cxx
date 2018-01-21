@@ -30,15 +30,14 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-const OUString RECENTLY_USED_FILE_NAME(".recently-used");
-const OUString SLASH("/");
+const char SLASH[] = "/";
 
-namespace /* private */ {
+namespace {
 
 inline void ensure_final_slash(/*inout*/ OUString& path)
 {
     if (!path.isEmpty() &&
-        (SLASH.pData->buffer[0] != path.pData->buffer[path.getLength() - 1]))
+        (SLASH[0] != path.pData->buffer[path.getLength() - 1]))
         path += SLASH;
 }
 
@@ -58,7 +57,7 @@ recently_used_file::recently_used_file() :
 
         OUString rufn = homedir;
         ensure_final_slash(rufn);
-        rufn += RECENTLY_USED_FILE_NAME;
+        rufn += ".recently-used";
 
         OString tmp =
             OUStringToOString(rufn, osl_getThreadTextEncoding());

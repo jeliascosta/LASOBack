@@ -81,13 +81,6 @@ class OFormattedModel
         virtual void SAL_CALL read(const css::uno::Reference< css::io::XObjectInputStream>& _rxInStream) throw ( css::io::IOException, css::uno::RuntimeException, std::exception) override;
         virtual OUString SAL_CALL getServiceName() throw ( css::uno::RuntimeException, std::exception) override;
 
-        // XPropertySet
-        virtual void SAL_CALL getFastPropertyValue(css::uno::Any& rValue, sal_Int32 nHandle ) const override;
-        virtual sal_Bool SAL_CALL convertFastPropertyValue(css::uno::Any& rConvertedValue, css::uno::Any& rOldValue,
-                                              sal_Int32 nHandle, const css::uno::Any& rValue )
-                                            throw(css::lang::IllegalArgumentException) override;
-        virtual void SAL_CALL setFastPropertyValue_NoBroadcast(sal_Int32 nHandle, const css::uno::Any& rValue) throw ( css::uno::Exception, std::exception) override;
-
         // XLoadListener
         virtual void SAL_CALL loaded(const css::lang::EventObject& rEvent) throw ( css::uno::RuntimeException, std::exception) override;
 
@@ -153,7 +146,7 @@ class OFormattedModel
 
     public:
         explicit OFormattedControl(const css::uno::Reference< css::uno::XComponentContext>& _rxContext);
-        virtual ~OFormattedControl();
+        virtual ~OFormattedControl() override;
 
         DECLARE_UNO3_AGG_DEFAULTS(OFormattedControl, OBoundControl)
         virtual css::uno::Any SAL_CALL queryAggregation(const css::uno::Type& _rType) throw(css::uno::RuntimeException, std::exception) override;
@@ -175,13 +168,13 @@ class OFormattedModel
         virtual void SAL_CALL keyReleased(const css::awt::KeyEvent& e) throw ( css::uno::RuntimeException, std::exception) override;
 
         // css::awt::XControl
-        virtual void SAL_CALL setDesignMode(sal_Bool bOn) throw ( css::uno::RuntimeException, std::exception) override;
+        using OBoundControl::setDesignMode;
 
         // disambiguation
         using OBoundControl::disposing;
 
     private:
-        DECL_LINK_TYPED( OnKeyPressed, void*, void );
+        DECL_LINK( OnKeyPressed, void*, void );
     };
 }
 #endif // INCLUDED_FORMS_SOURCE_COMPONENT_FORMATTEDFIELD_HXX

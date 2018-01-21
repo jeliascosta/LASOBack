@@ -1060,7 +1060,7 @@ VclPtr<FmGridControl> FmXGridPeer::imp_CreateControl(vcl::Window* pParent, WinBi
 
 void FmXGridPeer::Create(vcl::Window* pParent, WinBits nStyle)
 {
-    FmGridControl* pWin = imp_CreateControl(pParent, nStyle);
+    VclPtr<FmGridControl> pWin = imp_CreateControl(pParent, nStyle);
     DBG_ASSERT(pWin != nullptr, "FmXGridPeer::Create : imp_CreateControl didn't return a control !");
 
     pWin->SetStateProvider(LINK(this, FmXGridPeer, OnQueryGridSlotState));
@@ -1332,7 +1332,7 @@ Sequence< Any > SAL_CALL FmXGridPeer::queryFieldData( sal_Int32 nRow, const Type
                 // Strings are dealt with directly by the GetFieldText
                 case TypeClass_STRING           :
                 {
-                    OUString sText = aColumns[ nModelPos ]->GetCellText( xPaintRow, pGrid->getNumberFormatter() );
+                    OUString sText = aColumns[ nModelPos ]->GetCellText( xPaintRow.get(), pGrid->getNumberFormatter() );
                     pReturnArray[i] <<= sText;
                 }
                 break;
@@ -1416,7 +1416,7 @@ void FmXGridPeer::propertyChange(const PropertyChangeEvent& evt) throw( RuntimeE
                 sal_Int32 nTest = 0;
                 if (evt.NewValue >>= nTest)
                 {
-                    nWidth = pGrid->LogicToPixel(Point(nTest,0),MAP_10TH_MM).X();
+                    nWidth = pGrid->LogicToPixel(Point(nTest,0),MapUnit::Map10thMM).X();
                     // take the zoom factor into account
                     nWidth = pGrid->CalcZoom(nWidth);
                 }
@@ -1594,24 +1594,22 @@ Reference< XIndexContainer >  FmXGridPeer::getColumns() throw( RuntimeException,
 
 void FmXGridPeer::addColumnListeners(const Reference< XPropertySet >& xCol)
 {
-    static const OUString aPropsListenedTo[] =
+    static const OUStringLiteral aPropsListenedTo[] =
     {
-        OUString(FM_PROP_LABEL), OUString(FM_PROP_WIDTH), OUString(FM_PROP_HIDDEN), OUString(FM_PROP_ALIGN), OUString(FM_PROP_FORMATKEY)
+        OUStringLiteral(FM_PROP_LABEL), OUStringLiteral(FM_PROP_WIDTH), OUStringLiteral(FM_PROP_HIDDEN),
+        OUStringLiteral(FM_PROP_ALIGN), OUStringLiteral(FM_PROP_FORMATKEY)
     };
 
     // as not all properties have to be supported by all columns we have to check this
     // before adding a listener
     Reference< XPropertySetInfo > xInfo = xCol->getPropertySetInfo();
-    Property aPropDesc;
-    const OUString* pProps = aPropsListenedTo;
-    const OUString* pPropsEnd = pProps + SAL_N_ELEMENTS( aPropsListenedTo );
-    for (; pProps != pPropsEnd; ++pProps)
+    for (unsigned i=0; i<SAL_N_ELEMENTS(aPropsListenedTo); ++i)
     {
-        if ( xInfo->hasPropertyByName( *pProps ) )
+        if ( xInfo->hasPropertyByName( aPropsListenedTo[i] ) )
         {
-            aPropDesc = xInfo->getPropertyByName( *pProps );
+            Property aPropDesc = xInfo->getPropertyByName( aPropsListenedTo[i] );
             if ( 0 != ( aPropDesc.Attributes & PropertyAttribute::BOUND ) )
-                xCol->addPropertyChangeListener( *pProps, this );
+                xCol->addPropertyChangeListener( aPropsListenedTo[i], this );
         }
     }
 }
@@ -1621,9 +1619,10 @@ void FmXGridPeer::removeColumnListeners(const Reference< XPropertySet >& xCol)
 {
     // the same props as in addColumnListeners ... linux has problems with global static UStrings, so
     // we have to do it this way ....
-    static const OUString aPropsListenedTo[] =
+    static const OUStringLiteral aPropsListenedTo[] =
     {
-        OUString(FM_PROP_LABEL), OUString(FM_PROP_WIDTH), OUString(FM_PROP_HIDDEN), OUString(FM_PROP_ALIGN), OUString(FM_PROP_FORMATKEY)
+        OUStringLiteral(FM_PROP_LABEL), OUStringLiteral(FM_PROP_WIDTH), OUStringLiteral(FM_PROP_HIDDEN),
+        OUStringLiteral(FM_PROP_ALIGN), OUStringLiteral(FM_PROP_FORMATKEY)
     };
 
     Reference< XPropertySetInfo >  xInfo = xCol->getPropertySetInfo();
@@ -1694,9 +1693,9 @@ void FmXGridPeer::setDesignMode(sal_Bool bOn) throw( RuntimeException, std::exce
 {
     if (bOn != isDesignMode())
     {
-        vcl::Window* pWin = GetWindow();
+        VclPtr<vcl::Window> pWin = GetWindow();
         if (pWin)
-            static_cast<FmGridControl*>(pWin)->SetDesignMode(bOn);
+            static_cast<FmGridControl*>(pWin.get())->SetDesignMode(bOn);
     }
 
     if (bOn)
@@ -1708,9 +1707,9 @@ void FmXGridPeer::setDesignMode(sal_Bool bOn) throw( RuntimeException, std::exce
 
 sal_Bool FmXGridPeer::isDesignMode() throw( RuntimeException, std::exception )
 {
-    vcl::Window* pWin = GetWindow();
+    VclPtr<vcl::Window> pWin = GetWindow();
     if (pWin)
-        return static_cast<FmGridControl*>(pWin)->IsDesignMode();
+        return static_cast<FmGridControl*>(pWin.get())->IsDesignMode();
     else
         return false;
 }
@@ -1732,7 +1731,7 @@ void FmXGridPeer::elementInserted(const ContainerEvent& evt) throw( RuntimeExcep
     Any aWidth = xNewColumn->getPropertyValue(FM_PROP_WIDTH);
     sal_Int32 nWidth = 0;
     if (aWidth >>= nWidth)
-        nWidth = pGrid->LogicToPixel(Point(nWidth,0),MAP_10TH_MM).X();
+        nWidth = pGrid->LogicToPixel(Point(nWidth,0),MapUnit::Map10thMM).X();
 
     pGrid->AppendColumn(aName, (sal_uInt16)nWidth, (sal_Int16)::comphelper::getINT32(evt.Accessor));
 
@@ -1775,7 +1774,7 @@ void FmXGridPeer::elementReplaced(const ContainerEvent& evt) throw( RuntimeExcep
     Any aWidth = xNewColumn->getPropertyValue(FM_PROP_WIDTH);
     sal_Int32 nWidth = 0;
     if (aWidth >>= nWidth)
-        nWidth = pGrid->LogicToPixel(Point(nWidth,0),MAP_10TH_MM).X();
+        nWidth = pGrid->LogicToPixel(Point(nWidth,0),MapUnit::Map10thMM).X();
     sal_uInt16 nNewId = pGrid->AppendColumn(aName, (sal_uInt16)nWidth, (sal_Int16)::comphelper::getINT32(evt.Accessor));
     sal_uInt16 nNewPos = pGrid->GetModelColumnPos(nNewId);
 
@@ -1966,7 +1965,7 @@ void FmXGridPeer::setProperty( const OUString& PropertyName, const Any& Value) t
         sal_Int32 nLogHeight(0);
         if (Value >>= nLogHeight)
         {
-            sal_Int32 nHeight = pGrid->LogicToPixel(Point(0,nLogHeight),MAP_10TH_MM).Y();
+            sal_Int32 nHeight = pGrid->LogicToPixel(Point(0,nLogHeight),MapUnit::Map10thMM).Y();
             // take the zoom factor into account
             nHeight = pGrid->CalcZoom(nHeight);
             pGrid->SetDataRowHeight(nHeight);
@@ -2008,7 +2007,7 @@ Reference< XAccessibleContext > FmXGridPeer::CreateAccessibleContext()
     Reference< XAccessibleContext > xContext;
 
     // use the AccessibleContext provided by the VCL window
-    vcl::Window* pGrid = GetWindow();
+    VclPtr<vcl::Window> pGrid = GetWindow();
     if ( pGrid )
     {
         Reference< XAccessible > xAcc( pGrid->GetAccessible() );
@@ -2058,7 +2057,7 @@ Any FmXGridPeer::getProperty( const OUString& _rPropertyName ) throw( RuntimeExc
             sal_Int32 nPixelHeight = pGrid->GetDataRowHeight();
             // take the zoom factor into account
             nPixelHeight = pGrid->CalcReverseZoom(nPixelHeight);
-            aProp <<= (sal_Int32)pGrid->PixelToLogic(Point(0,nPixelHeight),MAP_10TH_MM).Y();
+            aProp <<= (sal_Int32)pGrid->PixelToLogic(Point(0,nPixelHeight),MapUnit::Map10thMM).Y();
         }
         else if ( _rPropertyName == FM_PROP_HASNAVIGATION )
         {
@@ -2570,19 +2569,18 @@ void FmXGridPeer::statusChanged(const css::frame::FeatureStateEvent& Event) thro
     Sequence< css::util::URL>& aUrls = getSupportedURLs();
     const css::util::URL* pUrls = aUrls.getConstArray();
 
-    Sequence<sal_uInt16> aSlots = getSupportedGridSlots();
-    const sal_uInt16* pSlots = aSlots.getConstArray();
+    const std::vector<DbGridControlNavigationBarState>& aSlots = getSupportedGridSlots();
 
     sal_uInt16 i;
-    for (i=0; i<aUrls.getLength(); ++i, ++pUrls, ++pSlots)
+    for (i=0; i<aUrls.getLength(); ++i, ++pUrls)
     {
         if (pUrls->Main == Event.FeatureURL.Main)
         {
             DBG_ASSERT(m_pDispatchers[i] == Event.Source, "FmXGridPeer::statusChanged : the event source is a little bit suspect !");
             m_pStateCache[i] = Event.IsEnabled;
             VclPtr< FmGridControl > pGrid = GetAs< FmGridControl >();
-            if (*pSlots != SID_FM_RECORD_UNDO)
-                pGrid->GetNavigationBar().InvalidateState(*pSlots);
+            if (aSlots[i] != DbGridControlNavigationBarState::Undo)
+                pGrid->GetNavigationBar().InvalidateState(aSlots[i]);
             break;
         }
     }
@@ -2654,24 +2652,16 @@ void FmXGridPeer::resetted(const EventObject& rEvent) throw( RuntimeException, s
 }
 
 
-Sequence<sal_uInt16>& FmXGridPeer::getSupportedGridSlots()
+const std::vector<DbGridControlNavigationBarState>& FmXGridPeer::getSupportedGridSlots()
 {
-    static Sequence<sal_uInt16> aSupported;
-    if (aSupported.getLength() == 0)
-    {
-        const sal_uInt16 nSupported[] = {
-            DbGridControl::NavigationBar::RECORD_FIRST,
-            DbGridControl::NavigationBar::RECORD_PREV,
-            DbGridControl::NavigationBar::RECORD_NEXT,
-            DbGridControl::NavigationBar::RECORD_LAST,
-            DbGridControl::NavigationBar::RECORD_NEW,
-            SID_FM_RECORD_UNDO
-        };
-        aSupported.realloc(SAL_N_ELEMENTS(nSupported));
-        sal_uInt16* pSupported = aSupported.getArray();
-        for (sal_Int32 i=0; i<aSupported.getLength(); ++i, ++pSupported)
-            *pSupported = nSupported[i];
-    }
+    static const std::vector<DbGridControlNavigationBarState> aSupported {
+        DbGridControlNavigationBarState::First,
+        DbGridControlNavigationBarState::Prev,
+        DbGridControlNavigationBarState::Next,
+        DbGridControlNavigationBarState::Last,
+        DbGridControlNavigationBarState::New,
+        DbGridControlNavigationBarState::Undo
+    };
     return aSupported;
 }
 
@@ -2804,17 +2794,16 @@ void FmXGridPeer::DisConnectFromDispatcher()
 }
 
 
-IMPL_LINK_TYPED(FmXGridPeer, OnQueryGridSlotState, sal_uInt16, nSlot, int)
+IMPL_LINK(FmXGridPeer, OnQueryGridSlotState, DbGridControlNavigationBarState, nSlot, int)
 {
     if (!m_pStateCache)
         return -1;  // unspecified
 
     // search the given slot with our supported sequence
-    Sequence<sal_uInt16>& aSupported = getSupportedGridSlots();
-    const sal_uInt16* pSlots = aSupported.getConstArray();
-    for (sal_Int32 i=0; i<aSupported.getLength(); ++i)
+    const std::vector<DbGridControlNavigationBarState>& aSupported = getSupportedGridSlots();
+    for (size_t i=0; i<aSupported.size(); ++i)
     {
-        if (pSlots[i] == nSlot)
+        if (aSupported[i] == nSlot)
         {
             if (!m_pDispatchers[i].is())
                 return -1;  // nothing known about this slot
@@ -2827,7 +2816,7 @@ IMPL_LINK_TYPED(FmXGridPeer, OnQueryGridSlotState, sal_uInt16, nSlot, int)
 }
 
 
-IMPL_LINK_TYPED(FmXGridPeer, OnExecuteGridSlot, sal_uInt16, nSlot, bool)
+IMPL_LINK(FmXGridPeer, OnExecuteGridSlot, DbGridControlNavigationBarState, nSlot, bool)
 {
     if (!m_pDispatchers)
         return false;   // not handled
@@ -2835,14 +2824,13 @@ IMPL_LINK_TYPED(FmXGridPeer, OnExecuteGridSlot, sal_uInt16, nSlot, bool)
     Sequence< css::util::URL>& aUrls = getSupportedURLs();
     const css::util::URL* pUrls = aUrls.getConstArray();
 
-    Sequence<sal_uInt16> aSlots = getSupportedGridSlots();
-    const sal_uInt16* pSlots = aSlots.getConstArray();
+    const std::vector<DbGridControlNavigationBarState>& aSlots = getSupportedGridSlots();
 
-    DBG_ASSERT(aSlots.getLength() == aUrls.getLength(), "FmXGridPeer::OnExecuteGridSlot : inconstent data returned by getSupportedURLs/getSupportedGridSlots !");
+    DBG_ASSERT((sal_Int32)aSlots.size() == aUrls.getLength(), "FmXGridPeer::OnExecuteGridSlot : inconstent data returned by getSupportedURLs/getSupportedGridSlots !");
 
-    for (sal_Int32 i=0; i<aSlots.getLength(); ++i, ++pUrls, ++pSlots)
+    for (size_t i=0; i<aSlots.size(); ++i, ++pUrls)
     {
-        if (*pSlots == nSlot)
+        if (aSlots[i] == nSlot)
         {
             if (m_pDispatchers[i].is())
             {

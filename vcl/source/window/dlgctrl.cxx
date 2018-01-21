@@ -186,7 +186,7 @@ vcl::Window* Window::ImplGetDlgWindow( sal_uInt16 nIndex, GetDlgWindowType nType
                                   sal_uInt16 nFormStart, sal_uInt16 nFormEnd,
                                   sal_uInt16* pIndex )
 {
-    DBG_ASSERT( (nIndex >= nFormStart) && (nIndex <= nFormEnd),
+    SAL_WARN_IF( (nIndex < nFormStart) || (nIndex > nFormEnd), "vcl",
                 "Window::ImplGetDlgWindow() - nIndex not in Form" );
 
     vcl::Window* pWindow = nullptr;
@@ -368,7 +368,7 @@ vcl::Window* ImplFindDlgCtrlWindow( vcl::Window* pParent, vcl::Window* pWindow, 
             if ( nIteration >= 2 )
             {
                 // this is an unexpected scenario
-                DBG_ASSERT( false, "It seems to be an endless loop!" );
+                SAL_WARN( "vcl", "It seems to be an endless loop!" );
                 rFormStart = 0;
                 break;
             }
@@ -383,7 +383,7 @@ vcl::Window* ImplFindDlgCtrlWindow( vcl::Window* pParent, vcl::Window* pWindow, 
 vcl::Window* ImplFindAccelWindow( vcl::Window* pParent, sal_uInt16& rIndex, sal_Unicode cCharCode,
                              sal_uInt16 nFormStart, sal_uInt16 nFormEnd, bool bCheckEnable )
 {
-    DBG_ASSERT( (rIndex >= nFormStart) && (rIndex <= nFormEnd),
+    SAL_WARN_IF( (rIndex < nFormStart) || (rIndex > nFormEnd), "vcl",
                 "Window::ImplFindAccelWindow() - rIndex not in Form" );
 
     sal_Unicode cCompareChar;
@@ -799,8 +799,7 @@ bool Window::ImplDlgCtrl( const KeyEvent& rKEvt, bool bKeyInput )
                 {
                     // Only use Ctrl-TAB if it was allowed for the whole
                     // dialog or for the current control (#103667#)
-                    if ( !aKeyCode.IsMod1() || (nDlgCtrlFlags & DialogControlFlags::Mod1Tab) ||
-                        ( pSWindow->GetStyle() & WB_NODIALOGCONTROL) )
+                    if (!aKeyCode.IsMod1() || (pSWindow->GetStyle() & WB_NODIALOGCONTROL))
                     {
                         if ( aKeyCode.IsShift() )
                         {
@@ -1117,7 +1116,7 @@ KeyEvent Window::GetActivationKey() const
 
 } /* namespace vcl */
 
-/* vim:set shiftwidth=4 softtabstop=4 expandtab: */sal_Unicode getAccel( const OUString& rStr )
+sal_Unicode getAccel( const OUString& rStr )
 {
     sal_Unicode nChar = 0;
     sal_Int32 nPos = 0;
@@ -1132,4 +1131,4 @@ KeyEvent Window::GetActivationKey() const
     return nChar;
 }
 
-
+/* vim:set shiftwidth=4 softtabstop=4 expandtab: */

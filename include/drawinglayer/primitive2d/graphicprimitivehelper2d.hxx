@@ -41,7 +41,8 @@ namespace drawinglayer
             Bitmaps (with the sub-categories animated bitmap, and SVG),
             and Metafiles.
          */
-        Primitive2DContainer create2DDecompositionOfGraphic(
+        void create2DDecompositionOfGraphic(
+            Primitive2DContainer& rContainer,
             const Graphic& rGraphic,
             const basegfx::B2DHomMatrix& rTransform);
 
@@ -51,7 +52,7 @@ namespace drawinglayer
         */
         Primitive2DContainer create2DColorModifierEmbeddingsAsNeeded(
             const Primitive2DContainer& rChildren,
-            GraphicDrawMode aGraphicDrawMode = GRAPHICDRAWMODE_STANDARD,
+            GraphicDrawMode aGraphicDrawMode,
             double fLuminance = 0.0,        // [-1.0 .. 1.0]
             double fContrast = 0.0,         // [-1.0 .. 1.0]
             double fRed = 0.0,              // [-1.0 .. 1.0]

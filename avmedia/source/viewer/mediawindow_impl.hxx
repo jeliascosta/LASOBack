@@ -79,11 +79,11 @@ class MediaWindowImpl : public Control, public DropTargetHelper, public DragSour
 {
 public:
     MediaWindowImpl(vcl::Window* parent, MediaWindow* pMediaWindow, bool bInternalMediaControl);
-    virtual ~MediaWindowImpl();
+    virtual ~MediaWindowImpl() override;
 
     virtual void dispose() override;
 
-    static css::uno::Reference<css::media::XPlayer> createPlayer(const OUString& rURL, const OUString& rReferer, const OUString* pMimeType = nullptr);
+    static css::uno::Reference<css::media::XPlayer> createPlayer(const OUString& rURL, const OUString& rReferer, const OUString* pMimeType);
 
     void setURL(const OUString& rURL, OUString const& rTempURL, OUString const& rReferer);
 
@@ -123,9 +123,6 @@ private:
     // DragSourceHelper
     virtual void    StartDrag( sal_Int8 nAction, const Point& rPosPixel ) override;
 
-    bool setZoom(css::media::ZoomLevel eLevel);
-    css::media::ZoomLevel getZoom() const;
-
     void stop();
 
     bool isPlaying() const;
@@ -134,15 +131,6 @@ private:
 
     void setMediaTime( double fTime );
     double getMediaTime() const;
-
-    void setPlaybackLoop( bool bSet );
-    bool isPlaybackLoop() const;
-
-    void setMute( bool bSet );
-    bool isMute() const;
-
-    void setVolumeDB( sal_Int16 nVolumeDB );
-    sal_Int16 getVolumeDB() const;
 
     void stopPlayingInternal( bool );
 

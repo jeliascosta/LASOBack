@@ -108,7 +108,7 @@ class SfxConfigFunctionListBox : public SvTreeListBox
 
 public:
     SfxConfigFunctionListBox(vcl::Window*, WinBits nStyle);
-    virtual ~SfxConfigFunctionListBox();
+    virtual ~SfxConfigFunctionListBox() override;
     virtual void  dispose() override;
 
     void          ClearAll();
@@ -135,12 +135,12 @@ class SfxConfigGroupListBox : public SvTreeListBox
 
     Image GetImage(
         const css::uno::Reference< css::script::browse::XBrowseNode >& node,
-        css::uno::Reference< css::uno::XComponentContext > xCtx,
+        css::uno::Reference< css::uno::XComponentContext > const & xCtx,
         bool bIsRootNode
     );
 
     static css::uno::Reference< css::uno::XInterface  > getDocumentModel(
-        css::uno::Reference< css::uno::XComponentContext >& xCtx,
+        css::uno::Reference< css::uno::XComponentContext > const & xCtx,
         OUString& docName
     );
 
@@ -157,7 +157,7 @@ protected:
 
 public:
     SfxConfigGroupListBox(vcl::Window* pParent, WinBits nStyle);
-    virtual ~SfxConfigGroupListBox();
+    virtual ~SfxConfigGroupListBox() override;
     virtual void        dispose() override;
     void                ClearAll();
 

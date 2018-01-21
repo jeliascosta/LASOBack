@@ -166,7 +166,6 @@ private:
     virtual uno::Reference< awt::XWindow > SAL_CALL getWindow() throw ( uno::RuntimeException, std::exception ) override;
 };
 
-
 SdrLightEmbeddedClient_Impl::SdrLightEmbeddedClient_Impl( SdrOle2Obj* pObj )
 : mpObj( pObj )
 {
@@ -184,7 +183,6 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::changingState( const css::lang::Event
 {
 }
 
-
 void SdrLightEmbeddedClient_Impl::Release()
 {
     {
@@ -194,7 +192,6 @@ void SdrLightEmbeddedClient_Impl::Release()
 
     release();
 }
-
 
 void SAL_CALL SdrLightEmbeddedClient_Impl::stateChanged( const css::lang::EventObject& /*aEvent*/, ::sal_Int32 nOldState, ::sal_Int32 nNewState ) throw (css::uno::RuntimeException, std::exception)
 {
@@ -211,14 +208,12 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::stateChanged( const css::lang::EventO
     }
 }
 
-
 void SAL_CALL SdrLightEmbeddedClient_Impl::disposing( const css::lang::EventObject& /*aEvent*/ ) throw (css::uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
     GetSdrGlobalData().GetOLEObjCache().RemoveObj(mpObj);
 }
-
 
 void SAL_CALL SdrLightEmbeddedClient_Impl::notifyEvent( const document::EventObject& aEvent ) throw( uno::RuntimeException, std::exception )
 {
@@ -232,7 +227,7 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::notifyEvent( const document::EventObj
     {
         try
         {
-            MapUnit aContainerMapUnit( MAP_100TH_MM );
+            MapUnit aContainerMapUnit( MapUnit::Map100thMM );
             uno::Reference< embed::XVisualObject > xParentVis( mpObj->GetParentXModel(), uno::UNO_QUERY );
             if ( xParentVis.is() )
                 aContainerMapUnit = VCLUnoHelper::UnoEmbed2VCLMapUnit( xParentVis->getMapUnit( mpObj->GetAspect() ) );
@@ -285,7 +280,6 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::notifyEvent( const document::EventObj
     }
 }
 
-
 void SAL_CALL SdrLightEmbeddedClient_Impl::saveObject()
     throw ( embed::ObjectSaveVetoException,
             uno::Exception,
@@ -312,7 +306,6 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::saveObject()
         xModifiable->setModified( true );
 }
 
-
 void SAL_CALL SdrLightEmbeddedClient_Impl::visibilityChanged( sal_Bool /*bVisible*/ )
     throw ( embed::WrongStateException,
             uno::RuntimeException, std::exception )
@@ -332,7 +325,6 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::visibilityChanged( sal_Bool /*bVisibl
         } // if( mpObj->IsChart() )
     }
 }
-
 
 uno::Reference< util::XCloseable > SAL_CALL SdrLightEmbeddedClient_Impl::getComponent()
     throw ( uno::RuntimeException, std::exception )
@@ -363,13 +355,11 @@ sal_Bool SAL_CALL SdrLightEmbeddedClient_Impl::canInplaceActivate()
     return bRet;
 }
 
-
 void SAL_CALL SdrLightEmbeddedClient_Impl::activatingInplace()
     throw ( embed::WrongStateException,
             uno::RuntimeException, std::exception )
 {
 }
-
 
 void SAL_CALL SdrLightEmbeddedClient_Impl::activatingUI()
     throw ( embed::WrongStateException,
@@ -416,13 +406,11 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::activatingUI()
     } // for(sal_Int32 i = nCount-1 ; i >= 0;--i)
 }
 
-
 void SAL_CALL SdrLightEmbeddedClient_Impl::deactivatedInplace()
     throw ( embed::WrongStateException,
             uno::RuntimeException, std::exception )
 {
 }
-
 
 void SAL_CALL SdrLightEmbeddedClient_Impl::deactivatedUI()
     throw ( embed::WrongStateException,
@@ -437,7 +425,6 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::deactivatedUI()
             xLayoutManager->createElement( aMenuBarURL );
     }
 }
-
 
 uno::Reference< css::frame::XLayoutManager > SAL_CALL SdrLightEmbeddedClient_Impl::getLayoutManager()
     throw ( embed::WrongStateException,
@@ -458,7 +445,6 @@ uno::Reference< css::frame::XLayoutManager > SAL_CALL SdrLightEmbeddedClient_Imp
     return xMan;
 }
 
-
 uno::Reference< frame::XDispatchProvider > SAL_CALL SdrLightEmbeddedClient_Impl::getInplaceDispatchProvider()
     throw ( embed::WrongStateException,
             uno::RuntimeException, std::exception )
@@ -466,7 +452,6 @@ uno::Reference< frame::XDispatchProvider > SAL_CALL SdrLightEmbeddedClient_Impl:
     SolarMutexGuard aGuard;
     return uno::Reference < frame::XDispatchProvider >( lcl_getFrame_throw(mpObj), uno::UNO_QUERY_THROW );
 }
-
 
 awt::Rectangle SAL_CALL SdrLightEmbeddedClient_Impl::getPlacement()
     throw ( embed::WrongStateException,
@@ -477,7 +462,7 @@ awt::Rectangle SAL_CALL SdrLightEmbeddedClient_Impl::getPlacement()
         throw uno::RuntimeException();
 
     Rectangle aLogicRect = impl_getScaledRect_nothrow();
-    MapUnit aContainerMapUnit( MAP_100TH_MM );
+    MapUnit aContainerMapUnit( MapUnit::Map100thMM );
     uno::Reference< embed::XVisualObject > xParentVis( mpObj->GetParentXModel(), uno::UNO_QUERY );
     if ( xParentVis.is() )
         aContainerMapUnit = VCLUnoHelper::UnoEmbed2VCLMapUnit( xParentVis->getMapUnit( mpObj->GetAspect() ) );
@@ -486,7 +471,6 @@ awt::Rectangle SAL_CALL SdrLightEmbeddedClient_Impl::getPlacement()
     return AWTRectangle( aLogicRect );
 }
 
-
 awt::Rectangle SAL_CALL SdrLightEmbeddedClient_Impl::getClipRectangle()
     throw ( embed::WrongStateException,
             uno::RuntimeException, std::exception )
@@ -494,20 +478,17 @@ awt::Rectangle SAL_CALL SdrLightEmbeddedClient_Impl::getClipRectangle()
     return getPlacement();
 }
 
-
 void SAL_CALL SdrLightEmbeddedClient_Impl::translateAccelerators( const uno::Sequence< awt::KeyEvent >& /*aKeys*/ )
     throw ( embed::WrongStateException,
             uno::RuntimeException, std::exception )
 {
 }
 
-
 void SAL_CALL SdrLightEmbeddedClient_Impl::scrollObject( const awt::Size& /*aOffset*/ )
     throw ( embed::WrongStateException,
             uno::RuntimeException, std::exception )
 {
 }
-
 
 void SAL_CALL SdrLightEmbeddedClient_Impl::changedPlacement( const awt::Rectangle& aPosRect )
     throw ( embed::WrongStateException,
@@ -531,7 +512,7 @@ void SAL_CALL SdrLightEmbeddedClient_Impl::changedPlacement( const awt::Rectangl
         return;
 
     // new scaled object area
-    MapUnit aContainerMapUnit( MAP_100TH_MM );
+    MapUnit aContainerMapUnit( MapUnit::Map100thMM );
     uno::Reference< embed::XVisualObject > xParentVis( mpObj->GetParentXModel(), uno::UNO_QUERY );
     if ( xParentVis.is() )
         aContainerMapUnit = VCLUnoHelper::UnoEmbed2VCLMapUnit( xParentVis->getMapUnit( mpObj->GetAspect() ) );
@@ -594,11 +575,9 @@ SdrEmbedObjectLink::SdrEmbedObjectLink(SdrOle2Obj* pObject):
     SetSynchron( false );
 }
 
-
 SdrEmbedObjectLink::~SdrEmbedObjectLink()
 {
 }
-
 
 ::sfx2::SvBaseLink::UpdateResult SdrEmbedObjectLink::DataChanged(
     const OUString& /*rMimeType*/, const css::uno::Any & /*rValue*/ )
@@ -635,13 +614,11 @@ SdrEmbedObjectLink::~SdrEmbedObjectLink()
     return SUCCESS;
 }
 
-
 void SdrEmbedObjectLink::Closed()
 {
     pObj->BreakFileLink_Impl();
     SvBaseLink::Closed();
 }
-
 
 class SdrOle2ObjImpl
 {
@@ -716,7 +693,6 @@ public:
     }
 };
 
-
 // Predicate determining whether the given OLE is an internal math
 // object
 static bool ImplIsMathObj( const uno::Reference < embed::XEmbeddedObject >& rObjRef )
@@ -739,7 +715,6 @@ static bool ImplIsMathObj( const uno::Reference < embed::XEmbeddedObject >& rObj
     }
 }
 
-
 // BaseProperties section
 
 sdr::properties::BaseProperties* SdrOle2Obj::CreateObjectSpecificProperties()
@@ -747,14 +722,12 @@ sdr::properties::BaseProperties* SdrOle2Obj::CreateObjectSpecificProperties()
     return new sdr::properties::OleProperties(*this);
 }
 
-
 // DrawContact section
 
 sdr::contact::ViewContact* SdrOle2Obj::CreateObjectSpecificViewContact()
 {
     return new sdr::contact::ViewContactOfSdrOle2Obj(*this);
 }
-
 
 SdrOle2Obj::SdrOle2Obj( bool bFrame_ ) :
     mpImpl(new SdrOle2ObjImpl(bFrame_))
@@ -784,7 +757,6 @@ OUString SdrOle2Obj::GetStyleString()
     return strStyle;
 }
 
-
 SdrOle2Obj::~SdrOle2Obj()
 {
     mpImpl->mbInDestruction = true;
@@ -799,10 +771,7 @@ SdrOle2Obj::~SdrOle2Obj()
         mpImpl->pLightClient->Release();
         mpImpl->pLightClient = nullptr;
     }
-
-    delete mpImpl;
 }
-
 
 void SdrOle2Obj::SetAspect( sal_Int64 nAspect )
 {
@@ -870,7 +839,6 @@ bool SdrOle2Obj::IsEmpty() const
     return !mpImpl->mxObjRef.is();
 }
 
-
 void SdrOle2Obj::Connect()
 {
     if( IsEmptyPresObj() )
@@ -887,7 +855,6 @@ void SdrOle2Obj::Connect()
     Connect_Impl();
     AddListeners_Impl();
 }
-
 
 bool SdrOle2Obj::UpdateLinkURL_Impl()
 {
@@ -947,7 +914,6 @@ bool SdrOle2Obj::UpdateLinkURL_Impl()
     return bResult;
 }
 
-
 void SdrOle2Obj::BreakFileLink_Impl()
 {
     uno::Reference<document::XStorageBasedDocument> xDoc;
@@ -979,7 +945,6 @@ void SdrOle2Obj::BreakFileLink_Impl()
     }
 }
 
-
 void SdrOle2Obj::DisconnectFileLink_Impl()
 {
     sfx2::LinkManager* pLinkManager = pModel ? pModel->GetLinkManager() : nullptr;
@@ -989,7 +954,6 @@ void SdrOle2Obj::DisconnectFileLink_Impl()
         mpImpl->mpObjectLink = nullptr;
     }
 }
-
 
 void SdrOle2Obj::CheckFileLink_Impl()
 {
@@ -1026,7 +990,6 @@ void SdrOle2Obj::CheckFileLink_Impl()
         }
     }
 }
-
 
 void SdrOle2Obj::Reconnect_Impl()
 {
@@ -1150,7 +1113,6 @@ void SdrOle2Obj::AddListeners_Impl()
         }
     }
 }
-
 
 void SdrOle2Obj::Disconnect()
 {
@@ -1279,7 +1241,6 @@ void SdrOle2Obj::Disconnect_Impl()
     mpImpl->mbConnected = false;
 }
 
-
 SdrObject* SdrOle2Obj::createSdrGrafObjReplacement(bool bAddText, bool /* bUseHCGraphic */) const
 {
     const Graphic* pOLEGraphic = GetGraphic();
@@ -1356,7 +1317,6 @@ SdrObject* SdrOle2Obj::DoConvertToPolyObj(bool bBezier, bool bAddText) const
     return nullptr;
 }
 
-
 void SdrOle2Obj::SetModel(SdrModel* pNewModel)
 {
     ::comphelper::IEmbeddedHelper* pDestPers = pNewModel ? pNewModel->GetPersist() : nullptr;
@@ -1431,7 +1391,6 @@ void SdrOle2Obj::SetModel(SdrModel* pNewModel)
     AddListeners_Impl();
 }
 
-
 void SdrOle2Obj::SetPage(SdrPage* pNewPage)
 {
     bool bRemove=pNewPage==nullptr && pPage!=nullptr;
@@ -1465,7 +1424,6 @@ void SdrOle2Obj::SetPage(SdrPage* pNewPage)
     if (bInsert && !mpImpl->mbConnected )
         Connect();
 }
-
 
 void SdrOle2Obj::SetObjRef( const css::uno::Reference < css::embed::XEmbeddedObject >& rNewObjRef )
 {
@@ -1505,7 +1463,6 @@ void SdrOle2Obj::SetObjRef( const css::uno::Reference < css::embed::XEmbeddedObj
     BroadcastObjectChange();
 }
 
-
 void SdrOle2Obj::SetClosedObj( bool bIsClosed )
 {
     // TODO/LATER: do we still need this hack?
@@ -1513,13 +1470,11 @@ void SdrOle2Obj::SetClosedObj( bool bIsClosed )
     bClosedObj = bIsClosed;
 }
 
-
 SdrObject* SdrOle2Obj::getFullDragClone() const
 {
     // #i118485# use central replacement generator
     return createSdrGrafObjReplacement(false, true);
 }
-
 
 void SdrOle2Obj::SetPersistName( const OUString& rPersistName )
 {
@@ -1539,12 +1494,10 @@ void SdrOle2Obj::AbandonObject()
     SetObjRef(nullptr);
 }
 
-
 const OUString& SdrOle2Obj::GetPersistName() const
 {
     return mpImpl->aPersistName;
 }
-
 
 void SdrOle2Obj::TakeObjInfo(SdrObjTransformInfoRec& rInfo) const
 {
@@ -1566,12 +1519,10 @@ void SdrOle2Obj::TakeObjInfo(SdrObjTransformInfoRec& rInfo) const
     rInfo.bCanConvToContour = true;
 }
 
-
 sal_uInt16 SdrOle2Obj::GetObjIdentifier() const
 {
     return mpImpl->mbFrame ? sal_uInt16(OBJ_FRAME) : sal_uInt16(OBJ_OLE2);
 }
-
 
 OUString SdrOle2Obj::TakeObjNameSingul() const
 {
@@ -1588,7 +1539,6 @@ OUString SdrOle2Obj::TakeObjNameSingul() const
 
     return sName.makeStringAndClear();
 }
-
 
 OUString SdrOle2Obj::TakeObjNamePlural() const
 {
@@ -1798,7 +1748,6 @@ void SdrOle2Obj::ImpSetVisAreaSize()
     }
 }
 
-
 void SdrOle2Obj::NbcResize(const Point& rRef, const Fraction& xFact, const Fraction& yFact)
 {
     if( pModel && !pModel->isLocked() )
@@ -1818,7 +1767,6 @@ void SdrOle2Obj::NbcResize(const Point& rRef, const Fraction& xFact, const Fract
         ImpSetVisAreaSize();
 }
 
-
 void SdrOle2Obj::SetGeoData(const SdrObjGeoData& rGeo)
 {
     SdrRectObj::SetGeoData(rGeo);
@@ -1826,7 +1774,6 @@ void SdrOle2Obj::SetGeoData(const SdrObjGeoData& rGeo)
     if( pModel && !pModel->isLocked() )
         ImpSetVisAreaSize();
 }
-
 
 void SdrOle2Obj::NbcSetSnapRect(const Rectangle& rRect)
 {
@@ -1843,7 +1790,6 @@ void SdrOle2Obj::NbcSetSnapRect(const Rectangle& rRect)
         mpImpl->mxObjRef.SetDefaultSizeForChart( Size( rRect.GetWidth(), rRect.GetHeight() ) );
     }
 }
-
 
 void SdrOle2Obj::NbcSetLogicRect(const Rectangle& rRect)
 {
@@ -1866,7 +1812,6 @@ void SdrOle2Obj::GetNewReplacement()
         mpImpl->mxObjRef.UpdateReplacement();
 }
 
-
 Size SdrOle2Obj::GetOrigObjSize( MapMode* pTargetMapMode ) const
 {
     return mpImpl->mxObjRef.GetSize( pTargetMapMode );
@@ -1884,7 +1829,6 @@ void SdrOle2Obj::NbcMove(const Size& rSize)
     if( pModel && !pModel->isLocked() )
         ImpSetVisAreaSize();
 }
-
 
 bool SdrOle2Obj::CanUnloadRunningObj( const uno::Reference< embed::XEmbeddedObject >& xObj, sal_Int64 nAspect )
 {
@@ -1926,7 +1870,6 @@ bool SdrOle2Obj::CanUnloadRunningObj( const uno::Reference< embed::XEmbeddedObje
     return bResult;
 }
 
-
 bool SdrOle2Obj::Unload( const uno::Reference< embed::XEmbeddedObject >& xObj, sal_Int64 nAspect )
 {
     bool bResult = false;
@@ -1952,7 +1895,6 @@ bool SdrOle2Obj::Unload( const uno::Reference< embed::XEmbeddedObject >& xObj, s
     return bResult;
 }
 
-
 bool SdrOle2Obj::Unload()
 {
     if (!mpImpl->mxObjRef.is())
@@ -1967,7 +1909,6 @@ bool SdrOle2Obj::Unload()
 
     return bUnloaded;
 }
-
 
 void SdrOle2Obj::GetObjRef_Impl()
 {
@@ -2059,7 +2000,6 @@ uno::Reference < embed::XEmbeddedObject > SdrOle2Obj::GetObjRef_NoInit() const
     return mpImpl->mxObjRef.GetObject();
 }
 
-
 uno::Reference< frame::XModel > SdrOle2Obj::getXModel() const
 {
     GetObjRef();
@@ -2068,7 +2008,6 @@ uno::Reference< frame::XModel > SdrOle2Obj::getXModel() const
     else
         return uno::Reference< frame::XModel >();
 }
-
 
 bool SdrOle2Obj::IsChart() const
 {
@@ -2099,12 +2038,10 @@ void SdrOle2Obj::SetGraphicToObj( const Graphic& aGraphic, const OUString& aMedi
     mpImpl->mxObjRef.SetGraphic( aGraphic, aMediaType );
 }
 
-
 void SdrOle2Obj::SetGraphicToObj( const uno::Reference< io::XInputStream >& xGrStream, const OUString& aMediaType )
 {
     mpImpl->mxObjRef.SetGraphicStream( xGrStream, aMediaType );
 }
-
 
 bool SdrOle2Obj::IsCalc() const
 {
@@ -2134,7 +2071,6 @@ uno::Reference< frame::XModel > SdrOle2Obj::GetParentXModel() const
     return xDoc;
 }
 
-
 bool SdrOle2Obj::CalculateNewScaling( Fraction& aScaleWidth, Fraction& aScaleHeight, Size& aObjAreaSize )
 {
     // TODO/LEAN: to avoid rounding errors scaling always uses the VisArea.
@@ -2155,7 +2091,6 @@ bool SdrOle2Obj::CalculateNewScaling( Fraction& aScaleWidth, Fraction& aScaleHei
 
     return true;
 }
-
 
 bool SdrOle2Obj::AddOwnLightClient()
 {
@@ -2188,12 +2123,10 @@ bool SdrOle2Obj::AddOwnLightClient()
     return true;
 }
 
-
 Graphic SdrOle2Obj::GetEmptyOLEReplacementGraphic()
 {
     return Graphic(BitmapEx(ResId(BMP_SVXOLEOBJ, *ImpGetResMgr())));
 }
-
 
 void SdrOle2Obj::SetWindow(const css::uno::Reference < css::awt::XWindow >& _xWindow)
 {

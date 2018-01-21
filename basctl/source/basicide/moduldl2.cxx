@@ -92,7 +92,7 @@ public:
 };
 
 // LibUserData
-class LibUserData
+class LibUserData final
 {
 private:
     ScriptDocument m_aDocument;
@@ -102,7 +102,7 @@ public:
         : m_aDocument(rDocument)
     {
     }
-    virtual ~LibUserData() {};
+    ~LibUserData() {};
 
     const ScriptDocument& GetDocument() const { return m_aDocument; }
 };
@@ -155,14 +155,7 @@ CheckBox::CheckBox(vcl::Window* pParent, WinBits nStyle)
     Init();
 }
 
-VCL_BUILDER_DECL_FACTORY(CheckBox)
-{
-    WinBits nWinBits = WB_TABSTOP;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-       nWinBits |= WB_BORDER;
-    rRet = VclPtr<CheckBox>::Create(pParent, nWinBits);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(CheckBox, WB_TABSTOP)
 
 CheckBox::~CheckBox()
 {
@@ -353,7 +346,7 @@ bool CheckBox::EditedEntry( SvTreeListEntry* pEntry, const OUString& rNewName )
 }
 
 // NewObjectDialog
-IMPL_LINK_NOARG_TYPED(NewObjectDialog, OkButtonHandler, Button*, void)
+IMPL_LINK_NOARG(NewObjectDialog, OkButtonHandler, Button*, void)
 {
     if (IsValidSbxName(m_pEdit->GetText()))
         EndDialog(1);
@@ -435,7 +428,7 @@ sal_Int32 GotoLineDialog::GetLineNumber() const
     return m_pEdit->GetText().toInt32();
 }
 
-IMPL_LINK_NOARG_TYPED(GotoLineDialog, OkButtonHandler, Button*, void)
+IMPL_LINK_NOARG(GotoLineDialog, OkButtonHandler, Button*, void)
 {
     if ( GetLineNumber() )
         EndDialog(1);
@@ -444,7 +437,7 @@ IMPL_LINK_NOARG_TYPED(GotoLineDialog, OkButtonHandler, Button*, void)
 }
 
 // ExportDialog
-IMPL_LINK_NOARG_TYPED(ExportDialog, OkButtonHandler, Button*, void)
+IMPL_LINK_NOARG(ExportDialog, OkButtonHandler, Button*, void)
 {
     mbExportAsPackage = m_pExportAsPackageButton->IsChecked();
     EndDialog(1);
@@ -483,7 +476,7 @@ LibPage::LibPage(vcl::Window * pParent)
 {
     get(m_pBasicsBox, "location");
     get(m_pLibBox, "library");
-    Size aSize(m_pLibBox->LogicToPixel(Size(130, 87), MAP_APPFONT));
+    Size aSize(m_pLibBox->LogicToPixel(Size(130, 87), MapUnit::MapAppFont));
     m_pLibBox->set_height_request(aSize.Height());
     m_pLibBox->set_width_request(aSize.Width());
     get(m_pEditButton, "edit");
@@ -510,7 +503,7 @@ LibPage::LibPage(vcl::Window * pParent)
     m_pLibBox->SetStyle( WB_HSCROLL | WB_BORDER | WB_TABSTOP );
 
     long aTabs[] = { 2, 30, 120 };
-    m_pLibBox->SetTabs( aTabs, MAP_PIXEL );
+    m_pLibBox->SetTabs( aTabs, MapUnit::MapPixel );
 
     FillListBox();
     m_pBasicsBox->SelectEntryPos( 0 );
@@ -607,19 +600,19 @@ void LibPage::DeactivatePage()
 {
 }
 
-IMPL_LINK_TYPED( LibPage, TreeListHighlightHdl, SvTreeListBox *, pBox, void )
+IMPL_LINK( LibPage, TreeListHighlightHdl, SvTreeListBox *, pBox, void )
 {
     if ( pBox->IsSelected( pBox->GetHdlEntry() ) )
         CheckButtons();
 }
 
-IMPL_LINK_NOARG_TYPED( LibPage, BasicSelectHdl, ListBox&, void )
+IMPL_LINK_NOARG( LibPage, BasicSelectHdl, ListBox&, void )
 {
     SetCurLib();
     CheckButtons();
 }
 
-IMPL_LINK_TYPED( LibPage, ButtonHdl, Button *, pButton, void )
+IMPL_LINK( LibPage, ButtonHdl, Button *, pButton, void )
 {
     if (pButton == m_pEditButton)
     {
@@ -707,7 +700,7 @@ IMPL_LINK_TYPED( LibPage, ButtonHdl, Button *, pButton, void )
     CheckButtons();
 }
 
-IMPL_LINK_TYPED( LibPage, CheckPasswordHdl, SvxPasswordDialog *, pDlg, bool )
+IMPL_LINK( LibPage, CheckPasswordHdl, SvxPasswordDialog *, pDlg, bool )
 {
     bool bRet = false;
 
@@ -747,18 +740,18 @@ void LibPage::InsertLib()
     // filter
     OUString aTitle(IDEResId(RID_STR_BASIC).toString());
     OUString aFilter;
-    aFilter =  "*.sbl;*.xlc;*.xlb" ;        // library files
-    aFilter += ";*.sdw;*.sxw;*.odt" ;       // text
-    aFilter += ";*.vor;*.stw;*.ott" ;       // text template
-    aFilter += ";*.sgl;*.sxg;*.odm" ;       // master document
-    aFilter += ";*.oth" ;                   // html document template
-    aFilter += ";*.sdc;*.sxc;*.ods" ;       // spreadsheet
-    aFilter += ";*.stc;*.ots" ;             // spreadsheet template
-    aFilter += ";*.sda;*.sxd;*.odg" ;       // drawing
-    aFilter += ";*.std;*.otg" ;             // drawing template
-    aFilter += ";*.sdd;*.sxi;*.odp" ;       // presentation
-    aFilter += ";*.sti;*.otp" ;             // presentation template
-    aFilter += ";*.sxm;*.odf" ;             // formula
+    aFilter = "*.sbl;*.xlc;*.xlb"        // library files
+              ";*.sdw;*.sxw;*.odt"       // text
+              ";*.vor;*.stw;*.ott"       // text template
+              ";*.sgl;*.sxg;*.odm"       // master document
+              ";*.oth"                   // html document template
+              ";*.sdc;*.sxc;*.ods"       // spreadsheet
+              ";*.stc;*.ots"             // spreadsheet template
+              ";*.sda;*.sxd;*.odg"       // drawing
+              ";*.std;*.otg"             // drawing template
+              ";*.sdd;*.sxi;*.odp"       // presentation
+              ";*.sti;*.otp"             // presentation template
+              ";*.sxm;*.odf";            // formula
     xFP->appendFilter( aTitle, aFilter );
 
     // set display directory and filter
@@ -847,7 +840,7 @@ void LibPage::InsertLib()
             }
 
             if ( !pLibDlg )
-                ScopedVclPtrInstance<MessageDialog>(this, IDE_RESSTR(RID_STR_NOLIBINSTORAGE), VCL_MESSAGE_INFO)->Execute();
+                ScopedVclPtrInstance<MessageDialog>(this, IDE_RESSTR(RID_STR_NOLIBINSTORAGE), VclMessageType::Info)->Execute();
             else
             {
                 bool bChanges = false;
@@ -893,9 +886,7 @@ void LibPage::InsertLib()
                                          ( xDlgLibContainer.is() && xDlgLibContainer->hasByName( aLibName ) && xDlgLibContainer->isLibraryReadOnly( aLibName ) && !xDlgLibContainer->isLibraryLink( aLibName ) ) )
                                     {
                                         OUString aErrStr( IDE_RESSTR(RID_STR_REPLACELIB) );
-                                        aErrStr = aErrStr.replaceAll("XX", aLibName);
-                                        aErrStr += "\n";
-                                        aErrStr += IDE_RESSTR(RID_STR_LIBISREADONLY);
+                                        aErrStr = aErrStr.replaceAll("XX", aLibName) + "\n" + IDE_RESSTR(RID_STR_LIBISREADONLY);
                                         ScopedVclPtrInstance<MessageDialog>(this, aErrStr)->Execute();
                                         continue;
                                     }
@@ -910,9 +901,7 @@ void LibPage::InsertLib()
                                         aErrStr = IDE_RESSTR(RID_STR_REFNOTPOSSIBLE);
                                     else
                                         aErrStr = IDE_RESSTR(RID_STR_IMPORTNOTPOSSIBLE);
-                                    aErrStr = aErrStr.replaceAll("XX", aLibName);
-                                    aErrStr += "\n" ;
-                                    aErrStr += IDE_RESSTR(RID_STR_SBXNAMEALLREADYUSED);
+                                    aErrStr = aErrStr.replaceAll("XX", aLibName) + "\n" +IDE_RESSTR(RID_STR_SBXNAMEALLREADYUSED);
                                     ScopedVclPtrInstance<MessageDialog>(this, aErrStr)->Execute();
                                     continue;
                                 }
@@ -1271,8 +1260,8 @@ void LibPage::ExportAsPackage( const OUString& aLibName )
         const OUString strFullPath = "FullPath" ;
         const OUString strBasicMediaType = "application/vnd.sun.star.basic-library" ;
 
-        OUString fullPath = aLibName;
-        fullPath += "/" ;
+        OUString fullPath = aLibName
+                          + "/" ;
         auto attribs(::comphelper::InitPropertySequence({
             { strFullPath, makeAny(fullPath) },
             { strMediaType, makeAny(strBasicMediaType) }

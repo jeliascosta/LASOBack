@@ -61,7 +61,7 @@ class TabWindow :  public css::lang::XTypeProvider             ,
 {
     public:
         TabWindow( const css::uno::Reference< css::uno::XComponentContext >& xContext );
-        virtual ~TabWindow();
+        virtual ~TabWindow() override;
 
         //  XInterface, XTypeProvider, XServiceInfo
         FWK_DECLARE_XINTERFACE
@@ -108,8 +108,8 @@ class TabWindow :  public css::lang::XTypeProvider             ,
         virtual void SAL_CALL windowHidden( const css::lang::EventObject& aEvent ) throw( css::uno::RuntimeException, std::exception ) override;
 
     protected:
-        DECL_LINK_TYPED( Activate, TabControl*, void );
-        DECL_LINK_TYPED( Deactivate, TabControl*, bool );
+        DECL_LINK( Activate, TabControl*, void );
+        DECL_LINK( Deactivate, TabControl*, bool );
 
     private:
 

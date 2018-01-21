@@ -157,7 +157,7 @@ static bool lcl_CopyData( ScDocument* pSrcDoc, const ScRange& rSrcRange,
     pSrcDoc->CopyToClip(aClipParam, pClipDoc.get(), &aSourceMark, false, false);
 
     if ( pClipDoc->HasAttrib( 0,0,nSrcTab, MAXCOL,MAXROW,nSrcTab,
-                                HASATTR_MERGED | HASATTR_OVERLAPPED ) )
+                                HasAttrFlags::Merged | HasAttrFlags::Overlapped ) )
     {
         ScPatternAttr aPattern( pSrcDoc->GetPool() );
         aPattern.GetItemSet().Put( ScMergeAttr() );             // Defaults
@@ -194,8 +194,7 @@ ScFunctionAccess::~ScFunctionAccess()
 
 void ScFunctionAccess::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DEINITIALIZING )
+    if ( rHint.GetId() == SFX_HINT_DEINITIALIZING )
     {
         //  document must not be used anymore
         aDocCache.Clear();
@@ -226,11 +225,7 @@ sal_Bool SAL_CALL ScFunctionAccess::supportsService( const OUString& rServiceNam
 uno::Sequence<OUString> SAL_CALL ScFunctionAccess::getSupportedServiceNames()
                                                     throw(uno::RuntimeException, std::exception)
 {
-    uno::Sequence<OUString> aRet(2);
-    OUString* pArray = aRet.getArray();
-    pArray[0] = SCFUNCTIONACCESS_SERVICE;
-    pArray[1] = SCDOCSETTINGS_SERVICE;
-    return aRet;
+    return {SCFUNCTIONACCESS_SERVICE, SCDOCSETTINGS_SERVICE};
 }
 
 // XPropertySet (document settings)
@@ -348,11 +343,11 @@ public:
     // the other types methods are here just to reflect the orig code and for
     // completeness.
 
-    void visitElem( long nCol, long nRow, const sal_Int16& elem )
+    void visitElem( long nCol, long nRow, sal_Int16 elem )
     {
         mpDoc->SetValue( (SCCOL) nCol, (SCROW) nRow, 0, elem );
     }
-    void visitElem( long nCol, long nRow, const sal_Int32& elem )
+    void visitElem( long nCol, long nRow, sal_Int32 elem )
     {
         mpDoc->SetValue( (SCCOL) nCol, (SCROW) nRow, 0, elem );
     }
@@ -610,19 +605,21 @@ uno::Any SAL_CALL ScFunctionAccess::callFunction( const OUString& aName,
     if ( !bArgErr && !bOverflow && nDocRow <= MAXROWCOUNT )
     {
         ScAddress aFormulaPos( 0, 0, nTempSheet );
-        // GRAM_PODF_A1 doesn't really matter for the token array but fits with
+        // GRAM_API doesn't really matter for the token array but fits with
         // other API compatibility grammars.
         ScFormulaCell* pFormula = new ScFormulaCell(
-            pDoc, aFormulaPos, aTokenArr, formula::FormulaGrammar::GRAM_PODF_A1,
+            pDoc, aFormulaPos, aTokenArr, formula::FormulaGrammar::GRAM_API,
             (sal_uInt8)(mbArray ? MM_FORMULA : MM_NONE) );
         pFormula = pDoc->SetFormulaCell(aFormulaPos, pFormula);
+        if (mbArray && pFormula)
+            pFormula->SetMatColsRows(1,1);  // the cell dimensions (only one cell)
 
         //  call GetMatrix before GetErrCode because GetMatrix always recalculates
         //  if there is no matrix result
 
         const ScMatrix* pMat = (mbArray && pFormula) ? pFormula->GetMatrix() : nullptr;
-        sal_uInt16 nErrCode = pFormula ? pFormula->GetErrCode() : formula::errIllegalArgument;
-        if ( nErrCode == 0 )
+        FormulaError nErrCode = pFormula ? pFormula->GetErrCode() : FormulaError::IllegalArgument;
+        if ( nErrCode == FormulaError::NONE )
         {
             if ( pMat )
             {
@@ -641,7 +638,7 @@ uno::Any SAL_CALL ScFunctionAccess::callFunction( const OUString& aName,
                 aRet <<= aStrVal;
             }
         }
-        else if ( nErrCode == formula::NOTAVAILABLE )
+        else if ( nErrCode == FormulaError::NotAvailable )
         {
             // #N/A: leave result empty, no exception
         }

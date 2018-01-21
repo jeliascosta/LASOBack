@@ -47,7 +47,7 @@ namespace pcr
     // OSelectLabelDialog
 
 
-    OSelectLabelDialog::OSelectLabelDialog( vcl::Window* pParent, Reference< XPropertySet >  _xControlModel )
+    OSelectLabelDialog::OSelectLabelDialog( vcl::Window* pParent, Reference< XPropertySet > const & _xControlModel )
         :ModalDialog(pParent, "LabelSelectionDialog", "modules/spropctrlr/ui/labelselectiondialog.ui")
         ,m_aModelImages(PcrRes(RID_IL_FORMEXPLORER))
         ,m_xControlModel(_xControlModel)
@@ -60,7 +60,7 @@ namespace pcr
         get(m_pNoAssignment, "noassignment");
 
         // initialize the TreeListBox
-        m_pControlTree->SetSelectionMode( SINGLE_SELECTION );
+        m_pControlTree->SetSelectionMode( SelectionMode::Single );
         m_pControlTree->SetDragDropMode( DragDropMode::NONE );
         m_pControlTree->EnableInplaceEditing( false );
         m_pControlTree->SetStyle(m_pControlTree->GetStyle() | WB_BORDER | WB_HASLINES | WB_HASLINESATROOT | WB_HASBUTTONS | WB_HASBUTTONSATROOT | WB_HSCROLL);
@@ -240,7 +240,7 @@ namespace pcr
     }
 
 
-    IMPL_LINK_TYPED(OSelectLabelDialog, OnEntrySelected, SvTreeListBox*, pLB, void)
+    IMPL_LINK(OSelectLabelDialog, OnEntrySelected, SvTreeListBox*, pLB, void)
     {
         DBG_ASSERT(pLB == m_pControlTree, "OSelectLabelDialog::OnEntrySelected : where did this come from ?");
         (void)pLB;
@@ -256,7 +256,7 @@ namespace pcr
     }
 
 
-    IMPL_LINK_TYPED(OSelectLabelDialog, OnNoAssignmentClicked, Button*, pButton, void)
+    IMPL_LINK(OSelectLabelDialog, OnNoAssignmentClicked, Button*, pButton, void)
     {
         DBG_ASSERT(pButton == m_pNoAssignment, "OSelectLabelDialog::OnNoAssignmentClicked : where did this come from ?");
         (void)pButton;

@@ -78,18 +78,12 @@ ConfigurationUpdater::ConfigurationUpdater (
     // updates until the two configurations are the same.
     maUpdateTimer.SetTimeout(snNormalTimeout);
     maUpdateTimer.SetTimeoutHdl(LINK(this,ConfigurationUpdater,TimeoutHandler));
-    SetControllerManager(rxControllerManager);
+    mxControllerManager = rxControllerManager;
 }
 
 ConfigurationUpdater::~ConfigurationUpdater()
 {
     maUpdateTimer.Stop();
-}
-
-void ConfigurationUpdater::SetControllerManager(
-    const Reference<XControllerManager>& rxControllerManager)
-{
-    mxControllerManager = rxControllerManager;
 }
 
 void ConfigurationUpdater::RequestUpdate (
@@ -364,7 +358,7 @@ void ConfigurationUpdater::SetUpdateBeingProcessed (bool bValue)
     mbUpdateBeingProcessed = bValue;
 }
 
-IMPL_LINK_NOARG_TYPED(ConfigurationUpdater, TimeoutHandler, Timer *, void)
+IMPL_LINK_NOARG(ConfigurationUpdater, TimeoutHandler, Timer *, void)
 {
     OSL_TRACE("configuration update timer");
     if ( ! mbUpdateBeingProcessed

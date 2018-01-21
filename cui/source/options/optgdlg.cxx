@@ -69,6 +69,7 @@
 #include <unotools/searchopt.hxx>
 #include <sal/macros.h>
 #include <officecfg/Office/Common.hxx>
+#include <officecfg/Setup.hxx>
 #include <comphelper/configuration.hxx>
 
 #include <com/sun/star/configuration/theDefaultProvider.hpp>
@@ -189,11 +190,11 @@ void OpenGLCfg::setForceOpenGL(bool bOpenGL)
 
 // class OfaMiscTabPage --------------------------------------------------
 
-SvxGeneralTabPage::sfxpg OfaMiscTabPage::DeactivatePage( SfxItemSet* pSet_ )
+DeactivateRC OfaMiscTabPage::DeactivatePage( SfxItemSet* pSet_ )
 {
     if ( pSet_ )
         FillItemSet( pSet_ );
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 namespace
@@ -401,10 +402,11 @@ void OfaMiscTabPage::Reset( const SfxItemSet* rSet )
     }
 
     m_pCollectUsageInfo->Check(officecfg::Office::Common::Misc::CollectUsageInformation::get());
+    m_pCollectUsageInfo->Enable(!officecfg::Office::Common::Misc::CollectUsageInformation::isReadOnly());
     m_pCollectUsageInfo->SaveValue();
 }
 
-IMPL_LINK_NOARG_TYPED( OfaMiscTabPage, TwoFigureHdl, Edit&, void )
+IMPL_LINK_NOARG( OfaMiscTabPage, TwoFigureHdl, Edit&, void )
 {
     OUString aOutput( m_aStrDateInfo );
     OUString aStr( m_pYearValueField->GetText() );
@@ -423,11 +425,11 @@ IMPL_LINK_NOARG_TYPED( OfaMiscTabPage, TwoFigureHdl, Edit&, void )
     m_pToYearFT->SetText( aOutput );
 }
 
-IMPL_LINK_TYPED( OfaMiscTabPage, TwoFigureConfigFocusHdl, Control&, rControl, void )
+IMPL_LINK( OfaMiscTabPage, TwoFigureConfigFocusHdl, Control&, rControl, void )
 {
     TwoFigureConfigHdl(static_cast<SpinField&>(rControl));
 }
-IMPL_LINK_TYPED( OfaMiscTabPage, TwoFigureConfigHdl, SpinField&, rEd, void )
+IMPL_LINK( OfaMiscTabPage, TwoFigureConfigHdl, SpinField&, rEd, void )
 {
     sal_Int64 nNum = m_pYearValueField->GetValue();
     OUString aOutput(OUString::number(nNum));
@@ -612,20 +614,24 @@ void CanvasSettings::EnabledHardwareAcceleration( bool _bEnabled ) const
 OfaViewTabPage::OfaViewTabPage(vcl::Window* pParent, const SfxItemSet& rSet)
     : SfxTabPage(pParent, "OptViewPage", "cui/ui/optviewpage.ui", &rSet)
     , nSizeLB_InitialSelection(0)
+    , nSidebarSizeLB_InitialSelection(0)
+    , nNotebookbarSizeLB_InitialSelection(0)
     , nStyleLB_InitialSelection(0)
     , pAppearanceCfg(new SvtTabAppearanceCfg)
     , pCanvasSettings(new CanvasSettings)
     , mpDrawinglayerOpt(new SvtOptionsDrawinglayer)
     , mpOpenGLConfig(new svt::OpenGLCfg)
 {
-    get(m_pWindowSizeMF, "windowsize");
     get(m_pIconSizeLB, "iconsize");
+    get(m_pSidebarIconSizeLB, "sidebariconsize");
+    get(m_pNotebookbarIconSizeLB, "notebookbariconsize");
     get(m_pIconStyleLB, "iconstyle");
 
     get(m_pFontAntiAliasing, "aafont");
     get(m_pAAPointLimitLabel, "aafrom");
     get(m_pAAPointLimit, "aanf");
     get(m_pMenuIconsLB, "menuicons");
+    get(m_pContextMenuShortcutsLB, "contextmenushortcuts");
     get(m_pFontShowCB, "showfontpreview");
     get(m_pUseHardwareAccell, "useaccel");
     get(m_pUseAntiAliase, "useaa");
@@ -642,18 +648,6 @@ OfaViewTabPage::OfaViewTabPage(vcl::Window* pParent, const SfxItemSet& rSet)
         m_pForceOpenGL->Hide();
         m_pOpenGLStatusEnabled->Hide();
         m_pOpenGLStatusDisabled->Hide();
-    }
-    else
-    {
-        //tdf#191196, we need height-for-width support here, but for now we can
-        //bodge it
-        Size aPrefSize(m_pForceOpenGL->get_preferred_size());
-        Size aSize(m_pForceOpenGL->CalcMinimumSize(36*approximate_char_width()));
-        if (aPrefSize.Width() > aSize.Width())
-        {
-            m_pForceOpenGL->set_width_request(aSize.Width());
-            m_pForceOpenGL->set_height_request(aSize.Height());
-        }
     }
 
 #if defined( UNX )
@@ -711,13 +705,15 @@ void OfaViewTabPage::dispose()
     pCanvasSettings = nullptr;
     delete pAppearanceCfg;
     pAppearanceCfg = nullptr;
-    m_pWindowSizeMF.clear();
     m_pIconSizeLB.clear();
+    m_pSidebarIconSizeLB.clear();
+    m_pNotebookbarIconSizeLB.clear();
     m_pIconStyleLB.clear();
     m_pFontAntiAliasing.clear();
     m_pAAPointLimitLabel.clear();
     m_pAAPointLimit.clear();
     m_pMenuIconsLB.clear();
+    m_pContextMenuShortcutsLB.clear();
     m_pFontShowCB.clear();
     m_pUseHardwareAccell.clear();
     m_pUseAntiAliase.clear();
@@ -731,7 +727,7 @@ void OfaViewTabPage::dispose()
 }
 
 #if defined( UNX )
-IMPL_LINK_NOARG_TYPED( OfaViewTabPage, OnAntialiasingToggled, CheckBox&, void )
+IMPL_LINK_NOARG( OfaViewTabPage, OnAntialiasingToggled, CheckBox&, void )
 {
     bool bAAEnabled = m_pFontAntiAliasing->IsChecked();
 
@@ -765,10 +761,43 @@ bool OfaViewTabPage::FillItemSet( SfxItemSet* )
             case 0: eSet = SFX_SYMBOLS_SIZE_AUTO;  break;
             case 1: eSet = SFX_SYMBOLS_SIZE_SMALL; break;
             case 2: eSet = SFX_SYMBOLS_SIZE_LARGE; break;
+            case 3: eSet = SFX_SYMBOLS_SIZE_32; break;
             default:
                 OSL_FAIL( "OfaViewTabPage::FillItemSet(): This state of m_pIconSizeLB should not be possible!" );
         }
         aMiscOptions.SetSymbolsSize( eSet );
+    }
+
+    const sal_Int32 nSidebarSizeLB_NewSelection = m_pSidebarIconSizeLB->GetSelectEntryPos();
+    if( nSidebarSizeLB_InitialSelection != nSidebarSizeLB_NewSelection )
+    {
+        // from now on it's modified, even if via auto setting the same size was set as now selected in the LB
+        ToolBoxButtonSize eSet = ToolBoxButtonSize::DontCare;
+        switch( nSidebarSizeLB_NewSelection )
+        {
+            case 0: eSet = ToolBoxButtonSize::DontCare;  break;
+            case 1: eSet = ToolBoxButtonSize::Small; break;
+            case 2: eSet = ToolBoxButtonSize::Large; break;
+            default:
+                OSL_FAIL( "OfaViewTabPage::FillItemSet(): This state of m_pSidebarIconSizeLB should not be possible!" );
+        }
+        aMiscOptions.SetSidebarIconSize( eSet );
+    }
+
+    const sal_Int32 nNotebookbarSizeLB_NewSelection = m_pNotebookbarIconSizeLB->GetSelectEntryPos();
+    if( nNotebookbarSizeLB_InitialSelection != nNotebookbarSizeLB_NewSelection )
+    {
+        // from now on it's modified, even if via auto setting the same size was set as now selected in the LB
+        ToolBoxButtonSize eSet = ToolBoxButtonSize::DontCare;
+        switch( nNotebookbarSizeLB_NewSelection )
+        {
+            case 0: eSet = ToolBoxButtonSize::DontCare;  break;
+            case 1: eSet = ToolBoxButtonSize::Small; break;
+            case 2: eSet = ToolBoxButtonSize::Large; break;
+            default:
+                OSL_FAIL( "OfaViewTabPage::FillItemSet(): This state of m_pNotebookbarIconSizeLB should not be possible!" );
+        }
+        aMiscOptions.SetNotebookbarIconSize( eSet );
     }
 
     const sal_Int32 nStyleLB_NewSelection = m_pIconStyleLB->GetSelectEntryPos();
@@ -787,17 +816,6 @@ bool OfaViewTabPage::FillItemSet( SfxItemSet* )
     }
 
     bool bAppearanceChanged = false;
-
-
-    // Screen Scaling
-    sal_uInt16 nOldScale = pAppearanceCfg->GetScaleFactor();
-    sal_uInt16 nNewScale = (sal_uInt16)m_pWindowSizeMF->GetValue();
-
-    if ( nNewScale != nOldScale )
-    {
-        pAppearanceCfg->SetScaleFactor(nNewScale);
-        bAppearanceChanged = true;
-    }
 
     // Mouse Snap Mode
     SnapType eOldSnap = pAppearanceCfg->GetSnapMode();
@@ -853,6 +871,16 @@ bool OfaViewTabPage::FillItemSet( SfxItemSet* )
         bAppearanceChanged = true;
     }
 
+    if(m_pContextMenuShortcutsLB->IsValueChangedFromSaved())
+    {
+        aMenuOpt.SetContextMenuShortcuts(m_pContextMenuShortcutsLB->GetSelectEntryPos() == 0 ?
+            TRISTATE_INDET :
+            static_cast<TriState>(m_pContextMenuShortcutsLB->GetSelectEntryPos() - 1));
+        bModified = true;
+        bMenuOptModified = true;
+        bAppearanceChanged = true;
+    }
+
     // #i95644#  if disabled, do not use value, see in ::Reset()
     if(m_pUseHardwareAccell->IsEnabled())
     {
@@ -874,8 +902,13 @@ bool OfaViewTabPage::FillItemSet( SfxItemSet* )
         }
     }
 
-    mpOpenGLConfig->setUseOpenGL(m_pUseOpenGL->IsChecked());
-    mpOpenGLConfig->setForceOpenGL(m_pForceOpenGL->IsChecked());
+    if (m_pUseOpenGL->IsValueChangedFromSaved() ||
+        m_pForceOpenGL->IsValueChangedFromSaved())
+    {
+        mpOpenGLConfig->setUseOpenGL(m_pUseOpenGL->IsChecked());
+        mpOpenGLConfig->setForceOpenGL(m_pForceOpenGL->IsChecked());
+        bModified = true;
+    }
 
     if( bMenuOptModified )
     {
@@ -904,6 +937,15 @@ bool OfaViewTabPage::FillItemSet( SfxItemSet* )
         }
     }
 
+    if (m_pUseOpenGL->IsValueChangedFromSaved() ||
+        m_pForceOpenGL->IsValueChangedFromSaved())
+    {
+        SolarMutexGuard aGuard;
+        svtools::executeRestartDialog(
+            comphelper::getProcessComponentContext(), nullptr,
+            svtools::RESTART_REASON_OPENGL);
+    }
+
     return bModified;
 }
 
@@ -912,10 +954,34 @@ void OfaViewTabPage::Reset( const SfxItemSet* )
     SvtMiscOptions aMiscOptions;
     mpOpenGLConfig->reset();
 
-    if( aMiscOptions.GetSymbolsSize() != SFX_SYMBOLS_SIZE_AUTO )
-        nSizeLB_InitialSelection = ( aMiscOptions.AreCurrentSymbolsLarge() )? 2 : 1;
+    if (aMiscOptions.GetSymbolsSize() != SFX_SYMBOLS_SIZE_AUTO)
+    {
+        nSizeLB_InitialSelection = 1;
+
+        if (aMiscOptions.GetSymbolsSize() == SFX_SYMBOLS_SIZE_LARGE)
+            nSizeLB_InitialSelection = 2;
+        else if (aMiscOptions.GetSymbolsSize() == SFX_SYMBOLS_SIZE_32)
+            nSizeLB_InitialSelection = 3;
+    }
     m_pIconSizeLB->SelectEntryPos( nSizeLB_InitialSelection );
     m_pIconSizeLB->SaveValue();
+
+    if( aMiscOptions.GetSidebarIconSize() == ToolBoxButtonSize::DontCare )
+        ; // do nothing
+    else if( aMiscOptions.GetSidebarIconSize() == ToolBoxButtonSize::Small )
+        nSidebarSizeLB_InitialSelection = 1;
+    else if( aMiscOptions.GetSidebarIconSize() == ToolBoxButtonSize::Large )
+        nSidebarSizeLB_InitialSelection = 2;
+    m_pSidebarIconSizeLB->SelectEntryPos( nSidebarSizeLB_InitialSelection );
+    m_pSidebarIconSizeLB->SaveValue();
+    if( aMiscOptions.GetNotebookbarIconSize() == ToolBoxButtonSize::DontCare )
+        ; // do nothing
+    else if( aMiscOptions.GetNotebookbarIconSize() == ToolBoxButtonSize::Small )
+        nNotebookbarSizeLB_InitialSelection = 1;
+    else if( aMiscOptions.GetNotebookbarIconSize() == ToolBoxButtonSize::Large )
+        nNotebookbarSizeLB_InitialSelection = 2;
+    m_pNotebookbarIconSizeLB->SelectEntryPos( nNotebookbarSizeLB_InitialSelection );
+    m_pNotebookbarIconSizeLB->SaveValue();
 
     if (aMiscOptions.IconThemeWasSetAutomatically()) {
         nStyleLB_InitialSelection = 0;
@@ -930,8 +996,6 @@ void OfaViewTabPage::Reset( const SfxItemSet* )
     m_pIconStyleLB->SelectEntryPos( nStyleLB_InitialSelection );
     m_pIconStyleLB->SaveValue();
 
-    // Screen Scaling
-    m_pWindowSizeMF->SetValue ( pAppearanceCfg->GetScaleFactor() );
     // Mouse Snap
     m_pMousePosLB->SelectEntryPos((sal_Int32)pAppearanceCfg->GetSnapMode());
     m_pMousePosLB->SaveValue();
@@ -951,6 +1015,11 @@ void OfaViewTabPage::Reset( const SfxItemSet* )
     SvtMenuOptions aMenuOpt;
     m_pMenuIconsLB->SelectEntryPos(aMenuOpt.GetMenuIconsState() == 2 ? 0 : aMenuOpt.GetMenuIconsState() + 1);
     m_pMenuIconsLB->SaveValue();
+
+    TriState eContextMenuShortcuts = aMenuOpt.GetContextMenuShortcuts();
+    bool bContextMenuShortcutsNonDefault = eContextMenuShortcuts == TRISTATE_FALSE || eContextMenuShortcuts == TRISTATE_TRUE;
+    m_pContextMenuShortcutsLB->SelectEntryPos(bContextMenuShortcutsNonDefault ? eContextMenuShortcuts + 1 : 0);
+    m_pContextMenuShortcutsLB->SaveValue();
 
     { // #i95644# HW accel (unified to disable mechanism)
         if(pCanvasSettings->IsHardwareAccelerationAvailable())
@@ -988,6 +1057,9 @@ void OfaViewTabPage::Reset( const SfxItemSet* )
     m_pAAPointLimit->SaveValue();
 #endif
     m_pFontShowCB->SaveValue();
+
+    m_pUseOpenGL->SaveValue();
+    m_pForceOpenGL->SaveValue();
 
 #if defined( UNX )
     LINK( this, OfaViewTabPage, OnAntialiasingToggled ).Call( *m_pFontAntiAliasing );
@@ -1041,6 +1113,16 @@ static OUString lcl_getDatePatternsConfigString( const LocaleDataWrapper& rLocal
     return aBuf.makeStringAndClear();
 }
 
+namespace
+{
+    //what ui language will be selected by default if the user override of General::UILocale is unset ?
+    LanguageTag GetInstalledLocaleForSystemUILanguage()
+    {
+        css::uno::Sequence<OUString> inst(officecfg::Setup::Office::InstalledLocales::get()->getElementNames());
+        return LanguageTag(getInstalledLocaleForSystemUILanguage(inst)).makeFallback();
+    }
+}
+
 OfaLanguagesTabPage::OfaLanguagesTabPage(vcl::Window* pParent, const SfxItemSet& rSet)
     : SfxTabPage(pParent,"OptLanguagesPage","cui/ui/optlanguagespage.ui", &rSet)
     , pLangConfig(new LanguageConfig_Impl)
@@ -1075,7 +1157,7 @@ OfaLanguagesTabPage::OfaLanguagesTabPage(vcl::Window* pParent, const SfxItemSet&
 
     OUString aUILang = m_sSystemDefaultString +
                        " - " +
-                       SvtLanguageTable::GetLanguageString( Application::GetSettings().GetUILanguageTag().getLanguageType(), true );
+                       SvtLanguageTable::GetLanguageString(GetInstalledLocaleForSystemUILanguage().getLanguageType(), true);
 
     m_pUserInterfaceLB->InsertEntry(aUILang);
     m_pUserInterfaceLB->SetEntryData(0, nullptr);
@@ -1644,7 +1726,7 @@ void OfaLanguagesTabPage::Reset( const SfxItemSet* rSet )
     }
 }
 
-IMPL_LINK_TYPED(  OfaLanguagesTabPage, SupportHdl, Button*, pButton, void )
+IMPL_LINK(  OfaLanguagesTabPage, SupportHdl, Button*, pButton, void )
 {
     CheckBox* pBox = static_cast<CheckBox*>(pButton);
     DBG_ASSERT( pBox, "OfaLanguagesTabPage::SupportHdl(): pBox invalid" );
@@ -1683,7 +1765,7 @@ namespace
     }
 }
 
-IMPL_LINK_TYPED( OfaLanguagesTabPage, LocaleSettingHdl, ListBox&, rListBox, void )
+IMPL_LINK( OfaLanguagesTabPage, LocaleSettingHdl, ListBox&, rListBox, void )
 {
     SvxLanguageBox* pBox = static_cast<SvxLanguageBox*>(&rListBox);
     LanguageType eLang = pBox->GetSelectLanguage();
@@ -1732,7 +1814,7 @@ IMPL_LINK_TYPED( OfaLanguagesTabPage, LocaleSettingHdl, ListBox&, rListBox, void
     m_pDatePatternsED->SetText( aDatePatternsString);
 }
 
-IMPL_LINK_TYPED( OfaLanguagesTabPage, DatePatternsHdl, Edit&, rEd, void )
+IMPL_LINK( OfaLanguagesTabPage, DatePatternsHdl, Edit&, rEd, void )
 {
     const OUString aPatterns( rEd.GetText());
     OUStringBuffer aBuf( aPatterns);

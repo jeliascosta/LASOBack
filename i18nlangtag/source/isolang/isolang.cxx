@@ -663,6 +663,7 @@ static IsoLanguageCountryEntry const aImplIsoLangEntries[] =
     { LANGUAGE_USER_APATANI,               "apt", "IN", 0     },
     { LANGUAGE_USER_ENGLISH_MAURITIUS,      "en", "MU", 0     },
     { LANGUAGE_USER_FRENCH_MAURITIUS,       "fr", "MU", 0     },
+    { LANGUAGE_USER_SILESIAN,              "szl", "PL", 0     },
     { LANGUAGE_MULTIPLE,                   "mul", ""  , 0     },    // multiple languages, many languages are used
     { LANGUAGE_UNDETERMINED,               "und", ""  , 0     },    // undetermined language, language cannot be identified
     { LANGUAGE_NONE,                       "zxx", ""  , 0     },    // added to ISO 639-2 on 2006-01-11: Used to declare the absence of linguistic information
@@ -746,6 +747,7 @@ static IsoLanguageScriptCountryEntry const aImplIsoLangScriptEntries[] =
     { LANGUAGE_USER_CREE_PLAINS_SYLLABICS,         "crk-Cans", "CA", 0     },
     { LANGUAGE_USER_CREE_PLAINS_LATIN,             "crk-Latn", "CN", kSAME },   // erroneous tdf#73973
     { LANGUAGE_USER_CREE_PLAINS_SYLLABICS,         "crk-Cans", "CN", kSAME },   // erroneous tdf#73973
+    { LANGUAGE_USER_HUNGARIAN_ROVAS,                "hu-Hung", "HU", 0     },
     { LANGUAGE_DONTKNOW,                            "",        ""  , 0     }    // marks end of table
 };
 

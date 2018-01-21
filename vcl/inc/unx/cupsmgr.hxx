@@ -59,7 +59,7 @@ class CUPSManager : public PrinterInfoManager
     bool                                                        m_bPPDThreadRunning;
 
     CUPSManager();
-    virtual ~CUPSManager();
+    virtual ~CUPSManager() override;
 
     virtual void initialize() override;
 
@@ -80,16 +80,13 @@ public:
     virtual bool endSpool( const OUString& rPrinterName, const OUString& rJobTitle, FILE* pFile, const JobData& rDocumentJobData, bool bBanner, const OUString& rFaxNumber ) override;
     virtual void setupJobContextData( JobData& rData ) override;
 
-    /// changes the info about a named printer
-    virtual void changePrinterInfo( const OUString& rPrinter, const PrinterInfo& rNewInfo ) override;
-
     /// check if the printer configuration has changed
     virtual bool checkPrintersChanged( bool bWait ) override;
 
     // members for administration
     // disable for CUPS
     virtual bool addPrinter( const OUString& rPrinterName, const OUString& rDriverName ) override;
-    virtual bool removePrinter( const OUString& rPrinterName, bool bCheckOnly = false ) override;
+    virtual bool removePrinter( const OUString& rPrinterName, bool bCheckOnly ) override;
     virtual bool writePrinterConfig() override;
     virtual bool setDefaultPrinter( const OUString& rPrinterName ) override;
 };

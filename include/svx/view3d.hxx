@@ -63,8 +63,6 @@ protected:
     // Migrate selections
     Impl3DMirrorConstructOverlay*                   mpMirrorOverlay;
 
-    bool                        bDoubleSided;
-
     void InitView();
 
     void ImpCreate3DObject(E3dScene* pScene, SdrObject* pObj, bool bExtrude, double fDepth, basegfx::B2DHomMatrix& rLatheMat);
@@ -77,15 +75,15 @@ protected:
     void BreakSingle3DObj(E3dObject* pObj);
 
 public:
-    E3dView(SdrModel* pModel, OutputDevice* pOut = nullptr);
-    virtual ~E3dView();
+    E3dView(SdrModel* pModel, OutputDevice* pOut);
+    virtual ~E3dView() override;
 
     // Output all marked Objects on the given OutputDevice.
     virtual void DrawMarkedObj(OutputDevice& rOut) const override;
 
     // Access to the default attributes.
     E3dDefaultAttributes& Get3DDefaultAttributes() { return a3DDefaultAttr; }
-    virtual bool BegDragObj(const Point& rPnt, OutputDevice* pOut = nullptr, SdrHdl* pHdl = nullptr, short nMinMov = -3, SdrDragMethod* pForcedMeth = nullptr) override;
+    virtual bool BegDragObj(const Point& rPnt, OutputDevice* pOut, SdrHdl* pHdl, short nMinMov = -3, SdrDragMethod* pForcedMeth = nullptr) override;
     virtual void CheckPossibilities() override;
 
     // Get/Set Event

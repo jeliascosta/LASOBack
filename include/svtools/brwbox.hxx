@@ -64,7 +64,7 @@ enum class BrowserMode
     HLINES               = 0x000010,
     VLINES               = 0x000020,
 
-    HIDESELECT           = 0x000100, // old => don't use!
+    HIDESELECT           = 0x000100,
     HIDECURSOR           = 0x000200,
 
     NO_HSCROLL           = 0x000400,
@@ -292,9 +292,9 @@ private:
 
     SVT_DLLPRIVATE void            ColumnInserted( sal_uInt16 nPos );
 
-    DECL_DLLPRIVATE_LINK_TYPED(    ScrollHdl, ScrollBar*, void );
-    DECL_DLLPRIVATE_LINK_TYPED(    EndScrollHdl, ScrollBar*, void );
-    DECL_DLLPRIVATE_LINK_TYPED(    StartDragHdl, HeaderBar*, void );
+    DECL_DLLPRIVATE_LINK(    ScrollHdl, ScrollBar*, void );
+    DECL_DLLPRIVATE_LINK(    EndScrollHdl, ScrollBar*, void );
+    DECL_DLLPRIVATE_LINK(    StartDragHdl, HeaderBar*, void );
 
     SVT_DLLPRIVATE long            GetFrozenWidth() const;
 
@@ -302,8 +302,6 @@ private:
 
     bool            GoToColumnId( sal_uInt16 nColId, bool bMakeVisible, bool bRowColMove = false);
     void            SelectColumnPos( sal_uInt16 nCol, bool _bSelect, bool bMakeVisible);
-    void            SelectColumnId( sal_uInt16 nColId, bool _bSelect, bool bMakeVisible)
-                        { SelectColumnPos( GetColumnPos(nColId), _bSelect, bMakeVisible); }
 
     void            ImplPaintData(OutputDevice& _rOut, const Rectangle& _rRect, bool _bForeignDevice, bool _bDrawSelections);
 
@@ -388,15 +386,12 @@ private:
 protected:
     // callbacks for the data window
     virtual void    ImplStartTracking();
-    virtual void    ImplTracking();
     virtual void    ImplEndTracking();
 
 public:
-                    BrowseBox( vcl::Window* pParent, WinBits nBits = 0,
+                    BrowseBox( vcl::Window* pParent, WinBits nBits,
                                BrowserMode nMode = BrowserMode::NONE );
-                    BrowseBox( vcl::Window* pParent, const ResId& rId,
-                               BrowserMode nMode = BrowserMode::NONE );
-    virtual         ~BrowseBox();
+    virtual         ~BrowseBox() override;
     virtual void    dispose() override;
 
     // override inherited handler
@@ -528,11 +523,11 @@ public:
     void            RowInserted( long nRow, long nNumRows = 1, bool bDoPaint = true, bool bKeepSelection = false );
 
     // miscellaneous
-    void            ReserveControlArea( sal_uInt16 nWidth = USHRT_MAX );
+    bool            ReserveControlArea(sal_uInt16 nWidth = USHRT_MAX);
     Rectangle       GetControlArea() const;
     bool            ProcessKey( const KeyEvent& rEvt );
     void            Dispatch( sal_uInt16 nId );
-    void            SetMode( BrowserMode nMode = BrowserMode::NONE );
+    void            SetMode( BrowserMode nMode );
     BrowserMode     GetMode( ) const { return m_nCurrentMode; }
 
     void            SetCursorColor(const Color& _rCol);

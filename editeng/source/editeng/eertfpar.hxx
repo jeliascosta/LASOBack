@@ -26,22 +26,17 @@
 
 class EditEngine;
 
-
-#define ACTION_INSERTPARABRK    2
-
 class EditRTFParser : public SvxRTFParser
 {
 private:
     EditSelection       aCurSel;
     EditEngine*         mpEditEngine;
-    rtl_TextEncoding    eDestCharSet;
     MapMode             aRTFMapMode;
     MapMode             aEditMapMode;
 
     sal_uInt16              nDefFont;
     sal_uInt16              nDefTab;
-    sal_uInt16              nDefFontHeight;
-    sal_uInt8               nLastAction;
+    bool                bLastActionInsertParaBreak;
 
 protected:
     virtual void        InsertPara() override;
@@ -64,11 +59,9 @@ protected:
 
 public:
     EditRTFParser(SvStream& rIn, EditSelection aCurSel, SfxItemPool& rAttrPool, EditEngine* pEditEngine);
-    virtual ~EditRTFParser();
+    virtual ~EditRTFParser() override;
 
     virtual SvParserState   CallParser() override;
-
-    vcl::Font       GetDefFont()                        { return GetFont( nDefFont ); }
 
     EditPaM         GetCurPaM() const                   { return aCurSel.Max(); }
 };

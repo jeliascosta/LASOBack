@@ -63,7 +63,7 @@ class Font2
 Font2::Font2(const PrinterGfx &rGfx)
 {
     mpFont[0] = rGfx.GetFontID();
-    mpFont[1] = rGfx.getFallbackID();
+    mpFont[1] = 0; // fallback ID
 
     PrintFontManager &rMgr = PrintFontManager::get();
     mbSymbol = mpFont[0] != -1 &&
@@ -85,13 +85,12 @@ static int getVerticalDeltaAngle( sal_Unicode nChar )
 void
 PrinterGfx::PSUploadPS1Font (sal_Int32 nFontID)
 {
-    std::list< sal_Int32 >::iterator aFont;
     // already in the document header ?
-    for (aFont = maPS1Font.begin(); aFont != maPS1Font.end(); ++aFont )
-        if( nFontID == *aFont )
+    for ( int i : maPS1Font )
+        if( nFontID == i )
             return;
 
-    // no occurrenc yet, mark for download
+    // no occurrence yet, mark for download
     // add the fontid to the list
     maPS1Font.push_back (nFontID);
 }
@@ -100,8 +99,7 @@ PrinterGfx::PSUploadPS1Font (sal_Int32 nFontID)
  * implement text handling printer routines,
  */
 
-sal_uInt16
-PrinterGfx::SetFont(
+void PrinterGfx::SetFont(
                     sal_Int32 nFontID,
                     sal_Int32 nHeight,
                     sal_Int32 nWidth,
@@ -122,8 +120,6 @@ PrinterGfx::SetFont(
     maVirtualStatus.mbArtBold         = bArtBold;
     mnTextAngle                       = nAngle;
     mbTextVertical                    = bVertical;
-
-    return 0;
 }
 
 void PrinterGfx::drawGlyphs(
@@ -540,7 +536,7 @@ PrinterGfx::LicenseWarning(const Point& rPoint, const sal_Unicode* pStr,
             RTL_TEXTENCODING_ASCII_US);
     PSSetFont (aFontName, RTL_TEXTENCODING_ISO_8859_1);
 
-    sal_Size  nSize    = 4 * nLen;
+    std::size_t  nSize    = 4 * nLen;
     unsigned char* pBuffer = static_cast<unsigned char*>(alloca (nSize* sizeof(unsigned char)));
 
     ConverterFactory &rCvt = GetConverterFactory ();
@@ -667,18 +663,17 @@ void
 PrinterGfx::writeResources( osl::File* pFile, std::list< OString >& rSuppliedFonts )
 {
     // write all type 1 fonts
-    std::list< sal_Int32 >::iterator aFont;
     // already in the document header ?
-    for (aFont = maPS1Font.begin(); aFont != maPS1Font.end(); ++aFont)
+    for (int aFont : maPS1Font)
     {
-        const OString& rSysPath (mrFontMgr.getFontFileSysPath(*aFont) );
+        const OString& rSysPath (mrFontMgr.getFontFileSysPath(aFont) );
         OUString aUNCPath;
         osl::File::getFileURLFromSystemPath (OStringToOUString (rSysPath, osl_getThreadTextEncoding()), aUNCPath);
         osl::File aFontFile (aUNCPath);
 
         // provide the pfb or pfa font as a (pfa-)font resource
         OString aPostScriptName =
-            OUStringToOString ( mrFontMgr.getPSName(*aFont),
+            OUStringToOString ( mrFontMgr.getPSName(aFont),
                                      RTL_TEXTENCODING_ASCII_US );
 
         WritePS (pFile, "%%BeginResource: font ");

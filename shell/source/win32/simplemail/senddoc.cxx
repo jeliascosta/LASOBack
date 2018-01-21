@@ -152,9 +152,9 @@ void initMapiMessage(
     ZeroMemory(pMapiMessage, sizeof(MapiMessage));
 
     try {
-         rtl_uString *subject = NULL;
-         rtl_uString_newFromAscii(&subject, const_cast<char*>(gSubject.c_str()));
-         rtl_uString *decoded_subject = NULL;
+         rtl_uString *subject = nullptr;
+         rtl_uString_newFromAscii(&subject, gSubject.c_str());
+         rtl_uString *decoded_subject = nullptr;
          rtl_uriDecode(subject, rtl_UriDecodeWithCharset, RTL_TEXTENCODING_UTF8, &decoded_subject);
          OUString ou_subject(decoded_subject);
          pMapiMessage->lpszSubject = strdup(OUStringToOString(ou_subject, osl_getThreadTextEncoding(), RTL_UNICODETOTEXT_FLAGS_UNDEFINED_QUESTIONMARK).getStr());
@@ -162,9 +162,9 @@ void initMapiMessage(
     catch (...) {
     pMapiMessage->lpszSubject = const_cast<char*>(gSubject.c_str());
     }
-    pMapiMessage->lpszNoteText = (gBody.length() ? const_cast<char*>(gBody.c_str()) : NULL);
+    pMapiMessage->lpszNoteText = (gBody.length() ? const_cast<char*>(gBody.c_str()) : nullptr);
     pMapiMessage->lpOriginator = aMapiOriginator;
-    pMapiMessage->lpRecips = aMapiRecipientList.size() ? &aMapiRecipientList[0] : 0;
+    pMapiMessage->lpRecips = aMapiRecipientList.size() ? &aMapiRecipientList[0] : nullptr;
     pMapiMessage->nRecipCount = aMapiRecipientList.size();
     pMapiMessage->lpFiles = &aMapiAttachmentList[0];
     pMapiMessage->nFileCount = aMapiAttachmentList.size();
@@ -189,7 +189,7 @@ const size_t nKnownParameter = SAL_N_ELEMENTS(KnownParameter);
 bool isKnownParameter(const char* aParameterName)
 {
     for (size_t i = 0; i < nKnownParameter; i++)
-        if (_tcsicmp(aParameterName, KnownParameter[i]) == 0)
+        if (_stricmp(aParameterName, KnownParameter[i]) == 0)
             return true;
 
     return false;
@@ -206,29 +206,29 @@ void initParameter(int argc, char* argv[])
             continue;
         }
 
-        if ((_tcsicmp(argv[i], TEXT("--mapi-dialog")) == 0))
+        if ((_stricmp(argv[i], "--mapi-dialog") == 0))
         {
             gMapiFlags |= MAPI_DIALOG;
         }
-        else if ((_tcsicmp(argv[i], TEXT("--mapi-logon-ui")) == 0))
+        else if ((_stricmp(argv[i], "--mapi-logon-ui") == 0))
         {
             gMapiFlags |= MAPI_LOGON_UI;
         }
         else if ((i+1) < argc) // is the value of a parameter available too?
         {
-            if (_tcsicmp(argv[i], TEXT("--to")) == 0)
+            if (_stricmp(argv[i], "--to") == 0)
                 gTo.push_back(prefixEmailAddress(argv[i+1]));
-            else if (_tcsicmp(argv[i], TEXT("--cc")) == 0)
+            else if (_stricmp(argv[i], "--cc") == 0)
                 gCc.push_back(prefixEmailAddress(argv[i+1]));
-            else if (_tcsicmp(argv[i], TEXT("--bcc")) == 0)
+            else if (_stricmp(argv[i], "--bcc") == 0)
                 gBcc.push_back(prefixEmailAddress(argv[i+1]));
-            else if (_tcsicmp(argv[i], TEXT("--from")) == 0)
+            else if (_stricmp(argv[i], "--from") == 0)
                 gFrom = prefixEmailAddress(argv[i+1]);
-            else if (_tcsicmp(argv[i], TEXT("--subject")) == 0)
+            else if (_stricmp(argv[i], "--subject") == 0)
                 gSubject = argv[i+1];
-            else if (_tcsicmp(argv[i], TEXT("--body")) == 0)
+            else if (_stricmp(argv[i], "--body") == 0)
                 gBody = argv[i+1];
-            else if ((_tcsicmp(argv[i], TEXT("--attach")) == 0))
+            else if ((_stricmp(argv[i], "--attach") == 0))
                 gAttachments.push_back(argv[i+1]);
 
             i++;
@@ -274,7 +274,7 @@ int main(int argc, char* argv[])
         initMapiOriginator(&mapiOriginator);
         initRecipientList(&mapiRecipientList);
         initAttachmentList(&mapiAttachmentList);
-        initMapiMessage((gFrom.length() ? &mapiOriginator : NULL), mapiRecipientList, mapiAttachmentList, &mapiMsg);
+        initMapiMessage((gFrom.length() ? &mapiOriginator : nullptr), mapiRecipientList, mapiAttachmentList, &mapiMsg);
 
         ulRet = mapi.MAPISendMail(hSession, 0, &mapiMsg, gMapiFlags, 0);
 
@@ -306,33 +306,33 @@ int main(int argc, char* argv[])
         std::ostringstream oss;
 
         if (gFrom.length() > 0)
-            oss << "--from" << " " << gFrom << std::endl;
+            oss << "--from " << gFrom << std::endl;
 
         if (gSubject.length() > 0)
-            oss << "--subject" << " " << gSubject << std::endl;
+            oss << "--subject " << gSubject << std::endl;
 
         if (gBody.length() > 0)
-            oss << "--body" << " " << gBody << std::endl;
+            oss << "--body " << gBody << std::endl;
 
         StringListIterator_t iter = gTo.begin();
         StringListIterator_t iter_end = gTo.end();
         for (/**/;iter != iter_end; ++iter)
-            oss << "--to" << " " << *iter << std::endl;
+            oss << "--to " << *iter << std::endl;
 
         iter = gCc.begin();
         iter_end = gCc.end();
         for (/**/;iter != iter_end; ++iter)
-            oss << "--cc" << " " << *iter << std::endl;
+            oss << "--cc " << *iter << std::endl;
 
         iter = gBcc.begin();
         iter_end = gBcc.end();
         for (/**/;iter != iter_end; ++iter)
-            oss << "--bcc" << " " << *iter << std::endl;
+            oss << "--bcc " << *iter << std::endl;
 
         iter = gAttachments.begin();
         iter_end = gAttachments.end();
         for (/**/;iter != iter_end; ++iter)
-            oss << "--attach" << " " << *iter << std::endl;
+            oss << "--attach " << *iter << std::endl;
 
         if (gMapiFlags & MAPI_DIALOG)
             oss << "--mapi-dialog" << std::endl;
@@ -340,7 +340,7 @@ int main(int argc, char* argv[])
         if (gMapiFlags & MAPI_LOGON_UI)
             oss << "--mapi-logon-ui" << std::endl;
 
-        MessageBox(NULL, oss.str().c_str(), "Arguments", MB_OK | MB_ICONINFORMATION);
+        MessageBox(nullptr, oss.str().c_str(), "Arguments", MB_OK | MB_ICONINFORMATION);
     }
 #endif
 

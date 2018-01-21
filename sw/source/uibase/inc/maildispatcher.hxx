@@ -61,13 +61,13 @@ public:
         @throws css::uno::RuntimeException
         on errors during construction of an instance of this class.
     */
-    MailDispatcher(css::uno::Reference< css::mail::XSmtpService> xMailService);
+    MailDispatcher(css::uno::Reference< css::mail::XSmtpService> const & xMailService);
 
     /**
         Shutdown the mail dispatcher. Every mail messages
         not yet sent will be discarded.
     */
-    virtual ~MailDispatcher();
+    virtual ~MailDispatcher() override;
 
     /**
         Enqueue a mail message for delivery. A client must
@@ -77,7 +77,7 @@ public:
         @param xMailMessage
         [in] a mail message that should be send.
     */
-    void enqueueMailMessage(css::uno::Reference< css::mail::XMailMessage> xMailMessage);
+    void enqueueMailMessage(css::uno::Reference< css::mail::XMailMessage> const & xMailMessage);
     /**
         Dequeues a mail message.
         This enables the caller to remove attachments when sending mails is to be cancelled.
@@ -130,7 +130,7 @@ public:
     /**
         Register a listener for mail dispatcher events.
     */
-    void addListener(::rtl::Reference<IMailDispatcherListener> listener);
+    void addListener(::rtl::Reference<IMailDispatcherListener> const & listener);
 
 protected:
     virtual void SAL_CALL run() override;
@@ -138,12 +138,12 @@ protected:
 
 private:
     std::list< ::rtl::Reference<IMailDispatcherListener> > cloneListener();
-    void sendMailMessageNotifyListener(css::uno::Reference< css::mail::XMailMessage> message);
+    void sendMailMessageNotifyListener(css::uno::Reference< css::mail::XMailMessage> const & message);
 
 private:
     css::uno::Reference< css::mail::XSmtpService> mailserver_;
-    ::std::list< css::uno::Reference< css::mail::XMailMessage > > messages_;
-    ::std::list< ::rtl::Reference<IMailDispatcherListener> > listeners_;
+    std::list< css::uno::Reference< css::mail::XMailMessage > > messages_;
+    std::list< ::rtl::Reference<IMailDispatcherListener> > listeners_;
     ::osl::Mutex message_container_mutex_;
     ::osl::Mutex listener_container_mutex_;
     ::osl::Mutex thread_status_mutex_;

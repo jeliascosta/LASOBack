@@ -80,8 +80,7 @@ class ConfigurationAccess
 {
     public:
 
-        ConfigurationAccess( const css::uno::Reference< css::uno::XComponentContext >& rXFactory,
-                                OptimizerSettings* pDefaultSettings = nullptr );
+        explicit ConfigurationAccess( const css::uno::Reference< css::uno::XComponentContext >& rXFactory );
         ~ConfigurationAccess();
         void SaveConfiguration();
 
@@ -103,14 +102,7 @@ class ConfigurationAccess
 
     private:
 
-        struct Compare
-        {
-            bool operator()( const PPPOptimizerTokenEnum s1, const PPPOptimizerTokenEnum s2 ) const
-            {
-                return s1 < s2;
-            }
-        };
-        std::map < PPPOptimizerTokenEnum, OUString, Compare > maStrings;
+        std::map < PPPOptimizerTokenEnum, OUString > maStrings;
 
         std::vector< OptimizerSettings > maSettings;
         std::vector< OptimizerSettings > maInitialSettings;

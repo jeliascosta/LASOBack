@@ -147,7 +147,7 @@ class XclRoot;
 
 // Constants and Enumerations =================================================
 
-const sal_Size EXC_CHART_PROGRESS_SIZE          = 10;
+const std::size_t EXC_CHART_PROGRESS_SIZE       = 10;
 const sal_uInt16 EXC_CHART_AUTOROTATION         = 0xFFFF;   /// Automatic rotation, e.g. axis labels (internal use only).
 
 const sal_Int32 EXC_CHART_AXIS_NONE             = -1;       /// For internal use only.
@@ -1281,7 +1281,7 @@ typedef css::uno::Reference< css::drawing::XShape >
 class XclChObjectTable
 {
 public:
-    explicit            XclChObjectTable( css::uno::Reference< css::lang::XMultiServiceFactory > xFactory,
+    explicit            XclChObjectTable( css::uno::Reference< css::lang::XMultiServiceFactory > const & xFactory,
                             const OUString& rServiceName, const OUString& rObjNameBase );
 
     /** Returns a named formatting object from the chart document. */

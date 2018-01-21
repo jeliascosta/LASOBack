@@ -62,6 +62,7 @@
 #include <com/sun/star/util/XNumberFormatter.hpp>
 #include <com/sun/star/util/XNumberFormats.hpp>
 
+#include <rtl/ref.hxx>
 #include <tools/wintypes.hxx>
 #include <cppuhelper/weakref.hxx>
 #include <comphelper/uno3.hxx>
@@ -77,8 +78,8 @@ namespace vcl { class Window; }
 
 // displaying a database exception for the user
 // display info about a simple css::sdbc::SQLException
-void displayException(const css::sdbc::SQLException&, vcl::Window* _pParent = nullptr);
-SVX_DLLPUBLIC void displayException(const css::sdb::SQLContext&, vcl::Window* _pParent = nullptr);
+void displayException(const css::sdbc::SQLException&, vcl::Window* _pParent);
+SVX_DLLPUBLIC void displayException(const css::sdb::SQLContext&, vcl::Window* _pParent);
 void displayException(const css::sdb::SQLErrorEvent&);
 void displayException(const css::uno::Any&, vcl::Window* _pParent = nullptr);
 
@@ -102,7 +103,6 @@ private:
 
 public:
     // Construction/Destruction
-    CursorWrapper() { }
     CursorWrapper(const css::uno::Reference< css::sdbc::XRowSet>& _rxCursor, bool bUseCloned = false);
     SVX_DLLPUBLIC CursorWrapper(const css::uno::Reference< css::sdbc::XResultSet>& _rxCursor, bool bUseCloned = false);
         // if bUseCloned == sal_True, the cursor is first doubled over the XCloneable interface (which it must implement)
@@ -157,11 +157,10 @@ class SAL_WARN_UNUSED FmXDisposeListener
 {
     friend class FmXDisposeMultiplexer;
 
-    FmXDisposeMultiplexer*  m_pAdapter;
+    rtl::Reference<FmXDisposeMultiplexer> m_pAdapter;
     osl::Mutex   m_aMutex;
 
 public:
-    FmXDisposeListener() : m_pAdapter(nullptr) { }
     virtual ~FmXDisposeListener();
 
     virtual void disposing(const css::lang::EventObject& _rEvent, sal_Int16 _nId) throw( css::uno::RuntimeException ) = 0;
@@ -174,9 +173,8 @@ class SAL_WARN_UNUSED FmXDisposeMultiplexer : public ::cppu::WeakImplHelper1< cs
 {
     css::uno::Reference< css::lang::XComponent>       m_xObject;
     FmXDisposeListener* m_pListener;
-    sal_Int16           m_nId;
 
-    virtual ~FmXDisposeMultiplexer();
+    virtual ~FmXDisposeMultiplexer() override;
 public:
     FmXDisposeMultiplexer(FmXDisposeListener* _pListener, const css::uno::Reference< css::lang::XComponent>& _rxObject);
 

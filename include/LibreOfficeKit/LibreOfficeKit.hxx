@@ -398,20 +398,21 @@ public:
     /**
      * Get number of views of this document.
      */
-    inline int getViews()
+    inline int getViewsCount()
     {
-        return mpDoc->pClass->getViews(mpDoc);
+        return mpDoc->pClass->getViewsCount(mpDoc);
     }
 
     /**
-     * Paints a font name to be displayed in the font list
+     * Paints a font name or character if provided to be displayed in the font list
      * @param pFontName the font to be painted
      */
     inline unsigned char* renderFont(const char *pFontName,
+                          const char *pChar,
                           int *pFontWidth,
                           int *pFontHeight)
     {
-        return mpDoc->pClass->renderFont(mpDoc, pFontName, pFontWidth, pFontHeight);
+        return mpDoc->pClass->renderFont(mpDoc, pFontName, pChar, pFontWidth, pFontHeight);
     }
 
     /**
@@ -433,6 +434,22 @@ public:
                                             nCanvasWidth, nCanvasHeight,
                                             nTilePosX, nTilePosY,
                                             nTileWidth, nTileHeight);
+    }
+
+    /**
+     * Returns the viewID for each existing view. Since viewIDs are not reused,
+     * viewIDs are not the same as the index of the view in the view array over
+     * time. Use getViewsCount() to know the minimal nSize that's large enough.
+     *
+     * @param pArray the array to write the viewIDs into
+     * @param nSize the size of pArray
+     * @returns true if pArray was large enough and result is written, false
+     * otherwise.
+     */
+    inline bool getViewIds(int* pArray,
+                           size_t nSize)
+    {
+        return mpDoc->pClass->getViewIds(mpDoc, pArray, nSize);
     }
 
 #endif // defined LOK_USE_UNSTABLE_API || defined LIBO_INTERNAL_ONLY
@@ -495,6 +512,18 @@ public:
 
 #if defined LOK_USE_UNSTABLE_API || defined LIBO_INTERNAL_ONLY
     /**
+     * Registers a callback. LOK will invoke this function when it wants to
+     * inform the client about events.
+     *
+     * @param pCallback the callback to invoke
+     * @param pData the user data, will be passed to the callback on invocation
+     */
+    inline void registerCallback(LibreOfficeKitCallback pCallback, void* pData)
+    {
+        mpThis->pClass->registerCallback(mpThis, pCallback, pData);
+    }
+
+    /**
      * Returns details of filter types.
      *
      * Example returned string:
@@ -545,6 +574,22 @@ public:
     inline void setDocumentPassword(char const* pURL, char const* pPassword)
     {
         mpThis->pClass->setDocumentPassword(mpThis, pURL, pPassword);
+    }
+
+    /**
+     * Get version information of the LOKit process
+     *
+     * @returns JSON string containing version information in format:
+     * {ProductName: <>, ProductVersion: <>, ProductExtension: <>, BuildId: <>}
+     *
+     * Eg: {"ProductName": "LibreOffice",
+     * "ProductVersion": "5.3",
+     * "ProductExtension": ".0.0.alpha0",
+     * "BuildId": "<full 40 char git hash>"}
+     */
+    inline char* getVersionInfo()
+    {
+        return mpThis->pClass->getVersionInfo(mpThis);
     }
 #endif // defined LOK_USE_UNSTABLE_API || defined LIBO_INTERNAL_ONLY
 };

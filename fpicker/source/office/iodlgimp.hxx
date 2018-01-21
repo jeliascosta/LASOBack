@@ -80,11 +80,11 @@ enum SvtFileDlgType
 class SvtFileDialogURLSelector : public MenuButton
 {
 public:
-    virtual ~SvtFileDialogURLSelector();
+    virtual ~SvtFileDialogURLSelector() override;
     virtual void dispose() override;
 private:
     VclPtr<SvtFileDialog>      m_pDlg;
-    PopupMenu*          m_pMenu;
+    VclPtr<PopupMenu>          m_pMenu;
 
 protected:
     inline        SvtFileDialog*  GetDialogParent()       { return m_pDlg; }
@@ -103,7 +103,7 @@ private:
 
 public:
     SvtUpButton_Impl( vcl::Window* pParent, SvtFileDialog* pDlg, WinBits nBits );
-    virtual ~SvtUpButton_Impl();
+    virtual ~SvtUpButton_Impl() override;
 
 protected:
     virtual void        FillURLMenu( PopupMenu* _pMenu ) override;
@@ -192,9 +192,8 @@ public:
     inline  void            SetFilterListSelectHdl( const Link<ListBox&,void>& _rHandler );
 
     // inits the listbox for the filters from the filter list (_pFilter)
-            void            ClearFilterList( );
             void            InitFilterList( );
-    inline  bool        HasFilterListEntry( const OUString& _rFilterName );
+    inline  bool            HasFilterListEntry( const OUString& _rFilterName );
     inline  void            SelectFilterListEntry( const OUString& _rFilterName );
     inline  void            SetNoFilterListSelection( );
             void            InsertFilterListEntry( const SvtFileDialogFilter_Impl* _pFilterDesc );

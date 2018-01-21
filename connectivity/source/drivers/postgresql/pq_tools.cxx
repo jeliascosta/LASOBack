@@ -34,6 +34,9 @@
  *
  ************************************************************************/
 
+#include <sal/config.h>
+
+#include <o3tl/any.hxx>
 #include <rtl/strbuf.hxx>
 #include <rtl/ustrbuf.hxx>
 
@@ -93,7 +96,7 @@ OUString concatQualified( const OUString & a, const OUString &b)
 
 static inline OString iOUStringToOString( const OUString& str, ConnectionSettings *settings) {
     OSL_ENSURE(settings, "pgsql-sdbc: OUStringToOString got NULL settings");
-    return OUStringToOString( str, settings->encoding );
+    return OUStringToOString( str, ConnectionSettings::encoding );
 }
 
 OString OUStringToOString( const OUString& str, ConnectionSettings *settings) {
@@ -115,7 +118,7 @@ void bufferEscapeConstant( OUStringBuffer & buf, const OUString & value, Connect
         // (X/Open SQL CLI, March 1995, ISBN: 1-85912-081-4, X/Open Document Number: C451)
         // 22018 is for "Invalid character value" and seems to be the best match.
         // We have no good XInterface Reference to pass here, so just give NULL
-        throw SQLException(OUString(errstr, strlen(errstr), settings->encoding),
+        throw SQLException(OUString(errstr, strlen(errstr), ConnectionSettings::encoding),
                            nullptr,
                            OUString("22018"),
                            -1,
@@ -161,7 +164,7 @@ static inline void ibufferQuoteIdentifier( OUStringBuffer & buf, const OUString 
     {
         char *errstr = PQerrorMessage(settings->pConnection);
         // Implementation-defined SQLACCESS error
-        throw SQLException(OUString(errstr, strlen(errstr), settings->encoding),
+        throw SQLException(OUString(errstr, strlen(errstr), ConnectionSettings::encoding),
                            nullptr,
                            OUString("22018"),
                            -1,
@@ -224,14 +227,14 @@ sal_Int32 extractIntProperty(
     return ret;
 }
 
-void disposeObject( const com::sun::star::uno::Reference< com::sun::star::uno::XInterface > & r )
+void disposeObject( const css::uno::Reference< css::uno::XInterface > & r )
 {
     Reference< XComponent > comp( r, UNO_QUERY );
     if( comp.is() )
         comp->dispose();
 }
 
-void disposeNoThrow( const com::sun::star::uno::Reference< com::sun::star::uno::XInterface > & r )
+void disposeNoThrow( const css::uno::Reference< css::uno::XInterface > & r )
 {
     try
     {
@@ -248,18 +251,18 @@ Reference< XConnection > extractConnectionFromStatement( const Reference< XInter
 {
     Reference< XConnection > ret;
 
-    Reference< com::sun::star::sdbc::XStatement > owner( stmt, UNO_QUERY );
+    Reference< css::sdbc::XStatement > owner( stmt, UNO_QUERY );
     if( owner.is() )
         ret = owner->getConnection();
     else
     {
-        Reference< com::sun::star::sdbc::XPreparedStatement > myowner( stmt, UNO_QUERY );
+        Reference< css::sdbc::XPreparedStatement > myowner( stmt, UNO_QUERY );
         if( myowner.is() )
             ret = myowner->getConnection();
         if( ! ret.is() )
             throw SQLException(
                 "PQSDBC: Couldn't retrieve connection from statement",
-                Reference< XInterface > () , OUString(), 0 , com::sun::star::uno::Any()  );
+                Reference< XInterface > () , OUString(), 0 , css::uno::Any()  );
     }
 
     return ret;
@@ -300,7 +303,7 @@ TransactionGuard::~TransactionGuard()
         if( ! m_commited )
             m_stmt->executeUpdate( getStatics().ROLLBACK );
     }
-    catch( com::sun::star::uno::Exception & )
+    catch( css::uno::Exception & )
     {
         // ignore, we are within a dtor
     }
@@ -565,7 +568,7 @@ void splitConcatenatedIdentifier( const OUString & source, OUString *first, OUSt
     }
 }
 
-OUString array2String( const com::sun::star::uno::Sequence< Any > &seq )
+OUString array2String( const css::uno::Sequence< Any > &seq )
 {
     OUStringBuffer buf(128);
     int len = seq.getLength();
@@ -711,7 +714,7 @@ std::vector< sal_Int32 > parseIntArray( const OUString & str )
 
 void fillAttnum2attnameMap(
     Int2StringMap &map,
-    const Reference< com::sun::star::sdbc::XConnection > &conn,
+    const Reference< css::sdbc::XConnection > &conn,
     const OUString &schema,
     const OUString &table )
 {
@@ -838,9 +841,9 @@ OString extractSingleTableFromSelect( const OStringVector &vec )
 
 }
 
-com::sun::star::uno::Sequence< sal_Int32 > string2intarray( const OUString & str )
+css::uno::Sequence< sal_Int32 > string2intarray( const OUString & str )
 {
-    com::sun::star::uno::Sequence< sal_Int32 > ret;
+    css::uno::Sequence< sal_Int32 > ret;
     const sal_Int32 strlen = str.getLength();
     if( str.getLength() > 1 )
     {
@@ -893,7 +896,7 @@ com::sun::star::uno::Sequence< sal_Int32 > string2intarray( const OUString & str
         } while( true );
         // vec is guaranteed non-empty
         assert(vec.size() > 0);
-        ret = com::sun::star::uno::Sequence< sal_Int32 > ( &vec[0] , vec.size() );
+        ret = css::uno::Sequence< sal_Int32 > ( &vec[0] , vec.size() );
     }
     return ret;
 }
@@ -923,17 +926,17 @@ OUString sqltype2string( const Reference< XPropertySet > & desc )
     {
         switch( extractIntProperty( desc, getStatics().TYPE ) )
         {
-        case com::sun::star::sdbc::DataType::VARBINARY:
-        case com::sun::star::sdbc::DataType::VARCHAR:
-        case com::sun::star::sdbc::DataType::CHAR:
+        case css::sdbc::DataType::VARBINARY:
+        case css::sdbc::DataType::VARCHAR:
+        case css::sdbc::DataType::CHAR:
         {
             typeName.append( "(" );
             typeName.append( precision );
             typeName.append( ")" );
             break;
         }
-        case com::sun::star::sdbc::DataType::DECIMAL:
-        case com::sun::star::sdbc::DataType::NUMERIC:
+        case css::sdbc::DataType::DECIMAL:
+        case css::sdbc::DataType::NUMERIC:
         {
             typeName.append( "(" );
             typeName.append( precision );
@@ -952,23 +955,23 @@ OUString sqltype2string( const Reference< XPropertySet > & desc )
 
 static void keyType2String( OUStringBuffer & buf, sal_Int32 keyType )
 {
-    if( com::sun::star::sdbc::KeyRule::CASCADE == keyType )
+    if( css::sdbc::KeyRule::CASCADE == keyType )
     {
         buf.append( "CASCADE " );
     }
-    else if( com::sun::star::sdbc::KeyRule::RESTRICT  == keyType )
+    else if( css::sdbc::KeyRule::RESTRICT  == keyType )
     {
         buf.append( "RESTRICT " );
     }
-    else if( com::sun::star::sdbc::KeyRule::SET_DEFAULT  == keyType )
+    else if( css::sdbc::KeyRule::SET_DEFAULT  == keyType )
     {
         buf.append( "SET DEFAULT " );
     }
-    else if( com::sun::star::sdbc::KeyRule::SET_NULL  == keyType )
+    else if( css::sdbc::KeyRule::SET_NULL  == keyType )
     {
         buf.append( "SET NULL " );
     }
-    else //if( com::sun::star::sdbc::KeyRule::NO_ACTION == keyType )
+    else //if( css::sdbc::KeyRule::NO_ACTION == keyType )
     {
         buf.append( "NO ACTION " );
     }
@@ -983,15 +986,15 @@ void bufferKey2TableConstraint(
     sal_Int32 updateRule = extractIntProperty( key, st.UPDATE_RULE );
     sal_Int32 deleteRule = extractIntProperty( key, st.DELETE_RULE );
     bool foreign = false;
-    if( type == com::sun::star::sdbcx::KeyType::UNIQUE )
+    if( type == css::sdbcx::KeyType::UNIQUE )
     {
         buf.append( "UNIQUE( " );
     }
-    else if( type == com::sun::star::sdbcx::KeyType::PRIMARY )
+    else if( type == css::sdbcx::KeyType::PRIMARY )
     {
         buf.append( "PRIMARY KEY( " );
     }
-    else if( type == com::sun::star::sdbcx::KeyType::FOREIGN )
+    else if( type == css::sdbcx::KeyType::FOREIGN )
     {
         foreign = true;
         buf.append( "FOREIGN KEY( " );
@@ -1130,7 +1133,7 @@ void extractNameValuePairsFromInsert( String2StringMap & map, const OString & la
 }
 
 OUString querySingleValue(
-    const com::sun::star::uno::Reference< com::sun::star::sdbc::XConnection > &connection,
+    const css::uno::Reference< css::sdbc::XConnection > &connection,
     const OUString &query )
 {
     OUString ret;
@@ -1159,65 +1162,65 @@ bool implSetObject( const Reference< XParameters >& _rxParameters,
         break;
 
         case typelib_TypeClass_VOID:
-            _rxParameters->setNull(_nColumnIndex,com::sun::star::sdbc::DataType::VARCHAR);
+            _rxParameters->setNull(_nColumnIndex,css::sdbc::DataType::VARCHAR);
             break;
 
         case typelib_TypeClass_STRING:
-            _rxParameters->setString(_nColumnIndex, *static_cast<OUString const *>(_rValue.getValue()));
+            _rxParameters->setString(_nColumnIndex, *o3tl::forceAccess<OUString>(_rValue));
             break;
 
         case typelib_TypeClass_BOOLEAN:
-            _rxParameters->setBoolean(_nColumnIndex, *static_cast<sal_Bool const *>(_rValue.getValue()));
+            _rxParameters->setBoolean(_nColumnIndex, *o3tl::forceAccess<bool>(_rValue));
             break;
 
         case typelib_TypeClass_BYTE:
-            _rxParameters->setByte(_nColumnIndex, *static_cast<sal_Int8 const *>(_rValue.getValue()));
+            _rxParameters->setByte(_nColumnIndex, *o3tl::forceAccess<sal_Int8>(_rValue));
             break;
 
         case typelib_TypeClass_UNSIGNED_SHORT:
         case typelib_TypeClass_SHORT:
-            _rxParameters->setShort(_nColumnIndex, *static_cast<sal_Int16 const *>(_rValue.getValue()));
+            _rxParameters->setShort(_nColumnIndex, *o3tl::forceAccess<sal_Int16>(_rValue));
             break;
 
         case typelib_TypeClass_CHAR:
-            _rxParameters->setString(_nColumnIndex, OUString(static_cast<sal_Unicode const *>(_rValue.getValue()),1));
+            _rxParameters->setString(_nColumnIndex, OUString(*o3tl::forceAccess<sal_Unicode>(_rValue)));
             break;
 
         case typelib_TypeClass_UNSIGNED_LONG:
         case typelib_TypeClass_LONG:
-            _rxParameters->setInt(_nColumnIndex, *static_cast<sal_Int32 const *>(_rValue.getValue()));
+            _rxParameters->setInt(_nColumnIndex, *o3tl::forceAccess<sal_Int32>(_rValue));
             break;
 
         case typelib_TypeClass_FLOAT:
-            _rxParameters->setFloat(_nColumnIndex, *static_cast<float const *>(_rValue.getValue()));
+            _rxParameters->setFloat(_nColumnIndex, *o3tl::forceAccess<float>(_rValue));
             break;
 
         case typelib_TypeClass_DOUBLE:
-            _rxParameters->setDouble(_nColumnIndex, *static_cast<double const *>(_rValue.getValue()));
+            _rxParameters->setDouble(_nColumnIndex, *o3tl::forceAccess<double>(_rValue));
             break;
 
         case typelib_TypeClass_SEQUENCE:
-            if (_rValue.getValueType() == cppu::UnoType<Sequence< sal_Int8 >>::get())
+            if (auto s = o3tl::tryAccess<Sequence< sal_Int8 >>(_rValue))
             {
-                _rxParameters->setBytes(_nColumnIndex, *static_cast<Sequence<sal_Int8> const *>(_rValue.getValue()));
+                _rxParameters->setBytes(_nColumnIndex, *s);
             }
             else
                 bSuccessfullyReRouted = false;
             break;
         case typelib_TypeClass_STRUCT:
-            if (_rValue.getValueType() == cppu::UnoType<com::sun::star::util::DateTime>::get())
-                _rxParameters->setTimestamp(_nColumnIndex, *static_cast<com::sun::star::util::DateTime const *>(_rValue.getValue()));
-            else if (_rValue.getValueType() == cppu::UnoType<com::sun::star::util::Date>::get())
-                _rxParameters->setDate(_nColumnIndex, *static_cast<com::sun::star::util::Date const *>(_rValue.getValue()));
-            else if (_rValue.getValueType() == cppu::UnoType<com::sun::star::util::Time>::get())
-                _rxParameters->setTime(_nColumnIndex, *static_cast<com::sun::star::util::Time const *>(_rValue.getValue()));
+            if (auto s1 = o3tl::tryAccess<css::util::DateTime>(_rValue))
+                _rxParameters->setTimestamp(_nColumnIndex, *s1);
+            else if (auto s2 = o3tl::tryAccess<css::util::Date>(_rValue))
+                _rxParameters->setDate(_nColumnIndex, *s2);
+            else if (auto s3 = o3tl::tryAccess<css::util::Time>(_rValue))
+                _rxParameters->setTime(_nColumnIndex, *s3);
             else
                 bSuccessfullyReRouted = false;
             break;
 
         case typelib_TypeClass_INTERFACE:
         {
-            Reference< com::sun::star::io::XInputStream >  xStream;
+            Reference< css::io::XInputStream >  xStream;
             if (_rValue >>= xStream)
             {
                 _rValue >>= xStream;

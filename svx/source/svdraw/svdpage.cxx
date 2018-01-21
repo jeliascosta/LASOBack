@@ -53,7 +53,7 @@
 #include <svx/sdr/contact/viewobjectcontact.hxx>
 #include <svx/sdr/contact/displayinfo.hxx>
 #include <algorithm>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <rtl/strbuf.hxx>
 #include <libxml/xmlwriter.h>
 
@@ -71,7 +71,7 @@ public:
 static const sal_Int32 InitialObjectContainerCapacity (64);
 
 
-SdrObjList::SdrObjList(SdrModel* pNewModel, SdrPage* pNewPage, SdrObjList* pNewUpList):
+SdrObjList::SdrObjList(SdrModel* pNewModel, SdrPage* pNewPage):
     maList(),
     mxNavigationOrder(),
     mbIsNavigationOrderDirty(false)
@@ -79,11 +79,11 @@ SdrObjList::SdrObjList(SdrModel* pNewModel, SdrPage* pNewPage, SdrObjList* pNewU
     maList.reserve(InitialObjectContainerCapacity);
     pModel=pNewModel;
     pPage=pNewPage;
-    pUpList=pNewUpList;
+    pUpList=nullptr;
     bObjOrdNumsDirty=false;
     bRectsDirty=false;
     pOwnerObj=nullptr;
-    eListKind=SDROBJLIST_UNKNOWN;
+    eListKind=SdrObjListKind::Unknown;
 }
 
 SdrObjList::SdrObjList():
@@ -98,7 +98,7 @@ SdrObjList::SdrObjList():
     bObjOrdNumsDirty=false;
     bRectsDirty=false;
     pOwnerObj=nullptr;
-    eListKind=SDROBJLIST_UNKNOWN;
+    eListKind=SdrObjListKind::Unknown;
 }
 
 SdrObjList::~SdrObjList()
@@ -135,7 +135,7 @@ void SdrObjList::CopyObjects(const SdrObjList& rSrcList)
     bRectsDirty     =false;
     size_t nCloneErrCnt = 0;
     const size_t nCount = rSrcList.GetObjCount();
-    SdrInsertReason aReason(SDRREASON_COPY);
+    SdrInsertReason aReason(SdrInsertReasonKind::Copy);
     for (size_t no=0; no<nCount; ++no) {
         SdrObject* pSO=rSrcList.GetObj(no);
 
@@ -235,9 +235,7 @@ void SdrObjList::Clear()
         // sent remove hint (after removal, see RemoveObject())
         if(pModel)
         {
-            SdrHint aHint(*pObj);
-            aHint.SetKind(HINT_OBJREMOVED);
-            aHint.SetPage(pPage);
+            SdrHint aHint(SdrHintKind::ObjectRemoved, *pObj, pPage);
             pModel->Broadcast(aHint);
         }
 
@@ -385,9 +383,7 @@ void SdrObjList::InsertObject(SdrObject* pObj, size_t nPos, const SdrInsertReaso
             // Repaint from object number ... (heads-up: GroupObj)
             if(pObj->GetPage())
             {
-                SdrHint aHint(*pObj);
-
-                aHint.SetKind(HINT_OBJINSERTED);
+                SdrHint aHint(SdrHintKind::ObjectInserted, *pObj);
                 pModel->Broadcast(aHint);
             }
 
@@ -449,8 +445,7 @@ SdrObject* SdrObjList::RemoveObject(size_t nObjNum)
         if (pModel!=nullptr) {
             // TODO: We need a different broadcast here.
             if (pObj->GetPage()!=nullptr) {
-                SdrHint aHint(*pObj);
-                aHint.SetKind(HINT_OBJREMOVED);
+                SdrHint aHint(SdrHintKind::ObjectRemoved, *pObj);
                 pModel->Broadcast(aHint);
             }
             pModel->SetChanged();
@@ -530,8 +525,7 @@ SdrObject* SdrObjList::ReplaceObject(SdrObject* pNewObj, size_t nObjNum)
         if (pModel!=nullptr) {
             // TODO: We need a different broadcast here.
             if (pObj->GetPage()!=nullptr) {
-                SdrHint aHint(*pObj);
-                aHint.SetKind(HINT_OBJREMOVED);
+                SdrHint aHint(SdrHintKind::ObjectRemoved, *pObj);
                 pModel->Broadcast(aHint);
             }
         }
@@ -555,8 +549,7 @@ SdrObject* SdrObjList::ReplaceObject(SdrObject* pNewObj, size_t nObjNum)
         if (pModel!=nullptr) {
             // TODO: We need a different broadcast here.
             if (pNewObj->GetPage()!=nullptr) {
-                SdrHint aHint(*pNewObj);
-                aHint.SetKind(HINT_OBJINSERTED);
+                SdrHint aHint(SdrHintKind::ObjectInserted, *pNewObj);
                 pModel->Broadcast(aHint);
             }
             pModel->SetChanged();
@@ -592,7 +585,8 @@ SdrObject* SdrObjList::SetObjectOrdNum(size_t nOldObjNum, size_t nNewObjNum)
         if (pModel!=nullptr)
         {
             // TODO: We need a different broadcast here.
-            if (pObj->GetPage()!=nullptr) pModel->Broadcast(SdrHint(*pObj));
+            if (pObj->GetPage()!=nullptr)
+                pModel->Broadcast(SdrHint(SdrHintKind::ObjectChange, *pObj));
             pModel->SetChanged();
         }
     }
@@ -651,7 +645,7 @@ void SdrObjList::ReformatAllTextObjects()
 void SdrObjList::ReformatAllEdgeObjects()
 {
     // #i120437# go over whole hierarchy, not only over object level null (seen from grouping)
-    SdrObjListIter aIter(*this, IM_DEEPNOGROUPS);
+    SdrObjListIter aIter(*this, SdrIterMode::DeepNoGroups);
 
     while(aIter.IsMore())
     {
@@ -740,7 +734,7 @@ void SdrObjList::UnGroupObj( size_t nObjNum )
             for( size_t i=0; i<nCount; ++i )
             {
                 SdrObject* pObj = pSrcLst->RemoveObject(0);
-                SdrInsertReason aReason(SDRREASON_VIEWCALL);
+                SdrInsertReason aReason(SdrInsertReasonKind::ViewCall);
                 InsertObject(pObj, nInsertPos, &aReason);
                 ++nInsertPos;
             }
@@ -986,7 +980,7 @@ void SdrObjList::RemoveObjectFromContainer (
 
 void SdrObjList::dumpAsXml(xmlTextWriterPtr pWriter) const
 {
-    xmlTextWriterStartElement(pWriter, BAD_CAST("sdrObjList"));
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SdrObjList"));
     xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("ptr"), "%p", this);
     xmlTextWriterWriteFormatAttribute(pWriter, BAD_CAST("symbol"), "%s", BAD_CAST(typeid(*this).name()));
 
@@ -1080,8 +1074,7 @@ void ImpPageChange(SdrPage& rSdrPage)
     if(rSdrPage.GetModel())
     {
         rSdrPage.GetModel()->SetChanged();
-        SdrHint aHint(HINT_PAGEORDERCHG);
-        aHint.SetPage(&rSdrPage);
+        SdrHint aHint(SdrHintKind::PageOrderChange, &rSdrPage);
         rSdrPage.GetModel()->Broadcast(aHint);
     }
 }
@@ -1106,25 +1099,20 @@ SdrPageProperties::~SdrPageProperties()
 
 void SdrPageProperties::Notify(SfxBroadcaster& /*rBC*/, const SfxHint& rHint)
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast< const SfxSimpleHint* >(&rHint);
-
-    if(pSimpleHint)
+    switch(rHint.GetId())
     {
-        switch(pSimpleHint->GetId())
-        {
-            case SFX_HINT_DATACHANGED :
+        case SFX_HINT_DATACHANGED :
             {
                 // notify change, broadcast
                 ImpPageChange(*mpSdrPage);
                 break;
             }
-            case SFX_HINT_DYING :
+        case SFX_HINT_DYING :
             {
                 // Style needs to be forgotten
                 ImpRemoveStyleSheet();
                 break;
             }
-        }
     }
 }
 
@@ -1189,7 +1177,7 @@ SdrPage::SdrPage(SdrModel& rNewModel, bool bMasterPage)
     mbPageBorderOnlyLeftRight(false)
 {
     aPrefVisiLayers.SetAll();
-    eListKind = (bMasterPage) ? SDROBJLIST_MASTERPAGE : SDROBJLIST_DRAWPAGE;
+    eListKind = (bMasterPage) ? SdrObjListKind::MasterPage : SdrObjListKind::DrawPage;
 
     mpSdrPageProperties.reset(new SdrPageProperties(*this));
 }
@@ -1307,7 +1295,7 @@ void SdrPage::lateInit(const SdrPage& rSrcPage, SdrModel* const pNewModel)
 
     // be careful and correct eListKind, a member of SdrObjList which
     // will be changed by the SdrObjList::lateInit before...
-    eListKind = (mbMaster) ? SDROBJLIST_MASTERPAGE : SDROBJLIST_DRAWPAGE;
+    eListKind = (mbMaster) ? SdrObjListKind::MasterPage : SdrObjListKind::DrawPage;
 }
 
 SdrPage* SdrPage::Clone() const
@@ -1360,7 +1348,7 @@ void SdrPage::SetOrientation(Orientation eOri)
     // square: handle like portrait format
     Size aSiz(GetSize());
     if (aSiz.Width()!=aSiz.Height()) {
-        if ((eOri==ORIENTATION_PORTRAIT) == (aSiz.Width()>aSiz.Height())) {
+        if ((eOri==Orientation::Portrait) == (aSiz.Width()>aSiz.Height())) {
             SetSize(Size(aSiz.Height(),aSiz.Width()));
         }
     }
@@ -1369,9 +1357,9 @@ void SdrPage::SetOrientation(Orientation eOri)
 Orientation SdrPage::GetOrientation() const
 {
     // square: handle like portrait format
-    Orientation eRet=ORIENTATION_PORTRAIT;
+    Orientation eRet=Orientation::Portrait;
     Size aSiz(GetSize());
-    if (aSiz.Width()>aSiz.Height()) eRet=ORIENTATION_LANDSCAPE;
+    if (aSiz.Width()>aSiz.Height()) eRet=Orientation::Landscape;
     return eRet;
 }
 
@@ -1495,7 +1483,14 @@ void SdrPage::SetModel(SdrModel* pNewModel)
 
         if(!IsMasterPage())
         {
-            pNew->PutItemSet(getSdrPageProperties().GetItemSet());
+            const SfxItemSet& rOldSet = getSdrPageProperties().GetItemSet();
+            SfxItemSet* pNewSet = rOldSet.Clone(false, &pNewModel->GetItemPool());
+            //ensure checkForUniqueItem is called so new pages which have e.g.
+            //XFillBitmapItem set, do not conflict with an existing XFillBitmapItem
+            //with the same name but different properties
+            SdrModel::MigrateItemSet(&rOldSet, pNewSet, pNewModel);
+            pNew->PutItemSet(*pNewSet);
+            delete pNewSet;
         }
 
         pNew->SetStyleSheet(getSdrPageProperties().GetStyleSheet());
@@ -1648,7 +1643,7 @@ void SdrPage::SetInserted( bool bIns )
         mbInserted = bIns;
 
         // #i120437# go over whole hierarchy, not only over object level null (seen from grouping)
-        SdrObjListIter aIter(*this, IM_DEEPNOGROUPS);
+        SdrObjListIter aIter(*this, SdrIterMode::DeepNoGroups);
 
          while ( aIter.IsMore() )
         {
@@ -1669,7 +1664,7 @@ void SdrPage::SetUnoPage(uno::Reference<drawing::XDrawPage> const& xNewPage)
     mxUnoPage = xNewPage;
 }
 
-uno::Reference< uno::XInterface > SdrPage::getUnoPage()
+uno::Reference< uno::XInterface > const & SdrPage::getUnoPage()
 {
     if( !mxUnoPage.is() )
     {
@@ -1776,43 +1771,6 @@ const SdrPageProperties* SdrPage::getCorrectSdrPageProperties() const
     else
     {
         return &getSdrPageProperties();
-    }
-}
-
-
-// use new redirector instead of pPaintProc
-
-StandardCheckVisisbilityRedirector::StandardCheckVisisbilityRedirector()
-:   ViewObjectContactRedirector()
-{
-}
-
-StandardCheckVisisbilityRedirector::~StandardCheckVisisbilityRedirector()
-{
-}
-
-drawinglayer::primitive2d::Primitive2DContainer StandardCheckVisisbilityRedirector::createRedirectedPrimitive2DSequence(
-    const sdr::contact::ViewObjectContact& rOriginal,
-    const sdr::contact::DisplayInfo& rDisplayInfo)
-{
-    SdrObject* pObject = rOriginal.GetViewContact().TryToGetSdrObject();
-
-    if(pObject)
-    {
-        if(pObject->GetPage())
-        {
-            if(pObject->GetPage()->checkVisibility(rOriginal, rDisplayInfo, false))
-            {
-                return sdr::contact::ViewObjectContactRedirector::createRedirectedPrimitive2DSequence(rOriginal, rDisplayInfo);
-            }
-        }
-
-        return drawinglayer::primitive2d::Primitive2DContainer();
-    }
-    else
-    {
-        // not an object, maybe a page
-        return sdr::contact::ViewObjectContactRedirector::createRedirectedPrimitive2DSequence(rOriginal, rDisplayInfo);
     }
 }
 

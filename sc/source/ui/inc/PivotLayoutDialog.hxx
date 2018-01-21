@@ -24,7 +24,7 @@
 #include "PivotLayoutTreeListData.hxx"
 #include "PivotLayoutTreeListLabel.hxx"
 
-class ScItemValue
+class ScItemValue final
 {
 public:
     OUString maName;
@@ -34,7 +34,7 @@ public:
     ScItemValue(OUString const & aName, SCCOL nColumn, PivotFunc nFunctionMask);
     ScItemValue(ScItemValue* pInputItemValue);
 
-    virtual ~ScItemValue();
+    ~ScItemValue();
 };
 
 class ScPivotLayoutDialog : public ScAnyRefDlg
@@ -83,14 +83,14 @@ private:
     ScAddress::Details  maAddressDetails;
     bool                mbDialogLostFocus;
 
-    DECL_LINK_TYPED(CancelClicked,       Button*, void);
-    DECL_LINK_TYPED(OKClicked,           Button*, void);
-    DECL_LINK_TYPED(GetFocusHandler,     Control&, void);
-    DECL_LINK_TYPED(LoseFocusHandler,    Control&, void);
-    DECL_LINK_TYPED(ToggleSource,        RadioButton&, void);
-    DECL_LINK_TYPED(ToggleDestination,   RadioButton&, void);
-    DECL_LINK_TYPED(SourceListSelected,  ListBox&, void);
-    DECL_LINK_TYPED(SourceEditModified,  Edit&, void);
+    DECL_LINK(CancelClicked,       Button*, void);
+    DECL_LINK(OKClicked,           Button*, void);
+    DECL_LINK(GetFocusHandler,     Control&, void);
+    DECL_LINK(LoseFocusHandler,    Control&, void);
+    DECL_LINK(ToggleSource,        RadioButton&, void);
+    DECL_LINK(ToggleDestination,   RadioButton&, void);
+    DECL_LINK(SourceListSelected,  ListBox&, void);
+    DECL_LINK(SourceEditModified,  Edit&, void);
     void ToggleSource();
     void ToggleDestination();
     virtual bool Close() override;
@@ -108,7 +108,7 @@ private:
 public:
     ScPivotLayoutDialog(SfxBindings* pSfxBindings, SfxChildWindow* pChildWindow, vcl::Window* pParent,
                              ScViewData* pViewData, const ScDPObject* pPivotTableObject, bool bCreateNewPivotTable);
-    virtual ~ScPivotLayoutDialog();
+    virtual ~ScPivotLayoutDialog() override;
     virtual void dispose() override;
 
     virtual void SetReference(const ScRange& rReferenceRange, ScDocument* pDocument) override;

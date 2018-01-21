@@ -66,7 +66,7 @@ namespace framework
         explicit            UndoActionWrapper(
                                 Reference< XUndoAction > const& i_undoAction
                             );
-        virtual             ~UndoActionWrapper();
+        virtual             ~UndoActionWrapper() override;
 
         virtual OUString    GetComment() const override;
         virtual void        Undo() override;
@@ -170,7 +170,7 @@ namespace framework
         }
 
     protected:
-        virtual ~UndoManagerRequest()
+        virtual ~UndoManagerRequest() override
         {
         }
 
@@ -287,11 +287,6 @@ namespace framework
         void notify(    OUString const& i_title,
                         void ( SAL_CALL XUndoManagerListener::*i_notificationMethod )( const UndoManagerEvent& )
                     );
-        void notify( void ( SAL_CALL XUndoManagerListener::*i_notificationMethod )( const UndoManagerEvent& ) )
-        {
-            notify( OUString(), i_notificationMethod );
-        }
-
         void notify( void ( SAL_CALL XUndoManagerListener::*i_notificationMethod )( const EventObject& ) );
 
     private:
@@ -525,7 +520,7 @@ namespace framework
 
         {
             ::comphelper::FlagGuard aNotificationGuard( m_bAPIActionRunning );
-            rUndoManager.EnterListAction( i_title, OUString() );
+            rUndoManager.EnterListAction( i_title, OUString(), 0, -1 );
         }
 
         m_aContextVisibilities.push( i_hidden );
@@ -825,7 +820,7 @@ namespace framework
         if ( m_bAPIActionRunning )
             return;
 
-        notify( &XUndoManagerListener::cancelledContext );
+        notify( OUString(), &XUndoManagerListener::cancelledContext );
     }
 
     void UndoManagerHelper_Impl::undoManagerDying()

@@ -71,6 +71,7 @@
 #include "framework/FrameworkHelper.hxx"
 #include "optsitem.hxx"
 #include "sdresid.hxx"
+#include "undo/undomanager.hxx"
 
 #include <svx/svxids.hrc>
 #include <sfx2/request.hxx>
@@ -128,10 +129,15 @@ void  ViewShell::GetMenuState( SfxItemSet &rSet )
 
         if(pUndoManager)
         {
+            auto pSdUndoManager = dynamic_cast<sd::UndoManager*>(pUndoManager);
+            if (pSdUndoManager)
+                pSdUndoManager->SetViewShell(&GetViewShellBase());
             if(pUndoManager->GetUndoActionCount() != 0)
             {
                 bActivate = true;
             }
+            if (pSdUndoManager)
+                pSdUndoManager->SetViewShell(nullptr);
         }
 
         if(bActivate)
@@ -155,10 +161,15 @@ void  ViewShell::GetMenuState( SfxItemSet &rSet )
 
         if(pUndoManager)
         {
+            auto pSdUndoManager = dynamic_cast<sd::UndoManager*>(pUndoManager);
+            if (pSdUndoManager)
+                pSdUndoManager->SetViewShell(&GetViewShellBase());
             if(pUndoManager->GetRedoActionCount() != 0)
             {
                 bActivate = true;
             }
+            if (pSdUndoManager)
+                pSdUndoManager->SetViewShell(nullptr);
         }
 
         if(bActivate)
@@ -236,7 +247,7 @@ SdPage* ViewShell::CreateOrDuplicatePage (
         const SfxUInt32Item* pLayout = rRequest.GetArg<SfxUInt32Item>(ID_VAL_WHATLAYOUT);
         if( pLayout )
         {
-            if (ePageKind == PK_NOTES)
+            if (ePageKind == PageKind::Notes)
             {
                 eNotesLayout   = (AutoLayout) pLayout->GetValue ();
             }
@@ -258,7 +269,7 @@ SdPage* ViewShell::CreateOrDuplicatePage (
 
         if (CHECK_RANGE (AUTOLAYOUT_START, (AutoLayout) pLayout->GetValue (), AUTOLAYOUT_END))
         {
-            if (ePageKind == PK_NOTES)
+            if (ePageKind == PageKind::Notes)
             {
                 aNotesPageName = pPageName->GetValue ();
                 eNotesLayout   = (AutoLayout) pLayout->GetValue ();
@@ -341,9 +352,9 @@ SdPage* ViewShell::CreateOrDuplicatePage (
                     sal_uInt16 nPageCount (pDocument->GetSdPageCount(ePageKind));
                     for (sal_uInt16 i=0; i<nPageCount; i++)
                     {
-                        pDocument->GetSdPage(i, PK_STANDARD)->SetSelected(
+                        pDocument->GetSdPage(i, PageKind::Standard)->SetSelected(
                             i == nNewPageIndex);
-                        pDocument->GetSdPage(i, PK_NOTES)->SetSelected(
+                        pDocument->GetSdPage(i, PageKind::Notes)->SetSelected(
                             i == nNewPageIndex);
                     }
                     // Move the selected page to the head of the document
@@ -382,14 +393,14 @@ SdPage* ViewShell::CreateOrDuplicatePage (
     }
     SdPage* pNewPage = nullptr;
     if(nNewPageIndex != 0xffff)
-        pNewPage = pDocument->GetSdPage(nNewPageIndex, PK_STANDARD);
+        pNewPage = pDocument->GetSdPage(nNewPageIndex, PageKind::Standard);
 
     if( bUndo )
     {
         if( pNewPage )
         {
             pDrView->AddUndo(pDocument->GetSdrUndoFactory().CreateUndoNewPage(*pNewPage));
-            pDrView->AddUndo(pDocument->GetSdrUndoFactory().CreateUndoNewPage(*pDocument->GetSdPage (nNewPageIndex, PK_NOTES)));
+            pDrView->AddUndo(pDocument->GetSdrUndoFactory().CreateUndoNewPage(*pDocument->GetSdPage (nNewPageIndex, PageKind::Notes)));
         }
 
         pDrView->EndUndo();

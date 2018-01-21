@@ -53,18 +53,18 @@ private:
     const SfxItemSet&   rOutAttrs;
     SfxItemSet          aAttrSet;
     const SdrView*      pView;
-    SfxMapUnit          eUnit;
+    MapUnit             eUnit;
 
     void                FillTypeLB();
 
-    DECL_LINK_TYPED( ChangeAttrEditHdl_Impl, Edit&, void );
-    DECL_LINK_TYPED( ChangeAttrListBoxHdl_Impl, ListBox&, void );
+    DECL_LINK( ChangeAttrEditHdl_Impl, Edit&, void );
+    DECL_LINK( ChangeAttrListBoxHdl_Impl, ListBox&, void );
     void ChangeAttrHdl_Impl(void*);
 
 public:
 
     SvxConnectionPage( vcl::Window* pWindow, const SfxItemSet& rInAttrs );
-    virtual ~SvxConnectionPage();
+    virtual ~SvxConnectionPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window*, const SfxItemSet* );

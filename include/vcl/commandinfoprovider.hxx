@@ -22,6 +22,7 @@
 #include <vcl/dllapi.h>
 #include <vcl/keycod.hxx>
 #include <vcl/image.hxx>
+#include <vcl/CommandImageResolver.hxx>
 
 #include <com/sun/star/frame/XFrame.hpp>
 #include <com/sun/star/uno/XComponentContext.hpp>
@@ -91,8 +92,8 @@ public:
 
     Image GetImageForCommand(
         const OUString& rsCommandName,
-        bool bLarge,
-        const css::uno::Reference<css::frame::XFrame>& rxFrame);
+        const css::uno::Reference<css::frame::XFrame>& rxFrame,
+        vcl::ImageType eImageType = vcl::ImageType::Small);
 
     sal_Int32 GetPropertiesForCommand(
         const OUString& rsCommandName,
@@ -100,6 +101,11 @@ public:
 
     bool IsRotated(const OUString& rsCommandName);
     bool IsMirrored(const OUString& rsCommandName);
+
+    /** Returns whether the command is experimental. */
+    bool IsExperimental(
+        const OUString& rsCommandName,
+        const OUString& rModuleName);
 
     /** Do not call.  Should be part of a local and hidden interface.
     */
@@ -119,10 +125,10 @@ public:
     CommandInfoProvider();
     ~CommandInfoProvider();
 
-    css::uno::Reference<css::ui::XAcceleratorConfiguration> GetDocumentAcceleratorConfiguration();
-    css::uno::Reference<css::ui::XAcceleratorConfiguration> GetModuleAcceleratorConfiguration();
-    css::uno::Reference<css::ui::XAcceleratorConfiguration> GetGlobalAcceleratorConfiguration();
-    OUString GetModuleIdentifier();
+    css::uno::Reference<css::ui::XAcceleratorConfiguration> const & GetDocumentAcceleratorConfiguration();
+    css::uno::Reference<css::ui::XAcceleratorConfiguration> const & GetModuleAcceleratorConfiguration();
+    css::uno::Reference<css::ui::XAcceleratorConfiguration> const & GetGlobalAcceleratorConfiguration();
+    OUString const & GetModuleIdentifier();
     css::uno::Sequence<css::beans::PropertyValue> GetCommandProperties (
         const OUString& rsCommandName);
     OUString GetCommandProperty(const OUString& rsProperty, const OUString& rsCommandName);

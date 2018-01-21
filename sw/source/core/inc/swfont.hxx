@@ -167,7 +167,6 @@ class SW_DLLPUBLIC SwFont
     bool m_bFontChg        :1;
     bool m_bOrgChg        :1;  // nOrgHeight/Ascent are invalid
     bool m_bURL           :1;
-    bool m_bPaintWrong    :1;  // flag for spelling mistakes
     bool m_bGreyWave      :1;  // for the extended TextInput: gray waveline
     bool m_bNoColorReplace  :1;  // Replacement without colormanipulation
 
@@ -403,7 +402,7 @@ public:
         const SvxShadowItemSide nShadow, const bool bVertLayout,
         const bool bSkipLeft, const bool bSkipRight ) const;
 
-    void dumpAsXml( xmlTextWriterPtr writer = nullptr ) const;
+    void dumpAsXml( xmlTextWriterPtr writer ) const;
 };
 
 inline void SwFont::SetColor( const Color& rColor )
@@ -962,12 +961,14 @@ inline void SwFont::SetHighlightColor( const Color& aNewColor )
 class SwUnderlineFont
 {
     Point m_aPos;
+    sal_Int32 m_nEnd;
     SwFont* m_pFont;
 
 public:
-    // sets the font which should paint the common baseline
+    // sets the font which should paint the common baseline,
+    // index where continuous underline ends,
     // and the starting point of the common baseline
-    SwUnderlineFont( SwFont& rFnt, const Point& rPoint );
+    SwUnderlineFont( SwFont& rFnt ,sal_Int32 m_nEnd , const Point& rPoint );
     ~SwUnderlineFont();
 
     SwFont& GetFont()
@@ -976,6 +977,7 @@ public:
         return *m_pFont;
     }
     const Point& GetPos() const { return m_aPos; }
+    sal_Int32 GetEnd() const { return m_nEnd; }
     // the x coordinate of the starting point has to be set for each portion
     void SetPos( const Point& rPoint ) { m_aPos = rPoint;  }
 };
@@ -990,15 +992,9 @@ public:
     sal_uInt16 nGetStretchTextSize;
     sal_uInt16 nDrawStretchText;
     sal_uInt16 nChangeFont;
-    sal_uInt16 nGetFontMetric;
 
-    inline void Reset()
-    {
-        nGetTextSize = nDrawText = nGetStretchTextSize =
-        nDrawStretchText = nChangeFont = nGetFontMetric = 0;
-    }
-
-    inline SvStatistics() { Reset(); }
+    SvStatistics()
+    { nGetTextSize = nDrawText = nGetStretchTextSize = nDrawStretchText = nChangeFont = 0; }
 };
 
 // global variable, implemented in swfont.cxx

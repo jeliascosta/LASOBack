@@ -267,13 +267,7 @@ private:
     // hack for Vba Events
     void impl_addVbEvents_nolck_nothrow( const sal_Int32 i_nIndex );
 
-    // the runtime event format has changed from version SO5.2 to OOo
-    enum EventFormat
-    {
-        efVersionSO5x,
-        efVersionSO6x
-    };
-    void    transformEvents( const EventFormat _eTargetFormat );
+    void    transformEvents();
 
     void    impl_createEventAttacher_nothrow();
 };
@@ -292,7 +286,7 @@ protected:
 public:
     OFormComponents(const css::uno::Reference< css::uno::XComponentContext>& _rxFactory);
     OFormComponents( const OFormComponents& _cloneSource );
-    virtual ~OFormComponents();
+    virtual ~OFormComponents() override;
 
     DECLARE_UNO3_AGG_DEFAULTS(OFormComponents, FormComponentsBase)
 

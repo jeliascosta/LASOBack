@@ -47,13 +47,6 @@ namespace com { namespace sun { namespace star {
     namespace uno { class XComponentContext; }
     namespace task { class XInteractionHandler; }
 } } }
-enum SegmentEnum
-{
-    e_Aborted = -1000,
-    e_Retry,
-    e_Finished,
-    e_Success = 0
-};
 
 enum InitialisationMode
 {
@@ -124,7 +117,7 @@ protected:
 
 public:
     ZipPackage( const css::uno::Reference < css::uno::XComponentContext > &xContext );
-    virtual ~ZipPackage();
+    virtual ~ZipPackage() override;
     ZipFile& getZipFile() { return *m_pZipFile;}
     sal_Int32 getFormat() const { return m_nFormat; }
 

@@ -74,7 +74,7 @@ awt::Rectangle AccessibleChartView::GetWindowPosSize() const
 
     awt::Rectangle aBBox( xWindow->getPosSize() );
 
-    vcl::Window* pWindow( VCLUnoHelper::GetWindow( GetInfo().m_xWindow ));
+    VclPtr<vcl::Window> pWindow( VCLUnoHelper::GetWindow( GetInfo().m_xWindow ));
     if( pWindow )
     {
         SolarMutexGuard aSolarGuard;
@@ -306,7 +306,8 @@ void SAL_CALL AccessibleChartView::initialize( const Sequence< Any >& rArguments
             MutexGuard aGuard( GetMutex());
             Reference< chart2::XChartDocument > xChartDoc( xChartModel, uno::UNO_QUERY );
             if( xChartDoc.is())
-                m_spObjectHierarchy.reset( new ObjectHierarchy( xChartDoc, getExplicitValueProvider() ));
+                m_spObjectHierarchy.reset(
+                    new ObjectHierarchy( xChartDoc, ExplicitValueProvider::getExplicitValueProvider(m_xChartView) ));
             else
                 m_spObjectHierarchy.reset();
         }
@@ -322,7 +323,7 @@ void SAL_CALL AccessibleChartView::initialize( const Sequence< Any >& rArguments
             aAccInfo.m_pParent = nullptr;
             aAccInfo.m_spObjectHierarchy = m_spObjectHierarchy;
             aAccInfo.m_pSdrView = m_pSdrView;
-            vcl::Window* pWindow = VCLUnoHelper::GetWindow( m_xWindow );
+            VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( m_xWindow );
             if ( m_pViewForwarder )
             {
                 delete m_pViewForwarder;
@@ -333,11 +334,6 @@ void SAL_CALL AccessibleChartView::initialize( const Sequence< Any >& rArguments
             SetInfo( aAccInfo );
         }
     }
-}
-
-ExplicitValueProvider* AccessibleChartView::getExplicitValueProvider()
-{
-    return ExplicitValueProvider::getExplicitValueProvider(m_xChartView);
 }
 
 // view::XSelectionChangeListener
@@ -364,12 +360,6 @@ void SAL_CALL AccessibleChartView::selectionChanged( const lang::EventObject& /*
         }
         m_aCurrentSelectionOID = aSelectedOID;
     }
-}
-
-// lang::XComponent::dispose()
-void SAL_CALL AccessibleChartView::disposing()
-{
-    AccessibleBase::disposing();
 }
 
 // XEventListener

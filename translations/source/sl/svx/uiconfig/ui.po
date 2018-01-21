@@ -1,16 +1,16 @@
 #. extracted from svx/uiconfig/ui
 msgid ""
 msgstr ""
-"Project-Id-Version: LibreOffice 5.4\n"
+"Project-Id-Version: LibreOffice 5.3\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2017-04-10 17:20+0200\n"
-"PO-Revision-Date: 2017-04-10 21:38+0200\n"
+"POT-Creation-Date: 2017-01-06 11:51+0100\n"
+"PO-Revision-Date: 2016-12-26 02:37+0200\n"
 "Last-Translator: Martin Srebotnjak <miles@filmsi.net>\n"
 "Language-Team: sl.libreoffice.org\n"
-"Language: sl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Language: sl\n"
 "Plural-Forms: nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);\n"
 "X-Generator: Virtaal 0.7.1\n"
 "X-Accelerator-Marker: ~\n"
@@ -61,132 +61,6 @@ msgctxt ""
 "string.text"
 msgid "R_eject All"
 msgstr "Za_vrni vse"
-
-#: acceptrejectchangesdialog.ui
-msgctxt ""
-"acceptrejectchangesdialog.ui\n"
-"calcedit\n"
-"label\n"
-"string.text"
-msgid "Edit Comment..."
-msgstr "Uredi komentar ..."
-
-#: acceptrejectchangesdialog.ui
-msgctxt ""
-"acceptrejectchangesdialog.ui\n"
-"calcsort\n"
-"label\n"
-"string.text"
-msgid "Sorting"
-msgstr "Razvrščanje"
-
-#: acceptrejectchangesdialog.ui
-msgctxt ""
-"acceptrejectchangesdialog.ui\n"
-"calcaction\n"
-"label\n"
-"string.text"
-msgid "Action"
-msgstr "Dejanje"
-
-#: acceptrejectchangesdialog.ui
-msgctxt ""
-"acceptrejectchangesdialog.ui\n"
-"calcposition\n"
-"label\n"
-"string.text"
-msgid "Position"
-msgstr "Položaj"
-
-#: acceptrejectchangesdialog.ui
-msgctxt ""
-"acceptrejectchangesdialog.ui\n"
-"calcauthor\n"
-"label\n"
-"string.text"
-msgid "Author"
-msgstr "Avtor"
-
-#: acceptrejectchangesdialog.ui
-msgctxt ""
-"acceptrejectchangesdialog.ui\n"
-"calcdate\n"
-"label\n"
-"string.text"
-msgid "Date"
-msgstr "Datum"
-
-#: acceptrejectchangesdialog.ui
-msgctxt ""
-"acceptrejectchangesdialog.ui\n"
-"calcdesc\n"
-"label\n"
-"string.text"
-msgid "Description"
-msgstr "Opis"
-
-#: acceptrejectchangesdialog.ui
-msgctxt ""
-"acceptrejectchangesdialog.ui\n"
-"writeredit\n"
-"label\n"
-"string.text"
-msgid "Edit Comment..."
-msgstr "Uredi komentar ..."
-
-#: acceptrejectchangesdialog.ui
-msgctxt ""
-"acceptrejectchangesdialog.ui\n"
-"writersort\n"
-"label\n"
-"string.text"
-msgid "Sort By"
-msgstr "Razvrsti po"
-
-#: acceptrejectchangesdialog.ui
-msgctxt ""
-"acceptrejectchangesdialog.ui\n"
-"writeraction\n"
-"label\n"
-"string.text"
-msgid "Action"
-msgstr "Dejanje"
-
-#: acceptrejectchangesdialog.ui
-msgctxt ""
-"acceptrejectchangesdialog.ui\n"
-"writerauthor\n"
-"label\n"
-"string.text"
-msgid "Author"
-msgstr "Avtor"
-
-#: acceptrejectchangesdialog.ui
-msgctxt ""
-"acceptrejectchangesdialog.ui\n"
-"writerdate\n"
-"label\n"
-"string.text"
-msgid "Date"
-msgstr "Datum"
-
-#: acceptrejectchangesdialog.ui
-msgctxt ""
-"acceptrejectchangesdialog.ui\n"
-"writerdesc\n"
-"label\n"
-"string.text"
-msgid "Comment"
-msgstr "Komentar"
-
-#: acceptrejectchangesdialog.ui
-msgctxt ""
-"acceptrejectchangesdialog.ui\n"
-"writerposition\n"
-"label\n"
-"string.text"
-msgid "Document Position"
-msgstr "Položaj dokumenta"
 
 #: addconditiondialog.ui
 msgctxt ""
@@ -1100,6 +974,24 @@ msgstr "Stiskanje brez izgub"
 #: compressgraphicdialog.ui
 msgctxt ""
 "compressgraphicdialog.ui\n"
+"spin-quality\n"
+"text\n"
+"string.text"
+msgid "90"
+msgstr "90"
+
+#: compressgraphicdialog.ui
+msgctxt ""
+"compressgraphicdialog.ui\n"
+"spin-compression\n"
+"text\n"
+"string.text"
+msgid "9"
+msgstr "9"
+
+#: compressgraphicdialog.ui
+msgctxt ""
+"compressgraphicdialog.ui\n"
 "label2\n"
 "label\n"
 "string.text"
@@ -1150,6 +1042,24 @@ msgctxt ""
 "string.text"
 msgid "Interpolation:"
 msgstr "Interpolacija:"
+
+#: compressgraphicdialog.ui
+msgctxt ""
+"compressgraphicdialog.ui\n"
+"spin-new-width\n"
+"text\n"
+"string.text"
+msgid "1"
+msgstr "1"
+
+#: compressgraphicdialog.ui
+msgctxt ""
+"compressgraphicdialog.ui\n"
+"spin-new-height\n"
+"text\n"
+"string.text"
+msgid "1"
+msgstr "1"
 
 #: compressgraphicdialog.ui
 msgctxt ""
@@ -1364,8 +1274,8 @@ msgctxt ""
 "check_safemode\n"
 "label\n"
 "string.text"
-msgid "Restart %PRODUCTNAME to enter safe mode"
-msgstr "Ponovno zaženi %PRODUCTNAME za vstop v varni način"
+msgid "Restart LibreOffice to enter Safe Mode"
+msgstr "Ponovno zaženi LibreOffice za vstop v varni način"
 
 #: datanavigator.ui
 msgctxt ""
@@ -3383,6 +3293,15 @@ msgstr "Vnesite vrednost prosojnosti za končno točko preliva, kjer 0 % predsta
 #: floatingareastyle.ui
 msgctxt ""
 "floatingareastyle.ui\n"
+"end\n"
+"text\n"
+"string.text"
+msgid "0"
+msgstr "0"
+
+#: floatingareastyle.ui
+msgctxt ""
+"floatingareastyle.ui\n"
 "label6\n"
 "label\n"
 "string.text"
@@ -3397,6 +3316,15 @@ msgctxt ""
 "string.text"
 msgid "Specify the border value of gradient transparency."
 msgstr "Določite vrednost roba prosojnosti preliva."
+
+#: floatingareastyle.ui
+msgctxt ""
+"floatingareastyle.ui\n"
+"border\n"
+"text\n"
+"string.text"
+msgid "0"
+msgstr "0"
 
 #: floatingareastyle.ui
 msgctxt ""
@@ -3428,11 +3356,29 @@ msgstr "Določite vodoravni odmik od središča za slog senčenja preliva v odst
 #: floatingareastyle.ui
 msgctxt ""
 "floatingareastyle.ui\n"
+"centerx\n"
+"text\n"
+"string.text"
+msgid "0"
+msgstr "0"
+
+#: floatingareastyle.ui
+msgctxt ""
+"floatingareastyle.ui\n"
 "centery\n"
 "tooltip_text\n"
 "string.text"
 msgid "Specify the vertical offset percentage from the center for the gradient shading style.  50% is the vertical center."
 msgstr "Določite navpični odmik od središča za slog senčenja preliva v odstotkih. 50 % predstavlja navpično središče."
+
+#: floatingareastyle.ui
+msgctxt ""
+"floatingareastyle.ui\n"
+"centery\n"
+"text\n"
+"string.text"
+msgid "0"
+msgstr "0"
 
 #: floatingcontour.ui
 msgctxt ""
@@ -3817,15 +3763,6 @@ msgctxt ""
 "string.text"
 msgid "Save..."
 msgstr "Shrani ..."
-
-#: imapdialog.ui
-msgctxt ""
-"imapdialog.ui\n"
-"TBI_CLOSE\n"
-"label\n"
-"string.text"
-msgid "Close"
-msgstr "Zapri"
 
 #: imapdialog.ui
 msgctxt ""
@@ -4469,11 +4406,29 @@ msgstr "Vrednost po meri"
 #: paralrspacing.ui
 msgctxt ""
 "paralrspacing.ui\n"
+"label11\n"
+"label\n"
+"string.text"
+msgid "Before"
+msgstr "Pred"
+
+#: paralrspacing.ui
+msgctxt ""
+"paralrspacing.ui\n"
 "beforetextindent\n"
 "tooltip_text\n"
 "string.text"
 msgid "Before Text Indent"
 msgstr "Zamik pred besedilom"
+
+#: paralrspacing.ui
+msgctxt ""
+"paralrspacing.ui\n"
+"label12\n"
+"label\n"
+"string.text"
+msgid "After"
+msgstr "Za"
 
 #: paralrspacing.ui
 msgctxt ""
@@ -4487,11 +4442,38 @@ msgstr "Zamik za besedilom"
 #: paralrspacing.ui
 msgctxt ""
 "paralrspacing.ui\n"
+"label13\n"
+"label\n"
+"string.text"
+msgid "First line"
+msgstr "Prva vrstica"
+
+#: paralrspacing.ui
+msgctxt ""
+"paralrspacing.ui\n"
 "firstlineindent\n"
 "tooltip_text\n"
 "string.text"
 msgid "First Line Indent"
 msgstr "Zamik prve vrstice"
+
+#: paraulspacing.ui
+msgctxt ""
+"paraulspacing.ui\n"
+"label2\n"
+"label\n"
+"string.text"
+msgid "Above"
+msgstr "Nad"
+
+#: paraulspacing.ui
+msgctxt ""
+"paraulspacing.ui\n"
+"label10\n"
+"label\n"
+"string.text"
+msgid "Below"
+msgstr "Pod"
 
 #: paraulspacing.ui
 msgctxt ""
@@ -5094,16 +5076,16 @@ msgstr "_Nadaljuj v varnem načinu"
 #: safemodedialog.ui
 msgctxt ""
 "safemodedialog.ui\n"
-"btn_restart\n"
+"btn_quit\n"
 "label\n"
 "string.text"
-msgid "_Restart in Normal Mode"
-msgstr "_Ponovno zaženi v varnem načinu ..."
+msgid "_Quit"
+msgstr "I_zhod"
 
 #: safemodedialog.ui
 msgctxt ""
 "safemodedialog.ui\n"
-"btn_apply\n"
+"btn_restart\n"
 "label\n"
 "string.text"
 msgid "_Apply Changes and Restart"
@@ -6783,84 +6765,3 @@ msgctxt ""
 "string.text"
 msgid "Delete"
 msgstr "Izbriši"
-
-#: xmlsecstatmenu.ui
-msgctxt ""
-"xmlsecstatmenu.ui\n"
-"signatures\n"
-"label\n"
-"string.text"
-msgid "Digital Signatures..."
-msgstr "Digitalni podpisi ..."
-
-#: zoommenu.ui
-msgctxt ""
-"zoommenu.ui\n"
-"page\n"
-"label\n"
-"string.text"
-msgid "Entire Page"
-msgstr "Cela stran"
-
-#: zoommenu.ui
-msgctxt ""
-"zoommenu.ui\n"
-"width\n"
-"label\n"
-"string.text"
-msgid "Page Width"
-msgstr "Širina strani"
-
-#: zoommenu.ui
-msgctxt ""
-"zoommenu.ui\n"
-"optimal\n"
-"label\n"
-"string.text"
-msgid "Optimal View"
-msgstr "Optimalen pogled"
-
-#: zoommenu.ui
-msgctxt ""
-"zoommenu.ui\n"
-"50\n"
-"label\n"
-"string.text"
-msgid "50%"
-msgstr "50 %"
-
-#: zoommenu.ui
-msgctxt ""
-"zoommenu.ui\n"
-"75\n"
-"label\n"
-"string.text"
-msgid "75%"
-msgstr "75 %"
-
-#: zoommenu.ui
-msgctxt ""
-"zoommenu.ui\n"
-"100\n"
-"label\n"
-"string.text"
-msgid "100%"
-msgstr "100 %"
-
-#: zoommenu.ui
-msgctxt ""
-"zoommenu.ui\n"
-"150\n"
-"label\n"
-"string.text"
-msgid "150%"
-msgstr "150 %"
-
-#: zoommenu.ui
-msgctxt ""
-"zoommenu.ui\n"
-"200\n"
-"label\n"
-"string.text"
-msgid "200%"
-msgstr "200 %"

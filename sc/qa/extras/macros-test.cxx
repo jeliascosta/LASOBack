@@ -292,7 +292,7 @@ void ScMacrosTest::testVba()
     OUString sTempDirURL;
     osl::FileBase:: getTempDirURL( sTempDirURL );
     osl::FileBase::getSystemPathFromFileURL( sTempDirURL, sTempDir );
-    sTempDir += OUStringLiteral1<SAL_PATHDELIMITER>();
+    sTempDir += OUStringLiteral1(SAL_PATHDELIMITER);
     OUString sTestFileName("My Test WorkBook.xls");
     Sequence< uno::Any > aParams;
     for ( sal_uInt32  i=0; i<SAL_N_ELEMENTS( testInfo ); ++i )
@@ -330,8 +330,8 @@ void ScMacrosTest::testVba()
             aOutParam);
         OUString aStringRes;
         aRet >>= aStringRes;
-        SAL_INFO("sc.qa", "value of Ret " << aStringRes);
-        CPPUNIT_ASSERT_MESSAGE( "script reported failure", aStringRes == "OK" );
+        CPPUNIT_ASSERT_EQUAL_MESSAGE(
+            "script reported failure", OUString("OK"), aStringRes);
         pFoundShell->DoClose();
         if ( bWorkbooksHandling )
         {

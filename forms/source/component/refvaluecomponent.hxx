@@ -54,7 +54,7 @@ namespace frm
             const OUString& _rDefault
         );
         DECLARE_DEFAULT_CLONE_CTOR( OReferenceValueComponent )
-        virtual ~OReferenceValueComponent();
+        virtual ~OReferenceValueComponent() override;
 
         // OPropertySet and friends
         virtual void SAL_CALL getFastPropertyValue(css::uno::Any& rValue, sal_Int32 nHandle) const override;
@@ -62,7 +62,7 @@ namespace frm
                     throw (css::uno::Exception, std::exception) override;
         virtual sal_Bool SAL_CALL convertFastPropertyValue(
                     css::uno::Any& _rConvertedValue, css::uno::Any& _rOldValue, sal_Int32 _nHandle, const css::uno::Any& _rValue )
-                    throw (css::lang::IllegalArgumentException) override;
+                    throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
         virtual void describeFixedProperties(
             css::uno::Sequence< css::beans::Property >& /* [out] */ _rProps
         ) const override;

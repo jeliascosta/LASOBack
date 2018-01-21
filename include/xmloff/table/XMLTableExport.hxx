@@ -59,7 +59,7 @@ class XMLOFF_DLLPUBLIC XMLTableExport : public salhelper::SimpleReferenceObject
 {
 public:
     XMLTableExport(SvXMLExport& rExp, const rtl::Reference< SvXMLExportPropertyMapper >& xCellExportPropertySetMapper, const rtl::Reference< XMLPropertyHandlerFactory >& xFactoryRef );
-    virtual ~XMLTableExport();
+    virtual ~XMLTableExport() override;
 
     // This method collects all automatic styles for the given table
     void collectTableAutoStyles(const css::uno::Reference < css::table::XColumnRowRange >& xColumnRowRange);
@@ -83,6 +83,7 @@ private:
     std::map< const css::uno::Reference< css::table::XColumnRowRange >, std::shared_ptr< XMLTableInfo > >
                                                     maTableInfoMap;
     bool                                            mbExportTables;
+    bool                                            mbWriter;
 
 protected:
     SvXMLExport& GetExport() { return mrExport; }

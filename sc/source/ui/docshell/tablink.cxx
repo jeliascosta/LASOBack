@@ -65,8 +65,7 @@ ScTableLink::ScTableLink(ScDocShell* pDocSh, const OUString& rFile,
     aOptions(rOpt),
     bInCreate( false ),
     bInEdit( false ),
-    bAddUndo( true ),
-    bDoPaint( true )
+    bAddUndo( true )
 {
     pImpl->m_pDocSh = pDocSh;
 }
@@ -82,8 +81,7 @@ ScTableLink::ScTableLink(SfxObjectShell* pShell, const OUString& rFile,
     aOptions(rOpt),
     bInCreate( false ),
     bInEdit( false ),
-    bAddUndo( true ),
-    bDoPaint( true )
+    bAddUndo( true )
 {
     pImpl->m_pDocSh = static_cast< ScDocShell* >( pShell );
     SetRefreshHandler( LINK( this, ScTableLink, RefreshHdl ) );
@@ -184,7 +182,7 @@ bool ScTableLink::Refresh(const OUString& rNewFile, const OUString& rNewFilter,
     if (!aOptions.isEmpty())
         pSet->Put( SfxStringItem( SID_FILE_FILTEROPTIONS, aOptions ) );
 
-    SfxMedium* pMed = new SfxMedium(aNewUrl, STREAM_STD_READ, pFilter, pSet);
+    SfxMedium* pMed = new SfxMedium(aNewUrl, StreamMode::STD_READ, pFilter, pSet);
 
     if ( bInEdit )                              // only if using the edit dialog,
         pMed->UseInteractionHandler(true);    // enable the filter options dialog
@@ -236,7 +234,7 @@ bool ScTableLink::Refresh(const OUString& rNewFile, const OUString& rNewFilter,
                     pUndoDoc->AddUndoTab( nTab, nTab, true, true );
                 bFirst = false;
                 ScRange aRange(0,0,nTab,MAXCOL,MAXROW,nTab);
-                rDoc.CopyToDocument(aRange, InsertDeleteFlags::ALL, false, pUndoDoc);
+                rDoc.CopyToDocument(aRange, InsertDeleteFlags::ALL, false, *pUndoDoc);
                 pUndoDoc->TransferDrawPage( &rDoc, nTab, nTab );
                 pUndoDoc->SetLink( nTab, nMode, aFileName, aFilterName,
                                    aOptions, aTabName, GetRefreshDelay() );
@@ -381,12 +379,9 @@ bool ScTableLink::Refresh(const OUString& rNewFile, const OUString& rNewFilter,
 
     //  Paint (koennen mehrere Tabellen sein)
 
-    if (bDoPaint)
-    {
-        pImpl->m_pDocSh->PostPaint( ScRange(0,0,0,MAXCOL,MAXROW,MAXTAB),
-                                    PAINT_GRID | PAINT_TOP | PAINT_LEFT | PAINT_EXTRAS );
-        aModificator.SetDocumentModified();
-    }
+    pImpl->m_pDocSh->PostPaint( ScRange(0,0,0,MAXCOL,MAXROW,MAXTAB),
+                                PaintPartFlags::Grid | PaintPartFlags::Top | PaintPartFlags::Left | PaintPartFlags::Extras );
+    aModificator.SetDocumentModified();
 
     if (bNotFound)
     {
@@ -404,12 +399,12 @@ bool ScTableLink::Refresh(const OUString& rNewFile, const OUString& rNewFilter,
     return true;
 }
 
-IMPL_LINK_NOARG_TYPED(ScTableLink, RefreshHdl, Timer *, void)
+IMPL_LINK_NOARG(ScTableLink, RefreshHdl, Timer *, void)
 {
     Refresh( aFileName, aFilterName, nullptr, GetRefreshDelay() );
 }
 
-IMPL_LINK_TYPED( ScTableLink, TableEndEditHdl, ::sfx2::SvBaseLink&, rLink, void )
+IMPL_LINK( ScTableLink, TableEndEditHdl, ::sfx2::SvBaseLink&, rLink, void )
 {
     pImpl->m_aEndEditLink.Call( rLink );
     bInEdit = false;
@@ -455,7 +450,7 @@ bool ScDocumentLoader::GetFilterName( const OUString& rFileName,
     //  Filter-Detection
 
     std::shared_ptr<const SfxFilter> pSfxFilter;
-    SfxMedium* pMedium = new SfxMedium( rFileName, STREAM_STD_READ );
+    SfxMedium* pMedium = new SfxMedium( rFileName, StreamMode::STD_READ );
     if ( pMedium->GetError() == ERRCODE_NONE )
     {
         if ( bWithInteraction )
@@ -489,7 +484,7 @@ void ScDocumentLoader::RemoveAppPrefix( OUString& rFilterName )
         rFilterName = rFilterName.copy( aAppPrefix.getLength());
 }
 
-SfxMedium* ScDocumentLoader::CreateMedium( const OUString& rFileName, std::shared_ptr<const SfxFilter> pFilter,
+SfxMedium* ScDocumentLoader::CreateMedium( const OUString& rFileName, std::shared_ptr<const SfxFilter> const & pFilter,
         const OUString& rOptions )
 {
     // Always create SfxItemSet so ScDocShell can set options.
@@ -497,7 +492,7 @@ SfxMedium* ScDocumentLoader::CreateMedium( const OUString& rFileName, std::share
     if ( !rOptions.isEmpty() )
         pSet->Put( SfxStringItem( SID_FILE_FILTEROPTIONS, rOptions ) );
 
-    return new SfxMedium( rFileName, STREAM_STD_READ, pFilter, pSet );
+    return new SfxMedium( rFileName, StreamMode::STD_READ, pFilter, pSet );
 }
 
 ScDocumentLoader::ScDocumentLoader( const OUString& rFileName,

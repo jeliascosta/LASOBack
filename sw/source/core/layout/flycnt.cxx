@@ -200,8 +200,6 @@ class SwOszControl
     static const SwFlyFrame *pStack5;
 
     const SwFlyFrame *pFly;
-    // #i3317#
-    sal_uInt8 mnPosStackSize;
     std::vector<Point*> maObjPositions;
 
 public:
@@ -218,9 +216,7 @@ const SwFlyFrame *SwOszControl::pStack4 = nullptr;
 const SwFlyFrame *SwOszControl::pStack5 = nullptr;
 
 SwOszControl::SwOszControl( const SwFlyFrame *pFrame )
-    : pFly( pFrame ),
-      // #i3317#
-      mnPosStackSize( 20 )
+    : pFly( pFrame )
 {
     if ( !SwOszControl::pStack1 )
         SwOszControl::pStack1 = pFly;
@@ -275,9 +271,9 @@ bool SwOszControl::ChkOsz()
 {
     bool bOscillationDetected = false;
 
-    if ( maObjPositions.size() == mnPosStackSize )
+    if ( maObjPositions.size() == 20 )
     {
-        // position stack is full -> oscillation
+        // #i3317# position stack is full -> oscillation
         bOscillationDetected = true;
     }
     else
@@ -388,11 +384,11 @@ void SwFlyAtContentFrame::MakeAll(vcl::RenderContext* pRenderContext)
             // the anchor frame, thus it has to move forward.
             bool bConsiderWrapInfluenceDueToMovedFwdAnchor( false );
             do {
-                SWRECTFN( this )
-                Point aOldPos( (Frame().*fnRect->fnGetPos)() );
+                SwRectFnSet aRectFnSet(this);
+                Point aOldPos( (Frame().*aRectFnSet->fnGetPos)() );
                 SwFlyFreeFrame::MakeAll(pRenderContext);
                 const bool bPosChgDueToOwnFormat =
-                                        aOldPos != (Frame().*fnRect->fnGetPos)();
+                                        aOldPos != (Frame().*aRectFnSet->fnGetPos)();
                 // #i3317#
                 if ( !ConsiderObjWrapInfluenceOnObjPos() &&
                      OverlapsPrevColumn() )
@@ -450,7 +446,7 @@ void SwFlyAtContentFrame::MakeAll(vcl::RenderContext* pRenderContext)
                     }
                 }
 
-                if ( aOldPos != (Frame().*fnRect->fnGetPos)() ||
+                if ( aOldPos != (Frame().*aRectFnSet->fnGetPos)() ||
                      ( !GetValidPosFlag() &&
                        ( pFooter || bPosChgDueToOwnFormat ) ) )
                 {
@@ -510,9 +506,9 @@ void SwFlyAtContentFrame::MakeAll(vcl::RenderContext* pRenderContext)
                 }
                 if ( pCellFrame )
                 {
-                    SWRECTFN( pCellFrame )
-                    if ( (pCellFrame->Frame().*fnRect->fnGetTop)() == 0 &&
-                         (pCellFrame->Frame().*fnRect->fnGetHeight)() == 0 )
+                    SwRectFnSet aRectFnSet(pCellFrame);
+                    if ( (pCellFrame->Frame().*aRectFnSet->fnGetTop)() == 0 &&
+                         (pCellFrame->Frame().*aRectFnSet->fnGetHeight)() == 0 )
                     {
                         bConsiderWrapInfluenceDueToMovedFwdAnchor = false;
                     }

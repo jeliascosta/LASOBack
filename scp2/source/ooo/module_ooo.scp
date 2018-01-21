@@ -31,9 +31,6 @@ Module gid_Module_Root
              gid_File_Txt_Pagein_Impress,
              gid_File_Txt_Pagein_Writer,
              gid_File_extras_newfiles,
-			 //ADD LIBRAS
-			 gid_File_laso_newfiles,
-			 //END LIBRAS
              gid_File_Rdb_Offapi,
              gid_Starregistry_Services_Rdb,
              auto_ooo_ALL,
@@ -56,6 +53,7 @@ Module gid_Module_Root
              gid_File_Extra_Palettes,
              gid_File_Extra_Database,
              gid_File_Extra_Databasebiblio,
+             gid_File_Extra_Emojiconfig,
              gid_File_Extra_Gallsound,
              gid_File_Extra_Autocorr,
              gid_File_Extra_Autocorr_Lang,
@@ -222,6 +220,17 @@ Module gid_Module_Root_Extension_Dictionary_Bn
     InstallOrder = "2000";
     Sortkey = "514";
     Spellcheckerlanguage = "bn";
+    PackageInfo = "packinfo_office.txt";
+    ParentID = gid_Module_Dictionaries;
+    Styles = ();
+End
+
+Module gid_Module_Root_Extension_Dictionary_Bo
+    MOD_NAME_DESC ( MODULE_EXTENSION_DICTIONARY_BO );
+    Files = (gid_File_Extension_Dictionary_Bo);
+    InstallOrder = "2000";
+    Sortkey = "525";
+    Spellcheckerlanguage = "bo";
     PackageInfo = "packinfo_office.txt";
     ParentID = gid_Module_Dictionaries;
     Styles = ();

@@ -33,7 +33,6 @@ namespace sdr
             // second position in pixel
             basegfx::B2DPoint                       maSecondPosition;
 
-            // bitfield
             // Flag to switch on/off long lines to the OutputDevice bounds
             bool                                    mbExtendedLines : 1;
 
@@ -47,19 +46,13 @@ namespace sdr
             OverlayRollingRectangleStriped(
                 const basegfx::B2DPoint& rBasePos,
                 const basegfx::B2DPoint& rSecondPos,
-                bool bExtendedLines = false,
+                bool bExtendedLines,
                 bool bShowBounds = true);
-            virtual ~OverlayRollingRectangleStriped();
+            virtual ~OverlayRollingRectangleStriped() override;
 
             // change second position
             const basegfx::B2DPoint& getSecondPosition() const { return maSecondPosition; }
             void setSecondPosition(const basegfx::B2DPoint& rNew);
-
-            // change extended lines
-            bool getExtendedLines() const { return mbExtendedLines; }
-
-            // change show bounds
-            bool getShowBounds() const { return mbShowBounds; }
 
             // react on stripe definition change
             virtual void stripeDefinitionHasChanged() override;

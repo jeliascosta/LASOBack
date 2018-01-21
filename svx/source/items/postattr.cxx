@@ -43,17 +43,17 @@ SvxPostItAuthorItem::SvxPostItAuthorItem( const OUString& rAuthor,
 bool SvxPostItAuthorItem::GetPresentation
 (
     SfxItemPresentation ePres,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
     switch ( ePres )
     {
-        case SFX_ITEM_PRESENTATION_NAMELESS:
+        case SfxItemPresentation::Nameless:
             rText = GetValue();
             return true;
-        case SFX_ITEM_PRESENTATION_COMPLETE:
+        case SfxItemPresentation::Complete:
             rText = SVX_RESSTR(RID_SVXITEMS_AUTHOR_COMPLETE) + GetValue();
             return true;
         default: ;//prevent warning
@@ -83,17 +83,17 @@ SvxPostItDateItem::SvxPostItDateItem( const OUString& rDate, sal_uInt16 _nWhich 
 bool SvxPostItDateItem::GetPresentation
 (
     SfxItemPresentation ePres,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
     switch ( ePres )
     {
-        case SFX_ITEM_PRESENTATION_NAMELESS:
+        case SfxItemPresentation::Nameless:
             rText = GetValue();
             return true;
-        case SFX_ITEM_PRESENTATION_COMPLETE:
+        case SfxItemPresentation::Complete:
             rText = SVX_RESSTR(RID_SVXITEMS_DATE_COMPLETE) + GetValue();
             return true;
         default: ;//prevent warning
@@ -112,28 +112,26 @@ SvxPostItTextItem::SvxPostItTextItem( sal_uInt16 _nWhich )
     SetWhich( _nWhich );
 }
 
-
 SvxPostItTextItem::SvxPostItTextItem( const OUString& rText, sal_uInt16 _nWhich ) :
 
     SfxStringItem( _nWhich, rText )
 {
 }
 
-
 bool SvxPostItTextItem::GetPresentation
 (
     SfxItemPresentation ePres,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText, const IntlWrapper *
 )   const
 {
     switch ( ePres )
     {
-        case SFX_ITEM_PRESENTATION_NAMELESS:
+        case SfxItemPresentation::Nameless:
             rText = GetValue();
             return true;
-        case SFX_ITEM_PRESENTATION_COMPLETE:
+        case SfxItemPresentation::Complete:
             rText = SVX_RESSTR(RID_SVXITEMS_TEXT_COMPLETE) + GetValue();
             return true;
         default: ;//prevent warning
@@ -141,11 +139,9 @@ bool SvxPostItTextItem::GetPresentation
     return false;
 }
 
-
 SfxPoolItem* SvxPostItTextItem::Clone( SfxItemPool * ) const
 {
     return new SvxPostItTextItem( *this );
 }
-
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

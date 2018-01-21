@@ -21,11 +21,11 @@ struct TextureCombo;
 class VCL_PLUGIN_PUBLIC X11OpenGLSalGraphicsImpl : public OpenGLSalGraphicsImpl, public X11GraphicsImpl
 {
 private:
-    X11SalGraphics&     mrParent;
+    X11SalGraphics&     mrX11Parent;
 
 public:
     X11OpenGLSalGraphicsImpl( X11SalGraphics& rParent );
-    virtual ~X11OpenGLSalGraphicsImpl();
+    virtual ~X11OpenGLSalGraphicsImpl() override;
 
 protected:
     virtual rtl::Reference<OpenGLContext> CreateWinContext() override;

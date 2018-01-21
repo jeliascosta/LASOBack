@@ -58,22 +58,24 @@ class UNOTOOLS_DLLPUBLIC LocaleDataWrapper
     css::uno::Reference< css::i18n::XLocaleData4 >     xLD;
     LanguageTag                                        maLanguageTag;
     std::shared_ptr< css::i18n::Calendar2 >            xDefaultCalendar;
+    std::shared_ptr< css::i18n::Calendar2 >            xSecondaryCalendar;
     css::i18n::LocaleDataItem                          aLocaleDataItem;
     css::uno::Sequence< OUString >                     aReservedWordSeq;
     css::uno::Sequence< OUString >                     aDateAcceptancePatterns;
     css::uno::Sequence< sal_Int32 >                    aGrouping;
     // cached items
-    OUString               aLocaleItem[css::i18n::LocaleItem::COUNT];
-    OUString               aReservedWord[css::i18n::reservedWords::COUNT];
-    OUString               aCurrSymbol;
-    OUString               aCurrBankSymbol;
-    int                         nDateFormat;
-    int                         nLongDateFormat;
-    sal_uInt16                      nCurrPositiveFormat;
-    sal_uInt16                      nCurrNegativeFormat;
-    sal_uInt16                      nCurrDigits;
-    bool                        bLocaleDataItemValid;
-    bool                        bReservedWordValid;
+    OUString                aLocaleItem[css::i18n::LocaleItem::COUNT];
+    OUString                aReservedWord[css::i18n::reservedWords::COUNT];
+    OUString                aCurrSymbol;
+    OUString                aCurrBankSymbol;
+    int                     nDateFormat;
+    int                     nLongDateFormat;
+    sal_uInt16              nCurrPositiveFormat;
+    sal_uInt16              nCurrNegativeFormat;
+    sal_uInt16              nCurrDigits;
+    bool                    bLocaleDataItemValid;
+    bool                    bReservedWordValid;
+    bool                    bSecondaryCalendarValid;
     mutable ::utl::ReadWriteMutex   aMutex;
     struct Locale_Compare
     {
@@ -105,6 +107,7 @@ class UNOTOOLS_DLLPUBLIC LocaleDataWrapper
     DateFormat          scanDateFormatImpl( const OUString& rCode );
 
     void                getDefaultCalendarImpl();
+    void                getSecondaryCalendarImpl();
 
     sal_Unicode*        ImplAddFormatNum( sal_Unicode* pBuf,
                             sal_Int64 nNumber, sal_uInt16 nDecimals,
@@ -175,13 +178,17 @@ public:
     MeasurementSystem   mapMeasurementStringToEnum( const OUString& rMS ) const;
 
     /// Convenience method to obtain the default calendar.
-    const std::shared_ptr< css::i18n::Calendar2 > getDefaultCalendar() const;
+    const std::shared_ptr< css::i18n::Calendar2 >& getDefaultCalendar() const;
 
     /// Convenience method to obtain the day names of the default calendar.
     const css::uno::Sequence< css::i18n::CalendarItem2 > getDefaultCalendarDays() const;
 
     /// Convenience method to obtain the month names of the default calendar.
     const css::uno::Sequence< css::i18n::CalendarItem2 > getDefaultCalendarMonths() const;
+
+    /** If the secondary calendar, if any, is of the name passed AND number
+        formats using it usually use the E or EE keyword (EC|EEC). */
+    bool doesSecondaryCalendarUseEC( const OUString& rName ) const;
 
     /** Obtain digit grouping. The usually known grouping by thousands (#,###)
         is actually only one of possible groupings. Another one, for example,
@@ -257,7 +264,7 @@ public:
                          */
     OUString       getLongDate( const Date& rDate,
                             CalendarWrapper& rCal,
-                            bool bTwoDigitYear = false
+                            bool bTwoDigitYear
                             ) const;
 
                         /** Simple number formatting

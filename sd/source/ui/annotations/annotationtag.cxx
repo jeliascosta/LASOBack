@@ -76,7 +76,7 @@ static OUString getInitials( const OUString& rName )
         // take letter
         if( nLength )
         {
-            sInitials += OUString( *pStr );
+            sInitials += OUStringLiteral1( *pStr );
             nLength--; pStr++;
         }
 
@@ -155,7 +155,7 @@ class AnnotationHdl : public SmartHdl
 {
 public:
     AnnotationHdl( const SmartTagReference& xTag, const Reference< XAnnotation >& xAnnotation, const Point& rPnt );
-    virtual ~AnnotationHdl();
+    virtual ~AnnotationHdl() override;
     virtual void CreateB2dIAObject() override;
     virtual bool IsFocusHdl() const override;
     virtual bool isMarkable() const override;
@@ -610,7 +610,7 @@ void AnnotationTag::ClosePopup()
     }
 }
 
-IMPL_LINK_TYPED(AnnotationTag, WindowEventHandler, VclWindowEvent&, rEvent, void)
+IMPL_LINK(AnnotationTag, WindowEventHandler, VclWindowEvent&, rEvent, void)
 {
         vcl::Window* pWindow = rEvent.GetWindow();
 
@@ -672,7 +672,7 @@ IMPL_LINK_TYPED(AnnotationTag, WindowEventHandler, VclWindowEvent&, rEvent, void
         }
 }
 
-IMPL_LINK_NOARG_TYPED(AnnotationTag, ClosePopupHdl, void*, void)
+IMPL_LINK_NOARG(AnnotationTag, ClosePopupHdl, void*, void)
 {
     mnClosePopupEvent = nullptr;
     ClosePopup();

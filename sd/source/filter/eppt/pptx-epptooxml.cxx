@@ -18,6 +18,7 @@
  */
 
 #include <stdio.h>
+#include <o3tl/any.hxx>
 #include <oox/drawingml/chart/chartconverter.hxx>
 #include <oox/token/tokens.hxx>
 #include <oox/ole/vbaproject.hxx>
@@ -155,7 +156,7 @@ static const PPTXLayoutInfo aLayoutInfo[LAYOUT_SIZE] = {
     { 16, "Title, 2 Content over Content", "twoObjOverTx" },      // not exactly, but close
     { 14, "Title, Content over Content", "objOverTx" },           // not exactly, but close
     { 18, "Title, 4 Content", "fourObj" },
-    { 33, "Title, 6 Content", "blank" }                           // not defined => blank
+    { 34, "Title, 6 Content", "blank" }                           // not defined => blank
 };
 
 int PowerPointExport::GetPPTXLayoutId( int nOffset )
@@ -195,7 +196,7 @@ int PowerPointExport::GetPPTXLayoutId( int nOffset )
         case 32:
             nId = LAYOUT_CENTERED_TEXT;
             break;
-        case 33:
+        case 34:
             nId = LAYOUT_TITLE_6CONTENT;
             break;
         case 20:
@@ -803,7 +804,7 @@ void PowerPointExport::WriteAnimationProperty( const FSHelperPtr& pFS, const Any
     switch( rAny.getValueType().getTypeClass() ) {
     case TypeClass_STRING:
         pFS->singleElementNS( XML_p, XML_strVal,
-                  XML_val, USS( *static_cast< const OUString* >( rAny.getValue() ) ),
+                  XML_val, USS( *o3tl::doAccess<OUString>(rAny) ),
                   FSEND );
         break;
     default:
@@ -1505,7 +1506,7 @@ bool PowerPointExport::WriteComments( sal_uInt32 nPageNum )
 }
 
 void PowerPointExport::ImplWriteSlide( sal_uInt32 nPageNum, sal_uInt32 nMasterNum, sal_uInt16 /* nMode */,
-                                       bool bHasBackground, Reference< XPropertySet > aXBackgroundPropSet )
+                                       bool bHasBackground, Reference< XPropertySet > const & aXBackgroundPropSet )
 {
     SAL_INFO("sd.eppt", "write slide: " << nPageNum << "\n----------------");
 
@@ -1668,7 +1669,7 @@ sal_Int32 PowerPointExport::nStyleLevelToken[5] =
     XML_lvl5pPr
 };
 
-void PowerPointExport::ImplWriteSlideMaster( sal_uInt32 nPageNum, Reference< XPropertySet > aXBackgroundPropSet )
+void PowerPointExport::ImplWriteSlideMaster( sal_uInt32 nPageNum, Reference< XPropertySet > const & aXBackgroundPropSet )
 {
     SAL_INFO("sd.eppt", "write slide master: " << nPageNum << "\n--------------");
 
@@ -1740,12 +1741,10 @@ void PowerPointExport::ImplWriteSlideMaster( sal_uInt32 nPageNum, Reference< XPr
     // use master's id type as they have same range, mso does that as well
     pFS->startElementNS( XML_p, XML_sldLayoutIdLst, FSEND );
 
-    int nCount = 0;
     for( int i = 0; i < LAYOUT_SIZE; i++) {
         sal_Int32 nLayoutFileId = GetLayoutFileId( i, nPageNum );
         if( nLayoutFileId > 0 ) {
             AddLayoutIdAndRelation( pFS, nLayoutFileId );
-            nCount++;
         } else {
             ImplWritePPTXLayout( i, nPageNum );
             AddLayoutIdAndRelation( pFS, GetLayoutFileId( i, nPageNum ) );
@@ -2325,19 +2324,15 @@ static const struct cppu::ImplementationEntry g_entries[] =
     { nullptr, nullptr, nullptr, nullptr, nullptr, 0 }
 };
 
-#ifdef __cplusplus
 extern "C"
 {
-#endif
 
 SAL_DLLPUBLIC_EXPORT void* SAL_CALL sdfilt_component_getFactory( const sal_Char* pImplName, void* pServiceManager, void* pRegistryKey )
 {
     return cppu::component_getFactoryHelper( pImplName, pServiceManager, pRegistryKey , g_entries );
 }
 
-#ifdef __cplusplus
 }
-#endif
 
 #if OSL_DEBUG_LEVEL > 1
 void dump_pset(Reference< XPropertySet > const & rXPropSet)
@@ -2356,15 +2351,15 @@ void dump_pset(Reference< XPropertySet > const & rXPropSet)
         RectanglePoint pointValue;
 
         if( value >>= strValue )
-            SAL_WARN("sd.eppt", name << " = \"" << strValue << "\"");
+            SAL_INFO("sd.eppt", name << " = \"" << strValue << "\"");
         else if( value >>= intValue )
-            SAL_WARN("sd.eppt", name << " = " << intValue << "(hex : " << std::hex << intValue << ")");
+            SAL_INFO("sd.eppt", name << " = " << intValue << "(hex : " << std::hex << intValue << ")");
         else if( value >>= boolValue )
-            SAL_WARN("sd.eppt", name << " = " << boolValue << "           (bool)");
+            SAL_INFO("sd.eppt", name << " = " << boolValue << "           (bool)");
         else if( value >>= pointValue )
-            SAL_WARN("sd.eppt", name << " = " << pointValue << "    (RectanglePoint)");
+            SAL_INFO("sd.eppt", name << " = " << pointValue << "    (RectanglePoint)");
         else
-            SAL_WARN("sd.eppt", "???          <unhandled type>");
+            SAL_INFO("sd.eppt", "???          <unhandled type>");
     }
 }
 #endif

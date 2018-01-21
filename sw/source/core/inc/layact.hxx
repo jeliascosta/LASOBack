@@ -101,7 +101,7 @@ class SwLayAction
                              const SwRect & );
 
     bool FormatLayout( OutputDevice* pRenderContext, SwLayoutFrame *, bool bAddRect = true );
-    bool FormatLayoutTab( SwTabFrame *, bool bAddRect = true );
+    bool FormatLayoutTab( SwTabFrame *, bool bAddRect );
     bool FormatContent( const SwPageFrame* pPage );
     void FormatContent_( const SwContentFrame* pContent,
                        const SwPageFrame* pPage );
@@ -116,7 +116,6 @@ class SwLayAction
     bool RemoveEmptyBrowserPages();
 
     inline void CheckIdleEnd();
-    inline std::clock_t GetStartTicks() { return m_nStartTicks; }
 
 public:
     SwLayAction( SwRootFrame *pRt, SwViewShellImp *pImp );
@@ -130,7 +129,6 @@ public:
     bool IsWaitAllowed()        const       { return m_bWaitAllowed; }
     bool IsNextCycle()          const       { return m_bNextCycle; }
     bool IsInput()              const       { return m_bInput; }
-    bool IsWait()               const       { return nullptr != m_pWait;  }
     bool IsPaint()              const       { return m_bPaint; }
     bool IsIdle()               const       { return m_bIdle;  }
     bool IsReschedule()         const       { return m_bReschedule;  }
@@ -171,7 +169,7 @@ public:
     void CheckWaitCursor();
 
     // #i28701# - method is now public;
-    // delete 2nd parameter, because its not used;
+    // delete 2nd parameter, because it's not used;
     bool FormatLayoutFly( SwFlyFrame * );
     // #i28701# - method is now public
     bool FormatFlyContent( const SwFlyFrame * );
@@ -186,7 +184,6 @@ class SwLayIdle
     SwContentNode *pContentNode;    // The current cursor position is saved here
     sal_Int32  nTextPos;
     bool        bPageValid;     // Were we able to evaluate everything on the whole page?
-    bool        bAllValid;      // Were we able to evaluate everything?
 
 #ifdef DBG_UTIL
     bool m_bIndicator;

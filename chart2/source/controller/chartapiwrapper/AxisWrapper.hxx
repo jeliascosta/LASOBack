@@ -61,8 +61,8 @@ public:
         SECOND_Y_AXIS
     };
 
-    AxisWrapper( tAxisType eType, std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
-    virtual ~AxisWrapper();
+    AxisWrapper(tAxisType eType, const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
+    virtual ~AxisWrapper() override;
 
     static void getDimensionAndMainAxisBool( tAxisType eType, sal_Int32& rnDimensionIndex, bool& rbMainAxis );
 
@@ -73,9 +73,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     //ReferenceSizePropertyProvider
     virtual void updateReferenceSize() override;

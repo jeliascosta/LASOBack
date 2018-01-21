@@ -21,6 +21,7 @@
 #include <sal/log.hxx>
 #include <unotools/mediadescriptor.hxx>
 #include <unotools/securityoptions.hxx>
+#include <unotools/ucbhelper.hxx>
 #include <comphelper/namedvaluecollection.hxx>
 #include <comphelper/stillreadwriteinteraction.hxx>
 
@@ -334,8 +335,6 @@ MediaDescriptor::MediaDescriptor(const css::uno::Sequence< css::beans::PropertyV
 
 bool MediaDescriptor::isStreamReadOnly() const
 {
-    static const char CONTENTSCHEME_FILE[] = "file";
-    static const char CONTENTPROP_ISREADONLY[] = "IsReadOnly";
     static bool READONLY_FALLBACK = false;
 
     bool bReadOnly = READONLY_FALLBACK;
@@ -372,12 +371,14 @@ bool MediaDescriptor::isStreamReadOnly() const
             if (xId.is())
                 aScheme = xId->getContentProviderScheme();
 
-            if (aScheme.equalsIgnoreAsciiCase(CONTENTSCHEME_FILE))
+            if (aScheme.equalsIgnoreAsciiCase("file"))
                 bReadOnly = true;
             else
             {
-                ::ucbhelper::Content aContent(xContent, css::uno::Reference< css::ucb::XCommandEnvironment >(), comphelper::getProcessComponentContext());
-                aContent.getPropertyValue(CONTENTPROP_ISREADONLY) >>= bReadOnly;
+                ::ucbhelper::Content aContent(xContent,
+                                              utl::UCBContentHelper::getDefaultCommandEnvironment(),
+                                              comphelper::getProcessComponentContext());
+                aContent.getPropertyValue("IsReadOnly") >>= bReadOnly;
             }
         }
     }

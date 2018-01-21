@@ -46,7 +46,6 @@ private:
     long            mnLineSize;
     long            mnPageSize;
     long            mnDelta;
-    sal_uInt16      mnDragDraw;
     sal_uInt16      mnStateFlags;
     ScrollType      meScrollType;
     bool            mbCalcSize;
@@ -57,9 +56,9 @@ private:
     Link<Slider*,void>   maSlideHdl;
     Link<Slider*,void>   maEndSlideHdl;
 
-    DECL_LINK_TYPED(LinkedFieldModifyHdl, Edit&, void);
-    DECL_LINK_TYPED(LinkedFieldLoseFocusHdl, Control&, void);
-    DECL_LINK_TYPED(LinkedFieldSpinnerHdl, SpinField&, void);
+    DECL_LINK(LinkedFieldModifyHdl, Edit&, void);
+    DECL_LINK(LinkedFieldLoseFocusHdl, Control&, void);
+    DECL_LINK(LinkedFieldSpinnerHdl, SpinField&, void);
 
     using Control::ImplInitSettings;
     using Window::ImplInit;
@@ -74,14 +73,14 @@ private:
     SAL_DLLPRIVATE bool ImplIsPageDown( const Point& rPos );
     SAL_DLLPRIVATE long ImplSlide( long nNewPos, bool bCallEndSlide );
     SAL_DLLPRIVATE long ImplDoAction( bool bCallEndSlide );
-    SAL_DLLPRIVATE void ImplDoMouseAction( const Point& rPos, bool bCallAction = true );
+    SAL_DLLPRIVATE void ImplDoMouseAction( const Point& rPos, bool bCallAction );
     SAL_DLLPRIVATE void ImplDoSlide( long nNewPos );
     SAL_DLLPRIVATE void ImplDoSlideAction( ScrollType eScrollType );
     SAL_DLLPRIVATE void ImplUpdateLinkedField();
 
 public:
-                    Slider( vcl::Window* pParent, WinBits nStyle = WB_HORZ );
-    virtual         ~Slider();
+                    Slider( vcl::Window* pParent, WinBits nStyle);
+    virtual         ~Slider() override;
     virtual void    dispose() override;
     virtual void    MouseButtonDown( const MouseEvent& rMEvt ) override;
     virtual void    MouseButtonUp( const MouseEvent& rMEvt ) override;
@@ -89,7 +88,6 @@ public:
     virtual void    KeyInput( const KeyEvent& rKEvt ) override;
     virtual void    Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect) override;
     virtual void    Resize() override;
-    virtual void    RequestHelp( const HelpEvent& rHEvt ) override;
     virtual void    StateChanged( StateChangedType nType ) override;
     virtual void    DataChanged( const DataChangedEvent& rDCEvt ) override;
 
@@ -110,7 +108,7 @@ public:
 
     Size            CalcWindowSizePixel();
 
-    void            SetLinkedField(VclPtr<NumericField> pField);
+    void            SetLinkedField(VclPtr<NumericField> const & pField);
 
     void            SetSlideHdl( const Link<Slider*,void>& rLink ) { maSlideHdl = rLink; }
     void            SetEndSlideHdl( const Link<Slider*,void>& rLink ) { maEndSlideHdl = rLink; }

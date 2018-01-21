@@ -49,11 +49,9 @@ bool areEqualJavaInfo(
 
 javaFrameworkError jfw_findAllJREs(JavaInfo ***pparInfo, sal_Int32 *pSize)
 {
-    javaFrameworkError retVal = JFW_E_NONE;
     try
     {
         osl::MutexGuard guard(jfw::FwkMutex::get());
-        javaFrameworkError errcode = JFW_E_NONE;
         if (pparInfo == nullptr || pSize == nullptr)
             return JFW_E_INVALID_ARG;
 
@@ -186,15 +184,14 @@ javaFrameworkError jfw_findAllJREs(JavaInfo ***pparInfo, sal_Int32 *pSize)
             (*pparInfo)[index++] = l->detach();
 
         *pSize = nSize;
-        return errcode;
+        return JFW_E_NONE;
     }
     catch (const jfw::FrameworkException& e)
     {
-        retVal = e.errorCode;
         fprintf(stderr, "%s\n", e.message.getStr());
         OSL_FAIL(e.message.getStr());
+        return e.errorCode;
     }
-    return retVal;
 }
 
 javaFrameworkError jfw_startVM(
@@ -244,11 +241,11 @@ javaFrameworkError jfw_startVM(
                 {
                     // If no JRE has been selected then we do not select one. This function shall then
                     //return JFW_E_NO_SELECT
-                    if (aInfo != NULL &&
+                    if (aInfo != nullptr &&
                         (aInfo->nFeatures & JFW_FEATURE_ACCESSBRIDGE) == 0)
                     {
                         //has the user manually selected a JRE?
-                        if (settings.getJavaInfoAttrAutoSelect() == true)
+                        if (settings.getJavaInfoAttrAutoSelect())
                         {
                             // if not then the automatism has previously selected a JRE
                             //without accessibility support. We return JFW_E_NO_SELECT

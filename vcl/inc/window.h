@@ -234,6 +234,7 @@ public:
     OString             maHelpId;
     OUString            maHelpText;
     OUString            maQuickHelpText;
+    OUString            maID;
     InputContext        maInputContext;
     css::uno::Reference< css::awt::XWindowPeer > mxWindowPeer;
     css::uno::Reference< css::accessibility::XAccessible > mxAccessible;
@@ -284,15 +285,12 @@ public:
                         mbVisible:1,
                         mbDisabled:1,
                         mbInputDisabled:1,
-                        mbDropDisabled:1,
                         mbNoUpdate:1,
                         mbNoParentUpdate:1,
                         mbActive:1,
-                        mbParentActive:1,
                         mbReallyVisible:1,
                         mbReallyShown:1,
                         mbInInitShow:1,
-                        mbChildNotify:1,
                         mbChildPtrOverwrite:1,
                         mbNoPtrVisible:1,
                         mbPaintFrame:1,

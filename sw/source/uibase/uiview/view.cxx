@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <hintids.hxx>
 #include <comphelper/string.hxx>
+#include <o3tl/any.hxx>
 #include <officecfg/Office/Common.hxx>
 #include <vcl/graph.hxx>
 #include <vcl/inputctx.hxx>
@@ -113,6 +114,8 @@
 
 #include <svl/cjkoptions.hxx>
 #include <comphelper/propertyvalue.hxx>
+#include <sfx2/lokhelper.hxx>
+#include <LibreOfficeKit/LibreOfficeKitEnums.h>
 
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
@@ -200,7 +203,7 @@ void SwView::GotFocus() const
 // called by the FormShell when a form control is focused. This is
 // a request to put the form shell on the top of the dispatcher stack
 
-IMPL_LINK_NOARG_TYPED(SwView, FormControlActivated, LinkParamNone*, void)
+IMPL_LINK_NOARG(SwView, FormControlActivated, LinkParamNone*, void)
 {
     // if a form control has been activated, and the form shell is not on the top
     // of the dispatcher stack, then we need to activate it
@@ -463,7 +466,7 @@ extern "C"
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwView, AttrChangedNotify, SwCursorShell*, void)
+IMPL_LINK_NOARG(SwView, AttrChangedNotify, SwCursorShell*, void)
 {
      if ( GetEditWin().IsChainMode() )
         GetEditWin().SetChainMode( false );
@@ -509,7 +512,7 @@ IMPL_LINK_NOARG_TYPED(SwView, AttrChangedNotify, SwCursorShell*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwView, TimeoutHdl, Timer *, void)
+IMPL_LINK_NOARG(SwView, TimeoutHdl, Timer *, void)
 {
     if( m_pWrtShell->BasicActionPend() || g_bNoInterrupt )
     {
@@ -556,7 +559,7 @@ void SwView::CheckReadonlyState()
             SID_PASTE_UNFORMATTED,
             SID_PASTE_SPECIAL,            SID_SBA_BRW_INSERT,
             SID_BACKGROUND_COLOR,       FN_INSERT_BOOKMARK,
-            SID_CHARMAP,                FN_INSERT_SOFT_HYPHEN,
+            SID_CHARMAP,                SID_EMOJI_CONTROL,          FN_INSERT_SOFT_HYPHEN,
             FN_INSERT_HARDHYPHEN,       FN_INSERT_HARD_SPACE,       FN_INSERT_BREAK,
             FN_INSERT_LINEBREAK,        FN_INSERT_COLUMN_BREAK,     FN_INSERT_BREAK_DLG,
             FN_DELETE_SENT,             FN_DELETE_BACK_SENT,        FN_DELETE_WORD,
@@ -688,7 +691,7 @@ SwView::SwView( SfxViewFrame *_pFrame, SfxViewShell* pOldSh )
     m_pFormShell(nullptr),
     m_pHScrollbar(nullptr),
     m_pVScrollbar(nullptr),
-    m_pScrollFill(VclPtr<ScrollBarBox>::Create( &_pFrame->GetWindow(), _pFrame->GetFrame().GetParentFrame() ? 0 : WB_SIZEABLE )),
+    m_pScrollFill(VclPtr<ScrollBarBox>::Create( &_pFrame->GetWindow(), WB_SIZEABLE )),
     m_pVRuler(VclPtr<SvxRuler>::Create(&GetViewFrame()->GetWindow(), m_pEditWin,
                             SvxRulerSupportFlags::TABS | SvxRulerSupportFlags::PARAGRAPH_MARGINS_VERTICAL|
                                 SvxRulerSupportFlags::BORDERS | SvxRulerSupportFlags::REDUCED_METRIC,
@@ -772,15 +775,15 @@ SwView::SwView( SfxViewFrame *_pFrame, SfxViewShell* pOldSh )
     {
         pExistingSh = pOldSh;
         // determine type of existing view
-        if( dynamic_cast<const SwPagePreview *>(pExistingSh) != nullptr )
+        if (SwPagePreview* pPagePreview = dynamic_cast<SwPagePreview *>(pExistingSh))
         {
-            m_sSwViewData = static_cast<SwPagePreview*>(pExistingSh)->GetPrevSwViewData();
-            m_sNewCursorPos = static_cast<SwPagePreview*>(pExistingSh)->GetNewCursorPos();
-            m_nNewPage = static_cast<SwPagePreview*>(pExistingSh)->GetNewPage();
+            m_sSwViewData = pPagePreview->GetPrevSwViewData();
+            m_sNewCursorPos = pPagePreview->GetNewCursorPos();
+            m_nNewPage = pPagePreview->GetNewPage();
             m_bOldShellWasPagePreview = true;
             m_bIsPreviewDoubleClick = !m_sNewCursorPos.isEmpty() || m_nNewPage != USHRT_MAX;
         }
-        else if( dynamic_cast<const SwSrcView *>(pExistingSh) != nullptr )
+        else if (dynamic_cast<const SwSrcView *>(pExistingSh) != nullptr)
             bOldShellWasSrcView = true;
     }
 
@@ -871,11 +874,6 @@ SwView::SwView( SfxViewFrame *_pFrame, SfxViewShell* pOldSh )
     m_pVRuler->SetActive();
 
     SfxViewFrame* pViewFrame = GetViewFrame();
-    if( pViewFrame->GetFrame().GetParentFrame())
-    {
-        aUsrPref.SetViewHRuler(false);
-        aUsrPref.SetViewVRuler(false);
-    }
 
     StartListening(*pViewFrame, true);
     StartListening(rDocSh, true);
@@ -1016,6 +1014,11 @@ SwView::SwView( SfxViewFrame *_pFrame, SfxViewShell* pOldSh )
 
 SwView::~SwView()
 {
+    // Notify other LOK views that we are going away.
+    SfxLokHelper::notifyOtherViews(this, LOK_CALLBACK_VIEW_CURSOR_VISIBLE, "visible", "false");
+    SfxLokHelper::notifyOtherViews(this, LOK_CALLBACK_TEXT_VIEW_SELECTION, "selection", "");
+    SfxLokHelper::notifyOtherViews(this, LOK_CALLBACK_GRAPHIC_VIEW_SELECTION, "selection", "EMPTY");
+
     GetViewFrame()->GetWindow().RemoveChildEventListener( LINK( this, SwView, WindowChildEventListener ) );
     delete m_pPostItMgr;
     m_pPostItMgr = nullptr;
@@ -1318,7 +1321,7 @@ void SwView::ReadUserDataSequence ( const uno::Sequence < beans::PropertyValue >
             }
             else if ( pValue->Name == "ViewLayoutBookMode" )
             {
-               bViewLayoutBookMode = * static_cast<sal_Bool const *>(pValue->Value.getValue());
+               bViewLayoutBookMode = *o3tl::doAccess<bool>(pValue->Value);
                bGotViewLayoutBookMode = true;
             }
             else if ( pValue->Name == "IsSelectedFrame" )
@@ -1331,6 +1334,8 @@ void SwView::ReadUserDataSequence ( const uno::Sequence < beans::PropertyValue >
                pValue->Value >>= bBrowseMode;
                bGotBrowseMode = true;
             }
+            // Fallback to common SdrModel processing
+            else GetDocShell()->GetDoc()->getIDocumentDrawModelAccess().GetDrawModel()->ReadUserDataSequenceValue(pValue);
             pValue++;
         }
         if (bGotBrowseMode)
@@ -1500,6 +1505,9 @@ void SwView::WriteUserDataSequence ( uno::Sequence < beans::PropertyValue >& rSe
     aVector.push_back(comphelper::makePropertyValue("IsSelectedFrame", FrameTypeFlags::NONE != m_pWrtShell->GetSelFrameType()));
 
     rSequence = comphelper::containerToSequence(aVector);
+
+    // Common SdrModel processing
+    GetDocShell()->GetDoc()->getIDocumentDrawModelAccess().GetDrawModel()->WriteUserDataSequence(rSequence);
 }
 
 void SwView::ShowCursor( bool bOn )
@@ -1564,9 +1572,20 @@ SwGlossaryHdl* SwView::GetGlosHdl()
 void SwView::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {
     bool bCallBase = true;
-    if ( dynamic_cast<const SfxSimpleHint*>(&rHint) )
+    if(dynamic_cast<const FmDesignModeChangedHint*>(&rHint))
     {
-        sal_uInt32 nId = static_cast<const SfxSimpleHint&>(rHint).GetId();
+        bool bDesignMode = static_cast<const FmDesignModeChangedHint&>(rHint).GetDesignMode();
+        if (!bDesignMode && GetDrawFuncPtr())
+        {
+            GetDrawFuncPtr()->Deactivate();
+            SetDrawFuncPtr(nullptr);
+            LeaveDrawCreate();
+            AttrChangedNotify(m_pWrtShell);
+        }
+    }
+    else
+    {
+        sal_uInt32 nId = rHint.GetId();
         switch ( nId )
         {
             // sub shells will be destroyed by the
@@ -1626,25 +1645,13 @@ void SwView::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
                     bCallBase = false;
                     if ( GetFormShell() )
                     {
-                        GetFormShell()->SetView(
-                            dynamic_cast<FmFormView*>( GetWrtShell().GetDrawView())  );
+                        GetFormShell()->SetView(dynamic_cast<FmFormView*>(GetWrtShell().GetDrawView()));
                         SfxBoolItem aItem( SID_FM_DESIGN_MODE, !GetDocShell()->IsReadOnly());
                         GetDispatcher().ExecuteList(SID_FM_DESIGN_MODE,
                                 SfxCallMode::SYNCHRON, { &aItem });
                     }
                 }
                 break;
-        }
-    }
-    else if(dynamic_cast<const FmDesignModeChangedHint*>(&rHint))
-    {
-        bool bDesignMode = static_cast<const FmDesignModeChangedHint&>(rHint).GetDesignMode();
-        if (!bDesignMode && GetDrawFuncPtr())
-        {
-            GetDrawFuncPtr()->Deactivate();
-            SetDrawFuncPtr(nullptr);
-            LeaveDrawCreate();
-            AttrChangedNotify(m_pWrtShell);
         }
     }
 

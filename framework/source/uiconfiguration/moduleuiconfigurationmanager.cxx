@@ -78,7 +78,7 @@ public:
             const css::uno::Reference< css::uno::XComponentContext >& xServiceManager,
             const css::uno::Sequence< css::uno::Any >& aArguments);
 
-    virtual ~ModuleUIConfigurationManager();
+    virtual ~ModuleUIConfigurationManager() override;
 
     virtual OUString SAL_CALL getImplementationName()
         throw (css::uno::RuntimeException, std::exception) override
@@ -95,8 +95,7 @@ public:
     virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
         throw (css::uno::RuntimeException, std::exception) override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.ui.ModuleUIConfigurationManager" };
-        return aSeq;
+        return {"com.sun.star.ui.ModuleUIConfigurationManager"};
     }
 
     // XComponent
@@ -205,7 +204,6 @@ private:
     css::uno::Reference< css::embed::XStorage >               m_xUserConfigStorage;
     bool                                                      m_bReadOnly;
     bool                                                      m_bModified;
-    bool                                                      m_bConfigRead;
     bool                                                      m_bDisposed;
     OUString                                                  m_aXMLPostfix;
     OUString                                                  m_aPropUIName;
@@ -235,8 +233,7 @@ static const char* UIELEMENTTYPENAMES[] =
 };
 
 static const char       RESOURCEURL_PREFIX[] = "private:resource/";
-static const sal_Int32  RESOURCEURL_PREFIX_SIZE = 17;
-static const char       RESOURCEURL_CUSTOM_ELEMENT[] = "custom_";
+static const sal_Int32  RESOURCEURL_PREFIX_SIZE = strlen(RESOURCEURL_PREFIX);
 
 sal_Int16 RetrieveTypeFromResourceURL( const OUString& aResourceURL )
 {
@@ -282,7 +279,7 @@ void ModuleUIConfigurationManager::impl_fillSequenceWithElementTypeInfo( UIEleme
     UIElementDataHashMap& rUserElements = m_aUIElements[LAYER_USERDEFINED][nElementType].aElementsHashMap;
     UIElementDataHashMap::const_iterator pUserIter = rUserElements.begin();
 
-    OUString aCustomUrlPrefix( RESOURCEURL_CUSTOM_ELEMENT );
+    OUString aCustomUrlPrefix( "custom_" );
     while ( pUserIter != rUserElements.end() )
     {
         sal_Int32 nIndex = pUserIter->second.aResourceURL.indexOf( aCustomUrlPrefix, RESOURCEURL_PREFIX_SIZE );
@@ -852,7 +849,6 @@ ModuleUIConfigurationManager::ModuleUIConfigurationManager(
     , m_xUserConfigStorage( nullptr )
     , m_bReadOnly( true )
     , m_bModified( false )
-    , m_bConfigRead( false )
     , m_bDisposed( false )
     , m_aXMLPostfix( ".xml" )
     , m_aPropUIName( "UIName" )
@@ -951,7 +947,6 @@ void SAL_CALL ModuleUIConfigurationManager::dispose() throw (css::uno::RuntimeEx
     m_xDefaultConfigStorage.clear();
     m_xUserConfigStorage.clear();
     m_xUserRootCommit.clear();
-    m_bConfigRead = false;
     m_bModified = false;
     m_bDisposed = true;
     aGuard.clear();

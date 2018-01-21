@@ -21,10 +21,9 @@
 #include "dialog.hrc"
 #include "helpid.hrc"
 
-ImageList DLG_STYLE_DESIGNER
+ImageList RID_STYLE_DESIGNER_IMAGELIST
 {
     Prefix = "sc";
-    MaskColor = Color { Red = 0xFFFF ; Green = 0x0000 ; Blue = 0xFFFF ; };
     IdList =
     {
         SID_STYLE_WATERCAN ;
@@ -43,6 +42,21 @@ String STR_STYLE_ELEMTLIST
 String STR_STYLE_FILTER_HIERARCHICAL
 {
     Text [ en-US ] = "Hierarchical" ;
+};
+
+String STR_STYLE_FILL_FORMAT_MODE
+{
+    Text [ en-US ] = "Fill Format Mode" ;
+};
+
+String STR_STYLE_NEW_STYLE_FROM_SELECTION
+{
+    Text [ en-US ] = "New Style from Selection" ;
+};
+
+String STR_STYLE_UPDATE_STYLE
+{
+    Text [ en-US ] = "Update Style" ;
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

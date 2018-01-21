@@ -23,13 +23,6 @@
 #include <vcl/floatwin.hxx>
 #include <vcl/timer.hxx>
 
-//ADD LIBRAS
-#include <string>
-#include <sstream> 
-#include <fstream>
-//END LIBRAS
-
-
 enum class QuickHelpFlags;
 
 class HelpTextWindow : public FloatingWindow
@@ -49,7 +42,7 @@ private:
     QuickHelpFlags      mnStyle;
 
 private:
-    DECL_LINK_TYPED( TimerHdl, Timer*, void );
+    DECL_LINK( TimerHdl, Timer*, void );
 
     virtual void Paint(vcl::RenderContext& rRenderContext, const Rectangle&) override;
     virtual void RequestHelp( const HelpEvent& rHEvt ) override;
@@ -62,7 +55,7 @@ private:
     virtual void        dispose() override;
 public:
                         HelpTextWindow( vcl::Window* pParent, const OUString& rText, sal_uInt16 nHelpWinStyle, QuickHelpFlags nStyle );
-    virtual             ~HelpTextWindow();
+    virtual             ~HelpTextWindow() override;
 
     const OUString&     GetHelpText() const { return maHelpText; }
     void                SetHelpText( const OUString& rHelpText );
@@ -85,10 +78,6 @@ void ImplShowHelpWindow( vcl::Window* pParent, sal_uInt16 nHelpWinStyle, QuickHe
 void ImplDestroyHelpWindow( bool bUpdateHideTime );
 void ImplSetHelpWindowPos( vcl::Window* pHelpWindow, sal_uInt16 nHelpWinStyle, QuickHelpFlags nStyle,
                             const Point& rPos, const Rectangle& rHelpArea );
-
-//ADD LIBRAS 
-void LASO_PrintHelpTextToPipeFile(const OUString& rHelpText, char *extra);
-//END LIBRAS
 
 #endif // INCLUDED_VCL_INC_HELPWIN_HXX
 

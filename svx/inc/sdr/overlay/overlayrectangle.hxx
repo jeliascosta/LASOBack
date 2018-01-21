@@ -40,7 +40,6 @@ namespace sdr
             // #i53216# added CursorBlinkTime (in ms)
             sal_uInt32                      mnBlinkTime;
 
-            /// bitfield
             // Flag to remember which state to draw. Inited with false (0)
             bool                            mbOverlayState : 1;
 
@@ -56,14 +55,7 @@ namespace sdr
                 double fDiscreteGrow,
                 double fDiscreteShrink,
                 double fRotation,
-                sal_uInt64 nBlinkTime,
                 bool bAnimate);
-
-            // data read access
-            double getTransparence() const { return mfTransparence; }
-            double getDiscreteGrow() const { return mfDiscreteGrow; }
-            double getDiscreteShrink() const { return mfDiscreteShrink; }
-            double getRotation() const { return mfRotation; }
 
             // execute event from base class sdr::animation::Event. Default
             // implementation does nothing and does not create a new event.

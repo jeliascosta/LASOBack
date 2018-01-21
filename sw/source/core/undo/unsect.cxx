@@ -70,7 +70,7 @@ static SfxItemSet* lcl_GetAttrSet( const SwSection& rSect )
 SwUndoInsSection::SwUndoInsSection(
         SwPaM const& rPam, SwSectionData const& rNewData,
         SfxItemSet const*const pSet, SwTOXBase const*const pTOXBase)
-    : SwUndo( UNDO_INSSECTION ), SwUndRng( rPam )
+    : SwUndo( UNDO_INSSECTION, rPam.GetDoc() ), SwUndRng( rPam )
     , m_pSectionData(new SwSectionData(rNewData))
     , m_pTOXBase( (pTOXBase) ? new SwTOXBase(*pTOXBase) : nullptr )
     , m_pAttrSet( (pSet && pSet->Count()) ? new SfxItemSet( *pSet ) : nullptr )
@@ -84,7 +84,7 @@ SwUndoInsSection::SwUndoInsSection(
     {
         m_pRedlData.reset(new SwRedlineData( nsRedlineType_t::REDLINE_INSERT,
                                         rDoc.getIDocumentRedlineAccess().GetRedlineAuthor() ));
-        SetRedlineMode( rDoc.getIDocumentRedlineAccess().GetRedlineMode() );
+        SetRedlineFlags( rDoc.getIDocumentRedlineAccess().GetRedlineFlags() );
     }
         m_pRedlineSaveData.reset( new SwRedlineSaveDatas );
         if( !FillSaveData( rPam, *m_pRedlineSaveData, false ))
@@ -122,7 +122,7 @@ void SwUndoInsSection::UndoImpl(::sw::UndoRedoContext & rContext)
         rDoc.GetNodes()[ m_nSectionNodePos ]->GetSectionNode();
     OSL_ENSURE( pNd, "wo ist mein SectionNode?" );
 
-    if( IDocumentRedlineAccess::IsRedlineOn( GetRedlineMode() ))
+    if( IDocumentRedlineAccess::IsRedlineOn( GetRedlineFlags() ))
         rDoc.getIDocumentRedlineAccess().DeleteRedline( *pNd, true, USHRT_MAX );
 
     // no selection?
@@ -187,16 +187,16 @@ void SwUndoInsSection::RedoImpl(::sw::UndoRedoContext & rContext)
     SwSectionNode *const pSectNd =
         rDoc.GetNodes()[ m_nSectionNodePos ]->GetSectionNode();
     if (m_pRedlData.get() &&
-        IDocumentRedlineAccess::IsRedlineOn( GetRedlineMode()))
+        IDocumentRedlineAccess::IsRedlineOn( GetRedlineFlags()))
     {
-        RedlineMode_t eOld = rDoc.getIDocumentRedlineAccess().GetRedlineMode();
-        rDoc.getIDocumentRedlineAccess().SetRedlineMode_intern((RedlineMode_t)(eOld & ~nsRedlineMode_t::REDLINE_IGNORE));
+        RedlineFlags eOld = rDoc.getIDocumentRedlineAccess().GetRedlineFlags();
+        rDoc.getIDocumentRedlineAccess().SetRedlineFlags_intern(eOld & ~RedlineFlags::Ignore);
 
         SwPaM aPam( *pSectNd->EndOfSectionNode(), *pSectNd, 1 );
         rDoc.getIDocumentRedlineAccess().AppendRedline( new SwRangeRedline( *m_pRedlData, aPam ), true);
-        rDoc.getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
+        rDoc.getIDocumentRedlineAccess().SetRedlineFlags_intern( eOld );
     }
-    else if( !( nsRedlineMode_t::REDLINE_IGNORE & GetRedlineMode() ) &&
+    else if( !( RedlineFlags::Ignore & GetRedlineFlags() ) &&
             !rDoc.getIDocumentRedlineAccess().GetRedlineTable().empty() )
     {
         SwPaM aPam( *pSectNd->EndOfSectionNode(), *pSectNd, 1 );
@@ -277,9 +277,9 @@ class SwUndoDelSection
     : public SwUndo
 {
 private:
-    ::std::unique_ptr<SwSectionData> const m_pSectionData; /// section not TOX
-    ::std::unique_ptr<SwTOXBase> const m_pTOXBase; /// set iff section is TOX
-    ::std::unique_ptr<SfxItemSet> const m_pAttrSet;
+    std::unique_ptr<SwSectionData> const m_pSectionData; /// section not TOX
+    std::unique_ptr<SwTOXBase> const m_pTOXBase; /// set iff section is TOX
+    std::unique_ptr<SfxItemSet> const m_pAttrSet;
     std::shared_ptr< ::sfx2::MetadatableUndo > const m_pMetadataUndo;
     sal_uLong const m_nStartNode;
     sal_uLong const m_nEndNode;
@@ -288,7 +288,7 @@ public:
     SwUndoDelSection(
         SwSectionFormat const&, SwSection const&, SwNodeIndex const*const);
 
-    virtual ~SwUndoDelSection();
+    virtual ~SwUndoDelSection() override;
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -303,7 +303,7 @@ SwUndo * MakeUndoDelSection(SwSectionFormat const& rFormat)
 SwUndoDelSection::SwUndoDelSection(
             SwSectionFormat const& rSectionFormat, SwSection const& rSection,
             SwNodeIndex const*const pIndex)
-    : SwUndo( UNDO_DELSECTION )
+    : SwUndo( UNDO_DELSECTION, rSectionFormat.GetDoc() )
     , m_pSectionData( new SwSectionData(rSection) )
     , m_pTOXBase( dynamic_cast<const SwTOXBaseSection*>( &rSection) !=  nullptr
             ? new SwTOXBase(static_cast<SwTOXBaseSection const&>(rSection))
@@ -387,8 +387,8 @@ class SwUndoUpdateSection
     : public SwUndo
 {
 private:
-    ::std::unique_ptr<SwSectionData> m_pSectionData;
-    ::std::unique_ptr<SfxItemSet> m_pAttrSet;
+    std::unique_ptr<SwSectionData> m_pSectionData;
+    std::unique_ptr<SfxItemSet> m_pAttrSet;
     sal_uLong const m_nStartNode;
     bool const m_bOnlyAttrChanged;
 
@@ -396,7 +396,7 @@ public:
     SwUndoUpdateSection(
         SwSection const&, SwNodeIndex const*const, bool const bOnlyAttr);
 
-    virtual ~SwUndoUpdateSection();
+    virtual ~SwUndoUpdateSection() override;
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -412,7 +412,7 @@ MakeUndoUpdateSection(SwSectionFormat const& rFormat, bool const bOnlyAttr)
 SwUndoUpdateSection::SwUndoUpdateSection(
         SwSection const& rSection, SwNodeIndex const*const pIndex,
         bool const bOnlyAttr)
-    : SwUndo( UNDO_CHGSECTION )
+    : SwUndo( UNDO_CHGSECTION, pIndex->GetNode().GetDoc() )
     , m_pSectionData( new SwSectionData(rSection) )
     , m_pAttrSet( ::lcl_GetAttrSet(rSection) )
     , m_nStartNode( pIndex->GetIndex() )

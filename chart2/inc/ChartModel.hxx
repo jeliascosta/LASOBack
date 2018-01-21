@@ -216,7 +216,7 @@ public:
     ChartModel() = delete;
     ChartModel(css::uno::Reference< css::uno::XComponentContext > const & xContext);
     explicit ChartModel( const ChartModel & rOther );
-    virtual ~ChartModel();
+    virtual ~ChartModel() override;
 
     // css::lang::XServiceInfo
 
@@ -226,9 +226,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // css::lang::XInitialization
     virtual void SAL_CALL initialize( const css::uno::Sequence< css::uno::Any >& aArguments )
@@ -568,7 +565,7 @@ public:
         throw (css::uno::RuntimeException, std::exception) override;
 
     // normal methods
-    css::uno::Reference< css::util::XNumberFormatsSupplier >
+    css::uno::Reference< css::util::XNumberFormatsSupplier > const &
         getNumberFormatsSupplier();
 
     const css::uno::Reference< css::uno::XInterface >& getChartView() { return xChartView;}

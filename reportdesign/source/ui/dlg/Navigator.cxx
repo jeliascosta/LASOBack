@@ -123,7 +123,7 @@ class NavigatorTree :   public ::cppu::BaseMutex
         VclPtr<NavigatorTree>                                       m_pTree;
     public:
         UserData(NavigatorTree* _pTree,const uno::Reference<uno::XInterface>& _xContent);
-        virtual ~UserData();
+        virtual ~UserData() override;
 
         const uno::Reference< uno::XInterface >& getContent() const { return m_xContent; }
         inline void setContent(const uno::Reference< uno::XInterface >& _xContent) { m_xContent = _xContent; }
@@ -179,11 +179,11 @@ protected:
 
 public:
     NavigatorTree(vcl::Window* pParent,OReportController& _rController );
-    virtual ~NavigatorTree();
+    virtual ~NavigatorTree() override;
     virtual void dispose() override;
 
-    DECL_LINK_TYPED(OnEntrySelDesel, SvTreeListBox*, void);
-    DECL_LINK_TYPED( OnDropActionTimer, Timer*, void );
+    DECL_LINK(OnEntrySelDesel, SvTreeListBox*, void);
+    DECL_LINK( OnDropActionTimer, Timer*, void );
 
     virtual void _selectionChanged( const lang::EventObject& aEvent ) throw (uno::RuntimeException) override;
 
@@ -244,7 +244,7 @@ NavigatorTree::NavigatorTree( vcl::Window* pParent,OReportController& _rControll
 
     SetDragDropMode(DragDropMode::ALL);
     EnableInplaceEditing( false );
-    SetSelectionMode(MULTIPLE_SELECTION);
+    SetSelectionMode(SelectionMode::Multiple);
     Clear();
 
     m_aDropActionTimer.SetTimeoutHdl(LINK(this, NavigatorTree, OnDropActionTimer));
@@ -266,7 +266,6 @@ void NavigatorTree::dispose()
         pCurrent = Next(pCurrent);
     }
     m_pReportListener->dispose();
-    m_pSelectionListener->dispose();
     SvTreeListBox::dispose();
 }
 
@@ -306,27 +305,27 @@ void NavigatorTree::Command( const CommandEvent& rEvt )
             uno::Reference< report::XGroup> xGroup(pData->getContent(),uno::UNO_QUERY);
             bool bDeleteAllowed = m_rController.isEditable() && (xGroup.is() ||
                                       uno::Reference< report::XFunction>(pData->getContent(),uno::UNO_QUERY).is());
-            PopupMenu aContextMenu( ModuleRes( RID_MENU_NAVIGATOR ) );
+            ScopedVclPtrInstance<PopupMenu> aContextMenu( ModuleRes( RID_MENU_NAVIGATOR ) );
 
-            sal_uInt16 nCount = aContextMenu.GetItemCount();
+            sal_uInt16 nCount = aContextMenu->GetItemCount();
             for (sal_uInt16 i = 0; i < nCount; ++i)
             {
-                if ( MenuItemType::SEPARATOR != aContextMenu.GetItemType(i))
+                if ( MenuItemType::SEPARATOR != aContextMenu->GetItemType(i))
                 {
-                    sal_uInt16 nId = aContextMenu.GetItemId(i);
+                    sal_uInt16 nId = aContextMenu->GetItemId(i);
 
-                    aContextMenu.CheckItem(nId,m_rController.isCommandChecked(nId));
+                    aContextMenu->CheckItem(nId,m_rController.isCommandChecked(nId));
                     bool bEnabled = m_rController.isCommandEnabled(nId);
                     if ( nId == SID_RPT_NEW_FUNCTION )
-                        aContextMenu.EnableItem(nId,m_rController.isEditable() && (xSupplier.is() || xFunctions.is()) );
+                        aContextMenu->EnableItem(nId,m_rController.isEditable() && (xSupplier.is() || xFunctions.is()) );
                     // special condition, check for function and group
                     else if ( nId == SID_DELETE )
-                        aContextMenu.EnableItem(SID_DELETE,bDeleteAllowed);
+                        aContextMenu->EnableItem(SID_DELETE,bDeleteAllowed);
                     else
-                        aContextMenu.EnableItem(nId,bEnabled);
+                        aContextMenu->EnableItem(nId,bEnabled);
                 }
             }
-            sal_uInt16 nId = aContextMenu.Execute(this, aWhere);
+            sal_uInt16 nId = aContextMenu->Execute(this, aWhere);
             if ( nId )
             {
                 uno::Sequence< beans::PropertyValue> aArgs;
@@ -423,7 +422,7 @@ void NavigatorTree::StartDrag( sal_Int8 /*_nAction*/, const Point& _rPosPixel )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(NavigatorTree, OnDropActionTimer, Timer *, void)
+IMPL_LINK_NOARG(NavigatorTree, OnDropActionTimer, Timer *, void)
 {
     if (--m_nTimerCounter > 0)
         return;
@@ -453,7 +452,7 @@ IMPL_LINK_NOARG_TYPED(NavigatorTree, OnDropActionTimer, Timer *, void)
 }
 
 
-IMPL_LINK_NOARG_TYPED(NavigatorTree, OnEntrySelDesel, SvTreeListBox*, void)
+IMPL_LINK_NOARG(NavigatorTree, OnEntrySelDesel, SvTreeListBox*, void)
 {
     if ( !m_pSelectionListener->locked() )
     {
@@ -866,7 +865,7 @@ void NavigatorTree::UserData::_disposing(const lang::EventObject& _rSource)
 
 Size NavigatorTree::GetOptimalSize() const
 {
-    return LogicToPixel(Size(100, 70), MAP_APPFONT);
+    return LogicToPixel(Size(100, 70), MapUnit::MapAppFont);
 }
 
 // class ONavigatorImpl

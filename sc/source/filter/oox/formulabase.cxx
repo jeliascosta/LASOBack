@@ -38,8 +38,8 @@
 #include <sal/log.hxx>
 #include <oox/core/filterbase.hxx>
 #include <oox/helper/containerhelper.hxx>
+#include <oox/helper/binaryinputstream.hxx>
 #include <oox/token/properties.hxx>
-#include "biffinputstream.hxx"
 
 namespace oox {
 namespace xls {
@@ -71,30 +71,6 @@ void BinSingleRef2d::setBiff12Data( sal_uInt16 nCol, sal_Int32 nRow, bool bRelat
         mnRow -= (BIFF12_TOK_REF_ROWMASK + 1);
 }
 
-void BinSingleRef2d::setBiff2Data( sal_uInt8 nCol, sal_uInt16 nRow, bool bRelativeAsOffset )
-{
-    mnCol = nCol;
-    mnRow = nRow & BIFF_TOK_REF_ROWMASK;
-    mbColRel = getFlag( nRow, BIFF_TOK_REF_COLREL );
-    mbRowRel = getFlag( nRow, BIFF_TOK_REF_ROWREL );
-    if( bRelativeAsOffset && mbColRel && (mnCol >= 0x80) )
-        mnCol -= 0x100;
-    if( bRelativeAsOffset && mbRowRel && (mnRow > (BIFF_TOK_REF_ROWMASK >> 1)) )
-        mnRow -= (BIFF_TOK_REF_ROWMASK + 1);
-}
-
-void BinSingleRef2d::setBiff8Data( sal_uInt16 nCol, sal_uInt16 nRow, bool bRelativeAsOffset )
-{
-    mnCol = nCol & BIFF_TOK_REF_COLMASK;
-    mnRow = nRow;
-    mbColRel = getFlag( nCol, BIFF_TOK_REF_COLREL );
-    mbRowRel = getFlag( nCol, BIFF_TOK_REF_ROWREL );
-    if( bRelativeAsOffset && mbColRel && (mnCol > (BIFF_TOK_REF_COLMASK >> 1)) )
-        mnCol -= (BIFF_TOK_REF_COLMASK + 1);
-    if( bRelativeAsOffset && mbRowRel && (mnRow >= 0x8000) )
-        mnRow -= 0x10000;
-}
-
 void BinSingleRef2d::readBiff12Data( SequenceInputStream& rStrm, bool bRelativeAsOffset )
 {
     sal_Int32 nRow;
@@ -102,21 +78,6 @@ void BinSingleRef2d::readBiff12Data( SequenceInputStream& rStrm, bool bRelativeA
     nRow = rStrm.readInt32();
     nCol = rStrm.readuInt16();
     setBiff12Data( nCol, nRow, bRelativeAsOffset );
-}
-
-void BinSingleRef2d::readBiff2Data( BiffInputStream& rStrm, bool bRelativeAsOffset )
-{
-    sal_uInt16 nRow;
-    sal_uInt8 nCol;
-    rStrm >> nRow >> nCol;
-    setBiff2Data( nCol, nRow, bRelativeAsOffset );
-}
-
-void BinSingleRef2d::readBiff8Data( BiffInputStream& rStrm, bool bRelativeAsOffset )
-{
-    sal_uInt16 nRow, nCol;
-    rStrm >> nRow >> nCol;
-    setBiff8Data( nCol, nRow, bRelativeAsOffset );
 }
 
 void BinComplexRef2d::readBiff12Data( SequenceInputStream& rStrm, bool bRelativeAsOffset )
@@ -129,23 +90,6 @@ void BinComplexRef2d::readBiff12Data( SequenceInputStream& rStrm, bool bRelative
     nCol2 = rStrm.readuInt16();
     maRef1.setBiff12Data( nCol1, nRow1, bRelativeAsOffset );
     maRef2.setBiff12Data( nCol2, nRow2, bRelativeAsOffset );
-}
-
-void BinComplexRef2d::readBiff2Data( BiffInputStream& rStrm, bool bRelativeAsOffset )
-{
-    sal_uInt16 nRow1, nRow2;
-    sal_uInt8 nCol1, nCol2;
-    rStrm >> nRow1 >> nRow2 >> nCol1 >> nCol2;
-    maRef1.setBiff2Data( nCol1, nRow1, bRelativeAsOffset );
-    maRef2.setBiff2Data( nCol2, nRow2, bRelativeAsOffset );
-}
-
-void BinComplexRef2d::readBiff8Data( BiffInputStream& rStrm, bool bRelativeAsOffset )
-{
-    sal_uInt16 nRow1, nRow2, nCol1, nCol2;
-    rStrm >> nRow1 >> nRow2 >> nCol1 >> nCol2;
-    maRef1.setBiff8Data( nCol1, nRow1, bRelativeAsOffset );
-    maRef2.setBiff8Data( nCol2, nRow2, bRelativeAsOffset );
 }
 
 // token vector, sequence =====================================================
@@ -220,11 +164,7 @@ const sal_uInt16 FUNCFLAG_MACROCALL_NEW     = FUNCFLAG_MACROCALL | FUNCFLAG_MACR
 const sal_uInt16 FUNCFLAG_BIFFIMPORTONLY    = 0x0800;   /// Only used in BIFF binary import filter.
 const sal_uInt16 FUNCFLAG_BIFFEXPORTONLY    = 0x1000;   /// Only used in BIFF binary export filter.
 const sal_uInt16 FUNCFLAG_INTERNAL          = 0x2000;   /// Function is internal in Calc.
-
-/// Converts a function library index (value of enum FunctionLibraryType) to function flags.
-#define FUNCLIB_TO_FUNCFLAGS( funclib_index ) static_cast< sal_uInt16 >( static_cast< sal_uInt8 >( funclib_index ) << 12 )
-/// Extracts a function library index (value of enum FunctionLibraryType) from function flags.
-#define FUNCFLAGS_TO_FUNCLIB( func_flags ) extractValue< FunctionLibraryType >( func_flags, 12, 4 )
+const sal_uInt16 FUNCFLAG_EUROTOOL          = 0x4000;   /// function of euro tool lib, FUNCLIB_EUROTOOL
 
 typedef std::shared_ptr< FunctionInfo > FunctionInfoRef;
 
@@ -240,21 +180,19 @@ struct FunctionData
     FunctionParamInfo   mpParamInfos[ FUNCINFO_PARAMINFOCOUNT ]; /// Information about all parameters.
     sal_uInt16          mnFlags;            /// Additional flags.
 
-    inline bool         isSupported( bool bImportFilter, FilterType eFilter ) const;
+    inline bool         isSupported(bool bImportFilter) const;
 };
 
-inline bool FunctionData::isSupported( bool bImportFilter, FilterType eFilter ) const
+inline bool FunctionData::isSupported(bool bImportFilter) const
 {
-    /*  For import filters: the FUNCFLAG_EXPORTONLY and FUNCFLAG_BIFFEXPORTONLY flag must not be set.
-        For OOXML import:   the FUNCFLAG_BIFFIMPORTONLY flag must not be set.
-        For export filters: the FUNCFLAG_IMPORTONLY and FUNCFLAG_BIFFIMPORTONLY flag must not be set.
-        For OOXML export:   the FUNCFLAG_BIFFEXPORTONLY flag must not be set. */
-    bool bSupported = !getFlag( mnFlags, static_cast<sal_uInt16>(bImportFilter ?
-                (FUNCFLAG_EXPORTONLY | FUNCFLAG_BIFFEXPORTONLY) :
-                (FUNCFLAG_IMPORTONLY | FUNCFLAG_BIFFIMPORTONLY)));
-    if (bSupported && eFilter == FILTER_OOXML)
-        bSupported = !getFlag( mnFlags, bImportFilter ? FUNCFLAG_BIFFIMPORTONLY : FUNCFLAG_BIFFEXPORTONLY );
-    return bSupported;
+    /*  For import filters: the FUNCFLAG_EXPORTONLY, FUNCFLAG_BIFFEXPORTONLY
+                            and FUNCFLAG_BIFFIMPORTONLY flag must not be set.
+        For export filters: the FUNCFLAG_IMPORTONLY, FUNCFLAG_BIFFIMPORTONLY
+                            and FUNCFLAG_BIFFEXPORTONLY flag must not be set. */
+    if (bImportFilter)
+        return !(mnFlags & ( FUNCFLAG_EXPORTONLY | FUNCFLAG_BIFFEXPORTONLY | FUNCFLAG_BIFFIMPORTONLY));
+    else
+        return !(mnFlags & ( FUNCFLAG_IMPORTONLY | FUNCFLAG_BIFFIMPORTONLY | FUNCFLAG_BIFFEXPORTONLY));
 }
 
 const sal_uInt16 NOID = SAL_MAX_UINT16;     /// No BIFF function identifier available.
@@ -679,8 +617,7 @@ static const FunctionData saFuncTableBiff5[] =
     { "ROMAN",                  "ROMAN",                354,    354,    1,  2,  V, { VR }, 0 },
 
     // *** EuroTool add-in ***
-
-    { "EUROCONVERT",            "EUROCONVERT",          NOID,   NOID,   3,  5,  V, { VR }, FUNCLIB_TO_FUNCFLAGS( FUNCLIB_EUROTOOL ) },
+    { "EUROCONVERT",            "EUROCONVERT",          NOID,   NOID,   3,  5,  V, { VR }, FUNCFLAG_EUROTOOL },
 
     // *** macro sheet commands ***
 
@@ -892,8 +829,7 @@ static const FunctionData saFuncTable2013[] =
     { "UNICHAR",                "UNICHAR",              NOID,   NOID,   1,  1,  V, { VR }, FUNCFLAG_MACROCALL_NEW },
     { "UNICODE",                "UNICODE",              NOID,   NOID,   1,  1,  V, { VR }, FUNCFLAG_MACROCALL_NEW },
     { "COM.MICROSOFT.WEBSERVICE","WEBSERVICE",          NOID,   NOID,   1,  1,  V, { VR }, FUNCFLAG_MACROCALL_NEW },
-    { "XOR",                    "XOR",                  NOID,   NOID,   1,  MX, V, { RX }, FUNCFLAG_MACROCALL_NEW },
-    { "ERROR.TYPE",             "ERROR.TYPE",           NOID,   NOID,   1,  1,  V, { VR }, FUNCFLAG_MACROCALL_NEW }
+    { "XOR",                    "XOR",                  NOID,   NOID,   1,  MX, V, { RX }, FUNCFLAG_MACROCALL_NEW }
 };
 
 /** Functions new in Excel 2016.
@@ -948,6 +884,20 @@ static const FunctionData saFuncTableOOoLO[] =
     { "ORG.OPENOFFICE.DAYSINYEAR",  "COM.SUN.STAR.SHEET.ADDIN.DATEFUNCTIONS.GETDAYSINYEAR",  NOID,   NOID,   1,  1,  V, { VR }, FUNCFLAG_IMPORTONLY | FUNCFLAG_EXTERNAL },
     { "ORG.OPENOFFICE.WEEKSINYEAR", "COM.SUN.STAR.SHEET.ADDIN.DATEFUNCTIONS.GETWEEKSINYEAR", NOID,   NOID,   1,  1,  V, { VR }, FUNCFLAG_IMPORTONLY | FUNCFLAG_EXTERNAL },
     { "ORG.OPENOFFICE.ROT13",       "COM.SUN.STAR.SHEET.ADDIN.DATEFUNCTIONS.GETROT13",       NOID,   NOID,   1,  1,  V, { VR }, FUNCFLAG_IMPORTONLY | FUNCFLAG_EXTERNAL },
+    // More functions written wrongly in the past.
+    { "ORG.OPENOFFICE.ERRORTYPE",   "ORG.OPENOFFICE.ERRORTYPE",     NOID,   NOID,   1,  1,  V, { VR }, FUNCFLAG_MACROCALL_NEW  },
+    { "ORG.OPENOFFICE.MULTIRANGE",  "ORG.OPENOFFICE.MULTIRANGE",    NOID,   NOID,   1, MX,  V, { RX }, FUNCFLAG_MACROCALL_NEW },
+    { "ORG.OPENOFFICE.GOALSEEK",    "ORG.OPENOFFICE.GOALSEEK",      NOID,   NOID,   3,  3,  V, { VR }, FUNCFLAG_MACROCALL_NEW },
+    { "ORG.OPENOFFICE.EASTERSUNDAY","ORG.OPENOFFICE.EASTERSUNDAY",  NOID,   NOID,   1,  1,  V, { VR }, FUNCFLAG_MACROCALL_NEW },
+    { "ORG.OPENOFFICE.CURRENT",     "ORG.OPENOFFICE.CURRENT",       NOID,   NOID,   0,  0,  V, { VR }, FUNCFLAG_MACROCALL_NEW },
+    { "ORG.OPENOFFICE.STYLE",       "ORG.OPENOFFICE.STYLE",         NOID,   NOID,   1,  3,  V, { VR }, FUNCFLAG_MACROCALL_NEW },
+    // And the import for the wrongly written functions even without _xlfn.
+    { "ORG.OPENOFFICE.ERRORTYPE",   "ERRORTYPE",    NOID,   NOID,   1,  1,  V, { VR }, FUNCFLAG_IMPORTONLY },
+    { "ORG.OPENOFFICE.MULTIRANGE",  "MULTIRANGE",   NOID,   NOID,   1, MX,  V, { RX }, FUNCFLAG_IMPORTONLY },
+    { "ORG.OPENOFFICE.GOALSEEK",    "GOALSEEK",     NOID,   NOID,   3,  3,  V, { VR }, FUNCFLAG_IMPORTONLY },
+    { "ORG.OPENOFFICE.EASTERSUNDAY","EASTERSUNDAY", NOID,   NOID,   1,  1,  V, { VR }, FUNCFLAG_IMPORTONLY },
+    { "ORG.OPENOFFICE.CURRENT",     "CURRENT",      NOID,   NOID,   0,  0,  V, { VR }, FUNCFLAG_IMPORTONLY },
+    { "ORG.OPENOFFICE.STYLE",       "STYLE",        NOID,   NOID,   1,  3,  V, { VR }, FUNCFLAG_IMPORTONLY },
     // Other functions.
     { "ORG.OPENOFFICE.CONVERT",     "ORG.OPENOFFICE.CONVERT",   NOID,   NOID,   3,  3,  V, { VR }, FUNCFLAG_MACROCALL_NEW },
     { "ORG.LIBREOFFICE.COLOR",      "ORG.LIBREOFFICE.COLOR",    NOID,   NOID,   3,  4,  V, { VR }, FUNCFLAG_MACROCALL_NEW },
@@ -1018,67 +968,35 @@ struct FunctionProviderImpl
     FuncIdMap           maBiffFuncs;        /// Maps BIFF2-BIFF8 function indexes to function data.
     FuncNameMap         maMacroFuncs;       /// Maps macro function names to function data.
 
-    explicit            FunctionProviderImpl( FilterType eFilter, BiffType eBiff, bool bImportFilter,
-                                              bool bCallerKnowsAboutMacroExport );
+    explicit            FunctionProviderImpl(bool bImportFilter);
 
 private:
     /** Creates and inserts a function info struct from the passed function data. */
-    void                initFunc( const FunctionData& rFuncData, sal_uInt8 nMaxParam );
+    void                initFunc(const FunctionData& rFuncData);
 
     /** Initializes the members from the passed function data list. */
-    void                initFuncs(
-                            const FunctionData* pBeg, const FunctionData* pEnd,
-                            sal_uInt8 nMaxParam, bool bImportFilter, FilterType eFilter );
+    void                initFuncs(const FunctionData* pBeg, const FunctionData* pEnd, bool bImportFilter);
 };
 
-FunctionProviderImpl::FunctionProviderImpl( FilterType eFilter, BiffType eBiff, bool bImportFilter,
-        bool bCallerKnowsAboutMacroExport )
+FunctionProviderImpl::FunctionProviderImpl( bool bImportFilter )
 {
-    // NOTE: this warning is only applicable if called for not yet existing
-    // external export filter, not the Calc internal conversion from binary to
-    // OOXML that also uses this mapping. Which is the only reason for
-    // bCallerKnowsAboutMacroExport, to suppress this warning then.
-    OSL_ENSURE( bImportFilter || bCallerKnowsAboutMacroExport,
-            "FunctionProviderImpl::FunctionProviderImpl - need special handling for macro call functions" );
-    (void)bCallerKnowsAboutMacroExport;
-    sal_uInt8 nMaxParam = 0;
-    switch( eFilter )
-    {
-        case FILTER_OOXML:
-            nMaxParam = OOX_MAX_PARAMCOUNT;
-            eBiff = BIFF8;  // insert all BIFF function tables, then the OOXML table
-        break;
-        case FILTER_BIFF:
-            nMaxParam = BIFF_MAX_PARAMCOUNT;
-        break;
-        case FILTER_UNKNOWN:
-            OSL_FAIL( "FunctionProviderImpl::FunctionProviderImpl - invalid filter type" );
-        break;
-    }
-    OSL_ENSURE( eBiff != BIFF_UNKNOWN, "FunctionProviderImpl::FunctionProviderImpl - invalid BIFF type" );
-
     /*  Add functions supported in the current BIFF version only. Function
         tables from later BIFF versions may overwrite single functions from
         earlier tables. */
-    if( eBiff >= BIFF2 )
-        initFuncs( saFuncTableBiff2, ::std::end( saFuncTableBiff2 ), nMaxParam, bImportFilter, eFilter );
-    if( eBiff >= BIFF3 )
-        initFuncs( saFuncTableBiff3, ::std::end( saFuncTableBiff3 ), nMaxParam, bImportFilter, eFilter );
-    if( eBiff >= BIFF4 )
-        initFuncs( saFuncTableBiff4, ::std::end( saFuncTableBiff4 ), nMaxParam, bImportFilter, eFilter );
-    if( eBiff >= BIFF5 )
-        initFuncs( saFuncTableBiff5, ::std::end( saFuncTableBiff5 ), nMaxParam, bImportFilter, eFilter );
-    if( eBiff >= BIFF8 )
-        initFuncs( saFuncTableBiff8, ::std::end( saFuncTableBiff8 ), nMaxParam, bImportFilter, eFilter );
-    initFuncs( saFuncTableOox, ::std::end( saFuncTableOox ), nMaxParam, bImportFilter, eFilter );
-    initFuncs( saFuncTable2010, ::std::end( saFuncTable2010 ), nMaxParam, bImportFilter, eFilter );
-    initFuncs( saFuncTable2013, ::std::end( saFuncTable2013 ), nMaxParam, bImportFilter, eFilter );
-    initFuncs( saFuncTable2016, ::std::end( saFuncTable2016 ), nMaxParam, bImportFilter, eFilter );
-    initFuncs( saFuncTableOdf, ::std::end( saFuncTableOdf ), nMaxParam, bImportFilter, eFilter );
-    initFuncs( saFuncTableOOoLO, ::std::end( saFuncTableOOoLO ), nMaxParam, bImportFilter, eFilter );
+    initFuncs(saFuncTableBiff2, saFuncTableBiff2 + SAL_N_ELEMENTS(saFuncTableBiff2), bImportFilter);
+    initFuncs(saFuncTableBiff3, saFuncTableBiff3 + SAL_N_ELEMENTS(saFuncTableBiff3), bImportFilter);
+    initFuncs(saFuncTableBiff4, saFuncTableBiff4 + SAL_N_ELEMENTS(saFuncTableBiff4), bImportFilter);
+    initFuncs(saFuncTableBiff5, saFuncTableBiff5 + SAL_N_ELEMENTS(saFuncTableBiff5), bImportFilter);
+    initFuncs(saFuncTableBiff8, saFuncTableBiff8 + SAL_N_ELEMENTS(saFuncTableBiff8), bImportFilter);
+    initFuncs(saFuncTableOox  , saFuncTableOox   + SAL_N_ELEMENTS(saFuncTableOox  ), bImportFilter);
+    initFuncs(saFuncTable2010 , saFuncTable2010  + SAL_N_ELEMENTS(saFuncTable2010 ), bImportFilter);
+    initFuncs(saFuncTable2013 , saFuncTable2013  + SAL_N_ELEMENTS(saFuncTable2013 ), bImportFilter);
+    initFuncs(saFuncTable2016 , saFuncTable2016  + SAL_N_ELEMENTS(saFuncTable2016 ), bImportFilter);
+    initFuncs(saFuncTableOdf  , saFuncTableOdf   + SAL_N_ELEMENTS(saFuncTableOdf  ), bImportFilter);
+    initFuncs(saFuncTableOOoLO, saFuncTableOOoLO + SAL_N_ELEMENTS(saFuncTableOOoLO), bImportFilter);
 }
 
-void FunctionProviderImpl::initFunc( const FunctionData& rFuncData, sal_uInt8 nMaxParam )
+void FunctionProviderImpl::initFunc(const FunctionData& rFuncData)
 {
     // create a function info object
     FunctionInfoRef xFuncInfo( new FunctionInfo );
@@ -1103,13 +1021,12 @@ void FunctionProviderImpl::initFunc( const FunctionData& rFuncData, sal_uInt8 nM
         OSL_ENSURE( !xFuncInfo->maOdfFuncName.isEmpty(), "FunctionProviderImpl::initFunc - missing ODF function name" );
         xFuncInfo->maBiffMacroName = "_xlfnodf." + xFuncInfo->maOdfFuncName;
     }
-
-    xFuncInfo->meFuncLibType = FUNCFLAGS_TO_FUNCLIB( rFuncData.mnFlags );
+    xFuncInfo->meFuncLibType = (rFuncData.mnFlags & FUNCFLAG_EUROTOOL) ? FUNCLIB_EUROTOOL : FUNCLIB_UNKNOWN;
     xFuncInfo->mnApiOpCode = -1;
     xFuncInfo->mnBiff12FuncId = rFuncData.mnBiff12FuncId;
     xFuncInfo->mnBiffFuncId = rFuncData.mnBiffFuncId;
     xFuncInfo->mnMinParamCount = rFuncData.mnMinParamCount;
-    xFuncInfo->mnMaxParamCount = (rFuncData.mnMaxParamCount == MX) ? nMaxParam : rFuncData.mnMaxParamCount;
+    xFuncInfo->mnMaxParamCount = (rFuncData.mnMaxParamCount == MX) ? OOX_MAX_PARAMCOUNT : rFuncData.mnMaxParamCount;
     xFuncInfo->mnRetClass = rFuncData.mnRetClass;
     xFuncInfo->mpParamInfos = rFuncData.mpParamInfos;
     xFuncInfo->mbParamPairs = getFlag( rFuncData.mnFlags, FUNCFLAG_PARAMPAIRS );
@@ -1135,17 +1052,15 @@ void FunctionProviderImpl::initFunc( const FunctionData& rFuncData, sal_uInt8 nM
         maMacroFuncs[ xFuncInfo->maBiffMacroName ] = xFuncInfo;
 }
 
-void FunctionProviderImpl::initFuncs( const FunctionData* pBeg, const FunctionData* pEnd, sal_uInt8 nMaxParam,
-        bool bImportFilter, FilterType eFilter )
+void FunctionProviderImpl::initFuncs(const FunctionData* pBeg, const FunctionData* pEnd, bool bImportFilter)
 {
     for( const FunctionData* pIt = pBeg; pIt != pEnd; ++pIt )
-        if( pIt->isSupported( bImportFilter, eFilter ) )
-            initFunc( *pIt, nMaxParam );
+        if( pIt->isSupported(bImportFilter) )
+            initFunc(*pIt);
 }
 
-FunctionProvider::FunctionProvider( FilterType eFilter, BiffType eBiff, bool bImportFilter,
-        bool bCallerKnowsAboutMacroExport ) :
-    mxFuncImpl( new FunctionProviderImpl( eFilter, eBiff, bImportFilter, bCallerKnowsAboutMacroExport ) )
+FunctionProvider::FunctionProvider(  bool bImportFilter ) :
+    mxFuncImpl( new FunctionProviderImpl( bImportFilter ) )
 {
 }
 
@@ -1163,11 +1078,6 @@ const FunctionInfo* FunctionProvider::getFuncInfoFromBiff12FuncId( sal_uInt16 nF
     return mxFuncImpl->maBiff12Funcs.get( nFuncId ).get();
 }
 
-const FunctionInfo* FunctionProvider::getFuncInfoFromBiffFuncId( sal_uInt16 nFuncId ) const
-{
-    return mxFuncImpl->maBiffFuncs.get( nFuncId ).get();
-}
-
 const FunctionInfo* FunctionProvider::getFuncInfoFromMacroName( const OUString& rFuncName ) const
 {
     return mxFuncImpl->maMacroFuncs.get( rFuncName ).get();
@@ -1175,13 +1085,10 @@ const FunctionInfo* FunctionProvider::getFuncInfoFromMacroName( const OUString& 
 
 FunctionLibraryType FunctionProvider::getFuncLibTypeFromLibraryName( const OUString& rLibraryName )
 {
-#define OOX_XLS_IS_LIBNAME( libname, basename ) (libname.equalsIgnoreAsciiCase( basename ".XLA" ) || libname.equalsIgnoreAsciiCase( basename ".XLAM" ))
-
     // the EUROTOOL add-in containing the EUROCONVERT function
-    if( OOX_XLS_IS_LIBNAME( rLibraryName, "EUROTOOL" ) )
+    if(   rLibraryName.equalsIgnoreAsciiCase("EUROTOOL.XLA")
+       || rLibraryName.equalsIgnoreAsciiCase("EUROTOOL.XLAM"))
         return FUNCLIB_EUROTOOL;
-
-#undef OOX_XLS_IS_LIBNAME
 
     // default: unknown library
     return FUNCLIB_UNKNOWN;
@@ -1479,8 +1386,8 @@ bool OpCodeProviderImpl::initFuncOpCodes( const ApiTokenMap& rIntFuncTokenMap, c
 }
 
 OpCodeProvider::OpCodeProvider( const Reference< XMultiServiceFactory >& rxModelFactory,
-        FilterType eFilter, BiffType eBiff, bool bImportFilter ) :
-    FunctionProvider( eFilter, eBiff, bImportFilter, true/*bCallerKnowsAboutMacroExport*/ ),
+         bool bImportFilter ) :
+    FunctionProvider( bImportFilter ),
     mxOpCodeImpl( new OpCodeProviderImpl( getFuncs(), rxModelFactory ) )
 {
 }
@@ -1616,7 +1523,7 @@ TokenToRangeListState lclProcessClose( sal_Int32& ornParenLevel )
 } // namespace
 
 FormulaProcessorBase::FormulaProcessorBase( const WorkbookHelper& rHelper ) :
-    OpCodeProvider( rHelper.getBaseFilter().getModelFactory(), rHelper.getFilterType(), rHelper.getBiff(), rHelper.getBaseFilter().isImportFilter() ),
+    OpCodeProvider( rHelper.getBaseFilter().getModelFactory(), rHelper.getBaseFilter().isImportFilter() ),
     ApiOpCodes( getOpCodes() ),
     WorkbookHelper( rHelper )
 {

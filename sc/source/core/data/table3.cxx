@@ -24,7 +24,6 @@
 #include <svl/zformat.hxx>
 #include <unotools/charclass.hxx>
 #include <unotools/collatorwrapper.hxx>
-#include <com/sun/star/i18n/CollatorOptions.hpp>
 #include <stdlib.h>
 #include <unotools/transliterationwrapper.hxx>
 
@@ -780,7 +779,12 @@ void fillSortedColumnArray(
                 }
                 break;
                 default:
-                    assert(!rCell.mpAttr);
+                    //assert(!rCell.mpAttr);
+                    // This assert doesn't hold, for example
+                    // CopyCellsFromClipHandler may omit copying cells during
+                    // PasteSpecial for which CopyTextAttrsFromClipHandler
+                    // still copies a CellTextAttr. So if that really is not
+                    // expected then fix it there.
                     rCellStore.push_back_empty();
             }
 
@@ -1483,12 +1487,35 @@ short ScTable::CompareCell(
     {
         if (!rCell2.isEmpty())
         {
+            bool bErr1 = false;
             bool bStr1 = ( eType1 != CELLTYPE_VALUE );
-            if (eType1 == CELLTYPE_FORMULA && rCell1.mpFormula->IsValue())
-                bStr1 = false;
+            if (eType1 == CELLTYPE_FORMULA)
+            {
+                if (rCell1.mpFormula->GetErrCode() != FormulaError::NONE)
+                {
+                    bErr1 = true;
+                    bStr1 = false;
+                }
+                else if (rCell1.mpFormula->IsValue())
+                {
+                    bStr1 = false;
+                }
+            }
+
+            bool bErr2 = false;
             bool bStr2 = ( eType2 != CELLTYPE_VALUE );
-            if (eType2 == CELLTYPE_FORMULA && rCell2.mpFormula->IsValue())
-                bStr2 = false;
+            if (eType2 == CELLTYPE_FORMULA)
+            {
+                if (rCell2.mpFormula->GetErrCode() != FormulaError::NONE)
+                {
+                    bErr2 = true;
+                    bStr2 = false;
+                }
+                else if (rCell2.mpFormula->IsValue())
+                {
+                    bStr2 = false;
+                }
+            }
 
             if ( bStr1 && bStr2 )           // only compare strings as strings!
             {
@@ -1531,10 +1558,32 @@ short ScTable::CompareCell(
                         nRes = static_cast<short>( pSortCollator->compareString( aStr1, aStr2 ) );
                 }
             }
-            else if ( bStr1 )               // String <-> Number
-                nRes = 1;                   // Number in front
-            else if ( bStr2 )               // Number <-> String
-                nRes = -1;                  // Number in front
+            else if ( bStr1 )               // String <-> Number or Error
+            {
+                if (bErr2)
+                    nRes = -1;              // String in front of Error
+                else
+                    nRes = 1;               // Number in front of String
+            }
+            else if ( bStr2 )               // Number or Error <-> String
+            {
+                if (bErr1)
+                    nRes = 1;               // String in front of Error
+                else
+                    nRes = -1;              // Number in front of String
+            }
+            else if (bErr1 && bErr2)
+            {
+                // nothing, two Errors are equal
+            }
+            else if (bErr1)                 // Error <-> Number
+            {
+                nRes = 1;                   // Number in front of Error
+            }
+            else if (bErr2)                 // Number <-> Error
+            {
+                nRes = -1;                  // Number in front of Error
+            }
             else                            // Mixed numbers
             {
                 double nVal1 = rCell1.getValue();
@@ -1752,7 +1801,7 @@ void ScTable::Sort(
     DestroySortCollator();
 }
 
-void ScTable::Reorder( const sc::ReorderParam& rParam, ScProgress* pProgress )
+void ScTable::Reorder( const sc::ReorderParam& rParam )
 {
     if (rParam.maOrderIndices.empty())
         return;
@@ -1767,10 +1816,10 @@ void ScTable::Reorder( const sc::ReorderParam& rParam, ScProgress* pProgress )
         pArray->ReorderByRow(rParam.maOrderIndices);
         if (pArray->IsUpdateRefs())
             SortReorderByRowRefUpdate(
-                pArray.get(), rParam.maSortRange.aStart.Col(), rParam.maSortRange.aEnd.Col(), pProgress);
+                pArray.get(), rParam.maSortRange.aStart.Col(), rParam.maSortRange.aEnd.Col(), nullptr);
         else
             SortReorderByRow(
-                pArray.get(), rParam.maSortRange.aStart.Col(), rParam.maSortRange.aEnd.Col(), pProgress);
+                pArray.get(), rParam.maSortRange.aStart.Col(), rParam.maSortRange.aEnd.Col(), nullptr);
     }
     else
     {
@@ -1778,7 +1827,7 @@ void ScTable::Reorder( const sc::ReorderParam& rParam, ScProgress* pProgress )
         pArray->SetOrderIndices(rParam.maOrderIndices);
         SortReorderByColumn(
             pArray.get(), rParam.maSortRange.aStart.Row(), rParam.maSortRange.aEnd.Row(),
-            rParam.mbPattern, pProgress);
+            rParam.mbPattern, nullptr);
     }
 }
 
@@ -2094,7 +2143,7 @@ bool ScTable::DoSubTotals( ScSubTotalParam& rParam )
                             aOutString += ScGlobal::GetRscString( nStrId );
                         }
                         SetString( nGroupCol[aRowEntry.nGroupNo], aRowEntry.nDestRow, nTab, aOutString );
-                        ApplyStyle( nGroupCol[aRowEntry.nGroupNo], aRowEntry.nDestRow, *pStyle );
+                        ApplyStyle( nGroupCol[aRowEntry.nGroupNo], aRowEntry.nDestRow, pStyle );
 
                         ++nRow;
                         ++nEndRow;
@@ -2142,12 +2191,13 @@ bool ScTable::DoSubTotals( ScSubTotalParam& rParam )
             aArr.AddOpCode( ocStop );
             ScFormulaCell* pCell = new ScFormulaCell(
                 pDocument, ScAddress(nResCols[nResult], iEntry->nDestRow, nTab), aArr);
+            if ( rParam.bIncludePattern )
+                pCell->SetNeedNumberFormat(true);
 
             SetFormulaCell(nResCols[nResult], iEntry->nDestRow, pCell);
-
             if ( nResCols[nResult] != nGroupCol[iEntry->nGroupNo] )
             {
-                ApplyStyle( nResCols[nResult], iEntry->nDestRow, *pStyle );
+                ApplyStyle( nResCols[nResult], iEntry->nDestRow, pStyle );
 
                 lcl_RemoveNumberFormat( this, nResCols[nResult], iEntry->nDestRow );
             }
@@ -2266,7 +2316,7 @@ public:
 
         if (!rCell.isEmpty())
         {
-            if (rCell.meType == CELLTYPE_FORMULA && rCell.mpFormula->GetErrCode())
+            if (rCell.meType == CELLTYPE_FORMULA && rCell.mpFormula->GetErrCode() != FormulaError::NONE)
                 // Error values are compared as string.
                 return false;
 
@@ -2391,7 +2441,7 @@ public:
 
         if (!rCell.isEmpty())
         {
-            if (rCell.meType == CELLTYPE_FORMULA && rCell.mpFormula->GetErrCode())
+            if (rCell.meType == CELLTYPE_FORMULA && rCell.mpFormula->GetErrCode() != FormulaError::NONE)
             {
                 // Error cell is evaluated as string (for now).
                 aCellStr = mrStrPool.intern(ScGlobal::GetErrorString(rCell.mpFormula->GetErrCode()));
@@ -2590,7 +2640,7 @@ public:
         {
             if (rItem.meType == ScQueryEntry::ByString)
             {
-                if (rCell.meType == CELLTYPE_FORMULA && rCell.mpFormula->GetErrCode())
+                if (rCell.meType == CELLTYPE_FORMULA && rCell.mpFormula->GetErrCode() != FormulaError::NONE)
                     // Error values are compared as string.
                     return std::pair<bool,bool>(false, bTestEqual);
 
@@ -3240,48 +3290,76 @@ bool ScTable::CreateQueryParam(SCCOL nCol1, SCROW nRow1, SCCOL nCol2, SCROW nRow
 
 bool ScTable::HasColHeader( SCCOL nStartCol, SCROW nStartRow, SCCOL nEndCol, SCROW nEndRow) const
 {
+    if (nStartRow == nEndRow)
+        // Assume only data.
+        /* XXX NOTE: previous behavior still checked this one row and could
+         * evaluate it has header row, but that doesn't make much sense. */
+        return false;
+
     if (nStartCol == nEndCol)
     {
-        if (nEndRow > nStartRow)
-        {
-            CellType eFstCellType = GetCellType(nStartCol, nStartRow);
-            CellType eSndCellType = GetCellType(nStartCol, nStartRow+1);
-            if ((eFstCellType == CELLTYPE_STRING || eFstCellType == CELLTYPE_EDIT)
-                   && (eSndCellType != CELLTYPE_STRING && eSndCellType != CELLTYPE_EDIT))
-                return true;
-        }
-        return false;
+        CellType eFstCellType = GetCellType(nStartCol, nStartRow);
+        CellType eSndCellType = GetCellType(nStartCol, nStartRow+1);
+        return ((eFstCellType == CELLTYPE_STRING || eFstCellType == CELLTYPE_EDIT) &&
+                (eSndCellType != CELLTYPE_STRING && eSndCellType != CELLTYPE_EDIT));
     }
+
     for (SCCOL nCol=nStartCol; nCol<=nEndCol; nCol++)
     {
         CellType eType = GetCellType( nCol, nStartRow );
+        // Any non-text cell in first row => not headers.
         if (eType != CELLTYPE_STRING && eType != CELLTYPE_EDIT)
             return false;
     }
-    return true;
+
+    // First row all text cells, any non-text cell in second row => headers.
+    SCROW nTestRow = nStartRow + 1;
+    for (SCCOL nCol=nStartCol; nCol<=nEndCol; nCol++)
+    {
+        CellType eType = GetCellType( nCol, nTestRow );
+        if (eType != CELLTYPE_STRING && eType != CELLTYPE_EDIT)
+            return true;
+    }
+
+    // Also second row all text cells => first row not headers.
+    return false;
 }
 
 bool ScTable::HasRowHeader( SCCOL nStartCol, SCROW nStartRow, SCCOL nEndCol, SCROW nEndRow ) const
 {
+    if (nStartCol == nEndCol)
+        // Assume only data.
+        /* XXX NOTE: previous behavior still checked this one column and could
+         * evaluate it has header column, but that doesn't make much sense. */
+        return false;
+
     if (nStartRow == nEndRow)
     {
-        if (nEndCol > nStartCol)
-        {
-            CellType eFstCellType = GetCellType(nStartCol, nStartRow);
-            CellType eSndCellType = GetCellType(nStartCol+1, nStartRow);
-            if ((eFstCellType == CELLTYPE_STRING || eFstCellType == CELLTYPE_EDIT)
-                   && (eSndCellType != CELLTYPE_STRING && eSndCellType != CELLTYPE_EDIT))
-                return true;
-        }
-        return false;
+        CellType eFstCellType = GetCellType(nStartCol, nStartRow);
+        CellType eSndCellType = GetCellType(nStartCol+1, nStartRow);
+        return ((eFstCellType == CELLTYPE_STRING || eFstCellType == CELLTYPE_EDIT) &&
+                (eSndCellType != CELLTYPE_STRING && eSndCellType != CELLTYPE_EDIT));
     }
+
     for (SCROW nRow=nStartRow; nRow<=nEndRow; nRow++)
     {
         CellType eType = GetCellType( nStartCol, nRow );
+        // Any non-text cell in first column => not headers.
         if (eType != CELLTYPE_STRING && eType != CELLTYPE_EDIT)
             return false;
     }
-    return true;
+
+    // First column all text cells, any non-text cell in second column => headers.
+    SCROW nTestCol = nStartCol + 1;
+    for (SCROW nRow=nStartRow; nRow<=nEndRow; nRow++)
+    {
+        CellType eType = GetCellType( nRow, nTestCol );
+        if (eType != CELLTYPE_STRING && eType != CELLTYPE_EDIT)
+            return true;
+    }
+
+    // Also second column all text cells => first column not headers.
+    return false;
 }
 
 void ScTable::GetFilterEntries(SCCOL nCol, SCROW nRow1, SCROW nRow2, std::vector<ScTypedStrData>& rStrings, bool& rHasDates)
@@ -3374,7 +3452,20 @@ sal_Int32 ScTable::GetMaxNumberStringLen(
 void ScTable::UpdateSelectionFunction( ScFunctionData& rData, const ScMarkData& rMark )
 {
     ScRangeList aRanges = rMark.GetMarkedRangesForTab( nTab );
-    for (SCCOL nCol = 0; nCol <= MAXCOL && !rData.bError; ++nCol)
+    ScRange aMarkArea( ScAddress::UNINITIALIZED );
+    if (rMark.IsMultiMarked())
+        rMark.GetMultiMarkArea( aMarkArea );
+    else if (rMark.IsMarked())
+        rMark.GetMarkArea( aMarkArea );
+    else
+    {
+        assert(!"ScTable::UpdateSelectionFunction - called without anything marked");
+        aMarkArea.aStart.SetCol(0);
+        aMarkArea.aEnd.SetCol(MAXCOL);
+    }
+    const SCCOL nStartCol = aMarkArea.aStart.Col();
+    const SCCOL nEndCol = aMarkArea.aEnd.Col();
+    for (SCCOL nCol = nStartCol; nCol <= nEndCol && !rData.bError; ++nCol)
     {
         if (pColFlags && ColHidden(nCol))
             continue;

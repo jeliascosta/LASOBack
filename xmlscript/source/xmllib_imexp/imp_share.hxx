@@ -32,6 +32,7 @@
 #include <com/sun/star/awt/FontDescriptor.hpp>
 
 #include <com/sun/star/xml/input/XRoot.hpp>
+#include <rtl/ref.hxx>
 
 #include <vector>
 
@@ -131,7 +132,7 @@ public:
     {
     }
 
-    virtual ~LibraryImport();
+    virtual ~LibraryImport() override;
 
     // XRoot
     virtual void SAL_CALL startDocument(
@@ -155,9 +156,9 @@ class LibElementBase
     : public ::cppu::WeakImplHelper< css::xml::input::XElement >
 {
 protected:
-    LibraryImport * _pImport;
-    LibElementBase * _pParent;
-
+    rtl::Reference<LibraryImport>  mxImport;
+    rtl::Reference<LibElementBase> mxParent;
+private:
     OUString _aLocalName;
     css::uno::Reference< css::xml::input::XAttributes > _xAttributes;
 
@@ -166,7 +167,7 @@ public:
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
         LibElementBase * pParent, LibraryImport * pImport );
-    virtual ~LibElementBase();
+    virtual ~LibElementBase() override;
 
     // XElement
     virtual css::uno::Reference< css::xml::input::XElement > SAL_CALL getParent()
@@ -211,8 +212,8 @@ public:
     LibrariesElement(
         OUString const & rLocalName,
         css::uno::Reference< css::xml::input::XAttributes > const & xAttributes,
-        LibElementBase * pParent, LibraryImport * pImport )
-        : LibElementBase( rLocalName, xAttributes, pParent, pImport )
+        LibraryImport * pImport )
+        : LibElementBase( rLocalName, xAttributes, nullptr, pImport )
         {}
 };
 

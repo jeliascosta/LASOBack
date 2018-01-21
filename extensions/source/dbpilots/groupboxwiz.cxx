@@ -153,8 +153,12 @@ namespace dbp
     }
 
 
-    void OGroupBoxWizard::createRadios()
+    bool OGroupBoxWizard::onFinish()
     {
+        // commit the basic control settings
+        commitControlSettings(&m_aSettings);
+
+        // create the radio buttons
         try
         {
             OOptionGroupLayouter aLayouter( getComponentContext() );
@@ -164,16 +168,6 @@ namespace dbp
         {
             OSL_FAIL("OGroupBoxWizard::createRadios: caught an exception while creating the radio shapes!");
         }
-    }
-
-
-    bool OGroupBoxWizard::onFinish()
-    {
-        // commit the basic control settings
-        commitControlSettings(&m_aSettings);
-
-        // create the radio buttons
-        createRadios();
 
         return OControlWizard::onFinish();
     }
@@ -200,8 +194,6 @@ namespace dbp
         m_pExistingRadios->EnableMultiSelection(true);
 
         getDialog()->defaultButton(m_pMoveRight.get());
-
-        m_pExistingRadios->SetAccessibleRelationMemberOf(m_pExistingRadios);
     }
 
     ORadioSelectionPage::~ORadioSelectionPage()
@@ -261,7 +253,7 @@ namespace dbp
     }
 
 
-    IMPL_LINK_TYPED( ORadioSelectionPage, OnMoveEntry, Button*, _pButton, void )
+    IMPL_LINK( ORadioSelectionPage, OnMoveEntry, Button*, _pButton, void )
     {
         bool bMoveLeft = (m_pMoveLeft == _pButton);
         if (bMoveLeft)
@@ -285,13 +277,13 @@ namespace dbp
     }
 
 
-    IMPL_LINK_NOARG_TYPED( ORadioSelectionPage, OnEntrySelected, ListBox&, void )
+    IMPL_LINK_NOARG( ORadioSelectionPage, OnEntrySelected, ListBox&, void )
     {
         implCheckMoveButtons();
     }
 
 
-    IMPL_LINK_NOARG_TYPED( ORadioSelectionPage, OnNameModified, Edit&, void )
+    IMPL_LINK_NOARG( ORadioSelectionPage, OnNameModified, Edit&, void )
     {
         implCheckMoveButtons();
     }
@@ -335,7 +327,6 @@ namespace dbp
 
         announceControls(*m_pDefSelYes, *m_pDefSelNo, *m_pDefSelection);
         m_pDefSelection->SetDropDownLineCount(10);
-        m_pDefSelection->SetAccessibleRelationLabeledBy( m_pDefSelYes );
         m_pDefSelection->SetStyle(WB_DROPDOWN);
     }
 
@@ -390,8 +381,6 @@ namespace dbp
         get(m_pOptions, "radiobuttons");
 
         m_pOptions->SetSelectHdl(LINK(this, OOptionValuesPage, OnOptionSelected));
-
-        m_pOptions->SetAccessibleRelationMemberOf(m_pOptions);
     }
 
     OOptionValuesPage::~OOptionValuesPage()
@@ -406,7 +395,7 @@ namespace dbp
         OGBWPage::dispose();
     }
 
-    IMPL_LINK_NOARG_TYPED( OOptionValuesPage, OnOptionSelected, ListBox&, void )
+    IMPL_LINK_NOARG( OOptionValuesPage, OnOptionSelected, ListBox&, void )
     {
         implTraveledOptions();
     }
@@ -485,7 +474,7 @@ namespace dbp
 
     OUString& OOptionDBFieldPage::getDBFieldSetting()
     {
-        return getSettings().sDBField;
+        return static_cast<OGroupBoxWizard*>(getDialog())->getSettings().sDBField;
     }
 
     OFinalizeGBWPage::OFinalizeGBWPage( OControlWizard* _pParent )

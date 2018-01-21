@@ -92,7 +92,6 @@ bool ConvertTableToText( const SwTableNode *pConstTableNode, sal_Unicode cCh )
 
 const SwTable& SwEditShell::InsertTable( const SwInsertTableOptions& rInsTableOpts,
                                          sal_uInt16 nRows, sal_uInt16 nCols,
-                                         sal_Int16 eAdj,
                                          const SwTableAutoFormat* pTAFormat )
 {
     StartAllAction();
@@ -109,7 +108,7 @@ const SwTable& SwEditShell::InsertTable( const SwInsertTableOptions& rInsTableOp
     // from pPos to the new content nodes in the table.
     const SwTable *pTable = GetDoc()->InsertTable( rInsTableOpts, *pPos,
                                                    nRows, nCols,
-                                                   eAdj, pTAFormat,
+                                                   css::text::HoriOrientation::FULL, pTAFormat,
                                                    nullptr, true );
     if( bEndUndo )
         EndUndo( UNDO_END );
@@ -120,7 +119,6 @@ const SwTable& SwEditShell::InsertTable( const SwInsertTableOptions& rInsTableOp
 
 bool SwEditShell::TextToTable( const SwInsertTableOptions& rInsTableOpts,
                                sal_Unicode cCh,
-                               sal_Int16 eAdj,
                                const SwTableAutoFormat* pTAFormat )
 {
     SwWait aWait( *GetDoc()->GetDocShell(), true );
@@ -130,7 +128,7 @@ bool SwEditShell::TextToTable( const SwInsertTableOptions& rInsTableOpts,
     {
         if( rPaM.HasMark() )
             bRet |= nullptr != GetDoc()->TextToTable( rInsTableOpts, rPaM, cCh,
-                                                eAdj, pTAFormat );
+                                                css::text::HoriOrientation::FULL, pTAFormat );
     }
     EndAllAction();
     return bRet;
@@ -175,7 +173,7 @@ bool SwEditShell::TableToText( sal_Unicode cCh )
 
     SwContentNode* pCNd = pCursor->GetContentNode();
     if( !pCNd )
-        pCursor->Move( fnMoveForward, fnGoContent );
+        pCursor->Move( fnMoveForward, GoInContent );
     else
         pCursor->GetPoint()->nContent.Assign( pCNd, 0 );
 
@@ -305,7 +303,7 @@ bool SwEditShell::GetTableBoxFormulaAttrs( SfxItemSet& rSet ) const
             } while ( pFrame && !pFrame->IsCellFrame() );
             if ( pFrame )
             {
-                SwTableBox *pBox = const_cast<SwTableBox*>(static_cast<const SwTableBox*>(static_cast<SwCellFrame*>(pFrame)->GetTabBox()));
+                SwTableBox *pBox = const_cast<SwTableBox*>(static_cast<SwCellFrame*>(pFrame)->GetTabBox());
                 aBoxes.insert( pBox );
             }
         } while( false );
@@ -322,7 +320,7 @@ bool SwEditShell::GetTableBoxFormulaAttrs( SfxItemSet& rSet ) const
 
             SwTableFormulaUpdate aTableUpdate( &rTable );
             aTableUpdate.m_eFlags = TBL_BOXNAME;
-            static_cast<SwDoc*>(GetDoc())->getIDocumentFieldsAccess().UpdateTableFields( &aTableUpdate );
+            GetDoc()->getIDocumentFieldsAccess().UpdateTableFields( &aTableUpdate );
 
             rSet.Put( pTableFormat->GetAttrSet() );
         }
@@ -347,7 +345,7 @@ void SwEditShell::SetTableBoxFormulaAttrs( const SfxItemSet& rSet )
             } while ( pFrame && !pFrame->IsCellFrame() );
             if ( pFrame )
             {
-                SwTableBox *pBox = const_cast<SwTableBox*>(static_cast<const SwTableBox*>(static_cast<SwCellFrame*>(pFrame)->GetTabBox()));
+                SwTableBox *pBox = const_cast<SwTableBox*>(static_cast<SwCellFrame*>(pFrame)->GetTabBox());
                 aBoxes.insert( pBox );
             }
         } while( false );
@@ -379,7 +377,7 @@ bool SwEditShell::IsTableBoxTextFormat() const
             pFrame = pFrame->GetUpper();
         } while ( pFrame && !pFrame->IsCellFrame() );
         if ( pFrame )
-            pBox = static_cast<const SwTableBox*>(static_cast<SwCellFrame*>(pFrame)->GetTabBox());
+            pBox = static_cast<SwCellFrame*>(pFrame)->GetTabBox();
     }
 
     if( !pBox )
@@ -419,7 +417,7 @@ OUString SwEditShell::GetTableBoxText() const
                 pFrame = pFrame->GetUpper();
             } while ( pFrame && !pFrame->IsCellFrame() );
             if ( pFrame )
-                pBox = static_cast<const SwTableBox*>(static_cast<SwCellFrame*>(pFrame)->GetTabBox());
+                pBox = static_cast<SwCellFrame*>(pFrame)->GetTabBox();
         }
 
         sal_uLong nNd;

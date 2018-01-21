@@ -19,7 +19,6 @@
 
 #include "workbookfragment.hxx"
 
-#include <com/sun/star/table/CellAddress.hpp>
 #include <oox/core/filterbase.hxx>
 #include <oox/core/xmlfilterbase.hxx>
 #include <oox/drawingml/themefragmenthandler.hxx>
@@ -30,7 +29,6 @@
 #include <oox/token/namespaces.hxx>
 #include <oox/token/tokens.hxx>
 
-#include "biffinputstream.hxx"
 #include "chartsheetfragment.hxx"
 #include "connectionsfragment.hxx"
 #include "externallinkbuffer.hxx"
@@ -225,9 +223,11 @@ class WorkerThread : public comphelper::ThreadTask
     rtl::Reference<FragmentHandler> mxHandler;
 
 public:
-    WorkerThread( WorkbookFragment& rWorkbookHandler,
+    WorkerThread( const std::shared_ptr<comphelper::ThreadTaskTag> & pTag,
+                  WorkbookFragment& rWorkbookHandler,
                   const rtl::Reference<FragmentHandler>& xHandler,
                   sal_Int32 &rSheetsLeft ) :
+        comphelper::ThreadTask( pTag ),
         mrSheetsLeft( rSheetsLeft ),
         mrWorkbookHandler( rWorkbookHandler ),
         mxHandler( xHandler )
@@ -270,7 +270,7 @@ class ProgressBarTimer : private Timer
             , mxWrapped(xRef)
         {
         }
-        virtual ~ProgressWrapper() {}
+        virtual ~ProgressWrapper() override {}
         // IProgressBar
         virtual double getPosition() const override { return mfPosition; }
         virtual void   setPosition( double fPosition ) override { mfPosition = fPosition; }
@@ -291,7 +291,7 @@ public:
     {
         SetTimeout( 500 );
     }
-    virtual ~ProgressBarTimer()
+    virtual ~ProgressBarTimer() override
     {
         aSegments.clear();
     }
@@ -309,54 +309,38 @@ public:
 
 void importSheetFragments( WorkbookFragment& rWorkbookHandler, SheetFragmentVector& rSheets )
 {
-    sal_Int32 nThreads = std::min( rSheets.size(), (size_t) comphelper::ThreadPool::getPreferredConcurrency() );
-
     Reference< XComponentContext > xContext = comphelper::getProcessComponentContext();
 
-    const char *pEnv;
-    if( ( pEnv = getenv( "SC_IMPORT_THREADS" ) ) )
-        nThreads = rtl_str_toInt32( pEnv, 10 );
+    // test sequential read in this mode
+    comphelper::ThreadPool &rSharedPool = comphelper::ThreadPool::getSharedOptimalPool();
+    std::shared_ptr<comphelper::ThreadTaskTag> pTag = comphelper::ThreadPool::createThreadTaskTag();
 
-    if( nThreads != 0 )
+    sal_Int32 nSheetsLeft = 0;
+    ProgressBarTimer aProgressUpdater;
+    SheetFragmentVector::iterator it = rSheets.begin(), itEnd = rSheets.end();
+    for( ; it != itEnd; ++it )
     {
-        // test sequential read in this mode
-        if( nThreads < 0)
-            nThreads = 0;
-        comphelper::ThreadPool aPool( nThreads );
+         // getting at the WorksheetGlobals is rather unpleasant
+         IWorksheetProgress *pProgress = WorksheetHelper::getWorksheetInterface( it->first );
+         pProgress->setCustomRowProgress(
+                     aProgressUpdater.wrapProgress(
+                             pProgress->getRowProgress() ) );
+         rSharedPool.pushTask( new WorkerThread( pTag, rWorkbookHandler, it->second,
+                                           /* ref */ nSheetsLeft ) );
+         nSheetsLeft++;
+     }
 
-        sal_Int32 nSheetsLeft = 0;
-        ProgressBarTimer aProgressUpdater;
-        SheetFragmentVector::iterator it = rSheets.begin(), itEnd = rSheets.end();
-        for( ; it != itEnd; ++it )
-        {
-            // getting at the WorksheetGlobals is rather unpleasant
-            IWorksheetProgress *pProgress = WorksheetHelper::getWorksheetInterface( it->first );
-            pProgress->setCustomRowProgress(
-                        aProgressUpdater.wrapProgress(
-                                pProgress->getRowProgress() ) );
-            aPool.pushTask( new WorkerThread( rWorkbookHandler, it->second,
-                                              /* ref */ nSheetsLeft ) );
-            nSheetsLeft++;
-        }
+     // coverity[loop_top] - this isn't an infinite loop where nSheetsLeft gets decremented by the above threads
+     while( nSheetsLeft > 0)
+     {
+         // This is a much more controlled re-enterancy hazard than
+         // allowing a yield deeper inside the filter code for progress
+         // bar updating.
+         Application::Yield();
+     }
+     rSharedPool.waitUntilDone(pTag);
 
-        // coverity[loop_top] - this isn't an infinite loop where nSheetsLeft gets decremented by the above threads
-        while( nSheetsLeft > 0)
-        {
-            // This is a much more controlled re-enterancy hazard than
-            // allowing a yield deeper inside the filter code for progress
-            // bar updating.
-            Application::Yield();
-        }
-        aPool.waitUntilEmpty();
-
-        // threads joined in ThreadPool destructor
-    }
-    else // single threaded iteration
-    {
-        SheetFragmentVector::iterator it = rSheets.begin(), itEnd = rSheets.end();
-        for( ; it != itEnd; ++it )
-            rWorkbookHandler.importOoxFragment( it->second );
-    }
+     // threads joined in ThreadPool destructor
 }
 
 }
@@ -468,7 +452,7 @@ void WorkbookFragment::finalizeImport()
     }
 
     // setup structure sizes for the number of sheets
-    getFormulaBuffer().SetSheetCount( aSheetFragments.size() );
+    getFormulaBuffer().SetSheetCount( nWorksheetCount );
 
     // create all database ranges and defined names, in that order
     getTables().finalizeImport();

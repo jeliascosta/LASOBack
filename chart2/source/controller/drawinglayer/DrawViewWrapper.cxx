@@ -164,21 +164,20 @@ SdrPageView* DrawViewWrapper::GetPageView() const
     return pSdrPageView;
 };
 
-void DrawViewWrapper::SetMarkHandles()
+void DrawViewWrapper::SetMarkHandles(SfxViewShell* pOtherShell)
 {
     if( m_pMarkHandleProvider && m_pMarkHandleProvider->getMarkHandles( maHdlList ) )
         return;
     else
-        SdrView::SetMarkHandles();
+        SdrView::SetMarkHandles(pOtherShell);
 }
 
 SdrObject* DrawViewWrapper::getHitObject( const Point& rPnt ) const
 {
-    SdrObject* pRet = nullptr;
     SdrSearchOptions nOptions = SdrSearchOptions::DEEP | SdrSearchOptions::TESTMARKABLE;
 
     SdrPageView* pSdrPageView = this->GetPageView();
-    this->SdrView::PickObj(rPnt, lcl_getHitTolerance( this->GetFirstOutputDevice() ), pRet, pSdrPageView, nOptions);
+    SdrObject* pRet = this->SdrView::PickObj(rPnt, lcl_getHitTolerance( this->GetFirstOutputDevice() ), pSdrPageView, nOptions);
 
     if( pRet )
     {
@@ -334,7 +333,7 @@ void DrawViewWrapper::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
     if( pSdrHint != nullptr )
     {
         SdrHintKind eKind = pSdrHint->GetKind();
-        if( eKind == HINT_BEGEDIT )
+        if( eKind == SdrHintKind::BeginEdit )
         {
             // #i79965# remember map mode
             OSL_ASSERT( ! m_bRestoreMapMode );
@@ -345,7 +344,7 @@ void DrawViewWrapper::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
                 m_bRestoreMapMode = true;
             }
         }
-        else if( eKind == HINT_ENDEDIT )
+        else if( eKind == SdrHintKind::EndEdit )
         {
             // #i79965# scroll back view when ending text edit
             OSL_ASSERT( m_bRestoreMapMode );

@@ -46,7 +46,7 @@ ImplWheelWindow::ImplWheelWindow( vcl::Window* pParent ) :
             mnActDeltaY     ( 0L )
 {
     // we need a parent
-    DBG_ASSERT( pParent, "ImplWheelWindow::ImplWheelWindow(): Parent not set!" );
+    SAL_WARN_IF( !pParent, "vcl", "ImplWheelWindow::ImplWheelWindow(): Parent not set!" );
 
     const Size      aSize( pParent->GetOutputSizePixel() );
     const StartAutoScrollFlags nFlags = ImplGetSVData()->maWinData.mnAutoScrollFlags;
@@ -359,7 +359,7 @@ void ImplWheelWindow::MouseButtonUp( const MouseEvent& rMEvt )
         FloatingWindow::MouseButtonUp( rMEvt );
 }
 
-IMPL_LINK_NOARG_TYPED(ImplWheelWindow, ImplScrollHdl, Timer *, void)
+IMPL_LINK_NOARG(ImplWheelWindow, ImplScrollHdl, Timer *, void)
 {
     if ( mnActDeltaX || mnActDeltaY )
     {

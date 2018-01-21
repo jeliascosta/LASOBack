@@ -23,6 +23,7 @@
 #include <sfx2/module.hxx>
 #include <sfx2/app.hxx>
 #include <sfx2/sfxresid.hxx>
+#include <sfx2/styfitem.hxx>
 #include <sfx2/msgpool.hxx>
 #include <sfx2/tbxctrl.hxx>
 #include <sfx2/stbitem.hxx>
@@ -41,42 +42,6 @@
 #include "sfxslots.hxx"
 #include "childwinimpl.hxx"
 #include <ctrlfactoryimpl.hxx>
-
-class SfxModuleArr_Impl
-{
-    typedef ::std::vector<SfxModule*> DataType;
-    DataType maData;
-public:
-
-    typedef DataType::iterator iterator;
-
-    iterator begin()
-    {
-        return maData.begin();
-    }
-
-    void erase( const iterator& it )
-    {
-        maData.erase(it);
-    }
-
-    SfxModule* operator[] ( size_t i )
-    {
-        return maData[i];
-    }
-
-    void push_back( SfxModule* p )
-    {
-        maData.push_back(p);
-    }
-
-    size_t size() const
-    {
-        return maData.size();
-    }
-};
-
-static SfxModuleArr_Impl* pModules=nullptr;
 
 class SfxModule_Impl
 {
@@ -126,7 +91,8 @@ ImageList* SfxModule_Impl::GetImageList( ResMgr* pResMgr, bool bBig )
             rpList = new ImageList();
     }
 
-    return rpList; }
+    return rpList;
+}
 
 
 SFX_IMPL_SUPERCLASS_INTERFACE(SfxModule, SfxShell)
@@ -136,64 +102,37 @@ ResMgr* SfxModule::GetResMgr()
     return pResMgr;
 }
 
-SfxModule::SfxModule( ResMgr* pMgrP, bool bDummyP,
-                      SfxObjectFactory* pFactoryP, ... )
-    : pResMgr( pMgrP ), bDummy( bDummyP ), pImpl(nullptr)
+SfxModule::SfxModule( ResMgr* pMgrP, std::initializer_list<SfxObjectFactory*> pFactoryList )
+    : pResMgr( pMgrP ), pImpl(nullptr)
 {
     Construct_Impl();
-    va_list pVarArgs;
-    va_start( pVarArgs, pFactoryP );
-    for ( SfxObjectFactory *pArg = pFactoryP; pArg;
-         pArg = va_arg( pVarArgs, SfxObjectFactory* ) )
-        pArg->SetModule_Impl( this );
-    va_end(pVarArgs);
+    for (auto pFactory : pFactoryList)
+    {
+        if (pFactory)
+            pFactory->SetModule_Impl( this );
+    }
 }
 
 void SfxModule::Construct_Impl()
 {
-    if( !bDummy )
-    {
-        SfxApplication *pApp = SfxGetpApp();
-        SfxModuleArr_Impl& rArr = GetModules_Impl();
-        SfxModule* pPtr = this;
-        rArr.push_back( pPtr );
-        pImpl = new SfxModule_Impl;
-        pImpl->pSlotPool = new SfxSlotPool(&pApp->GetAppSlotPool_Impl());
+    SfxApplication *pApp = SfxGetpApp();
+    pImpl = new SfxModule_Impl;
+    pImpl->pSlotPool = new SfxSlotPool(&pApp->GetAppSlotPool_Impl());
 
-        pImpl->pTbxCtrlFac=nullptr;
-        pImpl->pStbCtrlFac=nullptr;
-        pImpl->pFactArr=nullptr;
-        pImpl->pImgListSmall=nullptr;
-        pImpl->pImgListBig=nullptr;
+    pImpl->pTbxCtrlFac=nullptr;
+    pImpl->pStbCtrlFac=nullptr;
+    pImpl->pFactArr=nullptr;
+    pImpl->pImgListSmall=nullptr;
+    pImpl->pImgListBig=nullptr;
 
-        SetPool( &pApp->GetPool() );
-    }
+    SetPool( &pApp->GetPool() );
 }
 
 
 SfxModule::~SfxModule()
 {
-    if( !bDummy )
-    {
-        if ( SfxGetpApp()->Get_Impl() )
-        {
-            // The module will be destroyed before the Deinitialize,
-            // so remove from the array
-            SfxModuleArr_Impl& rArr = GetModules_Impl();
-            for( sal_uInt16 nPos = rArr.size(); nPos--; )
-            {
-                if( rArr[ nPos ] == this )
-                {
-                    rArr.erase( rArr.begin() + nPos );
-                    break;
-                }
-            }
-
-            delete pImpl;
-        }
-
-        delete pResMgr;
-    }
+    delete pImpl;
+    delete pResMgr;
 }
 
 
@@ -290,28 +229,6 @@ ImageList* SfxModule::GetImageList_Impl( bool bBig )
 VclPtr<SfxTabPage> SfxModule::CreateTabPage( sal_uInt16, vcl::Window*, const SfxItemSet& )
 {
     return VclPtr<SfxTabPage>();
-}
-
-SfxModuleArr_Impl& SfxModule::GetModules_Impl()
-{
-    if( !pModules )
-        pModules = new SfxModuleArr_Impl;
-    return *pModules;
-};
-
-void SfxModule::DestroyModules_Impl()
-{
-    if ( pModules )
-    {
-        SfxModuleArr_Impl& rModules = *pModules;
-        for( sal_uInt16 nPos = rModules.size(); nPos--; )
-        {
-            SfxModule* pMod = rModules[nPos];
-            delete pMod;
-        }
-        delete pModules;
-        pModules = nullptr;
-    }
 }
 
 void SfxModule::Invalidate( sal_uInt16 nId )

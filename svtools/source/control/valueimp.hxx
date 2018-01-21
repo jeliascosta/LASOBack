@@ -25,7 +25,7 @@
 #include <vcl/image.hxx>
 #include <cppuhelper/implbase.hxx>
 #include <cppuhelper/compbase.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <com/sun/star/lang/XUnoTunnel.hpp>
 #include <com/sun/star/accessibility/XAccessible.hpp>
 #include <com/sun/star/accessibility/XAccessibleContext.hpp>
@@ -64,7 +64,7 @@ struct ValueSetItem
     explicit ValueSetItem( ValueSet& rParent );
     ~ValueSetItem();
 
-    css::uno::Reference< css::accessibility::XAccessible >
+    css::uno::Reference< css::accessibility::XAccessible > const &
                         GetAccessible( bool bIsTransientChildrenDisabled );
 };
 
@@ -78,13 +78,13 @@ typedef ::cppu::WeakComponentImplHelper<
     ValueSetAccComponentBase;
 
 class ValueSetAcc :
-    public ::comphelper::OBaseMutex,
+    public ::cppu::BaseMutex,
     public ValueSetAccComponentBase
 {
 public:
 
-    ValueSetAcc( ValueSet* pParent, bool bIsTransientChildrenDisabled );
-    virtual ~ValueSetAcc();
+    explicit ValueSetAcc(ValueSet* pParent);
+    virtual ~ValueSetAcc() override;
 
     void                FireAccessibleEvent( short nEventId, const css::uno::Any& rOldValue, const css::uno::Any& rNewValue );
     bool                HasAccessibleListeners() const { return( mxEventListeners.size() > 0 ); }
@@ -149,7 +149,6 @@ private:
     ::std::vector< css::uno::Reference<
         css::accessibility::XAccessibleEventListener > >                mxEventListeners;
     VclPtr<ValueSet>                                                    mpParent;
-    bool                                                                mbIsTransientChildrenDisabled;
     /// The current FOCUSED state.
     bool mbIsFocused;
 
@@ -211,7 +210,7 @@ private:
 public:
 
     ValueItemAcc( ValueSetItem* pParent, bool bIsTransientChildrenDisabled );
-    virtual ~ValueItemAcc();
+    virtual ~ValueItemAcc() override;
 
     void    ParentDestroyed();
 

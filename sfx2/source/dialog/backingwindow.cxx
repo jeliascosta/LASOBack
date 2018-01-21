@@ -25,6 +25,8 @@
 #include <vcl/virdev.hxx>
 
 #include <unotools/dynamicmenuoptions.hxx>
+#include <unotools/historyoptions.hxx>
+#include <unotools/moduleoptions.hxx>
 #include <svtools/openfiledroptargetlistener.hxx>
 #include <svtools/colorcfg.hxx>
 #include <svtools/langhelp.hxx>
@@ -163,7 +165,6 @@ BackingWindow::BackingWindow( vcl::Window* i_pParent ) :
     SetBackground();
 }
 
-
 BackingWindow::~BackingWindow()
 {
     disposeOnce();
@@ -188,6 +189,7 @@ void BackingWindow::dispose()
         mxDropTargetListener.clear();
     }
     disposeBuilder();
+    maDndWindows.clear();
     mpOpenButton.clear();
     mpRemoteButton.clear();
     mpRecentButton.clear();
@@ -234,32 +236,36 @@ void BackingWindow::initControls()
     }
 
     if (aModuleOptions.IsModuleInstalled(SvtModuleOptions::EModule::WRITER))
-        mpAllRecentThumbnails->mnFileTypes |= TYPE_WRITER;
+        mpAllRecentThumbnails->mnFileTypes |= sfx2::ApplicationType::TYPE_WRITER;
 
     if (aModuleOptions.IsModuleInstalled(SvtModuleOptions::EModule::CALC))
-        mpAllRecentThumbnails->mnFileTypes |= TYPE_CALC;
+        mpAllRecentThumbnails->mnFileTypes |= sfx2::ApplicationType::TYPE_CALC;
 
     if (aModuleOptions.IsModuleInstalled(SvtModuleOptions::EModule::IMPRESS))
-        mpAllRecentThumbnails->mnFileTypes |= TYPE_IMPRESS;
+        mpAllRecentThumbnails->mnFileTypes |= sfx2::ApplicationType::TYPE_IMPRESS;
 
     if (aModuleOptions.IsModuleInstalled(SvtModuleOptions::EModule::DRAW))
-        mpAllRecentThumbnails->mnFileTypes |= TYPE_DRAW;
+        mpAllRecentThumbnails->mnFileTypes |= sfx2::ApplicationType::TYPE_DRAW;
 
     if (aModuleOptions.IsModuleInstalled(SvtModuleOptions::EModule::DATABASE))
-        mpAllRecentThumbnails->mnFileTypes |= TYPE_DATABASE;
+        mpAllRecentThumbnails->mnFileTypes |= sfx2::ApplicationType::TYPE_DATABASE;
 
     if (aModuleOptions.IsModuleInstalled(SvtModuleOptions::EModule::MATH))
-        mpAllRecentThumbnails->mnFileTypes |= TYPE_MATH;
+        mpAllRecentThumbnails->mnFileTypes |= sfx2::ApplicationType::TYPE_MATH;
 
-    mpAllRecentThumbnails->mnFileTypes |= TYPE_OTHER;
+    mpAllRecentThumbnails->mnFileTypes |= sfx2::ApplicationType::TYPE_OTHER;
     mpAllRecentThumbnails->Reload();
     mpAllRecentThumbnails->ShowTooltips( true );
+    mpRecentButton->SetActive(true);
 
     //initialize Template view
     mpLocalView->SetStyle( mpLocalView->GetStyle() | WB_VSCROLL);
     mpLocalView->Hide();
 
-    mpTemplateButton->SetMenuMode( MENUBUTTON_MENUMODE_TIMED );
+    mpTemplateButton->SetDelayMenu(true);
+    mpTemplateButton->SetDropDown(PushButtonDropdownStyle::SplitMenuButton);
+    mpRecentButton->SetDelayMenu(true);
+    mpRecentButton->SetDropDown(PushButtonDropdownStyle::SplitMenuButton);
 
     //set handlers
     mpLocalView->setCreateContextMenuHdl(LINK(this, BackingWindow, CreateContextMenuHdl));
@@ -277,6 +283,8 @@ void BackingWindow::initControls()
     setupButton( mpDBAllButton );
     setupButton( mpImpressAllButton );
     setupButton( mpMathAllButton );
+
+    checkInstalledModules();
 
     mpExtensionsButton->SetClickHdl(LINK(this, BackingWindow, ExtLinkClickHdl));
 
@@ -340,7 +348,7 @@ void BackingWindow::setupButton( PushButton* pButton )
     pButton->SetClickHdl( LINK( this, BackingWindow, ClickHdl ) );
 }
 
-void BackingWindow::setupButton( MenuButton* pButton )
+void BackingWindow::setupButton( MenuToggleButton* pButton )
 {
     vcl::Font aFont(pButton->GetSettings().GetStyleSettings().GetPushButtonFont());
     aFont.SetFontSize(Size(0, aFont.GetFontSize().Height() * fMultiplier));
@@ -354,6 +362,23 @@ void BackingWindow::setupButton( MenuButton* pButton )
 
     pButton->SetClickHdl(LINK(this, BackingWindow, ClickHdl));
     pButton->SetSelectHdl(LINK(this, BackingWindow, MenuSelectHdl));
+}
+
+void BackingWindow::checkInstalledModules()
+{
+    SvtModuleOptions aModuleOpt;
+
+    mpWriterAllButton->Enable( aModuleOpt.IsModuleInstalled( SvtModuleOptions::EModule::WRITER ));
+
+    mpCalcAllButton->Enable( aModuleOpt.IsModuleInstalled( SvtModuleOptions::EModule::CALC ) );
+
+    mpImpressAllButton->Enable( aModuleOpt.IsModuleInstalled( SvtModuleOptions::EModule::IMPRESS ) );
+
+    mpDrawAllButton->Enable( aModuleOpt.IsModuleInstalled( SvtModuleOptions::EModule::DRAW ) );
+
+    mpMathAllButton->Enable(aModuleOpt.IsModuleInstalled( SvtModuleOptions::EModule::MATH ));
+
+    mpDBAllButton->Enable(aModuleOpt.IsModuleInstalled( SvtModuleOptions::EModule::DATABASE ));
 }
 
 void BackingWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
@@ -381,7 +406,7 @@ void BackingWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle&)
                               *pVDev.get());
 }
 
-bool BackingWindow::PreNotify( NotifyEvent& rNEvt )
+bool BackingWindow::PreNotify(NotifyEvent& rNEvt)
 {
     if( rNEvt.GetType() == MouseNotifyEvent::KEYINPUT )
     {
@@ -437,6 +462,10 @@ bool BackingWindow::PreNotify( NotifyEvent& rNEvt )
         const OUString aCommand = mpAccExec->findCommand(svt::AcceleratorExecute::st_VCLKey2AWTKey(rKeyCode));
         if ((aCommand != "vnd.sun.star.findbar:FocusToFindbar") && pEvt && mpAccExec->execute(rKeyCode))
             return true;
+    }
+    else if (rNEvt.GetType() == MouseNotifyEvent::COMMAND)
+    {
+        Accelerator::ToggleMnemonicsOnHierarchy(*rNEvt.GetCommandEvent(), this);
     }
 
     return Window::PreNotify( rNEvt );
@@ -495,7 +524,7 @@ void BackingWindow::Resize()
         Invalidate();
 }
 
-IMPL_LINK_TYPED(BackingWindow, ExtLinkClickHdl, Button*, pButton, void)
+IMPL_LINK(BackingWindow, ExtLinkClickHdl, Button*, pButton, void)
 {
     OUString aNode;
 
@@ -534,7 +563,7 @@ IMPL_LINK_TYPED(BackingWindow, ExtLinkClickHdl, Button*, pButton, void)
     }
 }
 
-IMPL_LINK_TYPED( BackingWindow, ClickHdl, Button*, pButton, void )
+IMPL_LINK( BackingWindow, ClickHdl, Button*, pButton, void )
 {
     // dispatch the appropriate URL and end the dialog
     if( pButton == mpWriterAllButton )
@@ -573,6 +602,9 @@ IMPL_LINK_TYPED( BackingWindow, ClickHdl, Button*, pButton, void )
         mpLocalView->Hide();
         mpAllRecentThumbnails->Show();
         mpAllRecentThumbnails->GrabFocus();
+        mpRecentButton->SetActive(true);
+        mpTemplateButton->SetActive(false);
+        mpTemplateButton->Invalidate();
     }
     else if( pButton == mpTemplateButton )
     {
@@ -582,46 +614,66 @@ IMPL_LINK_TYPED( BackingWindow, ClickHdl, Button*, pButton, void )
         mpLocalView->Show();
         mpLocalView->reload();
         mpLocalView->GrabFocus();
+        mpRecentButton->SetActive(false);
+        mpRecentButton->Invalidate();
+        mpTemplateButton->SetActive(true);
     }
 }
 
-IMPL_LINK_TYPED( BackingWindow, MenuSelectHdl, MenuButton*, pButton, void )
+IMPL_LINK( BackingWindow, MenuSelectHdl, MenuButton*, pButton, void )
 {
-    initializeLocalView();
-
-    OString sId = pButton->GetCurItemIdent();
-
-    if( sId == "filter_writer" )
+    if(pButton == mpRecentButton)
     {
-        mpLocalView->filterItems(ViewFilter_Application(FILTER_APPLICATION::WRITER));
+        SvtHistoryOptions().Clear(ePICKLIST);
+        mpAllRecentThumbnails->Reload();
+        return;
     }
-    else if( sId == "filter_calc" )
+    else if(pButton == mpTemplateButton)
     {
-        mpLocalView->filterItems(ViewFilter_Application(FILTER_APPLICATION::CALC));
-    }
-    else if( sId == "filter_impress" )
-    {
-        mpLocalView->filterItems(ViewFilter_Application(FILTER_APPLICATION::IMPRESS));
-    }
-    else if( sId == "filter_draw" )
-    {
-        mpLocalView->filterItems(ViewFilter_Application(FILTER_APPLICATION::DRAW));
-    }
-    else if( sId == "manage" )
-    {
-        Reference< XDispatchProvider > xFrame( mxFrame, UNO_QUERY );
+        initializeLocalView();
 
-        Sequence< css::beans::PropertyValue > aArgs(1);
-        PropertyValue* pArg = aArgs.getArray();
-        pArg[0].Name = "Referer";
-        pArg[0].Value <<= OUString("private:user");
+        OString sId = pButton->GetCurItemIdent();
 
-        dispatchURL( ".uno:NewDoc", OUString(), xFrame, aArgs );
+        if( sId == "filter_writer" )
+        {
+            mpLocalView->filterItems(ViewFilter_Application(FILTER_APPLICATION::WRITER));
+        }
+        else if( sId == "filter_calc" )
+        {
+            mpLocalView->filterItems(ViewFilter_Application(FILTER_APPLICATION::CALC));
+        }
+        else if( sId == "filter_impress" )
+        {
+            mpLocalView->filterItems(ViewFilter_Application(FILTER_APPLICATION::IMPRESS));
+        }
+        else if( sId == "filter_draw" )
+        {
+            mpLocalView->filterItems(ViewFilter_Application(FILTER_APPLICATION::DRAW));
+        }
+        else if( sId == "manage" )
+        {
+            Reference< XDispatchProvider > xFrame( mxFrame, UNO_QUERY );
 
+            Sequence< css::beans::PropertyValue > aArgs(1);
+            PropertyValue* pArg = aArgs.getArray();
+            pArg[0].Name = "Referer";
+            pArg[0].Value <<= OUString("private:user");
+
+            dispatchURL( ".uno:NewDoc", OUString(), xFrame, aArgs );
+            return;
+        }
+
+        mpAllRecentThumbnails->Hide();
+        mpLocalView->Show();
+        mpLocalView->reload();
+        mpLocalView->GrabFocus();
+        mpRecentButton->SetActive(false);
+        mpTemplateButton->SetActive(true);
+        mpRecentButton->Invalidate();
     }
 }
 
-IMPL_LINK_TYPED(BackingWindow, CreateContextMenuHdl, ThumbnailViewItem*, pItem, void)
+IMPL_LINK(BackingWindow, CreateContextMenuHdl, ThumbnailViewItem*, pItem, void)
 {
     const TemplateViewItem *pViewItem = dynamic_cast<TemplateViewItem*>(pItem);
 
@@ -629,7 +681,7 @@ IMPL_LINK_TYPED(BackingWindow, CreateContextMenuHdl, ThumbnailViewItem*, pItem, 
         mpLocalView->createContextMenu();
 }
 
-IMPL_LINK_TYPED(BackingWindow, OpenTemplateHdl, ThumbnailViewItem*, pItem, void)
+IMPL_LINK(BackingWindow, OpenTemplateHdl, ThumbnailViewItem*, pItem, void)
 {
     uno::Sequence< PropertyValue > aArgs(4);
     aArgs[0].Name = "AsTemplate";
@@ -654,7 +706,7 @@ IMPL_LINK_TYPED(BackingWindow, OpenTemplateHdl, ThumbnailViewItem*, pItem, void)
     }
 }
 
-IMPL_LINK_TYPED(BackingWindow, EditTemplateHdl, ThumbnailViewItem*, pItem, void)
+IMPL_LINK(BackingWindow, EditTemplateHdl, ThumbnailViewItem*, pItem, void)
 {
     uno::Sequence< PropertyValue > aArgs(3);
     aArgs[0].Name = "AsTemplate";

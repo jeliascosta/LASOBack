@@ -143,7 +143,7 @@ OUString SvxFont::CalcCaseMap(const OUString &rTxt) const
         }
         default:
         {
-            DBG_ASSERT(false, "SvxFont::CaseMapTxt: unknown casemap");
+            SAL_WARN( "editeng", "SvxFont::CaseMapTxt: unknown casemap");
             break;
         }
     }
@@ -588,7 +588,7 @@ public:
               nKern( _nKrn )
             { }
 
-    virtual ~SvxDoGetCapitalSize() {}
+    virtual ~SvxDoGetCapitalSize() override {}
 
     virtual void Do( const OUString &rTxt, const sal_Int32 nIdx,
                      const sal_Int32 nLen, const bool bUpper ) override;

@@ -129,6 +129,8 @@ private:
     bool            bTableOpDirty  : 1; // Dirty flag for TableOp
     bool            bNeedListening : 1; // Listeners need to be re-established after UpdateReference
     bool            mbNeedsNumberFormat : 1; // set the calculated number format as hard number format
+    bool            mbAllowNumberFormatChange : 1; /* allow setting further calculated
+                                                      number formats as hard number format */
     bool            mbPostponedDirty : 1;   // if cell needs to be set dirty later
     bool            mbIsExtRef       : 1; // has references in ScExternalRefManager; never cleared after set
 
@@ -155,7 +157,7 @@ public:
 
     ScAddress       aPos;
 
-                    virtual ~ScFormulaCell();
+                    virtual ~ScFormulaCell() override;
 
     ScFormulaCell* Clone() const;
     ScFormulaCell* Clone( const ScAddress& rPos ) const;
@@ -188,7 +190,7 @@ public:
                     const formula::FormulaGrammar::Grammar = formula::FormulaGrammar::GRAM_DEFAULT,
                     sal_uInt8 cMatInd = MM_NONE );
 
-    ScFormulaCell( const ScFormulaCell& rCell, ScDocument& rDoc, const ScAddress& rPos, int nCloneFlags = SC_CLONECELL_DEFAULT );
+    ScFormulaCell(const ScFormulaCell& rCell, ScDocument& rDoc, const ScAddress& rPos, ScCloneFlags nCloneFlags = ScCloneFlags::Default);
 
     size_t GetHash() const;
 
@@ -217,8 +219,8 @@ public:
     bool NeedsNumberFormat() const { return mbNeedsNumberFormat;}
     short GetFormatType() const { return nFormatType; }
     void            Compile(const OUString& rFormula,
-                            bool bNoListening = false,
-                            const formula::FormulaGrammar::Grammar = formula::FormulaGrammar::GRAM_DEFAULT );
+                            bool bNoListening,
+                            const formula::FormulaGrammar::Grammar );
     void Compile(
         sc::CompileFormulaContext& rCxt, const OUString& rFormula, bool bNoListening = false );
 
@@ -283,7 +285,7 @@ public:
     void            UpdateDeleteTab( sc::RefUpdateDeleteTabContext& rCxt );
     void            UpdateMoveTab( sc::RefUpdateMoveTabContext& rCxt, SCTAB nTabNo );
     bool            TestTabRefAbs(SCTAB nTable);
-    void            UpdateCompile( bool bForceIfNameInUse = false );
+    void            UpdateCompile( bool bForceIfNameInUse );
     void            FindRangeNamesInUse(sc::UpdatedRangeNames& rIndexes) const;
     bool            IsSubTotal() const { return bSubTotal;}
     bool            IsChanged() const { return bChanged;}
@@ -294,20 +296,19 @@ public:
     bool            IsValue();      // also true if formula::svEmptyCell
     bool            IsValueNoError();
     bool            IsValueNoError() const;
-    bool            IsHybridValueCell(); // for cells after import to deal with inherited number formats
     double          GetValue();
     svl::SharedString GetString();
     const ScMatrix* GetMatrix();
     bool            GetMatrixOrigin( ScAddress& rPos ) const;
     void            GetResultDimensions( SCSIZE& rCols, SCSIZE& rRows );
-    sal_uInt16 GetMatrixEdge( ScAddress& rOrgPos ) const;
-    sal_uInt16      GetErrCode();   // interpret first if necessary
-    sal_uInt16      GetRawError();  // don't interpret, just return code or result error
-    bool GetErrorOrValue( sal_uInt16& rErr, double& rVal );
+    sc::MatrixEdge  GetMatrixEdge( ScAddress& rOrgPos ) const;
+    FormulaError    GetErrCode();   // interpret first if necessary
+    FormulaError    GetRawError();  // don't interpret, just return code or result error
+    bool            GetErrorOrValue( FormulaError& rErr, double& rVal );
     sc::FormulaResultValue GetResult();
     sc::FormulaResultValue GetResult() const;
     sal_uInt8       GetMatrixFlag() const { return cMatrixFlag;}
-    ScTokenArray* GetCode() { return pCode;}
+    ScTokenArray*   GetCode() { return pCode;}
     const ScTokenArray* GetCode() const { return pCode;}
 
     void SetCode( ScTokenArray* pNew );
@@ -346,6 +347,13 @@ public:
         SetHybridString() or SetHybridFormula(), use SetHybridDouble() first
         for performance reasons.*/
     void SetHybridString( const svl::SharedString& r );
+    /** For import only: set an empty cell result to be displayed as empty string.
+        If for whatever reason you have to use both, SetHybridDouble() and
+        SetHybridEmptyDisplayedAsString() or SetHybridFormula(), use
+        SetHybridDouble() first for performance reasons and use
+        SetHybridEmptyDisplayedAsString() last because SetHybridDouble() and
+        SetHybridString() will override it.*/
+    void SetHybridEmptyDisplayedAsString();
     /** For import only: set a temporary formula string to be compiled later.
         If for whatever reason you have to use both, SetHybridDouble() and
         SetHybridString() or SetHybridFormula(), use SetHybridDouble() first
@@ -369,10 +377,10 @@ public:
     svl::SharedString GetResultString() const;
 
     /* Sets the shared code array to error state in addition to the cell result */
-    void SetErrCode( sal_uInt16 n );
+    void SetErrCode( FormulaError n );
 
     /* Sets just the result to error */
-    void SetResultError( sal_uInt16 n );
+    void SetResultError( FormulaError n );
 
     bool IsHyperLinkCell() const;
     EditTextObject* CreateURLObject();

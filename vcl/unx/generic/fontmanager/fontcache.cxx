@@ -50,7 +50,7 @@ using namespace utl;
 FontCache::FontCache()
 {
     m_bDoFlush = false;
-    m_aCacheFile = getOfficePath( UserPath );
+    m_aCacheFile = getOfficePath( whichOfficePath::UserPath );
     if( !m_aCacheFile.isEmpty() )
     {
         m_aCacheFile += "/user/psprint/pspfontcache";
@@ -76,7 +76,7 @@ void FontCache::clearCache()
     {
         for( FontDirMap::iterator entry_it = dir_it->second.m_aEntries.begin(); entry_it != dir_it->second.m_aEntries.end(); ++entry_it )
         {
-            for( FontCacheEntry::iterator font_it = entry_it->second.m_aEntry.begin(); font_it != entry_it->second.m_aEntry.end(); ++font_it )
+            for( std::list< PrintFontManager::PrintFont* >::iterator font_it = entry_it->second.m_aEntry.begin(); font_it != entry_it->second.m_aEntry.end(); ++font_it )
                 delete *font_it;
         }
     }
@@ -124,7 +124,7 @@ void FontCache::flush()
         for( FontDirMap::const_iterator entry_it = rDir.begin(); entry_it != rDir.end(); ++entry_it )
         {
             // insert cache entries
-            const FontCacheEntry& rEntry( entry_it->second.m_aEntry );
+            const std::list< PrintFontManager::PrintFont* >& rEntry( entry_it->second.m_aEntry );
             if( rEntry.empty() )
                 continue;
 
@@ -140,7 +140,7 @@ void FontCache::flush()
             aStream.WriteLine(aLine.makeStringAndClear());
 
             sal_Int32 nSubEntry = 0;
-            for( FontCacheEntry::const_iterator it = rEntry.begin(); it != rEntry.end(); ++it, nSubEntry++ )
+            for( std::list< PrintFontManager::PrintFont* >::const_iterator it = rEntry.begin(); it != rEntry.end(); ++it, nSubEntry++ )
             {
                 /*
                  *  for each font entry write:
@@ -153,9 +153,9 @@ void FontCache::flush()
                     nSubEntry = 0;
 
                 aLine.append(OUStringToOString(pAtoms->getString( ATOM_FAMILYNAME, (*it)->m_nFamilyName), RTL_TEXTENCODING_UTF8));
-                for( ::std::list< int >::const_iterator name_it = (*it)->m_aAliases.begin(); name_it != (*it)->m_aAliases.end(); ++name_it )
+                for( int name : (*it)->m_aAliases )
                 {
-                    const OUString& rAdd( pAtoms->getString( ATOM_FAMILYNAME, *name_it ) );
+                    const OUString& rAdd( pAtoms->getString( ATOM_FAMILYNAME, name ) );
                     if( !rAdd.isEmpty() )
                     {
                         aLine.append(';');
@@ -463,7 +463,7 @@ void FontCache::read()
                     continue;
                 }
 
-                FontCacheEntry& rEntry = (*pDir)[aFile].m_aEntry;
+                std::list< PrintFontManager::PrintFont* >& rEntry = (*pDir)[aFile].m_aEntry;
                 rEntry.push_back( pFont );
             }
         }
@@ -567,7 +567,7 @@ bool FontCache::equalsPrintFont( const PrintFontManager::PrintFont* pLeft, Print
         pRight->m_bUserOverride     != pLeft->m_bUserOverride
         )
         return false;
-    std::list< int >::const_iterator lit, rit;
+    std::vector< int >::const_iterator lit, rit;
     for( lit = pLeft->m_aAliases.begin(), rit = pRight->m_aAliases.begin();
          lit != pLeft->m_aAliases.end() && rit != pRight->m_aAliases.end() && (*lit) == (*rit);
          ++lit, ++rit )
@@ -611,7 +611,7 @@ bool FontCache::getFontCacheFile( int nDirID, const OString& rFile, list< PrintF
         FontDirMap::const_iterator entry = dir->second.m_aEntries.find( rFile );
         if( entry != dir->second.m_aEntries.end() )
         {
-            for( FontCacheEntry::const_iterator font = entry->second.m_aEntry.begin(); font != entry->second.m_aEntry.end(); ++font )
+            for( std::list< PrintFontManager::PrintFont* >::const_iterator font = entry->second.m_aEntry.begin(); font != entry->second.m_aEntry.end(); ++font )
             {
                 bSuccess = true;
                 PrintFontManager::PrintFont* pFont = clonePrintFont( *font );
@@ -644,7 +644,7 @@ void FontCache::updateFontCacheEntry( const PrintFontManager::PrintFont* pFont, 
     }
     FontCacheData::const_iterator dir = m_aCache.find( nDirID );
     FontDirMap::const_iterator entry;
-    FontCacheEntry::const_iterator font;
+    std::list< PrintFontManager::PrintFont* >::const_iterator font;
     PrintFontManager::PrintFont* pCacheFont = nullptr;
 
     if( dir != m_aCache.end() )
@@ -700,7 +700,7 @@ bool FontCache::listDirectory( const OString& rDir, std::list< PrintFontManager:
     {
         for( FontDirMap::const_iterator file = dir->second.m_aEntries.begin(); file != dir->second.m_aEntries.end(); ++file )
         {
-            for( FontCacheEntry::const_iterator font = file->second.m_aEntry.begin(); font != file->second.m_aEntry.end(); ++font )
+            for( std::list< PrintFontManager::PrintFont* >::const_iterator font = file->second.m_aEntry.begin(); font != file->second.m_aEntry.end(); ++font )
             {
                 PrintFontManager::PrintFont* pFont = clonePrintFont( *font );
                 rNewFonts.push_back( pFont );

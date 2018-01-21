@@ -23,6 +23,7 @@
 #include <sal/config.h>
 
 #include <set>
+#include <stack>
 
 #include <xmloff/dllapi.h>
 #include <sal/types.h>
@@ -31,6 +32,7 @@
 #include <com/sun/star/xml/sax/XExtendedDocumentHandler.hpp>
 #include <com/sun/star/xml/sax/SAXException.hpp>
 #include <com/sun/star/xml/sax/XAttributeList.hpp>
+#include <com/sun/star/xml/sax/XFastParser.hpp>
 #include <com/sun/star/xml/sax/XLocator.hpp>
 #include <com/sun/star/lang/XUnoTunnel.hpp>
 #include <com/sun/star/util/XNumberFormatsSupplier.hpp>
@@ -48,8 +50,9 @@
 #include <xmloff/shapeimport.hxx>
 #include <xmloff/SchXMLImportHelper.hxx>
 #include <xmloff/ProgressBarHelper.hxx>
-#include <cppuhelper/implbase7.hxx>
+#include <cppuhelper/implbase8.hxx>
 #include <xmloff/formlayerimport.hxx>
+#include <comphelper/attributelist.hxx>
 
 #include <com/sun/star/beans/NamedValue.hpp>
 
@@ -58,6 +61,12 @@
 #include <com/sun/star/xml/sax/XFastAttributeList.hpp>
 #include <o3tl/typed_flags_set.hxx>
 #include <memory>
+
+#define NAMESPACE_TOKEN( prefixToken ) ( ( sal_Int32( prefixToken + 1 ) ) << NMSP_SHIFT )
+
+const size_t NMSP_SHIFT = 16;
+const sal_Int32 TOKEN_MASK = 0xffff;
+const sal_Int32 NMSP_MASK = 0xffff0000;
 
 namespace com { namespace sun { namespace star {
     namespace frame { class XModel; }
@@ -77,8 +86,8 @@ class XMLErrors;
 class StyleMap;
 enum class SvXMLErrorFlags;
 
-typedef std::vector<SvXMLImportContext *> SvXMLImportContexts_Impl;
-typedef std::vector< ::css::uno::Reference< ::css::xml::sax::XFastContextHandler>>
+typedef std::stack<SvXMLImportContextRef> SvXMLImportContexts_Impl;
+typedef std::stack<css::uno::Reference<css::xml::sax::XFastContextHandler>>
             FastSvXMLImportContexts_Impl;
 
 namespace xmloff {
@@ -103,15 +112,39 @@ namespace o3tl
     template<> struct typed_flags<SvXMLImportFlags> : is_typed_flags<SvXMLImportFlags, 0xffff> {};
 }
 
+class SvXMLImportFastNamespaceHandler : public ::cppu::WeakImplHelper< css::xml::sax::XFastNamespaceHandler >
+{
+private:
+    struct NamespaceDefine
+    {
+        OUString    m_aPrefix;
+        OUString    m_aNamespaceURI;
 
-class XMLOFF_DLLPUBLIC SvXMLImport : public ::cppu::WeakImplHelper7<
+        NamespaceDefine( const OUString& rPrefix, const OUString& rNamespaceURI ) : m_aPrefix( rPrefix ), m_aNamespaceURI( rNamespaceURI ) {}
+    };
+    std::vector< std::unique_ptr< NamespaceDefine > > m_aNamespaceDefines;
+
+public:
+    SvXMLImportFastNamespaceHandler();
+    void addNSDeclAttributes( rtl::Reference < comphelper::AttributeList >& rAttrList );
+
+    //XFastNamespaceHandler
+    virtual void SAL_CALL registerNamespace( const OUString& rNamespacePrefix, const OUString& rNamespaceURI )
+                            throw (css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getNamespaceURI( const OUString& rNamespacePrefix )
+                            throw (css::uno::RuntimeException, std::exception) override;
+};
+
+
+class XMLOFF_DLLPUBLIC SvXMLImport : public ::cppu::WeakImplHelper8<
              css::xml::sax::XExtendedDocumentHandler,
              css::xml::sax::XFastDocumentHandler,
              css::lang::XServiceInfo,
              css::lang::XInitialization,
              css::document::XImporter,
              css::document::XFilter,
-             css::lang::XUnoTunnel>
+             css::lang::XUnoTunnel,
+             css::xml::sax::XFastParser>
 {
     friend class SvXMLImportContext;
 
@@ -143,15 +176,15 @@ class XMLOFF_DLLPUBLIC SvXMLImport : public ::cppu::WeakImplHelper7<
 
     std::unique_ptr<SvXMLImport_Impl>  mpImpl;            // dummy
 
-    SvXMLNamespaceMap           *mpNamespaceMap;
-    SvXMLUnitConverter          *mpUnitConv;
-    SvXMLImportContexts_Impl    *mpContexts;
-    FastSvXMLImportContexts_Impl    *mpFastContexts;
-    SvXMLNumFmtHelper           *mpNumImport;
-    ProgressBarHelper           *mpProgressBarHelper;
-    XMLEventImportHelper        *mpEventImportHelper;
-    XMLErrors                   *mpXMLErrors;
-    StyleMap                    *mpStyleMap;
+    std::unique_ptr<SvXMLNamespaceMap> mpNamespaceMap;
+    std::unique_ptr<SvXMLUnitConverter> mpUnitConv;
+    SvXMLImportContexts_Impl    maContexts;
+    FastSvXMLImportContexts_Impl    maFastContexts;
+    std::unique_ptr<SvXMLNumFmtHelper> mpNumImport;
+    std::unique_ptr<ProgressBarHelper> mpProgressBarHelper;
+    std::unique_ptr<XMLEventImportHelper> mpEventImportHelper;
+    std::unique_ptr<XMLErrors>  mpXMLErrors;
+    rtl::Reference<StyleMap>    mpStyleMap;
     OUString                    msPackageProtocol;
 
     SAL_DLLPRIVATE void InitCtor_();
@@ -159,10 +192,23 @@ class XMLOFF_DLLPUBLIC SvXMLImport : public ::cppu::WeakImplHelper7<
     SvXMLImportFlags  mnImportFlags;
     SvXMLErrorFlags  mnErrorFlags;
     std::set< OUString > embeddedFontUrlsKnown;
-
-protected:
+    bool isFastContext;
+    css::uno::Reference< css::xml::sax::XFastParser > mxParser;
+    rtl::Reference< SvXMLImportFastNamespaceHandler > maNamespaceHandler;
+    css::uno::Reference< css::xml::sax::XFastDocumentHandler > mxFastDocumentHandler;
+    css::uno::Reference< css::xml::sax::XFastTokenHandler > mxTokenHandler;
+    std::unordered_map< sal_Int32, OUString > maNamespaceMap;
+    const OUString getNameFromToken( sal_Int32 nToken );
+    const OUString getNamespacePrefixFromToken( sal_Int32 nToken );
+    void registerNamespaces();
+    void registerNSHelper(sal_Int32 nToken, sal_Int32 nPrefix, sal_Int32 nNamespace );
+    std::unique_ptr<SvXMLNamespaceMap> processNSAttributes(
+        const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList);
+    void Characters(const OUString& aChars);
 
     css::uno::Reference< css::task::XStatusIndicator > mxStatusIndicator;
+
+protected:
     bool                        mbIsFormsSupported;
     bool                        mbIsTableShapeSupported;
     bool                        mbIsGraphicLoadOnDemandSupported;
@@ -206,11 +252,9 @@ public:
     SvXMLImport(
         const css::uno::Reference< css::uno::XComponentContext >& xContext,
         OUString const & implementationName,
-        SvXMLImportFlags nImportFlags = SvXMLImportFlags::ALL ) throw();
+        SvXMLImportFlags nImportFlags = SvXMLImportFlags::ALL );
 
-    virtual ~SvXMLImport() throw();
-
-    static const css::uno::Sequence< sal_Int8 > & getUnoTunnelId() throw();
+    virtual ~SvXMLImport() throw() override;
 
     // css::xml::sax::XDocumentHandler
     virtual void SAL_CALL startDocument()
@@ -268,6 +312,17 @@ public:
     virtual void SAL_CALL unknown(const OUString& sString)
         throw( css::xml::sax::SAXException, css::uno::RuntimeException, std::exception ) override;
 
+    // XFastParser
+    virtual void SAL_CALL parseStream( const css::xml::sax::InputSource& aInputSource ) throw (css::xml::sax::SAXException, css::io::IOException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setFastDocumentHandler( const css::uno::Reference< css::xml::sax::XFastDocumentHandler >& Handler ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setTokenHandler( const css::uno::Reference< css::xml::sax::XFastTokenHandler >& Handler ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL registerNamespace( const OUString& NamespaceURL, sal_Int32 NamespaceToken ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual OUString SAL_CALL getNamespaceURL( const OUString& rPrefix ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setErrorHandler( const css::uno::Reference< css::xml::sax::XErrorHandler >& Handler ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setEntityResolver( const css::uno::Reference< css::xml::sax::XEntityResolver >& Resolver ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setLocale( const css::lang::Locale& rLocale ) throw (css::uno::RuntimeException, std::exception) override;
+    virtual void SAL_CALL setNamespaceHandler( const css::uno::Reference< css::xml::sax::XFastNamespaceHandler >& Handler) throw (css::uno::RuntimeException, std::exception) override;
+
     // XImporter
     virtual void SAL_CALL setTargetDocument( const css::uno::Reference< css::lang::XComponent >& xDoc ) throw(css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
@@ -296,18 +351,18 @@ public:
     virtual void SetStatistics(const css::uno::Sequence< css::beans::NamedValue > & i_rStats);
 
     // get import helper for text
-    inline rtl::Reference< XMLTextImportHelper > GetTextImport();
+    inline rtl::Reference< XMLTextImportHelper > const & GetTextImport();
     bool HasTextImport() const { return mxTextImport.is(); }
     inline SvXMLNumFmtHelper* GetDataStylesImport();
 
     // get import helper for shapes
-    inline rtl::Reference< XMLShapeImportHelper > GetShapeImport();
+    inline rtl::Reference< XMLShapeImportHelper > const & GetShapeImport();
 
     // get import helper for charts
-    inline rtl::Reference< SchXMLImportHelper > GetChartImport();
+    inline rtl::Reference< SchXMLImportHelper > const & GetChartImport();
 
     // get import helper for form layer
-    inline rtl::Reference< ::xmloff::OFormLayerXMLImport > GetFormImport();
+    inline rtl::Reference< ::xmloff::OFormLayerXMLImport > const & GetFormImport();
 
     // get XPropertySet with import information
     const css::uno::Reference< css::beans::XPropertySet >& getImportInfo() const { return mxImportInfo; }
@@ -427,9 +482,6 @@ public:
     OUString GetBaseURL() const;
     OUString GetDocumentBase() const;
 
-    /// name of stream in package, e.g., "content.xml"
-    OUString GetStreamName() const;
-
     /// set the XmlId attribute of given UNO object (for RDF metadata)
     void SetXmlId(css::uno::Reference<
                   css::uno::XInterface> const & i_xIfc,
@@ -520,7 +572,7 @@ public:
     bool needFixPositionAfterZ() const;
 };
 
-inline rtl::Reference< XMLTextImportHelper > SvXMLImport::GetTextImport()
+inline rtl::Reference< XMLTextImportHelper > const & SvXMLImport::GetTextImport()
 {
     if( !mxTextImport.is() )
         mxTextImport = CreateTextImport();
@@ -528,7 +580,7 @@ inline rtl::Reference< XMLTextImportHelper > SvXMLImport::GetTextImport()
     return mxTextImport;
 }
 
-inline rtl::Reference< XMLShapeImportHelper > SvXMLImport::GetShapeImport()
+inline rtl::Reference< XMLShapeImportHelper > const & SvXMLImport::GetShapeImport()
 {
     if( !mxShapeImport.is() )
         mxShapeImport = CreateShapeImport();
@@ -536,7 +588,7 @@ inline rtl::Reference< XMLShapeImportHelper > SvXMLImport::GetShapeImport()
     return mxShapeImport;
 }
 
-inline rtl::Reference< SchXMLImportHelper > SvXMLImport::GetChartImport()
+inline rtl::Reference< SchXMLImportHelper > const & SvXMLImport::GetChartImport()
 {
     if( !mxChartImport.is() )
         mxChartImport = CreateChartImport();
@@ -544,7 +596,7 @@ inline rtl::Reference< SchXMLImportHelper > SvXMLImport::GetChartImport()
     return mxChartImport;
 }
 
-inline rtl::Reference< ::xmloff::OFormLayerXMLImport > SvXMLImport::GetFormImport()
+inline rtl::Reference< ::xmloff::OFormLayerXMLImport > const & SvXMLImport::GetFormImport()
 {
     if( !mxFormImport.is() )
         mxFormImport = CreateFormImport();
@@ -574,10 +626,10 @@ inline css::uno::Reference< css::util::XNumberFormatsSupplier > & SvXMLImport::G
 
 inline SvXMLNumFmtHelper* SvXMLImport::GetDataStylesImport()
 {
-    if ( mpNumImport == nullptr)
+    if ( !mpNumImport )
         CreateDataStylesImport_();
 
-    return mpNumImport;
+    return mpNumImport.get();
 }
 
 

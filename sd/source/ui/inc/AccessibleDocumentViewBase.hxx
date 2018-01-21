@@ -114,7 +114,7 @@ public:
         const css::uno::Reference<css::frame::XController>& rxController,
         const css::uno::Reference<css::accessibility::XAccessible>& rxParent);
 
-    virtual ~AccessibleDocumentViewBase();
+    virtual ~AccessibleDocumentViewBase() override;
 
     /** Initialize a new object.  Call this method directly after creating a
         new object.  It finished the initialization begun in the constructor
@@ -125,7 +125,7 @@ public:
     /** Define callback for listening to window child events of VCL.
         Listen for creation or destruction of OLE objects.
     */
-    DECL_LINK_TYPED( WindowChildEventListener, VclWindowEvent&, void );
+    DECL_LINK( WindowChildEventListener, VclWindowEvent&, void );
 
     //=====  IAccessibleViewForwarderListener  ================================
 
@@ -134,8 +134,7 @@ public:
         windowResized... methods it will be sufficient in most cases just to
         override this method.
      */
-    virtual void ViewForwarderChanged (ChangeType aChangeType,
-        const IAccessibleViewForwarder* pViewForwarder) override;
+    virtual void ViewForwarderChanged() override;
 
     //=====  XAccessibleContext  ==============================================
 

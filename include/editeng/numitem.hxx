@@ -33,6 +33,7 @@
 #include <unotools/fontcvt.hxx>
 #include <editeng/editengdllapi.h>
 #include <o3tl/typed_flags_set.hxx>
+#include <algorithm>
 
 class SvxBrushItem;
 namespace vcl { class Font; }
@@ -47,6 +48,8 @@ namespace com{namespace sun{ namespace star{
 
 #define SVX_NO_NUM              200 // Marker for no numbering
 #define SVX_NO_NUMLEVEL         0x20
+#define SVX_NUM_REL_SIZE_MIN    25 // Lower limit for numbering relative size
+
 
 #define LINK_TOKEN  0x80 //indicate linked bitmaps - for use in dialog only
 class EDITENG_DLLPUBLIC SvxNumberType
@@ -168,7 +171,7 @@ public:
     const vcl::Font* GetBulletFont() const {return pBulletFont;}
     void            SetBulletChar(sal_Unicode cSet){cBullet = cSet;}
     sal_Unicode     GetBulletChar()const {return cBullet;}
-    void            SetBulletRelSize(sal_uInt16 nSet) {nBulletRelSize = nSet;}
+    void            SetBulletRelSize(sal_uInt16 nSet) {nBulletRelSize = std::max(nSet, sal_uInt16(SVX_NUM_REL_SIZE_MIN));}
     sal_uInt16          GetBulletRelSize() const { return nBulletRelSize;}
     void            SetBulletColor(Color nSet){nBulletColor = nSet;}
     const Color&    GetBulletColor()const {return nBulletColor;}
@@ -181,8 +184,7 @@ public:
     virtual void    SetGraphicBrush( const SvxBrushItem* pBrushItem, const Size* pSize = nullptr, const sal_Int16* pOrient = nullptr);
     const SvxBrushItem*         GetBrush() const {return pGraphicBrush;}
     void            SetGraphic( const OUString& rName );
-    virtual void        SetVertOrient(sal_Int16 eSet);
-    virtual sal_Int16   GetVertOrient() const;
+    sal_Int16       GetVertOrient() const;
     void            SetGraphicSize(const Size& rSet) {aGraphicSize = rSet;}
     const Size&     GetGraphicSize() const {return aGraphicSize;}
 
@@ -236,7 +238,7 @@ enum class SvxNumRuleType
     END
 };
 
-class EDITENG_DLLPUBLIC SvxNumRule
+class EDITENG_DLLPUBLIC SvxNumRule final
 {
     sal_uInt16          nLevelCount;            // Number of supported levels
     SvxNumRuleFlags     nFeatureFlags;          // What is supported?
@@ -258,7 +260,7 @@ public:
                                 = SvxNumberFormat::LABEL_WIDTH_AND_POSITION );
     SvxNumRule(const SvxNumRule& rCopy);
     SvxNumRule(SvStream &rStream);
-    virtual ~SvxNumRule();
+    ~SvxNumRule();
 
     bool                    operator==( const SvxNumRule& ) const;
     bool                    operator!=( const SvxNumRule& rRule ) const {return !(*this == rRule);}
@@ -266,6 +268,7 @@ public:
     SvxNumRule&             operator=( const SvxNumRule&  );
 
     void                    Store(SvStream &rStream);
+    void                    dumpAsXml(struct _xmlTextWriter* pWriter) const;
     const SvxNumberFormat*  Get(sal_uInt16 nLevel)const;
     const SvxNumberFormat&  GetLevel(sal_uInt16 nLevel)const;
     void                    SetLevel(sal_uInt16 nLevel, const SvxNumberFormat& rFmt, bool bIsValid = true);
@@ -296,7 +299,7 @@ public:
     explicit SvxNumBulletItem(SvxNumRule& rRule);
     SvxNumBulletItem(SvxNumRule& rRule, sal_uInt16 nWhich );
     SvxNumBulletItem(const SvxNumBulletItem& rCopy);
-    virtual ~SvxNumBulletItem();
+    virtual ~SvxNumBulletItem() override;
 
     virtual SfxPoolItem*     Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*     Create(SvStream &rStream, sal_uInt16 nItemVersion) const override;
@@ -308,17 +311,16 @@ public:
 
     virtual bool            QueryValue( css::uno::Any& rVal, sal_uInt8 nMemberId = 0 ) const override;
     virtual bool            PutValue( const css::uno::Any& rVal, sal_uInt8 nMemberId ) override;
+    virtual void            dumpAsXml(struct _xmlTextWriter* pWriter) const override;
 };
 
 class SvxNodeNum
 {
     sal_uInt16 nLevelVal[ SVX_MAX_NUM ];    // Numbers of all levels
-    sal_uInt16 nSetValue;                   // predetermined number
-    sal_uInt8  nMyLevel;                     // Current Level
-    bool       bStartNum;                     // Restart numbering
+    sal_uInt8  nMyLevel;                    // Current Level
 
 public:
-    explicit inline SvxNodeNum( sal_uInt16 nSetVal = USHRT_MAX );
+    explicit inline SvxNodeNum();
     inline SvxNodeNum& operator=( const SvxNodeNum& rCpy );
 
     sal_uInt8 GetLevel() const                  { return nMyLevel; }
@@ -328,8 +330,8 @@ public:
           sal_uInt16* GetLevelVal()             { return nLevelVal; }
 };
 
-SvxNodeNum::SvxNodeNum( sal_uInt16 nSetVal )
-    : nSetValue( nSetVal ), nMyLevel( 0 ), bStartNum( false )
+SvxNodeNum::SvxNodeNum()
+    : nMyLevel( 0 )
 {
     memset( nLevelVal, 0, sizeof( nLevelVal ) );
 }
@@ -338,9 +340,7 @@ inline SvxNodeNum& SvxNodeNum::operator=( const SvxNodeNum& rCpy )
 {
     if ( &rCpy != this)
     {
-        nSetValue = rCpy.nSetValue;
         nMyLevel = rCpy.nMyLevel;
-        bStartNum = rCpy.bStartNum;
 
         memcpy( nLevelVal, rCpy.nLevelVal, sizeof( nLevelVal ) );
     }

@@ -60,7 +60,7 @@ private:
 public:
 
                             DynamicErrorInfo(sal_uIntPtr lUserId, sal_uInt16 nMask);
-    virtual                 ~DynamicErrorInfo();
+    virtual                 ~DynamicErrorInfo() override;
 
     operator                sal_uIntPtr() const;
     sal_uInt16              GetDialogMask() const;
@@ -88,10 +88,10 @@ private:
 public:
 
     TwoStringErrorInfo(sal_uIntPtr nUserID, const OUString & rTheArg1,
-                       const OUString & rTheArg2, sal_uInt16 nMask = 0):
+                       const OUString & rTheArg2, sal_uInt16 nMask):
         DynamicErrorInfo(nUserID, nMask), aArg1(rTheArg1), aArg2(rTheArg2) {}
 
-    virtual ~TwoStringErrorInfo() {}
+    virtual ~TwoStringErrorInfo() override {}
 
     const OUString& GetArg1() const { return aArg1; }
     const OUString& GetArg2() const { return aArg2; }
@@ -106,7 +106,7 @@ private:
     std::unique_ptr<ErrorContextImpl> pImpl;
 
 public:
-                            ErrorContext(vcl::Window *pWin=nullptr);
+                            ErrorContext(vcl::Window *pWin);
     virtual                 ~ErrorContext();
 
     virtual bool            GetString( sal_uIntPtr nErrId, OUString& rCtxStr ) = 0;
@@ -126,8 +126,6 @@ class TOOLS_DLLPUBLIC ErrorHandler
     friend class ErrorHandler_Impl;
 
 private:
-    std::unique_ptr<ErrorHandler_Impl>  pImpl;
-
     static sal_uInt16   HandleError_Impl( sal_uIntPtr lId,
                               sal_uInt16 nFlags,
                               bool bJustCreateString,

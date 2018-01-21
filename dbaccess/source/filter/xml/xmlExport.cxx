@@ -1260,16 +1260,6 @@ void ODBExport::ExportAutoStyles_()
     }
 }
 
-void ODBExport::ExportStyles_(bool bUsed)
-{
-    SvXMLExport::ExportStyles_(bUsed);
-}
-
-sal_uInt32 ODBExport::exportDoc(enum ::xmloff::token::XMLTokenEnum eClass)
-{
-    return SvXMLExport::exportDoc( eClass );
-}
-
 void ODBExport::GetViewSettings(Sequence<PropertyValue>& aProps)
 {
     Reference<XQueryDefinitionsSupplier> xSup(getDataSource(),UNO_QUERY);
@@ -1365,7 +1355,7 @@ OUString ODBExport::implConvertAny(const Any& _rValue)
     return aBuffer.makeStringAndClear();
 }
 
-rtl::Reference < XMLPropertySetMapper > ODBExport::GetTableStylesPropertySetMapper() const
+rtl::Reference < XMLPropertySetMapper > const & ODBExport::GetTableStylesPropertySetMapper() const
 {
     if ( !m_xTableStylesPropertySetMapper.is() )
     {
@@ -1374,7 +1364,7 @@ rtl::Reference < XMLPropertySetMapper > ODBExport::GetTableStylesPropertySetMapp
     return m_xTableStylesPropertySetMapper;
 }
 
-rtl::Reference < XMLPropertySetMapper > ODBExport::GetCellStylesPropertySetMapper() const
+rtl::Reference < XMLPropertySetMapper > const & ODBExport::GetCellStylesPropertySetMapper() const
 {
     if ( !m_xCellStylesPropertySetMapper.is() )
     {
@@ -1383,7 +1373,7 @@ rtl::Reference < XMLPropertySetMapper > ODBExport::GetCellStylesPropertySetMappe
     return m_xCellStylesPropertySetMapper;
 }
 
-rtl::Reference < XMLPropertySetMapper > ODBExport::GetColumnStylesPropertySetMapper() const
+rtl::Reference < XMLPropertySetMapper > const & ODBExport::GetColumnStylesPropertySetMapper() const
 {
     if ( !m_xColumnStylesPropertySetMapper.is() )
     {

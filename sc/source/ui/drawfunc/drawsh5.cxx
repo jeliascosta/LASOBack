@@ -81,7 +81,7 @@ void ScDrawShell::GetHLinkState( SfxItemSet& rSet )             //  Hyperlink
             aHLinkItem.SetInsertMode(HLINK_FIELD);
         }
         SdrUnoObj* pUnoCtrl = dynamic_cast<SdrUnoObj*>( pObj );
-        if (pUnoCtrl && FmFormInventor == pUnoCtrl->GetObjInventor())
+        if (pUnoCtrl && SdrInventor::FmForm == pUnoCtrl->GetObjInventor())
         {
             uno::Reference<awt::XControlModel> xControlModel = pUnoCtrl->GetUnoControlModel();
             OSL_ENSURE( xControlModel.is(), "UNO-Control ohne Model" );
@@ -167,7 +167,7 @@ void ScDrawShell::ExecuteHLink( SfxRequest& rReq )
                         {
                             SdrObject* pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
                             SdrUnoObj* pUnoCtrl = dynamic_cast<SdrUnoObj*>( pObj  );
-                            if (pUnoCtrl && FmFormInventor == pUnoCtrl->GetObjInventor())
+                            if (pUnoCtrl && SdrInventor::FmForm == pUnoCtrl->GetObjInventor())
                             {
                                 uno::Reference<awt::XControlModel> xControlModel =
                                                         pUnoCtrl->GetUnoControlModel();
@@ -305,32 +305,32 @@ void ScDrawShell::ExecDrawFunc( SfxRequest& rReq )
         case SID_OBJECT_ALIGN_LEFT:
         case SID_ALIGN_ANY_LEFT:
             if (pView->IsAlignPossible())
-                pView->AlignMarkedObjects(SDRHALIGN_LEFT, SDRVALIGN_NONE);
+                pView->AlignMarkedObjects(SdrHorAlign::Left, SdrVertAlign::NONE);
             break;
         case SID_OBJECT_ALIGN_CENTER:
         case SID_ALIGN_ANY_HCENTER:
             if (pView->IsAlignPossible())
-                pView->AlignMarkedObjects(SDRHALIGN_CENTER, SDRVALIGN_NONE);
+                pView->AlignMarkedObjects(SdrHorAlign::Center, SdrVertAlign::NONE);
             break;
         case SID_OBJECT_ALIGN_RIGHT:
         case SID_ALIGN_ANY_RIGHT:
             if (pView->IsAlignPossible())
-                pView->AlignMarkedObjects(SDRHALIGN_RIGHT, SDRVALIGN_NONE);
+                pView->AlignMarkedObjects(SdrHorAlign::Right, SdrVertAlign::NONE);
             break;
         case SID_OBJECT_ALIGN_UP:
         case SID_ALIGN_ANY_TOP:
             if (pView->IsAlignPossible())
-                pView->AlignMarkedObjects(SDRHALIGN_NONE, SDRVALIGN_TOP);
+                pView->AlignMarkedObjects(SdrHorAlign::NONE, SdrVertAlign::Top);
             break;
         case SID_OBJECT_ALIGN_MIDDLE:
         case SID_ALIGN_ANY_VCENTER:
             if (pView->IsAlignPossible())
-                pView->AlignMarkedObjects(SDRHALIGN_NONE, SDRVALIGN_CENTER);
+                pView->AlignMarkedObjects(SdrHorAlign::NONE, SdrVertAlign::Center);
             break;
         case SID_OBJECT_ALIGN_DOWN:
         case SID_ALIGN_ANY_BOTTOM:
             if (pView->IsAlignPossible())
-                pView->AlignMarkedObjects(SDRHALIGN_NONE, SDRVALIGN_BOTTOM);
+                pView->AlignMarkedObjects(SdrHorAlign::NONE, SdrVertAlign::Bottom);
             break;
 
         case SID_DELETE:
@@ -387,14 +387,14 @@ void ScDrawShell::ExecDrawFunc( SfxRequest& rReq )
         case SID_OBJECT_ROTATE:
             {
                 SdrDragMode eMode;
-                if (pView->GetDragMode() == SDRDRAG_ROTATE)
-                    eMode = SDRDRAG_MOVE;
+                if (pView->GetDragMode() == SdrDragMode::Rotate)
+                    eMode = SdrDragMode::Move;
                 else
-                    eMode = SDRDRAG_ROTATE;
+                    eMode = SdrDragMode::Rotate;
                 pView->SetDragMode( eMode );
                 rBindings.Invalidate( SID_OBJECT_ROTATE );
                 rBindings.Invalidate( SID_OBJECT_MIRROR );
-                if (eMode == SDRDRAG_ROTATE && !pView->IsFrameDragSingles())
+                if (eMode == SdrDragMode::Rotate && !pView->IsFrameDragSingles())
                 {
                     pView->SetFrameDragSingles();
                     rBindings.Invalidate( SID_BEZIER_EDIT );
@@ -404,14 +404,14 @@ void ScDrawShell::ExecDrawFunc( SfxRequest& rReq )
         case SID_OBJECT_MIRROR:
             {
                 SdrDragMode eMode;
-                if (pView->GetDragMode() == SDRDRAG_MIRROR)
-                    eMode = SDRDRAG_MOVE;
+                if (pView->GetDragMode() == SdrDragMode::Mirror)
+                    eMode = SdrDragMode::Move;
                 else
-                    eMode = SDRDRAG_MIRROR;
+                    eMode = SdrDragMode::Mirror;
                 pView->SetDragMode( eMode );
                 rBindings.Invalidate( SID_OBJECT_ROTATE );
                 rBindings.Invalidate( SID_OBJECT_MIRROR );
-                if (eMode == SDRDRAG_MIRROR && !pView->IsFrameDragSingles())
+                if (eMode == SdrDragMode::Mirror && !pView->IsFrameDragSingles())
                 {
                     pView->SetFrameDragSingles();
                     rBindings.Invalidate( SID_BEZIER_EDIT );
@@ -423,9 +423,9 @@ void ScDrawShell::ExecDrawFunc( SfxRequest& rReq )
                 bool bOld = pView->IsFrameDragSingles();
                 pView->SetFrameDragSingles( !bOld );
                 rBindings.Invalidate( SID_BEZIER_EDIT );
-                if (bOld && pView->GetDragMode() != SDRDRAG_MOVE)
+                if (bOld && pView->GetDragMode() != SdrDragMode::Move)
                 {
-                    pView->SetDragMode( SDRDRAG_MOVE );
+                    pView->SetDragMode( SdrDragMode::Move );
                     rBindings.Invalidate( SID_OBJECT_ROTATE );
                     rBindings.Invalidate( SID_OBJECT_MIRROR );
                 }
@@ -482,7 +482,7 @@ void ScDrawShell::ExecDrawFunc( SfxRequest& rReq )
 
                         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                         OSL_ENSURE(pFact, "Dialog creation failed!");
-                        std::unique_ptr<AbstractSvxObjectNameDialog> pDlg(pFact->CreateSvxObjectNameDialog(aName));
+                        ScopedVclPtr<AbstractSvxObjectNameDialog> pDlg(pFact->CreateSvxObjectNameDialog(aName));
                         OSL_ENSURE(pDlg, "Dialog creation failed!");
 
                         pDlg->SetCheckNameHdl(LINK(this, ScDrawShell, NameObjectHdl));
@@ -551,7 +551,7 @@ void ScDrawShell::ExecDrawFunc( SfxRequest& rReq )
 
                         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                         OSL_ENSURE(pFact, "Dialog creation failed!");
-                        std::unique_ptr<AbstractSvxObjectTitleDescDialog> pDlg(pFact->CreateSvxObjectTitleDescDialog(aTitle, aDescription));
+                        ScopedVclPtr<AbstractSvxObjectTitleDescDialog> pDlg(pFact->CreateSvxObjectTitleDescDialog(aTitle, aDescription));
                         OSL_ENSURE(pDlg, "Dialog creation failed!");
 
                         if(RET_OK == pDlg->Execute())
@@ -612,7 +612,7 @@ void ScDrawShell::ExecDrawFunc( SfxRequest& rReq )
     }
 }
 
-IMPL_LINK_TYPED( ScDrawShell, NameObjectHdl, AbstractSvxObjectNameDialog&, rDialog, bool )
+IMPL_LINK( ScDrawShell, NameObjectHdl, AbstractSvxObjectNameDialog&, rDialog, bool )
 {
     OUString aName;
     rDialog.GetName( aName );

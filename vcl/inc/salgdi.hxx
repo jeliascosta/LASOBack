@@ -43,7 +43,8 @@ class Rectangle;
 class FontSubsetInfo;
 class OpenGLContext;
 class OutputDevice;
-class ServerFontLayout;
+class FreetypeFont;
+class CommonSalLayout;
 struct SystemGraphicsData;
 
 #if ENABLE_CAIRO_CANVAS
@@ -60,7 +61,6 @@ typedef sal_Unicode sal_Ucs; // TODO: use sal_UCS4 instead of sal_Unicode
 typedef std::map< sal_Ucs, sal_Int32 >    Ucs2SIntMap;
 typedef std::map< sal_Ucs, sal_uInt32 >   Ucs2UIntMap;
 typedef std::map< sal_Ucs, OString > Ucs2OStrMap;
-typedef std::vector< sal_Int32 > Int32Vector;
 
 // note: if you add any new methods to class SalGraphics using coordinates
 //       make sure they have a corresponding protected pure virtual method
@@ -114,7 +114,7 @@ public:
     virtual void                SetFillColor( SalColor nSalColor ) = 0;
 
     // enable/disable XOR drawing
-    virtual void                SetXORMode( bool bSet, bool bInvertOnly ) = 0;
+    virtual void                SetXORMode( bool bSet ) = 0;
 
     // set line color for raster operations
     virtual void                SetROPLineColor( SalROPColor nROPColor ) = 0;
@@ -132,10 +132,10 @@ public:
     void                        ReleaseFonts() { SetFont( nullptr, 0 ); }
 
     // get the current font's metrics
-    virtual void                GetFontMetric( ImplFontMetricDataPtr&, int nFallbackLevel = 0 ) = 0;
+    virtual void                GetFontMetric( ImplFontMetricDataRef&, int nFallbackLevel ) = 0;
 
     // get the repertoire of the current font
-    virtual const FontCharMapPtr GetFontCharMap() const = 0;
+    virtual const FontCharMapRef GetFontCharMap() const = 0;
 
     // get the layout capabilities of the current font
     virtual bool                GetFontCapabilities(vcl::FontCapabilities &rFontCapabilities) const = 0;
@@ -210,14 +210,15 @@ public:
     virtual void                GetGlyphWidths(
                                     const PhysicalFontFace* pFont,
                                     bool bVertical,
-                                    Int32Vector& rWidths,
+                                    std::vector< sal_Int32 >& rWidths,
                                     Ucs2UIntMap& rUnicodeEnc ) = 0;
 
     virtual bool                GetGlyphBoundRect( sal_GlyphId, Rectangle& ) = 0;
     virtual bool                GetGlyphOutline( sal_GlyphId, basegfx::B2DPolyPolygon& ) = 0;
 
     virtual SalLayout*          GetTextLayout( ImplLayoutArgs&, int nFallbackLevel ) = 0;
-    virtual void                DrawServerFontLayout( const ServerFontLayout& ) = 0;
+    virtual void                DrawSalLayout( const CommonSalLayout& ) = 0;
+    virtual void                DrawServerFontLayout( const GenericSalLayout&, const FreetypeFont& ) = 0;
 
     virtual bool                supportsOperation( OutDevSupportType ) const = 0;
 
@@ -363,8 +364,7 @@ public:
     virtual bool                IsNativeControlSupported( ControlType nType, ControlPart nPart );
 
     // Query the native control to determine if it was acted upon
-    bool                        HitTestNativeControl(
-                                    ControlType nType,
+    bool                        HitTestNativeScrollbar(
                                     ControlPart nPart,
                                     const Rectangle& rControlRegion,
                                     const Point& aPos,

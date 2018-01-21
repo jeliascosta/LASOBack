@@ -62,12 +62,9 @@ protected:
     // OCommonAccessibleComponent
     virtual css::awt::Rectangle implGetBounds(  ) throw (css::uno::RuntimeException) override;
 
-    // XComponent
-    virtual void SAL_CALL    disposing() override;
-
 public:
     VCLXAccessibleHeaderBarItem( HeaderBar*    pHeadBar, sal_Int32 _nIndexInParent );
-    virtual ~VCLXAccessibleHeaderBarItem();
+    virtual ~VCLXAccessibleHeaderBarItem() override;
 
     // XInterface
     DECLARE_XINTERFACE()

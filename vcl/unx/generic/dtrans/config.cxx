@@ -18,6 +18,7 @@
  */
 
 #include <cstdio>
+#include <o3tl/any.hxx>
 #include <unotools/configitem.hxx>
 
 #include "X11_selection.hxx"
@@ -37,7 +38,7 @@ class DtransX11ConfigItem : public ::utl::ConfigItem
 
 public:
     DtransX11ConfigItem();
-    virtual ~DtransX11ConfigItem();
+    virtual ~DtransX11ConfigItem() override;
 
     sal_Int32 getSelectionTimeout() const { return m_nSelectionTimeout; }
 };
@@ -78,9 +79,8 @@ DtransX11ConfigItem::DtransX11ConfigItem() :
     Any* pValue = aValues.getArray();
     for( int i = 0; i < aValues.getLength(); i++, pValue++ )
     {
-        if( pValue->getValueTypeClass() == TypeClass_STRING )
+        if( auto pLine = o3tl::tryAccess<OUString>(*pValue) )
         {
-            const OUString* pLine = static_cast<const OUString*>(pValue->getValue());
             if( !pLine->isEmpty() )
             {
                 m_nSelectionTimeout = pLine->toInt32();

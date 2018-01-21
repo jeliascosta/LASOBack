@@ -90,19 +90,19 @@ private:
     void                    Init_Impl();
     void                    UpdateExample_Impl();
 
-    DECL_LINK_TYPED( LineDistHdl_Impl, ListBox&, void );
-    DECL_LINK_TYPED( ModifyHdl_Impl, Edit&, void );
-    DECL_LINK_TYPED( AutoHdl_Impl, Button*, void );
+    DECL_LINK( LineDistHdl_Impl, ListBox&, void );
+    DECL_LINK( ModifyHdl_Impl, Edit&, void );
+    DECL_LINK( AutoHdl_Impl, Button*, void );
 
 protected:
-    virtual sfxpg           DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC    DeactivatePage( SfxItemSet* pSet ) override;
 
 
 public:
-    virtual ~SvxStdParagraphTabPage();
+    virtual ~SvxStdParagraphTabPage() override;
     virtual void dispose() override;
 
-    DECL_LINK_TYPED(ELRLoseFocusHdl, Control&, void);
+    DECL_LINK(ELRLoseFocusHdl, Control&, void);
 
     static VclPtr<SfxTabPage>      Create( vcl::Window* pParent, const SfxItemSet* rSet );
     static const sal_uInt16* GetRanges() { return pStdRanges; }
@@ -111,8 +111,6 @@ public:
     virtual void            Reset( const SfxItemSet* rSet ) override;
     virtual void            ChangesApplied() override;
 
-
-    void                    SetPageWidth( sal_uInt16 nPageWidth );
     void                    EnableRelativeMode();
     void                    EnableRegisterMode();
     void                    EnableContextualMode();
@@ -153,19 +151,19 @@ class SvxParaAlignTabPage : public SfxTabPage
     VclPtr<VclFrame>                m_pPropertiesFL;
     VclPtr<svx::FrameDirectionListBox>  m_pTextDirectionLB;
 
-    DECL_LINK_TYPED(AlignHdl_Impl, Button*, void);
-    DECL_LINK_TYPED(LastLineHdl_Impl, ListBox&, void);
-    DECL_LINK_TYPED(TextDirectionHdl_Impl, ListBox&, void);
+    DECL_LINK(AlignHdl_Impl, Button*, void);
+    DECL_LINK(LastLineHdl_Impl, ListBox&, void);
+    DECL_LINK(TextDirectionHdl_Impl, ListBox&, void);
 
     void                    UpdateExample_Impl();
 
                             SvxParaAlignTabPage( vcl::Window* pParent, const SfxItemSet& rSet );
 
 protected:
-    virtual sfxpg           DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC    DeactivatePage( SfxItemSet* pSet ) override;
 
 public:
-    virtual ~SvxParaAlignTabPage();
+    virtual ~SvxParaAlignTabPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>      Create( vcl::Window* pParent, const SfxItemSet* rSet );
@@ -200,7 +198,7 @@ class SvxExtParagraphTabPage: public SfxTabPage
     static const sal_uInt16 pExtRanges[];
 
 public:
-    virtual ~SvxExtParagraphTabPage();
+    virtual ~SvxExtParagraphTabPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent,
@@ -214,7 +212,7 @@ public:
     void                DisablePageBreak();
 
 protected:
-    virtual sfxpg       DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
 
 private:
                         SvxExtParagraphTabPage( vcl::Window* pParent, const SfxItemSet& rSet );
@@ -256,15 +254,15 @@ private:
     bool                bHtmlMode;
     sal_uInt16              nStdPos;
 
-    DECL_LINK_TYPED(PageBreakHdl_Impl, Button*, void);
-    DECL_LINK_TYPED(KeepTogetherHdl_Impl, Button*, void);
-    DECL_LINK_TYPED(WidowHdl_Impl, Button*, void);
-    DECL_LINK_TYPED(OrphanHdl_Impl, Button*, void);
-    DECL_LINK_TYPED(HyphenClickHdl_Impl, Button*, void);
-    DECL_LINK_TYPED(ApplyCollClickHdl_Impl, Button*, void);
-    DECL_LINK_TYPED( PageBreakPosHdl_Impl, ListBox&, void );
-    DECL_LINK_TYPED( PageBreakTypeHdl_Impl, ListBox&, void );
-    DECL_LINK_TYPED(PageNumBoxClickHdl_Impl, Button*, void);
+    DECL_LINK(PageBreakHdl_Impl, Button*, void);
+    DECL_LINK(KeepTogetherHdl_Impl, Button*, void);
+    DECL_LINK(WidowHdl_Impl, Button*, void);
+    DECL_LINK(OrphanHdl_Impl, Button*, void);
+    DECL_LINK(HyphenClickHdl_Impl, Button*, void);
+    DECL_LINK(ApplyCollClickHdl_Impl, Button*, void);
+    DECL_LINK( PageBreakPosHdl_Impl, ListBox&, void );
+    DECL_LINK( PageBreakTypeHdl_Impl, ListBox&, void );
+    DECL_LINK(PageNumBoxClickHdl_Impl, Button*, void);
 
     virtual void            PageCreated(const SfxAllItemSet& aSet) override;
 };
@@ -280,10 +278,10 @@ class SvxAsianTabPage : public SfxTabPage
 
     SvxAsianTabPage( vcl::Window* pParent, const SfxItemSet& rSet );
 
-    DECL_STATIC_LINK_TYPED( SvxAsianTabPage, ClickHdl_Impl, Button*, void );
+    DECL_STATIC_LINK( SvxAsianTabPage, ClickHdl_Impl, Button*, void );
 
 public:
-    virtual ~SvxAsianTabPage();
+    virtual ~SvxAsianTabPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage>  Create( vcl::Window* pParent,

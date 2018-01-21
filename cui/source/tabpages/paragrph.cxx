@@ -86,12 +86,13 @@ const sal_uInt16 SvxExtParagraphTabPage::pExtRanges[] =
 enum LineSpaceList
 {
     LLINESPACE_1    = 0,
-    LLINESPACE_15   = 1,
-    LLINESPACE_2    = 2,
-    LLINESPACE_PROP = 3,
-    LLINESPACE_MIN  = 4,
-    LLINESPACE_DURCH= 5,
-    LLINESPACE_FIX  = 6,
+    LLINESPACE_115  = 1,
+    LLINESPACE_15   = 2,
+    LLINESPACE_2    = 3,
+    LLINESPACE_PROP = 4,
+    LLINESPACE_MIN  = 5,
+    LLINESPACE_DURCH= 6,
+    LLINESPACE_FIX  = 7,
     LLINESPACE_END
 };
 
@@ -103,39 +104,44 @@ void SetLineSpace_Impl( SvxLineSpacingItem& rLineSpace,
     switch ( eSpace )
     {
         case LLINESPACE_1:
-            rLineSpace.GetLineSpaceRule() = SVX_LINE_SPACE_AUTO;
-            rLineSpace.GetInterLineSpaceRule() = SVX_INTER_LINE_SPACE_OFF;
+            rLineSpace.SetLineSpaceRule( SvxLineSpaceRule::Auto );
+            rLineSpace.SetInterLineSpaceRule( SvxInterLineSpaceRule::Off );
+            break;
+
+        case LLINESPACE_115:
+            rLineSpace.SetLineSpaceRule( SvxLineSpaceRule::Auto );
+            rLineSpace.SetPropLineSpace( 115 );
             break;
 
         case LLINESPACE_15:
-            rLineSpace.GetLineSpaceRule() = SVX_LINE_SPACE_AUTO;
+            rLineSpace.SetLineSpaceRule( SvxLineSpaceRule::Auto );
             rLineSpace.SetPropLineSpace( 150 );
             break;
 
         case LLINESPACE_2:
-            rLineSpace.GetLineSpaceRule() = SVX_LINE_SPACE_AUTO;
+            rLineSpace.SetLineSpaceRule( SvxLineSpaceRule::Auto );
             rLineSpace.SetPropLineSpace( 200 );
             break;
 
         case LLINESPACE_PROP:
-            rLineSpace.GetLineSpaceRule() = SVX_LINE_SPACE_AUTO;
+            rLineSpace.SetLineSpaceRule( SvxLineSpaceRule::Auto );
             rLineSpace.SetPropLineSpace( (sal_uInt8)lValue );
             break;
 
         case LLINESPACE_MIN:
             rLineSpace.SetLineHeight( (sal_uInt16)lValue );
-            rLineSpace.GetInterLineSpaceRule() = SVX_INTER_LINE_SPACE_OFF;
+            rLineSpace.SetInterLineSpaceRule( SvxInterLineSpaceRule::Off );
             break;
 
         case LLINESPACE_DURCH:
-            rLineSpace.GetLineSpaceRule() = SVX_LINE_SPACE_AUTO;
+            rLineSpace.SetLineSpaceRule( SvxLineSpaceRule::Auto );
             rLineSpace.SetInterLineSpace( (sal_uInt16)lValue );
             break;
 
         case LLINESPACE_FIX:
             rLineSpace.SetLineHeight((sal_uInt16)lValue);
-            rLineSpace.GetLineSpaceRule() = SVX_LINE_SPACE_FIX;
-            rLineSpace.GetInterLineSpaceRule() = SVX_INTER_LINE_SPACE_OFF;
+            rLineSpace.SetLineSpaceRule( SvxLineSpaceRule::Fix );
+            rLineSpace.SetInterLineSpaceRule( SvxInterLineSpaceRule::Off );
         break;
     }
 }
@@ -155,7 +161,7 @@ sal_uInt16 GetHtmlMode_Impl(const SfxItemSet& rSet)
 
 }
 
-IMPL_LINK_NOARG_TYPED(SvxStdParagraphTabPage, ELRLoseFocusHdl, Control&, void)
+IMPL_LINK_NOARG(SvxStdParagraphTabPage, ELRLoseFocusHdl, Control&, void)
 {
     SfxItemPool* pPool = GetItemSet().GetPool();
     DBG_ASSERT( pPool, "Wo ist der Pool" );
@@ -214,13 +220,14 @@ bool SvxStdParagraphTabPage::FillItemSet( SfxItemSet* rOutSet )
            m_pLineDistAtMetricBox->IsValueModified() ) )
     {
         nWhich = GetWhich( SID_ATTR_PARA_LINESPACE );
-        SfxMapUnit eUnit = pPool->GetMetric( nWhich );
+        MapUnit eUnit = pPool->GetMetric( nWhich );
         SvxLineSpacingItem aSpacing(
             static_cast<const SvxLineSpacingItem&>(GetItemSet().Get( nWhich )) );
 
         switch ( nPos )
         {
             case LLINESPACE_1:
+            case LLINESPACE_115:
             case LLINESPACE_15:
             case LLINESPACE_2:
                 SetLineSpace_Impl( aSpacing, nPos );
@@ -240,7 +247,7 @@ bool SvxStdParagraphTabPage::FillItemSet( SfxItemSet* rOutSet )
             break;
 
             default:
-                OSL_FAIL( "unbekannter Type fuer Zeilenabstand." );
+                OSL_FAIL( "unknown LineDist entry" );
                 break;
         }
         eState = GetItemSet().GetItemState( nWhich );
@@ -258,7 +265,7 @@ bool SvxStdParagraphTabPage::FillItemSet( SfxItemSet* rOutSet )
          || m_pContextualCB->IsValueChangedFromSaved())
     {
         nWhich = GetWhich( SID_ATTR_ULSPACE );
-        SfxMapUnit eUnit = pPool->GetMetric( nWhich );
+        MapUnit eUnit = pPool->GetMetric( nWhich );
         pOld = GetOldItem( *rOutSet, SID_ATTR_ULSPACE );
         SvxULSpaceItem aMargin( nWhich );
 
@@ -305,7 +312,7 @@ bool SvxStdParagraphTabPage::FillItemSet( SfxItemSet* rOutSet )
          m_pAutoCB->IsValueChangedFromSaved() )
     {
         nWhich = GetWhich( SID_ATTR_LRSPACE );
-        SfxMapUnit eUnit = pPool->GetMetric( nWhich );
+        MapUnit eUnit = pPool->GetMetric( nWhich );
         SvxLRSpaceItem aMargin( nWhich );
         pOld = GetOldItem( *rOutSet, SID_ATTR_LRSPACE );
 
@@ -358,7 +365,7 @@ bool SvxStdParagraphTabPage::FillItemSet( SfxItemSet* rOutSet )
     if ( bNullTab )
     {
         MapUnit eUnit = (MapUnit)pPool->GetMetric( GetWhich( SID_ATTR_TABSTOP ) );
-        if ( MAP_100TH_MM != eUnit )
+        if ( MapUnit::Map100thMM != eUnit )
         {
 
             // negative first line indent -> set null default tabstob if applicable
@@ -370,7 +377,7 @@ bool SvxStdParagraphTabPage::FillItemSet( SfxItemSet* rOutSet )
                 const SvxTabStopItem& rTabItem =
                     static_cast<const SvxTabStopItem&>(rInSet.Get( _nWhich ));
                 SvxTabStopItem aNullTab( rTabItem );
-                SvxTabStop aNull( 0, SVX_TAB_ADJUST_DEFAULT );
+                SvxTabStop aNull( 0, SvxTabAdjust::Default );
                 aNullTab.Insert( aNull );
                 rOutSet->Put( aNullTab );
             }
@@ -434,7 +441,7 @@ void SvxStdParagraphTabPage::Reset( const SfxItemSet* rSet )
 
     if ( eItemState >= SfxItemState::DEFAULT )
     {
-        SfxMapUnit eUnit = pPool->GetMetric( _nWhich );
+        MapUnit eUnit = pPool->GetMetric( _nWhich );
 
         if ( bRelativeMode )
         {
@@ -504,7 +511,7 @@ void SvxStdParagraphTabPage::Reset( const SfxItemSet* rSet )
 
     if ( eItemState >= SfxItemState::DEFAULT )
     {
-        SfxMapUnit eUnit = pPool->GetMetric( _nWhich );
+        MapUnit eUnit = pPool->GetMetric( _nWhich );
 
         const SvxULSpaceItem& rOldItem =
             static_cast<const SvxULSpaceItem&>(rSet->Get( _nWhich ));
@@ -603,21 +610,21 @@ void SvxStdParagraphTabPage::EnableRelativeMode()
 {
     DBG_ASSERT( GetItemSet().GetParent(), "RelativeMode, but no parent-set!" );
 
-    m_pLeftIndent->EnableRelativeMode( 0, 999 );
-    m_pFLineIndent->EnableRelativeMode( 0, 999 );
-    m_pRightIndent->EnableRelativeMode( 0, 999 );
-    m_pTopDist->EnableRelativeMode( 0, 999 );
-    m_pBottomDist->EnableRelativeMode( 0, 999 );
+    m_pLeftIndent->EnableRelativeMode( 0, 999, 5 );
+    m_pFLineIndent->EnableRelativeMode( 0, 999, 5 );
+    m_pRightIndent->EnableRelativeMode( 0, 999, 5 );
+    m_pTopDist->EnableRelativeMode( 0, 999, 5 );
+    m_pBottomDist->EnableRelativeMode( 0, 999, 5 );
     bRelativeMode = true;
 }
 
-SfxTabPage::sfxpg SvxStdParagraphTabPage::DeactivatePage( SfxItemSet* _pSet )
+DeactivateRC SvxStdParagraphTabPage::DeactivatePage( SfxItemSet* _pSet )
 {
     ELRLoseFocusHdl( *m_pFLineIndent );
 
     if ( _pSet )
         FillItemSet( _pSet );
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 SvxStdParagraphTabPage::SvxStdParagraphTabPage( vcl::Window* pParent,  const SfxItemSet& rAttr ) :
@@ -707,26 +714,32 @@ void SvxStdParagraphTabPage::SetLineSpacing_Impl
     const SvxLineSpacingItem &rAttr
 )
 {
-    SfxMapUnit eUnit = GetItemSet().GetPool()->GetMetric( rAttr.Which() );
+    MapUnit eUnit = GetItemSet().GetPool()->GetMetric( rAttr.Which() );
 
     switch( rAttr.GetLineSpaceRule() )
     {
-        case SVX_LINE_SPACE_AUTO:
+        case SvxLineSpaceRule::Auto:
         {
-            SvxInterLineSpace eInter = rAttr.GetInterLineSpaceRule();
+            SvxInterLineSpaceRule eInter = rAttr.GetInterLineSpaceRule();
 
             switch( eInter )
             {
                 // Default single line spacing
-                case SVX_INTER_LINE_SPACE_OFF:
+                case SvxInterLineSpaceRule::Off:
                     m_pLineDist->SelectEntryPos( LLINESPACE_1 );
                     break;
 
                 // Default single line spacing
-                case SVX_INTER_LINE_SPACE_PROP:
+                case SvxInterLineSpaceRule::Prop:
                     if ( 100 == rAttr.GetPropLineSpace() )
                     {
                         m_pLineDist->SelectEntryPos( LLINESPACE_1 );
+                        break;
+                    }
+                    // 1.15 line spacing
+                    if ( 115 == rAttr.GetPropLineSpace() )
+                    {
+                        m_pLineDist->SelectEntryPos( LLINESPACE_115 );
                         break;
                     }
                     // 1.5 line spacing
@@ -746,7 +759,7 @@ void SvxStdParagraphTabPage::SetLineSpacing_Impl
                     m_pLineDist->SelectEntryPos( LLINESPACE_PROP );
                     break;
 
-                case SVX_INTER_LINE_SPACE_FIX:
+                case SvxInterLineSpaceRule::Fix:
                     SetMetricValue( *m_pLineDistAtMetricBox, rAttr.GetInterLineSpace(), eUnit );
                     m_pLineDist->SelectEntryPos( LLINESPACE_DURCH );
                     break;
@@ -754,12 +767,12 @@ void SvxStdParagraphTabPage::SetLineSpacing_Impl
             }
         }
         break;
-        case SVX_LINE_SPACE_FIX:
+        case SvxLineSpaceRule::Fix:
             SetMetricValue(*m_pLineDistAtMetricBox, rAttr.GetLineHeight(), eUnit);
             m_pLineDist->SelectEntryPos( LLINESPACE_FIX );
         break;
 
-        case SVX_LINE_SPACE_MIN:
+        case SvxLineSpaceRule::Min:
             SetMetricValue(*m_pLineDistAtMetricBox, rAttr.GetLineHeight(), eUnit);
             m_pLineDist->SelectEntryPos( LLINESPACE_MIN );
             break;
@@ -768,11 +781,12 @@ void SvxStdParagraphTabPage::SetLineSpacing_Impl
     LineDistHdl_Impl( *m_pLineDist );
 }
 
-IMPL_LINK_TYPED( SvxStdParagraphTabPage, LineDistHdl_Impl, ListBox&, rBox, void )
+IMPL_LINK( SvxStdParagraphTabPage, LineDistHdl_Impl, ListBox&, rBox, void )
 {
     switch( rBox.GetSelectEntryPos() )
     {
         case LLINESPACE_1:
+        case LLINESPACE_115:
         case LLINESPACE_15:
         case LLINESPACE_2:
             m_pLineDistAtLabel->Enable(false);
@@ -823,7 +837,7 @@ IMPL_LINK_TYPED( SvxStdParagraphTabPage, LineDistHdl_Impl, ListBox&, rBox, void 
             // if the value has been changed at SetMin,
             // it is time for the default
             if ( m_pLineDistAtMetricBox->GetValue() != nTemp )
-                SetMetricValue( *m_pLineDistAtMetricBox, FIX_DIST_DEF, SFX_MAPUNIT_TWIP ); // fix is only in Writer
+                SetMetricValue( *m_pLineDistAtMetricBox, FIX_DIST_DEF, MapUnit::MapTwip ); // fix is only in Writer
             m_pLineDistAtPercentBox->Hide();
             m_pLineDistAtMetricBox->Show();
             m_pLineDistAtMetricBox->Enable();
@@ -834,7 +848,7 @@ IMPL_LINK_TYPED( SvxStdParagraphTabPage, LineDistHdl_Impl, ListBox&, rBox, void 
     UpdateExample_Impl();
 }
 
-IMPL_LINK_NOARG_TYPED(SvxStdParagraphTabPage, ModifyHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG(SvxStdParagraphTabPage, ModifyHdl_Impl, Edit&, void)
 {
     UpdateExample_Impl();
 }
@@ -879,6 +893,7 @@ void SvxStdParagraphTabPage::UpdateExample_Impl()
     switch ( nPos )
     {
         case LLINESPACE_1:
+        case LLINESPACE_115:
         case LLINESPACE_15:
         case LLINESPACE_2:
             m_pExampleWin->SetLineSpace( (SvxPrevLineSpace)nPos );
@@ -893,7 +908,7 @@ void SvxStdParagraphTabPage::UpdateExample_Impl()
         case LLINESPACE_DURCH:
         case LLINESPACE_FIX:
             m_pExampleWin->SetLineSpace( (SvxPrevLineSpace)nPos,
-                (sal_uInt16)GetCoreValue( *m_pLineDistAtMetricBox, SFX_MAPUNIT_TWIP ) );
+                (sal_uInt16)GetCoreValue( *m_pLineDistAtMetricBox, MapUnit::MapTwip ) );
             break;
     }
     m_pExampleWin->Invalidate();
@@ -910,16 +925,11 @@ void SvxStdParagraphTabPage::EnableContextualMode()
     m_pContextualCB->Show();
 }
 
-IMPL_LINK_TYPED( SvxStdParagraphTabPage, AutoHdl_Impl, Button*, pBox, void )
+IMPL_LINK( SvxStdParagraphTabPage, AutoHdl_Impl, Button*, pBox, void )
 {
     bool bEnable = !static_cast<CheckBox*>(pBox)->IsChecked();
     m_pFLineLabel->Enable(bEnable);
     m_pFLineIndent->Enable(bEnable);
-}
-
-void SvxStdParagraphTabPage::SetPageWidth( sal_uInt16 nPageWidth )
-{
-    nWidth = nPageWidth;
 }
 
 void SvxStdParagraphTabPage::EnableAutoFirstLine()
@@ -948,7 +958,7 @@ void    SvxStdParagraphTabPage::PageCreated(const SfxAllItemSet& aSet)
     const SfxUInt32Item* pLineDistItem = aSet.GetItem<SfxUInt32Item>(SID_SVXSTDPARAGRAPHTABPAGE_ABSLINEDIST, false);
 
     if (pPageWidthItem)
-        SetPageWidth(pPageWidthItem->GetValue());
+        nWidth = pPageWidthItem->GetValue();
 
     if (pFlagSetItem )
         if (( 0x0001 & pFlagSetItem->GetValue())== 0x0001 )
@@ -1035,9 +1045,9 @@ SvxParaAlignTabPage::SvxParaAlignTabPage( vcl::Window* pParent, const SfxItemSet
     m_pLastLineLB->SetSelectHdl( LINK( this, SvxParaAlignTabPage, LastLineHdl_Impl ) );
     m_pTextDirectionLB->SetSelectHdl( LINK( this, SvxParaAlignTabPage, TextDirectionHdl_Impl ) );
 
+    m_pTextDirectionLB->InsertEntryValue( CUI_RESSTR( RID_SVXSTR_FRAMEDIR_SUPER ), FRMDIR_ENVIRONMENT );
     m_pTextDirectionLB->InsertEntryValue( CUI_RESSTR( RID_SVXSTR_FRAMEDIR_LTR ), FRMDIR_HORI_LEFT_TOP );
     m_pTextDirectionLB->InsertEntryValue( CUI_RESSTR( RID_SVXSTR_FRAMEDIR_RTL ), FRMDIR_HORI_RIGHT_TOP );
-    m_pTextDirectionLB->InsertEntryValue( CUI_RESSTR( RID_SVXSTR_FRAMEDIR_SUPER ), FRMDIR_ENVIRONMENT );
 
     setPreviewsToSamePlace(pParent, this);
 }
@@ -1067,11 +1077,11 @@ void SvxParaAlignTabPage::dispose()
     SfxTabPage::dispose();
 }
 
-SfxTabPage::sfxpg SvxParaAlignTabPage::DeactivatePage( SfxItemSet* _pSet )
+DeactivateRC SvxParaAlignTabPage::DeactivatePage( SfxItemSet* _pSet )
 {
     if ( _pSet )
         FillItemSet( _pSet );
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 VclPtr<SfxTabPage> SvxParaAlignTabPage::Create( vcl::Window* pParent, const SfxItemSet* rSet )
@@ -1153,7 +1163,7 @@ bool SvxParaAlignTabPage::FillItemSet( SfxItemSet* rOutSet )
     }
     if(m_pVertAlignLB->IsValueChangedFromSaved())
     {
-        rOutSet->Put(SvxParaVertAlignItem(m_pVertAlignLB->GetSelectEntryPos(), GetWhich( SID_PARA_VERTALIGN )));
+        rOutSet->Put(SvxParaVertAlignItem((SvxParaVertAlignItem::Align)m_pVertAlignLB->GetSelectEntryPos(), GetWhich( SID_PARA_VERTALIGN )));
         bModified = true;
     }
 
@@ -1242,7 +1252,7 @@ void SvxParaAlignTabPage::Reset( const SfxItemSet* rSet )
 
         const SvxParaVertAlignItem& rAlign = static_cast<const SvxParaVertAlignItem&>(rSet->Get( _nWhich ));
 
-        m_pVertAlignLB->SelectEntryPos(rAlign.GetValue());
+        m_pVertAlignLB->SelectEntryPos((sal_Int32)rAlign.GetValue());
     }
 
     _nWhich = GetWhich( SID_ATTR_FRAMEDIRECTION );
@@ -1278,7 +1288,7 @@ void SvxParaAlignTabPage::ChangesApplied()
     m_pExpandCB->SaveValue();
 }
 
-IMPL_LINK_NOARG_TYPED(SvxParaAlignTabPage, AlignHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxParaAlignTabPage, AlignHdl_Impl, Button*, void)
 {
     bool bJustify = m_pJustify->IsChecked();
     m_pLastLineFT->Enable(bJustify);
@@ -1288,7 +1298,7 @@ IMPL_LINK_NOARG_TYPED(SvxParaAlignTabPage, AlignHdl_Impl, Button*, void)
     UpdateExample_Impl();
 }
 
-IMPL_LINK_NOARG_TYPED(SvxParaAlignTabPage, LastLineHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG(SvxParaAlignTabPage, LastLineHdl_Impl, ListBox&, void)
 {
     //fdo#41350 only enable 'Expand last word' if last line is also justified
     bool bLastLineIsBlock = m_pLastLineLB->GetSelectEntryPos() == 2;
@@ -1296,7 +1306,7 @@ IMPL_LINK_NOARG_TYPED(SvxParaAlignTabPage, LastLineHdl_Impl, ListBox&, void)
     UpdateExample_Impl();
 }
 
-IMPL_LINK_NOARG_TYPED(SvxParaAlignTabPage, TextDirectionHdl_Impl, ListBox&, void)
+IMPL_LINK_NOARG(SvxParaAlignTabPage, TextDirectionHdl_Impl, ListBox&, void)
 {
     SvxFrameDirection eDir = m_pTextDirectionLB->GetSelectEntryValue();
     switch ( eDir )
@@ -1450,7 +1460,7 @@ bool SvxExtParagraphTabPage::FillItemSet( SfxItemSet* rOutSet )
 
     if ( bIsPageModel )
         // if PageModel is turned on, always turn off PageBreak
-        rOutSet->Put( SvxFormatBreakItem( SVX_BREAK_NONE, _nWhich ) );
+        rOutSet->Put( SvxFormatBreakItem( SvxBreak::NONE, _nWhich ) );
     else
     {
         eState = m_pPageBreakBox->GetState();
@@ -1474,22 +1484,22 @@ bool SvxExtParagraphTabPage::FillItemSet( SfxItemSet* rOutSet )
                     if ( m_pBreakTypeLB->GetSelectEntryPos() == 0 )
                     {
                         if ( bBefore )
-                            aBreak.SetValue( SVX_BREAK_PAGE_BEFORE );
+                            aBreak.SetValue( SvxBreak::PageBefore );
                         else
-                            aBreak.SetValue( SVX_BREAK_PAGE_AFTER );
+                            aBreak.SetValue( SvxBreak::PageAfter );
                     }
                     else
                     {
                         if ( bBefore )
-                            aBreak.SetValue( SVX_BREAK_COLUMN_BEFORE );
+                            aBreak.SetValue( SvxBreak::ColumnBefore );
                         else
-                            aBreak.SetValue( SVX_BREAK_COLUMN_AFTER );
+                            aBreak.SetValue( SvxBreak::ColumnAfter );
                     }
                     break;
                 }
 
                 case TRISTATE_FALSE:
-                    aBreak.SetValue( SVX_BREAK_NONE );
+                    aBreak.SetValue( SvxBreak::NONE );
                     break;
                 default: ; //prevent warning
             }
@@ -1700,7 +1710,7 @@ void SvxExtParagraphTabPage::Reset( const SfxItemSet* rSet )
                 const SvxFormatBreakItem& rPageBreak =
                     static_cast<const SvxFormatBreakItem&>(rSet->Get( _nWhich ));
 
-                SvxBreak eBreak = (SvxBreak)rPageBreak.GetValue();
+                SvxBreak eBreak = rPageBreak.GetBreak();
 
                 // PageBreak not via CTRL-RETURN,
                 // then CheckBox can be freed
@@ -1713,9 +1723,9 @@ void SvxExtParagraphTabPage::Reset( const SfxItemSet* rSet )
 
                 m_pPageBreakBox->SetState( TRISTATE_TRUE );
 
-                bool _bEnable =     eBreak != SVX_BREAK_NONE &&
-                                eBreak != SVX_BREAK_COLUMN_BEFORE &&
-                                eBreak != SVX_BREAK_COLUMN_AFTER;
+                bool _bEnable =     eBreak != SvxBreak::NONE &&
+                                eBreak != SvxBreak::ColumnBefore &&
+                                eBreak != SvxBreak::ColumnAfter;
                 m_pApplyCollBtn->Enable(_bEnable);
                 if(!_bEnable)
                 {
@@ -1724,22 +1734,22 @@ void SvxExtParagraphTabPage::Reset( const SfxItemSet* rSet )
                     m_pPagenumEdit->Enable(_bEnable);
                 }
 
-                if ( eBreak == SVX_BREAK_NONE )
+                if ( eBreak == SvxBreak::NONE )
                     m_pPageBreakBox->SetState( TRISTATE_FALSE );
 
                 sal_Int32 nType = 0; // selection position in break type ListBox : Page
                 sal_Int32 nPosition = 0; //  selection position in break position ListBox : Before
                 switch ( eBreak )
                 {
-                    case SVX_BREAK_PAGE_BEFORE:
+                    case SvxBreak::PageBefore:
                         break;
-                    case SVX_BREAK_PAGE_AFTER:
+                    case SvxBreak::PageAfter:
                         nPosition = 1;
                         break;
-                    case SVX_BREAK_COLUMN_BEFORE:
+                    case SvxBreak::ColumnBefore:
                         nType = 1;
                         break;
-                    case SVX_BREAK_COLUMN_AFTER:
+                    case SvxBreak::ColumnAfter:
                         nType = 1;
                         nPosition = 1;
                         break;
@@ -1878,11 +1888,11 @@ void SvxExtParagraphTabPage::ChangesApplied()
     m_pWidowRowNo->SetValue(m_pWidowRowNo->GetValue());
 }
 
-SfxTabPage::sfxpg SvxExtParagraphTabPage::DeactivatePage( SfxItemSet* _pSet )
+DeactivateRC SvxExtParagraphTabPage::DeactivatePage( SfxItemSet* _pSet )
 {
     if ( _pSet )
         FillItemSet( _pSet );
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 void SvxExtParagraphTabPage::DisablePageBreak()
@@ -1936,12 +1946,6 @@ SvxExtParagraphTabPage::SvxExtParagraphTabPage( vcl::Window* pParent, const SfxI
     get(m_pWidowBox,"checkWidow");
     get(m_pWidowRowNo,"spinWidow");
     get(m_pWidowRowLabel,"labelWidow");
-
-    m_pApplyCollBox->SetAccessibleRelationLabeledBy(m_pApplyCollBtn);
-    m_pApplyCollBox->SetAccessibleName(CUI_RES(STR_PAGE_STYLE));
-
-    m_pOrphanRowNo->SetAccessibleRelationLabeledBy(m_pOrphanBox);
-    m_pWidowRowNo->SetAccessibleRelationLabeledBy(m_pWidowBox);
 
     // this page needs ExchangeSupport
     SetExchangeSupport();
@@ -2027,7 +2031,7 @@ void SvxExtParagraphTabPage::dispose()
     SfxTabPage::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(SvxExtParagraphTabPage, PageBreakHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxExtParagraphTabPage, PageBreakHdl_Impl, Button*, void)
 {
     switch ( m_pPageBreakBox->GetState() )
     {
@@ -2068,14 +2072,14 @@ IMPL_LINK_NOARG_TYPED(SvxExtParagraphTabPage, PageBreakHdl_Impl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxExtParagraphTabPage, KeepTogetherHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxExtParagraphTabPage, KeepTogetherHdl_Impl, Button*, void)
 {
     bool bEnable = m_pKeepTogetherBox->GetState() == TRISTATE_FALSE;
     m_pWidowBox->Enable(bEnable);
     m_pOrphanBox->Enable(bEnable);
 }
 
-IMPL_LINK_NOARG_TYPED(SvxExtParagraphTabPage, WidowHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxExtParagraphTabPage, WidowHdl_Impl, Button*, void)
 {
     switch ( m_pWidowBox->GetState() )
     {
@@ -2097,7 +2101,7 @@ IMPL_LINK_NOARG_TYPED(SvxExtParagraphTabPage, WidowHdl_Impl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxExtParagraphTabPage, OrphanHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxExtParagraphTabPage, OrphanHdl_Impl, Button*, void)
 {
     switch( m_pOrphanBox->GetState() )
     {
@@ -2119,7 +2123,7 @@ IMPL_LINK_NOARG_TYPED(SvxExtParagraphTabPage, OrphanHdl_Impl, Button*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SvxExtParagraphTabPage, HyphenClickHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxExtParagraphTabPage, HyphenClickHdl_Impl, Button*, void)
 {
 
     bool bEnable = m_pHyphenBox->GetState() == TRISTATE_TRUE;
@@ -2132,7 +2136,7 @@ IMPL_LINK_NOARG_TYPED(SvxExtParagraphTabPage, HyphenClickHdl_Impl, Button*, void
     m_pHyphenBox->SetState( bEnable ? TRISTATE_TRUE : TRISTATE_FALSE);
 }
 
-IMPL_LINK_NOARG_TYPED(SvxExtParagraphTabPage, ApplyCollClickHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxExtParagraphTabPage, ApplyCollClickHdl_Impl, Button*, void)
 {
     bool bEnable = false;
     if ( m_pApplyCollBtn->GetState() == TRISTATE_TRUE &&
@@ -2153,7 +2157,7 @@ IMPL_LINK_NOARG_TYPED(SvxExtParagraphTabPage, ApplyCollClickHdl_Impl, Button*, v
     }
 }
 
-IMPL_LINK_TYPED( SvxExtParagraphTabPage, PageBreakPosHdl_Impl, ListBox&, rListBox, void )
+IMPL_LINK( SvxExtParagraphTabPage, PageBreakPosHdl_Impl, ListBox&, rListBox, void )
 {
     if ( 0 == rListBox.GetSelectEntryPos() )
     {
@@ -2179,7 +2183,7 @@ IMPL_LINK_TYPED( SvxExtParagraphTabPage, PageBreakPosHdl_Impl, ListBox&, rListBo
     }
 }
 
-IMPL_LINK_TYPED( SvxExtParagraphTabPage, PageBreakTypeHdl_Impl, ListBox&, rListBox, void )
+IMPL_LINK( SvxExtParagraphTabPage, PageBreakTypeHdl_Impl, ListBox&, rListBox, void )
 {
     //column break or break break after
     sal_Int32 nBreakPos = m_pBreakPositionLB->GetSelectEntryPos();
@@ -2195,7 +2199,7 @@ IMPL_LINK_TYPED( SvxExtParagraphTabPage, PageBreakTypeHdl_Impl, ListBox&, rListB
         PageBreakPosHdl_Impl( *m_pBreakPositionLB );
 }
 
-IMPL_LINK_NOARG_TYPED(SvxExtParagraphTabPage, PageNumBoxClickHdl_Impl, Button*, void)
+IMPL_LINK_NOARG(SvxExtParagraphTabPage, PageNumBoxClickHdl_Impl, Button*, void)
 {
     m_pPagenumEdit->Enable(m_pPageNumBox->GetState() == TRISTATE_TRUE);
 }
@@ -2313,7 +2317,7 @@ void SvxAsianTabPage::ChangesApplied()
     m_pHangingPunctCB->SaveValue();
     m_pScriptSpaceCB->SaveValue();
 }
-IMPL_STATIC_LINK_TYPED( SvxAsianTabPage, ClickHdl_Impl, Button*, pBox, void )
+IMPL_STATIC_LINK( SvxAsianTabPage, ClickHdl_Impl, Button*, pBox, void )
 {
     static_cast<CheckBox*>(pBox)->EnableTriState( false );
 }

@@ -130,7 +130,7 @@ public:
     }
 
 protected:
-    virtual ~DocumentStorageAccess()
+    virtual ~DocumentStorageAccess() override
     {
     }
 
@@ -395,13 +395,12 @@ void SAL_CALL DocumentStorageAccess::disposing( const css::lang::EventObject& So
 ODatabaseModelImpl::ODatabaseModelImpl( const Reference< XComponentContext >& _rxContext, ODatabaseContext& _rDBContext )
             :m_xModel()
             ,m_xDataSource()
-            ,m_pStorageAccess( nullptr )
             ,m_aMutex()
             ,m_aMutexFacade( m_aMutex )
             ,m_aContainer(4)
             ,m_aMacroMode( *this )
             ,m_nImposedMacroExecMode( MacroExecMode::NEVER_EXECUTE )
-            ,m_pDBContext( &_rDBContext )
+            ,m_rDBContext( _rDBContext )
             ,m_refCount(0)
             ,m_aEmbeddedMacros()
             ,m_bModificationLock( false )
@@ -430,13 +429,12 @@ ODatabaseModelImpl::ODatabaseModelImpl(
                     )
             :m_xModel()
             ,m_xDataSource()
-            ,m_pStorageAccess( nullptr )
             ,m_aMutex()
             ,m_aMutexFacade( m_aMutex )
             ,m_aContainer(4)
             ,m_aMacroMode( *this )
             ,m_nImposedMacroExecMode( MacroExecMode::NEVER_EXECUTE )
-            ,m_pDBContext( &_rDBContext )
+            ,m_rDBContext( _rDBContext )
             ,m_refCount(0)
             ,m_aEmbeddedMacros()
             ,m_bModificationLock( false )
@@ -506,7 +504,7 @@ void ODatabaseModelImpl::impl_construct_nothrow()
     {
         DBG_UNHANDLED_EXCEPTION();
     }
-    m_pDBContext->appendAtTerminateListener(*this);
+    m_rDBContext.appendAtTerminateListener(*this);
 }
 
 namespace
@@ -615,11 +613,10 @@ void ODatabaseModelImpl::reset()
     ::std::vector< TContentPtr > aEmptyContainers( 4 );
     m_aContainer.swap( aEmptyContainers );
 
-    if ( m_pStorageAccess )
+    if ( m_pStorageAccess.is() )
     {
         m_pStorageAccess->dispose();
-        m_pStorageAccess->release();
-        m_pStorageAccess = nullptr;
+        m_pStorageAccess.clear();
     }
 }
 
@@ -629,15 +626,20 @@ void SAL_CALL ODatabaseModelImpl::disposing( const css::lang::EventObject& Sourc
     if ( xCon.is() )
     {
         bool bStore = false;
-        OWeakConnectionArray::const_iterator aEnd = m_aConnections.end();
-        for (OWeakConnectionArray::iterator i = m_aConnections.begin(); aEnd != i; ++i)
+        for (OWeakConnectionArray::iterator i = m_aConnections.begin(); i != m_aConnections.end(); )
         {
-            if ( xCon == i->get() )
+            css::uno::Reference< css::sdbc::XConnection > xIterConn ( *i );
+            if ( !xIterConn.is())
+            {
+                i = m_aConnections.erase(i);
+            }
+            else if ( xCon == xIterConn )
             {
                 *i = css::uno::WeakReference< css::sdbc::XConnection >();
                 bStore = true;
                 break;
-            }
+            } else
+                ++i;
         }
 
         if ( bStore )
@@ -723,11 +725,10 @@ void ODatabaseModelImpl::dispose()
         DBG_UNHANDLED_EXCEPTION();
     }
 
-    if ( m_pStorageAccess )
+    if ( m_pStorageAccess.is() )
     {
         m_pStorageAccess->dispose();
-        m_pStorageAccess->release();
-        m_pStorageAccess = nullptr;
+        m_pStorageAccess.clear();
     }
 }
 
@@ -857,12 +858,11 @@ Reference< XStorage > ODatabaseModelImpl::getOrCreateRootStorage()
 
 DocumentStorageAccess* ODatabaseModelImpl::getDocumentStorageAccess()
 {
-    if ( !m_pStorageAccess )
+    if ( !m_pStorageAccess.is() )
     {
         m_pStorageAccess = new DocumentStorageAccess( *this );
-        m_pStorageAccess->acquire();
     }
-    return m_pStorageAccess;
+    return m_pStorageAccess.get();
 }
 
 void ODatabaseModelImpl::modelIsDisposing( const bool _wasInitialized, ResetModelAccess )
@@ -982,10 +982,11 @@ void SAL_CALL ODatabaseModelImpl::release()
     if ( osl_atomic_decrement(&m_refCount) == 0 )
     {
         acquire();  // prevent multiple releases
-        m_pDBContext->removeFromTerminateListener(*this);
+        m_rDBContext.removeFromTerminateListener(*this);
         dispose();
-        m_pDBContext->storeTransientProperties(*this);
-        revokeDataSource();
+        m_rDBContext.storeTransientProperties(*this);
+        if (!m_sDocumentURL.isEmpty())
+            m_rDBContext.revokeDatabaseDocument(*this);
         delete this;
     }
 }
@@ -1086,12 +1087,6 @@ TContentPtr& ODatabaseModelImpl::getObjectContainer( ObjectType _eType )
         rContentPtr->m_aProps.aTitle = lcl_getContainerStorageName_throw( _eType );
     }
     return rContentPtr;
-}
-
-void ODatabaseModelImpl::revokeDataSource() const
-{
-    if ( m_pDBContext && !m_sDocumentURL.isEmpty() )
-        m_pDBContext->revokeDatabaseDocument( *this );
 }
 
 bool ODatabaseModelImpl::adjustMacroMode_AutoReject()
@@ -1254,13 +1249,10 @@ void ODatabaseModelImpl::impl_switchToLogicalURL( const OUString& i_rDocumentURL
         m_sDocFileLocation = m_sDocumentURL;
 
     // register at the database context, or change registration
-    if ( m_pDBContext )
-    {
-        if ( !sOldURL.isEmpty() )
-            m_pDBContext->databaseDocumentURLChange( sOldURL, m_sDocumentURL );
-        else
-            m_pDBContext->registerDatabaseDocument( *this );
-    }
+    if (!sOldURL.isEmpty())
+        m_rDBContext.databaseDocumentURLChange( sOldURL, m_sDocumentURL );
+    else
+        m_rDBContext.registerDatabaseDocument( *this );
 }
 
 OUString ODatabaseModelImpl::getObjectContainerStorageName( const ObjectType _eType )

@@ -3,17 +3,17 @@ msgid ""
 msgstr ""
 "Project-Id-Version: LibO 40l10n\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2016-12-01 12:11+0100\n"
-"PO-Revision-Date: 2016-10-18 14:43+0000\n"
-"Last-Translator: Anonymous Pootle User\n"
+"POT-Creation-Date: 2017-06-01 14:03+0200\n"
+"PO-Revision-Date: 2017-07-29 01:15+0000\n"
+"Last-Translator: A S Alam <apreet.alam@gmail.com>\n"
 "Language-Team: none\n"
 "Language: pa_IN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: LibreOffice\n"
 "X-Accelerator-Marker: ~\n"
-"X-POOTLE-MTIME: 1476801811.000000\n"
+"X-Generator: Pootle 2.8\n"
+"X-POOTLE-MTIME: 1501290910.000000\n"
 
 #: aboutconfigdialog.ui
 msgctxt ""
@@ -184,7 +184,7 @@ msgctxt ""
 "copyright\n"
 "label\n"
 "string.text"
-msgid "Copyright © 2000–2016 LibreOffice contributors."
+msgid "Copyright © 2000–2017 LibreOffice contributors."
 msgstr ""
 
 #: aboutdialog.ui
@@ -1710,14 +1710,13 @@ msgid "Background"
 msgstr ""
 
 #: borderpage.ui
-#, fuzzy
 msgctxt ""
 "borderpage.ui\n"
 "userdefft\n"
 "label\n"
 "string.text"
 msgid "_User-defined:"
-msgstr "ਯੂਜ਼ਰ ਪ੍ਰਭਾਸ਼ਿਤ (_U)"
+msgstr "ਵਰਤੋਂਕਾਰ-ਪ੍ਰਭਾਸ਼ਿਤ (_U)"
 
 #: borderpage.ui
 msgctxt ""
@@ -8730,7 +8729,7 @@ msgctxt ""
 "1\n"
 "stringlist.text"
 msgid "User-defined"
-msgstr "ਯੂਜ਼ਰ-ਪ੍ਰਭਾਸ਼ਿਤ"
+msgstr "ਵਰਤੋਂਕਾਰ-ਪ੍ਰਭਾਸ਼ਿਤ"
 
 #: numberingformatpage.ui
 msgctxt ""
@@ -11086,14 +11085,13 @@ msgid "Ignore"
 msgstr ""
 
 #: optlanguagespage.ui
-#, fuzzy
 msgctxt ""
 "optlanguagespage.ui\n"
 "label4\n"
 "label\n"
 "string.text"
 msgid "_User interface:"
-msgstr "ਯੂਜ਼ਰ ਇੰਟਰਫੇਸ"
+msgstr "ਵਰਤੋਂਕਾਰ ਇੰਟਰਫੇਸ(_U):"
 
 #: optlanguagespage.ui
 msgctxt ""
@@ -12296,13 +12294,14 @@ msgid "_Company:"
 msgstr "ਕੰਪਨੀ(_C)"
 
 #: optuserpage.ui
+#, fuzzy
 msgctxt ""
 "optuserpage.ui\n"
 "nameft\n"
 "label\n"
 "string.text"
-msgid "Name/initials:"
-msgstr ""
+msgid "First/last _name/initials:"
+msgstr "ਪਹਿਲਾਂ ਨਾਂ/ਅੰਤ ਨਾਂ(_n)/ਸ਼ੁਰੂ"
 
 #: optuserpage.ui
 #, fuzzy
@@ -12372,11 +12371,20 @@ msgstr ""
 #: optuserpage.ui
 msgctxt ""
 "optuserpage.ui\n"
+"firstname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "First name"
+msgstr "ਪਹਿਲਾ ਨਾਂ"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
 "lastname-atkobject\n"
 "AtkObject::accessible-name\n"
 "string.text"
-msgid "Name"
-msgstr ""
+msgid "Last name"
+msgstr "ਆਖਰੀ ਨਾਂ"
 
 #: optuserpage.ui
 msgctxt ""
@@ -12476,6 +12484,88 @@ msgctxt ""
 "string.text"
 msgid "Use data for document properties"
 msgstr "ਡੌਕੂਮੈਂਟ ਵਿਸ਼ੇਸ਼ਤਾ ਲਈ ਡਾਟਾ ਵਰਤੋ"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"rusnameft\n"
+"label\n"
+"string.text"
+msgid "Last name/first _name/father’s name/initials:"
+msgstr ""
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"ruslastname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Last name"
+msgstr "ਆਖਰੀ ਨਾਂ"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"rusfathersname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Father's name"
+msgstr ""
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"russhortname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Initials"
+msgstr "ਸ਼ੁਰੂਆਤੀ"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"rusfirstname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "First name"
+msgstr "ਪਹਿਲਾ ਨਾਂ"
+
+#: optuserpage.ui
+#, fuzzy
+msgctxt ""
+"optuserpage.ui\n"
+"eastnameft\n"
+"label\n"
+"string.text"
+msgid "Last/first _name/initials:"
+msgstr "ਪਹਿਲਾਂ ਨਾਂ/ਅੰਤ ਨਾਂ(_n)/ਸ਼ੁਰੂ"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"eastlastname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Last name"
+msgstr "ਆਖਰੀ ਨਾਂ"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"eastfirstname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "First name"
+msgstr "ਪਹਿਲਾ ਨਾਂ"
+
+#: optuserpage.ui
+msgctxt ""
+"optuserpage.ui\n"
+"eastshortname-atkobject\n"
+"AtkObject::accessible-name\n"
+"string.text"
+msgid "Initials"
+msgstr "ਸ਼ੁਰੂਆਤੀ"
 
 #: optuserpage.ui
 msgctxt ""
@@ -12634,33 +12724,6 @@ msgstr ""
 #: optviewpage.ui
 msgctxt ""
 "optviewpage.ui\n"
-"menuicons\n"
-"0\n"
-"stringlist.text"
-msgid "Automatic"
-msgstr "ਆਟੋਮੈਟਿਕ"
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
-"menuicons\n"
-"1\n"
-"stringlist.text"
-msgid "Hide"
-msgstr "ਓਹਲੇ"
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
-"menuicons\n"
-"2\n"
-"stringlist.text"
-msgid "Show"
-msgstr "ਵੇਖੋ"
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
 "contextmenushortcuts\n"
 "0\n"
 "stringlist.text"
@@ -12693,6 +12756,33 @@ msgctxt ""
 "string.text"
 msgid "Shortcuts in context menus:"
 msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"menuicons\n"
+"0\n"
+"stringlist.text"
+msgid "Automatic"
+msgstr "ਆਟੋਮੈਟਿਕ"
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"menuicons\n"
+"1\n"
+"stringlist.text"
+msgid "Hide"
+msgstr "ਓਹਲੇ"
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
+"menuicons\n"
+"2\n"
+"stringlist.text"
+msgid "Show"
+msgstr "ਵੇਖੋ"
 
 #: optviewpage.ui
 msgctxt ""
@@ -12881,15 +12971,6 @@ msgstr ""
 #: optviewpage.ui
 msgctxt ""
 "optviewpage.ui\n"
-"aafrom\n"
-"label\n"
-"string.text"
-msgid "fro_m:"
-msgstr ""
-
-#: optviewpage.ui
-msgctxt ""
-"optviewpage.ui\n"
 "label9\n"
 "label\n"
 "string.text"
@@ -12962,11 +13043,20 @@ msgstr ""
 #: optviewpage.ui
 msgctxt ""
 "optviewpage.ui\n"
+"aafrom\n"
+"label\n"
+"string.text"
+msgid "fro_m:"
+msgstr ""
+
+#: optviewpage.ui
+msgctxt ""
+"optviewpage.ui\n"
 "label1\n"
 "label\n"
 "string.text"
 msgid "User Interface"
-msgstr "ਯੂਜ਼ਰ ਇੰਟਰਫੇਸ"
+msgstr "ਵਰਤੋਂਕਾਰ ਇੰਟਰਫੇਸ"
 
 #: optviewpage.ui
 msgctxt ""
@@ -16055,7 +16145,7 @@ msgctxt ""
 "label\n"
 "string.text"
 msgid "User name"
-msgstr "ਯੂਜ਼ਰ ਨਾਂ"
+msgstr "ਵਰਤੋਂਕਾਰ-ਨਾਂ"
 
 #: storedwebconnectiondialog.ui
 msgctxt ""

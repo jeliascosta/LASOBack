@@ -154,7 +154,7 @@ public:
     /** The destructor releases its children manager and text engine if
         still existent.  These are responsible to send appropriate events.
     */
-    virtual ~AccessibleShape();
+    virtual ~AccessibleShape() override;
 
     /** Initialize a new shape.  See the documentation of the constructor
         for the reason of this method's existence.
@@ -216,7 +216,7 @@ public:
         @return
             Reference of the requested child which is the accessible object
             of a visible shape.
-        @raises IndexOutOfBoundsException
+        @throws IndexOutOfBoundsException
             Throws an exception if the index is not valid.
     */
     virtual css::uno::Reference<
@@ -323,8 +323,7 @@ public:
         throw (css::uno::RuntimeException, std::exception) override;
 
     //=====  IAccessibleViewForwarderListener  ================================
-    virtual void ViewForwarderChanged (ChangeType aChangeType,
-        const IAccessibleViewForwarder* pViewForwarder) override;
+    virtual void ViewForwarderChanged() override;
 
     //=====  lang::XEventListener  ============================================
 
@@ -444,8 +443,6 @@ protected:
        GetFullAccessibleName(AccessibleShape *shape)
        throw (css::uno::RuntimeException, std::exception);
     virtual OUString GetStyle();
-    void UpdateDocumentAllSelState(css::uno::Reference<
-        css::accessibility::XAccessibleStateSet > &xStateSet);
     /** Update the <const>OPAQUE</const> and <const>SELECTED</const> state.
     */
     void UpdateStates();

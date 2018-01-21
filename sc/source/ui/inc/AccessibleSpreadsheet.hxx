@@ -71,7 +71,7 @@ protected:
         ScAccessibleSpreadsheet& rParent,
         const ScRange& rRange );
 
-    virtual ~ScAccessibleSpreadsheet();
+    virtual ~ScAccessibleSpreadsheet() override;
 
     void ConstructScAccessibleSpreadsheet(
         ScAccessibleDocument* pAccDoc,
@@ -261,7 +261,6 @@ protected:
 private:
     ScTabViewShell* mpViewShell;
     ScRangeList*    mpMarkedRanges;
-    std::vector<ScMyAddress>* mpSortedMarkedCells;
     ScAccessibleDocument* mpAccDoc;
     rtl::Reference<ScAccessibleCell> mpAccCell;
     Rectangle       maVisCells;
@@ -291,7 +290,6 @@ private:
         MAP_ADDR_XACC;
     MAP_ADDR_XACC m_mapSelectionSend;
     void RemoveSelection(ScMarkData &refScMarkData);
-    bool IsSameMarkCell();
     void CommitFocusCell(const ScAddress &aNewCell);
 public:
     void FireFirstCellFocus();

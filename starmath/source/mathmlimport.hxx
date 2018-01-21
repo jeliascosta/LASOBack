@@ -78,6 +78,7 @@ class SmXMLImport : public SvXMLImport
     std::unique_ptr<SvXMLTokenMap> pPresTableElemTokenMap;
     std::unique_ptr<SvXMLTokenMap> pColorTokenMap;
     std::unique_ptr<SvXMLTokenMap> pActionAttrTokenMap;
+    std::unique_ptr<SvXMLTokenMap> pMspaceAttrTokenMap;
 
         SmNodeStack aNodeStack;
         bool bSuccess;
@@ -87,7 +88,7 @@ public:
     SmXMLImport(
         const css::uno::Reference< css::uno::XComponentContext >& rContext,
         OUString const & implementationName, SvXMLImportFlags nImportFlags);
-    virtual ~SmXMLImport() throw ();
+    virtual ~SmXMLImport() throw () override;
 
     // XUnoTunnel
     sal_Int64 SAL_CALL getSomething( const css::uno::Sequence< sal_Int8 >& rId ) throw(css::uno::RuntimeException, std::exception) override;
@@ -236,12 +237,9 @@ public:
     const SvXMLTokenMap &GetPresTableElemTokenMap();
     const SvXMLTokenMap &GetColorTokenMap();
     const SvXMLTokenMap &GetActionAttrTokenMap();
+    const SvXMLTokenMap &GetMspaceAttrTokenMap();
 
     SmNodeStack & GetNodeStack()    { return aNodeStack; }
-    SmNode *GetTree()
-    {
-        return popOrZero(aNodeStack);
-    }
 
     bool GetSuccess()              { return bSuccess; }
     SAL_WARN_UNUSED_RESULT const OUString& GetText() { return aText; }
@@ -338,6 +336,10 @@ enum SmXMLActionAttrTokenMap
     XML_TOK_SELECTION
 };
 
+enum SmXMLMspaceAttrTokenMap
+{
+    XML_TOK_WIDTH
+};
 
 #endif
 

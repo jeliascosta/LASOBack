@@ -30,11 +30,11 @@ struct SvxSwFrameValidation;
 
 class SwDrawBaseShell: public SwBaseShell
 {
-    DECL_LINK_TYPED( CheckGroupShapeNameHdl, AbstractSvxObjectNameDialog&, bool );
-    DECL_LINK_TYPED(ValidatePosition, SvxSwFrameValidation&, void );
+    DECL_LINK( CheckGroupShapeNameHdl, AbstractSvxObjectNameDialog&, bool );
+    DECL_LINK(ValidatePosition, SvxSwFrameValidation&, void );
 public:
                 SwDrawBaseShell(SwView &rShell);
-    virtual     ~SwDrawBaseShell();
+    virtual     ~SwDrawBaseShell() override;
 
     SFX_DECL_INTERFACE(SW_DRAWBASESHELL)
 

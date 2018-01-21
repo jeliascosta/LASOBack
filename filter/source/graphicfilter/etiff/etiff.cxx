@@ -172,28 +172,20 @@ bool TIFFWriter::WriteTIFF( const Graphic& rGraphic, FilterConfigItem* pFilterCo
     mnLatestIfdPos = m_rOStm.Tell();
     m_rOStm.WriteUInt32( 0 );
 
-    Animation   aAnimation;
-    Bitmap      aBmp;
-
     if( mbStatus )
     {
-        if ( rGraphic.IsAnimated() )
-            aAnimation = rGraphic.GetAnimation();
-        else
-        {
-            AnimationBitmap aAnimationBitmap( rGraphic.GetBitmap(), Point(), Size() );
-            aAnimation.Insert( aAnimationBitmap );
-        }
+        Animation aAnimation = rGraphic.IsAnimated() ? rGraphic.GetAnimation() : Animation();
+        if (!rGraphic.IsAnimated())
+            aAnimation.Insert(AnimationBitmap(rGraphic.GetBitmap(), Point(), Size()));
 
-        sal_uInt16 i;
-        for ( i = 0; i < aAnimation.Count(); i++ )
-            mnSumOfAllPictHeight += aAnimation.Get( i ).aBmpEx.GetSizePixel().Height();
+        for (size_t i = 0; i < aAnimation.Count(); ++i)
+            mnSumOfAllPictHeight += aAnimation.Get(i).aBmpEx.GetSizePixel().Height();
 
-        for ( i = 0; mbStatus && ( i < aAnimation.Count() ); i++ )
+        for (size_t i = 0; mbStatus && i < aAnimation.Count(); ++i)
         {
             mnPalPos = 0;
             const AnimationBitmap& rAnimationBitmap = aAnimation.Get( i );
-            aBmp = rAnimationBitmap.aBmpEx.GetBitmap();
+            Bitmap aBmp = rAnimationBitmap.aBmpEx.GetBitmap();
             mpAcc = aBmp.AcquireReadAccess();
             if ( mpAcc )
             {
@@ -207,10 +199,10 @@ bool TIFFWriter::WriteTIFF( const Graphic& rGraphic, FilterConfigItem* pFilterCo
                 {
                     Size aDestMapSize( 300, 300 );
                     const MapMode aMapMode( aBmp.GetPrefMapMode() );
-                    if ( aMapMode.GetMapUnit() != MAP_PIXEL )
+                    if ( aMapMode.GetMapUnit() != MapUnit::MapPixel )
                     {
                         const Size aPrefSize( rGraphic.GetPrefSize() );
-                        aDestMapSize = OutputDevice::LogicToLogic( aPrefSize, aMapMode, MAP_INCH );
+                        aDestMapSize = OutputDevice::LogicToLogic( aPrefSize, aMapMode, MapUnit::MapInch );
                     }
                     ImplWriteResolution( mnXResPos, aDestMapSize.Width() );
                     ImplWriteResolution( mnYResPos, aDestMapSize.Height() );

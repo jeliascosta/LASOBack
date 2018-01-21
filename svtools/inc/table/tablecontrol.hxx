@@ -63,7 +63,7 @@ namespace svt { namespace table
 
     public:
         TableControl( vcl::Window* _pParent, WinBits _nStyle );
-        virtual ~TableControl();
+        virtual ~TableControl() override;
         virtual void dispose() override;
 
         /// sets a new table model
@@ -165,7 +165,7 @@ namespace svt { namespace table
 
 
     private:
-        DECL_DLLPRIVATE_LINK_TYPED( ImplSelectHdl, LinkParamNone*, void );
+        DECL_DLLPRIVATE_LINK( ImplSelectHdl, LinkParamNone*, void );
 
     private:
         TableControl( const TableControl& ) = delete;

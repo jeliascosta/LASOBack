@@ -16,6 +16,7 @@ $(eval $(call gb_Module_add_targets,sc,\
 	Library_scfilt \
 	$(call gb_Helper_optional,DESKTOP,Library_scui) \
 	$(call gb_Helper_optional,OPENCL,Package_opencl) \
+	Package_res_xml \
 ))
 
 $(eval $(call gb_Module_add_l10n_targets,sc,\
@@ -48,8 +49,13 @@ $(eval $(call gb_Module_add_check_targets,sc,\
 	CppunitTest_sc_rangelst_test \
 	CppunitTest_sc_mark_test \
 	CppunitTest_sc_core \
-	CppunitTest_sc_tiledrendering \
 ))
+
+ifeq ($(OS),LINUX)
+$(eval $(call gb_Module_add_check_targets,sc,\
+    CppunitTest_sc_tiledrendering \
+))
+endif
 
 $(eval $(call gb_Module_add_slowcheck_targets,sc, \
 	CppunitTest_sc_condformats \
@@ -59,8 +65,17 @@ $(eval $(call gb_Module_add_slowcheck_targets,sc, \
 	CppunitTest_sc_html_export_test \
 	CppunitTest_sc_opencl_test \
 	CppunitTest_sc_copypaste \
+))
+
+# Various function tests fail in 32-bit linux_x86 build due to dreaded floating
+# point weirdness (x87, registers, compiler optimization, ... whatever),
+# disable them until someone finds a real cure.
+
+ifneq ($(PLATFORMID),linux_x86)
+$(eval $(call gb_Module_add_slowcheck_targets,sc, \
 	CppunitTest_sc_functions_test \
 ))
+endif
 
 # Disabled to allow the check tinderbox execute the sd tests
 # CppunitTest_sc_chart_regression_test \
@@ -74,6 +89,7 @@ $(eval $(call gb_Module_add_subsequentcheck_targets,sc,\
 	JunitTest_sc_unoapi_5 \
 	JunitTest_sc_unoapi_6 \
 	JunitTest_sc_unoapi_7 \
+	CppunitTest_sc_anchor_test \
 	CppunitTest_sc_annotationshapeobj \
 	CppunitTest_sc_outlineobj \
 	CppunitTest_sc_styleloaderobj \
@@ -104,5 +120,9 @@ $(eval $(call gb_Module_add_perfcheck_targets,sc,\
 	CppunitTest_sc_tablesheetobj \
 ))
 
+# screenshots
+$(eval $(call gb_Module_add_screenshot_targets,sc,\
+	CppunitTest_sc_screenshots \
+))
 
 # vim: set noet sw=4 ts=4:

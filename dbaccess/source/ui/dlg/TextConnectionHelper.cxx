@@ -31,7 +31,6 @@
 #include "dsitems.hxx"
 #include "dbfindex.hxx"
 #include "dbaccess_helpid.hrc"
-#include "localresaccess.hxx"
 #include <vcl/layout.hxx>
 #include <vcl/mnemonic.hxx>
 #include <svl/cjkoptions.hxx>
@@ -169,12 +168,12 @@ namespace dbaui
         TabPage::dispose();
     }
 
-    IMPL_LINK_NOARG_TYPED(OTextConnectionHelper, OnEditModified, Edit&, void)
+    IMPL_LINK_NOARG(OTextConnectionHelper, OnEditModified, Edit&, void)
     {
         m_aGetExtensionHandler.Call(this);
     }
 
-    IMPL_LINK_NOARG_TYPED(OTextConnectionHelper, OnSetExtensionHdl, RadioButton&, void)
+    IMPL_LINK_NOARG(OTextConnectionHelper, OnSetExtensionHdl, RadioButton&, void)
     {
         bool bDoEnable = m_pAccessOtherFiles->IsChecked();
         m_pOwnExtension->Enable(bDoEnable);

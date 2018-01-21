@@ -77,7 +77,7 @@ protected:
     }
 
     SwTextFormatColl( SwAttrPool& rPool, const OUString &rFormatCollName,
-                    SwTextFormatColl* pDerFrom = nullptr,
+                    SwTextFormatColl* pDerFrom,
                     sal_uInt16 nFormatWh = RES_TXTFMTCOLL )
         : SwFormatColl(rPool, rFormatCollName, aTextFormatCollSetRange, pDerFrom, nFormatWh)
         , mbStayAssignedToListLevelOfOutlineStyle(false)
@@ -145,7 +145,7 @@ protected:
     {}
 
     SwGrfFormatColl( SwAttrPool& rPool, const OUString &rFormatCollName,
-                    SwGrfFormatColl* pDerFrom = nullptr )
+                    SwGrfFormatColl* pDerFrom )
         : SwFormatColl( rPool, rFormatCollName, aGrfFormatCollSetRange,
                     pDerFrom, RES_GRFFMTCOLL )
     {}
@@ -183,10 +183,10 @@ class SW_DLLPUBLIC SwCollCondition : public SwClient
 public:
 
     SwCollCondition( SwTextFormatColl* pColl, sal_uLong nMasterCond,
-                    sal_uLong nSubCond = 0 );
+                    sal_uLong nSubCond );
     SwCollCondition( SwTextFormatColl* pColl, sal_uLong nMasterCond,
                     const OUString& rSubExp );
-    virtual ~SwCollCondition();
+    virtual ~SwCollCondition() override;
 
     /// @@@ public copy ctor, but no copy assignment?
     SwCollCondition( const SwCollCondition& rCpy );
@@ -207,7 +207,7 @@ public:
     void RegisterToFormat( SwFormat& );
 };
 
-class SwFormatCollConditions : public std::vector<std::unique_ptr<SwCollCondition>> {};
+using SwFormatCollConditions = std::vector<std::unique_ptr<SwCollCondition>>;
 
 class SW_DLLPUBLIC SwConditionTextFormatColl : public SwTextFormatColl
 {
@@ -217,13 +217,13 @@ protected:
     SwFormatCollConditions m_CondColls;
 
     SwConditionTextFormatColl( SwAttrPool& rPool, const OUString &rFormatCollName,
-                            SwTextFormatColl* pDerFrom = nullptr )
+                            SwTextFormatColl* pDerFrom )
         : SwTextFormatColl( rPool, rFormatCollName, pDerFrom, RES_CONDTXTFMTCOLL )
     {}
 
 public:
 
-    virtual ~SwConditionTextFormatColl();
+    virtual ~SwConditionTextFormatColl() override;
 
     const SwCollCondition* HasCondition( const SwCollCondition& rCond ) const;
     const SwFormatCollConditions& GetCondColls() const { return m_CondColls; }

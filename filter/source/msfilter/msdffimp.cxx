@@ -168,9 +168,7 @@ struct SvxMSDffBLIPInfos : public std::vector<SvxMSDffBLIPInfo> {};
 void Impl_OlePres::Write( SvStream & rStm )
 {
     WriteClipboardFormat( rStm, SotClipboardFormatId::GDIMETAFILE );
-    rStm.WriteInt32( nJobLen + 4 );       // a TargetDevice that's always empty
-    if( nJobLen )
-        rStm.Write( pJob, nJobLen );
+    rStm.WriteInt32( 4 );       // a TargetDevice that's always empty
     rStm.WriteUInt32( nAspect );
     rStm.WriteInt32( -1 );      //L-Index always -1
     rStm.WriteInt32( nAdvFlags );
@@ -180,7 +178,7 @@ void Impl_OlePres::Write( SvStream & rStm )
     sal_uLong nPos = rStm.Tell();
     rStm.WriteInt32( 0 );
 
-    if( GetFormat() == SotClipboardFormatId::GDIMETAFILE && pMtf )
+    if( nFormat == SotClipboardFormatId::GDIMETAFILE && pMtf )
     {
         // Always to 1/100 mm, until Mtf-Solution found
         // Assumption (no scaling, no origin translation)
@@ -191,15 +189,15 @@ void Impl_OlePres::Write( SvStream & rStm )
         DBG_ASSERT( pMtf->GetPrefMapMode().GetOrigin() == Point(),
                     "Origin-Verschiebung im Mtf" );
         MapUnit nMU = pMtf->GetPrefMapMode().GetMapUnit();
-        if( MAP_100TH_MM != nMU )
+        if( MapUnit::Map100thMM != nMU )
         {
             Size aPrefS( pMtf->GetPrefSize() );
             Size aS( aPrefS );
-            aS = OutputDevice::LogicToLogic( aS, nMU, MAP_100TH_MM );
+            aS = OutputDevice::LogicToLogic( aS, nMU, MapUnit::Map100thMM );
 
             pMtf->Scale( Fraction( aS.Width(), aPrefS.Width() ),
                          Fraction( aS.Height(), aPrefS.Height() ) );
-            pMtf->SetPrefMapMode( MAP_100TH_MM );
+            pMtf->SetPrefMapMode( MapUnit::Map100thMM );
             pMtf->SetPrefSize( aS );
         }
         WriteWindowMetafileBits( rStm, *pMtf );
@@ -462,9 +460,9 @@ void SvxMSDffManager::SolveSolver( const SvxMSDffSolverContainer& rSolver )
                     SdrGluePointList* pList = pO->ForceGluePointList();
 
                     sal_Int32 nId = nC;
-                    sal_uInt32 nInventor = pO->GetObjInventor();
+                    SdrInventor nInventor = pO->GetObjInventor();
 
-                    if( nInventor == SdrInventor )
+                    if( nInventor == SdrInventor::Default )
                     {
                         bool bValidGluePoint = false;
                         sal_uInt32 nObjId = pO->GetObjIdentifier();
@@ -1020,7 +1018,7 @@ void DffPropertyReader::ApplyLineAttributes( SfxItemSet& rSet, const MSO_SPT eSh
 
         if ( nLineFlags & 0x10 )
         {
-            bool bScaleArrows = rManager.pSdrModel->GetScaleUnit() == MAP_TWIP;
+            bool bScaleArrows = rManager.pSdrModel->GetScaleUnit() == MapUnit::MapTwip;
 
             // LineStart
 
@@ -1373,7 +1371,7 @@ void DffPropertyReader::ApplyFillAttributes( SvStream& rIn, SfxItemSet& rSet, co
 
                             XOBitmap aXOBitmap( aBmp );
                             aXOBitmap.Bitmap2Array();
-                            aXOBitmap.SetBitmapType( XBITMAP_8X8 );
+                            aXOBitmap.SetBitmapType( XBitmapType::N8x8 );
                             aXOBitmap.SetPixelSize( aBmp.GetSizePixel() );
 
                             if( aXOBitmap.GetBackgroundColor() == COL_BLACK )
@@ -1832,7 +1830,7 @@ void DffPropertyReader::ApplyCustomShapeGeometryAttributes( SvStream& rIn, SfxIt
         }
         // "ProjectionMode"
         const OUString sExtrusionProjectionMode( "ProjectionMode" );
-        ProjectionMode eProjectionMode = GetPropertyValue( DFF_Prop_fc3DFillHarsh, 0 ) & 4 ? ProjectionMode_PARALLEL : ProjectionMode_PERSPECTIVE;
+        ProjectionMode eProjectionMode = (GetPropertyValue( DFF_Prop_fc3DFillHarsh, 0 ) & 4) ? ProjectionMode_PARALLEL : ProjectionMode_PERSPECTIVE;
         aProp.Name = sExtrusionProjectionMode;
         aProp.Value <<= eProjectionMode;
         aExtrusionPropVec.push_back( aProp );
@@ -2213,7 +2211,7 @@ void DffPropertyReader::ApplyCustomShapeGeometryAttributes( SvStream& rIn, SfxIt
                 sal_uInt16 nElemSizeSeg = 2;
                 rIn.ReadUInt16( nNumElemSeg ).ReadUInt16( nNumElemMemSeg ).ReadUInt16( nElemSizeSeg );
             }
-            sal_Size nMaxEntriesPossible = rIn.remainingSize() / sizeof(sal_uInt16);
+            std::size_t nMaxEntriesPossible = rIn.remainingSize() / sizeof(sal_uInt16);
             if (nNumElemSeg > nMaxEntriesPossible)
             {
                 SAL_WARN("filter.ms", "NumElem list is longer than remaining bytes, ppt or parser is wrong");
@@ -2574,17 +2572,17 @@ void DffPropertyReader::ApplyAttributes( SvStream& rIn, SfxItemSet& rSet, DffObj
         rSet.Put( SvxFontHeightItem( rManager.ScalePt( GetPropertyValue( DFF_Prop_gtextSize, 0 ) ), 100, EE_CHAR_FONTHEIGHT ) );
     sal_uInt32 nFontAttributes = GetPropertyValue( DFF_Prop_gtextFStrikethrough, 0 );
     if ( nFontAttributes & 0x20 )
-        rSet.Put( SvxWeightItem( nFontAttributes & 0x20 ? WEIGHT_BOLD : WEIGHT_NORMAL, EE_CHAR_WEIGHT ) );
+        rSet.Put( SvxWeightItem( (nFontAttributes & 0x20) ? WEIGHT_BOLD : WEIGHT_NORMAL, EE_CHAR_WEIGHT ) );
     if ( nFontAttributes & 0x10 )
-        rSet.Put( SvxPostureItem( nFontAttributes & 0x10 ? ITALIC_NORMAL : ITALIC_NONE, EE_CHAR_ITALIC ) );
+        rSet.Put( SvxPostureItem( (nFontAttributes & 0x10) ? ITALIC_NORMAL : ITALIC_NONE, EE_CHAR_ITALIC ) );
     if ( nFontAttributes & 0x08 )
-        rSet.Put( SvxUnderlineItem( nFontAttributes & 0x08 ? LINESTYLE_SINGLE : LINESTYLE_NONE, EE_CHAR_UNDERLINE ) );
+        rSet.Put( SvxUnderlineItem( (nFontAttributes & 0x08) ? LINESTYLE_SINGLE : LINESTYLE_NONE, EE_CHAR_UNDERLINE ) );
     if ( nFontAttributes & 0x40 )
         rSet.Put( SvxShadowedItem( (nFontAttributes & 0x40) != 0, EE_CHAR_SHADOW ) );
 //    if ( nFontAttributes & 0x02 )
 //        rSet.Put( SvxCaseMapItem( nFontAttributes & 0x02 ? SVX_CASEMAP_KAPITAELCHEN : SVX_CASEMAP_NOT_MAPPED ) );
     if ( nFontAttributes & 0x01 )
-        rSet.Put( SvxCrossedOutItem( nFontAttributes & 0x01 ? STRIKEOUT_SINGLE : STRIKEOUT_NONE, EE_CHAR_STRIKEOUT ) );
+        rSet.Put( SvxCrossedOutItem( (nFontAttributes & 0x01) ? STRIKEOUT_SINGLE : STRIKEOUT_NONE, EE_CHAR_STRIKEOUT ) );
     if ( IsProperty( DFF_Prop_fillColor ) )
         rSet.Put( XFillColorItem( OUString(), rManager.MSO_CLR_ToColor( GetPropertyValue( DFF_Prop_fillColor, 0 ), DFF_Prop_fillColor ) ) );
     if ( IsProperty( DFF_Prop_shadowColor ) )
@@ -2627,7 +2625,7 @@ void DffPropertyReader::ApplyAttributes( SvStream& rIn, SfxItemSet& rSet, DffObj
         if( eShadowType != mso_shadowOffset && !bNonZeroShadowOffset )
         {
             //0.12" == 173 twip == 302 100mm
-            sal_uInt32 nDist = rManager.pSdrModel->GetScaleUnit() == MAP_TWIP ? 173: 302;
+            sal_uInt32 nDist = rManager.pSdrModel->GetScaleUnit() == MapUnit::MapTwip ? 173: 302;
             rSet.Put( makeSdrShadowXDistItem( nDist ) );
             rSet.Put( makeSdrShadowYDistItem( nDist ) );
         }
@@ -2705,7 +2703,7 @@ void DffPropertyReader::CheckAndCorrectExcelTextRotation( SvStream& rIn, SfxItem
             if ( nLen )
             {
                 css::uno::Sequence< sal_Int8 > aXMLDataSeq( nLen );
-                rIn.Read( aXMLDataSeq.getArray(), nLen );
+                rIn.ReadBytes(aXMLDataSeq.getArray(), nLen);
                 css::uno::Reference< css::io::XInputStream > xInputStream
                     ( new ::comphelper::SequenceInputStream( aXMLDataSeq ) );
                 try
@@ -2924,10 +2922,9 @@ DffRecordManager::DffRecordManager( SvStream& rIn ) :
     Consume( rIn );
 }
 
-void DffRecordManager::Consume( SvStream& rIn, bool bAppend, sal_uInt32 nStOfs )
+void DffRecordManager::Consume( SvStream& rIn, sal_uInt32 nStOfs )
 {
-    if ( !bAppend )
-        Clear();
+    Clear();
     sal_uInt32 nOldPos = rIn.Tell();
     if ( !nStOfs )
     {
@@ -3138,7 +3135,7 @@ void SvxMSDffManager::ScaleEmu( sal_Int32& rVal ) const
 sal_uInt32 SvxMSDffManager::ScalePt( sal_uInt32 nVal ) const
 {
     MapUnit eMap = pSdrModel->GetScaleUnit();
-    Fraction aFact( GetMapFactor( MAP_POINT, eMap ).X() );
+    Fraction aFact( GetMapFactor( MapUnit::MapPoint, eMap ).X() );
     long aMul = aFact.GetNumerator();
     long aDiv = aFact.GetDenominator() * 65536;
     aFact = Fraction( aMul, aDiv ); // try again to shorten it
@@ -3158,7 +3155,7 @@ void SvxMSDffManager::SetModel(SdrModel* pModel, long nApplicationScale)
         // PPT works in units of 576DPI
         // WW on the other side uses twips, i.e. 1440DPI.
         MapUnit eMap = pSdrModel->GetScaleUnit();
-        Fraction aFact( GetMapFactor(MAP_INCH, eMap).X() );
+        Fraction aFact( GetMapFactor(MapUnit::MapInch, eMap).X() );
         long nMul=aFact.GetNumerator();
         long nDiv=aFact.GetDenominator()*nApplicationScale;
         aFact=Fraction(nMul,nDiv); // try again to shorten it
@@ -3170,7 +3167,7 @@ void SvxMSDffManager::SetModel(SdrModel* pModel, long nApplicationScale)
 
         // MS-DFF-Properties are mostly given in EMU (English Metric Units)
         // 1mm=36000emu, 1twip=635emu
-        aFact=GetMapFactor(MAP_100TH_MM,eMap).X();
+        aFact=GetMapFactor(MapUnit::Map100thMM,eMap).X();
         nMul=aFact.GetNumerator();
         nDiv=aFact.GetDenominator()*360;
         aFact=Fraction(nMul,nDiv); // try again to shorten it
@@ -3180,7 +3177,7 @@ void SvxMSDffManager::SetModel(SdrModel* pModel, long nApplicationScale)
         nEmuDiv=aFact.GetDenominator();
 
         // And something for typographic Points
-        aFact=GetMapFactor(MAP_POINT,eMap).X();
+        aFact=GetMapFactor(MapUnit::MapPoint,eMap).X();
         nPntMul=aFact.GetNumerator();
         nPntDiv=aFact.GetDenominator();
     }
@@ -3415,7 +3412,7 @@ Color SvxMSDffManager::MSO_CLR_ToColor( sal_uInt32 nColorCode, sal_uInt16 nConte
                 case mso_syscolorInactiveCaption :      aColor = rStyleSettings.GetDeactiveColor(); break;
                 case mso_syscolorInactiveCaptionText :  aColor = rStyleSettings.GetDeactiveColor(); break;
                 case mso_syscolorInfoBackground :       aColor = rStyleSettings.GetFaceColor(); break;
-                case mso_syscolorInfoText :             aColor = rStyleSettings.GetInfoTextColor(); break;
+                case mso_syscolorInfoText :             aColor = rStyleSettings.GetLabelTextColor(); break;
                 case mso_syscolorMenuText :             aColor = rStyleSettings.GetMenuTextColor(); break;
                 case mso_syscolorScrollbar :            aColor = rStyleSettings.GetFaceColor(); break;
                 case mso_syscolorWindow :               aColor = rStyleSettings.GetWindowColor(); break;
@@ -3692,7 +3689,7 @@ static Size lcl_GetPrefSize(const Graphic& rGraf, const MapMode& aWanted)
     if (aPrefMapMode == aWanted)
         return rGraf.GetPrefSize();
     Size aRetSize;
-    if (aPrefMapMode == MAP_PIXEL)
+    if (aPrefMapMode == MapUnit::MapPixel)
     {
         aRetSize = Application::GetDefaultDevice()->PixelToLogic(
             rGraf.GetPrefSize(), aWanted);
@@ -3722,7 +3719,7 @@ static void lcl_ApplyCropping( const DffPropSet& rPropSet, SfxItemSet* pSet, Gra
         sal_uInt32  nTop( 0 ),  nBottom( 0 ), nLeft( 0 ), nRight( 0 );
 
         if ( pSet ) // use crop attributes ?
-            aCropSize = lcl_GetPrefSize( rGraf, MAP_100TH_MM );
+            aCropSize = lcl_GetPrefSize( rGraf, MapUnit::Map100thMM );
         else
         {
             aCropBitmap = rGraf.GetBitmapEx();
@@ -3818,7 +3815,7 @@ SdrObject* SvxMSDffManager::ImportGraphic( SvStream& rSt, SfxItemSet& rSet, cons
             {
                 sal_uInt32 nTransColor = GetPropertyValue( DFF_Prop_pictureTransparent, 0 );
 
-                if ( aGraf.GetType() == GRAPHIC_BITMAP )
+                if ( aGraf.GetType() == GraphicType::Bitmap )
                 {
                     BitmapEx    aBitmapEx( aGraf.GetBitmapEx() );
                     Bitmap      aBitmap( aBitmapEx.GetBitmap() );
@@ -3908,7 +3905,7 @@ SdrObject* SvxMSDffManager::ImportGraphic( SvStream& rSt, SfxItemSet& rSet, cons
                     }
                     switch ( aGraf.GetType() )
                     {
-                        case GRAPHIC_BITMAP :
+                        case GraphicType::Bitmap :
                         {
                             BitmapEx    aBitmapEx( aGraf.GetBitmapEx() );
                             if ( nBrightness || nContrast || ( nGamma != 0x10000 ) )
@@ -3922,15 +3919,15 @@ SdrObject* SvxMSDffManager::ImportGraphic( SvStream& rSt, SfxItemSet& rSet, cons
                         }
                         break;
 
-                        case GRAPHIC_GDIMETAFILE :
+                        case GraphicType::GdiMetafile :
                         {
                             GDIMetaFile aGdiMetaFile( aGraf.GetGDIMetaFile() );
                             if ( nBrightness || nContrast || ( nGamma != 0x10000 ) )
                                 aGdiMetaFile.Adjust( nBrightness, (sal_Int16)nContrast, 0, 0, 0, (double)nGamma / 0x10000, false, true );
                             if ( eDrawMode == GRAPHICDRAWMODE_GREYS )
-                                aGdiMetaFile.Convert( MTF_CONVERSION_8BIT_GREYS );
+                                aGdiMetaFile.Convert( MtfConversion::N8BitGreys );
                             else if ( eDrawMode == GRAPHICDRAWMODE_MONO )
-                                aGdiMetaFile.Convert( MTF_CONVERSION_1BIT_THRESHOLD );
+                                aGdiMetaFile.Convert( MtfConversion::N1BitThreshold );
                             aGraf = aGdiMetaFile;
                         }
                         break;
@@ -4388,9 +4385,9 @@ SdrObject* SvxMSDffManager::ImportShape( const DffRecordHeader& rHd, SvStream& r
                             }
                             aSet.Put( SdrTextHorzAdjustItem( eHorzAdjust ) );
 
-                            SdrFitToSizeType eFTS = SDRTEXTFIT_NONE;
+                            SdrFitToSizeType eFTS = SdrFitToSizeType::NONE;
                             if ( eGeoTextAlign == mso_alignTextStretch )
-                                eFTS = SDRTEXTFIT_ALLLINES;
+                                eFTS = SdrFitToSizeType::AllLines;
                             aSet.Put( SdrTextFitToSizeTypeItem( eFTS ) );
                         }
                         if ( IsProperty( DFF_Prop_gtextSpacing ) )
@@ -4424,7 +4421,7 @@ SdrObject* SvxMSDffManager::ImportShape( const DffRecordHeader& rHd, SvStream& r
                             rOutliner.SetUpdateMode( false );
                             rOutliner.SetText( *pParaObj );
                             ScopedVclPtrInstance< VirtualDevice > pVirDev(DeviceFormat::BITMASK);
-                            pVirDev->SetMapMode( MAP_100TH_MM );
+                            pVirDev->SetMapMode( MapUnit::Map100thMM );
                             sal_Int32 i, nParagraphs = rOutliner.GetParagraphCount();
                             if ( nParagraphs )
                             {
@@ -4740,15 +4737,15 @@ SdrObject* SvxMSDffManager::ImportShape( const DffRecordHeader& rHd, SvStream& r
                         {
                             case mso_cxstyleBent:
                             {
-                                aSet.Put( SdrEdgeKindItem( SDREDGE_ORTHOLINES ) );
+                                aSet.Put( SdrEdgeKindItem( SdrEdgeKind::OrthoLines ) );
                                 n1HorzDist = n1VertDist = n2HorzDist = n2VertDist = 630;
                             }
                             break;
                             case mso_cxstyleCurved:
-                                aSet.Put( SdrEdgeKindItem( SDREDGE_BEZIER ) );
+                                aSet.Put( SdrEdgeKindItem( SdrEdgeKind::Bezier ) );
                             break;
                             default: // mso_cxstyleStraight || mso_cxstyleNone
-                                aSet.Put( SdrEdgeKindItem( SDREDGE_ONELINE ) );
+                                aSet.Put( SdrEdgeKindItem( SdrEdgeKind::OneLine ) );
                             break;
                         }
                         aSet.Put( SdrEdgeNode1HorzDistItem( n1HorzDist ) );
@@ -5534,8 +5531,7 @@ void SvxMSDffManager::StoreShapeOrder(sal_uLong         nId,
 
 
 void SvxMSDffManager::ExchangeInShapeOrder( SdrObject*   pOldObject,
-                                            sal_uLong        nTxBx,
-                                            SwFlyFrameFormat* pFly,
+                                            sal_uLong    nTxBx,
                                             SdrObject*   pObject) const
 {
     sal_uInt16 nShpCnt = m_pShapeOrders->size();
@@ -5545,7 +5541,7 @@ void SvxMSDffManager::ExchangeInShapeOrder( SdrObject*   pOldObject,
 
         if( rOrder.pObj == pOldObject )
         {
-            rOrder.pFly      = pFly;
+            rOrder.pFly      = nullptr;
             rOrder.pObj      = pObject;
             rOrder.nTxBxComp = nTxBx;
         }
@@ -5588,7 +5584,7 @@ SvxMSDffManager::SvxMSDffManager(SvStream& rStCtrl_,
      nOffsDgg( nOffsDgg_ ),
      nBLIPCount(  USHRT_MAX ),              // initialize with error, since we fist check if the
      nGroupShapeFlags(0),                   // ensure initialization here, as some corrupted
-                                            // files may yield to this being unitialized
+                                            // files may yield to this being uninitialized
      maBaseURL( rBaseURL ),
      mnCurMaxShapeId(0),
      mnDrawingsSaved(0),
@@ -5723,13 +5719,13 @@ void SvxMSDffManager::GetFidclData( sal_uInt32 nOffsDggL )
 
             if ( mnIdClusters-- > 2 )
             {
-                const sal_Size nFIDCLsize = sizeof(sal_uInt32) * 2;
+                const std::size_t nFIDCLsize = sizeof(sal_uInt32) * 2;
                 if ( aDggAtomHd.nRecLen == ( mnIdClusters * nFIDCLsize + 16 ) )
                 {
-                    sal_Size nMaxEntriesPossible = rStCtrl.remainingSize() / nFIDCLsize;
+                    std::size_t nMaxEntriesPossible = rStCtrl.remainingSize() / nFIDCLsize;
                     SAL_WARN_IF(nMaxEntriesPossible < mnIdClusters,
                         "filter.ms", "FIDCL list longer than remaining bytes, ppt or parser is wrong");
-                    mnIdClusters = std::min(nMaxEntriesPossible, static_cast<sal_Size>(mnIdClusters));
+                    mnIdClusters = std::min(nMaxEntriesPossible, static_cast<std::size_t>(mnIdClusters));
 
                     maFidcls.resize(mnIdClusters);
                     for (sal_uInt32 i = 0; i < mnIdClusters; ++i)
@@ -6258,7 +6254,7 @@ bool SvxMSDffManager::GetBLIP( sal_uLong nIdx_, Graphic& rData, Rectangle* pVisA
             to get the Graphic via GraphicObject */
             GraphicObject aGraphicObject( iter->second );
             rData = aGraphicObject.GetGraphic();
-            if ( rData.GetType() != GRAPHIC_NONE )
+            if ( rData.GetType() != GraphicType::NONE )
                 bOk = true;
             else
                 aEscherBlipCache.erase(iter);
@@ -6469,7 +6465,7 @@ bool SvxMSDffManager::GetBLIPDirect( SvStream& rBLIPStream, Graphic& rData, Rect
             //
             // For pict graphics we will furthermore scale the metafile, because font scaling leads to error if the
             // dxarray is empty (this has been solved in wmf/emf but not for pict)
-            if( bMtfBLIP && ( GRFILTER_OK == nRes ) && ( rData.GetType() == GRAPHIC_GDIMETAFILE ) && ( ( nInst & 0xFFFE ) == 0x542 ) )
+            if( bMtfBLIP && ( GRFILTER_OK == nRes ) && ( rData.GetType() == GraphicType::GdiMetafile ) && ( ( nInst & 0xFFFE ) == 0x542 ) )
             {
                 if ( ( aMtfSize100.Width() >= 1000 ) && ( aMtfSize100.Height() >= 1000 ) )
                 {   // #75956#, scaling does not work properly, if the graphic is less than 1cm
@@ -6482,7 +6478,7 @@ bool SvxMSDffManager::GetBLIPDirect( SvStream& rBLIPStream, Graphic& rData, Rect
                         aMtf.Scale( (double) aMtfSize100.Width() / aOldSize.Width(),
                                     (double) aMtfSize100.Height() / aOldSize.Height() );
                         aMtf.SetPrefSize( aMtfSize100 );
-                        aMtf.SetPrefMapMode( MAP_100TH_MM );
+                        aMtf.SetPrefMapMode( MapUnit::Map100thMM );
                         rData = aMtf;
                     }
                 }
@@ -6519,7 +6515,7 @@ bool SvxMSDffManager::ProcessClientAnchor(SvStream& rStData, sal_uInt32 nDatLen,
     {
         rBuffLen = std::min(rStData.remainingSize(), static_cast<sal_uInt64>(nDatLen));
         rpBuff = new char[rBuffLen];
-        rBuffLen = rStData.Read(rpBuff, rBuffLen);
+        rBuffLen = rStData.ReadBytes(rpBuff, rBuffLen);
     }
     return true;
 }
@@ -6531,7 +6527,7 @@ bool SvxMSDffManager::ProcessClientData(SvStream& rStData, sal_uInt32 nDatLen,
     {
         rBuffLen = std::min(rStData.remainingSize(), static_cast<sal_uInt64>(nDatLen));
         rpBuff = new char[rBuffLen];
-        rBuffLen = rStData.Read(rpBuff, rBuffLen);
+        rBuffLen = rStData.ReadBytes(rpBuff, rBuffLen);
     }
     return true;
 }
@@ -6587,7 +6583,7 @@ bool SvxMSDffManager::MakeContentStream( SotStorage * pStor, const GDIMetaFile &
     // SV tries to guess a best match for the right value
     Size aSize = rMtf.GetPrefSize();
     const MapMode& aMMSrc = rMtf.GetPrefMapMode();
-    MapMode aMMDst( MAP_100TH_MM );
+    MapMode aMMDst( MapUnit::Map100thMM );
     aSize = OutputDevice::LogicToLogic( aSize, aMMSrc, aMMDst );
     aEle.SetSize( aSize );
     aEle.SetAspect( nAspect );
@@ -6738,7 +6734,7 @@ bool SvxMSDffManager::ConvertToOle2( SvStream& rStm, sal_uInt32 nReadLen,
             if( 0x10000L > nStrLen )
             {
                 std::unique_ptr<sal_Char[]> pBuf(new sal_Char[ nStrLen ]);
-                rStm.Read( pBuf.get(), nStrLen );
+                rStm.ReadBytes(pBuf.get(), nStrLen);
                 aSvrName = OUString( pBuf.get(), (sal_uInt16) nStrLen-1, osl_getThreadTextEncoding() );
             }
             else
@@ -6759,11 +6755,11 @@ bool SvxMSDffManager::ConvertToOle2( SvStream& rStm, sal_uInt32 nReadLen,
                 if( !pData )
                     return false;
 
-                rStm.Read( pData.get(), nDataLen );
+                rStm.ReadBytes(pData.get(), nDataLen);
 
                 // write to ole10 stream
                 xOle10Stm->WriteUInt32( nDataLen );
-                xOle10Stm->Write( pData.get(), nDataLen );
+                xOle10Stm->WriteBytes(pData.get(), nDataLen);
                 xOle10Stm = tools::SvRef<SotStorageStream>();
 
                 // set the compobj stream
@@ -6791,12 +6787,12 @@ bool SvxMSDffManager::ConvertToOle2( SvStream& rStm, sal_uInt32 nReadLen,
             {
                 sal_uLong nPos = rStm.Tell();
                 sal_uInt16 sz[4];
-                rStm.Read( sz, 8 );
+                rStm.ReadBytes( sz, 8 );
                 Graphic aGraphic;
-                if( ERRCODE_NONE == GraphicConverter::Import( rStm, aGraphic ) && aGraphic.GetType() )
+                if( ERRCODE_NONE == GraphicConverter::Import( rStm, aGraphic ) && aGraphic.GetType() != GraphicType::NONE )
                 {
                     const GDIMetaFile& rMtf = aGraphic.GetGDIMetaFile();
-                    MakeContentStream( rDest, rMtf );
+                    MakeContentStream( rDest.get(), rMtf );
                     bMtfRead = true;
                 }
                 // set behind the data
@@ -6809,7 +6805,7 @@ bool SvxMSDffManager::ConvertToOle2( SvStream& rStm, sal_uInt32 nReadLen,
 
     if( !bMtfRead && pMtf )
     {
-        MakeContentStream( rDest, *pMtf );
+        MakeContentStream( rDest.get(), *pMtf );
         return true;
     }
 
@@ -6944,14 +6940,14 @@ css::uno::Reference < css::embed::XEmbeddedObject >  SvxMSDffManager::CheckForCo
         if ( pName )
         {
             // TODO/LATER: perhaps we need to retrieve VisArea and Metafile from the storage also
-            tools::SvRef<SotStorageStream> xStr = rSrcStg.OpenSotStream( "package_stream", STREAM_STD_READ );
+            tools::SvRef<SotStorageStream> xStr = rSrcStg.OpenSotStream( "package_stream", StreamMode::STD_READ );
             xStr->ReadStream( *xMemStream );
         }
         else
         {
             SfxFilterMatcher aMatch( sStarName );
             tools::SvRef<SotStorage> xStorage = new SotStorage( false, *xMemStream );
-            rSrcStg.CopyTo( xStorage );
+            rSrcStg.CopyTo( xStorage.get() );
             xStorage->Commit();
             xStorage.Clear();
             OUString aType = SfxFilter::GetTypeFromStorage( rSrcStg );
@@ -7035,7 +7031,7 @@ css::uno::Reference < css::embed::XEmbeddedObject >  SvxMSDffManager::CheckForCo
                 else
                 {
                     aSz = rVisArea.GetSize();
-                    aSz = OutputDevice::LogicToLogic( aSz, MapMode( MAP_100TH_MM ), aMapMode );
+                    aSz = OutputDevice::LogicToLogic( aSz, MapMode( MapUnit::Map100thMM ), aMapMode );
                 }
 
                 // don't modify the object
@@ -7093,13 +7089,13 @@ SdrOle2Obj* SvxMSDffManager::CreateSdrOLEFromStorage(
                     sal_uInt8 aTestA[10];   // exist the \1CompObj-Stream ?
                     tools::SvRef<SotStorageStream> xSrcTst = xObjStg->OpenSotStream( "\1CompObj" );
                     bValidStorage = xSrcTst.Is() && sizeof( aTestA ) ==
-                                    xSrcTst->Read( aTestA, sizeof( aTestA ) );
+                                    xSrcTst->ReadBytes(aTestA, sizeof(aTestA));
                     if( !bValidStorage )
                     {
                         // or the \1Ole-Stream ?
                         xSrcTst = xObjStg->OpenSotStream( "\1Ole" );
                         bValidStorage = xSrcTst.Is() && sizeof(aTestA) ==
-                                        xSrcTst->Read(aTestA, sizeof(aTestA));
+                                    xSrcTst->ReadBytes(aTestA, sizeof(aTestA));
                     }
                 }
 
@@ -7113,7 +7109,7 @@ SdrOle2Obj* SvxMSDffManager::CreateSdrOLEFromStorage(
                         // TODO/LATER: should the caller be notified if the aspect changes in future?
 
                         tools::SvRef<SotStorageStream> xObjInfoSrc = xObjStg->OpenSotStream(
-                            "\3ObjInfo", STREAM_STD_READ | StreamMode::NOCREATE );
+                            "\3ObjInfo", StreamMode::STD_READ );
                         if ( xObjInfoSrc.Is() && !xObjInfoSrc->GetError() )
                         {
                             sal_uInt8 nByte = 0;
@@ -7145,12 +7141,12 @@ SdrOle2Obj* SvxMSDffManager::CreateSdrOLEFromStorage(
         if( bValidStorage )
         {
             // object is not an own object
-            tools::SvRef<SotStorage> xObjStor = SotStorage::OpenOLEStorage( xDestStorage, aDstStgName, STREAM_READWRITE );
+            tools::SvRef<SotStorage> xObjStor = SotStorage::OpenOLEStorage( xDestStorage, aDstStgName, StreamMode::READWRITE );
 
             if ( xObjStor.Is() )
             {
                 tools::SvRef<SotStorage> xSrcStor = rSrcStorage->OpenSotStorage( rStorageName, StreamMode::READ );
-                xSrcStor->CopyTo( xObjStor );
+                xSrcStor->CopyTo( xObjStor.get() );
 
                 if( !xObjStor->GetError() )
                     xObjStor->Commit();
@@ -7281,7 +7277,6 @@ SvxMSDffImportRec::SvxMSDffImportRec()
       pYRelTo( nullptr ), //   relative to paragraph
       nLayoutInTableCell( 0 ), // element is laid out in table cell
       nFlags( 0 ),
-      nTextRotationAngle( 0 ),
       nDxTextLeft( 144 ),
       nDyTextTop( 72 ),
       nDxTextRight( 144 ),
@@ -7320,7 +7315,6 @@ SvxMSDffImportRec::SvxMSDffImportRec(const SvxMSDffImportRec& rCopy)
       pYRelTo( nullptr ),
       nLayoutInTableCell( rCopy.nLayoutInTableCell ),
       nFlags( rCopy.nFlags ),
-      nTextRotationAngle( rCopy.nTextRotationAngle ),
       nDxTextLeft( rCopy.nDxTextLeft    ),
       nDyTextTop( rCopy.nDyTextTop ),
       nDxTextRight( rCopy.nDxTextRight ),

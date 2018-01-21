@@ -130,7 +130,6 @@ class EasyFile
 {
 private:
     SvStream*   pOStm;
-    SfxMedium*  pMedium;
     bool        bOpen;
 
 public:
@@ -349,7 +348,7 @@ HtmlExport::HtmlExport(
     :   maPath( aPath ),
         mpDoc(pExpDoc),
         mpDocSh( pDocShell ),
-        meEC(nullptr),
+        meEC(),
         meMode( PUBLISH_SINGLE_DOCUMENT ),
         mbContentsPage(false),
         mnButtonThema(-1),
@@ -406,7 +405,7 @@ HtmlExport::~HtmlExport()
 // get common export parameters from item set
 void HtmlExport::InitExportParameters( const Sequence< PropertyValue >& rParams )
 {
-    mbImpress = mpDoc->GetDocumentType() == DOCUMENT_TYPE_IMPRESS;
+    mbImpress = mpDoc->GetDocumentType() == DocumentType::Impress;
 
     sal_Int32 nArgs = rParams.getLength();
     const PropertyValue* pParams = rParams.getConstArray();
@@ -597,7 +596,7 @@ void HtmlExport::InitExportParameters( const Sequence< PropertyValue >& rParams 
     }
 
     // calculate image sizes
-    SdPage* pPage = mpDoc->GetSdPage(0, PK_STANDARD);
+    SdPage* pPage = mpDoc->GetSdPage(0, PageKind::Standard);
     Size aTmpSize( pPage->GetSize() );
     double dRatio=((double)aTmpSize.Width())/aTmpSize.Height();
 
@@ -611,15 +610,15 @@ void HtmlExport::InitExportParameters( const Sequence< PropertyValue >& rParams 
     maExportPath = aINetURLObj.GetPartBeforeLastName(); // with trailing '/'
     maIndex = aINetURLObj.GetLastName();
 
-    mnSdPageCount = mpDoc->GetSdPageCount( PK_STANDARD );
+    mnSdPageCount = mpDoc->GetSdPageCount( PageKind::Standard );
     for( sal_uInt16 nPage = 0; nPage < mnSdPageCount; nPage++ )
     {
-        pPage = mpDoc->GetSdPage( nPage, PK_STANDARD );
+        pPage = mpDoc->GetSdPage( nPage, PageKind::Standard );
 
         if( mbHiddenSlides || !pPage->IsExcluded() )
         {
             maPages.push_back( pPage );
-            maNotesPages.push_back( mpDoc->GetSdPage( nPage, PK_NOTES ) );
+            maNotesPages.push_back( mpDoc->GetSdPage( nPage, PageKind::Notes ) );
         }
     }
     mnSdPageCount = maPages.size();
@@ -804,7 +803,7 @@ void HtmlExport::ExportHtml()
 void HtmlExport::SetDocColors( SdPage* pPage )
 {
     if( pPage == nullptr )
-        pPage = mpDoc->GetSdPage(0, PK_STANDARD);
+        pPage = mpDoc->GetSdPage(0, PageKind::Standard);
 
     svtools::ColorConfig aConfig;
     maVLinkColor = Color(aConfig.GetColorValue(svtools::LINKSVISITED).nColor);
@@ -814,7 +813,7 @@ void HtmlExport::SetDocColors( SdPage* pPage )
 
     SfxStyleSheet* pSheet = nullptr;
 
-    if( mpDoc->GetDocumentType() == DOCUMENT_TYPE_IMPRESS )
+    if( mpDoc->GetDocumentType() == DocumentType::Impress )
     {
         // default text color from the outline template of the first page
         pSheet = pPage->GetStyleSheetForPresObj(PRESOBJ_OUTLINE);
@@ -1039,7 +1038,7 @@ SdrTextObj* HtmlExport::GetLayoutTextObject(SdrPage* pPage)
     for (size_t nObject = 0; nObject < nObjectCount; ++nObject)
     {
         SdrObject* pObject = pPage->GetObj(nObject);
-        if (pObject->GetObjInventor() == SdrInventor &&
+        if (pObject->GetObjInventor() == SdrInventor::Default &&
             pObject->GetObjIdentifier() == OBJ_OUTLINETEXT)
         {
             pResult = static_cast<SdrTextObj*>(pObject);
@@ -1295,7 +1294,7 @@ void HtmlExport::WriteTable(OUStringBuffer& aStr, SdrTableObj* pTableObject, Sdr
 void HtmlExport::WriteObjectGroup(OUStringBuffer& aStr, SdrObjGroup* pObjectGroup, SdrOutliner* pOutliner,
                                   const Color& rBackgroundColor, bool bHeadLine)
 {
-    SdrObjListIter aGroupIterator(*pObjectGroup->GetSubList(), IM_DEEPNOGROUPS);
+    SdrObjListIter aGroupIterator(*pObjectGroup->GetSubList(), SdrIterMode::DeepNoGroups);
     while (aGroupIterator.IsMore())
     {
         SdrObject* pCurrentObject = aGroupIterator.Next();
@@ -1562,13 +1561,13 @@ bool HtmlExport::CreateHtmlForPresPages()
         while (!bMasterDone)
         {
             // sal_True = backwards
-            SdrObjListIter aIter(*pPage, IM_DEEPWITHGROUPS, true);
+            SdrObjListIter aIter(*pPage, SdrIterMode::DeepWithGroups, true);
 
             SdrObject* pObject = aIter.Next();
             while (pObject)
             {
-                SdAnimationInfo* pInfo     = mpDoc->GetAnimationInfo(pObject);
-                SdIMapInfo*      pIMapInfo = mpDoc->GetIMapInfo(pObject);
+                SdAnimationInfo* pInfo     = SdDrawDocument::GetAnimationInfo(pObject);
+                SdIMapInfo*      pIMapInfo = SdDrawDocument::GetIMapInfo(pObject);
 
                 if ((pInfo &&
                      (pInfo->meClickAction == presentation::ClickAction_BOOKMARK  ||
@@ -1683,8 +1682,8 @@ bool HtmlExport::CreateHtmlForPresPages()
 
             for (SdrObject* pObject : aClickableObjects)
             {
-                SdAnimationInfo* pInfo     = mpDoc->GetAnimationInfo(pObject);
-                SdIMapInfo*      pIMapInfo = mpDoc->GetIMapInfo(pObject);
+                SdAnimationInfo* pInfo     = SdDrawDocument::GetAnimationInfo(pObject);
+                SdIMapInfo*      pIMapInfo = SdDrawDocument::GetIMapInfo(pObject);
 
                 Rectangle aRect(pObject->GetCurrentBoundRect());
                 Point     aLogPos(aRect.TopLeft());
@@ -1868,7 +1867,7 @@ bool HtmlExport::CreateHtmlForPresPages()
                     if (!aHRef.isEmpty())
                     {
                         // a circle?
-                        if (pObject->GetObjInventor() == SdrInventor &&
+                        if (pObject->GetObjInventor() == SdrInventor::Default &&
                             pObject->GetObjIdentifier() == OBJ_CIRC  &&
                             bIsSquare )
                         {
@@ -1878,7 +1877,7 @@ bool HtmlExport::CreateHtmlForPresPages()
                                                     aHRef));
                         }
                         // a polygon?
-                        else if (pObject->GetObjInventor() == SdrInventor &&
+                        else if (pObject->GetObjInventor() == SdrInventor::Default &&
                                  (pObject->GetObjIdentifier() == OBJ_PATHLINE ||
                                   pObject->GetObjIdentifier() == OBJ_PLIN ||
                                   pObject->GetObjIdentifier() == OBJ_POLY))
@@ -2198,9 +2197,9 @@ void HtmlExport::CreateFileNames()
     }
 }
 
-OUString HtmlExport::getDocumentTitle()
+OUString const & HtmlExport::getDocumentTitle()
 {
-    // check for a title object in this page, if its the first
+    // check for a title object in this page, if it's the first
     // title it becomes this documents title for the content
     // page
     if( !mbHeader )
@@ -2209,7 +2208,7 @@ OUString HtmlExport::getDocumentTitle()
         {
             // if there is a non-empty title object, use their first passage
             // as page title
-            SdPage* pSdPage = mpDoc->GetSdPage(0, PK_STANDARD);
+            SdPage* pSdPage = mpDoc->GetSdPage(0, PageKind::Standard);
             SdrObject* pTitleObj = pSdPage->GetPresObj(PRESOBJ_TITLE);
             if (pTitleObj && !pTitleObj->IsEmptyPresObj())
             {
@@ -3139,7 +3138,6 @@ OUString HtmlExport::GetButtonName( int nButton )
 
 EasyFile::EasyFile()
 {
-    pMedium = nullptr;
     pOStm = nullptr;
     bOpen = false;
 }
@@ -3179,7 +3177,6 @@ sal_uLong EasyFile::createStream(  const OUString& rUrl, SvStream* &rpStr )
     if( nErr != 0 )
     {
         bOpen = false;
-        delete pMedium;
         delete pOStm;
         pOStm = nullptr;
     }
@@ -3222,24 +3219,12 @@ sal_uLong EasyFile::close()
 
     bOpen = false;
 
-    if( pMedium )
-    {
-        // transmitted
-        pMedium->Close();
-        pMedium->Commit();
-
-        nErr = pMedium->GetError();
-
-        delete pMedium;
-        pMedium = nullptr;
-    }
-
     return nErr;
 }
 
 // This class helps reporting errors during file i/o
-HtmlErrorContext::HtmlErrorContext(vcl::Window *_pWin)
-: ErrorContext(_pWin)
+HtmlErrorContext::HtmlErrorContext()
+: ErrorContext(nullptr)
 {
     mnResId = 0;
 }

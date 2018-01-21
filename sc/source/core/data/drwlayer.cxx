@@ -20,13 +20,7 @@
 #include <com/sun/star/uno/Reference.hxx>
 #include <com/sun/star/chart/XChartDocument.hpp>
 #include <com/sun/star/embed/XEmbeddedObject.hpp>
-#include <com/sun/star/embed/XVisualObject.hpp>
 #include <com/sun/star/embed/XClassifiedObject.hpp>
-#include <com/sun/star/embed/XComponentSupplier.hpp>
-#include <com/sun/star/embed/EmbedStates.hpp>
-#include <com/sun/star/embed/ElementModes.hpp>
-#include <com/sun/star/embed/NoVisualAreaSizeException.hpp>
-#include <com/sun/star/datatransfer/XTransferable.hpp>
 #include <basegfx/matrix/b2dhommatrixtools.hxx>
 
 #include "scitems.hxx"
@@ -162,7 +156,7 @@ void ScUndoAnchorData::Undo()
     // Trigger Object Change
     if (pObj->IsInserted() && pObj->GetPage() && pObj->GetModel())
     {
-        SdrHint aHint(*pObj);
+        SdrHint aHint(SdrHintKind::ObjectChange, *pObj);
         pObj->GetModel()->Broadcast(aHint);
     }
 
@@ -182,7 +176,7 @@ void ScUndoAnchorData::Redo()
     // Trigger Object Change
     if (pObj->IsInserted() && pObj->GetPage() && pObj->GetModel())
     {
-        SdrHint aHint(*pObj);
+        SdrHint aHint(SdrHintKind::ObjectChange, *pObj);
         pObj->GetModel()->Broadcast(aHint);
     }
 }
@@ -268,9 +262,9 @@ ScDrawLayer::ScDrawLayer( ScDocument* pDocument, const OUString& rName ) :
 
     SetSwapGraphics();
 
-    SetScaleUnit(MAP_100TH_MM);
+    SetScaleUnit(MapUnit::Map100thMM);
     SfxItemPool& rPool = GetItemPool();
-    rPool.SetDefaultMetric(SFX_MAPUNIT_100TH_MM);
+    rPool.SetDefaultMetric(MapUnit::Map100thMM);
     SvxFrameDirectionItem aModeItem( FRMDIR_ENVIRONMENT, EE_PARA_WRITINGDIR );
     rPool.SetPoolDefaultItem( aModeItem );
 
@@ -336,7 +330,7 @@ ScDrawLayer::ScDrawLayer( ScDocument* pDocument, const OUString& rName ) :
 
 ScDrawLayer::~ScDrawLayer()
 {
-    Broadcast(SdrHint(HINT_MODELCLEARED));
+    Broadcast(SdrHint(SdrHintKind::ModelCleared));
 
     ClearModel(true);
 
@@ -450,7 +444,7 @@ void ScDrawLayer::ScCopyPage( sal_uInt16 nOldPos, sal_uInt16 nNewPos )
         SCTAB nOldTab = static_cast<SCTAB>(nOldPos);
         SCTAB nNewTab = static_cast<SCTAB>(nNewPos);
 
-        SdrObjListIter aIter( *pOldPage, IM_FLAT );
+        SdrObjListIter aIter( *pOldPage, SdrIterMode::Flat );
         SdrObject* pOldObject = aIter.Next();
         while (pOldObject)
         {
@@ -505,7 +499,7 @@ void ScDrawLayer::ResetTab( SCTAB nStart, SCTAB nEnd )
         if (!pPage)
             continue;
 
-        SdrObjListIter aIter(*pPage, IM_FLAT);
+        SdrObjListIter aIter(*pPage, SdrIterMode::Flat);
         for (SdrObject* pObj = aIter.Next(); pObj; pObj = aIter.Next())
         {
             ScDrawObjData* pData = GetObjData(pObj);
@@ -593,6 +587,9 @@ void ScDrawLayer::SetPageSize( sal_uInt16 nPageNo, const Size& rSize, bool bUpda
 
         bool bNegativePage = pDoc && pDoc->IsNegativePage( static_cast<SCTAB>(nPageNo) );
 
+        // Disable mass broadcasts from drawing objects' position changes.
+        bool bWasLocked = isLocked();
+        setLock(true);
         const size_t nCount = pPage->GetObjCount();
         for ( size_t i = 0; i < nCount; ++i )
         {
@@ -601,6 +598,7 @@ void ScDrawLayer::SetPageSize( sal_uInt16 nPageNo, const Size& rSize, bool bUpda
             if( pData )
                 RecalcPos( pObj, *pData, bNegativePage, bUpdateNoteCaptionPos );
         }
+        setLock(bWasLocked);
     }
 }
 
@@ -1019,7 +1017,7 @@ bool ScDrawLayer::GetPrintArea( ScRange& rRange, bool bSetHor, bool bSetVer ) co
     OSL_ENSURE(pPage,"Page not found");
     if (pPage)
     {
-        SdrObjListIter aIter( *pPage, IM_FLAT );
+        SdrObjListIter aIter( *pPage, SdrIterMode::Flat );
         SdrObject* pObject = aIter.Next();
         while (pObject)
         {
@@ -1258,7 +1256,7 @@ void ScDrawLayer::DeleteObjectsInArea( SCTAB nTab, SCCOL nCol1,SCROW nRow1,
 
         std::unique_ptr<SdrObject*[]> ppObj(new SdrObject*[nObjCount]);
 
-        SdrObjListIter aIter( *pPage, IM_FLAT );
+        SdrObjListIter aIter( *pPage, SdrIterMode::Flat );
         SdrObject* pObject = aIter.Next();
         while (pObject)
         {
@@ -1315,7 +1313,7 @@ void ScDrawLayer::DeleteObjectsInSelection( const ScMarkData& rMark )
 
                 std::unique_ptr<SdrObject*[]> ppObj(new SdrObject*[nObjCount]);
 
-                SdrObjListIter aIter( *pPage, IM_FLAT );
+                SdrObjListIter aIter( *pPage, SdrIterMode::Flat );
                 SdrObject* pObject = aIter.Next();
                 while (pObject)
                 {
@@ -1362,7 +1360,7 @@ void ScDrawLayer::CopyToClip( ScDocument* pClipDoc, SCTAB nTab, const Rectangle&
         ScDrawLayer* pDestModel = nullptr;
         SdrPage* pDestPage = nullptr;
 
-        SdrObjListIter aIter( *pSrcPage, IM_FLAT );
+        SdrObjListIter aIter( *pSrcPage, SdrIterMode::Flat );
         SdrObject* pOldObject = aIter.Next();
         while (pOldObject)
         {
@@ -1488,7 +1486,7 @@ void ScDrawLayer::CopyFromClip( ScDrawLayer* pClipModel, SCTAB nSourceTab, const
     if ( !pSrcPage || !pDestPage )
         return;
 
-    SdrObjListIter aIter( *pSrcPage, IM_FLAT );
+    SdrObjListIter aIter( *pSrcPage, SdrIterMode::Flat );
     SdrObject* pOldObject = aIter.Next();
 
     ScDocument* pClipDoc = pClipModel->GetDocument();
@@ -1776,7 +1774,7 @@ SdrObject* ScDrawLayer::GetNamedObject( const OUString& rName, sal_uInt16 nId, S
         OSL_ENSURE(pPage,"Page ?");
         if (pPage)
         {
-            SdrObjListIter aIter( *pPage, IM_DEEPWITHGROUPS );
+            SdrObjListIter aIter( *pPage, SdrIterMode::DeepWithGroups );
             SdrObject* pObject = aIter.Next();
             while (pObject)
             {
@@ -1797,8 +1795,7 @@ SdrObject* ScDrawLayer::GetNamedObject( const OUString& rName, sal_uInt16 nId, S
 
 OUString ScDrawLayer::GetNewGraphicName( long* pnCounter ) const
 {
-    OUString aBase = ScGlobal::GetRscString(STR_GRAPHICNAME);
-    aBase += " ";
+    OUString aBase = ScGlobal::GetRscString(STR_GRAPHICNAME) + " ";
 
     bool bThere = true;
     OUString aGraphicName;
@@ -1829,7 +1826,7 @@ void ScDrawLayer::EnsureGraphicNames()
         OSL_ENSURE(pPage,"Page ?");
         if (pPage)
         {
-            SdrObjListIter aIter( *pPage, IM_DEEPWITHGROUPS );
+            SdrObjListIter aIter( *pPage, SdrIterMode::DeepWithGroups );
             SdrObject* pObject = aIter.Next();
 
             /* The index passed to GetNewGraphicName() will be set to
@@ -1856,7 +1853,7 @@ namespace
         for( sal_uInt16 i = 0; i < nCount; i++ )
         {
             SdrObjUserData* pData = pObj->GetUserData( i );
-            if( pData && pData->GetInventor() == SC_DRAWLAYER && pData->GetId() == nId )
+            if( pData && pData->GetInventor() == SdrInventor::ScOrSwDraw && pData->GetId() == nId )
                 return pData;
         }
         return nullptr;
@@ -1868,7 +1865,7 @@ namespace
         for( sal_uInt16 i = nCount; i > 0; i-- )
         {
             SdrObjUserData* pData = pObj->GetUserData( i-1 );
-            if( pData && pData->GetInventor() == SC_DRAWLAYER && pData->GetId() == nId )
+            if( pData && pData->GetInventor() == SdrInventor::ScOrSwDraw && pData->GetId() == nId )
                 pObj->DeleteUserData(i-1);
         }
     }
@@ -1984,7 +1981,7 @@ ScDrawObjData* ScDrawLayer::GetNonRotatedObjData( SdrObject* pObj, bool bCreate 
     for( sal_uInt16 i = 0; i < nCount; i++ )
     {
         SdrObjUserData* pData = pObj->GetUserData( i );
-        if( pData && pData->GetInventor() == SC_DRAWLAYER && pData->GetId() == SC_UD_OBJDATA && ++nFound == 2 )
+        if( pData && pData->GetInventor() == SdrInventor::ScOrSwDraw && pData->GetId() == SC_UD_OBJDATA && ++nFound == 2 )
             return static_cast<ScDrawObjData*>(pData);
     }
     if( pObj && bCreate )
@@ -2043,7 +2040,7 @@ ScIMapInfo* ScDrawLayer::GetIMapInfo( SdrObject* pObj )
 IMapObject* ScDrawLayer::GetHitIMapObject( SdrObject* pObj,
                                           const Point& rWinPoint, const vcl::Window& rCmpWnd )
 {
-    const MapMode       aMap100( MAP_100TH_MM );
+    const MapMode       aMap100( MapUnit::Map100thMM );
     MapMode             aWndMode = rCmpWnd.GetMapMode();
     Point               aRelPoint( rCmpWnd.LogicToLogic( rWinPoint, &aWndMode, &aMap100 ) );
     Rectangle           aLogRect = rCmpWnd.LogicToLogic( pObj->GetLogicRect(), &aWndMode, &aMap100 );
@@ -2074,7 +2071,7 @@ IMapObject* ScDrawLayer::GetHitIMapObject( SdrObject* pObj,
             if ( rGeo.nShearAngle )
                 ShearPoint( aRelPoint, aLogRect.TopLeft(), -rGeo.nTan );
 
-            if ( rGraphic.GetPrefMapMode().GetMapUnit() == MAP_PIXEL )
+            if ( rGraphic.GetPrefMapMode().GetMapUnit() == MapUnit::MapPixel )
                 aGraphSize = rCmpWnd.PixelToLogic( rGraphic.GetPrefSize(),
                                                          aMap100 );
             else

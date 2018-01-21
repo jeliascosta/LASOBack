@@ -657,7 +657,7 @@ ${MYCMD} --files mysqlc/source/DataAccess.xcu
 
 ${MYCMD} --files mysqlc/source/registry/data/org/openoffice/Office/DataAccess/Drivers.xcu
 
-${MYCMD} --base officecfg/registry/data/org/openoffice --files FirstStartWizard.xcu Inet.xcu Interaction.xcu
+${MYCMD} --base officecfg/registry/data/org/openoffice --files Inet.xcu Interaction.xcu
 
 ${MYCMD} --base officecfg/registry/data/org/openoffice/Office --files Accelerators.xcu Addons.xcu BasicIDE.xcu Calc.xcu Canvas.xcu Common.xcu Compatibility.xcu DataAccess.xcu Embedding.xcu ExtendedColorScheme.xcu ExtensionDependencies.xcu ExtensionManager.xcu FormWizard.xcu Histories.xcu Impress.xcu Jobs.xcu Linguistic.xcu Logging.xcu Math.xcu Paths.xcu PresentationMinimizer.xcu PresenterScreen.xcu ProtocolHandler.xcu Recovery.xcu ReportDesign.xcu Scripting.xcu Security.xcu TableWizard.xcu TypeDetection.xcu
 
@@ -728,7 +728,7 @@ ${MYCMD} --files tubes/uiconfig/ui/contacts.ui
 
 ${MYCMD} --base uui/uiconfig/ui --files authfallback.ui filterselect.ui logindialog.ui macrowarnmedium.ui masterpassworddlg.ui password.ui setmasterpassworddlg.ui simplenameclash.ui sslwarndialog.ui unknownauthdialog.ui
 
-${MYCMD} --base vcl/uiconfig/ui --files cupspassworddialog.ui errornocontentdialog.ui errornoprinterdialog.ui notebookbar.ui printdialog.ui printerdevicepage.ui printerpaperpage.ui printerpropertiesdialog.ui printprogressdialog.ui querydialog.ui
+${MYCMD} --base vcl/uiconfig/ui --files cupspassworddialog.ui errornocontentdialog.ui errornoprinterdialog.ui notebookbar.ui printdialog.ui printerdevicepage.ui printerpaperpage.ui printerpropertiesdialog.ui printprogressdialog.ui querydialog.ui screenshotannotationdialog.ui
 
 ${MYCMD} --base xmlsecurity/uiconfig/ui --files certdetails.ui certgeneral.ui certpage.ui digitalsignaturesdialog.ui macrosecuritydialog.ui securitylevelpage.ui securitytrustpage.ui selectcertificatedialog.ui viewcertdialog.ui
 

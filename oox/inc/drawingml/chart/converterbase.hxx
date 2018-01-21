@@ -88,7 +88,7 @@ protected:
     void                registerTitleLayout(
                             const css::uno::Reference< css::chart2::XTitle >& rxTitle,
                             const ModelRef< LayoutModel >& rxLayout, ObjectType eObjType,
-                            sal_Int32 nMainIdx = -1, sal_Int32 nSubIdx = -1 );
+                            sal_Int32 nMainIdx, sal_Int32 nSubIdx );
     /** Converts the positions of the main title and all axis titles. */
     void                convertTitlePositions();
 
@@ -109,7 +109,7 @@ public:
 protected:
     explicit            ConverterBase( const ConverterRoot& rParent, ModelType& rModel ) :
                             ConverterRoot( rParent ), mrModel( rModel ) {}
-    virtual             ~ConverterBase() {}
+    virtual             ~ConverterBase() override {}
 
 protected:
     ModelType&          mrModel;
@@ -122,7 +122,7 @@ class LayoutConverter : public ConverterBase< LayoutModel >
 {
 public:
     explicit            LayoutConverter( const ConverterRoot& rParent, LayoutModel& rModel );
-    virtual             ~LayoutConverter();
+    virtual             ~LayoutConverter() override;
 
     /** Tries to calculate the absolute position and size from the contained
         OOXML layout model. Returns true, if returned rectangle is valid. */

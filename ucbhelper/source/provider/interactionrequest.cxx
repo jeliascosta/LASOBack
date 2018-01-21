@@ -88,7 +88,7 @@ void InteractionRequest::setContinuations(
 }
 
 
-rtl::Reference< InteractionContinuation >
+rtl::Reference< InteractionContinuation > const &
 InteractionRequest::getSelection() const
 {
     return m_pImpl->m_xSelection;
@@ -758,7 +758,7 @@ InteractionSupplyAuthentication::canUseSystemCredentials(
         sal_Bool& Default )
     throw ( uno::RuntimeException, std::exception )
 {
-    Default = m_bDefaultUseSystemCredentials;
+    Default = false;
     return m_bCanUseSystemCredentials;
 }
 

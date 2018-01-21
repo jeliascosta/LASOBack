@@ -17,9 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include "accessibility/extended/accessibletabbarbase.hxx"
+#include "extended/accessibletabbarbase.hxx"
 #ifndef ACCESSIBILITY_EXT_ACCESSIBLETABBARPAGELIST
-#include "accessibility/extended/accessibletabbarpagelist.hxx"
+#include "extended/accessibletabbarpagelist.hxx"
 #endif
 #include <toolkit/helper/externallock.hxx>
 #include <svtools/tabbar.hxx>
@@ -43,14 +43,14 @@ AccessibleTabBarBase::~AccessibleTabBarBase()
     DELETEZ( m_pExternalLock );
 }
 
-IMPL_LINK_TYPED( AccessibleTabBarBase, WindowEventListener, VclWindowEvent&, rEvent, void )
+IMPL_LINK( AccessibleTabBarBase, WindowEventListener, VclWindowEvent&, rEvent, void )
 {
     vcl::Window* pEventWindow = rEvent.GetWindow();
     OSL_ENSURE( pEventWindow, "AccessibleTabBarBase::WindowEventListener: no window!" );
 
     if( ( rEvent.GetId() == VCLEVENT_TABBAR_PAGEREMOVED ) &&
         ( (sal_uInt16)reinterpret_cast<sal_IntPtr>(rEvent.GetData()) == TabBar::PAGE_NOT_FOUND ) &&
-        ( dynamic_cast< AccessibleTabBarPageList *> (this) != nullptr ) )
+        (dynamic_cast<AccessibleTabBarPageList *>(this) == nullptr))
     {
         return;
     }

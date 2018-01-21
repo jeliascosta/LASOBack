@@ -205,7 +205,7 @@ namespace sdr
             mpBufferDevice->EnableMapMode(bMapModeWasEnabledSource);
         }
 
-        IMPL_LINK_NOARG_TYPED(OverlayManagerBuffered, ImpBufferTimerHandler, Idle*, void)
+        IMPL_LINK_NOARG(OverlayManagerBuffered, ImpBufferTimerHandler, Idle*, void)
         {
             //Resolves: fdo#46728 ensure this exists until end of scope
             rtl::Reference<OverlayManager> xRef(this);
@@ -238,7 +238,7 @@ namespace sdr
                     }
                 }
 
-                if(DoRefreshWithPreRendering())
+                if(mbRefreshWithPreRendering)
                 {
                     // #i73602# ensure valid and sized mpOutputBufferDevice
                     const Size aDestinationSizePixel(mpBufferDevice->GetOutputSizePixel());

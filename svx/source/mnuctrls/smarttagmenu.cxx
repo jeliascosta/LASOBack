@@ -28,7 +28,7 @@ class SmartTagMenuController : public svt::PopupMenuControllerBase
 {
 public:
     explicit SmartTagMenuController( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual ~SmartTagMenuController();
+    virtual ~SmartTagMenuController() override;
 
     // XStatusListener
     virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& rEvent ) throw ( css::uno::RuntimeException, std::exception ) override;
@@ -39,18 +39,17 @@ public:
 
 private:
     void FillMenu();
-    DECL_LINK_TYPED( MenuSelect, Menu*, bool );
+    DECL_LINK( MenuSelect, Menu*, bool );
     struct InvokeAction
     {
         css::uno::Reference< css::smarttags::XSmartTagAction > m_xAction;
         css::uno::Reference< css::container::XStringKeyMap > m_xSmartTagProperties;
         sal_uInt32 m_nActionID;
-        InvokeAction( css::uno::Reference< css::smarttags::XSmartTagAction > xAction,
-                      css::uno::Reference< css::container::XStringKeyMap > xSmartTagProperties,
+        InvokeAction( css::uno::Reference< css::smarttags::XSmartTagAction > const & xAction,
+                      css::uno::Reference< css::container::XStringKeyMap > const & xSmartTagProperties,
                       sal_uInt32 nActionID ) : m_xAction( xAction ), m_xSmartTagProperties( xSmartTagProperties ), m_nActionID( nActionID ) {}
     };
     std::vector< InvokeAction > m_aInvokeActions;
-    std::vector< std::unique_ptr< PopupMenu > > m_aSubMenus;
     std::unique_ptr< const SvxSmartTagItem > m_pSmartTagItem;
 };
 
@@ -67,7 +66,6 @@ void SmartTagMenuController::statusChanged( const css::frame::FeatureStateEvent&
     throw ( css::uno::RuntimeException, std::exception )
 {
     resetPopupMenu( m_xPopupMenu );
-    m_aSubMenus.clear();
 
     css::uno::Sequence< css::beans::PropertyValue > aProperties;
     if ( rEvent.IsEnabled && ( rEvent.State >>= aProperties ) )
@@ -151,8 +149,8 @@ void SmartTagMenuController::FillMenu()
         if ( 1 < rActionComponentsSequence.getLength() )
         {
             pVCLMenu->InsertItem( nMenuId, aSmartTagCaption );
-            pSubMenu = new PopupMenu;
-            m_aSubMenus.push_back( std::unique_ptr< PopupMenu >( pSubMenu ) );
+            VclPtrInstance<PopupMenu> pMenu;
+            pSubMenu = pMenu;
             pVCLMenu->SetPopupMenu( nMenuId++, pSubMenu );
         }
         pSubMenu->SetSelectHdl( LINK( this, SmartTagMenuController, MenuSelect ) );
@@ -193,7 +191,7 @@ void SmartTagMenuController::FillMenu()
     }
 }
 
-IMPL_LINK_TYPED( SmartTagMenuController, MenuSelect, Menu*, pMenu, bool )
+IMPL_LINK( SmartTagMenuController, MenuSelect, Menu*, pMenu, bool )
 {
     if ( !m_pSmartTagItem )
         return false;

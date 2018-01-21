@@ -78,10 +78,6 @@ enum class ControlType {
 // all parts like slider, buttons
     Scrollbar          =  60,
     Slider             =  65,
-// Border around a group of related
-// items, perhaps also displaying
-// a label of identification
-    Groupbox           =  70,
 // A separator line
     Fixedline          =  80,
 // A toolbar control with buttons and a grip
@@ -150,16 +146,16 @@ enum class ControlPart
 
 /*  #i77549#
     HACK: for scrollbars in case of thumb rect, page up and page down rect we
-    abuse the HitTestNativeControl interface. All theming engines but aqua
+    abuse the HitTestNativeScrollbar interface. All theming engines but aqua
     are actually able to draw the thumb according to our internal representation.
     However aqua draws a little outside. The canonical way would be to enhance the
-    HitTestNativeControl passing a ScrollbarValue additionally so all necessary
+    HitTestNativeScrollbar passing a ScrollbarValue additionally so all necessary
     information is available in the call.
     .
     However since there is only this one small exception we will deviate a little and
     instead pass the respective rect as control region to allow for a small correction.
 
-    So all places using HitTestNativeControl on ControlPart::ThumbHorz, ControlPart::ThumbVert,
+    So all places using HitTestNativeScrollbar on ControlPart::ThumbHorz, ControlPart::ThumbVert,
     ControlPart::TrackHorzLeft, ControlPart::TrackHorzRight, ControlPart::TrackVertUpper, ControlPart::TrackVertLower
     do not use the control rectangle as region but the actuall part rectangle, making
     only small deviations feasible.
@@ -220,7 +216,6 @@ enum class ControlState {
     FOCUSED         = 0x0002,
     PRESSED         = 0x0004,
     ROLLOVER        = 0x0008,
-    HIDDEN          = 0x0010,
     DEFAULT         = 0x0020,
     SELECTED        = 0x0040,
     DOUBLEBUFFERING = 0x4000,  ///< Set when the control is painted using double-buffering via VirtualDevice.
@@ -228,7 +223,7 @@ enum class ControlState {
 };
 namespace o3tl
 {
-    template<> struct typed_flags<ControlState> : is_typed_flags<ControlState, 0xc07f> {};
+    template<> struct typed_flags<ControlState> : is_typed_flags<ControlState, 0xc06f> {};
 }
 
 class ControlCacheKey
@@ -365,7 +360,7 @@ class VCL_DLLPUBLIC ScrollbarValue : public ImplControlValue
             mnButton1State = ControlState::NONE; mnButton2State = ControlState::NONE;
             mnThumbState = ControlState::NONE; mnPage1State = ControlState::NONE; mnPage2State = ControlState::NONE;
         };
-        virtual ~ScrollbarValue();
+        virtual ~ScrollbarValue() override;
         virtual ScrollbarValue* clone() const override;
 };
 
@@ -382,7 +377,7 @@ class VCL_DLLPUBLIC SliderValue : public ImplControlValue
         : ImplControlValue( ControlType::Slider, 0 )
         , mnMin( 0 ), mnMax( 0 ), mnCur( 0 ), mnThumbState( ControlState::NONE )
         {}
-        virtual ~SliderValue();
+        virtual ~SliderValue() override;
         virtual SliderValue* clone() const override;
 };
 
@@ -417,7 +412,7 @@ class VCL_DLLPUBLIC TabitemValue : public ImplControlValue
             , maContentRect(rContentRect)
         {
         }
-        virtual ~TabitemValue();
+        virtual ~TabitemValue() override;
         virtual TabitemValue* clone() const override;
 
         bool isLeftAligned() const  { return bool(mnAlignment & TabitemFlags::LeftAligned); }
@@ -454,7 +449,7 @@ class VCL_DLLPUBLIC SpinbuttonValue : public ImplControlValue
         {
         }
 
-        virtual ~SpinbuttonValue();
+        virtual ~SpinbuttonValue() override;
         virtual SpinbuttonValue* clone() const override;
 };
 
@@ -467,7 +462,7 @@ class VCL_DLLPUBLIC ToolbarValue : public ImplControlValue
 public:
     ToolbarValue() : ImplControlValue( ControlType::Toolbar, 0 )
     { mbIsTopDockingArea = false; }
-    virtual ~ToolbarValue();
+    virtual ~ToolbarValue() override;
     virtual ToolbarValue* clone() const override;
     Rectangle           maGripRect;
     bool                mbIsTopDockingArea; // indicates that this is the top aligned dockingarea
@@ -483,7 +478,7 @@ class VCL_DLLPUBLIC MenubarValue : public ImplControlValue
 public:
     MenubarValue() : ImplControlValue( ControlType::Menubar, 0 )
     { maTopDockingAreaHeight=0; }
-    virtual ~MenubarValue();
+    virtual ~MenubarValue() override;
     virtual MenubarValue* clone() const override;
     int             maTopDockingAreaHeight;
 };
@@ -500,7 +495,7 @@ public:
     : ImplControlValue( ControlType::MenuPopup, i_nGutterWidth )
     , maItemRect( i_rItemRect )
     {}
-    virtual ~MenupopupValue();
+    virtual ~MenupopupValue() override;
     virtual MenupopupValue* clone() const override;
     Rectangle       maItemRect;
 };
@@ -515,7 +510,7 @@ public:
     PushButtonValue()
     : ImplControlValue( ControlType::Pushbutton, 0 )
     , mbBevelButton( false ), mbSingleLine( true ) {}
-    virtual ~PushButtonValue();
+    virtual ~PushButtonValue() override;
     virtual PushButtonValue* clone() const override;
 
     bool            mbBevelButton:1;

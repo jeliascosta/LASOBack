@@ -33,7 +33,7 @@
 
 EDITENG_DLLPUBLIC css::uno::Reference< css::container::XIndexReplace > SvxCreateNumRule( const SvxNumRule* pRule ) throw();
 EDITENG_DLLPUBLIC css::uno::Reference< css::container::XIndexReplace > SvxCreateNumRule() throw();
-const SvxNumRule& SvxGetNumRule( css::uno::Reference< css::container::XIndexReplace > xRule ) throw( css::lang::IllegalArgumentException );
+const SvxNumRule& SvxGetNumRule( css::uno::Reference< css::container::XIndexReplace > const & xRule ) throw( css::lang::IllegalArgumentException );
 EDITENG_DLLPUBLIC css::uno::Reference< css::ucb::XAnyCompare > SvxCreateNumRuleCompare() throw();
 
 class SvxUnoNumberingRules : public ::cppu::WeakAggImplHelper5< css::container::XIndexReplace, css::ucb::XAnyCompare,
@@ -43,7 +43,7 @@ private:
     SvxNumRule maRule;
 public:
     SvxUnoNumberingRules( const SvxNumRule& rRule ) throw();
-    virtual ~SvxUnoNumberingRules() throw();
+    virtual ~SvxUnoNumberingRules() throw() override;
 
     UNO3_GETIMPLEMENTATION_DECL( SvxUnoNumberingRules )
 
@@ -73,7 +73,7 @@ public:
 
     // internal
     css::uno::Sequence<css::beans::PropertyValue> getNumberingRuleByIndex( sal_Int32 nIndex) const
-        throw (css::uno::RuntimeException);
+        throw (css::uno::RuntimeException, std::exception);
     void setNumberingRuleByIndex(const css::uno::Sequence<css::beans::PropertyValue>& rProperties, sal_Int32 nIndex)
         throw (css::uno::RuntimeException, css::lang::IllegalArgumentException, std::exception);
 

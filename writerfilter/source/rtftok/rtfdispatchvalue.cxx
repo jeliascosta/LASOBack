@@ -151,10 +151,8 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
     {
     case RTF_FS:
     case RTF_AFS:
-        nSprm = (m_aStates.top().isRightToLeft || m_aStates.top().eRunType == RTFParserState::HICH) ? NS_ooxml::LN_EG_RPrBase_szCs : NS_ooxml::LN_EG_RPrBase_sz;
-        break;
-    case RTF_ANIMTEXT:
-        nSprm = NS_ooxml::LN_EG_RPrBase_effect;
+        nSprm = (m_aStates.top().isRightToLeft || m_aStates.top().eRunType == RTFParserState::RunType::HICH)
+                ? NS_ooxml::LN_EG_RPrBase_szCs : NS_ooxml::LN_EG_RPrBase_sz;
         break;
     case RTF_EXPNDTW:
         nSprm = NS_ooxml::LN_EG_RPrBase_spacing;
@@ -178,17 +176,17 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
     {
     case RTF_LANG:
     case RTF_ALANG:
-        if (m_aStates.top().isRightToLeft || m_aStates.top().eRunType == RTFParserState::HICH)
+        if (m_aStates.top().isRightToLeft || m_aStates.top().eRunType == RTFParserState::RunType::HICH)
         {
             nSprm = NS_ooxml::LN_CT_Language_bidi;
         }
-        else if (m_aStates.top().eRunType == RTFParserState::DBCH)
+        else if (m_aStates.top().eRunType == RTFParserState::RunType::DBCH)
         {
             nSprm = NS_ooxml::LN_CT_Language_eastAsia;
         }
         else
         {
-            assert(m_aStates.top().eRunType == RTFParserState::LOCH);
+            assert(m_aStates.top().eRunType == RTFParserState::RunType::LOCH);
             nSprm = NS_ooxml::LN_CT_Language_val;
         }
         break;
@@ -313,17 +311,17 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
     {
     case RTF_F:
     case RTF_AF:
-        if (m_aStates.top().isRightToLeft || m_aStates.top().eRunType == RTFParserState::HICH)
+        if (m_aStates.top().isRightToLeft || m_aStates.top().eRunType == RTFParserState::RunType::HICH)
         {
             nSprm = NS_ooxml::LN_CT_Fonts_cs;
         }
-        else if (m_aStates.top().eRunType == RTFParserState::DBCH)
+        else if (m_aStates.top().eRunType == RTFParserState::RunType::DBCH)
         {
             nSprm = NS_ooxml::LN_CT_Fonts_eastAsia;
         }
         else
         {
-            assert(m_aStates.top().eRunType == RTFParserState::LOCH);
+            assert(m_aStates.top().eRunType == RTFParserState::RunType::LOCH);
             nSprm = NS_ooxml::LN_CT_Fonts_ascii;
         }
         if (m_aStates.top().eDestination == Destination::FONTTABLE || m_aStates.top().eDestination == Destination::FONTENTRY)
@@ -1393,6 +1391,9 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
     {
         switch (nParam)
         {
+        case 3:
+            m_aStates.top().aPropType = cppu::UnoType<sal_Int32>::get();
+            break;
         case 30:
             m_aStates.top().aPropType = cppu::UnoType<OUString>::get();
             break;
@@ -1405,6 +1406,31 @@ RTFError RTFDocumentImpl::dispatchValue(RTFKeyword nKeyword, int nParam)
     case RTF_TRWWIDTHA:
         m_aStates.top().nTableRowWidthAfter = nParam;
         break;
+    case RTF_ANIMTEXT:
+    {
+        nId = 0;
+        switch (nParam)
+        {
+        case 0:
+            nId = NS_ooxml::LN_Value_ST_TextEffect_none;
+            break;
+        case 2:
+            nId = NS_ooxml::LN_Value_ST_TextEffect_blinkBackground;
+            break;
+        }
+
+        if (nId > 0)
+            m_aStates.top().aCharacterSprms.set(NS_ooxml::LN_EG_RPrBase_effect, std::make_shared<RTFValue>(nId));
+        break;
+    }
+    case RTF_VIEWBKSP:
+    {
+        m_aSettingsTableSprms.set(NS_ooxml::LN_CT_Settings_displayBackgroundShape, pIntValue);
+        // Send this token immediately, if it only appears before the first
+        // run, it will be too late, we ignored the background shape already by then.
+        outputSettingsTable();
+        break;
+    }
     default:
     {
         SAL_INFO("writerfilter", "TODO handle value '" << keywordToString(nKeyword) << "'");

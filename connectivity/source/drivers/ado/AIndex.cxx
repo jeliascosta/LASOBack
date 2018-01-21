@@ -36,8 +36,8 @@ using namespace com::sun::star::beans;
 using namespace com::sun::star::sdbc;
 
 
-OAdoIndex::OAdoIndex(sal_Bool _bCase,OConnection* _pConnection,ADOIndex* _pIndex)
-    : sdbcx::OIndex(OUString(),OUString(),sal_False,sal_False,sal_False,_bCase)
+OAdoIndex::OAdoIndex(bool _bCase,OConnection* _pConnection,ADOIndex* _pIndex)
+    : sdbcx::OIndex(OUString(),OUString(),false,false,false,_bCase)
     ,m_pConnection(_pConnection)
 {
     construct();
@@ -45,7 +45,7 @@ OAdoIndex::OAdoIndex(sal_Bool _bCase,OConnection* _pConnection,ADOIndex* _pIndex
     fillPropertyValues();
 }
 
-OAdoIndex::OAdoIndex(sal_Bool _bCase,OConnection* _pConnection)
+OAdoIndex::OAdoIndex(bool _bCase,OConnection* _pConnection)
     : sdbcx::OIndex(_bCase)
     ,m_pConnection(_pConnection)
 {
@@ -74,7 +74,7 @@ void OAdoIndex::refreshColumns()
 
 Sequence< sal_Int8 > OAdoIndex::getUnoTunnelImplementationId()
 {
-    static ::cppu::OImplementationId * pId = 0;
+    static ::cppu::OImplementationId * pId = nullptr;
     if (! pId)
     {
         ::osl::MutexGuard aGuard( ::osl::Mutex::getGlobalMutex() );
@@ -87,7 +87,7 @@ Sequence< sal_Int8 > OAdoIndex::getUnoTunnelImplementationId()
     return pId->getImplementationId();
 }
 
-// com::sun::star::lang::XUnoTunnel
+// css::lang::XUnoTunnel
 
 sal_Int64 OAdoIndex::getSomething( const Sequence< sal_Int8 > & rId ) throw (RuntimeException)
 {
@@ -129,16 +129,5 @@ void SAL_CALL OAdoIndex::setFastPropertyValue_NoBroadcast(sal_Int32 nHandle,cons
     }
     sdbcx::OIndex::setFastPropertyValue_NoBroadcast(nHandle,rValue);
 }
-
-void SAL_CALL OAdoIndex::acquire() throw()
-{
-    sdbcx::OIndex::acquire();
-}
-
-void SAL_CALL OAdoIndex::release() throw()
-{
-    sdbcx::OIndex::release();
-}
-
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

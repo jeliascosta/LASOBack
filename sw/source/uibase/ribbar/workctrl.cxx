@@ -67,15 +67,13 @@ SwTbxAutoTextCtrl::SwTbxAutoTextCtrl(
     sal_uInt16 nSlotId,
     sal_uInt16 nId,
     ToolBox& rTbx ) :
-    SfxToolBoxControl( nSlotId, nId, rTbx ),
-    pPopup(nullptr)
+    SfxToolBoxControl( nSlotId, nId, rTbx )
 {
     rTbx.SetItemBits( nId, ToolBoxItemBits::DROPDOWN | rTbx.GetItemBits( nId ) );
 }
 
 SwTbxAutoTextCtrl::~SwTbxAutoTextCtrl()
 {
-    DelPopup();
 }
 
 VclPtr<SfxPopupWindow> SwTbxAutoTextCtrl::CreatePopupWindow()
@@ -86,7 +84,7 @@ VclPtr<SfxPopupWindow> SwTbxAutoTextCtrl::CreatePopupWindow()
     {
         Link<Menu*,bool> aLnk = LINK(this, SwTbxAutoTextCtrl, PopupHdl);
 
-        pPopup = new PopupMenu;
+        ScopedVclPtrInstance<PopupMenu> pPopup;
         SwGlossaryList* pGlossaryList = ::GetGlossaryList();
         const size_t nGroupCount = pGlossaryList->GetGroupCount();
         for(size_t i = 1; i <= nGroupCount; ++i)
@@ -98,7 +96,7 @@ VclPtr<SfxPopupWindow> SwTbxAutoTextCtrl::CreatePopupWindow()
                 sal_uInt16 nIndex = static_cast<sal_uInt16>(100*i);
                 // but insert without extension
                 pPopup->InsertItem( i, sTitle);
-                PopupMenu* pSub = new PopupMenu;
+                VclPtrInstance<PopupMenu> pSub;
                 pSub->SetSelectHdl(aLnk);
                 pPopup->SetPopupMenu(i, pSub);
                 for(sal_uInt16 j = 0; j < nBlockCount; j++)
@@ -123,9 +121,7 @@ VclPtr<SfxPopupWindow> SwTbxAutoTextCtrl::CreatePopupWindow()
         pToolBox->SetItemDown( nId, false );
     }
     GetToolBox().EndSelection();
-    DelPopup();
     return nullptr;
-
 }
 
 void SwTbxAutoTextCtrl::StateChanged( sal_uInt16,
@@ -135,7 +131,7 @@ void SwTbxAutoTextCtrl::StateChanged( sal_uInt16,
     GetToolBox().EnableItem( GetId(), (GetItemState(pState) != SfxItemState::DISABLED) );
 }
 
-IMPL_STATIC_LINK_TYPED(SwTbxAutoTextCtrl, PopupHdl, Menu*, pMenu, bool)
+IMPL_STATIC_LINK(SwTbxAutoTextCtrl, PopupHdl, Menu*, pMenu, bool)
 {
     sal_uInt16 nId = pMenu->GetCurItemId();
 
@@ -156,20 +152,6 @@ IMPL_STATIC_LINK_TYPED(SwTbxAutoTextCtrl, PopupHdl, Menu*, pMenu, bool)
     pGlosHdl->InsertGlossary(sShortName);
 
     return false;
-}
-
-void SwTbxAutoTextCtrl::DelPopup()
-{
-    if(pPopup)
-    {
-        for( sal_uInt16 i = 0; i < pPopup->GetItemCount(); i ++ )
-        {
-            PopupMenu* pSubPopup = pPopup->GetPopupMenu(pPopup->GetItemId(i));
-            delete pSubPopup;
-        }
-        delete pPopup;
-        pPopup = nullptr;
-    }
 }
 
 // Navigation-Popup
@@ -308,7 +290,7 @@ void SwScrollNaviPopup::ApplyImageList()
     }
 }
 
-IMPL_LINK_TYPED(SwScrollNaviPopup, SelectHdl, ToolBox*, pSet, void)
+IMPL_LINK(SwScrollNaviPopup, SelectHdl, ToolBox*, pSet, void)
 {
     sal_uInt16 nSet = pSet->GetCurItemId();
     if( nSet != NID_PREV && nSet != NID_NEXT )
@@ -378,7 +360,7 @@ public:
     SwZoomBox_Impl(
         vcl::Window* pParent,
         sal_uInt16 nSlot );
-    virtual ~SwZoomBox_Impl();
+    virtual ~SwZoomBox_Impl() override;
 
 protected:
     virtual void    Select() override;
@@ -388,13 +370,13 @@ protected:
 
 };
 
-SwZoomBox_Impl::SwZoomBox_Impl(
-    vcl::Window* pParent,
-    sal_uInt16 nSlot ):
-    ComboBox( pParent, SW_RES(RID_PVIEW_ZOOM_LB)),
-    nSlotId(nSlot),
-    bRelease(true)
+SwZoomBox_Impl::SwZoomBox_Impl(vcl::Window* pParent, sal_uInt16 nSlot)
+    : ComboBox(pParent, WB_HIDE | WB_BORDER | WB_DROPDOWN | WB_AUTOHSCROLL)
+    , nSlotId(nSlot)
+    , bRelease(true)
 {
+    SetHelpId(HID_PVIEW_ZOOM_LB);
+    SetSizePixel(LogicToPixel(Size(30, 86), MapUnit::MapAppFont));
     EnableAutocomplete( false );
     sal_uInt16 aZoomValues[] =
     { RID_SVXSTR_ZOOM_25 , RID_SVXSTR_ZOOM_50 ,
@@ -417,7 +399,7 @@ void    SwZoomBox_Impl::Select()
 {
     if ( !IsTravelSelect() )
     {
-        OUString sEntry(comphelper::string::remove(GetText(), '%'));
+        OUString sEntry = GetText().replaceAll("%", "");
         SvxZoomItem aZoom(SvxZoomType::PERCENT,100);
         if(sEntry == SVX_RESSTR( RID_SVXSTR_ZOOM_PAGE_WIDTH ) )
             aZoom.SetType(SvxZoomType::PAGEWIDTH);
@@ -538,28 +520,22 @@ VclPtr<vcl::Window> SwPreviewZoomControl::CreateItemWindow( vcl::Window *pParent
 
 class SwJumpToSpecificBox_Impl : public NumericField
 {
-    sal_uInt16          nSlotId;
+    sal_uInt16      nSlotId;
 
 public:
-    SwJumpToSpecificBox_Impl(
-        vcl::Window* pParent,
-        sal_uInt16 nSlot );
-    virtual ~SwJumpToSpecificBox_Impl();
+    SwJumpToSpecificBox_Impl(vcl::Window* pParent, sal_uInt16 nSlot);
 
 protected:
     void            Select();
     virtual bool    Notify( NotifyEvent& rNEvt ) SAL_OVERRIDE;
 };
 
-SwJumpToSpecificBox_Impl::SwJumpToSpecificBox_Impl(
-    vcl::Window* pParent,
-    sal_uInt16 nSlot ):
-    NumericField( pParent, SW_RES(RID_JUMP_TO_SPEC_PAGE)),
-    nSlotId(nSlot)
-{}
-
-SwJumpToSpecificBox_Impl::~SwJumpToSpecificBox_Impl()
-{}
+SwJumpToSpecificBox_Impl::SwJumpToSpecificBox_Impl(vcl::Window* pParent, sal_uInt16 nSlot)
+    : NumericField(pParent, WB_HIDE | WB_BORDER)
+    , nSlotId(nSlot)
+{
+    SetSizePixel(LogicToPixel(Size(16, 12), MapUnit::MapAppFont));
+}
 
 void SwJumpToSpecificBox_Impl::Select()
 {

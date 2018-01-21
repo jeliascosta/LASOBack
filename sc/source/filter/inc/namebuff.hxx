@@ -91,7 +91,7 @@ public:
     inline                  NameBuffer( RootData*, sal_uInt16 nNewBase );
 
     virtual                 ~NameBuffer();
-    inline void             SetBase( sal_uInt16 nNewBase = 0 );
+    inline void             SetBase( sal_uInt16 nNewBase );
     void                    operator <<( const OUString& rNewString );
 };
 
@@ -127,7 +127,7 @@ public:
     const ScTokenArray* Find( const ScAddress& rRefPos ) const;
 };
 
-class RangeNameBufferWK3
+class RangeNameBufferWK3 final
 {
 private:
     struct Entry
@@ -157,7 +157,7 @@ private:
 
 public:
     RangeNameBufferWK3(LOTUS_ROOT* pLotRoot);
-    virtual                 ~RangeNameBufferWK3();
+    ~RangeNameBufferWK3();
     void                    Add( const OUString& rName, const ScComplexRefData& rCRD );
     inline void             Add( const OUString& rName, const ScRange& aScRange );
     bool                    FindRel( const OUString& rRef, sal_uInt16& rIndex );
@@ -184,14 +184,13 @@ class ExtSheetBuffer : public ExcRoot
 {
 private:
     struct Cont
-        {
+    {
         OUString      aFile;
         OUString      aTab;
         sal_uInt16    nTabNum;    // 0xFFFF -> not set yet
                                 // 0xFFFE -> tried to set, but failed
                                 // 0xFFFD -> should be in the same workbook, but not found
         bool          bSWB;
-        bool          bLink;
                     Cont( const OUString& rFilePathAndName, const OUString& rTabName,
                         const bool bSameWB ) :
                         aFile( rFilePathAndName ),
@@ -199,9 +198,8 @@ private:
                     {
                         nTabNum = 0xFFFF;   // -> table not created yet
                         bSWB = bSameWB;
-                        bLink = false;
                     }
-        };
+    };
 
     std::vector<Cont> maEntries;
 
@@ -209,11 +207,9 @@ public:
     inline          ExtSheetBuffer( RootData* );
 
     sal_Int16       Add( const OUString& rFilePathAndName,
-                        const OUString& rTabName, const bool bSameWorkbook = false );
+                        const OUString& rTabName, const bool bSameWorkbook );
 
     bool            GetScTabIndex( sal_uInt16 nExcSheetIndex, sal_uInt16& rIn_LastTab_Out_ScIndex );
-    bool            IsLink( const sal_uInt16 nExcSheetIndex ) const;
-    void            GetLink( const sal_uInt16 nExcSheetIndex, OUString &rAppl, OUString &rDoc ) const;
 
     void            Reset();
 };
@@ -224,13 +220,11 @@ inline ExtSheetBuffer::ExtSheetBuffer( RootData* p ) : ExcRoot( p )
 
 struct ExtName
 {
-    OUString          aName;
     sal_uInt32        nStorageId;
     sal_uInt16        nFlags;
 
-    inline          ExtName( const OUString& r, sal_uInt16 n ) : aName( r ), nStorageId( 0 ), nFlags( n ) {}
+    inline          ExtName( sal_uInt16 n ) : nStorageId( 0 ), nFlags( n ) {}
 
-    bool            IsDDE() const;
     bool            IsOLE() const;
 };
 
@@ -239,9 +233,9 @@ class ExtNameBuff : protected XclImpRoot
 public:
     explicit        ExtNameBuff( const XclImpRoot& rRoot );
 
-    void            AddDDE( const OUString& rName, sal_Int16 nRefIdx );
-    void            AddOLE( const OUString& rName, sal_Int16 nRefIdx, sal_uInt32 nStorageId );
-    void            AddName( const OUString& rName, sal_Int16 nRefIdx );
+    void            AddDDE( sal_Int16 nRefIdx );
+    void            AddOLE( sal_Int16 nRefIdx, sal_uInt32 nStorageId );
+    void            AddName( sal_Int16 nRefIdx );
 
     const ExtName*  GetNameByIndex( sal_Int16 nRefIdx, sal_uInt16 nNameIdx ) const;
 

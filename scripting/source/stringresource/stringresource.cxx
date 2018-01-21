@@ -1215,7 +1215,7 @@ class BinaryOutput
     Reference< io::XOutputStream >          m_xOutputStream;
 
 public:
-    explicit BinaryOutput( Reference< XComponentContext > xContext );
+    explicit BinaryOutput( Reference< XComponentContext > const & xContext );
 
     const Reference< io::XOutputStream >& getOutputStream() const
         { return m_xOutputStream; }
@@ -1233,7 +1233,7 @@ public:
     void writeString( const OUString& aStr );
 };
 
-BinaryOutput::BinaryOutput( Reference< XComponentContext > xContext )
+BinaryOutput::BinaryOutput( Reference< XComponentContext > const & xContext )
         : m_xContext( xContext )
 {
     m_xTempFile = io::TempFile::create( m_xContext );
@@ -1429,7 +1429,7 @@ class BinaryInput
     sal_Int32                               m_nSize;
 
 public:
-    BinaryInput( const Sequence< ::sal_Int8 >& aData, Reference< XComponentContext > xContext );
+    BinaryInput( const Sequence< ::sal_Int8 >& aData, Reference< XComponentContext > const & xContext );
 
     Reference< io::XInputStream > getInputStreamForSection( sal_Int32 nSize );
 
@@ -1443,7 +1443,7 @@ public:
     OUString readString();
 };
 
-BinaryInput::BinaryInput( const Sequence< ::sal_Int8 >& aData, Reference< XComponentContext > xContext )
+BinaryInput::BinaryInput( const Sequence< ::sal_Int8 >& aData, Reference< XComponentContext > const & xContext )
         : m_aData( aData )
         , m_xContext( xContext )
 {
@@ -2104,7 +2104,7 @@ void implWriteCharToBuffer( OUStringBuffer& aBuf, sal_Unicode cu, bool bKey )
 }
 
 void implWriteStringWithEncoding( const OUString& aStr,
-    Reference< io::XTextOutputStream2 > xTextOutputStream, bool bKey )
+    Reference< io::XTextOutputStream2 > const & xTextOutputStream, bool bKey )
 {
     static sal_Unicode cLineFeed = 0xa;
 
@@ -2130,9 +2130,6 @@ void implWriteStringWithEncoding( const OUString& aStr,
 bool StringResourcePersistenceImpl::implWritePropertiesFile( LocaleItem* pLocaleItem,
     const Reference< io::XOutputStream >& xOutputStream, const OUString& aComment )
 {
-    static const char aAssignmentStr[] = "=";
-    static const char aLineFeedStr[] = "\n";
-
     if( !xOutputStream.is() || pLocaleItem == nullptr )
         return false;
 
@@ -2146,7 +2143,7 @@ bool StringResourcePersistenceImpl::implWritePropertiesFile( LocaleItem* pLocale
     xTextOutputStream->setEncoding( aEncodingStr );
 
     xTextOutputStream->writeString( aComment );
-    xTextOutputStream->writeString( aLineFeedStr );
+    xTextOutputStream->writeString( "\n" );
 
     const IdToStringMap& rHashMap = pLocaleItem->m_aIdToStringMap;
     if( !rHashMap.empty() )
@@ -2189,7 +2186,7 @@ bool StringResourcePersistenceImpl::implWritePropertiesFile( LocaleItem* pLocale
                 if( !( it == rHashMap.end() ) )
                 {
                     implWriteStringWithEncoding( aResourceID, xTextOutputStream, true );
-                    xTextOutputStream->writeString( aAssignmentStr );
+                    xTextOutputStream->writeString( "=" );
                     OUString aValStr = (*it).second;
                     implWriteStringWithEncoding( aValStr, xTextOutputStream, false );
                 }

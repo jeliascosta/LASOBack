@@ -100,7 +100,6 @@ struct CpyTabFrame
 struct CR_SetBoxWidth
 {
     SwSelBoxes m_Boxes;
-    std::map<SwTableLine*, sal_uInt16> m_LineWidthMap;
     SwShareBoxFormats aShareFormats;
     SwTableNode* pTableNd;
     SwUndoTableNdsChg* pUndo;
@@ -122,9 +121,7 @@ struct CR_SetBoxWidth
         nMode = pTableNd->GetTable().GetTableChgMode();
     }
     CR_SetBoxWidth( const CR_SetBoxWidth& rCpy )
-        : m_LineWidthMap(rCpy.m_LineWidthMap)
-        ,
-        pTableNd( rCpy.pTableNd ),
+        : pTableNd( rCpy.pTableNd ),
         pUndo( rCpy.pUndo ),
         nDiff( rCpy.nDiff ), nSide( rCpy.nSide ),
         nMaxSize( rCpy.nMaxSize ), nLowerDiff( 0 ),
@@ -203,12 +200,11 @@ struct CR_SetLineHeight
     SwTwips nMaxSpace, nMaxHeight;
     TableChgMode nMode;
     sal_uInt16 nLines;
-    bool bBigger, bTop, bSplittBox, bAnyBoxFnd;
+    bool bBigger, bTop;
 
     CR_SetLineHeight( sal_uInt16 eType, SwTableNode* pTNd )
         : pTableNd( pTNd ), pUndo( nullptr ),
-        nMaxSpace( 0 ), nMaxHeight( 0 ), nLines( 0 ),
-        bSplittBox( false ), bAnyBoxFnd( false )
+        nMaxSpace( 0 ), nMaxHeight( 0 ), nLines( 0 )
     {
         bTop = nsTableChgWidthHeightType::WH_ROW_TOP == ( eType & 0xff ) || nsTableChgWidthHeightType::WH_CELL_TOP == ( eType & 0xff );
         bBigger = 0 != (eType & nsTableChgWidthHeightType::WH_FLAG_BIGGER );
@@ -220,8 +216,7 @@ struct CR_SetLineHeight
         : pTableNd( rCpy.pTableNd ), pUndo( rCpy.pUndo ),
         nMaxSpace( rCpy.nMaxSpace ), nMaxHeight( rCpy.nMaxHeight ),
         nMode( rCpy.nMode ), nLines( rCpy.nLines ),
-        bBigger( rCpy.bBigger ), bTop( rCpy.bTop ),
-        bSplittBox( rCpy.bSplittBox ), bAnyBoxFnd( rCpy.bAnyBoxFnd )
+        bBigger( rCpy.bBigger ), bTop( rCpy.bTop )
     {}
 
     SwUndoTableNdsChg* CreateUndo( SwUndoId nUndoType )
@@ -1075,8 +1070,8 @@ bool SwTable::OldSplitRow( SwDoc* pDoc, const SwSelBoxes& rBoxes, sal_uInt16 nCn
             SwTableBox* pSelBox = rBoxes[n];
             const SwRowFrame* pRow = GetRowFrame( *pSelBox->GetUpper() );
             OSL_ENSURE( pRow, "Where is the SwTableLine's Frame?" );
-            SWRECTFN( pRow )
-            pRowHeights[ n ] = (pRow->Frame().*fnRect->fnGetHeight)();
+            SwRectFnSet aRectFnSet(pRow);
+            pRowHeights[ n ] = (pRow->Frame().*aRectFnSet->fnGetHeight)();
         }
     }
 
@@ -1373,16 +1368,16 @@ struct InsULPara
 
     InsULPara( SwTableNode* pTNd,
                 SwTableBox* pLeft,
-                SwTableLine* pLine=nullptr, SwTableBox* pBox=nullptr )
-        : pTableNd( pTNd ), pInsLine( pLine ), pInsBox( pBox ),
+                SwTableLine* pLine )
+        : pTableNd( pTNd ), pInsLine( pLine ), pInsBox( nullptr ),
         pLeftBox( pLeft )
         {   bUL_LR = true; bUL = true; }
 
-    void SetLeft( SwTableBox* pBox=nullptr )
+    void SetLeft( SwTableBox* pBox )
         { bUL_LR = false;   bUL = true; if( pBox ) pInsBox = pBox; }
-    void SetRight( SwTableBox* pBox=nullptr )
+    void SetRight( SwTableBox* pBox )
         { bUL_LR = false;   bUL = false; if( pBox ) pInsBox = pBox; }
-    void SetLower( SwTableLine* pLine=nullptr )
+    void SetLower( SwTableLine* pLine )
         { bUL_LR = true;    bUL = false; if( pLine ) pInsLine = pLine; }
 };
 
@@ -2094,12 +2089,12 @@ bool SwTable::MakeCopy( SwDoc* pInsDoc, const SwPosition& rPos,
 
     pNewTable->SetTableStyleName(pTableNd->GetTable().GetTableStyleName());
 
-    if( typeid( SwDDETable) == typeid(*this))
+    if( auto pSwDDETable = dynamic_cast<const SwDDETable*>(this) )
     {
         // A DDE-Table is being copied
         // Does the new Document actually have it's FieldType?
         SwFieldType* pFieldType = pInsDoc->getIDocumentFieldsAccess().InsertFieldType(
-                                    *static_cast<const SwDDETable*>(this)->GetDDEFieldType() );
+                                    *pSwDDETable->GetDDEFieldType() );
         OSL_ENSURE( pFieldType, "unknown FieldType" );
 
         // Change the Table Pointer at the Node
@@ -2386,8 +2381,11 @@ static bool lcl_SetSelBoxWidth( SwTableLine* pLine, CR_SetBoxWidth& rParam,
                     return false;
 
             // Collect all "ContentBoxes"
-            if( (bGreaterBox = TBLFIX_CHGABS != rParam.nMode && ( nDist + ( rParam.bLeft ? 0 : nWidth ) ) >= rParam.nSide) ||
-                ( !rParam.bBigger && ( std::abs( nDist + (( rParam.nMode && rParam.bLeft ) ? 0 : nWidth ) - rParam.nSide ) < COLFUZZY ) ) )
+            bGreaterBox = (TBLFIX_CHGABS != rParam.nMode)
+                       && ((nDist + (rParam.bLeft ? 0 : nWidth)) >= rParam.nSide);
+            if (bGreaterBox
+                || (!rParam.bBigger
+                    && (std::abs(nDist + ((rParam.nMode && rParam.bLeft) ? 0 : nWidth) - rParam.nSide) < COLFUZZY)))
             {
                 rParam.bAnyBoxFnd = true;
                 SwTwips nLowerDiff;

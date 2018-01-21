@@ -26,10 +26,11 @@
 #include <rtl/textcvt.h>
 #include <rtl/textenc.h>
 #include <rtl/alloc.h>
+#include <rtl/character.hxx>
 
 char * RscChar::MakeUTF8( char * pStr, sal_uInt16 nTextEncoding )
 {
-    sal_Size nMaxUniCodeBuf = strlen( pStr ) + 1;
+    std::size_t nMaxUniCodeBuf = strlen( pStr ) + 1;
     if( nMaxUniCodeBuf * 6 > 0x0FFFFF )
         RscExit( 10 );
 
@@ -109,7 +110,7 @@ char * RscChar::MakeUTF8( char * pStr, sal_uInt16 nTextEncoding )
                         {
                             if( isdigit( *pStr ) )
                                 nChar = nChar * 16 + (sal_uInt8)*pStr - (sal_uInt8)'0';
-                            else if( isupper( *pStr ) )
+                            else if( rtl::isAsciiUpperCase( *pStr ) )
                                 nChar = nChar * 16 + (sal_uInt8)*pStr - (sal_uInt8)'A' +10;
                             else
                                 nChar = nChar * 16 + (sal_uInt8)*pStr - (sal_uInt8)'a' +10;

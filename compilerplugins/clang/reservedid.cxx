@@ -15,7 +15,6 @@
 
 #include "clang/AST/Attr.h"
 
-#include "compat.hxx"
 #include "plugin.hxx"
 
 namespace {
@@ -103,10 +102,8 @@ bool ReservedId::VisitNamedDecl(NamedDecl const * decl) {
         return true;
     }
     auto filename = compiler.getSourceManager().getFilename(spelLoc);
-    if ((filename
-         == SRCDIR "/bridges/source/cpp_uno/gcc3_linux_x86-64/share.hxx")
-        || (filename
-            == SRCDIR "/bridges/source/cpp_uno/gcc3_macosx_x86-64/share.hxx"))
+    if (filename.startswith(SRCDIR "/bridges/source/cpp_uno/")
+        && filename.endswith("share.hxx"))
     {
         return true;
     }
@@ -132,6 +129,7 @@ bool ReservedId::VisitNamedDecl(NamedDecl const * decl) {
             && s != "__PK11_GetKeyData"
                 // xmlsecurity/source/xmlsec/nss/nssrenam.h
             && s != "__data_start" // sal/osl/unx/system.cxx
+            && s != "__lxstat64" // setup_native/scripts/source/getuid.c
             && s != "__lxstat") // setup_native/scripts/source/getuid.c
         {
             report(
@@ -153,6 +151,8 @@ bool ReservedId::VisitNamedDecl(NamedDecl const * decl) {
                 // vcl/unx/gtk/xid_fullscreen_on_all_monitors.c
             && s != "_GstVideoOverlay"
                 // avmedia/source/gstreamer/gstplayer.hxx
+            && s != "_TpAccount" && s != "_TpContact"
+                // include/tubes/manager.hxx
             && s != "_XRegion" // vcl/unx/generic/gdi/x11cairotextrender.cxx
             && s != "_XTrap") // vcl/unx/generic/gdi/xrender_peer.hxx
         {

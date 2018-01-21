@@ -78,7 +78,7 @@ class XclExpPalette : public XclDefaultPalette, public XclExpRecord
 {
 public:
     explicit            XclExpPalette( const XclExpRoot& rRoot );
-    virtual             ~XclExpPalette();
+    virtual             ~XclExpPalette() override;
 
     /** Inserts the color into the list and updates weighting.
         @param nAutoDefault  The Excel palette index for automatic color.
@@ -101,13 +101,9 @@ public:
                             sal_uInt16& rnXclForeIx, sal_uInt16& rnXclBackIx, sal_uInt8& rnXclPattern,
                             sal_uInt32 nForeColorId, sal_uInt32 nBackColorId ) const;
 
-    /** Returns the RGB color data for a (non-zero-based) Excel palette entry.
-        @return  The color from current or default palette or COL_AUTO, if nothing else found. */
-    ColorData           GetColorData( sal_uInt16 nXclIndex ) const;
     /** Returns the color for a (non-zero-based) Excel palette entry.
         @return  The color from current or default palette or COL_AUTO, if nothing else found. */
-    inline Color        GetColor( sal_uInt16 nXclIndex ) const
-                            { return Color( GetColorData( nXclIndex ) ); }
+    Color               GetColor( sal_uInt16 nXclIndex ) const;
 
     /** Saves the PALETTE record, if it differs from the default palette. */
     virtual void        Save( XclExpStream& rStrm ) override;
@@ -228,11 +224,6 @@ public:
         @return  The resulting Excel font index. */
     sal_uInt16          Insert( const XclFontData& rFontData,
                             XclExpColorType eColorType, bool bAppFont = false );
-    /** Inserts the font into the buffer if not present.
-        @param bAppFont  true = Sets the application font; false = Inserts a new font.
-        @return  The resulting Excel font index. */
-    sal_uInt16          Insert( const vcl::Font& rFont,
-                            XclExpColorType eColorType, bool bAppFont = false );
     /** Inserts the SvxFont into the buffer if not present, e.g. where escapements are used.
         @return  The resulting Excel font index. */
     sal_uInt16          Insert( const SvxFont& rFont,
@@ -242,7 +233,7 @@ public:
         @param bAppFont  true = Sets the application font; false = Inserts a new font.
         @return  The resulting Excel font index. */
     sal_uInt16          Insert( const SfxItemSet& rItemSet, sal_Int16 nScript,
-                            XclExpColorType eColorType, bool bAppFont = false );
+                            XclExpColorType eColorType, bool bAppFont );
 
     /** Writes all FONT records contained in this buffer. */
     virtual void        Save( XclExpStream& rStrm ) override;
@@ -285,7 +276,7 @@ class XclExpNumFmtBuffer : public XclExpRecordBase, protected XclExpRoot
 {
 public:
     explicit            XclExpNumFmtBuffer( const XclExpRoot& rRoot );
-    virtual             ~XclExpNumFmtBuffer();
+    virtual             ~XclExpNumFmtBuffer() override;
 
     /** Returns the core index of the current standard number format. */
     inline sal_uInt32   GetStandardFormat() const { return mnStdFmt; }
@@ -396,7 +387,7 @@ struct XclExpCellArea : public XclCellArea
         @return  true = At least one area item is set. */
     bool                FillFromItemSet(
                             const SfxItemSet& rItemSet, XclExpPalette& rPalette,
-                            bool bStyle = false );
+                            bool bStyle );
     /** Fills the mn***Color base members from the mn***ColorId members. */
     void                SetFinalColors( const XclExpPalette& rPalette );
 
@@ -546,7 +537,7 @@ class XclExpStyle : public XclExpRecord
 {
 public:
     explicit            XclExpStyle( sal_uInt32 nXFId, const OUString& rStyleName );
-    explicit            XclExpStyle( sal_uInt32 nXFId, sal_uInt8 nStyleId, sal_uInt8 nLevel = EXC_STYLE_NOLEVEL );
+    explicit            XclExpStyle( sal_uInt32 nXFId, sal_uInt8 nStyleId, sal_uInt8 nLevel );
 
     /** Returns true, if this record represents an Excel built-in style. */
     inline bool         IsBuiltIn() const { return mnStyleId != EXC_STYLE_USERDEF; }
@@ -648,7 +639,7 @@ private:
     sal_uInt32          FindXF( const SfxStyleSheetBase& rStyleSheet ) const;
 
     /** Returns the XF ID of a built-in style XF, searches by style identifier. */
-    sal_uInt32          FindBuiltInXF( sal_uInt8 nStyleId, sal_uInt8 nLevel = EXC_STYLE_NOLEVEL ) const;
+    sal_uInt32          FindBuiltInXF( sal_uInt8 nStyleId, sal_uInt8 nLevel ) const;
 
     /** Tries to find the XF record containing the passed format or inserts a new record.
         @return  The XF record ID. */
@@ -664,11 +655,11 @@ private:
 
     /** Inserts a built-in XF record without a STYLE record and returns the XF ID.
         @param bCreateStyleRec  true = Creates the related STYLE record. */
-    sal_uInt32          AppendBuiltInXF( XclExpXFRef xXF,
+    sal_uInt32          AppendBuiltInXF( XclExpXFRef const & xXF,
                             sal_uInt8 nStyleId, sal_uInt8 nLevel = EXC_STYLE_NOLEVEL );
     /** Inserts a built-in XF and STYLE record and returns the XF ID.
         @param bCreateStyleRec  true = Creates the related STYLE record. */
-    sal_uInt32          AppendBuiltInXFWithStyle( XclExpXFRef xXF,
+    sal_uInt32          AppendBuiltInXFWithStyle( XclExpXFRef const & xXF,
                             sal_uInt8 nStyleId, sal_uInt8 nLevel = EXC_STYLE_NOLEVEL );
 
     /** Inserts all default XF and STYLE records. */
@@ -711,7 +702,7 @@ class XclExpDxf : public XclExpRecordBase, protected XclExpRoot
 public:
     XclExpDxf( const XclExpRoot& rRoot, XclExpCellAlign* pAlign, XclExpCellBorder* pBorder,
             XclExpDxfFont* pFont, XclExpNumFmt* pNumberFmt, XclExpCellProt* pProt, XclExpColor* pColor);
-    virtual ~XclExpDxf();
+    virtual ~XclExpDxf() override;
 
     virtual void SaveXml( XclExpXmlStream& rStrm ) override;
 
@@ -728,7 +719,7 @@ class XclExpDxfs : public XclExpRecordBase, protected XclExpRoot
 {
 public:
     XclExpDxfs( const XclExpRoot& rRoot );
-    virtual ~XclExpDxfs() {}
+    virtual ~XclExpDxfs() override {}
 
     sal_Int32 GetDxfId(const OUString& rName);
 

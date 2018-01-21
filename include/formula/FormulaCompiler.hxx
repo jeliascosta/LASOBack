@@ -20,23 +20,25 @@
 #ifndef INCLUDED_FORMULA_FORMULACOMPILER_HXX
 #define INCLUDED_FORMULA_FORMULACOMPILER_HXX
 
-#include <formula/formuladllapi.h>
-#include <rtl/ustrbuf.hxx>
-#include <rtl/ustring.hxx>
-#include <tools/debug.hxx>
-
-#include <com/sun/star/uno/Sequence.hxx>
-
-#include <formula/opcode.hxx>
-#include <formula/grammar.hxx>
-#include <formula/token.hxx>
-#include <formula/ExternalReferenceHelper.hxx>
-
 #include <memory>
 #include <unordered_map>
+#include <vector>
+
+#include <com/sun/star/uno/Sequence.hxx>
+#include <formula/formuladllapi.h>
+#include <formula/grammar.hxx>
+#include <formula/opcode.hxx>
+#include <formula/token.hxx>
+#include <formula/types.hxx>
+#include <rtl/ustrbuf.hxx>
+#include <rtl/ustring.hxx>
+#include <sal/log.hxx>
+#include <sal/types.h>
+#include <tools/debug.hxx>
 
 #define FORMULA_MAXJUMPCOUNT    32  /* maximum number of jumps (ocChoose) */
 #define FORMULA_MAXTOKENS     8192  /* maximum number of tokens in formula */
+#define FORMULA_MAXPARAMS      255  /* maximum number of parameters per function (byte) */
 
 
 namespace com { namespace sun { namespace star {
@@ -47,6 +49,7 @@ namespace com { namespace sun { namespace star {
 }}}
 
 class CharClass;
+enum class FormulaError : sal_uInt16;
 
 namespace formula
 {
@@ -56,6 +59,7 @@ struct FormulaArrayStack
 {
     FormulaArrayStack*  pNext;
     FormulaTokenArray*  pArr;
+    FormulaTokenRef     mpLastToken;
     bool bTemp;
 };
 
@@ -74,7 +78,7 @@ public:
     virtual ~FormulaCompiler();
 
     /** Mappings from strings to OpCodes and vice versa. */
-    class FORMULA_DLLPUBLIC OpCodeMap
+    class FORMULA_DLLPUBLIC OpCodeMap final
     {
         OpCodeHashMap         * mpHashMap;                 /// Hash map of symbols, OUString -> OpCode
         OUString              * mpTable;                   /// Array of symbols, OpCode -> OUString, offset==OpCode
@@ -101,7 +105,7 @@ public:
         {
             mbEnglish = FormulaGrammar::isEnglish( meGrammar);
         }
-        virtual ~OpCodeMap();
+        ~OpCodeMap();
 
         /** Copy mappings from r into this map, effectively replacing this map.
 
@@ -145,6 +149,8 @@ public:
 
         /// Is it an ODF 1.1 compatibility mapping?
         inline bool isPODF() const { return FormulaGrammar::isPODF( meGrammar); }
+
+        /* TODO: add isAPI() once a FormulaLanguage was added. */
 
         /// Is it an ODFF / ODF 1.2 mapping?
         inline bool isODFF() const { return FormulaGrammar::isODFF( meGrammar); }
@@ -216,7 +222,7 @@ public:
      */
     OpCode GetEnglishOpCode( const OUString& rName ) const;
 
-    sal_uInt16 GetErrorConstant( const OUString& rName ) const;
+    FormulaError GetErrorConstant( const OUString& rName ) const;
 
     void EnableJumpCommandReorder( bool bEnable );
     void EnableStopOnError( bool bEnable );
@@ -276,7 +282,7 @@ protected:
     virtual void fillFromAddInCollectionEnglishName( const NonConstOpCodeMapPtr& xMap ) const;
     virtual void fillAddInToken(::std::vector< css::sheet::FormulaOpCodeMapEntry >& _rVec, bool _bIsEnglish) const;
 
-    virtual void SetError(sal_uInt16 nError);
+    virtual void SetError(FormulaError nError);
     virtual FormulaTokenRef ExtendRangeReference( FormulaToken & rTok1, FormulaToken & rTok2 );
     virtual bool HandleExternalReference(const FormulaToken& _aToken);
     virtual bool HandleRange();
@@ -295,7 +301,7 @@ protected:
         Calc: ForceArray or ReferenceOrForceArray type. */
     virtual bool IsForceArrayParameter( const FormulaToken* pToken, sal_uInt16 nParam ) const;
 
-    void AppendErrorConstant( OUStringBuffer& rBuffer, sal_uInt16 nError ) const;
+    void AppendErrorConstant( OUStringBuffer& rBuffer, FormulaError nError ) const;
 
     bool   GetToken();
     OpCode NextToken();
@@ -314,7 +320,7 @@ protected:
     void NotLine();
     OpCode Expression();
     void PopTokenArray();
-    void PushTokenArray( FormulaTokenArray*, bool = false );
+    void PushTokenArray( FormulaTokenArray*, bool );
 
     bool MergeRangeReference( FormulaToken * * const pCode1, FormulaToken * const * const pCode2 );
 
@@ -327,6 +333,7 @@ protected:
     FormulaTokenRef     pCurrentFactorToken;    // current factor token (of Factor() method)
     sal_uInt16          nCurrentFactorParam;    // current factor token's parameter, 1-based
     FormulaTokenArray*  pArr;
+    FormulaTokenRef     mpLastToken;            // last token
 
     FormulaToken**      pCode;
     FormulaArrayStack*  pStack;
@@ -349,6 +356,7 @@ private:
     void InitSymbolsNative() const;    /// only SymbolsNative, on first document creation
     void InitSymbolsEnglish() const;   /// only SymbolsEnglish, maybe later
     void InitSymbolsPODF() const;      /// only SymbolsPODF, on demand
+    void InitSymbolsAPI() const;       /// only SymbolsAPI, on demand
     void InitSymbolsODFF() const;      /// only SymbolsODFF, on demand
     void InitSymbolsEnglishXL() const; /// only SymbolsEnglishXL, on demand
     void InitSymbolsOOXML() const;     /// only SymbolsOOXML, on demand
@@ -405,6 +413,7 @@ private:
 
     mutable NonConstOpCodeMapPtr  mxSymbolsODFF;      // ODFF symbols
     mutable NonConstOpCodeMapPtr  mxSymbolsPODF;      // ODF 1.1 symbols
+    mutable NonConstOpCodeMapPtr  mxSymbolsAPI;       // XFunctionAccess API symbols
     mutable NonConstOpCodeMapPtr  mxSymbolsNative;    // native symbols
     mutable NonConstOpCodeMapPtr  mxSymbolsEnglish;   // English symbols
     mutable NonConstOpCodeMapPtr  mxSymbolsEnglishXL; // English Excel symbols (for VBA formula parsing)

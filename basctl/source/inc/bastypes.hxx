@@ -81,7 +81,7 @@ class DockingWindow : public ::DockingWindow
 public:
     DockingWindow (vcl::Window* pParent);
     DockingWindow (Layout* pParent);
-    virtual ~DockingWindow();
+    virtual ~DockingWindow() override;
     virtual void dispose() override;
     void ResizeIfDocking (Point const&, Size const&);
     void ResizeIfDocking (Size const&);
@@ -153,7 +153,7 @@ private:
     VclPtr<ScrollBar>      pShellHScrollBar;
     VclPtr<ScrollBar>      pShellVScrollBar;
 
-    DECL_LINK_TYPED( ScrollHdl, ScrollBar*, void );
+    DECL_LINK( ScrollHdl, ScrollBar*, void );
     int nStatus;
 
     ScriptDocument      m_aDocument;
@@ -168,7 +168,7 @@ protected:
 
 public:
     BaseWindow( vcl::Window* pParent, const ScriptDocument& rDocument, const OUString& aLibName, const OUString& aName );
-    virtual         ~BaseWindow();
+    virtual         ~BaseWindow() override;
     virtual void    dispose() override;
 
     void            Init();
@@ -286,15 +286,15 @@ private:
     Map m_aMap;
 };
 
-void            CutLines( OUString& rStr, sal_Int32 nStartLine, sal_Int32 nLines, bool bEraseTrailingEmptyLines = false );
+void            CutLines( OUString& rStr, sal_Int32 nStartLine, sal_Int32 nLines, bool bEraseTrailingEmptyLines );
 OUString CreateMgrAndLibStr( const OUString& rMgrName, const OUString& rLibName );
 sal_uLong           CalcLineCount( SvStream& rStream );
 
-bool QueryReplaceMacro( const OUString& rName, vcl::Window* pParent = nullptr );
-bool QueryDelMacro( const OUString& rName, vcl::Window* pParent = nullptr );
-bool QueryDelDialog( const OUString& rName, vcl::Window* pParent = nullptr );
-bool QueryDelModule( const OUString& rName, vcl::Window* pParent = nullptr );
-bool QueryDelLib( const OUString& rName, bool bRef = false, vcl::Window* pParent = nullptr );
+bool QueryReplaceMacro( const OUString& rName, vcl::Window* pParent );
+bool QueryDelMacro( const OUString& rName, vcl::Window* pParent );
+bool QueryDelDialog( const OUString& rName, vcl::Window* pParent );
+bool QueryDelModule( const OUString& rName, vcl::Window* pParent );
+bool QueryDelLib( const OUString& rName, bool bRef, vcl::Window* pParent );
 bool QueryPassword( const css::uno::Reference< css::script::XLibraryContainer >& xLibContainer, const OUString& rLibName, OUString& rPassword, bool bRepeat = false, bool bNewTitle = false );
 
 class ModuleInfoHelper

@@ -159,7 +159,6 @@ void Calendar::ImplInit( WinBits nWinStyle )
     mnWinStyle              = nWinStyle;
     mnFirstYear             = 0;
     mnLastYear              = 0;
-    mnRequestYear           = 0;
     mbCalc                  = true;
     mbFormat                = true;
     mbDrag                  = false;
@@ -172,7 +171,6 @@ void Calendar::ImplInit( WinBits nWinStyle )
     mbPrevIn                = false;
     mbNextIn                = false;
     mbDirect                = false;
-    mbInSelChange           = false;
     mbTravelSelect          = false;
     mbScrollDateRange       = false;
     mbSelLeft               = false;
@@ -298,7 +296,7 @@ DayOfWeek Calendar::ImplGetWeekStart() const
     return eDay;
 }
 
-void Calendar::ImplGetWeekFont( vcl::Font& rFont ) const
+void Calendar::ImplGetWeekFont( vcl::Font& rFont )
 {
     // weeknumber is displayed in WEEKNUMBER_HEIGHT%-Fontheight
     Size aFontSize = rFont.GetFontSize();
@@ -455,8 +453,8 @@ void Calendar::ImplFormat()
     }
 
     // get DateInfo
-    sal_uInt16 nNewFirstYear = maFirstDate.GetYear();
-    sal_uInt16 nNewLastYear = GetLastDate().GetYear();
+    sal_Int16 nNewFirstYear = maFirstDate.GetYear();
+    sal_Int16 nNewLastYear = GetLastDate().GetYear();
     if ( mnFirstYear )
     {
         if ( nNewFirstYear < mnFirstYear )
@@ -473,7 +471,6 @@ void Calendar::ImplFormat()
         mnFirstYear = nNewFirstYear;
         mnLastYear = nNewLastYear;
     }
-    mnRequestYear = 0;
 
     mbFormat = false;
 }
@@ -673,9 +670,9 @@ void Calendar::ImplDrawSpin(vcl::RenderContext& rRenderContext )
 
 void Calendar::ImplDrawDate(vcl::RenderContext& rRenderContext,
                             long nX, long nY,
-                            sal_uInt16 nDay, sal_uInt16 nMonth, sal_uInt16 nYear,
+                            sal_uInt16 nDay, sal_uInt16 nMonth, sal_Int16 nYear,
                             DayOfWeek eDayOfWeek,
-                            bool bOther, sal_uLong nToday )
+                            bool bOther, sal_Int32 nToday )
 {
     Color* pTextColor = nullptr;
     const OUString& rDay = maDayTexts[nDay - 1];
@@ -772,10 +769,10 @@ void Calendar::ImplDraw(vcl::RenderContext& rRenderContext)
     long nDeltaY;
     long nDayX;
     long nDayY;
-    sal_uLong nToday = Date(Date::SYSTEM).GetDate();
+    sal_Int32 nToday = Date(Date::SYSTEM).GetDate();
     sal_uInt16 nDay;
     sal_uInt16 nMonth;
-    sal_uInt16 nYear;
+    sal_Int16 nYear;
     Date aDate = GetFirstMonth();
     DayOfWeek eStartDay = ImplGetWeekStart();
 
@@ -1098,10 +1095,6 @@ void Calendar::ImplMouseSelect( const Date& rDate, sal_uInt16 nHitTest,
     bool bNewSel = *pOldSel != *mpSelectTable;
     if ( (maCurDate != aOldDate) || bNewSel )
     {
-        if ( bNewSel )
-        {
-            mbInSelChange = false;
-        }
         HideFocus();
         if ( bNewSel )
             ImplUpdateSelection( pOldSel.get() );
@@ -1161,8 +1154,7 @@ void Calendar::ImplShowMenu( const Point& rPos, const Date& rDate )
     EndSelection();
 
     Date        aOldFirstDate = GetFirstMonth();
-    PopupMenu   aPopupMenu;
-    PopupMenu*  pYearPopupMenus[MENU_YEAR_COUNT];
+    ScopedVclPtrInstance<PopupMenu> aPopupMenu;
     sal_uInt16      nMonthOff;
     sal_uInt16      nCurItemId;
     sal_uInt16      nYear = rDate.GetYear()-1;
@@ -1179,27 +1171,19 @@ void Calendar::ImplShowMenu( const Point& rPos, const Date& rDate )
     // construct menu (include years with different months)
     for ( i = 0; i < MENU_YEAR_COUNT; i++ )
     {
-        pYearPopupMenus[i] = new PopupMenu;
+        VclPtrInstance<PopupMenu> pYearPopupMenu;
         for ( j = 1; j <= 12; j++ )
-            pYearPopupMenus[i]->InsertItem( nYearIdCount+j,
+            pYearPopupMenu->InsertItem( nYearIdCount+j,
                     maCalendarWrapper.getDisplayName(
                         i18n::CalendarDisplayIndex::MONTH, j-1, 1));
-        aPopupMenu.InsertItem( 10+i, OUString::number( nYear+i ) );
-        aPopupMenu.SetPopupMenu( 10+i, pYearPopupMenus[i] );
+        aPopupMenu->InsertItem( 10+i, OUString::number( nYear+i ) );
+        aPopupMenu->SetPopupMenu( 10+i, pYearPopupMenu );
         nYearIdCount += 1000;
     }
 
     mbMenuDown = true;
-    nCurItemId = aPopupMenu.Execute( this, rPos );
+    nCurItemId = aPopupMenu->Execute( this, rPos );
     mbMenuDown = false;
-
-    // destroy menu
-    aPopupMenu.SetPopupMenu( 2, nullptr );
-    for ( i = 0; i < MENU_YEAR_COUNT; i++ )
-    {
-        aPopupMenu.SetPopupMenu( 10+i, nullptr );
-        delete pYearPopupMenus[i];
-    }
 
     if ( nCurItemId )
     {
@@ -1305,7 +1289,7 @@ void Calendar::ImplEndTracking( bool bCancel )
     }
 }
 
-IMPL_LINK_NOARG_TYPED( Calendar, ScrollHdl, Timer*, void )
+IMPL_LINK_NOARG( Calendar, ScrollHdl, Timer*, void )
 {
     bool bPrevIn = (mnDragScrollHitTest & CALENDAR_HITTEST_PREV) != 0;
     bool bNextIn = (mnDragScrollHitTest & CALENDAR_HITTEST_NEXT) != 0;
@@ -1493,7 +1477,6 @@ void Calendar::KeyInput( const KeyEvent& rKEvt )
             SetCurDate( aNewDate );
             mbDirect = false;
             maAnchorDate = aOldAnchorDate;
-            mbInSelChange = false;
             ImplUpdateSelection( pOldSel.get() );
         }
         else
@@ -1567,7 +1550,7 @@ void Calendar::RequestHelp( const HelpEvent& rHEvt )
                 if ( (nMonth == 12) && (nWeek == 1) )
                 {
                     aStr += ",  ";
-                    aStr += OUString::number(aDate.GetYear()+1);
+                    aStr += OUString::number(aDate.GetNextYear());
                 }
                 else if ( (nMonth == 1) && (nWeek > 50) )
                 {
@@ -1662,8 +1645,7 @@ void Calendar::SelectDate( const Date& rDate, bool bSelect )
 
     std::unique_ptr<IntDateSet> pOldSel;
 
-    if ( !mbInSelChange )
-        pOldSel.reset(new IntDateSet( *mpSelectTable ));
+    pOldSel.reset(new IntDateSet( *mpSelectTable ));
 
     ImplCalendarSelectDate( mpSelectTable, rDate, bSelect );
 
@@ -1675,8 +1657,7 @@ void Calendar::SetNoSelection()
 {
     std::unique_ptr<IntDateSet> pOldSel;
 
-    if ( !mbInSelChange )
-        pOldSel.reset(new IntDateSet( *mpSelectTable ));
+    pOldSel.reset(new IntDateSet( *mpSelectTable ));
 
     ImplCalendarClearSelectDate( mpSelectTable );
 
@@ -1771,7 +1752,7 @@ Date Calendar::GetFirstMonth() const
     if ( maFirstDate.GetDay() > 1 )
     {
         if ( maFirstDate.GetMonth() == 12 )
-            return Date( 1, 1, maFirstDate.GetYear()+1 );
+            return Date( 1, 1, maFirstDate.GetNextYear() );
         else
             return Date( 1, maFirstDate.GetMonth()+1, maFirstDate.GetYear() );
     }
@@ -1998,7 +1979,7 @@ private:
 
 public:
                     explicit ImplCFieldFloatWin( vcl::Window* pParent );
-    virtual         ~ImplCFieldFloatWin();
+    virtual         ~ImplCFieldFloatWin() override;
     virtual void    dispose() override;
 
     void            SetCalendar( Calendar* pCalendar )
@@ -2165,7 +2146,7 @@ CalendarField::CalendarField(vcl::Window* pParent, WinBits nWinStyle)
     , mnCalendarStyle(0)
     , mpTodayBtn(nullptr)
     , mpNoneBtn(nullptr)
-    , maDefaultDate( 0, 0, 0 )
+    , maDefaultDate( Date::EMPTY )
     , mbToday(false)
     , mbNone(false)
 {
@@ -2185,7 +2166,7 @@ void CalendarField::dispose()
     DateField::dispose();
 }
 
-IMPL_LINK_TYPED( CalendarField, ImplSelectHdl, Calendar*, pCalendar, void )
+IMPL_LINK( CalendarField, ImplSelectHdl, Calendar*, pCalendar, void )
 {
     if ( !pCalendar->IsTravelSelect() )
     {
@@ -2202,7 +2183,7 @@ IMPL_LINK_TYPED( CalendarField, ImplSelectHdl, Calendar*, pCalendar, void )
     }
 }
 
-IMPL_LINK_TYPED( CalendarField, ImplClickHdl, Button*, pButton, void )
+IMPL_LINK( CalendarField, ImplClickHdl, Button*, pButton, void )
 {
     PushButton* pBtn = static_cast<PushButton*>(pButton);
     mpFloatWin->EndPopupMode();
@@ -2230,7 +2211,7 @@ IMPL_LINK_TYPED( CalendarField, ImplClickHdl, Button*, pButton, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(CalendarField, ImplPopupModeEndHdl, FloatingWindow*, void)
+IMPL_LINK_NOARG(CalendarField, ImplPopupModeEndHdl, FloatingWindow*, void)
 {
     EndDropDown();
     GrabFocus();
@@ -2274,7 +2255,7 @@ bool CalendarField::ShowDropDown( bool bShow )
         mpCalendar->StartSelection();
         mpCalendar->GrabFocus();
         mpCalendar->Show();
-        mpFloatWin->StartPopupMode( aRect, FloatWinPopupFlags::NoFocusClose|FloatWinPopupFlags::Down );
+        mpFloatWin->StartPopupMode( aRect, FloatWinPopupFlags::Down );
     }
     else
     {
@@ -2285,18 +2266,13 @@ bool CalendarField::ShowDropDown( bool bShow )
     return true;
 }
 
-VclPtr<Calendar> CalendarField::CreateCalendar( vcl::Window* pParent )
-{
-    return VclPtr<Calendar>::Create( pParent, mnCalendarStyle | WB_TABSTOP );
-}
-
 Calendar* CalendarField::GetCalendar()
 {
     if ( !mpFloatWin )
     {
         mpFloatWin = VclPtr<ImplCFieldFloatWin>::Create( this );
         mpFloatWin->SetPopupModeEndHdl( LINK( this, CalendarField, ImplPopupModeEndHdl ) );
-        mpCalendar = CreateCalendar( mpFloatWin );
+        mpCalendar = VclPtr<Calendar>::Create( mpFloatWin, mnCalendarStyle | WB_TABSTOP );
         mpCalendar->SetPosPixel( Point() );
         mpCalendar->SetSelectHdl( LINK( this, CalendarField, ImplSelectHdl ) );
     }

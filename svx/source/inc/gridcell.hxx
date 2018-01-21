@@ -71,7 +71,7 @@ class DbGridColumn
     ::svt::CellControllerRef m_xController; // Struktur zum Verwalten der Controls fuer eine Spalte
                                         // diese wird von der DbBrowseBox auf die jeweiligen Zellen
                                         // einer Spalte positioniert
-    FmXGridCell*                m_pCell;
+    rtl::Reference<FmXGridCell>                           m_pCell;
 
 protected:
     DbGridControl&      m_rParent;
@@ -134,7 +134,7 @@ public:
     const   ::svt::CellControllerRef& GetController() const {return m_bLocked ? s_xEmptyController : m_xController;}
     const   css::uno::Reference< css::beans::XPropertySet >& GetField() const {return m_xField;}
     DbGridControl& GetParent() const {return m_rParent;}
-    FmXGridCell* GetCell() const {return m_pCell;}
+    FmXGridCell* GetCell() const {return m_pCell.get();}
 
     css::uno::Reference< css::sdb::XColumn >  GetCurrentFieldValue() const;
 
@@ -200,8 +200,8 @@ class DbCellControl
         ,public ::comphelper::OPropertyChangeListener
 {
 private:
-    ::comphelper::OPropertyChangeMultiplexer*   m_pModelChangeBroadcaster;
-    ::comphelper::OPropertyChangeMultiplexer*   m_pFieldChangeBroadcaster;
+    rtl::Reference<::comphelper::OPropertyChangeMultiplexer>  m_pModelChangeBroadcaster;
+    rtl::Reference<::comphelper::OPropertyChangeMultiplexer>  m_pFieldChangeBroadcaster;
 
 private:
     bool                    m_bTransparent : 1;
@@ -225,7 +225,7 @@ protected:
     inline  void        setTransparent( bool _bSet ) { m_bTransparent = _bSet; }
 
     // control alignment
-    inline  void        setAlignedController( bool _bAlign = true ) { m_bAlignedController = _bAlign; }
+    inline  void        setAlignedController( bool _bAlign ) { m_bAlignedController = _bAlign; }
 
 
     /** determined whether or not the value property is locked
@@ -262,7 +262,7 @@ protected:
 
 public:
     DbCellControl(DbGridColumn& _rColumn);
-    virtual ~DbCellControl();
+    virtual ~DbCellControl() override;
 
 
     vcl::Window& GetWindow() const
@@ -327,7 +327,7 @@ protected:
     virtual void _propertyChanged(const css::beans::PropertyChangeEvent& evt) throw(css::uno::RuntimeException) override;
 
 private:
-    void implDoPropertyListening( const OUString& _rPropertyName, bool _bWarnIfNotExistent = true );
+    void implDoPropertyListening( const OUString& _rPropertyName, bool _bWarnIfNotExistent );
 
     /// updates the "readonly" setting on m_pWindow, according to the respective property value in the given model
     void implAdjustReadOnly( const css::uno::Reference< css::beans::XPropertySet >& _rxModel,bool i_bReadOnly );
@@ -386,7 +386,7 @@ class DbTextField : public DbLimitedLengthField
     bool                    m_bIsSimpleEdit;
 
 protected:
-    virtual ~DbTextField( );
+    virtual ~DbTextField( ) override;
 
 public:
     DbTextField(DbGridColumn& _rColumn);
@@ -420,7 +420,7 @@ protected:
 
 public:
     DbFormattedField(DbGridColumn& _rColumn);
-    virtual ~DbFormattedField();
+    virtual ~DbFormattedField() override;
 
 
     virtual void Init( vcl::Window& rParent, const css::uno::Reference< css::sdbc::XRowSet >& xCursor ) override;
@@ -673,7 +673,7 @@ class DbFilterField
 
 public:
     DbFilterField(const css::uno::Reference< css::uno::XComponentContext >& rxContext, DbGridColumn& _rColumn);
-    virtual ~DbFilterField();
+    virtual ~DbFilterField() override;
 
     virtual void Init( vcl::Window& rParent, const css::uno::Reference< css::sdbc::XRowSet >& xCursor ) override;
     virtual ::svt::CellControllerRef CreateController() const override;
@@ -696,7 +696,7 @@ protected:
 protected:
     void SetList(const css::uno::Any& rItems, bool bComboBox);
     void CreateControl(vcl::Window* pParent, const css::uno::Reference< css::beans::XPropertySet >& xModel);
-    DECL_LINK_TYPED( OnClick, VclPtr<CheckBox>, void );
+    DECL_LINK( OnClick, VclPtr<CheckBox>, void );
 };
 
 
@@ -724,7 +724,7 @@ private:
     ::comphelper::OInterfaceContainerHelper2   m_aMouseMotionListeners;
 
 protected:
-    virtual ~FmXGridCell();
+    virtual ~FmXGridCell() override;
 
 public:
     FmXGridCell( DbGridColumn* pColumn, DbCellControl* pControl );
@@ -801,7 +801,7 @@ protected:
     virtual void onFocusLost( const css::awt::FocusEvent& _rEvent );
 
 private:
-    DECL_LINK_TYPED( OnWindowEvent, VclWindowEvent&, void );
+    DECL_LINK( OnWindowEvent, VclWindowEvent&, void );
 };
 
 
@@ -875,7 +875,7 @@ protected:
     ::svt::IEditImplementation*         m_pEditImplementation;
     bool                                m_bOwnEditImplementation;
 
-    virtual ~FmXEditCell();
+    virtual ~FmXEditCell() override;
 public:
     FmXEditCell( DbGridColumn* pColumn, DbCellControl& _rControl );
 
@@ -930,7 +930,7 @@ class FmXCheckBoxCell : public FmXDataCell,
     VclPtr<CheckBox>                    m_pBox;
 
 protected:
-    virtual ~FmXCheckBoxCell();
+    virtual ~FmXCheckBoxCell() override;
 
 public:
     FmXCheckBoxCell( DbGridColumn* pColumn, DbCellControl& _rControl );
@@ -974,7 +974,7 @@ class FmXListBoxCell    :public FmXTextCell
     VclPtr<ListBox>                     m_pBox;
 
 protected:
-    virtual ~FmXListBoxCell();
+    virtual ~FmXListBoxCell() override;
 
 public:
     FmXListBoxCell( DbGridColumn* pColumn, DbCellControl& _rControl );
@@ -1014,7 +1014,7 @@ public:
 protected:
     virtual void onWindowEvent( const sal_uLong _nEventId, const vcl::Window& _rWindow, const void* _pEventData ) override;
 
-    DECL_LINK_TYPED( OnDoubleClick, ListBox&, void );
+    DECL_LINK( OnDoubleClick, ListBox&, void );
 };
 
 
@@ -1029,7 +1029,7 @@ private:
     VclPtr<ComboBox>                    m_pComboBox;
 
 protected:
-    virtual ~FmXComboBoxCell();
+    virtual ~FmXComboBoxCell() override;
 
 public:
     FmXComboBoxCell( DbGridColumn* pColumn, DbCellControl& _rControl );
@@ -1069,9 +1069,9 @@ class FmXFilterCell :public FmXGridCell
 {
     ::comphelper::OInterfaceContainerHelper2 m_aTextListeners;
 protected:
-    virtual ~FmXFilterCell();
+    virtual ~FmXFilterCell() override;
 public:
-    FmXFilterCell(DbGridColumn* pColumn = nullptr, DbCellControl* pControl = nullptr);
+    FmXFilterCell(DbGridColumn* pColumn, DbCellControl* pControl = nullptr);
 
 
     DECLARE_UNO3_AGG_DEFAULTS(FmXFilterCell, FmXGridCell)
@@ -1107,7 +1107,7 @@ public:
     virtual sal_Int16 SAL_CALL getMaxTextLen() throw(css::uno::RuntimeException, std::exception) override;
 
 protected:
-    DECL_LINK_TYPED( OnCommit, DbFilterField&, void );
+    DECL_LINK( OnCommit, DbFilterField&, void );
 };
 
 #endif // INCLUDED_SVX_SOURCE_INC_GRIDCELL_HXX

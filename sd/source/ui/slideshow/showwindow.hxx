@@ -50,11 +50,11 @@ class ShowWindow
 
 public:
     ShowWindow ( const ::rtl::Reference< ::sd::SlideshowImpl >& xController, vcl::Window* pParent );
-    virtual ~ShowWindow();
+    virtual ~ShowWindow() override;
     virtual void dispose() override;
 
     void            SetEndMode();
-    bool            SetPauseMode( sal_Int32 nTimeoutSec = SLIDE_NO_TIMEOUT, Graphic* pLogo = nullptr );
+    bool            SetPauseMode( sal_Int32 nTimeoutSec, Graphic* pLogo = nullptr );
     bool            SetBlankMode( sal_Int32 nPageIndexToRestart, const Color& rBlankColor );
 
     const Color&        GetBlankColor() const { return maShowBackground.GetColor(); }
@@ -68,9 +68,6 @@ public:
 
     void            RestartShow( sal_Int32 nPageIndexToRestart );
 
-    virtual void    Move() override;
-    virtual void    Resize() override;
-    virtual void    GetFocus() override;
     virtual void    LoseFocus() override;
 
     virtual void    KeyInput(const KeyEvent& rKEvt) override;
@@ -106,9 +103,9 @@ private:
     bool            mbMouseCursorHidden;
     sal_uInt64      mnFirstMouseMove;
 
-                    DECL_LINK_TYPED( PauseTimeoutHdl, Timer*, void );
-                    DECL_LINK_TYPED(MouseTimeoutHdl, Timer *, void);
-                    DECL_LINK_TYPED( EventHdl, VclWindowEvent&, void );
+                    DECL_LINK( PauseTimeoutHdl, Timer*, void );
+                    DECL_LINK(MouseTimeoutHdl, Timer *, void);
+                    DECL_LINK( EventHdl, VclWindowEvent&, void );
 
     ::rtl::Reference< SlideshowImpl > mxController;
 };

@@ -224,7 +224,7 @@ void SwColExample::DrawPage(vcl::RenderContext& rRenderContext, const Point& rOr
     long nL = GetLeft();
     long nR = GetRight();
 
-    if (GetUsage() == SVX_PAGE_MIRROR && !bSecond)
+    if (GetUsage() == SvxPageUsage::Mirror && !bSecond)
     {
         // swap for mirrored
         nL = GetRight();
@@ -356,7 +356,7 @@ SwColumnOnlyExample::SwColumnOnlyExample(vcl::Window* pParent)
     : Window(pParent)
     , m_aFrameSize(1,1)
 {
-    SetMapMode( MapMode( MAP_TWIP ) );
+    SetMapMode( MapMode( MapUnit::MapTwip ) );
     m_aWinSize = GetOptimalSize();
     m_aWinSize.Height() -= 4;
     m_aWinSize.Width() -= 4;
@@ -513,7 +513,7 @@ void  SwColumnOnlyExample::SetColumns(const SwFormatCol& rCol)
 
 Size SwColumnOnlyExample::GetOptimalSize() const
 {
-    return LogicToPixel(Size(75, 46), MapMode(MAP_APPFONT));
+    return LogicToPixel(Size(75, 46), MapMode(MapUnit::MapAppFont));
 }
 
 SwPageGridExample::~SwPageGridExample()
@@ -545,7 +545,7 @@ void SwPageGridExample::DrawPage(vcl::RenderContext& rRenderContext, const Point
         long nL = GetLeft();
         long nR = GetRight();
 
-        if (GetUsage() == SVX_PAGE_MIRROR && !bSecond)
+        if (GetUsage() == SvxPageUsage::Mirror && !bSecond)
         {
             // rotate for mirrored
             nL = GetRight();

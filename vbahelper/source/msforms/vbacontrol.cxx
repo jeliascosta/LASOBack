@@ -22,6 +22,7 @@
 #include <com/sun/star/awt/XWindow2.hpp>
 #include <com/sun/star/awt/XActionListener.hpp>
 #include <com/sun/star/lang/XEventListener.hpp>
+#include <com/sun/star/lang/XMultiServiceFactory.hpp>
 #include <com/sun/star/drawing/XShape.hpp>
 #include <com/sun/star/drawing/XControlShape.hpp>
 #include <com/sun/star/frame/XModel.hpp>
@@ -101,7 +102,7 @@ private:
     ScVbaControl *pControl;
 public:
     explicit ScVbaControlListener( ScVbaControl *pTmpControl );
-    virtual ~ScVbaControlListener();
+    virtual ~ScVbaControlListener() override;
     virtual void SAL_CALL disposing( const lang::EventObject& rEventObject ) throw( uno::RuntimeException, std::exception ) override;
 };
 
@@ -494,7 +495,7 @@ static Pointer lcl_msoPointerToLOPointer( long msoPointerStyle )
 ScVbaControl::getMousePointer() throw (css::uno::RuntimeException, std::exception)
 {
     PointerStyle eType = PointerStyle::Arrow; // default ?
-    vcl::Window* pWindow = VCLUnoHelper::GetWindow( getWindowPeer() );
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( getWindowPeer() );
     if ( pWindow )
     {
         eType = pWindow->GetPointer().GetStyle();
@@ -505,7 +506,7 @@ ScVbaControl::getMousePointer() throw (css::uno::RuntimeException, std::exceptio
 void SAL_CALL
 ScVbaControl::setMousePointer( ::sal_Int32 _mousepointer ) throw (css::uno::RuntimeException, std::exception)
 {
-    vcl::Window* pWindow = VCLUnoHelper::GetWindow( getWindowPeer() );
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( getWindowPeer() );
     if ( pWindow )
     {
         Pointer aPointer( PointerStyle::Arrow );

@@ -21,7 +21,7 @@
 #include <sfx2/sidebar/Theme.hxx>
 #include <sfx2/sfxresid.hxx>
 
-#include <sfx2/sidebar/Sidebar.hrc>
+#include "Sidebar.hrc"
 
 #include <vcl/image.hxx>
 
@@ -41,7 +41,6 @@ DeckTitleBar::DeckTitleBar (const OUString& rsTitle,
                             vcl::Window* pParentWindow,
                             const std::function<void()>& rCloserAction)
     : TitleBar(rsTitle, pParentWindow, GetBackgroundPaint())
-    , mnCloserItemIndex(1)
     , maCloserAction(rCloserAction)
     , mbIsCloserVisible(false)
 {
@@ -100,9 +99,8 @@ void DeckTitleBar::HandleToolBoxItemClick (const sal_uInt16 nItemIndex)
 
 css::uno::Reference<css::accessibility::XAccessible> DeckTitleBar::CreateAccessible()
 {
-    const OUString sAccessibleName(msTitle);
-    SetAccessibleName(sAccessibleName);
-    SetAccessibleDescription(sAccessibleName);
+    SetAccessibleName(msTitle);
+    SetAccessibleDescription(msTitle);
     return TitleBar::CreateAccessible();
 }
 

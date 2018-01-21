@@ -40,7 +40,6 @@
 
 ObjectStack                     S;
 RscTop *                        pCurClass;
-SfxStyleItem                    nCurMask;
 char                            szErrBuf[ 100 ];
 
 RSCINST GetVarInst( const RSCINST & rInst, const char * pVarName )
@@ -54,38 +53,6 @@ RSCINST GetVarInst( const RSCINST & rInst, const char * pVarName )
         pTC->pEH->Error( ERR_NOVARIABLENAME, rInst.pClass, RscId() );
 
     return aInst;
-}
-
-void SetNumber( const RSCINST & rInst, const char * pVarName, sal_Int32 lValue )
-{
-    RSCINST aInst;
-
-    aInst = GetVarInst( rInst, pVarName );
-
-    if( aInst.pData )
-    {
-        ERRTYPE aError;
-        aError = aInst.pClass->SetNumber( aInst, lValue );
-
-        if( aError.IsError() )
-            pTC->pEH->Error( aError, aInst.pClass, RscId() );
-    }
-}
-
-void SetConst( const RSCINST & rInst, const char * pVarName,
-               Atom nValueId, sal_Int32 nVal )
-{
-    RSCINST aInst;
-
-    aInst = GetVarInst( rInst, pVarName );
-    if( aInst.pData )
-    {
-        ERRTYPE aError;
-        aError = aInst.pClass->SetConst( aInst, nValueId, nVal );
-
-        if( aError.IsError() )
-            pTC->pEH->Error( aError, aInst.pClass, RscId() );
-    }
 }
 
 void SetString( const RSCINST & rInst, const char * pVarName, const char * pStr )
@@ -172,7 +139,7 @@ bool DoClassHeader( RSCHEADER * pHeader, bool bMember )
     {
         if( S.IsEmpty() )
         {
-            if( (sal_Int32)aName1 < 256 )
+            if( aName1.GetNumber() < 256 )
                 pTC->pEH->Error( WRN_GLOBALID, pHeader->pClass, aName1 );
 
             if( aCopyInst.IsInst() )
@@ -197,7 +164,7 @@ bool DoClassHeader( RSCHEADER * pHeader, bool bMember )
             RSCINST aTmpI;
             ERRTYPE aError;
 
-            if( (sal_Int32)aName1 >= 256 && aName1.IsId() )
+            if( aName1.GetNumber() >= 256 && aName1.IsId() )
                 pTC->pEH->Error( WRN_LOCALID, pHeader->pClass, aName1 );
 
             aError = S.Top().pClass->GetElement( S.Top(), aName1,
@@ -209,7 +176,7 @@ bool DoClassHeader( RSCHEADER * pHeader, bool bMember )
             }
             else if( aError.IsError() )
             {
-                if( ERR_CONT_INVALIDTYPE == aError )
+                if( ERR_CONT_INVALIDTYPE == aError.GetError() )
                     pTC->pEH->Error( aError, S.Top().pClass, aName1,
                                      pHS->getString( pHeader->pClass->GetId() ).getStr() );
                 else
@@ -300,14 +267,6 @@ RSCINST GetFirstTupelEle( const RSCINST & rTop )
 %token LINE
 %token AUTO_ID
 %token NOT
-%token XSCALE
-%token YSCALE
-%token RGB
-%token GEOMETRY
-%token POSITION
-%token DIMENSION
-%token INZOOMOUTPUTSIZE
-%token FLOATINGPOS
 %token DEFINE
 %token INCLUDE
 %token MACROTARGET
@@ -324,16 +283,12 @@ RSCINST GetFirstTupelEle( const RSCINST & rTop )
 
 %type  <macrostruct>    macro_expression
 %type  <macrostruct>    id_expression
-%type  <value>                  long_expression
 %type  <string>                 string_multiline
 
-%type  <pClass>                 type
-%type  <pClass>                 type_base
 %type  <header>                 class_header_body
 %type  <header>                 class_header
 %type  <header>                 var_header_class
 %type  <copyref>                copy_ref
-%type  <ushort>                 type_flags
 
 
 %left '|'
@@ -382,7 +337,7 @@ resource_definition
       {
           if( !pTC->aFileTab.NewDef( pFI->GetFileIndex(),
                                      rtl::OString( $3 ),
-                                     $4.GetLong(), ULONG_MAX ) )
+                                     $4.GetLong() ) )
               bError = true;
       }
       else if( $4.IsDefinition() )
@@ -397,7 +352,7 @@ resource_definition
           pExpr = new RscExpression( aExpType, '+', $4 );
 
           if( !pTC->aFileTab.NewDef( pFI->GetFileIndex(),
-                                     rtl::OString( $3 ), pExpr, ULONG_MAX ) )
+                                     rtl::OString( $3 ), pExpr ) )
           {
               bError =true;
           }
@@ -405,8 +360,7 @@ resource_definition
       else if( $4.IsExpression() )
       {
           if( !pTC->aFileTab.NewDef( pFI->GetFileIndex(),
-                                     rtl::OString( $3 ), $4.aExp.pExp,
-                                     ULONG_MAX ) )
+                                     rtl::OString( $3 ), $4.aExp.pExp ) )
           {
               bError = true;
           }
@@ -435,106 +389,6 @@ resource_definition
       pMem = rtl_allocateMemory( 20000 );
       rtl_freeMemory( pMem );
 #endif
-  }
-  | new_class_definition_header '{' new_class_definition_body '}' ';'
-  | new_class_definition_header ';'
-  ;
-
-new_class_definition_header
-  : CLASS SYMBOL id_expression ':' CLASSNAME
-  {
-      sal_Int32       lType;
-
-      $3.Evaluate( &lType );
-
-      // Klasse anlegen
-      Atom nId = pHS->getID( $2 );
-      pCurClass = new RscClass( nId, lType, $5 );
-      nCurMask = SfxStyleItem::List;
-      pTC->aNmTb.Put( nId, CLASSNAME, pCurClass );
-      pTC->GetRoot()->Insert( pCurClass );
-  }
-  | CLASS CLASSNAME id_expression ':' CLASSNAME
-  {
-      pCurClass = $2;
-      nCurMask = SfxStyleItem::List;
-  }
-;
-
-new_class_definition_body
-  :
-  | property_definition ';' new_class_definition_body
-  ;
-
-property_definition
-  : type_flags type SYMBOL
-  {
-      // Variable anlegen
-      Atom nId = pTC->aNmTb.Put( $3, VARNAME );
-      pCurClass->SetVariable( nId, $2, nullptr, $1, nCurMask );
-      nCurMask = SfxStyleItem(((int)nCurMask) << 1);
-  }
-  | type_flags type VARNAME
-  {
-      pCurClass->SetVariable( $3, $2, nullptr, $1, nCurMask );
-      nCurMask = SfxStyleItem(((int)nCurMask) << 1);
-  }
-  ;
-
-type_flags
-  : type_flags EXTENDABLE
-  {
-      $$ = $1 | VAR_EXTENDABLE;
-  }
-  | type_flags WRITEIFSET
-  {
-      $$ = $1 | VAR_SVDYNAMIC;
-  }
-  |
-  {
-      $$ = 0;
-  }
-  ;
-
-type
-  : type_base
-  {
-        $$ = $1;
-  }
-  | type_base '[' ']'
-  {
-      if( $1 )
-      {
-          rtl::OString aTypeName = rtl::OStringBuffer(pHS->getString($1->GetId())).
-              append("[]").makeStringAndClear();
-          $$ = pTC->SearchType( pHS->getID( aTypeName.getStr(), true ) );
-          if( !$$ )
-          {
-              RscCont * pCont;
-              pCont = new RscCont( pHS->getID( aTypeName.getStr() ), RSC_NOTYPE );
-              pCont->SetTypeClass( $1 );
-              pTC->InsertType( pCont );
-              $$ = pCont;
-          }
-      }
-      else
-      {
-          $$ = nullptr;
-      }
-  }
-  ;
-
-type_base
-  : CLASSNAME
-  {
-        $$ = $1;
-  }
-  | SYMBOL
-  {
-      RscTop * pType = pTC->SearchType( pHS->getID( $1, true ) );
-      if( !pType )
-          pTC->pEH->Error( ERR_NOTYPE, pCurClass, RscId() );
-      $$ = pType;
   }
   ;
 
@@ -647,31 +501,6 @@ var_definitions
   | var_definitions var_definition
   ;
 
-xy_mapmode
-  : CONSTNAME
-  {
-      SetConst( S.Top(), "_XYMAPMODE", $1.hashid, $1.nValue );
-  }
-  |
-  ;
-
-wh_mapmode
-  : CONSTNAME
-  {
-      SetConst( S.Top(), "_WHMAPMODE", $1.hashid, $1.nValue );
-  }
-  |
-  ;
-
-xywh_mapmode
-  : CONSTNAME
-  {
-      SetConst( S.Top(), "_XYMAPMODE", $1.hashid, $1.nValue );
-      SetConst( S.Top(), "_WHMAPMODE", $1.hashid, $1.nValue );
-  }
-  |
-  ;
-
 var_definition
   : line_number
   | var_header var_body ';'
@@ -706,67 +535,6 @@ var_definition
           pTC->pEH->Error( aError, S.Top().pClass, aRscId );
 
       S.Pop();
-  }
-  | XSCALE '=' '(' long_expression ',' long_expression ')' ';'
-  {
-      SetNumber( S.Top(), "_XNUMERATOR", $4 );
-      SetNumber( S.Top(), "_XDENOMINATOR", $6 );
-  }
-  | YSCALE '=' '(' long_expression ',' long_expression ')' ';'
-  {
-      SetNumber( S.Top(), "_YNUMERATOR", $4 );
-      SetNumber( S.Top(), "_YDENOMINATOR", $6 );
-  }
-  | RGB '=' '(' long_expression ',' long_expression
-                                ',' long_expression ')' ';'
-  {
-      SetNumber( S.Top(), "RED", $4 );
-      SetNumber( S.Top(), "GREEN", $6 );
-      SetNumber( S.Top(), "BLUE", $8 );
-  }
-  | GEOMETRY '=' xywh_mapmode '(' long_expression ',' long_expression ','
-                                                long_expression ',' long_expression ')' ';'
-  {
-      SetNumber( S.Top(), "_X", $5 );
-      SetNumber( S.Top(), "_Y", $7 );
-      SetNumber( S.Top(), "_WIDTH", $9 );
-      SetNumber( S.Top(), "_HEIGHT", $11 );
-  }
-  | POSITION '=' xy_mapmode '(' long_expression ',' long_expression
-                                                        ')' ';'
-  {
-      SetNumber( S.Top(), "_X", $5 );
-      SetNumber( S.Top(), "_Y", $7 );
-  }
-  | DIMENSION '=' wh_mapmode '(' long_expression ',' long_expression
-                                                         ')' ';'
-  {
-      SetNumber( S.Top(), "_WIDTH", $5 );
-      SetNumber( S.Top(), "_HEIGHT", $7 );
-  }
-  | INZOOMOUTPUTSIZE '=' CONSTNAME '(' long_expression ',' long_expression
-                                                         ')' ';'
-  {
-      SetConst( S.Top(), "_ZOOMINMAPMODE", $3.hashid, $3.nValue );
-      SetNumber( S.Top(), "_ZOOMINWIDTH", $5 );
-      SetNumber( S.Top(), "_ZOOMINHEIGHT", $7 );
-  }
-  | INZOOMOUTPUTSIZE '=' '(' long_expression ',' long_expression ')' ';'
-  {
-      SetNumber( S.Top(), "_ZOOMINWIDTH", $4 );
-      SetNumber( S.Top(), "_ZOOMINHEIGHT", $6 );
-  }
-  | FLOATINGPOS '=' CONSTNAME '(' long_expression ',' long_expression
-                                                         ')' ';'
-  {
-      SetConst( S.Top(),      "_FLOATINGPOSMAPMODE", $3.hashid, $3.nValue );
-      SetNumber( S.Top(), "_FLOATINGPOSX", $5 );
-      SetNumber( S.Top(), "_FLOATINGPOSY", $7 );
-  }
-  | FLOATINGPOS '=' '(' long_expression ',' long_expression ')' ';'
-  {
-      SetNumber( S.Top(), "_FLOATINGPOSX", $4 );
-      SetNumber( S.Top(), "_FLOATINGPOSY", $6 );
   }
 ;
 
@@ -1171,16 +939,6 @@ string_multiline
       aBuf.append( $1 );
       aBuf.append( $2 );
       $$ = const_cast<char*>(pStringContainer->putString( aBuf.getStr() ));
-  }
-;
-
-long_expression
-  : macro_expression
-  {
-      if( !$1.Evaluate( &$$ ) )
-          pTC->pEH->Error( ERR_ZERODIVISION, nullptr, RscId() );
-      if( $1.IsExpression() )
-          delete $1.aExp.pExp;
   }
 ;
 

@@ -270,7 +270,7 @@ gb_CXX03FLAGS :=
 
 gb_LinkTarget_EXCEPTIONFLAGS := \
 	-DEXCEPTIONS_ON \
-	-EHa \
+	-EHs \
 
 gb_PrecompiledHeader_EXCEPTIONFLAGS := $(gb_LinkTarget_EXCEPTIONFLAGS)
 
@@ -289,13 +289,7 @@ gb_DEBUGINFO_FLAGS := \
 	-FS \
 	-Zi \
 
-gb_DEBUG_CFLAGS := $(gb_DEBUGINFO_FLAGS)
-
-# this does not use CFLAGS so it is not overridable
-ifeq ($(gb_SYMBOL),$(true))
-gb_CFLAGS+=$(gb_DEBUG_CFLAGS)
-gb_CXXFLAGS+=$(gb_DEBUG_CFLAGS)
-endif
+gb_DEBUG_CFLAGS :=
 
 gb_COMPILEROPTFLAGS := -O2 -Oy-
 gb_COMPILERNOOPTFLAGS := -Od
@@ -322,11 +316,21 @@ define gb_Helper_prepend_ld_path
 PATH="$(shell cygpath -w $(INSTDIR)/$(LIBO_URE_LIB_FOLDER));$(shell cygpath -w $(INSTDIR)/$(LIBO_BIN_FOLDER));$(1);$$PATH"
 endef
 
+# $(1): one directory pathname to append to the ld path
+define gb_Helper_extend_ld_path
+$(gb_Helper_set_ld_path)';$(shell cygpath -w $(1))'
+endef
+
 else
 gb_Helper_set_ld_path := PATH="$(shell cygpath -u $(INSTDIR)/$(LIBO_URE_LIB_FOLDER)):$(shell cygpath -u $(INSTDIR)/$(LIBO_BIN_FOLDER)):$$PATH"
 
 define gb_Helper_prepend_ld_path
 PATH="$(shell cygpath -u $(INSTDIR)/$(LIBO_URE_LIB_FOLDER)):$(shell cygpath -u $(INSTDIR)/$(LIBO_BIN_FOLDER)):$(1):$$PATH"
+endef
+
+# $(1): one directory pathname to append to the ld path
+define gb_Helper_extend_ld_path
+$(gb_Helper_set_ld_path):$(shell cygpath -u $(1))
 endef
 
 endif

@@ -28,14 +28,13 @@ class NumberingPopup : public svtools::ToolbarMenu
     NumberingPageType mePageType;
     NumberingToolBoxControl& mrController;
     VclPtr<SvxNumValueSet> mpValueSet;
-    DECL_LINK_TYPED( VSSelectToolbarMenuHdl, ToolbarMenu*, void );
-    DECL_LINK_TYPED( VSSelectValueSetHdl, ValueSet*, void );
+    DECL_LINK( VSSelectToolbarMenuHdl, ToolbarMenu*, void );
+    DECL_LINK( VSSelectValueSetHdl, ValueSet*, void );
     void VSSelectHdl(void *);
 public:
     NumberingPopup( NumberingToolBoxControl& rController,
-                    const css::uno::Reference< css::frame::XFrame >& rFrame,
                     vcl::Window* pParent, NumberingPageType ePageType );
-    virtual ~NumberingPopup();
+    virtual ~NumberingPopup() override;
     virtual void dispose() override;
 
     virtual void statusChanged( const css::frame::FeatureStateEvent& rEvent )
@@ -49,7 +48,6 @@ class NumberingToolBoxControl : public svt::PopupWindowController
 public:
     explicit NumberingToolBoxControl( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
     virtual VclPtr<vcl::Window> createPopupWindow( vcl::Window* pParent ) override;
-    bool IsInImpressDraw();
 
     // XStatusListener
     virtual void SAL_CALL statusChanged( const css::frame::FeatureStateEvent& rEvent )
@@ -70,9 +68,8 @@ public:
 
 //class NumberingPopup
 NumberingPopup::NumberingPopup( NumberingToolBoxControl& rController,
-                                const css::uno::Reference< css::frame::XFrame >& rFrame,
                                 vcl::Window* pParent, NumberingPageType ePageType ) :
-    ToolbarMenu( rFrame, pParent, WB_STDPOPUP ),
+    ToolbarMenu( rController.getFrameInterface(), pParent, WB_STDPOPUP ),
     mePageType( ePageType ),
     mrController( rController )
 {
@@ -103,7 +100,7 @@ NumberingPopup::NumberingPopup( NumberingToolBoxControl& rController,
         }
     }
 
-    Size aItemSize( LogicToPixel( Size( 30, 42 ), MAP_APPFONT ) );
+    Size aItemSize( LogicToPixel( Size( 30, 42 ), MapUnit::MapAppFont ) );
     mpValueSet->SetExtraSpacing( 2 );
     mpValueSet->SetOutputSizePixel( mpValueSet->CalcWindowSizePixel( aItemSize ) );
     mpValueSet->SetColor( GetSettings().GetStyleSettings().GetFieldColor() );
@@ -128,7 +125,7 @@ NumberingPopup::NumberingPopup( NumberingToolBoxControl& rController,
         AddStatusListener( ".uno:CurrentOutlineType" );
     }
 
-    appendEntry( 1, aMoreItemText, ::GetImage( rFrame, ".uno:OutlineBullet", false ) );
+    appendEntry( 1, aMoreItemText, ::GetImage( mrController.getFrameInterface(), ".uno:OutlineBullet", false ) );
 
     SetOutputSizePixel( getMenuSize() );
     mpValueSet->SetSelectHdl( LINK( this, NumberingPopup, VSSelectValueSetHdl ) );
@@ -156,11 +153,11 @@ void NumberingPopup::statusChanged( const css::frame::FeatureStateEvent& rEvent 
         mpValueSet->SelectItem( nSelItem );
 }
 
-IMPL_LINK_TYPED( NumberingPopup, VSSelectValueSetHdl, ValueSet*, pControl, void )
+IMPL_LINK( NumberingPopup, VSSelectValueSetHdl, ValueSet*, pControl, void )
 {
     VSSelectHdl(pControl);
 }
-IMPL_LINK_TYPED( NumberingPopup, VSSelectToolbarMenuHdl, ToolbarMenu*, pControl, void )
+IMPL_LINK( NumberingPopup, VSSelectToolbarMenuHdl, ToolbarMenu*, pControl, void )
 {
     VSSelectHdl(pControl);
 }
@@ -191,14 +188,7 @@ void NumberingPopup::VSSelectHdl(void* pControl)
     }
     else if ( getSelectedEntryId() == 1 )
     {
-        OUString aPageName;
-        if ( mrController.IsInImpressDraw() )
-            aPageName = "customize";
-        else
-            // Writer variants
-            aPageName = "options";
-
-        auto aArgs( comphelper::InitPropertySequence( { { "Page", css::uno::makeAny( aPageName ) } } ) );
+        auto aArgs( comphelper::InitPropertySequence( { { "Page", css::uno::makeAny( OUString("customize") ) } } ) );
         mrController.dispatchCommand( ".uno:OutlineBullet", aArgs );
     }
 }
@@ -213,14 +203,9 @@ NumberingToolBoxControl::NumberingToolBoxControl( const css::uno::Reference< css
 
 VclPtr<vcl::Window> NumberingToolBoxControl::createPopupWindow( vcl::Window* pParent )
 {
-    return VclPtr<NumberingPopup>::Create( *this, m_xFrame, pParent, mePageType );
+    return VclPtr<NumberingPopup>::Create( *this, pParent, mePageType );
 }
 
-bool NumberingToolBoxControl::IsInImpressDraw()
-{
-    return ( m_sModuleName == "com.sun.star.presentation.PresentationDocument" ||
-             m_sModuleName == "com.sun.star.drawing.DrawingDocument" );
-}
 
 void SAL_CALL NumberingToolBoxControl::statusChanged( const css::frame::FeatureStateEvent& rEvent )
     throw ( css::uno::RuntimeException, std::exception )

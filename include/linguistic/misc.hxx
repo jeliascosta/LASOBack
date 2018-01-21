@@ -80,7 +80,7 @@ enum class CapType
 
 LNG_DLLPUBLIC ::osl::Mutex& GetLinguMutex();
 
-LocaleDataWrapper & GetLocaleDataWrapper( sal_Int16 nLang );
+const LocaleDataWrapper & GetLocaleDataWrapper( LanguageType nLang );
 
 sal_Int32 LevDistance( const OUString &rTxt1, const OUString &rTxt2 );
 
@@ -179,7 +179,7 @@ class AppExitListener :
 
 public:
     AppExitListener();
-    virtual ~AppExitListener();
+    virtual ~AppExitListener() override;
 
     virtual void    AtExit() = 0;
 

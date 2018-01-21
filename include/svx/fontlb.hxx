@@ -38,14 +38,14 @@ public:
                                 SvLBoxFontString(
                                     const OUString& rString,
                                     const vcl::Font& rFont,
-                                    const Color* pColor = nullptr );
+                                    const Color* pColor );
 
-    virtual                     ~SvLBoxFontString();
+    virtual                     ~SvLBoxFontString() override;
 
     /** Creates a new empty list box item. */
     virtual SvLBoxItem*         Create() const override;
 
-    void            InitViewData( SvTreeListBox*,SvTreeListEntry*,SvViewDataItem* ) override;
+    void            InitViewData( SvTreeListBox*, SvTreeListEntry*, SvViewDataItem* = nullptr ) override;
 
     /** Paints this entry to the specified position, using the own font settings. */
     virtual void Paint(const Point& rPos, SvTreeListBox& rOutDev, vcl::RenderContext& rRenderContext,
@@ -65,7 +65,7 @@ private:
     bool                        mbUseFont;      /// true = Use maEntryFont/mpEntryColor in InitEntry().
 
 public:
-    SvxFontListBox(vcl::Window* pParent, WinBits nStyle = WB_BORDER);
+    SvxFontListBox(vcl::Window* pParent, WinBits nStyle);
 
     /** Inserts a list entry and sets the font used for this entry.
         @param pColor  The font color. NULL = use default listbox text color. */

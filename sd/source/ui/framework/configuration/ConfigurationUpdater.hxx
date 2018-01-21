@@ -55,13 +55,6 @@ public:
             css::drawing::framework::XControllerManager>& rxControllerManager);
     ~ConfigurationUpdater();
 
-    /** This method is typically called once, when the controller manager is
-        accessible to the caller.
-    */
-    void SetControllerManager(
-        const css::uno::Reference<
-            css::drawing::framework::XControllerManager>& rxControllerManager);
-
     /** Request an update of the current configuration so that it looks like
         the given requested configuration.  It checks whether an update of
         the current configuration can be done.  Calls UpdateConfiguration()
@@ -197,7 +190,7 @@ private:
     */
     void UnlockUpdates();
 
-    DECL_LINK_TYPED(TimeoutHandler, Timer *, void);
+    DECL_LINK(TimeoutHandler, Timer *, void);
 };
 
 } } // end of namespace sd::framework

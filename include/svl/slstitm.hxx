@@ -24,13 +24,14 @@
 #include <svl/svldllapi.h>
 #include <svl/poolitem.hxx>
 #include <com/sun/star/uno/Sequence.h>
+#include <memory>
 
 class SfxImpStringList;
 
 class SVL_DLLPUBLIC SfxStringListItem : public SfxPoolItem
 {
 protected:
-    SfxImpStringList*   pImp;
+    std::shared_ptr<SfxImpStringList>   pImpl;
 
 public:
     static SfxPoolItem* CreateDefault();
@@ -39,7 +40,7 @@ public:
     SfxStringListItem( sal_uInt16 nWhich, const std::vector<OUString> *pList=nullptr );
     SfxStringListItem( sal_uInt16 nWhich, SvStream& rStream );
     SfxStringListItem( const SfxStringListItem& rItem );
-    virtual ~SfxStringListItem();
+    virtual ~SfxStringListItem() override;
 
     std::vector<OUString>&       GetList();
 
@@ -54,10 +55,10 @@ public:
 
     virtual bool            operator==( const SfxPoolItem& ) const override;
     virtual bool            GetPresentation( SfxItemPresentation ePres,
-                                    SfxMapUnit eCoreMetric,
-                                    SfxMapUnit ePresMetric,
-                                    OUString &rText,
-                                    const IntlWrapper * = nullptr ) const override;
+                                             MapUnit eCoreMetric,
+                                             MapUnit ePresMetric,
+                                             OUString &rText,
+                                             const IntlWrapper * = nullptr ) const override;
     virtual SfxPoolItem*    Clone( SfxItemPool *pPool = nullptr ) const override;
     virtual SfxPoolItem*    Create( SvStream &, sal_uInt16 nVersion ) const override;
     virtual SvStream&       Store( SvStream &, sal_uInt16 nItemVersion ) const override;

@@ -26,6 +26,16 @@
 // Create default drawing objects via keyboard
 #include <svx/svdopath.hxx>
 #include <svx/svdocapt.hxx>
+#include <svx/dialogs.hrc>
+#include <svx/xlnwtit.hxx>
+#include <svx/xlnstwit.hxx>
+#include <svx/xlnedwit.hxx>
+#include <svx/xlnedit.hxx>
+#include <svx/xlnstit.hxx>
+#include <svx/dialmgr.hxx>
+#include <svx/svdomeas.hxx>
+#include <basegfx/polygon/b2dpolygontools.hxx>
+
 #include <basegfx/polygon/b2dpolygon.hxx>
 #include <basegfx/point/b2dpoint.hxx>
 
@@ -51,6 +61,38 @@ FuConstRectangle::FuConstRectangle(ScTabViewShell* pViewSh, vcl::Window* pWin, S
 
 FuConstRectangle::~FuConstRectangle()
 {
+}
+
+/**
+ * set line starts and ends for the object to be created
+ */
+
+namespace {
+
+::basegfx::B2DPolyPolygon getPolygon( sal_uInt16 nResId, SdrModel* pDoc )
+{
+    ::basegfx::B2DPolyPolygon aRetval;
+    XLineEndListRef pLineEndList = pDoc->GetLineEndList();
+
+    if( pLineEndList.is() )
+    {
+        OUString aArrowName( SVX_RES(nResId) );
+        long nCount = pLineEndList->Count();
+        long nIndex;
+        for( nIndex = 0L; nIndex < nCount; nIndex++ )
+        {
+            const XLineEndEntry* pEntry = pLineEndList->GetLineEnd(nIndex);
+            if( pEntry->GetName() == aArrowName )
+            {
+                aRetval = pEntry->GetLineEnd();
+                break;
+            }
+        }
+    }
+
+    return aRetval;
+}
+
 }
 
 /*************************************************************************
@@ -86,21 +128,20 @@ bool FuConstRectangle::MouseButtonDown(const MouseEvent& rMEvt)
         }
         else
             bReturn = pView->BegCreateObj(aPos);
+
+        SdrObject* pObj = pView->GetCreateObj();
+
+        if (pObj)
+        {
+            SfxItemSet aAttr(pObj->GetModel()->GetItemPool());
+            SetLineEnds(aAttr, pObj, aSfxRequest.GetSlot());
+            pObj->SetMergedItemSet(aAttr);
+        }
+
         if ( bReturn )
             pView->GetCreateObj()->SetGridOffset( aGridOff );
     }
     return bReturn;
-}
-
-/*************************************************************************
-|*
-|* MouseMove-event
-|*
-\************************************************************************/
-
-bool FuConstRectangle::MouseMove(const MouseEvent& rMEvt)
-{
-    return FuConstruct::MouseMove(rMEvt);
 }
 
 /*************************************************************************
@@ -118,7 +159,7 @@ bool FuConstRectangle::MouseButtonUp(const MouseEvent& rMEvt)
 
     if ( pView->IsCreateObj() && rMEvt.IsLeft() )
     {
-        pView->EndCreateObj(SDRCREATE_FORCEEND);
+        pView->EndCreateObj(SdrCreateCmd::ForceEnd);
 
         if (aSfxRequest.GetSlot() == SID_DRAW_CAPTION_VERTICAL)
         {
@@ -144,20 +185,6 @@ bool FuConstRectangle::MouseButtonUp(const MouseEvent& rMEvt)
 
 /*************************************************************************
 |*
-|* Tastaturereignisse bearbeiten
-|*
-|* Wird ein KeyEvent bearbeitet, so ist der Return-Wert sal_True, andernfalls
-|* FALSE.
-|*
-\************************************************************************/
-
-bool FuConstRectangle::KeyInput(const KeyEvent& rKEvt)
-{
-    return FuConstruct::KeyInput(rKEvt);
-}
-
-/*************************************************************************
-|*
 |* Function aktivieren
 |*
 \************************************************************************/
@@ -169,8 +196,21 @@ void FuConstRectangle::Activate()
     switch (aSfxRequest.GetSlot() )
     {
         case SID_DRAW_LINE:
+        case SID_DRAW_XLINE:
+        case SID_LINE_ARROW_END:
+        case SID_LINE_ARROW_CIRCLE:
+        case SID_LINE_ARROW_SQUARE:
+        case SID_LINE_ARROW_START:
+        case SID_LINE_CIRCLE_ARROW:
+        case SID_LINE_SQUARE_ARROW:
+        case SID_LINE_ARROWS:
             aNewPointer = Pointer( PointerStyle::DrawLine );
             aObjKind = OBJ_LINE;
+            break;
+
+        case SID_DRAW_MEASURELINE:
+            aNewPointer = Pointer( PointerStyle::DrawLine );
+            aObjKind = OBJ_MEASURE;
             break;
 
         case SID_DRAW_RECT:
@@ -203,6 +243,139 @@ void FuConstRectangle::Activate()
     FuConstruct::Activate();
 }
 
+void FuConstRectangle::SetLineEnds(SfxItemSet& rAttr, SdrObject* pObj, sal_uInt16 nSlotId)
+{
+    SdrModel *pDoc = pObj->GetModel();
+
+    if ( nSlotId == SID_LINE_ARROW_START      ||
+         nSlotId == SID_LINE_ARROW_END        ||
+         nSlotId == SID_LINE_ARROWS           ||
+         nSlotId == SID_LINE_ARROW_CIRCLE     ||
+         nSlotId == SID_LINE_CIRCLE_ARROW     ||
+         nSlotId == SID_LINE_ARROW_SQUARE     ||
+         nSlotId == SID_LINE_SQUARE_ARROW )
+    {
+
+        // set attributes of line start and ends
+
+        // arrowhead
+        ::basegfx::B2DPolyPolygon aArrow( getPolygon( RID_SVXSTR_ARROW, pDoc ) );
+        if( !aArrow.count() )
+        {
+            ::basegfx::B2DPolygon aNewArrow;
+            aNewArrow.append(::basegfx::B2DPoint(10.0, 0.0));
+            aNewArrow.append(::basegfx::B2DPoint(0.0, 30.0));
+            aNewArrow.append(::basegfx::B2DPoint(20.0, 30.0));
+            aNewArrow.setClosed(true);
+            aArrow.append(aNewArrow);
+        }
+
+        // Circles
+        ::basegfx::B2DPolyPolygon aCircle( getPolygon( RID_SVXSTR_CIRCLE, pDoc ) );
+        if( !aCircle.count() )
+        {
+            ::basegfx::B2DPolygon aNewCircle;
+            aNewCircle = ::basegfx::tools::createPolygonFromEllipse(::basegfx::B2DPoint(0.0, 0.0), 250.0, 250.0);
+            aNewCircle.setClosed(true);
+            aCircle.append(aNewCircle);
+        }
+
+        // Square
+        ::basegfx::B2DPolyPolygon aSquare( getPolygon( RID_SVXSTR_SQUARE, pDoc ) );
+        if( !aSquare.count() )
+        {
+            ::basegfx::B2DPolygon aNewSquare;
+            aNewSquare.append(::basegfx::B2DPoint(0.0, 0.0));
+            aNewSquare.append(::basegfx::B2DPoint(10.0, 0.0));
+            aNewSquare.append(::basegfx::B2DPoint(10.0, 10.0));
+            aNewSquare.append(::basegfx::B2DPoint(0.0, 10.0));
+            aNewSquare.setClosed(true);
+            aSquare.append(aNewSquare);
+        }
+
+        SfxItemSet aSet( pDoc->GetItemPool() );
+        long nWidth = 200; // (1/100th mm)
+
+        // determine line width and calculate with it the line end width
+        if( aSet.GetItemState( XATTR_LINEWIDTH ) != SfxItemState::DONTCARE )
+        {
+            long nValue = static_cast<const XLineWidthItem&>( aSet.Get( XATTR_LINEWIDTH ) ).GetValue();
+            if( nValue > 0 )
+                nWidth = nValue * 3;
+        }
+
+        switch (nSlotId)
+        {
+            case SID_LINE_ARROWS:
+            {
+                // connector with arrow ends
+                rAttr.Put(XLineStartItem(SVX_RESSTR(RID_SVXSTR_ARROW), aArrow));
+                rAttr.Put(XLineStartWidthItem(nWidth));
+                rAttr.Put(XLineEndItem(SVX_RESSTR(RID_SVXSTR_ARROW), aArrow));
+                rAttr.Put(XLineEndWidthItem(nWidth));
+            }
+            break;
+
+            case SID_LINE_ARROW_START:
+            case SID_LINE_ARROW_CIRCLE:
+            case SID_LINE_ARROW_SQUARE:
+            {
+                // connector with arrow start
+                rAttr.Put(XLineStartItem(SVX_RESSTR(RID_SVXSTR_ARROW), aArrow));
+                rAttr.Put(XLineStartWidthItem(nWidth));
+            }
+            break;
+
+            case SID_LINE_ARROW_END:
+            case SID_LINE_CIRCLE_ARROW:
+            case SID_LINE_SQUARE_ARROW:
+            {
+                // connector with arrow end
+                rAttr.Put(XLineEndItem(SVX_RESSTR(RID_SVXSTR_ARROW), aArrow));
+                rAttr.Put(XLineEndWidthItem(nWidth));
+            }
+            break;
+        }
+
+        // and again, for the still missing ends
+        switch (nSlotId)
+        {
+            case SID_LINE_ARROW_CIRCLE:
+            {
+                // circle end
+                rAttr.Put(XLineEndItem(SVX_RESSTR(RID_SVXSTR_CIRCLE), aCircle));
+                rAttr.Put(XLineEndWidthItem(nWidth));
+            }
+            break;
+
+            case SID_LINE_CIRCLE_ARROW:
+            {
+                // circle start
+                rAttr.Put(XLineStartItem(SVX_RESSTR(RID_SVXSTR_CIRCLE), aCircle));
+                rAttr.Put(XLineStartWidthItem(nWidth));
+            }
+            break;
+
+            case SID_LINE_ARROW_SQUARE:
+            {
+                // square end
+                rAttr.Put(XLineEndItem(SVX_RESSTR(RID_SVXSTR_SQUARE), aSquare));
+                rAttr.Put(XLineEndWidthItem(nWidth));
+            }
+            break;
+
+            case SID_LINE_SQUARE_ARROW:
+            {
+                // square start
+                rAttr.Put(XLineStartItem(SVX_RESSTR(RID_SVXSTR_SQUARE), aSquare));
+                rAttr.Put(XLineStartWidthItem(nWidth));
+            }
+            break;
+        }
+    }
+}
+
+
 /*************************************************************************
 |*
 |* Function deaktivieren
@@ -231,6 +404,14 @@ SdrObject* FuConstRectangle::CreateDefaultObject(const sal_uInt16 nID, const Rec
         switch(nID)
         {
             case SID_DRAW_LINE:
+            case SID_DRAW_XLINE:
+            case SID_LINE_ARROW_END:
+            case SID_LINE_ARROW_CIRCLE:
+            case SID_LINE_ARROW_SQUARE:
+            case SID_LINE_ARROW_START:
+            case SID_LINE_CIRCLE_ARROW:
+            case SID_LINE_SQUARE_ARROW:
+            case SID_LINE_ARROWS:
             {
                 if(dynamic_cast<const SdrPathObj*>( pObj) !=  nullptr)
                 {
@@ -247,6 +428,19 @@ SdrObject* FuConstRectangle::CreateDefaultObject(const sal_uInt16 nID, const Rec
 
                 break;
             }
+
+            case SID_DRAW_MEASURELINE:
+            {
+                if(dynamic_cast<const SdrMeasureObj*>( pObj) != nullptr)
+                {
+                    sal_Int32 nYMiddle((aRect.Top() + aRect.Bottom()) / 2);
+                    static_cast<SdrMeasureObj*>(pObj)->SetPoint(Point(aStart.X(), nYMiddle), 0);
+                    static_cast<SdrMeasureObj*>(pObj)->SetPoint(Point(aEnd.X(), nYMiddle), 1);
+                }
+
+                break;
+            }
+
             case SID_DRAW_CAPTION:
             case SID_DRAW_CAPTION_VERTICAL:
             {
@@ -289,6 +483,7 @@ SdrObject* FuConstRectangle::CreateDefaultObject(const sal_uInt16 nID, const Rec
         }
 
         SfxItemSet aAttr(pDrDoc->GetItemPool());
+        SetLineEnds(aAttr, pObj, nID);
         pObj->SetMergedItemSet(aAttr);
     }
 

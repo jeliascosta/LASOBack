@@ -43,7 +43,7 @@
 #include "certdb.h"
 #include "list"
 
-#include "xmlsecurity/xmlsec-wrapper.h"
+#include "xmlsec-wrapper.h"
 
 class SecurityEnvironment_NssImpl : public ::cppu::WeakImplHelper<
     css::xml::crypto::XSecurityEnvironment ,
@@ -64,7 +64,7 @@ private:
 
     public:
         SecurityEnvironment_NssImpl();
-        virtual ~SecurityEnvironment_NssImpl();
+        virtual ~SecurityEnvironment_NssImpl() override;
 
         //Methods from XSecurityEnvironment
 
@@ -104,9 +104,6 @@ private:
             throw (css::uno::RuntimeException, std::exception) override;
 
         static const css::uno::Sequence< sal_Int8 >& getUnoTunnelId() ;
-
-        //Native methods
-        CERTCertDBHandle* getCertDb() throw( css::uno::Exception , css::uno::RuntimeException ) ;
 
         void setCertDb( CERTCertDBHandle* aCertDb ) throw( css::uno::Exception , css::uno::RuntimeException ) ;
 

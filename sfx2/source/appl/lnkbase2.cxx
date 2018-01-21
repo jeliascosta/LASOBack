@@ -105,7 +105,7 @@ public:
         bIsInDTOR( false )
     {}
 #endif
-    virtual ~ImplDdeItem();
+    virtual ~ImplDdeItem() override;
 
     virtual DdeData* Get( SotClipboardFormatId ) override;
     virtual bool     Put( const DdeData* ) override;
@@ -152,7 +152,7 @@ SvBaseLink::SvBaseLink( SfxLinkUpdateMode nUpdateMode, SotClipboardFormatId nCon
 static DdeTopic* FindTopic( const OUString & rLinkName, sal_uInt16* pItemStt )
 {
     if( rLinkName.isEmpty() )
-        return 0;
+        return nullptr;
 
     OUString sNm( rLinkName );
     sal_Int32 nTokenPos = 0;
@@ -178,7 +178,7 @@ static DdeTopic* FindTopic( const OUString & rLinkName, sal_uInt16* pItemStt )
             break;
         }
     }
-    return 0;
+    return nullptr;
 }
 
 SvBaseLink::SvBaseLink( const OUString& rLinkName, sal_uInt16 nObjectType, SvLinkSource* pObj )
@@ -235,7 +235,7 @@ SvBaseLink::~SvBaseLink()
     delete pImplData;
 }
 
-IMPL_LINK_TYPED( SvBaseLink, EndEditHdl, const OUString&, _rNewName, void )
+IMPL_LINK( SvBaseLink, EndEditHdl, const OUString&, _rNewName, void )
 {
     OUString sNewName = _rNewName;
     if ( !ExecuteEdit( sNewName ) )

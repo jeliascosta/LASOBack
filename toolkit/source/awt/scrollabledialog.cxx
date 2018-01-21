@@ -115,13 +115,13 @@ void ScrollableWrapper<T>::lcl_Scroll( long nX, long nY )
     }
 }
 
-//Can't use IMPL_LINK_TYPED with the template
-//IMPL_LINK_TYPED( ScrollableWrapper, ScrollBarHdl, ScrollBar*, pSB, void )
+//Can't use IMPL_LINK with the template
+//IMPL_LINK( ScrollableWrapper, ScrollBarHdl, ScrollBar*, pSB, void )
 
 template< class T>
 void ScrollableWrapper<T>::LinkStubScrollBarHdl( void* pThis, ScrollBar* pCaller)
 {
-    static_cast<ScrollableWrapper<T>*>(pThis)->ScrollBarHdl( static_cast<ScrollBar*>(pCaller) );
+    static_cast<ScrollableWrapper<T>*>(pThis)->ScrollBarHdl( pCaller );
 }
 
 template< class T>

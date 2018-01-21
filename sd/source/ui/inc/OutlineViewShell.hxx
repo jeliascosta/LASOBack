@@ -56,9 +56,9 @@ public:
         SfxViewFrame* pFrame,
         ViewShellBase& rViewShellBase,
         vcl::Window* pParentWindow,
-        FrameView* pFrameView = nullptr);
+        FrameView* pFrameView);
 
-    virtual ~OutlineViewShell();
+    virtual ~OutlineViewShell() override;
 
     virtual void Shutdown() override;
 
@@ -111,10 +111,10 @@ public:
     virtual bool KeyInput(const KeyEvent& rKEvt, ::sd::Window* pWin) override;
     virtual void MouseButtonUp(const MouseEvent& rMEvt, ::sd::Window* pWin) override;
 
-    sal_uLong   Read(SvStream& rInput, const OUString& rBaseURL, sal_uInt16 eFormat);
+    sal_uLong   ReadRtf(SvStream& rInput, const OUString& rBaseURL);
 
-    virtual void WriteUserDataSequence ( css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse = false ) override;
-    virtual void ReadUserDataSequence ( const css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse = false ) override;
+    virtual void WriteUserDataSequence ( css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse ) override;
+    virtual void ReadUserDataSequence ( const css::uno::Sequence < css::beans::PropertyValue >&, bool bBrowse ) override;
 
     /** this method is called when the visible area of the view from this viewshell is changed */
     virtual void VisAreaChanged(const Rectangle& rRect) override;
@@ -149,15 +149,14 @@ public:
     void UpdateOutlineObject( SdPage* pPage, Paragraph* pPara );
 
 private:
-    void ShowSlideShow(SfxRequest& rReq);
     OutlineView* pOlView;
     SdPage*         pLastPage; // For efficient processing of the preview
-    TransferableClipboardListener* pClipEvtLstnr;
+    rtl::Reference<TransferableClipboardListener> mxClipEvtLstnr;
     bool            bPastePossible;
     bool mbInitialized;
 
     void Construct (DrawDocShell* pDocSh);
-    DECL_LINK_TYPED( ClipboardChanged, TransferableDataHelper*, void );
+    DECL_LINK( ClipboardChanged, TransferableDataHelper*, void );
 };
 
 } // end of namespace sd

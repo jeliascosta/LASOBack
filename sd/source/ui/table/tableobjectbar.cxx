@@ -25,7 +25,7 @@
 #include <sfx2/viewfrm.hxx>
 #include <sfx2/dispatch.hxx>
 #include <sfx2/msgpool.hxx>
-#include <sfx2/sidebar/EnumContext.hxx>
+#include <vcl/EnumContext.hxx>
 #include <svl/whiter.hxx>
 #include <svl/itempool.hxx>
 #include <svx/svdomedia.hxx>
@@ -93,7 +93,7 @@ TableObjectBar::TableObjectBar( ViewShell* pSdViewShell, ::sd::View* pSdView )
     SetRepeatTarget( mpView );
     SetHelpId( SD_IF_SDDRAWTABLEOBJECTBAR );
     SetName( SD_RESSTR( RID_DRAW_TABLE_TOOLBOX ) );
-    SetContextName(sfx2::sidebar::EnumContext::GetContextName(sfx2::sidebar::EnumContext::Context_Table));
+    SetContextName(vcl::EnumContext::GetContextName(vcl::EnumContext::Context_Table));
 }
 
 TableObjectBar::~TableObjectBar()
@@ -140,11 +140,11 @@ void TableObjectBar::Execute( SfxRequest& rReq )
             case SID_TABLE_INSERT_COL_BEFORE:
             case SID_TABLE_INSERT_COL_AFTER:
             {
-                std::unique_ptr<SvxAbstractInsRowColDlg> pDlg;
+                ScopedVclPtr<SvxAbstractInsRowColDlg> pDlg;
                 if (nSlotId == SID_TABLE_INSERT_ROW_DLG || nSlotId == SID_TABLE_INSERT_COL_DLG)
                 {
                     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-                    pDlg.reset(pFact ? pFact->CreateSvxInsRowColDlg(mpView->GetViewShell()->GetParentWindow(), nSlotId == SID_TABLE_INSERT_COL_DLG, SD_MOD()->GetSlotPool()->GetSlot(nSlotId)->GetCommand()) : nullptr);
+                    pDlg.disposeAndReset(pFact ? pFact->CreateSvxInsRowColDlg(mpView->GetViewShell()->GetParentWindow(), nSlotId == SID_TABLE_INSERT_COL_DLG, SD_MOD()->GetSlotPool()->GetSlot(nSlotId)->GetCommand()) : nullptr);
 
                     if (!pDlg.get() || (pDlg->Execute() != 1))
                         break;

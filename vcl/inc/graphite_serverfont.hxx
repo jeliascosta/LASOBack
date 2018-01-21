@@ -36,12 +36,12 @@ class VCL_PLUGIN_PUBLIC GraphiteLayoutImpl : public GraphiteLayout
 {
 public:
     GraphiteLayoutImpl(const gr_face * pFace,
-                       ServerFont & rServerFont) throw()
-    : GraphiteLayout(pFace), mrServerFont(rServerFont) {};
-    virtual ~GraphiteLayoutImpl() throw() {};
+                       FreetypeFont & rFreetypeFont) throw()
+    : GraphiteLayout(pFace), mrFreetypeFont(rFreetypeFont) {};
+    virtual ~GraphiteLayoutImpl() throw() override {};
     virtual sal_GlyphId getKashidaGlyph(int & width) override;
 private:
-    ServerFont & mrServerFont;
+    FreetypeFont & mrFreetypeFont;
 };
 
 // This class implments the server font specific parts.
@@ -54,7 +54,7 @@ private:
         mutable GraphiteLayoutImpl maImpl;
         grutils::GrFeatureParser * mpFeatures;
 public:
-        GraphiteServerFontLayout(ServerFont& pServerFont) throw();
+        GraphiteServerFontLayout(FreetypeFont& pFreetypeFont) throw();
 
         virtual bool  LayoutText( ImplLayoutArgs& rArgs) override
         {
@@ -76,7 +76,7 @@ public:
         {
             return maImpl.FillDXArray(dxa);
         }
-        virtual sal_Int32 GetTextBreak(DeviceCoordinate max_width, DeviceCoordinate extra, int factor) const override
+        virtual sal_Int32 GetTextBreak(DeviceCoordinate max_width, DeviceCoordinate extra=0, int factor=1) const override
         {
             return maImpl.GetTextBreak(max_width, extra, factor);
         }
@@ -99,9 +99,9 @@ public:
         virtual void    DropGlyph( int nStart ) override { maImpl.DropGlyph(nStart); };
         virtual void    Simplify( bool bIsBase ) override { maImpl.Simplify(bIsBase); };
 
-        virtual ~GraphiteServerFontLayout() throw();
+        virtual ~GraphiteServerFontLayout() throw() override;
 
-        static bool IsGraphiteEnabledFont(ServerFont& rServerFont);
+        static bool IsGraphiteEnabledFont(FreetypeFont& rFreetypeFont);
 };
 
 #endif

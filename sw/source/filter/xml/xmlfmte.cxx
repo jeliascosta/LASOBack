@@ -67,7 +67,7 @@ void SwXMLExport::ExportFormat( const SwFormat& rFormat, enum XMLTokenEnum eFami
         AddAttribute( XML_NAMESPACE_STYLE, XML_FAMILY, eFamily );
 
 #if OSL_DEBUG_LEVEL > 0
-    // style:parent-style-name="..." (if its not the default only)
+    // style:parent-style-name="..." (if it's not the default only)
     const SwFormat* pParent = rFormat.DerivedFrom();
     // Only adopt parent name, if it's not the default
     OSL_ENSURE( !pParent || pParent->IsDefault(), "unexpected parent" );
@@ -92,7 +92,7 @@ void SwXMLExport::ExportFormat( const SwFormat& rFormat, enum XMLTokenEnum eFami
                 SwStyleNameMapper::FillProgName(
                                     pPageDesc->GetName(),
                                     sName,
-                                    nsSwGetPoolIdFromName::GET_POOLID_PAGEDESC,
+                                    SwGetPoolIdFromName::PageDesc,
                                     true);
             AddAttribute( XML_NAMESPACE_STYLE, XML_MASTER_PAGE_NAME,
                           EncodeStyleName( sName ) );
@@ -133,29 +133,26 @@ void SwXMLExport::ExportFormat( const SwFormat& rFormat, enum XMLTokenEnum eFami
         XMLTokenEnum ePropToken = XML_TABLE_PROPERTIES;
         if( XML_TABLE == eFamily )
         {
-            xItemMap = xTableItemMap;
+            xItemMap = m_xTableItemMap;
         }
         else if( XML_TABLE_ROW == eFamily )
         {
-            xItemMap = xTableRowItemMap;
+            xItemMap = m_xTableRowItemMap;
             ePropToken = XML_TABLE_ROW_PROPERTIES;
         }
         else if( XML_TABLE_CELL == eFamily )
         {
-            xItemMap = xTableCellItemMap;
+            xItemMap = m_xTableCellItemMap;
             ePropToken = XML_TABLE_CELL_PROPERTIES;
         }
 
         if( xItemMap.Is() )
         {
-            SvXMLExportItemMapper& rItemMapper = GetTableItemMapper();
-            rItemMapper.setMapEntries( xItemMap );
-
-            GetTableItemMapper().exportXML( *this,
+            m_pTableItemMapper->setMapEntries( xItemMap );
+            m_pTableItemMapper->exportXML( *this,
                                            rFormat.GetAttrSet(),
                                            GetTwipUnitConverter(),
-                                           ePropToken,
-                                           SvXmlExportFlags::IGN_WS );
+                                           ePropToken );
         }
     }
 }
@@ -170,6 +167,7 @@ void SwXMLExport::ExportStyles_( bool bUsed )
     GetTextParagraphExport()->exportTextStyles( bUsed
                                              ,IsShowProgress()
                                               );
+    GetShapeExport()->GetShapeTableExport()->exportTableStyles();
     //page defaults
     GetPageExport()->exportDefaultStyle();
 }
@@ -219,7 +217,7 @@ void SwXMLExport::ExportAutoStyles_()
                 GetFormExport()->examineForms(xPage);
         }
 
-        GetTextParagraphExport()->collectTextAutoStylesOptimized( bShowProgress );
+        GetTextParagraphExport()->collectTextAutoStylesOptimized( m_bShowProgress );
     }
 
     GetTextParagraphExport()->exportTextAutoStyles();
@@ -258,7 +256,7 @@ protected:
     virtual void exportStyleAttributes(
             SvXMLAttributeList& rAttrList,
             sal_Int32 nFamily,
-            const ::std::vector< XMLPropertyState >& rProperties,
+            const std::vector< XMLPropertyState >& rProperties,
             const SvXMLExportPropertyMapper& rPropExp
             , const SvXMLUnitConverter& rUnitConverter,
             const SvXMLNamespaceMap& rNamespaceMap
@@ -266,13 +264,13 @@ protected:
 public:
 
     explicit SwXMLAutoStylePoolP( SvXMLExport& rExport );
-    virtual ~SwXMLAutoStylePoolP();
+    virtual ~SwXMLAutoStylePoolP() override;
 };
 
 void SwXMLAutoStylePoolP::exportStyleAttributes(
             SvXMLAttributeList& rAttrList,
             sal_Int32 nFamily,
-            const ::std::vector< XMLPropertyState >& rProperties,
+            const std::vector< XMLPropertyState >& rProperties,
             const SvXMLExportPropertyMapper& rPropExp
             , const SvXMLUnitConverter& rUnitConverter,
             const SvXMLNamespaceMap& rNamespaceMap
@@ -282,7 +280,7 @@ void SwXMLAutoStylePoolP::exportStyleAttributes(
 
     if( XML_STYLE_FAMILY_TEXT_PARAGRAPH == nFamily )
     {
-        for( ::std::vector< XMLPropertyState >::const_iterator
+        for( std::vector< XMLPropertyState >::const_iterator
                     aProperty = rProperties.begin();
              aProperty != rProperties.end();
               ++aProperty )

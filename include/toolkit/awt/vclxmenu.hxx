@@ -33,6 +33,7 @@
 #include <osl/mutex.hxx>
 
 #include <tools/link.hxx>
+#include <vcl/vclptr.hxx>
 
 #include <vector>
 
@@ -59,21 +60,21 @@ class TOOLKIT_DLLPUBLIC VCLXMenu :  public css::awt::XMenuBar,
 {
 private:
     ::osl::Mutex            maMutex;
-    Menu*                   mpMenu;
+    VclPtr<Menu>            mpMenu;
     MenuListenerMultiplexer maMenuListeners;
     PopupMenuRefList        maPopupMenuRefs;
 
 protected:
     ::osl::Mutex&           GetMutex() { return maMutex; }
 
-    DECL_LINK_TYPED( MenuEventListener, VclMenuEvent&, void );
+    DECL_LINK( MenuEventListener, VclMenuEvent&, void );
 
     void ImplCreateMenu( bool bPopup );
 
 public:
     VCLXMenu();
     VCLXMenu( Menu* pMenu );
-    virtual ~VCLXMenu();
+    virtual ~VCLXMenu() override;
 
 
     Menu*    GetMenu() const { return mpMenu; }

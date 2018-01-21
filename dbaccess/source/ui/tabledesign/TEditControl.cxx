@@ -37,6 +37,7 @@
 #include <vcl/msgbox.hxx>
 #include "TableUndo.hxx"
 #include "TableController.hxx"
+#include <connectivity/dbmetadata.hxx>
 #include <connectivity/dbtools.hxx>
 #include "SqlNameEdit.hxx"
 #include "TableRowExchange.hxx"
@@ -72,11 +73,11 @@ using namespace ::com::sun::star::sdb;
 // Maximum length in description field
 #define MAX_DESCR_LEN       256
 
-OTableEditorCtrl::ClipboardInvalidator::ClipboardInvalidator(sal_uLong nTimeout,OTableEditorCtrl* _pOwner)
+OTableEditorCtrl::ClipboardInvalidator::ClipboardInvalidator(OTableEditorCtrl* _pOwner)
 : m_pOwner(_pOwner)
 {
 
-    m_aInvalidateTimer.SetTimeout(nTimeout);
+    m_aInvalidateTimer.SetTimeout(500);
     m_aInvalidateTimer.SetTimeoutHdl(LINK(this, OTableEditorCtrl::ClipboardInvalidator, OnInvalidate));
     m_aInvalidateTimer.Start();
 }
@@ -91,7 +92,7 @@ void OTableEditorCtrl::ClipboardInvalidator::Stop()
     m_aInvalidateTimer.Stop();
 }
 
-IMPL_LINK_NOARG_TYPED(OTableEditorCtrl::ClipboardInvalidator, OnInvalidate, Timer *, void)
+IMPL_LINK_NOARG(OTableEditorCtrl::ClipboardInvalidator, OnInvalidate, Timer *, void)
 {
     m_pOwner->GetView()->getController().InvalidateFeature(SID_CUT);
     m_pOwner->GetView()->getController().InvalidateFeature(SID_COPY);
@@ -143,7 +144,7 @@ OTableEditorCtrl::OTableEditorCtrl(vcl::Window* pWindow)
     ,nOldDataPos(-1)
     ,bSaveOnMove(true)
     ,bReadOnly(true)
-    ,m_aInvalidate(500,this)
+    ,m_aInvalidate(this)
 {
 
     SetHelpId(HID_TABDESIGN_BACKGROUND);
@@ -622,7 +623,7 @@ bool OTableEditorCtrl::CursorMoving(long nNewRow, sal_uInt16 nNewCol)
     return true;
 }
 
-IMPL_LINK_NOARG_TYPED( OTableEditorCtrl, InvalidateFieldType, void*, void )
+IMPL_LINK_NOARG( OTableEditorCtrl, InvalidateFieldType, void*, void )
 {
     nInvalidateTypeEvent = nullptr;
     Invalidate( GetFieldRectPixel(nOldDataPos, FIELD_TYPE) );
@@ -647,7 +648,7 @@ void OTableEditorCtrl::CellModified( long nRow, sal_uInt16 nColId )
     default:            sActionDescription = ModuleRes( STR_CHANGE_COLUMN_ATTRIBUTE ); break;
     }
 
-    GetUndoManager().EnterListAction( sActionDescription, OUString() );
+    GetUndoManager().EnterListAction( sActionDescription, OUString(),0,-1 );
     if (!pActFieldDescr)
     {
         const OTypeInfoMap& rTypeInfoMap = GetView()->getController().getTypeInfo();
@@ -1360,10 +1361,10 @@ void OTableEditorCtrl::Command(const CommandEvent& rEvt)
                             if ( !IsColumnSelected( nColId ) )
                                 SelectColumnId( nColId );
 
-                            PopupMenu aContextMenu( ModuleRes( RID_QUERYCOLPOPUPMENU ) );
-                            aContextMenu.EnableItem( SID_DELETE, false );
-                            aContextMenu.RemoveDisabledEntries(true, true);
-                            switch ( aContextMenu.Execute( this, aMenuPos ) )
+                            ScopedVclPtrInstance<PopupMenu> aContextMenu( ModuleRes( RID_QUERYCOLPOPUPMENU ) );
+                            aContextMenu->EnableItem( SID_DELETE, false );
+                            aContextMenu->RemoveDisabledEntries(true, true);
+                            switch ( aContextMenu->Execute( this, aMenuPos ) )
                             {
                                 case ID_BROWSER_COLWIDTH:
                                     adjustBrowseBoxColumnWidth( this, nColId );
@@ -1374,18 +1375,18 @@ void OTableEditorCtrl::Command(const CommandEvent& rEvt)
                 }
                 else
                 {
-                    PopupMenu aContextMenu(ModuleRes(RID_TABLEDESIGNROWPOPUPMENU));
+                    ScopedVclPtrInstance<PopupMenu> aContextMenu(ModuleRes(RID_TABLEDESIGNROWPOPUPMENU));
 
-                    aContextMenu.EnableItem( SID_CUT, IsCutAllowed(nRow) );
-                    aContextMenu.EnableItem( SID_COPY, IsCopyAllowed(nRow) );
-                    aContextMenu.EnableItem( SID_PASTE, IsPasteAllowed(nRow) );
-                    aContextMenu.EnableItem( SID_DELETE, IsDeleteAllowed(nRow) );
-                    aContextMenu.EnableItem( SID_TABLEDESIGN_TABED_PRIMARYKEY, IsPrimaryKeyAllowed(nRow) );
-                    aContextMenu.EnableItem( SID_TABLEDESIGN_INSERTROWS, IsInsertNewAllowed(nRow) );
-                    aContextMenu.CheckItem( SID_TABLEDESIGN_TABED_PRIMARYKEY, IsRowSelected(GetCurRow()) && IsPrimaryKey() );
+                    aContextMenu->EnableItem( SID_CUT, IsCutAllowed(nRow) );
+                    aContextMenu->EnableItem( SID_COPY, IsCopyAllowed(nRow) );
+                    aContextMenu->EnableItem( SID_PASTE, IsPasteAllowed(nRow) );
+                    aContextMenu->EnableItem( SID_DELETE, IsDeleteAllowed(nRow) );
+                    aContextMenu->EnableItem( SID_TABLEDESIGN_TABED_PRIMARYKEY, IsPrimaryKeyAllowed(nRow) );
+                    aContextMenu->EnableItem( SID_TABLEDESIGN_INSERTROWS, IsInsertNewAllowed(nRow) );
+                    aContextMenu->CheckItem( SID_TABLEDESIGN_TABED_PRIMARYKEY, IsRowSelected(GetCurRow()) && IsPrimaryKey() );
 
                     // remove all the disable entries
-                    aContextMenu.RemoveDisabledEntries(true, true);
+                    aContextMenu->RemoveDisabledEntries(true, true);
 
                     if( SetDataPtr(m_nDataPos) )
                         pDescrWin->SaveData( pActRow->GetActFieldDescr() );
@@ -1393,7 +1394,7 @@ void OTableEditorCtrl::Command(const CommandEvent& rEvt)
                     // All actions which change the number of rows must be run asynchronously
                     // otherwise there may be problems between the Context menu and the Browser
                     m_nDataPos = GetCurRow();
-                    switch (aContextMenu.Execute(this, aMenuPos))
+                    switch (aContextMenu->Execute(this, aMenuPos))
                     {
                         case SID_CUT:
                             cut();
@@ -1430,13 +1431,13 @@ void OTableEditorCtrl::Command(const CommandEvent& rEvt)
 
 }
 
-IMPL_LINK_NOARG_TYPED( OTableEditorCtrl, DelayedCut, void*, void )
+IMPL_LINK_NOARG( OTableEditorCtrl, DelayedCut, void*, void )
 {
     nCutEvent = nullptr;
     OTableRowView::cut();
 }
 
-IMPL_LINK_NOARG_TYPED( OTableEditorCtrl, DelayedPaste, void*, void )
+IMPL_LINK_NOARG( OTableEditorCtrl, DelayedPaste, void*, void )
 {
     nPasteEvent = nullptr;
 
@@ -1462,13 +1463,13 @@ IMPL_LINK_NOARG_TYPED( OTableEditorCtrl, DelayedPaste, void*, void )
     GoToRow( nPastePosition );
 }
 
-IMPL_LINK_NOARG_TYPED( OTableEditorCtrl, DelayedDelete, void*, void )
+IMPL_LINK_NOARG( OTableEditorCtrl, DelayedDelete, void*, void )
 {
     nDeleteEvent = nullptr;
     DeleteRows();
 }
 
-IMPL_LINK_NOARG_TYPED( OTableEditorCtrl, DelayedInsNewRows, void*, void )
+IMPL_LINK_NOARG( OTableEditorCtrl, DelayedInsNewRows, void*, void )
 {
     nInsNewRowsEvent = nullptr;
     sal_Int32 nPastePosition = GetView()->getController().getFirstEmptyRowPosition();

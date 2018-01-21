@@ -53,7 +53,7 @@ class DummyHandler_Impl : public ::cppu::WeakImplHelper< task::XInteractionHandl
 {
 public:
     DummyHandler_Impl() {}
-    virtual ~DummyHandler_Impl();
+    virtual ~DummyHandler_Impl() override;
 
     virtual void SAL_CALL handle( const uno::Reference< task::XInteractionRequest >& xRequest )
             throw( uno::RuntimeException, std::exception ) override;
@@ -299,7 +299,7 @@ bool OwnView_Impl::ReadContentsAndGenerateTempFile( const uno::Reference< io::XI
                 aReadSeq[0] == '.'
                )
             {
-                aFileSuffix += OUString( (sal_Unicode) aReadSeq[0] );
+                aFileSuffix += OUStringLiteral1( aReadSeq[0] );
             }
 
         } while( aReadSeq[0] );

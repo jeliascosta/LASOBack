@@ -42,9 +42,9 @@ using namespace com::sun::star::packages::zip::ZipConstants;
  */
 ZipOutputStream::ZipOutputStream( const uno::Reference < io::XOutputStream > &xOStream )
 : m_xStream(xOStream)
+, mpThreadTaskTag( comphelper::ThreadPool::createThreadTaskTag() )
 , m_aChucker(xOStream)
 , m_pCurrentEntry(nullptr)
-, m_rSharedThreadPool(comphelper::ThreadPool::getSharedOptimalPool())
 {
 }
 
@@ -70,7 +70,7 @@ void ZipOutputStream::setEntry( ZipEntry *pEntry )
 
 void ZipOutputStream::addDeflatingThread( ZipOutputEntry *pEntry, comphelper::ThreadTask *pThread )
 {
-    m_rSharedThreadPool.pushTask(pThread);
+    comphelper::ThreadPool::getSharedOptimalPool().pushTask(pThread);
     m_aEntries.push_back(pEntry);
 }
 
@@ -148,17 +148,7 @@ void ZipOutputStream::consumeFinishedScheduledThreadEntries()
     m_aEntries = aNonFinishedEntries;
 }
 
-void ZipOutputStream::consumeAllScheduledThreadEntries()
-{
-    while(!m_aEntries.empty())
-    {
-        ZipOutputEntry* pCandidate = m_aEntries.back();
-        m_aEntries.pop_back();
-        consumeScheduledThreadEntry(pCandidate);
-    }
-}
-
-void ZipOutputStream::reduceScheduledThreadsToGivenNumberOrLess(sal_Int32 nThreads, sal_Int32 nWaitTimeInTenthSeconds)
+void ZipOutputStream::reduceScheduledThreadsToGivenNumberOrLess(sal_Int32 nThreads)
 {
     while(static_cast< sal_Int32 >(m_aEntries.size()) > nThreads)
     {
@@ -166,22 +156,27 @@ void ZipOutputStream::reduceScheduledThreadsToGivenNumberOrLess(sal_Int32 nThrea
 
         if(static_cast< sal_Int32 >(m_aEntries.size()) > nThreads)
         {
-            const TimeValue aTimeValue(0, 100000 * nWaitTimeInTenthSeconds);
+            const TimeValue aTimeValue(0, 100000);
             osl_waitThread(&aTimeValue);
         }
     }
 }
 
 void ZipOutputStream::finish()
-    throw(IOException, RuntimeException)
+    throw(IOException, RuntimeException, std::exception)
 {
     assert(!m_aZipList.empty() && "Zip file must have at least one entry!");
 
     // Wait for all threads to finish & write
-    m_rSharedThreadPool.waitUntilEmpty();
+    comphelper::ThreadPool::getSharedOptimalPool().waitUntilDone(mpThreadTaskTag);
 
     // consume all processed entries
-    consumeAllScheduledThreadEntries();
+    while(!m_aEntries.empty())
+    {
+        ZipOutputEntry* pCandidate = m_aEntries.back();
+        m_aEntries.pop_back();
+        consumeScheduledThreadEntry(pCandidate);
+    }
 
     sal_Int32 nOffset= static_cast < sal_Int32 > (m_aChucker.GetPosition());
     for (ZipEntry* p : m_aZipList)

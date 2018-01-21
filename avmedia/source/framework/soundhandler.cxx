@@ -125,8 +125,7 @@ sal_Bool SAL_CALL SoundHandler::supportsService( const OUString& sServiceName ) 
 // XServiceInfo
 css::uno::Sequence< OUString > SAL_CALL SoundHandler::getSupportedServiceNames() throw( css::uno::RuntimeException, std::exception )
 {
-    css::uno::Sequence<OUString> seqServiceNames { "com.sun.star.frame.ContentHandler" };
-    return seqServiceNames;
+    return { "com.sun.star.frame.ContentHandler" };
 }
 
 /*-************************************************************************************************************
@@ -299,7 +298,7 @@ OUString SAL_CALL SoundHandler::detect( css::uno::Sequence< css::beans::Property
     @return     0 every time... it doesn't matter for us.
     @threadsafe yes
 *//*-*************************************************************************************************************/
-IMPL_LINK_NOARG_TYPED(SoundHandler, implts_PlayerNotify, Idle *, void)
+IMPL_LINK_NOARG(SoundHandler, implts_PlayerNotify, Idle *, void)
 {
     // SAFE {
     ::osl::ClearableMutexGuard aLock( m_aLock );

@@ -25,6 +25,7 @@
 #include "whassert.hxx"
 
 #include <comphelper/extract.hxx>
+#include <libxml/xmlwriter.h>
 
 
 // virtual
@@ -37,8 +38,8 @@ bool SfxEnumItemInterface::operator ==(const SfxPoolItem & rItem) const
 }
 
 // virtual
-bool SfxEnumItemInterface::GetPresentation(SfxItemPresentation, SfxMapUnit,
-                                      SfxMapUnit, OUString & rText,
+bool SfxEnumItemInterface::GetPresentation(SfxItemPresentation, MapUnit,
+                                      MapUnit, OUString & rText,
                                       const IntlWrapper *) const
 {
     rText = OUString::number( GetEnumValue() );
@@ -160,19 +161,26 @@ SfxBoolItem::SfxBoolItem(sal_uInt16 const nWhich, SvStream & rStream)
 // virtual
 bool SfxBoolItem::operator ==(const SfxPoolItem & rItem) const
 {
-    DBG_ASSERT(dynamic_cast<const SfxBoolItem*>( &rItem ) !=  nullptr,
-               "SfxBoolItem::operator ==(): Bad type");
+    assert(dynamic_cast<const SfxBoolItem*>(&rItem) != nullptr);
     return m_bValue == static_cast< SfxBoolItem const * >(&rItem)->m_bValue;
 }
 
 // virtual
 bool SfxBoolItem::GetPresentation(SfxItemPresentation,
-                                                 SfxMapUnit, SfxMapUnit,
+                                                 MapUnit, MapUnit,
                                                  OUString & rText,
                                                  const IntlWrapper *) const
 {
     rText = GetValueTextByVal(m_bValue);
     return true;
+}
+
+void SfxBoolItem::dumpAsXml(struct _xmlTextWriter* pWriter) const
+{
+    xmlTextWriterStartElement(pWriter, BAD_CAST("SfxBoolItem"));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("whichId"), BAD_CAST(OString::number(Which()).getStr()));
+    xmlTextWriterWriteAttribute(pWriter, BAD_CAST("value"), BAD_CAST(GetValueTextByVal(m_bValue).toUtf8().getStr()));
+    xmlTextWriterEndElement(pWriter);
 }
 
 // virtual

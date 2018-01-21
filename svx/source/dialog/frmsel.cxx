@@ -55,7 +55,7 @@ FrameBorderType GetFrameBorderTypeFromIndex( size_t nIndex )
 
 size_t GetIndexFromFrameBorderType( FrameBorderType eBorder )
 {
-    DBG_ASSERT( eBorder != FRAMEBORDER_NONE,
+    DBG_ASSERT( eBorder != FrameBorderType::NONE,
         "svx::GetIndexFromFrameBorderType - invalid frame border type" );
     return static_cast< size_t >( eBorder ) - 1;
 }
@@ -84,17 +84,17 @@ FrameSelFlags lclGetFlagFromType( FrameBorderType eBorder )
 {
     switch( eBorder )
     {
-        case FRAMEBORDER_LEFT:      return FRAMESEL_LEFT;
-        case FRAMEBORDER_RIGHT:     return FRAMESEL_RIGHT;
-        case FRAMEBORDER_TOP:       return FRAMESEL_TOP;
-        case FRAMEBORDER_BOTTOM:    return FRAMESEL_BOTTOM;
-        case FRAMEBORDER_HOR:       return FRAMESEL_INNER_HOR;
-        case FRAMEBORDER_VER:       return FRAMESEL_INNER_VER;
-        case FRAMEBORDER_TLBR:      return FRAMESEL_DIAG_TLBR;
-        case FRAMEBORDER_BLTR:      return FRAMESEL_DIAG_BLTR;
-        case FRAMEBORDER_NONE : break;
+        case FrameBorderType::Left:      return FrameSelFlags::Left;
+        case FrameBorderType::Right:     return FrameSelFlags::Right;
+        case FrameBorderType::Top:       return FrameSelFlags::Top;
+        case FrameBorderType::Bottom:    return FrameSelFlags::Bottom;
+        case FrameBorderType::Horizontal:       return FrameSelFlags::InnerHorizontal;
+        case FrameBorderType::Vertical:       return FrameSelFlags::InnerVertical;
+        case FrameBorderType::TLBR:      return FrameSelFlags::DiagonalTLBR;
+        case FrameBorderType::BLTR:      return FrameSelFlags::DiagonalBLTR;
+        case FrameBorderType::NONE : break;
     }
-    return FRAMESEL_NONE;
+    return FrameSelFlags::NONE;
 }
 
 /** Merges the rSource polypolygon into the rDest polypolygon. */
@@ -108,11 +108,11 @@ inline void lclPolyPolyUnion( tools::PolyPolygon& rDest, const tools::PolyPolygo
 
 FrameBorder::FrameBorder( FrameBorderType eType ) :
     meType( eType ),
-    meState( FRAMESTATE_HIDE ),
-    meKeyLeft( FRAMEBORDER_NONE ),
-    meKeyRight( FRAMEBORDER_NONE ),
-    meKeyTop( FRAMEBORDER_NONE ),
-    meKeyBottom( FRAMEBORDER_NONE ),
+    meState( FrameBorderState::Hide ),
+    meKeyLeft( FrameBorderType::NONE ),
+    meKeyRight( FrameBorderType::NONE ),
+    meKeyTop( FrameBorderType::NONE ),
+    meKeyBottom( FrameBorderType::NONE ),
     mbEnabled( false ),
     mbSelected( false )
 {
@@ -120,9 +120,9 @@ FrameBorder::FrameBorder( FrameBorderType eType ) :
 
 void FrameBorder::Enable( FrameSelFlags nFlags )
 {
-    mbEnabled = (nFlags & lclGetFlagFromType( meType )) != 0;
+    mbEnabled = bool(nFlags & lclGetFlagFromType( meType ));
     if( !mbEnabled )
-        SetState( FRAMESTATE_HIDE );
+        SetState( FrameBorderState::Hide );
 }
 
 void FrameBorder::SetCoreStyle( const SvxBorderLine* pStyle )
@@ -134,7 +134,7 @@ void FrameBorder::SetCoreStyle( const SvxBorderLine* pStyle )
 
     // from twips to points
     maUIStyle.Set( maCoreStyle, 0.05, FRAMESEL_GEOM_WIDTH );
-    meState = maUIStyle.Prim() ? FRAMESTATE_SHOW : FRAMESTATE_HIDE;
+    meState = maUIStyle.Prim() ? FrameBorderState::Show : FrameBorderState::Hide;
 }
 
 void FrameBorder::SetState( FrameBorderState eState )
@@ -142,14 +142,14 @@ void FrameBorder::SetState( FrameBorderState eState )
     meState = eState;
     switch( meState )
     {
-        case FRAMESTATE_SHOW:
+        case FrameBorderState::Show:
             SAL_WARN( "svx.dialog", "svx::FrameBorder::SetState - use SetCoreStyle to make border visible" );
         break;
-        case FRAMESTATE_HIDE:
+        case FrameBorderState::Hide:
             maCoreStyle = SvxBorderLine();
             maUIStyle.Clear();
         break;
-        case FRAMESTATE_DONTCARE:
+        case FrameBorderState::DontCare:
             maCoreStyle = SvxBorderLine();
             maUIStyle = frame::Style(3, 0, 0, table::BorderLineStyle::SOLID); //OBJ_FRAMESTYLE_DONTCARE
         break;
@@ -192,7 +192,7 @@ void FrameBorder::SetKeyboardNeighbors(
 
 FrameBorderType FrameBorder::GetKeyboardNeighbor( sal_uInt16 nKeyCode ) const
 {
-    FrameBorderType eBorder = FRAMEBORDER_NONE;
+    FrameBorderType eBorder = FrameBorderType::NONE;
     switch( nKeyCode )
     {
         case KEY_LEFT:  eBorder = meKeyLeft;      break;
@@ -209,15 +209,15 @@ FrameSelectorImpl::FrameSelectorImpl( FrameSelector& rFrameSel ) :
     mrFrameSel( rFrameSel ),
     mpVirDev( VclPtr<VirtualDevice>::Create() ),
     maILArrows(),
-    maLeft( FRAMEBORDER_LEFT ),
-    maRight( FRAMEBORDER_RIGHT ),
-    maTop( FRAMEBORDER_TOP ),
-    maBottom( FRAMEBORDER_BOTTOM ),
-    maHor( FRAMEBORDER_HOR ),
-    maVer( FRAMEBORDER_VER ),
-    maTLBR( FRAMEBORDER_TLBR ),
-    maBLTR( FRAMEBORDER_BLTR ),
-    mnFlags( FRAMESEL_OUTER ),
+    maLeft( FrameBorderType::Left ),
+    maRight( FrameBorderType::Right ),
+    maTop( FrameBorderType::Top ),
+    maBottom( FrameBorderType::Bottom ),
+    maHor( FrameBorderType::Horizontal ),
+    maVer( FrameBorderType::Vertical ),
+    maTLBR( FrameBorderType::TLBR ),
+    maBLTR( FrameBorderType::BLTR ),
+    mnFlags( FrameSelFlags::Outer ),
     mnCtrlSize( 0 ),
     mnArrowSize( 0 ),
     mnLine1( 0 ),
@@ -239,14 +239,14 @@ FrameSelectorImpl::FrameSelectorImpl( FrameSelector& rFrameSel ) :
     FreeResource();
 
     maAllBorders.resize( FRAMEBORDERTYPE_COUNT, nullptr );
-    maAllBorders[ GetIndexFromFrameBorderType( FRAMEBORDER_LEFT   ) ] = &maLeft;
-    maAllBorders[ GetIndexFromFrameBorderType( FRAMEBORDER_RIGHT  ) ] = &maRight;
-    maAllBorders[ GetIndexFromFrameBorderType( FRAMEBORDER_TOP    ) ] = &maTop;
-    maAllBorders[ GetIndexFromFrameBorderType( FRAMEBORDER_BOTTOM ) ] = &maBottom;
-    maAllBorders[ GetIndexFromFrameBorderType( FRAMEBORDER_HOR    ) ] = &maHor;
-    maAllBorders[ GetIndexFromFrameBorderType( FRAMEBORDER_VER    ) ] = &maVer;
-    maAllBorders[ GetIndexFromFrameBorderType( FRAMEBORDER_TLBR   ) ] = &maTLBR;
-    maAllBorders[ GetIndexFromFrameBorderType( FRAMEBORDER_BLTR   ) ] = &maBLTR;
+    maAllBorders[ GetIndexFromFrameBorderType( FrameBorderType::Left   ) ] = &maLeft;
+    maAllBorders[ GetIndexFromFrameBorderType( FrameBorderType::Right  ) ] = &maRight;
+    maAllBorders[ GetIndexFromFrameBorderType( FrameBorderType::Top    ) ] = &maTop;
+    maAllBorders[ GetIndexFromFrameBorderType( FrameBorderType::Bottom ) ] = &maBottom;
+    maAllBorders[ GetIndexFromFrameBorderType( FrameBorderType::Horizontal    ) ] = &maHor;
+    maAllBorders[ GetIndexFromFrameBorderType( FrameBorderType::Vertical    ) ] = &maVer;
+    maAllBorders[ GetIndexFromFrameBorderType( FrameBorderType::TLBR   ) ] = &maTLBR;
+    maAllBorders[ GetIndexFromFrameBorderType( FrameBorderType::BLTR   ) ] = &maBLTR;
 #if OSL_DEBUG_LEVEL >= 2
     {
         bool bOk = true;
@@ -255,14 +255,14 @@ FrameSelectorImpl::FrameSelectorImpl( FrameSelector& rFrameSel ) :
     }
 #endif
     //                             left neighbor     right neighbor     upper neighbor    lower neighbor
-    maLeft.SetKeyboardNeighbors(   FRAMEBORDER_NONE, FRAMEBORDER_TLBR,  FRAMEBORDER_TOP,  FRAMEBORDER_BOTTOM );
-    maRight.SetKeyboardNeighbors(  FRAMEBORDER_BLTR, FRAMEBORDER_NONE,  FRAMEBORDER_TOP,  FRAMEBORDER_BOTTOM );
-    maTop.SetKeyboardNeighbors(    FRAMEBORDER_LEFT, FRAMEBORDER_RIGHT, FRAMEBORDER_NONE, FRAMEBORDER_TLBR );
-    maBottom.SetKeyboardNeighbors( FRAMEBORDER_LEFT, FRAMEBORDER_RIGHT, FRAMEBORDER_BLTR, FRAMEBORDER_NONE );
-    maHor.SetKeyboardNeighbors(    FRAMEBORDER_LEFT, FRAMEBORDER_RIGHT, FRAMEBORDER_TLBR, FRAMEBORDER_BLTR );
-    maVer.SetKeyboardNeighbors(    FRAMEBORDER_TLBR, FRAMEBORDER_BLTR,  FRAMEBORDER_TOP,  FRAMEBORDER_BOTTOM );
-    maTLBR.SetKeyboardNeighbors(   FRAMEBORDER_LEFT, FRAMEBORDER_VER,   FRAMEBORDER_TOP,  FRAMEBORDER_HOR );
-    maBLTR.SetKeyboardNeighbors(   FRAMEBORDER_VER,  FRAMEBORDER_RIGHT, FRAMEBORDER_HOR,  FRAMEBORDER_BOTTOM );
+    maLeft.SetKeyboardNeighbors(   FrameBorderType::NONE, FrameBorderType::TLBR,  FrameBorderType::Top,  FrameBorderType::Bottom );
+    maRight.SetKeyboardNeighbors(  FrameBorderType::BLTR, FrameBorderType::NONE,  FrameBorderType::Top,  FrameBorderType::Bottom );
+    maTop.SetKeyboardNeighbors(    FrameBorderType::Left, FrameBorderType::Right, FrameBorderType::NONE, FrameBorderType::TLBR );
+    maBottom.SetKeyboardNeighbors( FrameBorderType::Left, FrameBorderType::Right, FrameBorderType::BLTR, FrameBorderType::NONE );
+    maHor.SetKeyboardNeighbors(    FrameBorderType::Left, FrameBorderType::Right, FrameBorderType::TLBR, FrameBorderType::BLTR );
+    maVer.SetKeyboardNeighbors(    FrameBorderType::TLBR, FrameBorderType::BLTR,  FrameBorderType::Top,  FrameBorderType::Bottom );
+    maTLBR.SetKeyboardNeighbors(   FrameBorderType::Left, FrameBorderType::Vertical,   FrameBorderType::Top,  FrameBorderType::Horizontal );
+    maBLTR.SetKeyboardNeighbors(   FrameBorderType::Vertical,  FrameBorderType::Right, FrameBorderType::Horizontal,  FrameBorderType::Bottom );
 
     Initialize(mnFlags);
 }
@@ -544,12 +544,12 @@ void FrameSelectorImpl::DrawArrows( const FrameBorder& rBorder )
     long nLinePos = 0;
     switch( rBorder.GetType() )
     {
-        case FRAMEBORDER_LEFT:
-        case FRAMEBORDER_TOP:       nLinePos = mnLine1; break;
-        case FRAMEBORDER_VER:
-        case FRAMEBORDER_HOR:       nLinePos = mnLine2; break;
-        case FRAMEBORDER_RIGHT:
-        case FRAMEBORDER_BOTTOM:    nLinePos = mnLine3; break;
+        case FrameBorderType::Left:
+        case FrameBorderType::Top:       nLinePos = mnLine1; break;
+        case FrameBorderType::Vertical:
+        case FrameBorderType::Horizontal:       nLinePos = mnLine2; break;
+        case FrameBorderType::Right:
+        case FrameBorderType::Bottom:    nLinePos = mnLine3; break;
         default: ; //prevent warning
     }
     nLinePos -= mnArrowSize / 2;
@@ -560,25 +560,25 @@ void FrameSelectorImpl::DrawArrows( const FrameBorder& rBorder )
     sal_uInt16 nImgId1 = 0, nImgId2 = 0;
     switch( rBorder.GetType() )
     {
-        case FRAMEBORDER_LEFT:
-        case FRAMEBORDER_RIGHT:
-        case FRAMEBORDER_VER:
+        case FrameBorderType::Left:
+        case FrameBorderType::Right:
+        case FrameBorderType::Vertical:
             aPos1 = Point( nLinePos, nTLPos ); nImgId1 = 1;
             aPos2 = Point( nLinePos, nBRPos ); nImgId2 = 2;
         break;
 
-        case FRAMEBORDER_TOP:
-        case FRAMEBORDER_BOTTOM:
-        case FRAMEBORDER_HOR:
+        case FrameBorderType::Top:
+        case FrameBorderType::Bottom:
+        case FrameBorderType::Horizontal:
             aPos1 = Point( nTLPos, nLinePos ); nImgId1 = 3;
             aPos2 = Point( nBRPos, nLinePos ); nImgId2 = 4;
         break;
 
-        case FRAMEBORDER_TLBR:
+        case FrameBorderType::TLBR:
             aPos1 = Point( nTLPos, nTLPos ); nImgId1 = 5;
             aPos2 = Point( nBRPos, nBRPos ); nImgId2 = 6;
         break;
-        case FRAMEBORDER_BLTR:
+        case FrameBorderType::BLTR:
             aPos1 = Point( nTLPos, nBRPos ); nImgId1 = 7;
             aPos2 = Point( nBRPos, nTLPos ); nImgId2 = 8;
         break;
@@ -589,12 +589,6 @@ void FrameSelectorImpl::DrawArrows( const FrameBorder& rBorder )
     sal_uInt16 nSelectAdd = (mrFrameSel.IsEnabled() && rBorder.IsSelected()) ? 0 : 8;
     mpVirDev->DrawImage( aPos1, maILArrows.GetImage( nImgId1 + nSelectAdd ) );
     mpVirDev->DrawImage( aPos2, maILArrows.GetImage( nImgId2 + nSelectAdd ) );
-}
-
-void FrameSelectorImpl::DrawAllArrows()
-{
-    for(FrameBorderCIter aIt(maEnabBorders); aIt.Is(); ++aIt)
-        DrawArrows(**aIt);
 }
 
 Color FrameSelectorImpl::GetDrawLineColor( const Color& rColor ) const
@@ -610,8 +604,8 @@ void FrameSelectorImpl::DrawAllFrameBorders()
     // Translate core colors to current UI colors (regards current background and HC mode).
     for( FrameBorderIter aIt( maEnabBorders ); aIt.Is(); ++aIt )
     {
-        Color aCoreColorPrim = ((*aIt)->GetState() == FRAMESTATE_DONTCARE) ? maMarkCol : (*aIt)->GetCoreStyle().GetColorOut();
-        Color aCoreColorSecn = ((*aIt)->GetState() == FRAMESTATE_DONTCARE) ? maMarkCol : (*aIt)->GetCoreStyle().GetColorIn();
+        Color aCoreColorPrim = ((*aIt)->GetState() == FrameBorderState::DontCare) ? maMarkCol : (*aIt)->GetCoreStyle().GetColorOut();
+        Color aCoreColorSecn = ((*aIt)->GetState() == FrameBorderState::DontCare) ? maMarkCol : (*aIt)->GetCoreStyle().GetColorIn();
         (*aIt)->SetUIColorPrim( GetDrawLineColor( aCoreColorPrim ) );
         (*aIt)->SetUIColorSecn( GetDrawLineColor( aCoreColorSecn ) );
     }
@@ -662,7 +656,8 @@ void FrameSelectorImpl::DrawAllFrameBorders()
 void FrameSelectorImpl::DrawVirtualDevice()
 {
     DrawBackground();
-    DrawAllArrows();
+    for(FrameBorderCIter aIt(maEnabBorders); aIt.Is(); ++aIt)
+        DrawArrows(**aIt);
     DrawAllFrameBorders();
     mbFullRepaint = false;
 }
@@ -709,7 +704,7 @@ void FrameSelectorImpl::SetBorderState( FrameBorder& rBorder, FrameBorderState e
     DBG_ASSERT( rBorder.IsEnabled(), "svx::FrameSelectorImpl::SetBorderState - access to disabled border" );
     Any aOld;
     Any aNew;
-    Any& rMod = eState == FRAMESTATE_SHOW ? aNew : aOld;
+    Any& rMod = eState == FrameBorderState::Show ? aNew : aOld;
     rMod <<= AccessibleStateType::CHECKED;
     Reference< XAccessible > xRet;
     size_t nVecIdx = static_cast< size_t >( rBorder.GetType() );
@@ -717,7 +712,7 @@ void FrameSelectorImpl::SetBorderState( FrameBorder& rBorder, FrameBorderState e
         xRet = mxChildVec[ --nVecIdx ];
     a11y::AccFrameSelector* pFrameSelector = static_cast<a11y::AccFrameSelector*>(xRet.get());
 
-    if( eState == FRAMESTATE_SHOW )
+    if( eState == FrameBorderState::Show )
         SetBorderCoreStyle( rBorder, &maCurrStyle );
     else
         rBorder.SetState( eState );
@@ -739,14 +734,14 @@ void FrameSelectorImpl::ToggleBorderState( FrameBorder& rBorder )
     switch( rBorder.GetState() )
     {
         // same order as tristate check box: visible -> don't care -> hidden
-        case FRAMESTATE_SHOW:
-            SetBorderState( rBorder, bDontCare ? FRAMESTATE_DONTCARE : FRAMESTATE_HIDE );
+        case FrameBorderState::Show:
+            SetBorderState( rBorder, bDontCare ? FrameBorderState::DontCare : FrameBorderState::Hide );
         break;
-        case FRAMESTATE_HIDE:
-            SetBorderState( rBorder, FRAMESTATE_SHOW );
+        case FrameBorderState::Hide:
+            SetBorderState( rBorder, FrameBorderState::Show );
         break;
-        case FRAMESTATE_DONTCARE:
-            SetBorderState( rBorder, FRAMESTATE_HIDE );
+        case FrameBorderState::DontCare:
+            SetBorderState( rBorder, FrameBorderState::Hide );
         break;
     }
 }
@@ -819,7 +814,7 @@ sal_Int32 FrameSelector::GetEnabledBorderCount() const
 
 FrameBorderType FrameSelector::GetEnabledBorderType( sal_Int32 nIndex ) const
 {
-    FrameBorderType eBorder = FRAMEBORDER_NONE;
+    FrameBorderType eBorder = FrameBorderType::NONE;
     if( nIndex >= 0 )
     {
         size_t nVecIdx = static_cast< size_t >( nIndex );
@@ -841,7 +836,7 @@ sal_Int32 FrameSelector::GetEnabledBorderIndex( FrameBorderType eBorder ) const
 // frame border state and style
 bool FrameSelector::SupportsDontCareState() const
 {
-    return (mxImpl->mnFlags & FRAMESEL_DONTCARE) != 0;
+    return bool(mxImpl->mnFlags & FrameSelFlags::DontCare);
 }
 
 FrameBorderState FrameSelector::GetFrameBorderState( FrameBorderType eBorder ) const
@@ -863,21 +858,21 @@ void FrameSelector::ShowBorder( FrameBorderType eBorder, const SvxBorderLine* pS
 
 void FrameSelector::SetBorderDontCare( FrameBorderType eBorder )
 {
-    mxImpl->SetBorderState( mxImpl->GetBorderAccess( eBorder ), FRAMESTATE_DONTCARE );
+    mxImpl->SetBorderState( mxImpl->GetBorderAccess( eBorder ), FrameBorderState::DontCare );
 }
 
 bool FrameSelector::IsAnyBorderVisible() const
 {
     bool bIsSet = false;
     for( FrameBorderCIter aIt( mxImpl->maEnabBorders ); !bIsSet && aIt.Is(); ++aIt )
-        bIsSet = ((*aIt)->GetState() == FRAMESTATE_SHOW);
+        bIsSet = ((*aIt)->GetState() == FrameBorderState::Show);
     return bIsSet;
 }
 
 void FrameSelector::HideAllBorders()
 {
     for( FrameBorderIter aIt( mxImpl->maEnabBorders ); aIt.Is(); ++aIt )
-        mxImpl->SetBorderState( **aIt, FRAMESTATE_HIDE );
+        mxImpl->SetBorderState( **aIt, FrameBorderState::Hide );
 }
 
 bool FrameSelector::GetVisibleWidth( long& rnWidth, SvxBorderStyle& rnStyle ) const
@@ -976,14 +971,14 @@ void FrameSelector::SetStyleToSelection( long nWidth, SvxBorderStyle nStyle )
     mxImpl->maCurrStyle.SetBorderLineStyle( nStyle );
     mxImpl->maCurrStyle.SetWidth( nWidth );
     for( SelFrameBorderIter aIt( mxImpl->maEnabBorders ); aIt.Is(); ++aIt )
-        mxImpl->SetBorderState( **aIt, FRAMESTATE_SHOW );
+        mxImpl->SetBorderState( **aIt, FrameBorderState::Show );
 }
 
 void FrameSelector::SetColorToSelection( const Color& rColor )
 {
     mxImpl->maCurrStyle.SetColor( rColor );
     for( SelFrameBorderIter aIt( mxImpl->maEnabBorders ); aIt.Is(); ++aIt )
-        mxImpl->SetBorderState( **aIt, FRAMESTATE_SHOW );
+        mxImpl->SetBorderState( **aIt, FrameBorderState::Show );
 }
 
 // accessibility
@@ -991,7 +986,7 @@ Reference< XAccessible > FrameSelector::CreateAccessible()
 {
     if( !mxImpl->mxAccess.is() )
         mxImpl->mxAccess = mxImpl->mpAccess =
-            new a11y::AccFrameSelector( *this, FRAMEBORDER_NONE );
+            new a11y::AccFrameSelector( *this, FrameBorderType::NONE );
     return mxImpl->mxAccess;
 }
 
@@ -1101,8 +1096,8 @@ void FrameSelector::MouseButtonDown( const MouseEvent& rMEvt )
             else
             {
                 // hide a "don't care" frame border only if it is not clicked
-                if( bHideDontCare && ((*aIt)->GetState() == FRAMESTATE_DONTCARE) )
-                    mxImpl->SetBorderState( **aIt, FRAMESTATE_HIDE );
+                if( bHideDontCare && ((*aIt)->GetState() == FrameBorderState::DontCare) )
+                    mxImpl->SetBorderState( **aIt, FrameBorderState::Hide );
 
                 // deselect frame borders not clicked (if SHIFT or CTRL are not pressed)
                 if( !rMEvt.IsShift() && !rMEvt.IsMod1() )
@@ -1121,7 +1116,7 @@ void FrameSelector::MouseButtonDown( const MouseEvent& rMEvt )
                 // new frame border selected, selection extended, or selected borders different? -> show
                 for( SelFrameBorderIter aIt( mxImpl->maEnabBorders ); aIt.Is(); ++aIt )
                     // SetBorderState() sets current style and color to the frame border
-                    mxImpl->SetBorderState( **aIt, FRAMESTATE_SHOW );
+                    mxImpl->SetBorderState( **aIt, FrameBorderState::Show );
             }
             else
             {
@@ -1168,10 +1163,10 @@ void FrameSelector::KeyInput( const KeyEvent& rKEvt )
                     {
                         eBorder = mxImpl->GetBorder( eBorder ).GetKeyboardNeighbor( nCode );
                     }
-                    while( (eBorder != FRAMEBORDER_NONE) && !IsBorderEnabled( eBorder ) );
+                    while( (eBorder != FrameBorderType::NONE) && !IsBorderEnabled( eBorder ) );
 
                     // select the frame border
-                    if( eBorder != FRAMEBORDER_NONE )
+                    if( eBorder != FrameBorderType::NONE )
                     {
                         DeselectAllBorders();
                         SelectBorder( eBorder );
@@ -1197,27 +1192,27 @@ void FrameSelector::GetFocus()
         mxImpl->mpAccess->NotifyFocusListeners( true );
     if (IsAnyBorderSelected())
     {
-        FrameBorderType borderType = FRAMEBORDER_NONE;
+        FrameBorderType borderType = FrameBorderType::NONE;
         if (mxImpl->maLeft.IsSelected())
-            borderType = FRAMEBORDER_LEFT;
+            borderType = FrameBorderType::Left;
         else if (mxImpl->maRight.IsSelected())
-            borderType = FRAMEBORDER_RIGHT;
+            borderType = FrameBorderType::Right;
         else if (mxImpl->maTop.IsSelected())
-            borderType = FRAMEBORDER_TOP;
+            borderType = FrameBorderType::Top;
         else if (mxImpl->maBottom.IsSelected())
-            borderType = FRAMEBORDER_BOTTOM;
+            borderType = FrameBorderType::Bottom;
         else if (mxImpl->maHor.IsSelected())
-            borderType = FRAMEBORDER_HOR;
+            borderType = FrameBorderType::Horizontal;
         else if (mxImpl->maVer.IsSelected())
-            borderType = FRAMEBORDER_VER;
+            borderType = FrameBorderType::Vertical;
         else if (mxImpl->maTLBR.IsSelected())
-            borderType = FRAMEBORDER_TLBR;
+            borderType = FrameBorderType::TLBR;
         else if (mxImpl->maBLTR.IsSelected())
-            borderType = FRAMEBORDER_BLTR;
+            borderType = FrameBorderType::BLTR;
         SelectBorder(borderType);
     }
     for( SelFrameBorderIter aIt( mxImpl->maEnabBorders ); aIt.Is(); ++aIt )
-            mxImpl->SetBorderState( **aIt, FRAMESTATE_SHOW );
+            mxImpl->SetBorderState( **aIt, FrameBorderState::Show );
     Control::GetFocus();
 }
 
@@ -1244,7 +1239,7 @@ void FrameSelector::Resize()
 
 Size FrameSelector::GetOptimalSize() const
 {
-    return LogicToPixel(Size(61, 65), MAP_APPFONT);
+    return LogicToPixel(Size(61, 65), MapUnit::MapAppFont);
 }
 
 

@@ -58,12 +58,12 @@ class AccessibleChartView :
 {
 public:
     AccessibleChartView(SdrView* pView );
-    virtual ~AccessibleChartView();
+    virtual ~AccessibleChartView() override;
 
     AccessibleChartView() = delete;
 
     // ____ WeakComponentHelper (called from XComponent::dispose()) ____
-    virtual void SAL_CALL disposing() override;
+    using AccessibleBase::disposing;
 
     // ____ lang::XInitialization ____
     // 0: view::XSelectionSupplier offers notifications for selection changes and access to the selection itself
@@ -111,8 +111,6 @@ private: // methods
                 which isn't taken into account.
      */
     css::awt::Rectangle GetWindowPosSize() const;
-
-    ExplicitValueProvider* getExplicitValueProvider();
 
 private: // members
     css::uno::WeakReference< css::view::XSelectionSupplier >        m_xSelectionSupplier;

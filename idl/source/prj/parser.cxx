@@ -40,7 +40,7 @@ void SvIdlParser::ReadSvIdl( const OUString & rPath )
         Read( SvHash_module() );
         tools::SvRef<SvMetaModule> aModule = new SvMetaModule;
         ReadModuleHeader(*aModule);
-        rBase.GetModuleList().push_back( aModule );
+        rBase.GetModuleList().push_back( aModule.get() );
     }
 }
 
@@ -114,12 +114,12 @@ void SvIdlParser::ReadModuleElement( SvMetaModule& rModule )
     {
         tools::SvRef<SvMetaSlot> xSlot( new SvMetaSlot() );
 
-        if( xSlot->ReadSvIdl( rBase, rInStm ) )
+        if (ReadSlot(*xSlot))
         {
             if( xSlot->Test( rInStm ) )
             {
                 // announce globally
-                rBase.AppendSlot( xSlot );
+                rBase.AppendSlot( xSlot.get() );
             }
         }
     }
@@ -182,10 +182,8 @@ void SvIdlParser::ReadStruct()
     xStruct->SetType( MetaTypeType::Struct );
     xStruct->SetName( ReadIdentifier() );
     Read( '{' );
-    sal_uInt32 nBeginPos = 0; // can not happen with Tell
-    while( nBeginPos != rInStm.Tell() )
+    while( true )
     {
-        nBeginPos = rInStm.Tell();
         tools::SvRef<SvMetaAttribute> xAttr( new SvMetaAttribute() );
         xAttr->aType = ReadKnownType();
         xAttr->SetName(ReadIdentifier());
@@ -194,7 +192,7 @@ void SvIdlParser::ReadStruct()
         if( !rBase.FindId( xAttr->aSlotId.getString(), &n ) )
             throw SvParseException( rInStm, "no value for identifier <" + xAttr->aSlotId.getString() + "> " );
         xAttr->aSlotId.SetValue(n);
-        xStruct->GetAttrList().push_back( xAttr );
+        xStruct->GetAttrList().push_back( xAttr.get() );
         if( !ReadIfDelimiter() )
             break;
         if( rInStm.GetToken().IsChar() && rInStm.GetToken().GetChar() == '}')
@@ -203,7 +201,7 @@ void SvIdlParser::ReadStruct()
     Read( '}' );
     ReadDelimiter();
     // announce globally
-    rBase.GetTypeList().push_back( xStruct );
+    rBase.GetTypeList().push_back( xStruct.get() );
 }
 
 void SvIdlParser::ReadItem()
@@ -213,7 +211,7 @@ void SvIdlParser::ReadItem()
     xItem->SetRef( ReadKnownType() );
     xItem->SetName( ReadIdentifier() );
     // announce globally
-    rBase.GetTypeList().push_back( xItem );
+    rBase.GetTypeList().push_back( xItem.get() );
 }
 
 void SvIdlParser::ReadEnum()
@@ -231,7 +229,7 @@ void SvIdlParser::ReadEnum()
     }
     Read( '}' );
     // announce globally
-    rBase.GetTypeList().push_back( xEnum );
+    rBase.GetTypeList().push_back( xEnum.get() );
 }
 
 static OString getCommonSubPrefix(const OString &rA, const OString &rB)
@@ -260,7 +258,7 @@ void SvIdlParser::ReadEnumValue( SvMetaTypeEnum& rEnum )
     {
         rEnum.aPrefix = getCommonSubPrefix(rEnum.aPrefix, aEnumVal->GetName());
     }
-    rEnum.aEnumValueList.push_back( aEnumVal );
+    rEnum.aEnumValueList.push_back( aEnumVal.get() );
 }
 
 void SvIdlParser::ReadInterfaceOrShell( SvMetaModule& rModule, MetaTypeType aMetaTypeType )
@@ -286,44 +284,39 @@ void SvIdlParser::ReadInterfaceOrShell( SvMetaModule& rModule, MetaTypeType aMet
         }
         Read( '}' );
     }
-    rModule.aClassList.push_back( aClass );
+    rModule.aClassList.push_back( aClass.get() );
     // announce globally
-    rBase.GetClassList().push_back( aClass );
+    rBase.GetClassList().push_back( aClass.get() );
 }
 
 void SvIdlParser::ReadInterfaceOrShellEntry(SvMetaClass& rClass)
 {
-    sal_uInt32  nTokPos = rInStm.Tell();
-    SvToken&    rTok = rInStm.GetToken_Next();
-
-    if( rTok.Is( SvHash_import() ) )
+    if( ReadIf( SvHash_import() ) )
     {
         SvMetaClass * pClass = ReadKnownClass();
         SvClassElement aEle(pClass);
-        rTok = rInStm.GetToken();
+        SvToken& rTok = rInStm.GetToken();
         if( rTok.IsString() )
         {
             aEle.SetPrefix( rTok.GetString() );
             rInStm.GetToken_Next();
         }
         rClass.aClassElementList.push_back( aEle );
-        return;
     }
     else
     {
-        rInStm.Seek( nTokPos );
         SvMetaType * pType = rBase.ReadKnownType( rInStm );
         tools::SvRef<SvMetaAttribute> xAttr;
         bool bOk = false;
         if( !pType || pType->IsItem() )
         {
             xAttr = new SvMetaSlot( pType );
-            bOk = ReadInterfaceOrShellSlot(static_cast<SvMetaSlot&>(*xAttr));
+            bOk = ReadSlot(static_cast<SvMetaSlot&>(*xAttr));
         }
         else
         {
             xAttr = new SvMetaAttribute( pType );
-            ReadInterfaceOrShellMethodOrAttribute(*xAttr);
+            ReadInterfaceOrShellMethod(*xAttr);
             bOk = true;
         }
         if( bOk )
@@ -334,14 +327,12 @@ void SvIdlParser::ReadInterfaceOrShellEntry(SvMetaClass& rClass)
         {
             if( !xAttr->GetSlotId().IsSet() )
                 xAttr->SetSlotId( SvIdentifier(rBase.GetUniqueId()) );
-            rClass.aAttrList.push_back( xAttr );
-            return;
+            rClass.aAttrList.push_back( xAttr.get() );
         }
     }
-    rInStm.Seek( nTokPos );
 }
 
-bool SvIdlParser::ReadInterfaceOrShellSlot(SvMetaSlot& rSlot)
+bool SvIdlParser::ReadSlot(SvMetaSlot& rSlot)
 {
     sal_uInt32  nTokPos = rInStm.Tell();
     bool        bOk     = true;
@@ -360,10 +351,10 @@ bool SvIdlParser::ReadInterfaceOrShellSlot(SvMetaSlot& rSlot)
             while( nBeginPos != rInStm.Tell() )
             {
                 nBeginPos = rInStm.Tell();
-                rSlot.ReadAttributesSvIdl( rBase, rInStm );
+                ReadSlotAttribute(rSlot);
                 ReadIfDelimiter();
             }
-            bOk = ReadIf( ']' );
+            Read( ']' );
         }
     }
     else
@@ -388,34 +379,130 @@ bool SvIdlParser::ReadInterfaceOrShellSlot(SvMetaSlot& rSlot)
     return bOk;
 }
 
-void SvIdlParser::ReadInterfaceOrShellMethodOrAttribute( SvMetaAttribute& rAttr )
+void SvIdlParser::ReadSlotAttribute( SvMetaSlot& rSlot )
+{
+    bool bOk = false;
+    bOk |= ReadIfBoolAttribute(rSlot.aPseudoSlots, SvHash_PseudoSlots() );
+    bOk |= ReadIfIdAttribute(rSlot.aGroupId, SvHash_GroupId() );
+    bOk |= ReadIfIdAttribute(rSlot.aExecMethod, SvHash_ExecMethod() );
+    bOk |= ReadIfIdAttribute(rSlot.aStateMethod, SvHash_StateMethod() );
+    bOk |= ReadStringSvIdl( SvHash_DisableFlags(), rInStm, rSlot.aDisableFlags );
+    bOk |= ReadIfBoolAttribute(rSlot.aReadOnlyDoc, SvHash_ReadOnlyDoc() );
+    bOk |= ReadIfBoolAttribute(rSlot.aExport, SvHash_Export() );
+
+    bOk |= ReadIfBoolAttribute(rSlot.aToggle, SvHash_Toggle() );
+    bOk |= ReadIfBoolAttribute(rSlot.aAutoUpdate, SvHash_AutoUpdate() );
+    bOk |= ReadIfBoolAttribute(rSlot.aAsynchron, SvHash_Asynchron() );
+    bOk |= ReadIfBoolAttribute(rSlot.aRecordAbsolute, SvHash_RecordAbsolute() );
+
+    if( ReadIfBoolAttribute(rSlot.aRecordPerItem, SvHash_RecordPerItem()) )
+    {
+        if (rSlot.aRecordPerSet.IsSet() || rSlot.aNoRecord.IsSet())
+            throw SvParseException(rInStm, "conflicting attributes");
+        rSlot.SetRecordPerItem( rSlot.aRecordPerItem );
+        bOk = true;
+    }
+    if( ReadIfBoolAttribute(rSlot.aRecordPerSet, SvHash_RecordPerSet() ) )
+    {
+        if (rSlot.aRecordPerItem.IsSet() || rSlot.aNoRecord.IsSet())
+            throw SvParseException(rInStm, "conflicting attributes");
+        rSlot.SetRecordPerSet( rSlot.aRecordPerSet );
+        bOk = true;
+    }
+    if( ReadIfBoolAttribute(rSlot.aNoRecord, SvHash_NoRecord() ) )
+    {
+        if (rSlot.aRecordPerItem.IsSet() || rSlot.aRecordPerSet.IsSet())
+            throw SvParseException(rInStm, "conflicting attributes");
+        rSlot.SetNoRecord( rSlot.aNoRecord );
+        bOk = true;
+    }
+
+    bOk |= ReadIfIdAttribute(rSlot.aPseudoPrefix, SvHash_PseudoPrefix() );
+    bOk |= ReadIfBoolAttribute(rSlot.aMenuConfig, SvHash_MenuConfig() );
+    bOk |= ReadIfBoolAttribute(rSlot.aToolBoxConfig, SvHash_ToolBoxConfig() );
+    bOk |= ReadIfBoolAttribute(rSlot.aAccelConfig, SvHash_AccelConfig() );
+
+    bOk |= ReadIfBoolAttribute(rSlot.aFastCall, SvHash_FastCall() );
+    bOk |= ReadIfBoolAttribute(rSlot.aContainer, SvHash_Container() );
+
+    if( bOk )
+        return;
+
+    if( !rSlot.aSlotType.Is() )
+    {
+        sal_uInt32 nTokPos = rInStm.Tell();
+        SvToken& rTok = rInStm.GetToken_Next();
+        if( rTok.Is( SvHash_SlotType() ) )
+        {
+            if( rInStm.ReadIf( '=' ) )
+            {
+                rSlot.aSlotType = rBase.ReadKnownType( rInStm );
+                if( !rSlot.aSlotType.Is() )
+                    throw SvParseException( rInStm, "SlotType with unknown item type" );
+                if( !rSlot.aSlotType->IsItem() )
+                    throw SvParseException( rInStm, "the SlotType is not a item" );
+                return;
+            }
+        }
+        rInStm.Seek( nTokPos );
+
+    }
+    if( !rSlot.aMethod.Is() )
+    {
+        SvToken& rTok = rInStm.GetToken();
+        if( rTok.IsIdentifier() )
+        {
+            rSlot.aMethod = new SvMetaSlot();
+            sal_uInt32 nTokPos = rInStm.Tell();
+            if( rSlot.aMethod->ReadSvIdl( rBase, rInStm ) )
+            {
+                if( rSlot.aMethod->IsMethod() )
+                {
+                    rSlot.aMethod->SetSlotId( rSlot.GetSlotId() );
+                    if( rSlot.aMethod->Test( rInStm ) )
+                        return;
+                }
+                rInStm.Seek( nTokPos );
+            }
+            rSlot.aMethod.Clear();
+        }
+    }
+}
+
+void SvIdlParser::ReadInterfaceOrShellMethod( SvMetaAttribute& rAttr )
 {
     rAttr.SetName( ReadIdentifier() );
-    rAttr.aSlotId.setString( ReadIdentifier() );
-    sal_uLong n;
-    if( !rBase.FindId( rAttr.aSlotId.getString(), &n ) )
-        throw SvParseException( rInStm, "no value for identifier <" + rAttr.aSlotId.getString() + "> " );
-    rAttr.aSlotId.SetValue(n);
+    ReadSlotId( rAttr.aSlotId );
 
-    Read( '(' );
     // read method arguments
+    Read( '(' );
     tools::SvRef<SvMetaType> xT(new SvMetaType() );
     xT->SetRef(rAttr.GetType() );
     rAttr.aType = xT;
-    sal_uInt32 nBeginPos = 0; // can not happen with Tell
-    while( nBeginPos != rInStm.Tell() )
-    {
-        nBeginPos = rInStm.Tell();
-        tools::SvRef<SvMetaAttribute> xAttr( new SvMetaAttribute() );
-        if( xAttr->ReadSvIdl( rBase, rInStm ) )
-        {
-            if( xAttr->Test( rInStm ) )
-                rAttr.aType->GetAttrList().push_back( xAttr );
-        }
-        ReadIfDelimiter();
-    }
-    Read( ')' );
     rAttr.aType->SetType( MetaTypeType::Method );
+    if (!ReadIf(')'))
+    {
+        while (true)
+        {
+            tools::SvRef<SvMetaAttribute> xParamAttr( new SvMetaAttribute() );
+            xParamAttr->aType = ReadKnownType();
+            xParamAttr->SetName( ReadIdentifier() );
+            ReadSlotId(xParamAttr->aSlotId);
+            rAttr.aType->GetAttrList().push_back( xParamAttr.get() );
+            if (!ReadIfDelimiter())
+                break;
+        }
+        Read(')');
+    }
+}
+
+void SvIdlParser::ReadSlotId(SvIdentifier& rSlotId)
+{
+    rSlotId.setString( ReadIdentifier() );
+    sal_uLong n;
+    if( !rBase.FindId( rSlotId.getString(), &n ) )
+        throw SvParseException( rInStm, "no value for identifier <" + rSlotId.getString() + "> " );
+    rSlotId.SetValue(n);
 }
 
 SvMetaClass * SvIdlParser::ReadKnownClass()
@@ -433,13 +520,54 @@ SvMetaType * SvIdlParser::ReadKnownType()
     for( const auto& aType : rBase.GetTypeList() )
     {
         if( aType->GetName() == aName )
-        {
             return aType;
-        }
     }
     throw SvParseException( rInStm, "wrong typedef: ");
 }
 
+bool SvIdlParser::ReadIfBoolAttribute( SvBOOL& rBool, SvStringHashEntry * pName )
+{
+    sal_uInt32 nTokPos = rInStm.Tell();
+    SvToken& rTok = rInStm.GetToken_Next();
+
+    if( rTok.Is( pName ) )
+    {
+        if( rInStm.ReadIf( '=' ) )
+        {
+            rTok = rInStm.GetToken();
+            if( !rTok.IsBool() )
+                throw SvParseException(rInStm, "xxx");
+            rBool = rTok.GetBool();
+            rInStm.GetToken_Next();
+        }
+        else
+            rBool = true; //default action set to TRUE
+        return true;
+    }
+    rInStm.Seek( nTokPos );
+    return false;
+}
+
+bool SvIdlParser::ReadIfIdAttribute( SvIdentifier& rIdentifier, SvStringHashEntry * pName )
+{
+    sal_uInt32 nTokPos = rInStm.Tell();
+    SvToken& rTok = rInStm.GetToken_Next();
+
+    if( rTok.Is( pName ) )
+    {
+        if( rInStm.ReadIf( '=' ) )
+        {
+            rTok = rInStm.GetToken();
+            if( !rTok.IsIdentifier() )
+                throw SvParseException(rInStm, "expected identifier");
+            rIdentifier.setString(rTok.GetString());
+            rInStm.GetToken_Next();
+        }
+        return true;
+    }
+    rInStm.Seek( nTokPos );
+    return false;
+}
 
 void SvIdlParser::ReadDelimiter()
 {
@@ -479,9 +607,8 @@ OString SvIdlParser::ReadString()
 
 void SvIdlParser::Read(char cChar)
 {
-    if( !(rInStm.GetToken().IsChar() && rInStm.GetToken().GetChar() == cChar ) )
+    if( !ReadIf(cChar) )
         throw SvParseException(rInStm, "expected char '" + OString(cChar) + "'");
-    rInStm.GetToken_Next();
 }
 
 bool SvIdlParser::ReadIf(char cChar)

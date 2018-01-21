@@ -29,6 +29,7 @@
 #include <osl/mutex.hxx>
 #include <cppuhelper/implbase1.hxx>
 #include <comphelper/servicehelper.hxx>
+#include <memory>
 
 class AccessibleStateSetHelperImpl;
 
@@ -62,7 +63,7 @@ public:
 
     AccessibleStateSetHelper ( const AccessibleStateSetHelper& rHelper );
 protected:
-    virtual ~AccessibleStateSetHelper();
+    virtual ~AccessibleStateSetHelper() override;
 public:
 
     //=====  XAccessibleStateSet  ==============================================
@@ -144,7 +145,7 @@ protected:
 
 private:
     /// The implementation of this helper interface.
-    AccessibleStateSetHelperImpl*   mpHelperImpl;
+    std::unique_ptr<AccessibleStateSetHelperImpl>   mpHelperImpl;
 };
 
 }

@@ -164,6 +164,8 @@ public:
                     ContentAttribs( const ContentAttribs& );
                     ~ContentAttribs();  // only for larger Tabs
 
+    void            dumpAsXml(struct _xmlTextWriter* pWriter) const;
+
     SvxTabStop      FindTabStop( sal_Int32 nCurPos, sal_uInt16 nDefTab );
     SfxItemSet&     GetItems()                          { return aAttribSet; }
     const SfxItemSet& GetItems() const { return aAttribSet; }
@@ -188,11 +190,13 @@ private:
     SvxFont         aDefFont;          // faster than ever from the pool!
     bool            bHasEmptyAttribs;
 
-                    CharAttribList( const CharAttribList& ) {;}
+                    CharAttribList( const CharAttribList& ) {}
 
 public:
                     CharAttribList();
                     ~CharAttribList();
+
+    void            dumpAsXml(struct _xmlTextWriter* pWriter) const;
 
     void            DeleteEmptyAttribs(  SfxItemPool& rItemPool );
 
@@ -248,13 +252,15 @@ public:
                     ContentNode(const ContentNode&) = delete;
     ContentNode&    operator=(const ContentNode&) = delete;
 
+    void            dumpAsXml(struct _xmlTextWriter* pWriter) const;
+
     ContentAttribs& GetContentAttribs()     { return aContentAttribs; }
     const ContentAttribs& GetContentAttribs() const { return aContentAttribs; }
     CharAttribList& GetCharAttribs()        { return aCharAttribList; }
     const CharAttribList& GetCharAttribs() const { return aCharAttribList; }
 
     void            ExpandAttribs( sal_Int32 nIndex, sal_Int32 nNewChars, SfxItemPool& rItemPool );
-    void            CollapsAttribs( sal_Int32 nIndex, sal_Int32 nDelChars, SfxItemPool& rItemPool );
+    void            CollapseAttribs( sal_Int32 nIndex, sal_Int32 nDelChars, SfxItemPool& rItemPool );
     void            AppendAttribs( ContentNode* pNextNode );
     void            CopyAndCutAttribs( ContentNode* pPrevNode, SfxItemPool& rPool, bool bKeepEndingAttribs );
 
@@ -373,7 +379,7 @@ struct ExtraPortionInfo
 class TextPortion
 {
 private:
-    ExtraPortionInfo*   pExtraInfos;
+    std::unique_ptr<ExtraPortionInfo> xExtraInfos;
     sal_Int32           nLen;
     Size                aOutSz;
     PortionKind         nKind;
@@ -383,8 +389,7 @@ private:
 
 public:
                 TextPortion( sal_Int32 nL )
-                : pExtraInfos( nullptr )
-                , nLen( nL )
+                : nLen( nL )
                 , aOutSz( -1, -1 )
                 , nKind( PortionKind::TEXT )
                 , nRightToLeftLevel( 0 )
@@ -393,8 +398,7 @@ public:
                 }
 
                 TextPortion( const TextPortion& r )
-                : pExtraInfos( nullptr )
-                , nLen( r.nLen )
+                : nLen( r.nLen )
                 , aOutSz( r.aOutSz )
                 , nKind( r.nKind )
                 , nRightToLeftLevel( r.nRightToLeftLevel )
@@ -421,8 +425,8 @@ public:
 
     bool           HasValidSize() const        { return aOutSz.Width() != (-1); }
 
-    ExtraPortionInfo*   GetExtraInfos() const { return pExtraInfos; }
-    void                SetExtraInfos( ExtraPortionInfo* p ) { delete pExtraInfos; pExtraInfos = p; }
+    ExtraPortionInfo*   GetExtraInfos() const { return xExtraInfos.get(); }
+    void                SetExtraInfos( ExtraPortionInfo* p ) { xExtraInfos.reset(p); }
 };
 
 
@@ -747,7 +751,8 @@ public:
                     EditDoc( SfxItemPool* pItemPool );
                     ~EditDoc();
 
-    void ClearSpellErrors();
+    void            dumpAsXml(struct _xmlTextWriter* pWriter) const;
+    void            ClearSpellErrors();
 
     bool            IsModified() const      { return bModified; }
     void            SetModified( bool b );
@@ -791,8 +796,8 @@ public:
     void            InsertAttrib( const SfxPoolItem& rItem, ContentNode* pNode, sal_Int32 nStart, sal_Int32 nEnd );
     void            InsertAttrib( ContentNode* pNode, sal_Int32 nStart, sal_Int32 nEnd, const SfxPoolItem& rPoolItem );
     void            InsertAttribInSelection( ContentNode* pNode, sal_Int32 nStart, sal_Int32 nEnd, const SfxPoolItem& rPoolItem );
-    bool            RemoveAttribs( ContentNode* pNode, sal_Int32 nStart, sal_Int32 nEnd, sal_uInt16 nWhich = 0 );
-    bool            RemoveAttribs( ContentNode* pNode, sal_Int32 nStart, sal_Int32 nEnd, EditCharAttrib*& rpStarting, EditCharAttrib*& rpEnding, sal_uInt16 nWhich = 0 );
+    bool            RemoveAttribs( ContentNode* pNode, sal_Int32 nStart, sal_Int32 nEnd, sal_uInt16 nWhich );
+    bool            RemoveAttribs( ContentNode* pNode, sal_Int32 nStart, sal_Int32 nEnd, EditCharAttrib*& rpStarting, EditCharAttrib*& rpEnding, sal_uInt16 nWhich );
     static void     FindAttribs( ContentNode* pNode, sal_Int32 nStartPos, sal_Int32 nEndPos, SfxItemSet& rCurSet );
 
     sal_Int32 GetPos(const ContentNode* pNode) const;
@@ -825,7 +830,7 @@ class EditEngineItemPool : public SfxItemPool
 public:
                         EditEngineItemPool( bool bPersistenRefCounts );
 protected:
-                        virtual ~EditEngineItemPool();
+                        virtual ~EditEngineItemPool() override;
 public:
 
     virtual SvStream&   Store( SvStream& rStream ) const override;

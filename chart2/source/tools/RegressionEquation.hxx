@@ -54,7 +54,7 @@ class RegressionEquation :
 {
 public:
     explicit RegressionEquation();
-    virtual ~RegressionEquation();
+    virtual ~RegressionEquation() override;
 
     virtual OUString SAL_CALL
         getImplementationName()
@@ -68,9 +68,6 @@ public:
         getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception )
         override;
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString >
-        getSupportedServiceNames_Static();
 
     /// merge XInterface implementations
      DECLARE_XINTERFACE()

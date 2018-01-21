@@ -32,7 +32,6 @@
 
 #include <toolkit/helper/vclunohelper.hxx>
 #include <unotools/syslocale.hxx>
-#include <svl/smplhint.hxx>
 
 #define CORNER_SPACE     5
 
@@ -134,7 +133,7 @@ void OStartMarker::Paint(vcl::RenderContext& rRenderContext, const Rectangle& /*
         aStartColor.RGBtoHSB(nHue, nSat, nBri);
         nSat += 40;
         Color aEndColor(Color::HSBtoRGB(nHue, nSat, nBri));
-        Gradient aGradient(GradientStyle_LINEAR,aStartColor,aEndColor);
+        Gradient aGradient(GradientStyle::Linear,aStartColor,aEndColor);
         aGradient.SetSteps(static_cast<sal_uInt16>(aSize.Height()));
 
         rRenderContext.DrawGradient(PixelToLogic(aPoly) ,aGradient);
@@ -147,7 +146,7 @@ void OStartMarker::Paint(vcl::RenderContext& rRenderContext, const Rectangle& /*
                              aSize.Height() - nCornerHeight - nCornerHeight));
         ColorChanger aColors(&rRenderContext, COL_WHITE, COL_WHITE);
         rRenderContext.DrawPolyLine( tools::Polygon(rRenderContext.PixelToLogic(aRect)),
-                                    LineInfo(LINE_SOLID, 2));
+                                    LineInfo(LineStyle::Solid, 2));
     }
 }
 
@@ -254,8 +253,7 @@ void OStartMarker::setTitle(const OUString& _sTitle)
 void OStartMarker::Notify(SfxBroadcaster & rBc, SfxHint const & rHint)
 {
     OColorListener::Notify(rBc, rHint);
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if (pSimpleHint && pSimpleHint->GetId() == SFX_HINT_COLORS_CHANGED)
+    if (rHint.GetId() == SFX_HINT_COLORS_CHANGED)
     {
         setColor();
         Invalidate(InvalidateFlags::Children);

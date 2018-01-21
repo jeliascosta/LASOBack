@@ -1,10 +1,10 @@
 #. extracted from sw/uiconfig/swriter/ui
 msgid ""
 msgstr ""
-"Project-Id-Version: LibreOffice 5.4\n"
+"Project-Id-Version: LibreOffice 5.3\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2017-04-10 17:20+0200\n"
-"PO-Revision-Date: 2017-04-01 01:00+0200\n"
+"POT-Creation-Date: 2017-01-12 14:45+0100\n"
+"PO-Revision-Date: 2017-01-07 16:24+0200\n"
 "Last-Translator: Martin Srebotnjak <miles@filmsi.net>\n"
 "Language-Team: sl.libreoffice.org\n"
 "MIME-Version: 1.0\n"
@@ -1544,8 +1544,8 @@ msgctxt ""
 "hyperlink\n"
 "label\n"
 "string.text"
-msgid "Hyperlink"
-msgstr "Hiperpovezava"
+msgid "Link"
+msgstr "Povezava"
 
 #: characterproperties.ui
 msgctxt ""
@@ -1625,8 +1625,8 @@ msgctxt ""
 "label32\n"
 "label\n"
 "string.text"
-msgid "Hyperlink"
-msgstr "Hiperpovezava"
+msgid "Link"
+msgstr "Povezava"
 
 #: charurlpage.ui
 msgctxt ""
@@ -5175,8 +5175,8 @@ msgctxt ""
 "hyperlink\n"
 "label\n"
 "string.text"
-msgid "Hyperlink"
-msgstr "Hiperpovezava"
+msgid "Link"
+msgstr "Povezava"
 
 #: framedialog.ui
 msgctxt ""
@@ -6032,258 +6032,6 @@ msgctxt ""
 "string.text"
 msgid "Edit"
 msgstr "Uredi"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"sum\n"
-"label\n"
-"string.text"
-msgid "Sum"
-msgstr "Vsota"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"round\n"
-"label\n"
-"string.text"
-msgid "Round"
-msgstr "Zaokroži"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"phd\n"
-"label\n"
-"string.text"
-msgid "Percent"
-msgstr "Odstotek"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"sqrt\n"
-"label\n"
-"string.text"
-msgid "Square Root"
-msgstr "Kvadratni koren"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"pow\n"
-"label\n"
-"string.text"
-msgid "Power"
-msgstr "Potenca"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"operators\n"
-"label\n"
-"string.text"
-msgid "Operators"
-msgstr "Operatorji"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"|\n"
-"label\n"
-"string.text"
-msgid "List Separator"
-msgstr "Ločilo v seznamu"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"eq\n"
-"label\n"
-"string.text"
-msgid "Equal"
-msgstr "Enako"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"neq\n"
-"label\n"
-"string.text"
-msgid "Not Equal"
-msgstr "Ni enako"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"leq\n"
-"label\n"
-"string.text"
-msgid "Less Than or Equal"
-msgstr "Manjše ali enako"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"geq\n"
-"label\n"
-"string.text"
-msgid "Greater Than or Equal"
-msgstr "Večje ali enako"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"l\n"
-"label\n"
-"string.text"
-msgid "Less"
-msgstr "Manjše"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"g\n"
-"label\n"
-"string.text"
-msgid "Greater"
-msgstr "Večje"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"or\n"
-"label\n"
-"string.text"
-msgid "Boolean Or"
-msgstr "Logični ali"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"xor\n"
-"label\n"
-"string.text"
-msgid "Boolean Xor"
-msgstr "Logični ekskluzivni ali"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"and\n"
-"label\n"
-"string.text"
-msgid "Boolean And"
-msgstr "Logični in"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"not\n"
-"label\n"
-"string.text"
-msgid "Boolean Not"
-msgstr "Logični ne"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"statistics\n"
-"label\n"
-"string.text"
-msgid "Statistical Functions"
-msgstr "Statistične funkcije"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"mean\n"
-"label\n"
-"string.text"
-msgid "Mean"
-msgstr "Srednja vrednost"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"min\n"
-"label\n"
-"string.text"
-msgid "Minimum"
-msgstr "Najmanj"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"max\n"
-"label\n"
-"string.text"
-msgid "Maximum"
-msgstr "Največ"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"functions\n"
-"label\n"
-"string.text"
-msgid "Functions"
-msgstr "Funkcije"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"sin\n"
-"label\n"
-"string.text"
-msgid "Sine"
-msgstr "Sinus"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"cos\n"
-"label\n"
-"string.text"
-msgid "Cosine"
-msgstr "Kosinus"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"tag\n"
-"label\n"
-"string.text"
-msgid "Tangent"
-msgstr "Tangens"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"asin\n"
-"label\n"
-"string.text"
-msgid "Arcsine"
-msgstr "Arkus sinus"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"acos\n"
-"label\n"
-"string.text"
-msgid "Arccosine"
-msgstr "Arkus kosinus"
-
-#: inputwinmenu.ui
-msgctxt ""
-"inputwinmenu.ui\n"
-"atan\n"
-"label\n"
-"string.text"
-msgid "Arctangent"
-msgstr "Arkus tangens"
 
 #: insertautotextdialog.ui
 msgctxt ""
@@ -7764,7 +7512,7 @@ msgstr "Shr_ani kot en sam dokument"
 #: mailmerge.ui
 msgctxt ""
 "mailmerge.ui\n"
-"individualdocuments\n"
+"idividualdocuments\n"
 "label\n"
 "string.text"
 msgid "Sa_ve as individual documents"
@@ -9537,6 +9285,24 @@ msgstr "Vstavi"
 #: notebookbar.ui
 msgctxt ""
 "notebookbar.ui\n"
+"ulspacing\n"
+"tooltip_text\n"
+"string.text"
+msgid "Indent"
+msgstr "Zamik"
+
+#: notebookbar.ui
+msgctxt ""
+"notebookbar.ui\n"
+"lrspacing\n"
+"tooltip_text\n"
+"string.text"
+msgid "Indent"
+msgstr "Zamik"
+
+#: notebookbar.ui
+msgctxt ""
+"notebookbar.ui\n"
 "box15\n"
 "tooltip_text\n"
 "string.text"
@@ -10059,7 +9825,7 @@ msgstr "Slog"
 #: notebookbar_groups.ui
 msgctxt ""
 "notebookbar_groups.ui\n"
-"formatgrouplabel\n"
+"fomatgrouplabel\n"
 "label\n"
 "string.text"
 msgid "Text"
@@ -10620,8 +10386,8 @@ msgctxt ""
 "hyperlink\n"
 "label\n"
 "string.text"
-msgid "Hyperlink"
-msgstr "Hiperpovezava"
+msgid "Link"
+msgstr "Povezava"
 
 #: objectdialog.ui
 msgctxt ""
@@ -11015,20 +10781,10 @@ msgid "Protect form"
 msgstr "Zaščiti obliko"
 
 #: optcompatpage.ui
-#, fuzzy
 msgctxt ""
 "optcompatpage.ui\n"
 "format\n"
 "12\n"
-"stringlist.text"
-msgid "MS Word-compatible trailing blanks"
-msgstr "Končni presledki, združljivi z MS Word"
-
-#: optcompatpage.ui
-msgctxt ""
-"optcompatpage.ui\n"
-"format\n"
-"13\n"
 "stringlist.text"
 msgid "<User settings>"
 msgstr "<nastavitve uporabnika>"
@@ -12867,6 +12623,42 @@ msgstr "Z_unanje"
 #: pagemargincontrol.ui
 msgctxt ""
 "pagemargincontrol.ui\n"
+"left\n"
+"text\n"
+"string.text"
+msgid "0,00"
+msgstr "0,00"
+
+#: pagemargincontrol.ui
+msgctxt ""
+"pagemargincontrol.ui\n"
+"right\n"
+"text\n"
+"string.text"
+msgid "0,00"
+msgstr "0,00"
+
+#: pagemargincontrol.ui
+msgctxt ""
+"pagemargincontrol.ui\n"
+"top\n"
+"text\n"
+"string.text"
+msgid "0,00"
+msgstr "0,00"
+
+#: pagemargincontrol.ui
+msgctxt ""
+"pagemargincontrol.ui\n"
+"bottom\n"
+"text\n"
+"string.text"
+msgid "0,00"
+msgstr "0,00"
+
+#: pagemargincontrol.ui
+msgctxt ""
+"pagemargincontrol.ui\n"
 "label1\n"
 "label\n"
 "string.text"
@@ -12890,6 +12682,15 @@ msgctxt ""
 "string.text"
 msgid "Landscape"
 msgstr "Ležeče"
+
+#: pageorientationcontrol.ui
+msgctxt ""
+"pageorientationcontrol.ui\n"
+"landscape\n"
+"tooltip_text\n"
+"string.text"
+msgid "Single"
+msgstr "Enojno"
 
 #: pagesizecontrol.ui
 msgctxt ""
@@ -13176,8 +12977,8 @@ msgctxt ""
 "hyperlink\n"
 "label\n"
 "string.text"
-msgid "Hyperlink"
-msgstr "Hiperpovezava"
+msgid "Link"
+msgstr "Povezava"
 
 #: picturedialog.ui
 msgctxt ""
@@ -15105,96 +14906,6 @@ msgctxt ""
 msgid "Setting"
 msgstr "Nastavitev"
 
-#: spellmenu.ui
-msgctxt ""
-"spellmenu.ui\n"
-"ignoreall\n"
-"label\n"
-"string.text"
-msgid "I_gnore All"
-msgstr "Prezri _vse"
-
-#: spellmenu.ui
-msgctxt ""
-"spellmenu.ui\n"
-"addmenu\n"
-"label\n"
-"string.text"
-msgid "_Add to Dictionary"
-msgstr "_Dodaj v slovar"
-
-#: spellmenu.ui
-msgctxt ""
-"spellmenu.ui\n"
-"add\n"
-"label\n"
-"string.text"
-msgid "_Add to Dictionary"
-msgstr "_Dodaj v slovar"
-
-#: spellmenu.ui
-msgctxt ""
-"spellmenu.ui\n"
-"correctmenu\n"
-"label\n"
-"string.text"
-msgid "Always correct _to"
-msgstr "Vedno pop_ravi v"
-
-#: spellmenu.ui
-msgctxt ""
-"spellmenu.ui\n"
-"langselection\n"
-"label\n"
-"string.text"
-msgid "Set Language for Selection"
-msgstr "Določi jezik izbora"
-
-#: spellmenu.ui
-msgctxt ""
-"spellmenu.ui\n"
-"langpara\n"
-"label\n"
-"string.text"
-msgid "Set Language for Paragraph"
-msgstr "Določi jezik odstavka"
-
-#: spellmenu.ui
-msgctxt ""
-"spellmenu.ui\n"
-"accept\n"
-"label\n"
-"string.text"
-msgid "Accept Change"
-msgstr "Sprejmi spremembo"
-
-#: spellmenu.ui
-msgctxt ""
-"spellmenu.ui\n"
-"reject\n"
-"label\n"
-"string.text"
-msgid "Reject Change"
-msgstr "Zavrni spremembo"
-
-#: spellmenu.ui
-msgctxt ""
-"spellmenu.ui\n"
-"next\n"
-"label\n"
-"string.text"
-msgid "Next Change"
-msgstr "Naslednja sprememba"
-
-#: spellmenu.ui
-msgctxt ""
-"spellmenu.ui\n"
-"prev\n"
-"label\n"
-"string.text"
-msgid "Previous Change"
-msgstr "Prejšnja sprememba"
-
 #: splittable.ui
 msgctxt ""
 "splittable.ui\n"
@@ -15498,8 +15209,8 @@ msgctxt ""
 "TablePropertiesDialog\n"
 "title\n"
 "string.text"
-msgid "Table Properties"
-msgstr "Lastnosti tabele"
+msgid "Table Format"
+msgstr "Oblika tabele"
 
 #: tableproperties.ui
 msgctxt ""
@@ -16956,8 +16667,8 @@ msgctxt ""
 "hyperlink\n"
 "label\n"
 "string.text"
-msgid "H_yperlink"
-msgstr "_Hiperpovezava"
+msgid "L_ink"
+msgstr "Pove_zava"
 
 #: tocentriespage.ui
 msgctxt ""

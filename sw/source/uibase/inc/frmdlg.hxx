@@ -52,13 +52,13 @@ class SwFrameDlg : public SfxTabDialog
 public:
     SwFrameDlg(   SfxViewFrame *pFrame, vcl::Window *pParent,
                 const SfxItemSet& rCoreSet,
-                bool bNewFrame  = false,
+                bool bNewFrame,
                 const OUString& sResType = OUString("FrameDialog"),
                 bool bFormat     = false,
                 const OString& sDefPage = OString(),
                 const OUString* pFormatStr  = nullptr);
 
-    virtual ~SwFrameDlg();
+    virtual ~SwFrameDlg() override;
 
     SwWrtShell*  GetWrtShell()   { return m_pWrtShell; }
 };

@@ -13,14 +13,25 @@
 #include <ibase.h>
 
 #include <rtl/ustring.hxx>
+#include <rtl/ustrbuf.hxx>
 
 #include <com/sun/star/sdbc/DataType.hpp>
 #include <com/sun/star/sdbc/SQLException.hpp>
+
+#include <vector>
 
 namespace connectivity
 {
     namespace firebird
     {
+        typedef ::std::vector< OString > OStringVector;
+        // Type Blob has 2 subtypes values
+        // 0 for BLOB, 1 for CLOB
+        // see http://www.firebirdfaq.org/faq48/
+        enum class BlobSubtype {
+            Blob = 0,
+            Clob = 1
+        };
 
         /**
          * Make sure an identifier is safe to use within the databse. Currently
@@ -47,11 +58,11 @@ namespace connectivity
          */
         void evaluateStatusVector(const ISC_STATUS_ARRAY& rStatusVector,
                                   const ::rtl::OUString& aCause,
-                                  const ::com::sun::star::uno::Reference< ::com::sun::star::uno::XInterface >& _rxContext)
-                throw (::com::sun::star::sdbc::SQLException);
+                                  const css::uno::Reference< css::uno::XInterface >& _rxContext)
+                throw (css::sdbc::SQLException);
 
-        sal_Int32 getColumnTypeFromFBType(short aType);
-        ::rtl::OUString getColumnTypeNameFromFBType(short aType);
+        sal_Int32 getColumnTypeFromFBType(short aType, short aSubType);
+        ::rtl::OUString getColumnTypeNameFromFBType(short aType, short aSubType);
 
         /**
          * Internally (i.e. in RDB$FIELD_TYPE) firebird stores the data type
@@ -64,6 +75,9 @@ namespace connectivity
         void mallocSQLVAR(XSQLDA* pSqlda);
 
         void freeSQLVAR(XSQLDA* pSqlda);
+
+        OUString escapeWith( const OUString& sText, const char aKey, const char aEscapeChar);
+        sal_Int64 pow10Integer( int nDecimalCount );
     }
 }
 #endif // INCLUDED_CONNECTIVITY_SOURCE_DRIVERS_FIREBIRD_UTIL_HXX

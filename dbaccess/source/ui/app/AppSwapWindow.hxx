@@ -37,13 +37,13 @@ namespace dbaui
 
         void ImplInitSettings();
 
-        DECL_LINK_TYPED( OnContainerSelectHdl, SvtIconChoiceCtrl*, void );
-        DECL_LINK_TYPED( ChangeToLastSelected, void*, void );
+        DECL_LINK( OnContainerSelectHdl, SvtIconChoiceCtrl*, void );
+        DECL_LINK( ChangeToLastSelected, void*, void );
     protected:
         virtual void DataChanged(const DataChangedEvent& rDCEvt) override;
     public:
         OApplicationSwapWindow( vcl::Window* _pParent, OAppBorderWindow& _rBorderWindow );
-        virtual ~OApplicationSwapWindow();
+        virtual ~OApplicationSwapWindow() override;
         // Window overrides
         virtual void dispose() override;
         virtual void Resize() override;

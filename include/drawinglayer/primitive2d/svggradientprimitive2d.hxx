@@ -108,7 +108,6 @@ namespace drawinglayer
             /// how to spread
             SpreadMethod                maSpreadMethod;
 
-            /// bitfield
             bool                        mbPreconditionsChecked : 1;
             bool                        mbCreatesContent : 1;
             bool                        mbSingleEntry : 1;
@@ -121,7 +120,7 @@ namespace drawinglayer
 
         protected:
             /// local helpers
-            Primitive2DContainer createSingleGradientEntryFill() const;
+            void createSingleGradientEntryFill(Primitive2DContainer& rContainer) const;
             virtual void createAtom(
                 Primitive2DContainer& rTargetColor,
                 Primitive2DContainer& rTargetOpacity,
@@ -136,7 +135,8 @@ namespace drawinglayer
                 const SvgGradientEntryVector& rEntries,
                 sal_Int32 nOffset) const;
             virtual void checkPreconditions();
-            Primitive2DContainer createResult(
+            void createResult(
+                Primitive2DContainer& rContainer,
                 const Primitive2DContainer& rTargetColor,
                 const Primitive2DContainer& rTargetOpacity,
                 const basegfx::B2DHomMatrix& rUnitGradientToObject,
@@ -197,7 +197,7 @@ namespace drawinglayer
             virtual void checkPreconditions() override;
 
             /// local decomposition.
-            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
 
         public:
             /// constructor
@@ -209,7 +209,7 @@ namespace drawinglayer
                 const basegfx::B2DPoint& rEnd,
                 bool bUseUnitCoordinates,
                 SpreadMethod aSpreadMethod = SpreadMethod::Pad);
-            virtual ~SvgLinearGradientPrimitive2D();
+            virtual ~SvgLinearGradientPrimitive2D() override;
 
             /// data read access
             const basegfx::B2DPoint& getEnd() const { return maEnd; }
@@ -248,7 +248,6 @@ namespace drawinglayer
             // internal helper for case SpreadMethod::Reflect
             SvgGradientEntryVector                  maMirroredGradientEntries;
 
-            /// bitfield
             bool                                    mbFocalSet : 1;
 
             /// local helpers
@@ -266,7 +265,7 @@ namespace drawinglayer
             virtual void checkPreconditions() override;
 
             /// local decomposition.
-            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
 
         public:
             /// constructor
@@ -279,7 +278,7 @@ namespace drawinglayer
                 bool bUseUnitCoordinates,
                 SpreadMethod aSpreadMethod = SpreadMethod::Pad,
                 const basegfx::B2DPoint* pFocal = nullptr);
-            virtual ~SvgRadialGradientPrimitive2D();
+            virtual ~SvgRadialGradientPrimitive2D() override;
 
             /// data read access
             double getRadius() const { return mfRadius; }
@@ -321,7 +320,7 @@ namespace drawinglayer
         protected:
 
             /// local decomposition.
-            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
 
         public:
             /// constructor
@@ -383,7 +382,7 @@ namespace drawinglayer
         protected:
 
             /// local decomposition.
-            virtual Primitive2DContainer create2DDecomposition(const geometry::ViewInformation2D& rViewInformation) const override;
+            virtual void create2DDecomposition(Primitive2DContainer& rContainer, const geometry::ViewInformation2D& rViewInformation) const override;
 
         public:
             /// constructor
@@ -393,7 +392,7 @@ namespace drawinglayer
             SvgRadialAtomPrimitive2D(
                 const basegfx::BColor& aColorA, double fScaleA,
                 const basegfx::BColor& aColorB, double fScaleB);
-            virtual ~SvgRadialAtomPrimitive2D();
+            virtual ~SvgRadialAtomPrimitive2D() override;
 
             /// data read access
             const basegfx::BColor& getColorA() const { return maColorA; }

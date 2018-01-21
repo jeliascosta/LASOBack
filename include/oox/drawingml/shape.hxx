@@ -123,7 +123,7 @@ public:
     Shape3DProperties&              get3DProperties() { return *mp3DPropertiesPtr; }
     const Shape3DProperties&        get3DProperties() const { return *mp3DPropertiesPtr; }
 
-    table::TablePropertiesPtr       getTableProperties();
+    table::TablePropertiesPtr const & getTableProperties();
 
     EffectProperties&               getEffectProperties() const { return *mpEffectPropertiesPtr; }
 
@@ -138,6 +138,7 @@ public:
 
     void                            setRotation( sal_Int32 nRotation ) { mnRotation = nRotation; }
     void                            setFlip( bool bFlipH, bool bFlipV ) { mbFlipH = bFlipH; mbFlipV = bFlipV; }
+    void                            applyParentTextFlipV(bool bTextFlipV) { mbInheritedTextFlipV = bTextFlipV; }
     void                            addChild( const ShapePtr& rChildPtr ) { maChildren.push_back( rChildPtr ); }
     std::vector< ShapePtr >&        getChildren() { return maChildren; }
 
@@ -184,15 +185,14 @@ public:
                             const Theme* pTheme,
                             const css::uno::Reference< css::drawing::XShapes >& rxShapes,
                             basegfx::B2DHomMatrix& aTransformation,
-                            const css::awt::Rectangle* pShapeRect = nullptr,
-                            ShapeIdMap* pShapeMap = nullptr );
+                            const css::awt::Rectangle* pShapeRect = nullptr );
 
     void                setXShape( const css::uno::Reference< css::drawing::XShape >& rXShape )
                             { mxShape = rXShape; };
     const css::uno::Reference< css::drawing::XShape > &
                         getXShape() const { return mxShape; }
 
-    virtual void        applyShapeReference( const Shape& rReferencedShape, bool bUseText = true );
+    void                applyShapeReference( const Shape& rReferencedShape, bool bUseText = true );
     const ::std::vector<OUString>&
                         getExtDrawings() { return maExtDrawings; }
     void                addExtDrawingRelId( const OUString &rRelId ) { maExtDrawings.push_back( rRelId ); }
@@ -216,7 +216,7 @@ public:
 
 protected:
 
-    css::uno::Reference< css::drawing::XShape >
+    css::uno::Reference< css::drawing::XShape > const &
                         createAndInsert(
                             ::oox::core::XmlFilterBase& rFilterBase,
                             const OUString& rServiceName,
@@ -316,6 +316,7 @@ private:
     sal_Int32                       mnRotation;
     bool                            mbFlipH;
     bool                            mbFlipV;
+    bool                            mbInheritedTextFlipV; // Used by group shapes only
     bool                            mbHidden;
     bool                            mbHiddenMasterShape; // master shapes can be hidden in layout slides
                                                          // we need separate flag because we don't want

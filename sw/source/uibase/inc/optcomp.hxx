@@ -50,8 +50,8 @@ private:
     sal_uLong                   m_nSavedOptions;
 
     // handler
-    DECL_LINK_TYPED(SelectHdl, ListBox&, void);
-    DECL_LINK_TYPED(UseAsDefaultHdl, Button*, void);
+    DECL_LINK(SelectHdl, ListBox&, void);
+    DECL_LINK(UseAsDefaultHdl, Button*, void);
 
     // private methods
     void                    InitControls( const SfxItemSet& rSet );
@@ -61,7 +61,7 @@ private:
 
 public:
     SwCompatibilityOptPage( vcl::Window* pParent, const SfxItemSet& rSet );
-    virtual ~SwCompatibilityOptPage();
+    virtual ~SwCompatibilityOptPage() override;
     virtual void            dispose() override;
 
     static VclPtr<SfxTabPage> Create( vcl::Window* pParent, const SfxItemSet* rAttrSet );

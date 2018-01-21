@@ -37,12 +37,6 @@
 namespace svtools { class AsynchronLink; }
 
 class SfxViewFrame;
-struct MarkData_Impl
-{
-    OUString aMark;
-    OUString aUserData;
-    SfxViewFrame* pFrame;
-};
 
 class SfxBasicManagerHolder;
 
@@ -80,7 +74,6 @@ struct SfxObjectShell_Impl : public ::sfx2::IMacroDocumentAccess
                         bIsSaving:1,
                         bPasswd:1,
                         bIsNamedVisible:1,
-                        bIsTemplate:1,
                         bIsAbortingImport:1,  // Import operation should be canceled.
                         bImportDone : 1, // Import finished already? For auto reload of Docs.
                         bInPrepareClose : 1,
@@ -110,12 +103,10 @@ struct SfxObjectShell_Impl : public ::sfx2::IMacroDocumentAccess
     sal_uInt16          nEventId;           // If Open/Create as to be sent
                                             // before Activate
     AutoReloadTimer_Impl *pReloadTimer;
-    MarkData_Impl*      pMarkData;
     SfxLoadedFlags      nLoadedFlags;
     SfxLoadedFlags      nFlagsInProgress;
     bool                bModalMode;
     bool                bRunningMacro;
-    bool                bReloadAvailable;
     sal_uInt16          nAutoLoadLocks;
     SfxObjectShellFlags eFlags;
     bool                bReadOnlyUI;

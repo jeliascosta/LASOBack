@@ -25,7 +25,7 @@
 #include <vcl/settings.hxx>
 
 
-#include "ctfonts.hxx"
+#include "quartz/ctfonts.hxx"
 #include "impfont.hxx"
 #ifdef MACOSX
 #include "osx/saldata.hxx"
@@ -48,7 +48,9 @@ CoreTextStyle::CoreTextStyle( const FontSelectPattern& rFSD )
     : mpFontData( static_cast<CoreTextFontFace const *>(rFSD.mpFontData) )
     , mfFontStretch( 1.0 )
     , mfFontRotation( 0.0 )
+    , maFontSelData( rFSD )
     , mpStyleDict( nullptr )
+    , mpHbFont( nullptr )
 {
     const FontSelectPattern* const pReqFont = &rFSD;
 
@@ -115,20 +117,32 @@ CoreTextStyle::~CoreTextStyle()
 {
     if( mpStyleDict )
         CFRelease( mpStyleDict );
+    if( mpHbFont )
+        hb_font_destroy( mpHbFont );
 }
 
-void CoreTextStyle::GetFontMetric( ImplFontMetricDataPtr& rxFontMetric ) const
+void CoreTextStyle::GetFontMetric( ImplFontMetricDataRef& rxFontMetric ) const
 {
     // get the matching CoreText font handle
     // TODO: is it worth it to cache the CTFontRef in SetFont() and reuse it here?
     CTFontRef aCTFontRef = static_cast<CTFontRef>(CFDictionaryGetValue( mpStyleDict, kCTFontAttributeName ));
 
-    const CGFloat fAscent = CTFontGetAscent( aCTFontRef );
-    const CGFloat fCapHeight = CTFontGetCapHeight( aCTFontRef );
-    rxFontMetric->SetAscent( lrint( fAscent ) );
-    rxFontMetric->SetDescent( lrint( CTFontGetDescent( aCTFontRef )) );
-    rxFontMetric->SetExternalLeading( lrint( CTFontGetLeading( aCTFontRef )) );
-    rxFontMetric->SetInternalLeading( lrint( fAscent - fCapHeight ) );
+    int nBufSize = 0;
+
+    nBufSize = mpFontData->GetFontTable("hhea", nullptr);
+    uint8_t* pHheaBuf = new uint8_t[nBufSize];
+    nBufSize = mpFontData->GetFontTable("hhea", pHheaBuf);
+    std::vector<uint8_t> rHhea(pHheaBuf, pHheaBuf + nBufSize);
+
+    nBufSize = mpFontData->GetFontTable("OS/2", nullptr);
+    uint8_t* pOS2Buf = new uint8_t[nBufSize];
+    nBufSize = mpFontData->GetFontTable("OS/2", pOS2Buf);
+    std::vector<uint8_t> rOS2(pOS2Buf, pOS2Buf + nBufSize);
+
+    rxFontMetric->ImplCalcLineSpacing(rHhea, rOS2, CTFontGetUnitsPerEm(aCTFontRef));
+
+    delete[] pHheaBuf;
+    delete[] pOS2Buf;
 
     // since ImplFontMetricData::mnWidth is only used for stretching/squeezing fonts
     // setting this width to the pixel height of the fontsize is good enough
@@ -139,6 +153,19 @@ void CoreTextStyle::GetFontMetric( ImplFontMetricDataPtr& rxFontMetric ) const
     rxFontMetric->SetScalableFlag( true );
     rxFontMetric->SetTrueTypeFlag( true ); // Not sure, but this field is used only for Windows so far
     rxFontMetric->SetKernableFlag( true );
+
+    UniChar nKashidaCh = 0x0640;
+    CGGlyph nKashidaGid = 0;
+    if (CTFontGetGlyphsForCharacters(aCTFontRef, &nKashidaCh, &nKashidaGid, 1))
+    {
+SAL_WNODEPRECATED_DECLARATIONS_PUSH
+            // 'kCTFontHorizontalOrientation' is deprecated: first deprecated in
+            // macOS 10.11
+        double nKashidaAdv = CTFontGetAdvancesForGlyphs(aCTFontRef,
+                kCTFontHorizontalOrientation, &nKashidaGid, nullptr, 1);
+SAL_WNODEPRECATED_DECLARATIONS_POP
+        rxFontMetric->SetMinKashida(lrint(nKashidaAdv));
+    }
 }
 
 bool CoreTextStyle::GetGlyphBoundRect( sal_GlyphId aGlyphId, Rectangle& rRect ) const
@@ -150,12 +177,16 @@ bool CoreTextStyle::GetGlyphBoundRect( sal_GlyphId aGlyphId, Rectangle& rRect ) 
     SAL_WNODEPRECATED_DECLARATIONS_PUSH //TODO: 10.11 kCTFontDefaultOrientation
     const CTFontOrientation aFontOrientation = kCTFontDefaultOrientation; // TODO: horz/vert
     SAL_WNODEPRECATED_DECLARATIONS_POP
-    const CGRect aCGRect = CTFontGetBoundingRectsForGlyphs( aCTFontRef, aFontOrientation, &nCGGlyph, nullptr, 1 );
+    CGRect aCGRect = CTFontGetBoundingRectsForGlyphs(aCTFontRef, aFontOrientation, &nCGGlyph, nullptr, 1);
+
+    // Apply font rotation to non-upright glyphs.
+    if (mfFontRotation && !(aGlyphId & GF_ROTMASK))
+        aCGRect = CGRectApplyAffineTransform(aCGRect, CGAffineTransformMakeRotation(mfFontRotation));
 
     rRect.Left()   = lrint( aCGRect.origin.x );
-    rRect.Top()    = lrint( aCGRect.origin.y );
+    rRect.Top()    = lrint(-aCGRect.origin.y - aCGRect.size.height );
     rRect.Right()  = lrint( aCGRect.origin.x + aCGRect.size.width );
-    rRect.Bottom() = lrint( aCGRect.origin.y + aCGRect.size.height );
+    rRect.Bottom() = lrint(-aCGRect.origin.y );
     return true;
 }
 
@@ -218,6 +249,19 @@ bool CoreTextStyle::GetGlyphOutline( sal_GlyphId aGlyphId, basegfx::B2DPolyPolyg
     CGGlyph nCGGlyph = aGlyphId & GF_IDXMASK;
     // XXX: this is broken if the glyph came from fallback font
     CTFontRef pCTFont = static_cast<CTFontRef>(CFDictionaryGetValue( mpStyleDict, kCTFontAttributeName ));
+
+    SAL_WNODEPRECATED_DECLARATIONS_PUSH
+    const CTFontOrientation aFontOrientation = kCTFontDefaultOrientation;
+    SAL_WNODEPRECATED_DECLARATIONS_POP
+    CGRect aCGRect = CTFontGetBoundingRectsForGlyphs(pCTFont, aFontOrientation, &nCGGlyph, nullptr, 1);
+
+    if (!CGRectIsNull(aCGRect) && CGRectIsEmpty(aCGRect))
+    {
+        // CTFontCreatePathForGlyph returns NULL for blank glyphs, but we want
+        // to return true for them.
+        return true;
+    }
+
     CGPathRef xPath = CTFontCreatePathForGlyph( pCTFont, nCGGlyph, nullptr );
     if (!xPath)
     {
@@ -248,7 +292,7 @@ LogicalFontInstance* CoreTextFontFace::CreateFontInstance( /*const*/ FontSelectP
 
 int CoreTextFontFace::GetFontTable( const char pTagName[5], unsigned char* pResultBuf ) const
 {
-    DBG_ASSERT( pTagName[4]=='\0', "CoreTextFontFace::GetFontTable with invalid tagname!\n" );
+    SAL_WARN_IF( pTagName[4]!='\0', "vcl", "CoreTextFontFace::GetFontTable with invalid tagname!\n" );
 
     const CTFontTableTag nTagCode = (pTagName[0]<<24) + (pTagName[1]<<16) + (pTagName[2]<<8) + (pTagName[3]<<0);
 
@@ -336,6 +380,20 @@ FontAttributes DevFontFromCTFontDescriptor( CTFontDescriptorRef pFD, bool* bFont
 
     // get font attributes
     CFDictionaryRef pAttrDict = static_cast<CFDictionaryRef>(CTFontDescriptorCopyAttribute( pFD, kCTFontTraitsAttribute ));
+
+    if (bFontEnabled && *bFontEnabled && SalLayout::UseCommonLayout())
+    {
+        // Ignore font formats not supported by CommonSalLayout.
+        int nFormat;
+        CFNumberRef pFormat = static_cast<CFNumberRef>(CTFontDescriptorCopyAttribute(pFD, kCTFontFormatAttribute));
+        CFNumberGetValue(pFormat, kCFNumberIntType, &nFormat);
+        if (nFormat == kCTFontFormatUnrecognized || nFormat == kCTFontFormatPostScript || nFormat == kCTFontFormatBitmap)
+        {
+            SAL_INFO("vcl.fonts", "Ignoring font with unsupported format: " << rDFA.GetFamilyName());
+            *bFontEnabled = false;
+        }
+        CFRelease(pFormat);
+    }
 
     // get symbolic trait
     // TODO: use other traits such as MonoSpace/Condensed/Expanded or Vertical too

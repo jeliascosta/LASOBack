@@ -82,7 +82,7 @@ private:
     css::uno::Sequence< css::uno::Any > m_aOutplaceFrameProps;
 
 
-    css::uno::Reference< css::frame::XFrame > GetDocFrame();
+    css::uno::Reference< css::frame::XFrame > const & GetDocFrame();
     bool LoadDocToFrame( bool );
 
     css::awt::Rectangle CalculateBorderedArea( const css::awt::Rectangle& aRect );
@@ -115,7 +115,7 @@ public:
 
     DocumentHolder( const css::uno::Reference< css::uno::XComponentContext >& xContext,
                     OCommonEmbeddedObject* pEmbObj );
-    virtual ~DocumentHolder();
+    virtual ~DocumentHolder() override;
 
     OCommonEmbeddedObject* GetEmbedObject() { return m_pEmbedObj; }
 

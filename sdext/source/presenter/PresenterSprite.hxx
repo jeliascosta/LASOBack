@@ -32,11 +32,11 @@ namespace sdext { namespace presenter {
     to show the sprite when its size is not yet defined (results in a crash)
     and hiding a sprite before disposing it (results in zombie sprites.)
 */
-class PresenterSprite
+class PresenterSprite final
 {
 public:
     PresenterSprite();
-    virtual ~PresenterSprite();
+    ~PresenterSprite();
     PresenterSprite(const PresenterSprite&) = delete;
     PresenterSprite& operator=(const PresenterSprite&) = delete;
 
@@ -63,7 +63,6 @@ private:
     css::geometry::RealSize2D maSize;
     css::geometry::RealPoint2D maLocation;
     bool mbIsVisible;
-    double mnPriority;
     double mnAlpha;
 
     void ProvideSprite();

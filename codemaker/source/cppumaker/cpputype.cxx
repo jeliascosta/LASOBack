@@ -443,7 +443,7 @@ void CppuType::dumpDependedTypes(
     if (!options.isValid("-nD")) {
         codemaker::cppumaker::Dependencies::Map const & map
             = m_dependencies.getMap();
-        for (const std::pair<OUString,codemaker::cppumaker::Dependencies::Kind>& entry : map)
+        for (const auto& entry : map)
         {
             produce(entry.first, m_typeMgr, generated, options);
         }
@@ -2851,8 +2851,8 @@ void ExceptionType::dumpHppFile(
         }
         out << "}\n\n";
     }
-    out << indent() << id_ << "::" << id_ << "(" << id_
-        << " const & the_other)";
+    out << "#if !defined LIBO_INTERNAL_ONLY\n" << indent() << id_ << "::" << id_
+        << "(" << id_ << " const & the_other)";
     bFirst = true;
     if (!base.isEmpty()) {
         out << ": " << codemaker::cpp::scopedCppName(u2b(base))
@@ -2882,7 +2882,7 @@ void ExceptionType::dumpHppFile(
     }
     out << indent() << "return *this;\n";
     dec();
-    out << indent() << "}\n\n";
+    out << indent() << "}\n#endif\n\n";
     if (codemaker::cppumaker::dumpNamespaceClose(out, name_, false)) {
         out << "\n";
     }
@@ -3066,10 +3066,11 @@ void ExceptionType::dumpDeclaration(FileStream & out) {
         }
         out << ");\n\n";
     }
-    out << indent() << "inline CPPU_GCC_DLLPRIVATE " << id_ << "(" << id_
+    out << "#if !defined LIBO_INTERNAL_ONLY\n" << indent()
+        << "inline CPPU_GCC_DLLPRIVATE " << id_ << "(" << id_
         << " const &);\n\n" << indent() << "inline CPPU_GCC_DLLPRIVATE ~"
         << id_ << "();\n\n" << indent() << "inline CPPU_GCC_DLLPRIVATE " << id_
-        << " & operator =(" << id_ << " const &);\n\n";
+        << " & operator =(" << id_ << " const &);\n#endif\n\n";
     for (std::vector< unoidl::ExceptionTypeEntity::Member >::const_iterator i(
              entity_->getDirectMembers().begin());
          i != entity_->getDirectMembers().end(); ++i)
@@ -3620,10 +3621,12 @@ void ServiceType::dumpHppFile(
                                 u2b(j.name), "param",
                                 codemaker::cpp::IdentifierTranslationMode::NonGlobal));
                         sal_Int32 rank;
-                        if (m_typeMgr->getSort(
-                                b2u(codemaker::UnoType::decompose(
-                                        u2b(j.type), &rank)))
-                            == codemaker::UnoType::Sort::Char)
+                        if (resolveOuterTypedefs(j.type) == "any") {
+                            o << "= " << param;
+                        } else if (m_typeMgr->getSort(
+                                       b2u(codemaker::UnoType::decompose(
+                                               u2b(j.type), &rank)))
+                                   == codemaker::UnoType::Sort::Char)
                         {
                             o << "= ::css::uno::Any(&" << param
                               << ", ::cppu::UnoType< ";

@@ -75,7 +75,6 @@ public: // Methods
     explicit CUtListElmt(pCUtListElmt pPrev) { InsertAfter(pPrev); }
     explicit CUtListElmt(pCUtList pList);
     virtual ~CUtListElmt();
-    bool OnList() { return cpNext != nullptr; }
     void MakeNotOnList() { cpNext = nullptr; } // Same as Remove but doesn't
                                             // patch up list
     pCUtListElmt GetNext() const { return cpNext; }
@@ -115,7 +114,7 @@ private: // Data
 class CUtOwningList : public CUtList
 {
 public: // Methods
-    virtual ~CUtOwningList();
+    virtual ~CUtOwningList() override;
 };
 }//end namespace OpenStormBento
 #endif

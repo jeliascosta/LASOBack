@@ -43,9 +43,11 @@
 #include <svl/zformat.hxx>
 #include <svl/languageoptions.hxx>
 #include <editeng/editstat.hxx>
+#include <formula/errorcodes.hxx>
 
 #include "appluno.hxx"
 #include "xmlimprt.hxx"
+#include "importcontext.hxx"
 #include "document.hxx"
 #include "docsh.hxx"
 #include "docuno.hxx"
@@ -79,17 +81,10 @@
 #include <com/sun/star/document/XDocumentPropertiesSupplier.hpp>
 #include <com/sun/star/frame/XModel.hpp>
 #include <com/sun/star/sheet/XSheetCellRange.hpp>
-#include <com/sun/star/sheet/XCellRangeAddressable.hpp>
-#include <com/sun/star/sheet/XSpreadsheetDocument.hpp>
-#include <com/sun/star/util/XMergeable.hpp>
-#include <com/sun/star/sheet/CellInsertMode.hpp>
-#include <com/sun/star/sheet/XCellRangeMovement.hpp>
 #include <com/sun/star/document/XActionLockable.hpp>
 #include <com/sun/star/util/NumberFormat.hpp>
 #include <com/sun/star/util/XNumberFormatTypes.hpp>
-#include <com/sun/star/sheet/XNamedRanges.hpp>
 #include <com/sun/star/sheet/NamedRangeFlag.hpp>
-#include <com/sun/star/sheet/XNamedRange.hpp>
 #include <com/sun/star/sheet/XLabelRanges.hpp>
 #include <com/sun/star/io/XSeekable.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
@@ -233,12 +228,11 @@ protected:
     ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
 
 public:
-
     ScXMLDocContext_Impl( ScXMLImport& rImport,
         sal_uInt16 nPrfx,
         const OUString& rLName,
         const uno::Reference<xml::sax::XAttributeList>& xAttrList );
-    virtual ~ScXMLDocContext_Impl();
+    virtual ~ScXMLDocContext_Impl() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
         const OUString& rLocalName,
@@ -267,7 +261,7 @@ public:
         const uno::Reference<xml::sax::XAttributeList>& i_xAttrList,
         const uno::Reference<document::XDocumentProperties>& i_xDocProps);
 
-    virtual ~ScXMLFlatDocContext_Impl();
+    virtual ~ScXMLFlatDocContext_Impl() override;
 
     virtual SvXMLImportContext *CreateChildContext(
         sal_uInt16 i_nPrefix, const OUString& i_rLocalName,
@@ -302,16 +296,13 @@ SvXMLImportContext *ScXMLFlatDocContext_Impl::CreateChildContext(
     }
 }
 
-class ScXMLBodyContext_Impl : public SvXMLImportContext
+class ScXMLBodyContext_Impl : public ScXMLImportContext
 {
-    ScXMLImport& GetScImport() { return static_cast<ScXMLImport&>(GetImport()); }
-
 public:
-
     ScXMLBodyContext_Impl( ScXMLImport& rImport, sal_uInt16 nPrfx,
         const OUString& rLName,
         const uno::Reference< xml::sax::XAttributeList > & xAttrList );
-    virtual ~ScXMLBodyContext_Impl();
+    virtual ~ScXMLBodyContext_Impl() override;
 
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
         const OUString& rLocalName,
@@ -321,7 +312,7 @@ public:
 ScXMLBodyContext_Impl::ScXMLBodyContext_Impl( ScXMLImport& rImport,
                                              sal_uInt16 nPrfx, const OUString& rLName,
                                              const uno::Reference< xml::sax::XAttributeList > & /* xAttrList */ ) :
-SvXMLImportContext( rImport, nPrfx, rLName )
+ScXMLImportContext( rImport, nPrfx, rLName )
 {
 }
 
@@ -2837,6 +2828,14 @@ void ScXMLImport::SetStyleToRanges()
                 sal_Int32 nNumberFormat(pStyle->GetNumberFormat());
                 SetType(xProperties, nNumberFormat, nPrevCellType, sPrevCurrency);
 
+                css::uno::Any aAny = xProperties->getPropertyValue("FormatID");
+                sal_uInt64 nKey = 0;
+                if ((aAny >>= nKey) && nKey)
+                {
+                    ScFormatSaveData* pFormatSaveData = ScModelObj::getImplementation(GetModel())->GetFormatSaveData();
+                    pFormatSaveData->maIDToName.insert(std::pair<sal_uInt64, OUString>(nKey, sPrevStyleName));
+                }
+
                 // store first cell of first range for each style, once per sheet
                 uno::Sequence<table::CellRangeAddress> aAddresses(xSheetCellRanges->getRangeAddresses());
                 pStyle->ApplyCondFormat(aAddresses);
@@ -3043,8 +3042,7 @@ sal_Int32 ScXMLImport::GetRangeType(const OUString& sRangeType)
 
 void ScXMLImport::SetLabelRanges()
 {
-    ScMyLabelRanges* pLabelRanges = GetLabelRanges();
-    if (pLabelRanges)
+    if (pMyLabelRanges)
     {
         uno::Reference <beans::XPropertySet> xPropertySet (GetModel(), uno::UNO_QUERY);
         if (xPropertySet.is())
@@ -3060,8 +3058,8 @@ void ScXMLImport::SetLabelRanges()
                 table::CellRangeAddress aLabelRange;
                 table::CellRangeAddress aDataRange;
 
-                ScMyLabelRanges::iterator aItr = pLabelRanges->begin();
-                while (aItr != pLabelRanges->end())
+                ScMyLabelRanges::iterator aItr = pMyLabelRanges->begin();
+                while (aItr != pMyLabelRanges->end())
                 {
                     sal_Int32 nOffset1(0);
                     sal_Int32 nOffset2(0);
@@ -3077,7 +3075,7 @@ void ScXMLImport::SetLabelRanges()
                     }
 
                     delete *aItr;
-                    aItr = pLabelRanges->erase(aItr);
+                    aItr = pMyLabelRanges->erase(aItr);
                 }
             }
         }
@@ -3134,8 +3132,7 @@ public:
 
 void ScXMLImport::SetNamedRanges()
 {
-    ScMyNamedExpressions* pNamedExpressions = GetNamedExpressions();
-    if (!pNamedExpressions)
+    if (!m_pMyNamedExpressions)
         return;
 
     if (!pDoc)
@@ -3143,7 +3140,7 @@ void ScXMLImport::SetNamedRanges()
 
     // Insert the namedRanges
     ScRangeName* pRangeNames = pDoc->GetRangeName();
-    ::std::for_each(pNamedExpressions->begin(), pNamedExpressions->end(), RangeNameInserter(pDoc, *pRangeNames));
+    ::std::for_each(m_pMyNamedExpressions->begin(), m_pMyNamedExpressions->end(), RangeNameInserter(pDoc, *pRangeNames));
 }
 
 void ScXMLImport::SetSheetNamedRanges()
@@ -3410,12 +3407,12 @@ void ScXMLImport::ExtractFormulaNamespaceGrammar(
     reGrammar = eDefaultGrammar;
 }
 
-bool ScXMLImport::IsFormulaErrorConstant( const OUString& rStr ) const
+FormulaError ScXMLImport::GetFormulaErrorConstant( const OUString& rStr ) const
 {
     if (!mpComp)
-        return false;
+        return FormulaError::NONE;
 
-    return mpComp->GetErrorConstant(rStr) > 0;
+    return mpComp->GetErrorConstant(rStr);
 }
 
 ScEditEngineDefaulter* ScXMLImport::GetEditEngine()
@@ -3423,7 +3420,7 @@ ScEditEngineDefaulter* ScXMLImport::GetEditEngine()
     if (!mpEditEngine)
     {
         mpEditEngine.reset(new ScEditEngineDefaulter(pDoc->GetEnginePool()));
-        mpEditEngine->SetRefMapMode(MAP_100TH_MM);
+        mpEditEngine->SetRefMapMode(MapUnit::Map100thMM);
         mpEditEngine->SetEditTextObjectPool(pDoc->GetEditPool());
         mpEditEngine->SetUpdateMode(false);
         mpEditEngine->EnableUndo(false);

@@ -71,6 +71,10 @@ class SwExtraPainter
     bool bGoLeft;
     bool bLineNum;
     inline bool IsClipChg() { return aClip.IsChg(); }
+
+    SwExtraPainter(const SwExtraPainter&) = delete;
+    SwExtraPainter& operator=(const SwExtraPainter&) = delete;
+
 public:
     SwExtraPainter( const SwTextFrame *pFrame, SwViewShell *pVwSh,
         const SwLineNumberInfo &rLnInf, const SwRect &rRct,
@@ -291,7 +295,7 @@ void SwTextFrame::PaintExtraData( const SwRect &rRect ) const
     bool bLineNum = !IsInTab() && rLineInf.IsPaintLineNumbers() &&
                ( !IsInFly() || rLineInf.IsCountInFlys() ) && rLineNum.IsCount();
     sal_Int16 eHor = (sal_Int16)SW_MOD()->GetRedlineMarkPos();
-    if( eHor != text::HoriOrientation::NONE && !IDocumentRedlineAccess::IsShowChanges( rIDRA.GetRedlineMode() ) )
+    if( eHor != text::HoriOrientation::NONE && !IDocumentRedlineAccess::IsShowChanges( rIDRA.GetRedlineFlags() ) )
         eHor = text::HoriOrientation::NONE;
     bool bRedLine = eHor != text::HoriOrientation::NONE;
     if ( bLineNum || bRedLine )
@@ -479,14 +483,14 @@ bool SwTextFrame::PaintEmpty( const SwRect &rRect, bool bCheck ) const
             }
 
             const IDocumentRedlineAccess& rIDRA = rTextNode.getIDocumentRedlineAccess();
-            if( IDocumentRedlineAccess::IsShowChanges( rIDRA.GetRedlineMode() ) )
+            if( IDocumentRedlineAccess::IsShowChanges( rIDRA.GetRedlineFlags() ) )
             {
                 const sal_uInt16 nRedlPos = rIDRA.GetRedlinePos( rTextNode, USHRT_MAX );
                 if( USHRT_MAX != nRedlPos )
                 {
                     SwAttrHandler aAttrHandler;
                     aAttrHandler.Init(  rTextNode.GetSwAttrSet(),
-                                       *rTextNode.getIDocumentSettingAccess(), nullptr );
+                                       *rTextNode.getIDocumentSettingAccess() );
                     SwRedlineItr aRedln( rTextNode, *pFnt, aAttrHandler, nRedlPos, true );
                 }
             }

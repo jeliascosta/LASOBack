@@ -30,9 +30,11 @@ namespace sw {
     }
 }
 
+class SwDoc;
+
 class SwUndoBookmark : public SwUndo
 {
-    const ::std::unique_ptr<SwHistoryBookmark> m_pHistoryBookmark;
+    const std::unique_ptr<SwHistoryBookmark> m_pHistoryBookmark;
 
 protected:
     SwUndoBookmark( SwUndoId nUndoId, const ::sw::mark::IMark& );
@@ -41,7 +43,7 @@ protected:
     void ResetInDoc( SwDoc* );
 
 public:
-    virtual ~SwUndoBookmark();
+    virtual ~SwUndoBookmark() override;
 
     /**
        Returns the rewriter for this undo object.
@@ -82,8 +84,8 @@ class SwUndoRenameBookmark : public SwUndo
     const OUString m_sNewName;
 
 public:
-    SwUndoRenameBookmark( const OUString& rOldName, const OUString& rNewName );
-    virtual ~SwUndoRenameBookmark();
+    SwUndoRenameBookmark( const OUString& rOldName, const OUString& rNewName, const SwDoc* pDoc );
+    virtual ~SwUndoRenameBookmark() override;
 
 private:
     virtual SwRewriter GetRewriter() const override;

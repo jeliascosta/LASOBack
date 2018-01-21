@@ -17,6 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <sal/config.h>
+
+#include <o3tl/any.hxx>
 #include <tools/debug.hxx>
 #include <xmloff/nmspmap.hxx>
 #include <xmloff/xmlnmspe.hxx>
@@ -30,6 +33,7 @@
 #include <com/sun/star/style/XStyleFamiliesSupplier.hpp>
 #include <com/sun/star/style/XStyle.hpp>
 #include <com/sun/star/container/XNameContainer.hpp>
+#include <com/sun/star/beans/NamedValue.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/beans/XPropertyState.hpp>
 #include <com/sun/star/document/XEventsSupplier.hpp>
@@ -41,6 +45,7 @@
 #include <xmloff/maptype.hxx>
 #include <memory>
 #include <set>
+#include "prstylecond.hxx"
 
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
@@ -75,8 +80,54 @@ void XMLStyleExport::exportStyleAttributes( const Reference< XStyle >& )
 {
 }
 
-void XMLStyleExport::exportStyleContent( const Reference< XStyle >& )
+void XMLStyleExport::exportStyleContent( const Reference< XStyle >& rStyle )
 {
+    Reference< XPropertySet > xPropSet( rStyle, UNO_QUERY );
+
+    try
+    {
+        uno::Any aProperty = xPropSet->getPropertyValue( "ParaStyleConditions" );
+        uno::Sequence< beans::NamedValue > aSeq;
+        int i;
+
+        aProperty >>= aSeq;
+
+        for(i = 0; i < aSeq.getLength(); ++i)
+        {
+            beans::NamedValue const& aNamedCond = aSeq[i];
+            OUString aStyleName;
+
+            if ( aNamedCond.Value >>= aStyleName )
+            {
+                if ( aStyleName.getLength() > 0 )
+                {
+                    OUString aExternal = GetParaStyleCondExternal( aNamedCond.Name );
+
+                    if (aExternal.getLength() > 0)
+                    {
+                        bool    bEncoded;
+
+
+                        GetExport().AddAttribute( XML_NAMESPACE_STYLE,
+                                            XML_CONDITION,
+                                            aExternal);
+                        GetExport().AddAttribute( XML_NAMESPACE_STYLE,
+                                            XML_APPLY_STYLE_NAME,
+                                            GetExport().EncodeStyleName( aStyleName,
+                                                                       &bEncoded ) );
+                        SvXMLElementExport aElem( GetExport(),
+                                                  XML_NAMESPACE_STYLE,
+                                                  XML_MAP,
+                                                  true,
+                                                  true );
+                    }
+                }
+            }
+        }
+    }
+    catch( const beans::UnknownPropertyException& )
+    {
+    }
 }
 
 bool XMLStyleExport::exportStyle(
@@ -96,7 +147,7 @@ bool XMLStyleExport::exportStyle(
     if( xPropSetInfo->hasPropertyByName( sIsPhysical ) )
     {
         aAny = xPropSet->getPropertyValue( sIsPhysical );
-        if( !*static_cast<sal_Bool const *>(aAny.getValue()) )
+        if( !*o3tl::doAccess<bool>(aAny) )
             return false;
     }
 
@@ -164,7 +215,7 @@ bool XMLStyleExport::exportStyle(
     if( xPropSetInfo->hasPropertyByName( sIsAutoUpdate ) )
     {
         aAny = xPropSet->getPropertyValue( sIsAutoUpdate );
-        if( *static_cast<sal_Bool const *>(aAny.getValue()) )
+        if( *o3tl::doAccess<bool>(aAny) )
             GetExport().AddAttribute( XML_NAMESPACE_STYLE, XML_AUTO_UPDATE,
                                       XML_TRUE );
     }
@@ -474,7 +525,7 @@ void XMLStyleExport::exportStyleFamily(
             if (xPropSetInfo->hasPropertyByName( sIsPhysical ))
             {
                 Any aAny( xPropSet->getPropertyValue( sIsPhysical ) );
-                if (!*static_cast<sal_Bool const *>(aAny.getValue()))
+                if (!*o3tl::doAccess<bool>(aAny))
                     continue;
             }
 

@@ -85,7 +85,6 @@ static const XMLPropType aPropTypes[XML_FAMILY_TYPE_END][MAX_PROP_TYPES] =
     ENTRY1( END ),                              // XML_FAMILY_TYPE_FILL_IMAGE,
     ENTRY1( END ),                              // XML_FAMILY_TYPE_STROKE_DASH,
     ENTRY1( END ),                              // XML_FAMILY_TYPE_MARKER,
-    ENTRY1( END )                               // XML_FAMILY_TYPE_PRESENTATION_PAGE_LAYOUT,
 };
 
 static const XMLTokenEnum aPropTokens[XML_PROP_TYPE_END] =
@@ -150,7 +149,7 @@ public:
     XMLTypedPropertiesOOoTContext_Impl( XMLTransformerBase& rTransformer,
                            const OUString& rQName );
 
-    virtual ~XMLTypedPropertiesOOoTContext_Impl();
+    virtual ~XMLTypedPropertiesOOoTContext_Impl() override;
 
     using XMLPersAttrListTContext::AddAttribute;
     void AddAttribute( const OUString &sName ,
@@ -235,7 +234,7 @@ public:
                                const XMLPropTypes& rTypes,
                                bool bPersistent );
 
-    virtual ~XMLPropertiesOOoTContext_Impl();
+    virtual ~XMLPropertiesOOoTContext_Impl() override;
 
     rtl::Reference<XMLTransformerContext> CreateChildContext(
             sal_uInt16 nPrefix,
@@ -810,12 +809,13 @@ void XMLPropertiesOOoTContext_Impl::StartElement(
                 XMLPersAttrListTContext *pSymbolImageContext = new XMLPersAttrListTContext(
                     GetTransformer(), GetTransformer().GetNamespaceMap().GetQNameByKey(
                         XML_NAMESPACE_CHART, GetXMLToken( XML_SYMBOL_IMAGE )));
+                rtl::Reference<XMLTransformerContext> xSymbolImageContext(pSymbolImageContext);
 
                 OUString aAttrValue( sAttrValue );
                 if( GetTransformer().ConvertURIToOASIS( aAttrValue, true ))
                 {
                     pSymbolImageContext->AddAttribute( XML_NAMESPACE_XLINK, XML_HREF, aAttrValue );
-                    pContext->AddContent( pSymbolImageContext );
+                    pContext->AddContent(xSymbolImageContext);
                 }
             }
             break;

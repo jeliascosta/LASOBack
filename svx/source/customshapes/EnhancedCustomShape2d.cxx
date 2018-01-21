@@ -651,10 +651,23 @@ void EnhancedCustomShape2d::SetPathSize( sal_Int32 nIndex )
             "svx",
             "ooxml shape, path width: " << nCoordWidth << " height: "
                 << nCoordHeight);
+
+        // Try to set up scale separately, if given only width or height
+        // This is possible case in OOXML when only width or height is non-zero
         if ( nCoordWidth == 0 )
-            fXScale = 1.0;
+        {
+            if ( nWidth )
+                fXScale = (double)aLogicRect.GetWidth() / (double)nWidth;
+            else
+                fXScale = 1.0;
+        }
         if ( nCoordHeight == 0 )
-            fYScale = 1.0;
+        {
+            if ( nHeight )
+                fYScale = (double)aLogicRect.GetHeight() / (double)nHeight;
+            else
+                fYScale = 1.0;
+        }
     }
     if ( (sal_uInt32)nXRef != 0x80000000 && aLogicRect.GetHeight() )
     {
@@ -704,7 +717,7 @@ EnhancedCustomShape2d::EnhancedCustomShape2d( SdrObject* pAObj ) :
     // of the constructed helper SdrObjects. This would lead to problems since the shadow
     // of one helper object would fall on one helper object behind it (e.g. with the
     // eyes of the smiley shape). This is not wanted; instead a single shadow 'behind'
-    // the AutoShape visualisation is wanted. This is done with primitive functionailty
+    // the AutoShape visualisation is wanted. This is done with primitive functionality
     // now in SdrCustomShapePrimitive2D::create2DDecomposition, but only for 2D objects
     // (see there and in EnhancedCustomShape3d::Create3DObject to read more).
     // This exception may be removed later when AutoShapes will create primitives directly.
@@ -810,24 +823,28 @@ EnhancedCustomShape2d::EnhancedCustomShape2d( SdrObject* pAObj ) :
         }
     }
 }
-double EnhancedCustomShape2d::GetEnumFunc( const EnumFunc eFunc ) const
+
+using EnhancedCustomShape::ExpressionFunct;
+
+double EnhancedCustomShape2d::GetEnumFunc( const ExpressionFunct eFunc ) const
 {
     double fRet = 0.0;
     switch( eFunc )
     {
-        case ENUM_FUNC_PI :         fRet = F_PI; break;
-        case ENUM_FUNC_LEFT :       fRet = 0.0; break;
-        case ENUM_FUNC_TOP :        fRet = 0.0; break;
-        case ENUM_FUNC_RIGHT :      fRet = (double)nCoordWidth * fXRatio;   break;
-        case ENUM_FUNC_BOTTOM :     fRet = (double)nCoordHeight * fYRatio; break;
-        case ENUM_FUNC_XSTRETCH :   fRet = nXRef; break;
-        case ENUM_FUNC_YSTRETCH :   fRet = nYRef; break;
-        case ENUM_FUNC_HASSTROKE :  fRet = bStroked ? 1.0 : 0.0; break;
-        case ENUM_FUNC_HASFILL :    fRet = bFilled ? 1.0 : 0.0; break;
-        case ENUM_FUNC_WIDTH :      fRet = nCoordWidth; break;
-        case ENUM_FUNC_HEIGHT :     fRet = nCoordHeight; break;
-        case ENUM_FUNC_LOGWIDTH :   fRet = aLogicRect.GetWidth(); break;
-        case ENUM_FUNC_LOGHEIGHT :  fRet = aLogicRect.GetHeight(); break;
+        case ExpressionFunct::EnumPi :         fRet = F_PI; break;
+        case ExpressionFunct::EnumLeft :       fRet = 0.0; break;
+        case ExpressionFunct::EnumTop :        fRet = 0.0; break;
+        case ExpressionFunct::EnumRight :      fRet = (double)nCoordWidth * fXRatio;   break;
+        case ExpressionFunct::EnumBottom :     fRet = (double)nCoordHeight * fYRatio; break;
+        case ExpressionFunct::EnumXStretch :   fRet = nXRef; break;
+        case ExpressionFunct::EnumYStretch :   fRet = nYRef; break;
+        case ExpressionFunct::EnumHasStroke :  fRet = bStroked ? 1.0 : 0.0; break;
+        case ExpressionFunct::EnumHasFill :    fRet = bFilled ? 1.0 : 0.0; break;
+        case ExpressionFunct::EnumWidth :      fRet = nCoordWidth; break;
+        case ExpressionFunct::EnumHeight :     fRet = nCoordHeight; break;
+        case ExpressionFunct::EnumLogWidth :   fRet = aLogicRect.GetWidth(); break;
+        case ExpressionFunct::EnumLogHeight :  fRet = aLogicRect.GetHeight(); break;
+        default: break;
     }
     return fRet;
 }
@@ -1200,14 +1217,32 @@ bool EnhancedCustomShape2d::SetHandleControllerPosition( const sal_uInt32 nIndex
             fPos1 /= fXScale;
             fPos2 /= fYScale;
 
+            // Used for scaling the adjustment values based on handle positions
+            double fWidth;
+            double fHeight;
+
+            if ( nCoordWidth || nCoordHeight )
+            {
+                fWidth = nCoordWidth;
+                fHeight = nCoordHeight;
+            }
+            else
+            {
+                fWidth = aLogicRect.GetWidth();
+                fHeight = aLogicRect.GetHeight();
+            }
+
             if ( aHandle.nFlags & HandleFlags::SWITCHED )
             {
                 if ( aLogicRect.GetHeight() > aLogicRect.GetWidth() )
                 {
                     double fX = fPos1;
                     double fY = fPos2;
+                    double fTmp = fWidth;
                     fPos1 = fY;
                     fPos2 = fX;
+                    fHeight = fWidth;
+                    fWidth = fTmp;
                 }
             }
 
@@ -1218,11 +1253,22 @@ bool EnhancedCustomShape2d::SetHandleControllerPosition( const sal_uInt32 nIndex
             if ( aHandle.aPosition.Second.Type == EnhancedCustomShapeParameterType::ADJUSTMENT )
                 aHandle.aPosition.Second.Value>>= nSecondAdjustmentValue;
 
-            if ( aHandle.nFlags & HandleFlags::POLAR )
+
+            // DrawingML polar handles set REFR or REFANGLE instead of POLAR
+            if ( aHandle.nFlags & ( HandleFlags::POLAR | HandleFlags::REFR | HandleFlags::REFANGLE ) )
             {
                 double fXRef, fYRef, fAngle;
-                GetParameter( fXRef, aHandle.aPolar.First, false, false );
-                GetParameter( fYRef, aHandle.aPolar.Second, false, false );
+                if ( aHandle.nFlags & HandleFlags::POLAR )
+                {
+                    GetParameter( fXRef, aHandle.aPolar.First, false, false );
+                    GetParameter( fYRef, aHandle.aPolar.Second, false, false );
+                }
+                else
+                {
+                    // DrawingML polar handles don't have reference center.
+                    fXRef = fWidth / 2;
+                    fYRef = fHeight / 2;
+                }
                 const double fDX = fPos1 - fXRef;
                 fAngle = -( atan2( -fPos2 + fYRef, ( ( fDX == 0.0L ) ? 0.000000001 : fDX ) ) / F_PI180 );
                 double fX = ( fPos1 - fXRef );
@@ -1242,6 +1288,21 @@ bool EnhancedCustomShape2d::SetHandleControllerPosition( const sal_uInt32 nIndex
                     if ( fRadius > fMax )
                         fRadius = fMax;
                 }
+                if (aHandle.nFlags & HandleFlags::REFR)
+                {
+                    fRadius *= 100000.0;
+                    fRadius /= sqrt( fWidth * fWidth + fHeight * fHeight );
+                    nFirstAdjustmentValue = aHandle.nRefR;
+                }
+                if (aHandle.nFlags & HandleFlags::REFANGLE)
+                {
+                    if ( fAngle < 0 )
+                        fAngle += 360.0;
+                    // Adjustment value referred by nRefAngle needs to be in 60000th a degree
+                    // from 0 to 21600000.
+                    fAngle *= 60000.0;
+                    nSecondAdjustmentValue = aHandle.nRefAngle;
+                }
                 if ( nFirstAdjustmentValue >= 0 )
                     SetAdjustValueAsDouble( fRadius, nFirstAdjustmentValue );
                 if ( nSecondAdjustmentValue >= 0 )
@@ -1253,13 +1314,13 @@ bool EnhancedCustomShape2d::SetHandleControllerPosition( const sal_uInt32 nIndex
                 {
                     nFirstAdjustmentValue = aHandle.nRefX;
                     fPos1 *= 100000.0;
-                    fPos1 /= nCoordWidth;
+                    fPos1 /= fWidth;
                 }
                 if ( aHandle.nFlags & HandleFlags::REFY )
                 {
                     nSecondAdjustmentValue = aHandle.nRefY;
                     fPos2 *= 100000.0;
-                    fPos2 /= nCoordHeight;
+                    fPos2 /= fHeight;
                 }
                 if ( nFirstAdjustmentValue >= 0 )
                 {

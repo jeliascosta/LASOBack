@@ -44,14 +44,13 @@ const OString aGroupIdent("dBase III");
 ODbaseIndexDialog::ODbaseIndexDialog(vcl::Window * pParent, const OUString& aDataSrcName)
     : ModalDialog(pParent, "DBaseIndexDialog", "dbaccess/ui/dbaseindexdialog.ui")
     , m_aDSN(aDataSrcName)
-    , m_bCaseSensitiv(true)
 {
     get(m_pPB_OK, "ok");
     get(m_pCB_Tables, "table");
     get(m_pIndexes, "frame");
     get(m_pLB_TableIndexes, "tableindex");
     get(m_pLB_FreeIndexes, "freeindex");
-    Size aSize(LogicToPixel(Size(76, 98), MAP_APPFONT));
+    Size aSize(LogicToPixel(Size(76, 98), MapUnit::MapAppFont));
     m_pLB_TableIndexes->set_height_request(aSize.Height());
     m_pLB_TableIndexes->set_width_request(aSize.Width());
     m_pLB_FreeIndexes->set_height_request(aSize.Height());
@@ -103,16 +102,8 @@ bool ODbaseIndexDialog::GetTable(const OUString& _rName, TableInfoList::iterator
             ++_rPosition
         )
     {
-        if (m_bCaseSensitiv)
-        {
-            if (_rPosition->aTableName == _rName)
-                return true;
-        }
-        else
-        {
-            if (_rPosition->aTableName.equalsIgnoreAsciiCase(_rName))
-                return true;
-        }
+        if (_rPosition->aTableName == _rName)
+            return true;
     }
     return false;
 }
@@ -138,7 +129,7 @@ OTableIndex ODbaseIndexDialog::implRemoveIndex(const OUString& _rName, TableInde
             ++aSearch, ++nPos
         )
     {
-        if ( m_bCaseSensitiv ? aSearch->GetIndexFileName() == _rName : aSearch->GetIndexFileName().equalsIgnoreAsciiCase(_rName) )
+        if ( aSearch->GetIndexFileName() == _rName )
         {
             aReturn = *aSearch;
 
@@ -188,7 +179,7 @@ void ODbaseIndexDialog::InsertTableIndex( const OUString& _rTableName, const OTa
     implInsertIndex(_rIndex, aTablePos->aIndexList, *m_pLB_TableIndexes);
 }
 
-IMPL_LINK_NOARG_TYPED( ODbaseIndexDialog, OKClickHdl, Button*, void )
+IMPL_LINK_NOARG( ODbaseIndexDialog, OKClickHdl, Button*, void )
 {
     // let all tables write their INF file
 
@@ -201,7 +192,7 @@ IMPL_LINK_NOARG_TYPED( ODbaseIndexDialog, OKClickHdl, Button*, void )
     EndDialog();
 }
 
-IMPL_LINK_NOARG_TYPED( ODbaseIndexDialog, AddClickHdl, Button*, void )
+IMPL_LINK_NOARG( ODbaseIndexDialog, AddClickHdl, Button*, void )
 {
     OUString aSelection = m_pLB_FreeIndexes->GetSelectEntry();
     OUString aTableName = m_pCB_Tables->GetText();
@@ -211,7 +202,7 @@ IMPL_LINK_NOARG_TYPED( ODbaseIndexDialog, AddClickHdl, Button*, void )
     checkButtons();
 }
 
-IMPL_LINK_NOARG_TYPED( ODbaseIndexDialog, RemoveClickHdl, Button*, void )
+IMPL_LINK_NOARG( ODbaseIndexDialog, RemoveClickHdl, Button*, void )
 {
     OUString aSelection = m_pLB_TableIndexes->GetSelectEntry();
     OUString aTableName = m_pCB_Tables->GetText();
@@ -221,7 +212,7 @@ IMPL_LINK_NOARG_TYPED( ODbaseIndexDialog, RemoveClickHdl, Button*, void )
     checkButtons();
 }
 
-IMPL_LINK_NOARG_TYPED( ODbaseIndexDialog, AddAllClickHdl, Button*, void )
+IMPL_LINK_NOARG( ODbaseIndexDialog, AddAllClickHdl, Button*, void )
 {
     const sal_Int32 nCnt = m_pLB_FreeIndexes->GetEntryCount();
     OUString aTableName = m_pCB_Tables->GetText();
@@ -232,7 +223,7 @@ IMPL_LINK_NOARG_TYPED( ODbaseIndexDialog, AddAllClickHdl, Button*, void )
     checkButtons();
 }
 
-IMPL_LINK_NOARG_TYPED( ODbaseIndexDialog, RemoveAllClickHdl, Button*, void )
+IMPL_LINK_NOARG( ODbaseIndexDialog, RemoveAllClickHdl, Button*, void )
 {
     const sal_Int32 nCnt = m_pLB_TableIndexes->GetEntryCount();
     OUString aTableName = m_pCB_Tables->GetText();
@@ -243,12 +234,12 @@ IMPL_LINK_NOARG_TYPED( ODbaseIndexDialog, RemoveAllClickHdl, Button*, void )
     checkButtons();
 }
 
-IMPL_LINK_NOARG_TYPED( ODbaseIndexDialog, OnListEntrySelected, ListBox&, void )
+IMPL_LINK_NOARG( ODbaseIndexDialog, OnListEntrySelected, ListBox&, void )
 {
     checkButtons();
 }
 
-IMPL_LINK_TYPED( ODbaseIndexDialog, TableSelectHdl, ComboBox&, rComboBox, void )
+IMPL_LINK( ODbaseIndexDialog, TableSelectHdl, ComboBox&, rComboBox, void )
 {
     // search the table
     TableInfoList::iterator aTablePos;

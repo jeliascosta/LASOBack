@@ -61,7 +61,7 @@ public:
     void * address;
 
 private:
-    virtual ~MappedFile();
+    virtual ~MappedFile() override;
 
     sal_uInt8 get8(sal_uInt32 offset) const;
 
@@ -551,7 +551,7 @@ std::vector< OUString > readAnnotations(
 
 ConstantValue readConstant(
     rtl::Reference< MappedFile > const & file, sal_uInt32 offset,
-    sal_uInt32 * newOffset = nullptr, bool * annotated = nullptr)
+    sal_uInt32 * newOffset, bool * annotated)
 {
     assert(file.is());
     int v = file->read8(offset);
@@ -648,7 +648,7 @@ class UnoidlModuleEntity;
 class UnoidlCursor: public MapCursor {
 public:
     UnoidlCursor(
-        rtl::Reference< MappedFile > file,
+        rtl::Reference< MappedFile > const & file,
         rtl::Reference<UnoidlProvider> const & reference1,
         rtl::Reference<UnoidlModuleEntity> const & reference2,
         NestedMap const & map):
@@ -657,7 +657,7 @@ public:
     {}
 
 private:
-    virtual ~UnoidlCursor() throw () {}
+    virtual ~UnoidlCursor() throw () override {}
 
     virtual rtl::Reference< Entity > getNext(OUString * name) override;
 
@@ -699,7 +699,7 @@ public:
     }
 
 private:
-    virtual ~UnoidlModuleEntity() throw () {}
+    virtual ~UnoidlModuleEntity() throw () override {}
 
     virtual std::vector< OUString > getMemberNames() const override;
 

@@ -75,23 +75,22 @@ public:
     osl::Mutex                              maUserEventListMutex;
     oslCondition                            maWaitingYieldCond;
 
-    typedef std::list<const ApplicationEvent*> AppEventList;
-    static AppEventList aAppEventList;
+    static std::list<const ApplicationEvent*> aAppEventList;
 
 public:
     AquaSalInstance();
-    virtual ~AquaSalInstance();
+    virtual ~AquaSalInstance() override;
 
     virtual SalFrame*       CreateChildFrame( SystemParentData* pParent, SalFrameStyleFlags nStyle ) override;
     virtual SalFrame*       CreateFrame( SalFrame* pParent, SalFrameStyleFlags nStyle ) override;
     virtual void            DestroyFrame( SalFrame* pFrame ) override;
     virtual SalObject*      CreateObject( SalFrame* pParent, SystemWindowData* pWindowData,
-                                          bool bShow = true ) override;
+                                          bool bShow ) override;
     virtual void            DestroyObject( SalObject* pObject ) override;
     virtual SalVirtualDevice* CreateVirtualDevice( SalGraphics* pGraphics,
                                                    long &nDX, long &nDY,
                                                    DeviceFormat eFormat,
-                                                   const SystemGraphicsData *pData ) override;
+                                                   const SystemGraphicsData *pData = nullptr ) override;
     virtual SalInfoPrinter* CreateInfoPrinter( SalPrinterQueueInfo* pQueueInfo,
                                                ImplJobSetup* pSetupData ) override;
     virtual void            DestroyInfoPrinter( SalInfoPrinter* pPrinter ) override;
@@ -102,7 +101,6 @@ public:
     virtual void            DeletePrinterQueueInfo( SalPrinterQueueInfo* pInfo ) override;
     virtual OUString        GetDefaultPrinter() override;
     virtual SalTimer*       CreateSalTimer() override;
-    virtual SalI18NImeStatus* CreateI18NImeStatus() override;
     virtual SalSystem*      CreateSalSystem() override;
     virtual SalBitmap*      CreateSalBitmap() override;
     virtual comphelper::SolarMutex* GetYieldMutex() override;

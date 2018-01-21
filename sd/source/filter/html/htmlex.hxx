@@ -66,8 +66,8 @@ private:
     OUString  maURL2;
 
 public:
-                    explicit HtmlErrorContext(vcl::Window *pWin=nullptr);
-                    virtual ~HtmlErrorContext() {};
+                    explicit HtmlErrorContext();
+                    virtual ~HtmlErrorContext() override {};
 
     virtual bool    GetString( sal_uLong nErrId, OUString& rCtxStr ) override;
 
@@ -76,7 +76,7 @@ public:
 };
 
 /// this class exports an Impress Document as a HTML Presentation.
-class HtmlExport
+class HtmlExport final
 {
     std::vector< SdPage* > maPages;
     std::vector< SdPage* > maNotesPages;
@@ -167,7 +167,7 @@ class HtmlExport
     bool    checkForExistingFiles();
     bool    checkFileExists( css::uno::Reference< css::ucb::XSimpleFileAccess3 >& xFileAccess, OUString const & aFileName );
 
-    OUString getDocumentTitle();
+    OUString const & getDocumentTitle();
     bool    SavePresentation();
 
     static OUString CreateLink( const OUString& aLink, const OUString& aText,
@@ -229,7 +229,7 @@ class HtmlExport
                SdDrawDocument* pExpDoc,
                sd::DrawDocShell* pDocShell);
 
-    virtual ~HtmlExport();
+    ~HtmlExport();
 
     static OUString ColorToHTMLString( Color aColor );
     static OUString StringToHTMLString( const OUString& rString );

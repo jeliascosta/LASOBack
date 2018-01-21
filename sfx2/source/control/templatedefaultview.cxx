@@ -23,14 +23,15 @@
 
 VCL_BUILDER_FACTORY(TemplateDefaultView)
 
+static const int gnItemPadding(5); //TODO:: Change padding to 10. It looks really crowded and occupied.
+
 TemplateDefaultView::TemplateDefaultView( Window* pParent)
-    : TemplateLocalView(pParent)
+    : TemplateLocalView(pParent, WB_TABSTOP)
     , mnTextHeight(30)
-    , mnItemPadding(5)//TODO:: Change padding to 10. It looks really crowded and occupied.
 {
     Rectangle aScreen = Application::GetScreenPosSizePixel(Application::GetDisplayBuiltInScreen());
     mnItemMaxSize = std::min(aScreen.GetWidth(),aScreen.GetHeight()) > 800 ? 256 : 192;
-    ThumbnailView::setItemDimensions( mnItemMaxSize, mnItemMaxSize, mnTextHeight, mnItemPadding );
+    ThumbnailView::setItemDimensions( mnItemMaxSize, mnItemMaxSize, mnTextHeight, gnItemPadding );
     updateThumbnailDimensions(mnItemMaxSize);
 
     // startcenter specific settings
@@ -45,7 +46,7 @@ void TemplateDefaultView::reload()
 {
     TemplateLocalView::reload();
     // Set preferred width
-    set_width_request(mnTextHeight + mnItemMaxSize + 2*mnItemPadding);
+    set_width_request(mnTextHeight + mnItemMaxSize + 2*gnItemPadding);
 }
 
 void TemplateDefaultView::showAllTemplates()
@@ -62,9 +63,24 @@ void TemplateDefaultView::KeyInput( const KeyEvent& rKEvt )
     ThumbnailView::KeyInput(rKEvt);
 }
 
+void TemplateDefaultView::MouseButtonDown( const MouseEvent& rMEvt )
+{
+    if( rMEvt.IsLeft() && rMEvt.GetClicks() == 1 )
+    {
+        size_t nPos = ImplGetItem(rMEvt.GetPosPixel());
+        ThumbnailViewItem* pItem = ImplGetItem(nPos);
+        TemplateViewItem* pViewItem = dynamic_cast<TemplateViewItem*>(pItem);
+        if(pViewItem)
+            maOpenTemplateHdl.Call(pViewItem);
+        return;
+    }
+
+    TemplateLocalView::MouseButtonDown(rMEvt);
+}
+
 void TemplateDefaultView::createContextMenu()
 {
-    std::unique_ptr<PopupMenu> pItemMenu(new PopupMenu);
+    ScopedVclPtrInstance<PopupMenu> pItemMenu;
     pItemMenu->InsertItem(MNI_OPEN,SfxResId(STR_OPEN).toString());
     pItemMenu->InsertItem(MNI_EDIT,SfxResId(STR_EDIT_TEMPLATE).toString());
     deselectItems();
@@ -74,7 +90,7 @@ void TemplateDefaultView::createContextMenu()
     Invalidate();
 }
 
-IMPL_LINK_TYPED(TemplateDefaultView, ContextMenuSelectHdl, Menu*, pMenu, void)
+IMPL_LINK(TemplateDefaultView, ContextMenuSelectHdl, Menu*, pMenu, void)
 {
     sal_uInt16 nMenuId = pMenu->GetCurItemId();
 

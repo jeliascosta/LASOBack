@@ -23,6 +23,7 @@
 #include <vcl/decoview.hxx>
 #include <vcl/spinfld.hxx>
 #include <vcl/settings.hxx>
+#include <vcl/uitest/uiobject.hxx>
 
 #include "controldata.hxx"
 #include "spin.hxx"
@@ -337,30 +338,11 @@ void SpinField::ImplInit(vcl::Window* pParent, WinBits nWinStyle)
     }
 }
 
-SpinField::SpinField(WindowType nTyp) :
-    Edit(nTyp)
-{
-    ImplInitSpinFieldData();
-}
-
 SpinField::SpinField(vcl::Window* pParent, WinBits nWinStyle) :
     Edit(WINDOW_SPINFIELD)
 {
     ImplInitSpinFieldData();
     ImplInit(pParent, nWinStyle);
-}
-
-SpinField::SpinField(vcl::Window* pParent, const ResId& rResId) :
-    Edit(WINDOW_SPINFIELD)
-{
-    ImplInitSpinFieldData();
-    rResId.SetRT(RSC_SPINFIELD);
-    WinBits nStyle = ImplInitRes(rResId);
-    ImplInit(pParent, nStyle);
-    ImplLoadRes(rResId);
-
-    if (!(nStyle & WB_HIDE))
-        Show();
 }
 
 SpinField::~SpinField()
@@ -590,11 +572,6 @@ bool SpinField::Notify(NotifyEvent& rNEvt)
     return bDone || Edit::Notify(rNEvt);
 }
 
-void SpinField::Command(const CommandEvent& rCEvt)
-{
-    Edit::Command(rCEvt);
-}
-
 void SpinField::FillLayoutData() const
 {
     if (mbSpin)
@@ -755,7 +732,7 @@ void SpinField::Resize()
             {
                 if (maUpperRect.IsEmpty())
                 {
-                    DBG_ASSERT( !maDropDownRect.IsEmpty(), "SpinField::Resize: SPIN && DROPDOWN, but all empty rects?" );
+                    SAL_WARN_IF( maDropDownRect.IsEmpty(), "vcl", "SpinField::Resize: SPIN && DROPDOWN, but all empty rects?" );
                     aSize.Width() = maDropDownRect.Left();
                 }
                 else
@@ -968,7 +945,7 @@ Size SpinField::CalcSize(sal_Int32 nChars) const
     return aSz;
 }
 
-IMPL_LINK_TYPED( SpinField, ImplTimeout, Timer*, pTimer, void )
+IMPL_LINK( SpinField, ImplTimeout, Timer*, pTimer, void )
 {
     if ( pTimer->GetTimeout() == GetSettings().GetMouseSettings().GetButtonStartRepeat() )
     {
@@ -1040,6 +1017,11 @@ void SpinField::Draw(OutputDevice* pDev, const Point& rPos, const Size& rSize, D
         pDev->Pop();
         pDev->SetSettings(aOldSettings);
     }
+}
+
+FactoryFunction SpinField::GetUITestFactory() const
+{
+    return SpinFieldUIObject::create;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

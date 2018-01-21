@@ -51,11 +51,10 @@ class SVT_DLLPUBLIC SfxErrorHandler : private ErrorHandler
 {
 public:
     SfxErrorHandler(sal_uInt16 nId, sal_uLong lStart, sal_uLong lEnd, ResMgr *pMgr=nullptr);
-    virtual ~SfxErrorHandler();
+    virtual ~SfxErrorHandler() override;
 
 protected:
     bool     GetErrorString(sal_uLong lErrId, OUString &, sal_uInt16&) const;
-    bool     GetMessageString(sal_uLong lErrId, OUString &, sal_uInt16&) const;
 
 private:
 
@@ -65,7 +64,7 @@ private:
     ResMgr              *pMgr;
     ResMgr              *pFreeMgr;
 
-    SVT_DLLPRIVATE void   GetClassString(sal_uLong lErrId, OUString &) const;
+    SVT_DLLPRIVATE static void GetClassString(sal_uLong lErrId, OUString &);
     virtual bool          CreateString( const ErrorInfo *, OUString &, sal_uInt16 &) const override;
 };
 

@@ -21,33 +21,38 @@
 #ifndef INCLUDED_OOX_PPT_TIMENODE_HXX
 #define INCLUDED_OOX_PPT_TIMENODE_HXX
 
-#include <memory>
-#include <vector>
 #include <list>
-#include <rtl/ustring.hxx>
+#include <map>
+#include <memory>
 
-#include <com/sun/star/frame/XModel.hpp>
-#include <com/sun/star/animations/XAnimationNode.hpp>
-#include <oox/helper/propertymap.hxx>
+#include <com/sun/star/uno/Any.hxx>
+#include <com/sun/star/uno/Reference.hxx>
 #include <oox/ppt/slidetransition.hxx>
 #include <oox/ppt/slidepersist.hxx>
 #include <oox/ppt/animationspersist.hxx>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
+
+namespace com { namespace sun { namespace star {
+    namespace animations { class XAnimationNode; }
+} } }
+
+namespace oox { namespace core { class XmlFilterBase; } }
 
 namespace oox { namespace ppt {
 
     class TimeNode;
-    class SlideTransition;
 
     typedef std::shared_ptr< TimeNode > TimeNodePtr;
     typedef std::list< TimeNodePtr > TimeNodePtrList;
 
-    class TimeNode
+    class TimeNode final
     {
     public:
         typedef ::std::map< OUString, css::uno::Any > UserDataMap;
 
         TimeNode( sal_Int16 nNodeType );
-        virtual ~TimeNode();
+        ~TimeNode();
 
         NodePropertyMap & getNodeProperties() { return maNodeProperties; }
         UserDataMap & getUserData() { return maUserData; }
@@ -72,7 +77,7 @@ namespace oox { namespace ppt {
             const css::uno::Reference< css::animations::XAnimationNode >& xNode,
             const SlidePersistPtr & pSlide );
 
-        AnimTargetElementPtr getTarget()
+        AnimTargetElementPtr const & getTarget()
             {
                 if( !mpTarget )
                     mpTarget.reset( new AnimTargetElement );
@@ -89,7 +94,7 @@ namespace oox { namespace ppt {
             { return maPrevCondList; }
         AnimationCondition & getEndSyncValue()
             { mbHasEndSyncValue = true; return maEndSyncValue; }
-    protected:
+    private:
 
         static OUString getServiceName( sal_Int16 nNodeType );
 
@@ -99,7 +104,6 @@ namespace oox { namespace ppt {
             const OUString& rServiceName,
             const css::uno::Reference< css::animations::XAnimationNode >& rxNode );
 
-    private:
         const sal_Int16 mnNodeType;
 
         TimeNodePtrList maChildren;

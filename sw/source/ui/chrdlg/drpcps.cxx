@@ -82,8 +82,8 @@ class SwDropCapsPict : public Control
         sal_uLong  textWidth;   ///< Physical width of this segment.
         sal_uInt16 scriptType;  ///< Script type (e.g. Latin, Asian, Complex)
         sal_Int32 changePos;   ///< Character position where the script changes.
-        ScriptInfo(sal_uLong txtWidth, sal_uInt16 scrptType, sal_Int32 position)
-            : textWidth(txtWidth), scriptType(scrptType), changePos(position) {}
+        ScriptInfo(sal_uInt16 scrptType, sal_Int32 position)
+            : textWidth(0), scriptType(scrptType), changePos(position) {}
     };
     std::vector<ScriptInfo> maScriptChanges;
     SvxFont         maFont;
@@ -117,7 +117,7 @@ public:
 
     void SetDropCapsPage(SwDropCapsPage* pPage) { mpPage = pPage; }
 
-    virtual ~SwDropCapsPict();
+    virtual ~SwDropCapsPict() override;
     virtual void dispose() override;
 
     void UpdatePaintSettings();       // also invalidates control!
@@ -280,8 +280,8 @@ void SwDropCapsPict::UpdatePaintSettings()
             mpPage->rSh.Push();
             mpPage->rSh.SttCursorMove();
             mpPage->rSh.ClearMark();
-            SwWhichPara pSwuifnParaCurr = GetfnParaCurr();
-            SwPosPara pSwuifnParaStart = GetfnParaStart();
+            SwWhichPara pSwuifnParaCurr = GoCurrPara;
+            SwMoveFnCollection const & pSwuifnParaStart = fnParaStart;
             mpPage->rSh.MovePara(pSwuifnParaCurr,pSwuifnParaStart);
             // normal
             GetFontSettings( *mpPage, aFont, RES_CHRATR_FONT );
@@ -348,7 +348,7 @@ void SwDropCapsPict::Paint(vcl::RenderContext& rRenderContext, const Rectangle& 
     if (!IsVisible())
         return;
 
-    rRenderContext.SetMapMode(MapMode(MAP_PIXEL));
+    rRenderContext.SetMapMode(MapMode(MapUnit::MapPixel));
     rRenderContext.SetLineColor();
 
     rRenderContext.SetFillColor(maBackColor);
@@ -446,7 +446,7 @@ void SwDropCapsPict::CheckScript()
     for(;;)
     {
         nChg = xBreak->endOfScript( maText, nChg, nScript );
-        maScriptChanges.push_back( ScriptInfo(0, nScript, nChg) );
+        maScriptChanges.push_back( ScriptInfo(nScript, nChg) );
         if( nChg >= maText.getLength() || nChg < 0 )
             break;
         nScript = xBreak->getScriptType( maText, nChg );
@@ -610,12 +610,12 @@ void SwDropCapsPage::dispose()
     SfxTabPage::dispose();
 }
 
-SfxTabPage::sfxpg SwDropCapsPage::DeactivatePage(SfxItemSet * _pSet)
+DeactivateRC SwDropCapsPage::DeactivatePage(SfxItemSet * _pSet)
 {
     if (_pSet)
         FillSet(*_pSet);
 
-    return LEAVE_PAGE;
+    return DeactivateRC::LeavePage;
 }
 
 VclPtr<SfxTabPage> SwDropCapsPage::Create(vcl::Window *pParent,
@@ -679,7 +679,7 @@ void  SwDropCapsPage::Reset(const SfxItemSet *rSet)
     bModified = false;
 }
 
-IMPL_LINK_NOARG_TYPED(SwDropCapsPage, ClickHdl, Button*, void)
+IMPL_LINK_NOARG(SwDropCapsPage, ClickHdl, Button*, void)
 {
     bool bChecked = m_pDropCapsBox->IsChecked();
 
@@ -707,7 +707,7 @@ IMPL_LINK_NOARG_TYPED(SwDropCapsPage, ClickHdl, Button*, void)
     bModified = true;
 }
 
-IMPL_LINK_NOARG_TYPED(SwDropCapsPage, WholeWordHdl, Button*, void)
+IMPL_LINK_NOARG(SwDropCapsPage, WholeWordHdl, Button*, void)
 {
     m_pDropCapsField->Enable( !m_pWholeWordCB->IsChecked() );
     m_pSwitchText->Enable(!m_pWholeWordCB->IsChecked());
@@ -717,7 +717,7 @@ IMPL_LINK_NOARG_TYPED(SwDropCapsPage, WholeWordHdl, Button*, void)
     bModified = true;
 }
 
-IMPL_LINK_TYPED( SwDropCapsPage, ModifyHdl, Edit&, rEdit, void )
+IMPL_LINK( SwDropCapsPage, ModifyHdl, Edit&, rEdit, void )
 {
     OUString sPreview;
 
@@ -766,7 +766,7 @@ IMPL_LINK_TYPED( SwDropCapsPage, ModifyHdl, Edit&, rEdit, void )
     bModified = true;
 }
 
-IMPL_LINK_NOARG_TYPED(SwDropCapsPage, SelectHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwDropCapsPage, SelectHdl, ListBox&, void)
 {
     m_pPict->UpdatePaintSettings();
     bModified = true;

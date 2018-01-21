@@ -283,7 +283,7 @@ sal_uLong ScHTMLLayoutParser::Read( SvStream& rStream, const OUString& rBaseURL 
 
             xValues = new SvKeyValueIterator;
             xValues->Append( SvKeyValue( OUString( OOO_STRING_SVTOOLS_HTML_META_content_type ), aContentType ) );
-            pAttributes = xValues;
+            pAttributes = xValues.get();
         }
     }
 
@@ -299,7 +299,7 @@ sal_uLong ScHTMLLayoutParser::Read( SvStream& rStream, const OUString& rBaseURL 
     for ( sal_uInt16 j = 1; j < nCount; j++ )
     {
         aSize.Width() = (*pColOffset)[j] - nOff;
-        aSize = pDefaultDev->PixelToLogic( aSize, MapMode( MAP_TWIP ) );
+        aSize = pDefaultDev->PixelToLogic( aSize, MapMode( MapUnit::MapTwip ) );
         maColWidths[ j-1 ] = aSize.Width();
         nOff = (*pColOffset)[j];
     }
@@ -877,7 +877,7 @@ void ScHTMLLayoutParser::CloseEntry( ImportInfo* pInfo )
     NewActEntry( pActEntry ); // New free flying pActEntry
 }
 
-IMPL_LINK_TYPED( ScHTMLLayoutParser, HTMLImportHdl, ImportInfo&, rInfo, void )
+IMPL_LINK( ScHTMLLayoutParser, HTMLImportHdl, ImportInfo&, rInfo, void )
 {
     switch ( rInfo.eState )
     {
@@ -1768,7 +1768,7 @@ void ScHTMLEntry::Strip( const EditEngine& rEditEngine )
     instance of this class ownes the contained table objects and deletes them
     on destruction.
  */
-class ScHTMLTableMap
+class ScHTMLTableMap final
 {
 private:
     typedef std::shared_ptr< ScHTMLTable >          ScHTMLTablePtr;
@@ -1785,7 +1785,7 @@ private:
 
 public:
     explicit            ScHTMLTableMap( ScHTMLTable& rParentTable );
-    virtual             ~ScHTMLTableMap();
+                        ~ScHTMLTableMap();
 
     inline const_iterator begin() const { return maTables.begin(); }
     inline const_iterator end() const { return maTables.end(); }
@@ -2865,7 +2865,7 @@ sal_uLong ScHTMLQueryParser::Read( SvStream& rStrm, const OUString& rBaseURL  )
 
             xValues = new SvKeyValueIterator;
             xValues->Append( SvKeyValue( OUString( OOO_STRING_SVTOOLS_HTML_META_content_type ), aContentType ) );
-            pAttributes = xValues;
+            pAttributes = xValues.get();
         }
     }
 
@@ -3210,7 +3210,7 @@ void ScHTMLQueryParser::ParseStyle(const OUString&) {}
 
 #endif
 
-IMPL_LINK_TYPED( ScHTMLQueryParser, HTMLImportHdl, ImportInfo&, rInfo, void )
+IMPL_LINK( ScHTMLQueryParser, HTMLImportHdl, ImportInfo&, rInfo, void )
 {
     switch( rInfo.eState )
     {

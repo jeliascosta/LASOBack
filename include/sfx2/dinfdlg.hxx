@@ -30,7 +30,6 @@
 #include <svl/zforlist.hxx>
 
 #include <svtools/headbar.hxx>
-#include <svtools/stdctrl.hxx>
 #include <svtools/svmedit.hxx>
 
 #include <unotools/syslocale.hxx>
@@ -93,7 +92,7 @@ public:
         const css::uno::Sequence< css::document::CmisProperty> & i_cmisProps,
         bool bUseUserData, bool bUseThumbnailSave );
     SfxDocumentInfoItem( const SfxDocumentInfoItem& );
-    virtual ~SfxDocumentInfoItem();
+    virtual ~SfxDocumentInfoItem() override;
 
     /// update i_xDocProps with the data in this object
     void UpdateDocumentInfo(
@@ -116,24 +115,15 @@ public:
 
     const css::util::DateTime&
                 getCreationDate() const { return m_CreationDate; }
-    void        setCreationDate(const css::util::DateTime& i_val) {
-                    m_CreationDate = i_val;
-                }
     const OUString& getModifiedBy() const { return m_ModifiedBy; }
     void        setModifiedBy(const OUString& i_val) { m_ModifiedBy = i_val; }
 
     const css::util::DateTime&
                 getModificationDate() const { return m_ModificationDate; }
-    void        setModificationDate(const css::util::DateTime& i_val) {
-                    m_ModificationDate = i_val;
-                }
     const OUString& getPrintedBy() const { return m_PrintedBy; }
     void        setPrintedBy(const OUString& i_val) { m_PrintedBy = i_val; }
     const css::util::DateTime&
                 getPrintDate() const { return m_PrintDate; }
-    void        setPrintDate(const css::util::DateTime& i_val) {
-                    m_PrintDate = i_val;
-                }
     sal_Int16   getEditingCycles() const { return m_EditingCycles; }
     void        setEditingCycles(sal_Int16 i_val) { m_EditingCycles = i_val; }
     sal_Int32   getEditingDuration() const { return m_EditingDuration; }
@@ -209,14 +199,14 @@ private:
     bool                        bEnableUseUserData  : 1,
                                 bHandleDelete       : 1;
 
-    DECL_LINK_TYPED(DeleteHdl, Button*, void);
-    DECL_LINK_TYPED(SignatureHdl, Button*, void);
-    DECL_STATIC_LINK_TYPED(SfxDocumentPage, ChangePassHdl, Button*, void);
+    DECL_LINK(DeleteHdl, Button*, void);
+    DECL_LINK(SignatureHdl, Button*, void);
+    DECL_STATIC_LINK(SfxDocumentPage, ChangePassHdl, Button*, void);
     void                ImplUpdateSignatures();
     void                ImplCheckPasswordState();
 
 protected:
-    virtual ~SfxDocumentPage();
+    virtual ~SfxDocumentPage() override;
     virtual void dispose() override;
 
     virtual bool        FillItemSet( SfxItemSet* ) override;
@@ -241,7 +231,7 @@ private:
     SfxDocumentInfoItem*      m_pInfoItem;
 
 protected:
-    virtual ~SfxDocumentDescPage();
+    virtual ~SfxDocumentDescPage() override;
     virtual void dispose() override;
 
     virtual bool            FillItemSet( SfxItemSet* ) override;
@@ -290,11 +280,8 @@ private:
     CustomPropertyLine*             m_pLine;
 
 public:
-    inline CustomPropertiesTypeBox(
-        vcl::Window* pParent, const ResId& rResId, CustomPropertyLine* pLine ) :
-            ListBox( pParent, rResId ), m_pLine( pLine ) {}
-
-    inline CustomPropertyLine*      GetLine() const { return m_pLine; }
+    CustomPropertiesTypeBox(vcl::Window* pParent, CustomPropertyLine* pLine);
+    CustomPropertyLine*      GetLine() const { return m_pLine; }
 };
 
 class CustomPropertiesDateField : public DateField
@@ -340,7 +327,7 @@ class CustomPropertiesEditButton : public PushButton
 public:
     CustomPropertiesEditButton(vcl::Window* pParent, WinBits nStyle, CustomPropertyLine* pLine);
 
-    DECL_LINK_TYPED(ClickHdl, Button*, void);
+    DECL_LINK(ClickHdl, Button*, void);
 };
 
 class CustomPropertiesRemoveButton : public ImageButton
@@ -365,8 +352,8 @@ private:
     VclPtr<RadioButton>             m_aNoButton;
 
 public:
-    CustomPropertiesYesNoButton( vcl::Window* pParent, const ResId& rResId );
-    virtual ~CustomPropertiesYesNoButton();
+    CustomPropertiesYesNoButton(vcl::Window* pParent);
+    virtual ~CustomPropertiesYesNoButton() override;
     virtual void dispose() override;
 
     virtual void    Resize() override;
@@ -427,14 +414,14 @@ private:
     Idle                                m_aBoxLoseFocusIdle;
     Link<void*,void>                    m_aRemovedHdl;
 
-    DECL_STATIC_LINK_TYPED( CustomPropertiesWindow, TypeHdl, ListBox&, void );
-    DECL_LINK_TYPED(  RemoveHdl, Button*, void );
-    DECL_LINK_TYPED(  EditLoseFocusHdl, Control&, void );
-    DECL_LINK_TYPED(  BoxLoseFocusHdl, Control&, void );
+    DECL_STATIC_LINK( CustomPropertiesWindow, TypeHdl, ListBox&, void );
+    DECL_LINK(  RemoveHdl, Button*, void );
+    DECL_LINK(  EditLoseFocusHdl, Control&, void );
+    DECL_LINK(  BoxLoseFocusHdl, Control&, void );
     //add lose focus handlers of Date/TimeField?
 
-    DECL_LINK_TYPED(EditTimeoutHdl, Idle *, void);
-    DECL_LINK_TYPED(BoxTimeoutHdl, Idle *, void);
+    DECL_LINK(EditTimeoutHdl, Idle *, void);
+    DECL_LINK(BoxTimeoutHdl, Idle *, void);
 
     bool        IsLineValid( CustomPropertyLine* pLine ) const;
     void        ValidateLine( CustomPropertyLine* pLine, bool bIsFromTypeBox );
@@ -444,7 +431,7 @@ public:
         FixedText *pHeaderAccName,
         FixedText *pHeaderAccType,
         FixedText *pHeaderAccValue);
-    virtual ~CustomPropertiesWindow();
+    virtual ~CustomPropertiesWindow() override;
     virtual void dispose() override;
 
     bool                InitControls( HeaderBar* pHeaderBar, const ScrollBar* pScrollBar );
@@ -475,12 +462,12 @@ private:
 
     sal_Int32               m_nThumbPos;
 
-    DECL_LINK_TYPED( ScrollHdl, ScrollBar*, void );
-    DECL_LINK_TYPED( RemovedHdl, void*, void );
+    DECL_LINK( ScrollHdl, ScrollBar*, void );
+    DECL_LINK( RemovedHdl, void*, void );
 
 public:
     CustomPropertiesControl(vcl::Window* pParent);
-    virtual ~CustomPropertiesControl();
+    virtual ~CustomPropertiesControl() override;
     virtual void dispose() override;
 
     void            AddLine( const OUString& sName, css::uno::Any& rAny, bool bInteractive );
@@ -501,17 +488,17 @@ class SfxCustomPropertiesPage : public SfxTabPage
 private:
     VclPtr<CustomPropertiesControl> m_pPropertiesCtrl;
 
-    DECL_LINK_TYPED(AddHdl, Button*, void);
+    DECL_LINK(AddHdl, Button*, void);
 
     using TabPage::DeactivatePage;
 
 protected:
-    virtual ~SfxCustomPropertiesPage();
+    virtual ~SfxCustomPropertiesPage() override;
     virtual void dispose() override;
 
     virtual bool        FillItemSet( SfxItemSet* ) override;
     virtual void        Reset( const SfxItemSet* ) override;
-    virtual sfxpg       DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
 
 public:
     SfxCustomPropertiesPage( vcl::Window* pParent, const SfxItemSet& );
@@ -559,7 +546,7 @@ struct CmisPropertyLine : public VclBuilderContainer
     std::vector< CmisYesNo* >     m_aYesNos;
     long getItemHeight() const;
     CmisPropertyLine( vcl::Window* pParent );
-    virtual ~CmisPropertyLine();
+    virtual ~CmisPropertyLine() override;
 };
 
 // class CmisPropertiesWindow ------------------------------------------
@@ -598,7 +585,7 @@ private:
     CmisPropertiesWindow    m_pPropertiesWin;
     VclScrolledWindow&      m_rScrolledWindow;
     ScrollBar&              m_rVertScroll;
-    DECL_LINK_TYPED( ScrollHdl, ScrollBar*, void );
+    DECL_LINK( ScrollHdl, ScrollBar*, void );
 
     void checkAutoVScroll();
 
@@ -630,11 +617,11 @@ private:
 protected:
     virtual bool        FillItemSet( SfxItemSet* ) override;
     virtual void        Reset( const SfxItemSet* ) override;
-    virtual sfxpg       DeactivatePage( SfxItemSet* pSet = nullptr ) override;
+    virtual DeactivateRC DeactivatePage( SfxItemSet* pSet ) override;
 
 public:
     SfxCmisPropertiesPage( vcl::Window* pParent, const SfxItemSet& );
-    virtual ~SfxCmisPropertiesPage();
+    virtual ~SfxCmisPropertiesPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create( vcl::Window* pParent, const SfxItemSet* );

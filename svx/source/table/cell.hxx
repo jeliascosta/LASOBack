@@ -166,15 +166,10 @@ public:
     SVX_DLLPRIVATE virtual void SAL_CALL removeTextContent( const css::uno::Reference< css::text::XTextContent >& xContent ) throw (css::container::NoSuchElementException, css::uno::RuntimeException, std::exception) override;
 
     // XSimpleText
-    SVX_DLLPRIVATE virtual css::uno::Reference< css::text::XTextCursor > SAL_CALL createTextCursor(  ) throw (css::uno::RuntimeException, std::exception) override;
-    SVX_DLLPRIVATE virtual css::uno::Reference< css::text::XTextCursor > SAL_CALL createTextCursorByRange( const css::uno::Reference< css::text::XTextRange >& aTextPosition ) throw (css::uno::RuntimeException, std::exception) override;
     SVX_DLLPRIVATE virtual void SAL_CALL insertString( const css::uno::Reference< css::text::XTextRange >& xRange, const OUString& aString, sal_Bool bAbsorb ) throw (css::uno::RuntimeException, std::exception) override;
     SVX_DLLPRIVATE virtual void SAL_CALL insertControlCharacter( const css::uno::Reference< css::text::XTextRange >& xRange, ::sal_Int16 nControlCharacter, sal_Bool bAbsorb ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
 
     // XTextRange
-    SVX_DLLPRIVATE virtual css::uno::Reference< css::text::XText > SAL_CALL getText(  ) throw (css::uno::RuntimeException, std::exception) override;
-    SVX_DLLPRIVATE virtual css::uno::Reference< css::text::XTextRange > SAL_CALL getStart(  ) throw (css::uno::RuntimeException, std::exception) override;
-    SVX_DLLPRIVATE virtual css::uno::Reference< css::text::XTextRange > SAL_CALL getEnd(  ) throw (css::uno::RuntimeException, std::exception) override;
     SVX_DLLPRIVATE virtual OUString SAL_CALL getString(  ) throw (css::uno::RuntimeException, std::exception) override;
     SVX_DLLPRIVATE virtual void SAL_CALL setString( const OUString& aString ) throw (css::uno::RuntimeException, std::exception) override;
 
@@ -194,15 +189,17 @@ public:
 
     SVX_DLLPRIVATE void notifyModified();
 
+    void dumpAsXml(struct _xmlTextWriter * pWriter, sal_Int32 nRow, sal_Int32 nCol) const;
+
 protected:
     SVX_DLLPRIVATE virtual const SfxItemSet& GetObjectItemSet() override;
     SVX_DLLPRIVATE virtual void SetObjectItem(const SfxPoolItem& rItem) override;
 
-    SVX_DLLPRIVATE css::uno::Any GetAnyForItem( SfxItemSet& aSet, const SfxItemPropertySimpleEntry* pMap );
+    SVX_DLLPRIVATE static css::uno::Any GetAnyForItem( SfxItemSet& aSet, const SfxItemPropertySimpleEntry* pMap );
 
 private:
     SVX_DLLPRIVATE Cell( SdrTableObj& rTableObj, OutlinerParaObject* pOutlinerParaObject ) throw(css::uno::RuntimeException);
-    SVX_DLLPRIVATE virtual ~Cell() throw();
+    SVX_DLLPRIVATE virtual ~Cell() throw() override;
 
     Cell(Cell const &) = delete;
     void operator =(Cell const &) = delete;
@@ -213,14 +210,14 @@ private:
 
     css::table::CellContentType mnCellContentType;
 
-    OUString msFormula;
+    OUString        msFormula;
     double          mfValue;
     ::sal_Int32     mnError;
-    bool      mbMerged;
+    bool            mbMerged;
     ::sal_Int32     mnRowSpan;
     ::sal_Int32     mnColSpan;
 
-    Rectangle maCellRect;
+    Rectangle       maCellRect;
 
     css::uno::Reference< css::table::XTable > mxTable;
 };

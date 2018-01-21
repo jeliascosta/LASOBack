@@ -183,7 +183,6 @@ endef
 
 endif # SYSTEM_CPPUNIT
 
-ifneq ($(ENABLE_OPENGL)$(ENABLE_OPENGL_CANVAS)$(if $(filter ANDROID,$(OS)),TRUE),)
 ifneq ($(SYSTEM_GLEW),)
 
 define gb_LinkTarget__use_glew
@@ -229,44 +228,6 @@ $(call gb_ExternalProject_use_external_project,$(1),glew)
 endef
 
 endif # SYSTEM_GLEW
-endif # ENABLE_OPENGL
-
-ifneq ($(SYSTEM_GLYPHY),)
-
-define gb_LinkTarget__use_glyphy
-$(call gb_LinkTarget_set_include,$(1),\
-	$$(INCLUDE) \
-    $(GLYPHY_CFLAGS) \
-)
-$(call gb_LinkTarget_add_libs,$(1),$(GLYPHY_LIBS))
-
-endef
-else # !SYSTEM_GLYPHY
-
-$(eval $(call gb_Helper_optional,GLYPHY,$(call gb_Helper_register_packages_for_install,ooo,\
-	glyphy \
-)))
-
-define gb_LinkTarget__use_glyphy
-$(call gb_LinkTarget_use_package,$(1),glyphy)
-
-$(call gb_LinkTarget_set_include,$(1),\
-	-I$(call gb_UnpackedTarball_get_dir,glyphy/src) \
-	$$(INCLUDE) \
-)
-
-ifeq ($(COM),MSC)
-$(call gb_LinkTarget_add_libs,$(1),\
-	$(call gb_UnpackedTarball_get_dir,glyphy)/src/.libs/libglyphy.lib \
-)
-else
-$(call gb_LinkTarget_add_libs,$(1),\
-	-L$(call gb_UnpackedTarball_get_dir,glyphy)/src/.libs -lglyphy \
-)
-endif
-endef
-
-endif # SYSTEM_GLYPHY
 
 define gb_LinkTarget__use_iconv
 $(call gb_LinkTarget_add_libs,$(1),-liconv)
@@ -725,7 +686,7 @@ endef
 define gb_LinkTarget__use_boost_headers
 $(call gb_LinkTarget_use_unpacked,$(1),boost)
 $(call gb_LinkTarget_set_include,$(1),\
-	-I$(call gb_UnpackedTarball_get_dir,boost) \
+	$(BOOST_CPPFLAGS) \
 	$$(INCLUDE) \
 )
 
@@ -1010,7 +971,7 @@ gb_ExternalProject__use_liblangtag :=
 
 else # !SYSTEM_LIBLANGTAG
 
-$(eval $(call gb_Helper_register_packages_for_install,ooo,\
+$(eval $(call gb_Helper_register_packages_for_install,ure,\
 	liblangtag_data \
 ))
 
@@ -1028,7 +989,7 @@ endef
 
 else
 
-$(eval $(call gb_Helper_register_packages_for_install,ooo,\
+$(eval $(call gb_Helper_register_packages_for_install,ure,\
 	liblangtag \
 ))
 
@@ -1369,8 +1330,6 @@ endef
 
 endif # SYSTEM_FONTCONFIG
 
-ifeq ($(ENABLE_GRAPHITE),TRUE)
-
 ifneq ($(SYSTEM_GRAPHITE),)
 
 define gb_LinkTarget__use_graphite
@@ -1381,6 +1340,8 @@ $(call gb_LinkTarget_set_include,$(1),\
 $(call gb_LinkTarget_add_libs,$(1),$(GRAPHITE_LIBS))
 
 endef
+
+gb_ExternalProject__use_graphite:=
 
 else # !SYSTEM_GRAPHITE
 
@@ -1396,13 +1357,13 @@ $(call gb_LinkTarget_use_static_libraries,$(1),\
 
 endef
 
+define gb_ExternalProject__use_graphite
+$(call gb_ExternalProject_use_static_libraries,$(1),\
+	graphite \
+)
+
+endef
 endif # SYSTEM_GRAPHITE
-
-else # !ENABLE_GRAPHITE
-
-gb_LinkTarget__use_graphite :=
-
-endif # ENABLE_GRAPHITE
 
 ifneq ($(SYSTEM_ICU),)
 
@@ -1456,7 +1417,7 @@ endef
 
 # icudata and icui18n is called icudt and icuin when built with MSVC :-/
 define gb_LinkTarget__use_icudata
-$(call gb_LinkTarget_use_package,$(1),icu)
+$(call gb_LinkTarget_use_package,$(1),icu_ure)
 
 ifeq ($(OS),WNT)
 $(call gb_LinkTarget_add_libs,$(1),\
@@ -1486,7 +1447,7 @@ endif
 endef
 
 define gb_LinkTarget__use_icuuc
-$(call gb_LinkTarget_use_package,$(1),icu)
+$(call gb_LinkTarget_use_package,$(1),icu_ure)
 
 ifeq ($(OS),WNT)
 $(call gb_LinkTarget_add_libs,$(1),\
@@ -1502,7 +1463,6 @@ endef
 
 endif # SYSTEM_ICU
 
-ifeq ($(ENABLE_HARFBUZZ),TRUE)
 ifneq ($(SYSTEM_HARFBUZZ),)
 
 define gb_LinkTarget__use_harfbuzz
@@ -1527,11 +1487,6 @@ $(call gb_LinkTarget_use_external_project,$(1),harfbuzz)
 endef
 
 endif # SYSTEM_HARFBUZZ
-else # ENABLE_HARFBUZZ != YES
-
-gb_LinkTarget__use_harfbuzz :=
-
-endif # ENABLE_HARFBUZZ
 
 ifeq ($(DISABLE_OPENSSL),TRUE)
 
@@ -2011,6 +1966,39 @@ endef
 endif # SYSTEM_PAGEMAKER
 
 
+ifneq ($(SYSTEM_ZMF),)
+
+define gb_LinkTarget__use_zmf
+$(call gb_LinkTarget_set_include,$(1),\
+	$$(INCLUDE) \
+    $(ZMF_CFLAGS) \
+)
+$(call gb_LinkTarget_add_libs,$(1),$(ZMF_LIBS))
+
+endef
+gb_ExternalProject__use_zmf :=
+
+else # !SYSTEM_ZMF
+
+define gb_LinkTarget__use_zmf
+$(call gb_LinkTarget_set_include,$(1),\
+	-I$(call gb_UnpackedTarball_get_dir,libzmf)/inc \
+	$$(INCLUDE) \
+)
+$(call gb_LinkTarget_add_libs,$(1),\
+	$(call gb_UnpackedTarball_get_dir,libzmf)/src/lib/.libs/libzmf-0.0$(gb_StaticLibrary_PLAINEXT) \
+)
+$(call gb_LinkTarget_use_external_project,$(1),libzmf)
+
+endef
+define gb_ExternalProject__use_zmf
+$(call gb_ExternalProject_use_external_project,$(1),libzmf)
+
+endef
+
+endif # SYSTEM_ZMF
+
+
 ifneq ($(SYSTEM_VISIO),)
 
 define gb_LinkTarget__use_visio
@@ -2269,6 +2257,60 @@ endif # MSC
 
 endif # SYSTEM_MWAW
 
+ifneq ($(SYSTEM_STAROFFICE),)
+
+define gb_LinkTarget__use_staroffice
+$(call gb_LinkTarget_set_include,$(1),\
+	$$(INCLUDE) \
+    $(STAROFFICE_CFLAGS) \
+)
+$(call gb_LinkTarget_add_libs,$(1),$(STAROFFICE_LIBS))
+
+endef
+
+else # !SYSTEM_STAROFFICE
+
+ifeq ($(COM),MSC)
+
+$(eval $(call gb_Helper_register_libraries_for_install,PLAINLIBS_OOO,ooo,\
+	staroffice \
+))
+
+define gb_LinkTarget__use_staroffice
+$(call gb_LinkTarget_set_include,$(1),\
+	-I$(call gb_UnpackedTarball_get_dir,libstaroffice)/inc \
+	$$(INCLUDE) \
+)
+
+$(call gb_LinkTarget_use_libraries,$(1),\
+	staroffice \
+)
+
+endef
+
+else # !MSC
+
+$(eval $(call gb_Helper_register_packages_for_install,ooo,\
+	libstaroffice \
+))
+
+define gb_LinkTarget__use_staroffice
+$(call gb_LinkTarget_use_package,$(1),libstaroffice)
+
+$(call gb_LinkTarget_set_include,$(1),\
+	-I$(call gb_UnpackedTarball_get_dir,libstaroffice)/inc \
+	$$(INCLUDE) \
+)
+$(call gb_LinkTarget_add_libs,$(1),\
+	-L$(call gb_UnpackedTarball_get_dir,libstaroffice)/src/lib/.libs -lstaroffice-0.0 \
+)
+
+endef
+
+endif # MSC
+
+endif # SYSTEM_STAROFFICE
+
 
 ifneq ($(SYSTEM_LCMS2),)
 
@@ -2335,7 +2377,7 @@ endef
 else # !SYSTEM_LPSOLVE
 
 define gb_LinkTarget__use_lpsolve
-$(call gb_LinkTarget_use_unpacked,$(1),lpsolve)
+$(call gb_LinkTarget_use_external_project,$(1),lpsolve)
 ifeq ($(COM),MSC)
 $(call gb_LinkTarget_add_libs,$(1),\
 	$(call gb_UnpackedTarball_get_dir,lpsolve)/lpsolve55/lpsolve55.lib \
@@ -2587,6 +2629,8 @@ $(call gb_LinkTarget_add_libs,$(1),\
 
 endef
 
+gb_ExternalProject__use_png :=
+
 else # !SYSTEM_LIBPNG
 
 define gb_LinkTarget__use_png
@@ -2598,6 +2642,13 @@ $(call gb_LinkTarget_use_static_libraries,$(1),\
 	png \
 )
 $(call gb_LinkTarget__use_zlib,$(1))
+
+endef
+
+define gb_ExternalProject__use_png
+$(call gb_ExternalProject_use_static_libraries,$(1),\
+	png \
+)
 
 endef
 
@@ -2828,6 +2879,36 @@ endef
 
 endif # SYSTEM_OPENLDAP
 
+ifneq ($(SYSTEM_LIBTOMMATH),)
+
+define gb_LinkTarget__use_libtommath
+$(call gb_LinkTarget_set_include,$(1),\
+	$(LIBTOMMATH_CFLAGS) \
+	$$(INCLUDE) \
+)
+$(call gb_LinkTarget_add_libs,$(1),$(LIBTOMMATH_LIBS))
+
+endef
+
+else # !SYSTEM_LIBTOMMATH
+define gb_LinkTarget__use_libtommath
+$(call gb_LinkTarget_set_include,$(1),\
+	-I${WORKDIR}/UnpackedTarball/libtommath \
+	$$(INCLUDE) \
+)
+$(call gb_LinkTarget_add_libs,$(1),\
+	$(call gb_UnpackedTarball_get_dir,libtommath)/libtommath$(gb_StaticLibrary_PLAINEXT) \
+)
+$(call gb_LinkTarget_use_external_project,$(1),libtommath)
+
+endef
+
+endif # SYSTEM_LIBTOMMATH
+
+define gb_ExternalProject__use_libtommath
+$(call gb_ExternalProject_use_external_project,$(1),libtommath)
+
+endef
 
 ifeq ($(ENABLE_FIREBIRD_SDBC),TRUE)
 
@@ -2842,38 +2923,29 @@ $(call gb_LinkTarget_add_libs,$(1),$(FIREBIRD_LIBS))
 
 endef
 
-# gb_LinkTarget__use_atomic_ops :=
-# gb_LinkTarget__use_tommath :=
-
 else # !SYSTEM_FIREBIRD
 
 #$(call gb_LinkTarget__use_libatomic_ops,$(1))
+#$(call gb_LinkTarget__use_libtommath,$(1))
 
 define gb_LinkTarget__use_libfbembed
 $(call gb_LinkTarget_use_package,$(1),firebird)
 $(call gb_LinkTarget_set_include,$(1),\
+	-I$(call gb_UnpackedTarball_get_dir,firebird)/gen/$(if $(ENABLE_DEBUG),Debug,Release)/firebird/include \
 	$$(INCLUDE) \
-	-I$(call gb_UnpackedTarball_get_dir,firebird)/gen/firebird/include \
 )
 ifeq ($(COM),MSC)
 $(call gb_LinkTarget_add_libs,$(1),\
-	$(call gb_UnpackedTarball_get_dir,firebird)/gen/firebird/bin/ifbembed.lib \
+	$(call gb_UnpackedTarball_get_dir,firebird)/gen/$(if $(ENABLE_DEBUG),Debug,Release)/firebird/bin/ifbclient.lib \
 )
 else
 $(call gb_LinkTarget_add_libs,$(1),\
-	-L$(call gb_UnpackedTarball_get_dir,firebird)/gen/firebird/lib -lfbembed \
+	-L$(call gb_UnpackedTarball_get_dir,firebird)/gen/$(if $(ENABLE_DEBUG),Debug,Release)/firebird/lib -lfbclient \
 )
 endif
 
 endef
 
-# define gb_LinkTarget__use_tommath
-# $(call gb_LinkTarget_set_include,$(1),\
-# 	$(TOMMATH_CFLAGS) \
-# 	$$(INCLUDE) \
-# )
-
-# $(call gb_LinkTarget_add_libs,$(1),$(TOMMATH_LIBS))
 
 # endef
 
@@ -2883,7 +2955,7 @@ else # !ENABLE_FIREBIRD_SDBC
 
 gb_LinkTarget__use_firebird :=
 # gb_LinkTarget__use_atomic_ops :=
-# gb_LinkTarget__use_tommath :=
+# gb_LinkTarget__use_libtommath :=
 
 endif # ENABLE_FIREBIRD_SDBC
 
@@ -3120,7 +3192,7 @@ $(call gb_LinkTarget_set_include,$(1),\
 )
 
 $(call gb_LinkTarget_add_libs,$(1),\
-       -L$(call gb_UnpackedTarball_get_dir,liborcus)/src/liborcus/.libs -lorcus-0.11 \
+       -L$(call gb_UnpackedTarball_get_dir,liborcus)/src/liborcus/.libs -lorcus-0.12 \
 )
 
 $(if $(SYSTEM_BOOST), \
@@ -3139,7 +3211,7 @@ $(call gb_LinkTarget_set_include,$(1),\
 )
 
 $(call gb_LinkTarget_add_libs,$(1),\
-	-L$(call gb_UnpackedTarball_get_dir,liborcus)/src/parser/.libs -lorcus-parser-0.11 \
+	-L$(call gb_UnpackedTarball_get_dir,liborcus)/src/parser/.libs -lorcus-parser-0.12 \
 )
 
 endef
@@ -3730,6 +3802,7 @@ ifeq ($(SYSTEM_ICU),)
 define gb_Executable__register_gendict
 $(call gb_Executable_add_runtime_dependencies,gendict,\
 	$(call gb_Package_get_target_for_build,icu) \
+	$(call gb_Package_get_target_for_build,icu_ure) \
 )
 endef
 
@@ -3758,7 +3831,7 @@ $(call gb_Executable_add_runtime_dependencies,saxparser,\
 	$(call gb_Library_get_target,$(gb_CPPU_ENV)_uno) \
 	$(call gb_Package_get_target_for_build,instsetoo_native_setup_ure) \
 	$(call gb_Rdb_get_target_for_build,saxparser) \
-	$(INSTROOT_FOR_BUILD)/$(LIBO_URE_MISC_FOLDER)/services.rdb \
+	$(INSTROOT_FOR_BUILD)/$(LIBO_URE_MISC_FOLDER_FOR_BUILD)/services.rdb \
 	$(call gb_UnoApi_get_target,udkapi) \
 )
 endef
@@ -3872,6 +3945,7 @@ $(call gb_ExternalExecutable_set_internal,genbrk,$(WORKDIR_FOR_BUILD)/UnpackedTa
 $(call gb_ExternalExecutable_set_precommand,genbrk,$(subst $$,$$$$,$(gb_ICU_PRECOMMAND)))
 $(call gb_ExternalExecutable_add_dependencies,genbrk,\
 	$(call gb_Package_get_target_for_build,icu) \
+	$(call gb_Package_get_target_for_build,icu_ure) \
 )
 
 endef
@@ -3892,6 +3966,7 @@ $(call gb_ExternalExecutable_set_internal,genccode,$(WORKDIR_FOR_BUILD)/Unpacked
 $(call gb_ExternalExecutable_set_precommand,genccode,$(subst $$,$$$$,$(gb_ICU_PRECOMMAND)))
 $(call gb_ExternalExecutable_add_dependencies,genccode,\
 	$(call gb_Package_get_target_for_build,icu) \
+	$(call gb_Package_get_target_for_build,icu_ure) \
 )
 
 endef
@@ -3912,6 +3987,7 @@ $(call gb_ExternalExecutable_set_internal,gencmn,$(WORKDIR_FOR_BUILD)/UnpackedTa
 $(call gb_ExternalExecutable_set_precommand,gencmn,$(subst $$,$$$$,$(gb_ICU_PRECOMMAND)))
 $(call gb_ExternalExecutable_add_dependencies,gencmn,\
 	$(call gb_Package_get_target_for_build,icu) \
+	$(call gb_Package_get_target_for_build,icu_ure) \
 )
 
 endef

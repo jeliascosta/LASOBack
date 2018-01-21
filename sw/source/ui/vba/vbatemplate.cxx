@@ -24,6 +24,7 @@
 #include <comphelper/processfactory.hxx>
 #include <comphelper/string.hxx>
 #include <tools/urlobj.hxx>
+#include <rtl/character.hxx>
 #include <osl/file.hxx>
 
 using namespace ::ooo::vba;
@@ -39,7 +40,7 @@ static OUString lcl_CheckGroupName( const OUString& rGroupName )
         if (rtl::isAsciiAlphanumeric(cChar) ||
             cChar == '_' || cChar == 0x20)
         {
-            sRet += OUString(cChar);
+            sRet += OUStringLiteral1(cChar);
         }
     }
     return comphelper::string::strip(sRet, ' ');

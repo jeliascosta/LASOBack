@@ -81,8 +81,8 @@ class E3dObjList : public SdrObjList
     E3dObjList &operator=(const E3dObjList& rSrcList) = delete;
 
 public:
-    E3dObjList(SdrModel* pNewModel = nullptr, SdrPage* pNewPage = nullptr, E3dObjList* pNewUpList = nullptr);
-    SVX_DLLPUBLIC virtual ~E3dObjList();
+    E3dObjList();
+    SVX_DLLPUBLIC virtual ~E3dObjList() override;
 
     virtual E3dObjList* Clone() const override;
 
@@ -143,12 +143,12 @@ public:
     virtual void RecalcSnapRect() override;
     virtual void SetRectsDirty(bool bNotMyself = false) override;
 
-    virtual ~E3dObject();
+    virtual ~E3dObject() override;
 
-    virtual sal_uInt32  GetObjInventor() const override;
+    virtual SdrInventor GetObjInventor() const override;
     virtual sal_uInt16  GetObjIdentifier() const override;
 
-    virtual void    TakeObjInfo(SdrObjTransformInfoRec& rInfo) const override;
+    virtual void        TakeObjInfo(SdrObjTransformInfoRec& rInfo) const override;
 
     virtual void        NbcSetLayer(SdrLayerID nLayer) override;
 
@@ -244,7 +244,7 @@ public:
 
     E3dCompoundObject();
     E3dCompoundObject(E3dDefaultAttributes& rDefault);
-    virtual ~E3dCompoundObject();
+    virtual ~E3dCompoundObject() override;
 
     virtual basegfx::B2DPolyPolygon TakeXorPoly() const override;
     virtual sal_uInt32 GetHdlCount() const override;

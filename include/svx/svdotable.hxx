@@ -48,13 +48,13 @@ struct ImplTableShadowPaintInfo;
 
 
 /// SdrTableHitKind
-enum TableHitKind
+enum class TableHitKind
 {
-    SDRTABLEHIT_NONE,
-    SDRTABLEHIT_CELL,
-    SDRTABLEHIT_CELLTEXTAREA,
-    SDRTABLEHIT_HORIZONTAL_BORDER,
-    SDRTABLEHIT_VERTICAL_BORDER
+    NONE,
+    Cell,
+    CellTextArea,
+    HorizontalBorder,
+    VerticallBorder
 };
 
 
@@ -100,7 +100,7 @@ class SVX_DLLPUBLIC SdrTableObj : public ::SdrTextObj
 public:
     SdrTableObj(SdrModel* _pModel);
     SdrTableObj(SdrModel* _pModel, const ::Rectangle& rNewRect, sal_Int32 nColumns, sal_Int32 nRows);
-    virtual ~SdrTableObj();
+    virtual ~SdrTableObj() override;
 
 
     // Table stuff
@@ -127,7 +127,7 @@ public:
     const sdr::table::TableStyleSettings& getTableStyleSettings() const;
     void setTableStyleSettings( const sdr::table::TableStyleSettings& rStyle );
 
-    TableHitKind CheckTableHit( const Point& rPos, sal_Int32& rnX, sal_Int32& rnY ) const;
+    TableHitKind CheckTableHit( const Point& rPos, sal_Int32& rnX, sal_Int32& rnY, const sal_uInt16 aTol = 0 ) const;
 
     void uno_lock();
     void uno_unlock();
@@ -175,8 +175,8 @@ public:
     /** At the same time, we set the text in the outliner (if applicable the EditOutliners')
      * as well as the PaperSize
      */
-    void TakeTextRect( const sdr::table::CellPos& rPos, SdrOutliner& rOutliner, ::Rectangle& rTextRect, bool bNoEditText = false, ::Rectangle* pAnchorRect=nullptr, bool bLineWidth = true ) const;
-    virtual void TakeTextRect( SdrOutliner& rOutliner, Rectangle& rTextRect, bool bNoEditText = false, Rectangle* pAnchorRect=nullptr, bool bLineWidth = true ) const override;
+    void TakeTextRect( const sdr::table::CellPos& rPos, SdrOutliner& rOutliner, ::Rectangle& rTextRect, bool bNoEditText, ::Rectangle* pAnchorRect=nullptr, bool bLineWidth = true ) const;
+    virtual void TakeTextRect( SdrOutliner& rOutliner, Rectangle& rTextRect, bool bNoEditText, Rectangle* pAnchorRect, bool bLineWidth = true ) const override;
     void TakeTextAnchorRect(const sdr::table::CellPos& rPos, ::Rectangle& rAnchorRect ) const;
     virtual void TakeTextAnchorRect(::Rectangle& rAnchorRect) const override;
 
@@ -185,7 +185,6 @@ public:
 
     virtual bool IsFontwork() const override;
 
-    virtual void SetPage(SdrPage* pNewPage) override;
     virtual void SetModel(SdrModel* pNewModel) override;
     virtual void TakeObjInfo(SdrObjTransformInfoRec& rInfo) const override;
     virtual sal_uInt16 GetObjIdentifier() const override;
@@ -197,8 +196,6 @@ public:
     virtual OUString TakeObjNamePlural() const override;
     virtual SdrTableObj* Clone() const override;
     SdrTableObj& operator=(const SdrTableObj& rObj);
-    virtual basegfx::B2DPolyPolygon TakeXorPoly() const override;
-    virtual basegfx::B2DPolyPolygon TakeContour() const override;
     virtual void RecalcSnapRect() override;
     virtual const Rectangle& GetSnapRect() const override;
     virtual void NbcSetSnapRect(const Rectangle& rRect) override;
@@ -206,9 +203,6 @@ public:
     virtual const Rectangle& GetLogicRect() const override;
     virtual void NbcSetLogicRect(const Rectangle& rRect) override;
     virtual void AdjustToMaxRect( const Rectangle& rMaxRect, bool bShrinkOnly = false ) override;
-
-    virtual sal_uInt32 GetSnapPointCount() const override;
-    virtual Point GetSnapPoint(sal_uInt32 i) const override;
 
     virtual sal_uInt32 GetHdlCount() const override;
     virtual SdrHdl* GetHdl(sal_uInt32 nHdlNum) const override;
@@ -218,7 +212,6 @@ public:
     virtual bool hasSpecialDrag() const override;
     virtual bool beginSpecialDrag(SdrDragStat& rDrag) const override;
     virtual bool applySpecialDrag(SdrDragStat& rDrag) override;
-    virtual OUString getSpecialDragComment(const SdrDragStat& rDrag) const override;
     virtual basegfx::B2DPolyPolygon getSpecialDragPoly(const SdrDragStat& rDrag) const override;
 
     virtual bool BegCreate(SdrDragStat& rStat) override;
@@ -241,7 +234,6 @@ public:
     virtual void NbcSetOutlinerParaObject(OutlinerParaObject* pTextObject) override;
 
     virtual OutlinerParaObject* GetOutlinerParaObject() const override;
-    virtual OutlinerParaObject* GetEditOutlinerParaObject() const override;
 
     virtual void NbcReformatText() override;
     virtual void ReformatText() override;
@@ -258,25 +250,6 @@ public:
     void SetSkipChangeLayout(bool bSkipChangeLayout);
 
     virtual void onEditOutlinerStatusEvent( EditStatus* pEditStatus ) override;
-
-    // Transformation interface for StarOfficeAPI. This implements support for
-    // homogenous 3x3 matrices containing the transformation of the SdrObject. At the
-    // moment it contains a shearX, rotation and translation, but for setting all linear
-    // transforms like Scale, ShearX, ShearY, Rotate and Translate are supported.
-
-    // Gets base transformation and rectangle of object. If it's an SdrPathObj it fills the PolyPolygon
-    // with the base geometry and returns TRUE. Otherwise it returns FALSE.
-    virtual bool TRGetBaseGeometry(basegfx::B2DHomMatrix& rMatrix, basegfx::B2DPolyPolygon& rPolyPolygon) const override;
-
-    // Sets the base geometry of the object using infos contained in the homogen 3x3 matrix.
-    // If it's an SdrPathObj it will use the provided geometry information. The Polygon has
-    // to use (0,0) as upper left and will be scaled to the given size in the matrix.
-    virtual void TRSetBaseGeometry(const basegfx::B2DHomMatrix& rMatrix, const basegfx::B2DPolyPolygon& rPolyPolygon) override;
-
-    // #103836# iterates over the paragraphs of a given SdrObject and removes all
-    //          hard set character attributes with the which ids contained in the
-    //          given vector
-//  virtual void RemoveOutlinerCharacterAttribs( const std::vector<sal_uInt16>& rCharWhichIds );
 
     /** Hack for clipboard with calc and writer, export and import table content as rtf table */
     static void ExportAsRTF( SvStream& rStrm, SdrTableObj& rObj );
@@ -306,7 +279,7 @@ private:
 
     Rectangle   maLogicRect;
 private:
-    SdrTableObjImpl*    mpImpl;
+    rtl::Reference<SdrTableObjImpl>    mpImpl;
 };
 
 

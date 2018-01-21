@@ -15,7 +15,6 @@
 
 #include "clang/AST/Attr.h"
 
-#include "compat.hxx"
 #include "plugin.hxx"
 
 namespace {
@@ -46,7 +45,7 @@ bool Override::VisitCXXMethodDecl(CXXMethodDecl const * decl) {
     // As a heuristic, ignore declarations where the name is spelled out in an
     // ignored location; that e.g. handles uses of the Q_OBJECT macro from
     // external QtCore/qobjectdefs.h:
-    if (ignoreLocation(decl) || !compat::isFirstDecl(*decl)
+    if (ignoreLocation(decl) || !decl->isFirstDecl()
         || decl->begin_overridden_methods() == decl->end_overridden_methods()
         || decl->hasAttr<OverrideAttr>()
         || ignoreLocation(
@@ -55,28 +54,9 @@ bool Override::VisitCXXMethodDecl(CXXMethodDecl const * decl) {
     {
         return true;
     }
-    // It appears that the C++ standard allows overriding destructors to be
-    // marked "override," but at least some MSVC versions complain about it, so
-    // at least make sure such destructors are explicitly marked "virtual":
-    if (isa<CXXDestructorDecl>(decl)) {
-        if (!decl->isVirtualAsWritten()
-            && (rewriter == nullptr
-                || !insertTextBefore(
-                    decl->getSourceRange().getBegin(), "virtual ")))
-        {
-            report(
-                DiagnosticsEngine::Warning,
-                ("overriding destructor declaration not explicitly marked"
-                 " 'virtual'"),
-                decl->getLocation())
-                << decl->getSourceRange();
-        }
-        return true;
-    }
     std::string over(
         isInUnoIncludeFile(decl->getSourceRange().getBegin())
         ? "SAL_OVERRIDE" : "override");
-#if LO_COMPILERPLUGINS_CLANG_COMPAT_HAVE_isAtEndOfImmediateMacroExpansion
     if (rewriter != nullptr) {
         // In  void MACRO(...);  getSourceRange().getEnd() would (erroneously?)
         // point at "MACRO" rather than ")", so make the loop always terminate
@@ -150,7 +130,8 @@ bool Override::VisitCXXMethodDecl(CXXMethodDecl const * decl) {
                     l, &l))
             {
                 n = Lexer::MeasureTokenLength(
-                    l, compiler.getSourceManager(), compiler.getLangOpts());
+                    compiler.getSourceManager().getSpellingLoc(l),
+                    compiler.getSourceManager(), compiler.getLangOpts());
             }
             l = l.getLocWithOffset(std::max<unsigned>(n, 1));
         }
@@ -163,7 +144,6 @@ bool Override::VisitCXXMethodDecl(CXXMethodDecl const * decl) {
             return true;
         }
     }
-#endif
     report(
         DiagnosticsEngine::Warning,
         ("overriding virtual function declaration not marked '%0'"),

@@ -41,7 +41,6 @@ FileControl::FileControl( vcl::Window* pParent, WinBits nStyle ) :
     mnInternalFlags( FileControlMode_Internal::ORIGINALBUTTONTEXT )
 {
     maButton->SetClickHdl( LINK( this, FileControl, ButtonHdl ) );
-    mbOpenDlg = true;
 
     maButton->Show();
     maEdit->Show();
@@ -173,11 +172,6 @@ void FileControl::Resize()
 }
 
 
-IMPL_LINK_NOARG_TYPED(FileControl, ButtonHdl, Button*, void)
-{
-    ImplBrowseFile( );
-}
-
 void FileControl::GetFocus()
 {
     maEdit->GrabFocus();
@@ -200,7 +194,7 @@ void FileControl::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize
         GetEdit().SetStyle( nOldEditStyle );
 }
 
-void FileControl::ImplBrowseFile( )
+IMPL_LINK_NOARG(FileControl, ButtonHdl, Button*, void)
 {
     try
     {

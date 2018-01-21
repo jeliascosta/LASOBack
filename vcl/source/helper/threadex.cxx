@@ -36,7 +36,7 @@ SolarThreadExecutor::~SolarThreadExecutor()
     osl_destroyCondition( m_aFinish );
 }
 
-IMPL_LINK_NOARG_TYPED(SolarThreadExecutor, worker, void*, void)
+IMPL_LINK_NOARG(SolarThreadExecutor, worker, void*, void)
 {
     if ( !m_bTimeout )
     {
@@ -46,7 +46,7 @@ IMPL_LINK_NOARG_TYPED(SolarThreadExecutor, worker, void*, void)
     }
 }
 
-long SolarThreadExecutor::impl_execute()
+void SolarThreadExecutor::execute()
 {
     if( ::osl::Thread::getCurrentIdentifier() == Application::GetMainThreadIdentifier() )
     {
@@ -68,7 +68,6 @@ long SolarThreadExecutor::impl_execute()
         else
             osl_waitCondition( m_aFinish, nullptr );
     }
-    return m_nReturn;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

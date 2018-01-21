@@ -33,8 +33,8 @@ using namespace connectivity::dbase;
 using namespace connectivity::file;
 using namespace com::sun::star::sdbc;
 
-ONDXKey::ONDXKey(sal_uInt32 nRec)
-    :nRecord(nRec)
+ONDXKey::ONDXKey()
+    :nRecord(0)
 {
 }
 
@@ -46,7 +46,7 @@ ONDXKey::ONDXKey(const ORowSetValue& rVal, sal_Int32 eType, sal_uInt32 nRec)
 }
 
 ONDXKey::ONDXKey(const OUString& aStr, sal_uInt32 nRec)
-    : ONDXKey_BASE(::com::sun::star::sdbc::DataType::VARCHAR)
+    : ONDXKey_BASE(css::sdbc::DataType::VARCHAR)
      ,nRecord(nRec)
 {
     if (!aStr.isEmpty())
@@ -56,31 +56,27 @@ ONDXKey::ONDXKey(const OUString& aStr, sal_uInt32 nRec)
     }
 }
 
-
 ONDXKey::ONDXKey(double aVal, sal_uInt32 nRec)
-    : ONDXKey_BASE(::com::sun::star::sdbc::DataType::DOUBLE)
+    : ONDXKey_BASE(css::sdbc::DataType::DOUBLE)
      ,nRecord(nRec)
      ,xValue(aVal)
 {
 }
 
-
 // index page
-
 ONDXPage::ONDXPage(ODbaseIndex& rInd, sal_uInt32 nPos, ONDXPage* pParent)
-           :bNoDelete(1)
-           ,nRefCount(0)
-           ,nPagePos(nPos)
-           ,bModified(false)
-           ,nCount(0)
-           ,aParent(pParent)
-           ,rIndex(rInd)
-           ,ppNodes(nullptr)
+    : nRefCount(0)
+    , bNoDelete(1)
+    , nPagePos(nPos)
+    , bModified(false)
+    , nCount(0)
+    , aParent(pParent)
+    , rIndex(rInd)
+    , ppNodes(nullptr)
 {
     sal_uInt16 nT = rIndex.getHeader().db_maxkeys;
     ppNodes = new ONDXNode[nT];
 }
-
 
 ONDXPage::~ONDXPage()
 {
@@ -707,7 +703,7 @@ void ONDXNode::Write(SvStream &rStream, const ONDXPage& rPage) const
         {
             sal_uInt8 buf[sizeof(double)];
             memset(&buf[0], 0, sizeof(double));
-            rStream.Write(&buf[0], sizeof(double));
+            rStream.WriteBytes(&buf[0], sizeof(double));
         }
         else
             rStream.WriteDouble( (double) aKey.getValue() );
@@ -724,7 +720,7 @@ void ONDXNode::Write(SvStream &rStream, const ONDXPage& rPage) const
             strncpy(reinterpret_cast<char *>(&pBuf[0]), aText.getStr(),
                 std::min<size_t>(nLen, aText.getLength()));
         }
-        rStream.Write(&pBuf[0], nLen);
+        rStream.WriteBytes(&pBuf[0], nLen);
     }
     WriteONDXPagePtr( rStream, aChild );
 }
@@ -809,27 +805,50 @@ SvStream& connectivity::dbase::WriteONDXPagePtr(SvStream &rStream, const ONDXPag
     return rStream;
 }
 
-
 // ONDXPagePtr
+ONDXPagePtr::ONDXPagePtr()
+    : mpPage(nullptr)
+    , nPagePos(0)
+{
+}
 
+ONDXPagePtr::ONDXPagePtr(ONDXPagePtr&& rRef)
+{
+    mpPage = rRef.mpPage;
+    rRef.mpPage = nullptr;
+    nPagePos = rRef.nPagePos;
+}
 
-ONDXPagePtr::ONDXPagePtr(const ONDXPagePtr& rRef)
-              :mpPage(rRef.mpPage)
-              ,nPagePos(rRef.nPagePos)
+ONDXPagePtr::ONDXPagePtr(ONDXPagePtr const & rRef)
+    : mpPage(rRef.mpPage)
+    , nPagePos(rRef.nPagePos)
 {
     if (mpPage != nullptr)
         mpPage->AddNextRef();
 }
 
-
 ONDXPagePtr::ONDXPagePtr(ONDXPage* pRefPage)
-              :mpPage(pRefPage)
-              ,nPagePos(0)
+    : mpPage(pRefPage)
+    , nPagePos(0)
 {
     if (mpPage != nullptr)
         mpPage->AddFirstRef();
     if (pRefPage)
         nPagePos = pRefPage->GetPagePos();
+}
+
+ONDXPagePtr::~ONDXPagePtr()
+{
+    if (mpPage != nullptr) mpPage->ReleaseRef();
+}
+
+void ONDXPagePtr::Clear()
+{
+    if (mpPage != nullptr) {
+        ONDXPage * pRefObj = mpPage;
+        mpPage = nullptr;
+        pRefObj->ReleaseRef();
+    }
 }
 
 ONDXPagePtr& ONDXPagePtr::operator=(ONDXPagePtr const & rOther)
@@ -863,7 +882,7 @@ SvStream& connectivity::dbase::operator >> (SvStream &rStream, ONDXPage& rPage)
 SvStream& connectivity::dbase::WriteONDXPage(SvStream &rStream, const ONDXPage& rPage)
 {
     // Page doesn't exist yet
-    sal_Size nSize = rPage.GetPagePos() + 1;
+    std::size_t nSize = rPage.GetPagePos() + 1;
     nSize *= DINDEX_PAGE_SIZE;
     if (nSize > rStream.Seek(STREAM_SEEK_TO_END))
     {
@@ -872,7 +891,7 @@ SvStream& connectivity::dbase::WriteONDXPage(SvStream &rStream, const ONDXPage& 
 
         char aEmptyData[DINDEX_PAGE_SIZE];
         memset(aEmptyData,0x00,DINDEX_PAGE_SIZE);
-        rStream.Write(aEmptyData, DINDEX_PAGE_SIZE);
+        rStream.WriteBytes(aEmptyData, DINDEX_PAGE_SIZE);
     }
     rStream.Seek(rPage.GetPagePos() * DINDEX_PAGE_SIZE);
 
@@ -887,14 +906,14 @@ SvStream& connectivity::dbase::WriteONDXPage(SvStream &rStream, const ONDXPage& 
     // check if we have to fill the stream with '\0'
     if(i < rPage.rIndex.getHeader().db_maxkeys)
     {
-        sal_Size nTell = rStream.Tell() % DINDEX_PAGE_SIZE;
+        std::size_t nTell = rStream.Tell() % DINDEX_PAGE_SIZE;
         sal_uInt16 nBufferSize = rStream.GetBufferSize();
-        sal_Size nRemainSize = nBufferSize - nTell;
+        std::size_t nRemainSize = nBufferSize - nTell;
         if ( nRemainSize <= nBufferSize )
         {
             std::unique_ptr<char[]> pEmptyData( new char[nRemainSize] );
             memset(pEmptyData.get(), 0x00, nRemainSize);
-            rStream.Write(pEmptyData.get(), nRemainSize);
+            rStream.WriteBytes(pEmptyData.get(), nRemainSize);
             rStream.Seek(nTell);
         }
     }

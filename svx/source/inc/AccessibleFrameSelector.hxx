@@ -59,7 +59,7 @@ class AccFrameSelector :
 public:
     explicit            AccFrameSelector( FrameSelector& rFrameSel, FrameBorderType eBorder );
 
-    virtual             ~AccFrameSelector();
+    virtual             ~AccFrameSelector() override;
 
     //XAccessible
     virtual css::uno::Reference< css::accessibility::XAccessibleContext > SAL_CALL getAccessibleContext(  ) throw (css::uno::RuntimeException, std::exception) override;
@@ -101,9 +101,7 @@ public:
     void    NotifyAccessibleEvent( const sal_Int16 _nEventId, const css::uno::Any& _rOldValue, const css::uno::Any& _rNewValue );
 
 protected:
-    DECL_LINK_TYPED( WindowEventListener, VclWindowEvent&, void );
-
-    void    ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent );
+    DECL_LINK( WindowEventListener, VclWindowEvent&, void );
 
 private:
     void                IsValid() throw (css::uno::RuntimeException);

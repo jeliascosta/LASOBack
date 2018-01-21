@@ -41,7 +41,7 @@ public:
         , m_fScale(fScale)
     {
     }
-    virtual ~SvpSalVirtualDevice();
+    virtual ~SvpSalVirtualDevice() override;
 
     // SalVirtualDevice
     virtual SalGraphics*    AcquireGraphics() override;

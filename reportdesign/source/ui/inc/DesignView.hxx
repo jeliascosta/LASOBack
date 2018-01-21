@@ -73,12 +73,11 @@ namespace rptui
         sal_uInt16                          m_eActObj;
         Size                                m_aGridSizeCoarse;
         Size                                m_aGridSizeFine;
-        bool                                m_bGridSnap;
         bool                                m_bDeleted;
 
 
-        DECL_LINK_TYPED(MarkTimeout, Idle *, void);
-        DECL_LINK_TYPED( SplitHdl, SplitWindow*, void );
+        DECL_LINK(MarkTimeout, Idle *, void);
+        DECL_LINK( SplitHdl, SplitWindow*, void );
 
         void ImplInitSettings();
 
@@ -94,7 +93,7 @@ namespace rptui
         ODesignView(vcl::Window* pParent,
                     const css::uno::Reference< css::uno::XComponentContext >&,
                     OReportController& _rController);
-        virtual ~ODesignView();
+        virtual ~ODesignView() override;
         virtual void dispose() override;
 
         // Window overrides
@@ -166,7 +165,6 @@ namespace rptui
 
         const Size&     getGridSizeCoarse() const { return m_aGridSizeCoarse; }
         const Size&     getGridSizeFine() const { return m_aGridSizeFine; }
-        inline bool     isGridSnap() const { return m_bGridSnap; }
         void            setGridSnap(bool bOn);
         void            setDragStripes(bool bOn);
         /** turns the grid on or off

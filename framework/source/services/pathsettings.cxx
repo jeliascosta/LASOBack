@@ -183,7 +183,7 @@ public:
     explicit PathSettings(const css::uno::Reference< css::uno::XComponentContext >& xContext);
 
     /** free all used resources ... if it was not already done. */
-    virtual ~PathSettings();
+    virtual ~PathSettings() override;
 
     virtual OUString SAL_CALL getImplementationName()
         throw (css::uno::RuntimeException, std::exception) override
@@ -354,7 +354,7 @@ public:
     void impl_readAll();
 
 private:
-    virtual void SAL_CALL disposing() override;
+    virtual void SAL_CALL disposing() final override;
 
     OUString getStringProperty(const OUString& p1)
         throw(css::uno::RuntimeException);

@@ -160,7 +160,13 @@ void ScColumn::CopyOneCellFromClip( sc::CopyFromClipContext& rCxt, SCROW nRow1, 
         {
             const ScPatternAttr* pAttr = (bSameDocPool ? rCxt.getSingleCellPattern(nColOffset) :
                     rCxt.getSingleCellPattern(nColOffset)->PutInPool( pDocument, rCxt.getClipDoc()));
-            pAttrArray->SetPatternArea(nRow1, nRow2, pAttr, true);
+
+            ScPatternAttr aNewPattern(*pAttr);
+            sal_uInt16 pItems[2];
+            pItems[0] = ATTR_CONDITIONAL;
+            pItems[1] = 0;
+            aNewPattern.ClearItems(pItems);
+            pAttrArray->SetPatternArea(nRow1, nRow2, &aNewPattern, true);
         }
     }
 
@@ -216,7 +222,7 @@ void ScColumn::CopyOneCellFromClip( sc::CopyFromClipContext& rCxt, SCROW nRow1, 
                 std::vector<sc::RowSpan> aRanges;
                 aRanges.reserve(1);
                 aRanges.push_back(sc::RowSpan(nRow1, nRow2));
-                CloneFormulaCell(*rSrcCell.mpFormula, rSrcAttr, aRanges, nullptr);
+                CloneFormulaCell(*rSrcCell.mpFormula, rSrcAttr, aRanges);
             }
             break;
             default:
@@ -478,7 +484,7 @@ void ScColumn::DeleteRanges( const std::vector<sc::RowSpan>& rRanges, InsertDele
 
 void ScColumn::CloneFormulaCell(
     const ScFormulaCell& rSrc, const sc::CellTextAttr& rAttr,
-    const std::vector<sc::RowSpan>& rRanges, sc::StartListeningContext* pCxt )
+    const std::vector<sc::RowSpan>& rRanges )
 {
     sc::CellStoreType::iterator itPos = maCells.begin();
     sc::CellTextAttrStoreType::iterator itAttrPos = maCellTextAttrs.begin();
@@ -509,11 +515,6 @@ void ScColumn::CloneFormulaCell(
         {
             // Single, ungrouped formula cell.
             ScFormulaCell* pCell = new ScFormulaCell(rSrc, *pDocument, aPos);
-            if (pCxt)
-            {
-                pCell->StartListeningTo(*pCxt);
-                pCell->SetDirty();
-            }
             aFormulas.push_back(pCell);
         }
         else
@@ -531,11 +532,6 @@ void ScColumn::CloneFormulaCell(
                 {
                     xGroup->mpTopCell = pCell;
                     xGroup->mnLength = nLen;
-                }
-                if (pCxt)
-                {
-                    pCell->StartListeningTo(*pCxt);
-                    pCell->SetDirty();
                 }
                 aFormulas.push_back(pCell);
             }
@@ -602,11 +598,15 @@ public:
     }
 };
 
-struct NoteCaptionCleaner
+class NoteCaptionCleaner
 {
+    bool mbPreserveData;
+public:
+    explicit NoteCaptionCleaner( bool bPreserveData ) : mbPreserveData(bPreserveData) {}
+
     void operator() ( size_t /*nRow*/, ScPostIt* p )
     {
-        p->ForgetCaption();
+        p->ForgetCaption(mbPreserveData);
     }
 };
 
@@ -618,12 +618,12 @@ void ScColumn::CreateAllNoteCaptions()
     sc::ProcessNote(maCellNotes, aFunc);
 }
 
-void ScColumn::ForgetNoteCaptions( SCROW nRow1, SCROW nRow2 )
+void ScColumn::ForgetNoteCaptions( SCROW nRow1, SCROW nRow2, bool bPreserveData )
 {
     if (!ValidRow(nRow1) || !ValidRow(nRow2))
         return;
 
-    NoteCaptionCleaner aFunc;
+    NoteCaptionCleaner aFunc(bPreserveData);
     sc::CellNoteStoreType::iterator it = maCellNotes.begin();
     sc::ProcessNote(it, maCellNotes, nRow1, nRow2, aFunc);
 }
@@ -1154,6 +1154,11 @@ void ScColumn::CollectFormulaCells( std::vector<ScFormulaCell*>& rCells, SCROW n
     sc::ProcessFormula(maCells.begin(), maCells, nRow1, nRow2, aFunc);
 }
 
+bool ScColumn::HasFormulaCell() const
+{
+    return mnBlkCountFormula != 0;
+}
+
 namespace {
 
 struct FindAnyFormula
@@ -1168,8 +1173,14 @@ struct FindAnyFormula
 
 bool ScColumn::HasFormulaCell( SCROW nRow1, SCROW nRow2 ) const
 {
+    if (!mnBlkCountFormula)
+        return false;
+
     if (nRow2 < nRow1 || !ValidRow(nRow1) || !ValidRow(nRow2))
         return false;
+
+    if (nRow1 == 0 && nRow2 == MAXROW)
+        return HasFormulaCell();
 
     FindAnyFormula aFunc;
     std::pair<sc::CellStoreType::const_iterator, size_t> aRet =
@@ -1356,6 +1367,9 @@ void ScColumn::StartListeningFormulaCells(
     sc::StartListeningContext& rStartCxt, sc::EndListeningContext& rEndCxt,
     SCROW nRow1, SCROW nRow2 )
 {
+    if (!HasFormulaCell())
+        return;
+
     StartListeningFormulaCellsHandler aFunc(rStartCxt, rEndCxt);
     sc::ProcessBlock(maCells.begin(), maCells, aFunc, nRow1, nRow2);
 }
@@ -1364,6 +1378,9 @@ void ScColumn::EndListeningFormulaCells(
     sc::EndListeningContext& rCxt, SCROW nRow1, SCROW nRow2,
     SCROW* pStartRow, SCROW* pEndRow )
 {
+    if (!HasFormulaCell())
+        return;
+
     EndListeningFormulaCellsHandler aFunc(rCxt);
     sc::ProcessBlock(maCells.begin(), maCells, aFunc, nRow1, nRow2);
 

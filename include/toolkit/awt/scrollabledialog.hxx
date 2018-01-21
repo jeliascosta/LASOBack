@@ -54,7 +54,7 @@ namespace toolkit
         void    lcl_Scroll( long nX, long nY );
     public:
         ScrollableWrapper( vcl::Window* pParent, WinBits nStyle = WB_STDDIALOG, Dialog::InitFlag eFlag = Dialog::InitFlag::Default );
-        virtual ~ScrollableWrapper();
+        virtual ~ScrollableWrapper() override;
         virtual void dispose() override;
         virtual void    SetScrollWidth( long nWidth ) override;
         virtual void    SetScrollHeight( long nHeight ) override;
@@ -62,8 +62,8 @@ namespace toolkit
         virtual void    SetScrollTop( long Top ) override;
 
         void setScrollVisibility( ScrollBarVisibility rState );
-        DECL_LINK_TYPED( ScrollBarHdl, ScrollBar*, void );
-        virtual void ResetScrollBars();
+        DECL_LINK( ScrollBarHdl, ScrollBar*, void );
+        void ResetScrollBars();
         // Window
         virtual void Resize() override;
     };

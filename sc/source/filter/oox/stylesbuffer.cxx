@@ -67,7 +67,6 @@
 #include <oox/token/namespaces.hxx>
 #include <oox/token/properties.hxx>
 #include <oox/token/tokens.hxx>
-#include "biffinputstream.hxx"
 #include "condformatbuffer.hxx"
 #include "excelhandlers.hxx"
 #include "themebuffer.hxx"
@@ -102,7 +101,6 @@ namespace {
 
 // OOXML predefined color indexes (also used in BIFF3-BIFF8)
 const sal_Int32 OOX_COLOR_USEROFFSET        = 0;        /// First user defined color in palette (OOXML/BIFF12).
-const sal_Int32 BIFF_COLOR_USEROFFSET       = 8;        /// First user defined color in palette (BIFF3-BIFF8).
 
 // OOXML font family (also used in BIFF)
 const sal_Int32 OOX_FONTFAMILY_NONE         = 0;
@@ -233,9 +231,7 @@ ExcelGraphicHelper::ExcelGraphicHelper( const WorkbookHelper& rHelper ) :
 
 sal_Int32 ExcelGraphicHelper::getSchemeColor( sal_Int32 nToken ) const
 {
-    if( getFilterType() == FILTER_OOXML )
-        return getTheme().getColorByToken( nToken );
-    return GraphicHelper::getSchemeColor( nToken );
+    return getTheme().getColorByToken( nToken );
 }
 
 sal_Int32 ExcelGraphicHelper::getPaletteColor( sal_Int32 nPaletteIdx ) const
@@ -349,33 +345,6 @@ namespace {
 #define PALETTE_EGA_COLORS_DARK \
             0x800000, 0x008000, 0x000080, 0x808000, 0x800080, 0x008080, 0xC0C0C0, 0x808080
 
-/** Default color table for BIFF2. */
-static const sal_Int32 spnDefColors2[] =
-{
-/*  0 */    PALETTE_EGA_COLORS_LIGHT
-};
-
-/** Default color table for BIFF3/BIFF4. */
-static const sal_Int32 spnDefColors3[] =
-{
-/*  0 */    PALETTE_EGA_COLORS_LIGHT,
-/*  8 */    PALETTE_EGA_COLORS_LIGHT,
-/* 16 */    PALETTE_EGA_COLORS_DARK
-};
-
-/** Default color table for BIFF5. */
-static const sal_Int32 spnDefColors5[] =
-{
-/*  0 */    PALETTE_EGA_COLORS_LIGHT,
-/*  8 */    PALETTE_EGA_COLORS_LIGHT,
-/* 16 */    PALETTE_EGA_COLORS_DARK,
-/* 24 */    0x8080FF, 0x802060, 0xFFFFC0, 0xA0E0E0, 0x600080, 0xFF8080, 0x0080C0, 0xC0C0FF,
-/* 32 */    0x000080, 0xFF00FF, 0xFFFF00, 0x00FFFF, 0x800080, 0x800000, 0x008080, 0x0000FF,
-/* 40 */    0x00CFFF, 0x69FFFF, 0xE0FFE0, 0xFFFF80, 0xA6CAF0, 0xDD9CB3, 0xB38FEE, 0xE3E3E3,
-/* 48 */    0x2A6FF9, 0x3FB8CD, 0x488436, 0x958C41, 0x8E5E42, 0xA0627A, 0x624FAC, 0x969696,
-/* 56 */    0x1D2FBE, 0x286676, 0x004500, 0x453E01, 0x6A2813, 0x85396A, 0x4A3285, 0x424242
-};
-
 /** Default color table for BIFF8/BIFF12/OOXML. */
 static const sal_Int32 spnDefColors8[] =
 {
@@ -399,26 +368,8 @@ ColorPalette::ColorPalette( const WorkbookHelper& rHelper )
     , mnAppendIndex(0)
 {
     // default colors
-    switch( getFilterType() )
-    {
-        case FILTER_OOXML:
-            maColors.insert( maColors.begin(), spnDefColors8, ::std::end(spnDefColors8) );
-            mnAppendIndex = OOX_COLOR_USEROFFSET;
-        break;
-        case FILTER_BIFF:
-            switch( getBiff() )
-            {
-                case BIFF2: maColors.insert( maColors.begin(), spnDefColors2, ::std::end(spnDefColors2) );  break;
-                case BIFF3:
-                case BIFF4: maColors.insert( maColors.begin(), spnDefColors3, ::std::end(spnDefColors3) );  break;
-                case BIFF5: maColors.insert( maColors.begin(), spnDefColors5, ::std::end(spnDefColors5) );  break;
-                case BIFF8: maColors.insert( maColors.begin(), spnDefColors8, ::std::end(spnDefColors8) );  break;
-                case BIFF_UNKNOWN: break;
-            }
-            mnAppendIndex = BIFF_COLOR_USEROFFSET;
-        break;
-        case FILTER_UNKNOWN: break;
-    }
+    maColors.insert( maColors.begin(), spnDefColors8, spnDefColors8 + SAL_N_ELEMENTS(spnDefColors8) );
+    mnAppendIndex = OOX_COLOR_USEROFFSET;
 }
 
 void ColorPalette::importPaletteColor( const AttributeList& rAttribs )
@@ -1008,11 +959,11 @@ void Font::fillToItemSet( SfxItemSet& rItemSet, bool bEditEngineText, bool bSkip
     }
     if( maUsedFlags.mbEscapementUsed )
     {
-        SvxEscapement eScEscapem = SVX_ESCAPEMENT_OFF;
+        SvxEscapement eScEscapem = SvxEscapement::Off;
         if ( maApiData.mnEscapement == API_ESCAPE_SUPERSCRIPT )
-            eScEscapem = SVX_ESCAPEMENT_SUPERSCRIPT;
+            eScEscapem = SvxEscapement::Superscript;
         else if ( maApiData.mnEscapement == API_ESCAPE_SUBSCRIPT )
-            eScEscapem = SVX_ESCAPEMENT_SUBSCRIPT;
+            eScEscapem = SvxEscapement::Subscript;
         if( bEditEngineText )
         {
            // #TODO handle EscapementHeight
@@ -1216,14 +1167,8 @@ void Alignment::finalizeImport()
         maApiData.mnVerJustifyMethod = css::table::CellJustifyMethod::DISTRIBUTE;
 
     /*  indentation: expressed as number of blocks of 3 space characters in
-        OOXML/BIFF12, and as multiple of 10 points in BIFF8. */
-    sal_Int32 nIndent = 0;
-    switch( getFilterType() )
-    {
-        case FILTER_OOXML:  nIndent = getUnitConverter().scaleToMm100( 3.0 * maModel.mnIndent, UNIT_SPACE );  break;
-        case FILTER_BIFF:   nIndent = getUnitConverter().scaleToMm100( 10.0 * maModel.mnIndent, UNIT_POINT ); break;
-        case FILTER_UNKNOWN: break;
-    }
+        OOXML. */
+    sal_Int32 nIndent = getUnitConverter().scaleToMm100( 3.0 * maModel.mnIndent, UNIT_SPACE );
     if( (0 <= nIndent) && (nIndent <= SAL_MAX_INT16) )
         maApiData.mnIndent = static_cast< sal_Int16 >( nIndent );
 
@@ -1328,10 +1273,10 @@ void Alignment::fillToItemSet( SfxItemSet& rItemSet, bool bSkipPoolDefs ) const
 {
     // horizontal alignment
     ScfTools::PutItem( rItemSet, SvxHorJustifyItem( GetScHorAlign(), ATTR_HOR_JUSTIFY ), bSkipPoolDefs );
-    ScfTools::PutItem( rItemSet, SvxJustifyMethodItem( ( maApiData.mnHorJustifyMethod == css::table::CellJustifyMethod::DISTRIBUTE ) ? ::SVX_JUSTIFY_METHOD_DISTRIBUTE : ::SVX_JUSTIFY_METHOD_AUTO, ATTR_HOR_JUSTIFY_METHOD ), bSkipPoolDefs );
+    ScfTools::PutItem( rItemSet, SvxJustifyMethodItem( ( maApiData.mnHorJustifyMethod == css::table::CellJustifyMethod::DISTRIBUTE ) ? ::SvxCellJustifyMethod::Distribute : ::SvxCellJustifyMethod::Auto, ATTR_HOR_JUSTIFY_METHOD ), bSkipPoolDefs );
     ScfTools::PutItem( rItemSet, SvxVerJustifyItem( GetScVerAlign(), ATTR_VER_JUSTIFY ), bSkipPoolDefs );
     // vertical alignment
-    ScfTools::PutItem( rItemSet, SvxJustifyMethodItem( ( maApiData.mnVerJustifyMethod == css::table::CellJustifyMethod::DISTRIBUTE ) ? ::SVX_JUSTIFY_METHOD_DISTRIBUTE : ::SVX_JUSTIFY_METHOD_AUTO, ATTR_VER_JUSTIFY_METHOD ), bSkipPoolDefs );
+    ScfTools::PutItem( rItemSet, SvxJustifyMethodItem( ( maApiData.mnVerJustifyMethod == css::table::CellJustifyMethod::DISTRIBUTE ) ? ::SvxCellJustifyMethod::Distribute : ::SvxCellJustifyMethod::Auto, ATTR_VER_JUSTIFY_METHOD ), bSkipPoolDefs );
 
     // CTL text direction
     ScfTools::PutItem( rItemSet, SvxFrameDirectionItem( GetScFrameDir(), ATTR_WRITINGDIR ), bSkipPoolDefs );
@@ -1344,20 +1289,6 @@ void Alignment::fillToItemSet( SfxItemSet& rItemSet, bool bSkipPoolDefs ) const
     // line wrap
     ScfTools::PutItem( rItemSet, SfxBoolItem( ATTR_LINEBREAK, maApiData.mbWrapText ), bSkipPoolDefs );
     ScfTools::PutItem( rItemSet, SfxBoolItem( ATTR_SHRINKTOFIT, maApiData.mbShrink ), bSkipPoolDefs );
-}
-
-void Alignment::writeToPropertyMap( PropertyMap& rPropMap ) const
-{
-    rPropMap.setProperty( PROP_HoriJustify, maApiData.meHorJustify);
-    rPropMap.setProperty( PROP_HoriJustifyMethod, maApiData.mnHorJustifyMethod);
-    rPropMap.setProperty( PROP_VertJustify, maApiData.mnVerJustify);
-    rPropMap.setProperty( PROP_VertJustifyMethod, maApiData.mnVerJustifyMethod);
-    rPropMap.setProperty( PROP_WritingMode, maApiData.mnWritingMode);
-    rPropMap.setProperty( PROP_RotateAngle, maApiData.mnRotation);
-    rPropMap.setProperty( PROP_Orientation, maApiData.meOrientation);
-    rPropMap.setProperty( PROP_ParaIndent, maApiData.mnIndent);
-    rPropMap.setProperty( PROP_IsTextWrapped, maApiData.mbWrapText);
-    rPropMap.setProperty( PROP_ShrinkToFit, maApiData.mbShrink);
 }
 
 ProtectionModel::ProtectionModel() :
@@ -1401,11 +1332,6 @@ void Protection::finalizeImport()
 {
     maApiData.maCellProt.IsLocked = maModel.mbLocked;
     maApiData.maCellProt.IsFormulaHidden = maModel.mbHidden;
-}
-
-void Protection::writeToPropertyMap( PropertyMap& rPropMap ) const
-{
-    rPropMap.setProperty( PROP_CellProtection, maApiData.maCellProt);
 }
 
 void Protection::fillToItemSet( SfxItemSet& rItemSet, bool bSkipPoolDefs ) const
@@ -1463,19 +1389,6 @@ bool ApiBorderData::hasAnyOuterBorder() const
         ( ( lcl_isBorder( maBottom ) && maBottom.OuterLineWidth > 0 ) ) ||
         ( ( lcl_isBorder( maLeft ) && maLeft.OuterLineWidth > 0 ) ) ||
         ( ( lcl_isBorder( maRight ) && maRight.OuterLineWidth > 0 ) );
-}
-
-bool operator==( const ApiBorderData& rLeft, const ApiBorderData& rRight )
-{
-    return
-        (rLeft.maLeft       == rRight.maLeft)   &&
-        (rLeft.maRight      == rRight.maRight)  &&
-        (rLeft.maTop        == rRight.maTop)    &&
-        (rLeft.maBottom     == rRight.maBottom) &&
-        (rLeft.maTLtoBR     == rRight.maTLtoBR) &&
-        (rLeft.maBLtoTR     == rRight.maBLtoTR) &&
-        (rLeft.mbBorderUsed == rRight.mbBorderUsed) &&
-        (rLeft.mbDiagUsed   == rRight.mbDiagUsed);
 }
 
 namespace {
@@ -1611,39 +1524,6 @@ void Border::fillToItemSet( SfxItemSet& rItemSet, bool bSkipPoolDefs ) const
         ScfTools::PutItem( rItemSet, aTLBRItem, bSkipPoolDefs );
         ScfTools::PutItem( rItemSet, aBLTRItem, bSkipPoolDefs );
     }
-}
-
-void Border::writeToPropertyMap( PropertyMap& rPropMap ) const
-{
-    if( maApiData.mbBorderUsed )
-    {
-        rPropMap.setProperty( PROP_LeftBorder, maApiData.maLeft);
-        rPropMap.setProperty( PROP_RightBorder, maApiData.maRight);
-        rPropMap.setProperty( PROP_TopBorder, maApiData.maTop);
-        rPropMap.setProperty( PROP_BottomBorder, maApiData.maBottom);
-    }
-    if( maApiData.mbDiagUsed )
-    {
-        rPropMap.setProperty( PROP_DiagonalTLBR, maApiData.maTLtoBR);
-        rPropMap.setProperty( PROP_DiagonalBLTR, maApiData.maBLtoTR);
-    }
-}
-
-bool Border::hasBorder() const
-{
-    if (lcl_isBorder(maApiData.maBottom))
-        return true;
-
-    if (lcl_isBorder(maApiData.maTop))
-        return true;
-
-    if (lcl_isBorder(maApiData.maLeft))
-        return true;
-
-    if (lcl_isBorder(maApiData.maRight))
-        return true;
-
-    return false;
 }
 
 BorderLineModel* Border::getBorderLine( sal_Int32 nElement )
@@ -1782,14 +1662,6 @@ ApiSolidFillData::ApiSolidFillData() :
     mbTransparent( true ),
     mbUsed( false )
 {
-}
-
-bool operator==( const ApiSolidFillData& rLeft, const ApiSolidFillData& rRight )
-{
-    return
-        (rLeft.mnColor       == rRight.mnColor) &&
-        (rLeft.mbTransparent == rRight.mbTransparent) &&
-        (rLeft.mbUsed        == rRight.mbUsed);
 }
 
 namespace {
@@ -2029,15 +1901,6 @@ void Fill::fillToItemSet( SfxItemSet& rItemSet, bool bSkipPoolDefs ) const
     }
 }
 
-void Fill::writeToPropertyMap( PropertyMap& rPropMap ) const
-{
-    if( maApiData.mbUsed )
-    {
-        rPropMap.setProperty( PROP_CellBackColor, maApiData.mnColor);
-        rPropMap.setProperty( PROP_IsCellBackgroundTransparent, maApiData.mbTransparent);
-    }
-}
-
 XfModel::XfModel() :
     mnStyleXfId( -1 ),
     mnFontId( -1 ),
@@ -2179,7 +2042,7 @@ void Xf::applyPatternToAttrList( AttrList& rAttrs, SCROW nRow1, SCROW nRow2, sal
     if ( nNumFmtId >= 0 )
     {
         ScPatternAttr aNumPat(rDoc.GetPool());
-        mnScNumFmt = getStyles().writeNumFmtToItemSet( aNumPat.GetItemSet(), nNumFmtId );
+        mnScNumFmt = getStyles().writeNumFmtToItemSet( aNumPat.GetItemSet(), nNumFmtId, false );
         rPat.GetItemSet().Put(aNumPat.GetItemSet());
     }
 
@@ -2218,36 +2081,6 @@ void Xf::applyPatternToAttrList( AttrList& rAttrs, SCROW nRow1, SCROW nRow2, sal
         if (!sc::NumFmtUtil::isLatinScript(*aEntry.pPattern, rDoc))
             rAttrs.mbLatinNumFmtOnly = false;
     }
-}
-
-void Xf::writeToPropertyMap( PropertyMap& rPropMap ) const
-{
-    StylesBuffer& rStyles = getStyles();
-
-    // create and set cell style.
-
-    // TODO : We should gradually move things to writeToDoc(), to set cell
-    // styles to the document directly.
-
-    if( maModel.mbFontUsed )
-        rStyles.writeFontToPropertyMap( rPropMap, maModel.mnFontId );
-    if( maModel.mbNumFmtUsed )
-        rStyles.writeNumFmtToPropertyMap( rPropMap, maModel.mnNumFmtId );
-    if( maModel.mbAlignUsed )
-        maAlignment.writeToPropertyMap( rPropMap );
-    if( maModel.mbProtUsed )
-        maProtection.writeToPropertyMap( rPropMap );
-    if( maModel.mbBorderUsed )
-        rStyles.writeBorderToPropertyMap( rPropMap, maModel.mnBorderId );
-    if( maModel.mbAreaUsed )
-        rStyles.writeFillToPropertyMap( rPropMap, maModel.mnFillId );
-}
-
-void Xf::writeToPropertySet( PropertySet& rPropSet ) const
-{
-    PropertyMap aPropMap;
-    writeToPropertyMap( aPropMap );
-    rPropSet.setProperties( aPropMap );
 }
 
 void Xf::writeToDoc( ScDocumentImport& rDoc, const table::CellRangeAddress& rRange )
@@ -2307,9 +2140,9 @@ Xf::createPattern( bool bSkipPoolDefs )
         if( !maModel.mbProtUsed )
             maModel.mbProtUsed = !rStyleData.mbProtUsed || !(maProtection.getApiData() == pStyleXf->maProtection.getApiData());
         if( !maModel.mbBorderUsed )
-            maModel.mbBorderUsed = !rStyleData.mbBorderUsed || !rStyles.equalBorders( maModel.mnBorderId, rStyleData.mnBorderId );
+            maModel.mbBorderUsed = !rStyleData.mbBorderUsed || !StylesBuffer::equalBorders( maModel.mnBorderId, rStyleData.mnBorderId );
         if( !maModel.mbAreaUsed )
-            maModel.mbAreaUsed = !rStyleData.mbAreaUsed || !rStyles.equalFills( maModel.mnFillId, rStyleData.mnFillId );
+            maModel.mbAreaUsed = !rStyleData.mbAreaUsed || !StylesBuffer::equalFills( maModel.mnFillId, rStyleData.mnFillId );
     }
     // cell protection
     if( maModel.mbProtUsed )
@@ -2373,21 +2206,21 @@ Dxf::Dxf( const WorkbookHelper& rHelper ) :
 {
 }
 
-FontRef Dxf::createFont( bool bAlwaysNew )
+FontRef const & Dxf::createFont( bool bAlwaysNew )
 {
     if( bAlwaysNew || !mxFont )
         mxFont.reset( new Font( *this, true ) );
     return mxFont;
 }
 
-BorderRef Dxf::createBorder( bool bAlwaysNew )
+BorderRef const & Dxf::createBorder( bool bAlwaysNew )
 {
     if( bAlwaysNew || !mxBorder )
         mxBorder.reset( new Border( *this, true ) );
     return mxBorder;
 }
 
-FillRef Dxf::createFill( bool bAlwaysNew )
+FillRef const & Dxf::createFill( bool bAlwaysNew )
 {
     if( bAlwaysNew || !mxFill )
         mxFill.reset( new Fill( *this, true ) );
@@ -2648,14 +2481,14 @@ void CellStyle::createCellStyle()
         if( bDefStyle )
         {
             // use existing "Default" style sheet
-            mpStyleSheet = static_cast< ScStyleSheet* >( static_cast< ScStyleSheetPool* >( rDoc.GetStyleSheetPool() )->Find(
+            mpStyleSheet = static_cast< ScStyleSheet* >( rDoc.GetStyleSheetPool()->Find(
                 ScGlobal::GetRscString( STR_STYLENAME_STANDARD ), SfxStyleFamily::Para ) );
             OSL_ENSURE( mpStyleSheet, "CellStyle::createStyle - Default style not found" );
             bCreatePattern = true;
         }
         else
         {
-            mpStyleSheet = static_cast< ScStyleSheet* >( static_cast< ScStyleSheetPool* >( rDoc.GetStyleSheetPool() )->Find( maFinalName, SfxStyleFamily::Para ) );
+            mpStyleSheet = static_cast< ScStyleSheet* >( rDoc.GetStyleSheetPool()->Find( maFinalName, SfxStyleFamily::Para ) );
             if( !mpStyleSheet )
             {
                 mpStyleSheet = &static_cast< ScStyleSheet& >( rDoc.GetStyleSheetPool()->Make( maFinalName, SfxStyleFamily::Para, SFXSTYLEBIT_USERDEF ) );
@@ -2706,13 +2539,7 @@ void CellStyleBuffer::finalizeImport()
 
     /*  First, reserve style names that are built-in in Calc. This causes that
         imported cell styles get different unused names and thus do not try to
-        overwrite these built-in styles. For BIFF4 workbooks (which contain a
-        separate list of cell styles per sheet), reserve all existing styles if
-        current sheet is not the first sheet (this styles buffer will be
-        constructed again for every new sheet). This will create unique names
-        for styles in different sheets with the same name. Assuming that the
-        BIFF4W import filter is never used to import from clipboard... */
-    bool bReserveAll = (getFilterType() == FILTER_BIFF) && (getBiff() == BIFF4) && isWorkbookFile() && (getCurrentSheetIndex() > 0);
+        overwrite these built-in styles. */
     try
     {
         // unfortunately, com.sun.star.style.StyleFamily does not implement XEnumerationAccess...
@@ -2720,7 +2547,7 @@ void CellStyleBuffer::finalizeImport()
         for( sal_Int32 nIndex = 0, nCount = xStyleFamilyIA->getCount(); nIndex < nCount; ++nIndex )
         {
             Reference< XStyle > xStyle( xStyleFamilyIA->getByIndex( nIndex ), UNO_QUERY_THROW );
-            if( bReserveAll || !xStyle->isUserDefined() )
+            if( !xStyle->isUserDefined() )
             {
                 // create an empty entry by using ::std::map<>::operator[]
                 aCellStyles[ xStyle->getName() ];
@@ -2740,13 +2567,10 @@ void CellStyleBuffer::finalizeImport()
             continue;
 
         OUString aStyleName = lclCreateStyleName( rModel );
-        /*  If a builtin style entry already exists, and we do not reserve all
-            existing styles, we just stick with the last definition and ignore
+        /*  If a builtin style entry already exists,
+            we just stick with the last definition and ignore
             the preceding ones. */
-        if( bReserveAll && (aCellStyles.find( aStyleName ) != aCellStyles.end()) )
-            aConflictNameStyles.push_back( *aIt );
-        else
-            aCellStyles[ aStyleName ] = *aIt;
+        aCellStyles[ aStyleName ] = *aIt;
     }
 
     /*  Calculate names of user defined styles. Store styles with reserved
@@ -2807,7 +2631,7 @@ OUString CellStyleBuffer::createCellStyle( sal_Int32 nXfId ) const
 
 // private --------------------------------------------------------------------
 
-void CellStyleBuffer::insertCellStyle( CellStyleRef xCellStyle )
+void CellStyleBuffer::insertCellStyle( CellStyleRef const & xCellStyle )
 {
     const CellStyleModel& rModel = xCellStyle->getModel();
     if( rModel.mnXfId >= 0 )
@@ -3020,53 +2844,21 @@ const FontModel& StylesBuffer::getDefaultFontModel() const
     return xDefFont.get() ? xDefFont->getModel() : getTheme().getDefaultFontModel();
 }
 
-bool StylesBuffer::equalBorders( sal_Int32 nBorderId1, sal_Int32 nBorderId2 ) const
+bool StylesBuffer::equalBorders( sal_Int32 nBorderId1, sal_Int32 nBorderId2 )
 {
     if( nBorderId1 == nBorderId2 )
         return true;
 
-    switch( getFilterType() )
-    {
-        case FILTER_OOXML:
-            // in OOXML, borders are assumed to be unique
-            return false;
-
-        case FILTER_BIFF:
-        {
-            // in BIFF, a new border entry has been created for every XF
-            const Border* pBorder1 = maBorders.get( nBorderId1 ).get();
-            const Border* pBorder2 = maBorders.get( nBorderId2 ).get();
-            return pBorder1 && pBorder2 && (pBorder1->getApiData() == pBorder2->getApiData());
-        }
-
-        case FILTER_UNKNOWN:
-        break;
-    }
+    // in OOXML, borders are assumed to be unique
     return false;
 }
 
-bool StylesBuffer::equalFills( sal_Int32 nFillId1, sal_Int32 nFillId2 ) const
+bool StylesBuffer::equalFills( sal_Int32 nFillId1, sal_Int32 nFillId2 )
 {
     if( nFillId1 == nFillId2 )
         return true;
 
-    switch( getFilterType() )
-    {
-        case FILTER_OOXML:
-            // in OOXML, fills are assumed to be unique
-            return false;
-
-        case FILTER_BIFF:
-        {
-            // in BIFF, a new fill entry has been created for every XF
-            const Fill* pFill1 = maFills.get( nFillId1 ).get();
-            const Fill* pFill2 = maFills.get( nFillId2 ).get();
-            return pFill1 && pFill2 && (pFill1->getApiData() == pFill2->getApiData());
-        }
-
-        case FILTER_UNKNOWN:
-        break;
-    }
+    // in OOXML, fills are assumed to be unique
     return false;
 }
 
@@ -3120,20 +2912,9 @@ void StylesBuffer::writeFontToItemSet( SfxItemSet& rItemSet, sal_Int32 nFontId, 
         pFont->fillToItemSet( rItemSet, false, bSkipPoolDefs );
 }
 
-void StylesBuffer::writeFontToPropertyMap( PropertyMap& rPropMap, sal_Int32 nFontId ) const
-{
-    if( Font* pFont = maFonts.get( nFontId ).get() )
-        pFont->writeToPropertyMap( rPropMap, FONT_PROPTYPE_CELL );
-}
-
 sal_uLong StylesBuffer::writeNumFmtToItemSet( SfxItemSet& rItemSet, sal_Int32 nNumFmtId, bool bSkipPoolDefs ) const
 {
     return maNumFmts.fillToItemSet( rItemSet, nNumFmtId, bSkipPoolDefs );
-}
-
-void StylesBuffer::writeNumFmtToPropertyMap( PropertyMap& rPropMap, sal_Int32 nNumFmtId ) const
-{
-    maNumFmts.writeToPropertyMap( rPropMap, nNumFmtId );
 }
 
 void StylesBuffer::writeBorderToItemSet( SfxItemSet& rItemSet, sal_Int32 nBorderId, bool bSkipPoolDefs ) const
@@ -3142,22 +2923,10 @@ void StylesBuffer::writeBorderToItemSet( SfxItemSet& rItemSet, sal_Int32 nBorder
         pBorder->fillToItemSet( rItemSet, bSkipPoolDefs );
 }
 
-void StylesBuffer::writeBorderToPropertyMap( PropertyMap& rPropMap, sal_Int32 nBorderId ) const
-{
-    if( Border* pBorder = maBorders.get( nBorderId ).get() )
-        pBorder->writeToPropertyMap( rPropMap );
-}
-
 void StylesBuffer::writeFillToItemSet( SfxItemSet& rItemSet, sal_Int32 nFillId, bool bSkipPoolDefs ) const
 {
     if( Fill* pFill = maFills.get( nFillId ).get() )
         pFill->fillToItemSet( rItemSet, bSkipPoolDefs );
-}
-
-void StylesBuffer::writeFillToPropertyMap( PropertyMap& rPropMap, sal_Int32 nFillId ) const
-{
-    if( Fill* pFill = maFills.get( nFillId ).get() )
-        pFill->writeToPropertyMap( rPropMap );
 }
 
 bool operator==( const XfModel& rXfModel1,  const XfModel& rXfModel2 )

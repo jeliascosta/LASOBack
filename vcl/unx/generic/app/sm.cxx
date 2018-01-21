@@ -37,7 +37,6 @@
 #include <X11/Xatom.h>
 
 #include <unx/sm.hxx>
-#include <unx/saldata.hxx>
 #include <unx/saldisp.hxx>
 #include <unx/salframe.h>
 #include <unx/salinst.h>
@@ -55,7 +54,7 @@ public:
     IceSalSession() {}
 
 private:
-    virtual ~IceSalSession() {}
+    virtual ~IceSalSession() override {}
 
     virtual void queryInteraction() override;
     virtual void interactionDone() override;
@@ -238,7 +237,7 @@ bool SessionManagerClient::checkDocumentsSaved()
     return m_bDocSaveDone;
 }
 
-IMPL_STATIC_LINK_TYPED( SessionManagerClient, SaveYourselfHdl, void*, pStateVal, void )
+IMPL_STATIC_LINK( SessionManagerClient, SaveYourselfHdl, void*, pStateVal, void )
 {
     // Decode argument smuggled in as void*:
     sal_uIntPtr nStateVal = reinterpret_cast< sal_uIntPtr >(pStateVal);
@@ -279,7 +278,7 @@ IMPL_STATIC_LINK_TYPED( SessionManagerClient, SaveYourselfHdl, void*, pStateVal,
         saveDone();
 }
 
-IMPL_STATIC_LINK_NOARG_TYPED( SessionManagerClient, InteractionHdl, void*, void )
+IMPL_STATIC_LINK_NOARG( SessionManagerClient, InteractionHdl, void*, void )
 {
     SAL_INFO("vcl.sm", "interaction link");
     if( m_pSession )
@@ -289,7 +288,7 @@ IMPL_STATIC_LINK_NOARG_TYPED( SessionManagerClient, InteractionHdl, void*, void 
     }
 }
 
-IMPL_STATIC_LINK_NOARG_TYPED( SessionManagerClient, ShutDownCancelHdl, void*, void )
+IMPL_STATIC_LINK_NOARG( SessionManagerClient, ShutDownCancelHdl, void*, void )
 {
     SAL_INFO("vcl.sm", "shutdown cancel");
     if( m_pSession )
@@ -337,7 +336,7 @@ void SessionManagerClient::SaveYourselfProc(
     SAL_INFO("vcl.sm", "waiting for save yourself event to be processed" );
 }
 
-IMPL_STATIC_LINK_NOARG_TYPED( SessionManagerClient, ShutDownHdl, void*, void )
+IMPL_STATIC_LINK_NOARG( SessionManagerClient, ShutDownHdl, void*, void )
 {
     if( m_pSession )
     {

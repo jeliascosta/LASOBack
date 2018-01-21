@@ -36,7 +36,7 @@ public:
                 ScColBar( vcl::Window* pParent, ScHSplitPos eWhich,
                           ScHeaderFunctionSet* pFuncSet, ScHeaderSelectionEngine* pEng,
                           ScTabView* pTab );
-                virtual ~ScColBar();
+                virtual ~ScColBar() override;
 
     virtual SCCOLROW    GetPos() const override;
     virtual sal_uInt16  GetEntrySize( SCCOLROW nEntryNo ) const override;
@@ -55,8 +55,6 @@ public:
     virtual void        DrawInvert( long nDragPos ) override;
 
     virtual OUString    GetDragHelp( long nVal ) override;
-
-            bool        UseNumericHeader() const;
 };
 
 class ScRowBar : public ScHeaderControl
@@ -68,7 +66,7 @@ public:
                 ScRowBar( vcl::Window* pParent, ScVSplitPos eWhich,
                           ScHeaderFunctionSet* pFuncSet, ScHeaderSelectionEngine* pEng,
                           ScTabView* pTab );
-                virtual ~ScRowBar();
+                virtual ~ScRowBar() override;
 
     virtual SCCOLROW    GetPos() const override;
     virtual sal_uInt16  GetEntrySize( SCCOLROW nEntryNo ) const override;

@@ -108,7 +108,7 @@ void OStaticSet::fillAllRows()
 }
 
 // XResultSet
-bool SAL_CALL OStaticSet::next(  ) throw(SQLException, RuntimeException)
+bool SAL_CALL OStaticSet::next() throw(SQLException, RuntimeException, std::exception)
 {
     m_bInserted = m_bUpdated = m_bDeleted = false;
 
@@ -141,14 +141,14 @@ void SAL_CALL OStaticSet::beforeFirst(  ) throw(SQLException, RuntimeException)
     m_aSetIter = m_aSet.begin();
 }
 
-void SAL_CALL OStaticSet::afterLast(  ) throw(SQLException, RuntimeException)
+void SAL_CALL OStaticSet::afterLast(  ) throw(SQLException, RuntimeException, std::exception)
 {
     m_bInserted = m_bUpdated = m_bDeleted = false;
     fillAllRows();
     m_aSetIter = m_aSet.end();
 }
 
-bool SAL_CALL OStaticSet::first(  ) throw(SQLException, RuntimeException)
+bool SAL_CALL OStaticSet::first() throw(SQLException, RuntimeException, std::exception)
 {
     m_bInserted = m_bUpdated = m_bDeleted = false;
     m_aSetIter = m_aSet.begin()+1;
@@ -158,7 +158,7 @@ bool SAL_CALL OStaticSet::first(  ) throw(SQLException, RuntimeException)
     return m_aSetIter != m_aSet.end();
 }
 
-bool SAL_CALL OStaticSet::last(  ) throw(SQLException, RuntimeException)
+bool SAL_CALL OStaticSet::last() throw(SQLException, RuntimeException, std::exception)
 {
     m_bInserted = m_bUpdated = m_bDeleted = false;
     fillAllRows();
@@ -177,7 +177,7 @@ sal_Int32 SAL_CALL OStaticSet::getRow(  ) throw(SQLException, RuntimeException)
     return nPos;
 }
 
-bool SAL_CALL OStaticSet::absolute( sal_Int32 row ) throw(SQLException, RuntimeException)
+bool SAL_CALL OStaticSet::absolute( sal_Int32 row ) throw(SQLException, RuntimeException, std::exception)
 {
     m_bInserted = m_bUpdated = m_bDeleted = false;
     OSL_ENSURE(row,"OStaticSet::absolute: INVALID row number!");
@@ -256,11 +256,6 @@ void SAL_CALL OStaticSet::insertRow( const ORowSetRow& _rInsertRow,const connect
         ((*m_aSetIter)->get())[0] = (_rInsertRow->get())[0] = getBookmark();
         m_bEnd = false;
     }
-}
-
-void SAL_CALL OStaticSet::updateRow(const ORowSetRow& _rInsertRow ,const ORowSetRow& _rOriginalRow,const connectivity::OSQLTable& _xTable  ) throw(SQLException, RuntimeException, std::exception)
-{
-    OCacheSet::updateRow( _rInsertRow,_rOriginalRow,_xTable);
 }
 
 void SAL_CALL OStaticSet::deleteRow(const ORowSetRow& _rDeleteRow ,const connectivity::OSQLTable& _xTable  ) throw(SQLException, RuntimeException)

@@ -43,13 +43,13 @@ class SVX_DLLPUBLIC FmFormPage : public SdrPage
     FmFormPage& operator=(const FmFormPage&) = delete;
 
     friend class FmFormObj;
-    FmFormPageImpl*     m_pImpl;
+    std::unique_ptr<FmFormPageImpl>     m_pImpl;
     OUString            m_sPageName;
 
 public:
 
     explicit FmFormPage(FmFormModel& rModel, bool bMasterPage=false);
-    virtual ~FmFormPage();
+    virtual ~FmFormPage() override;
 
     virtual void    SetModel(SdrModel* pNewModel) override;
 

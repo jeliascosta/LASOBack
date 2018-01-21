@@ -30,6 +30,7 @@
 #include <osl/mutex.hxx>
 #include <cppuhelper/implbase1.hxx>
 #include <comphelper/servicehelper.hxx>
+#include <memory>
 
 class AccessibleRelationSetHelperImpl;
 
@@ -51,7 +52,7 @@ public:
     AccessibleRelationSetHelper ();
     AccessibleRelationSetHelper (const AccessibleRelationSetHelper& rHelper);
 protected:
-    virtual ~AccessibleRelationSetHelper();
+    virtual ~AccessibleRelationSetHelper() override;
 public:
 
     //=====  XAccessibleRelationSet  ==========================================
@@ -136,7 +137,7 @@ protected:
 
 private:
     /// The implementation of this helper interface.
-    AccessibleRelationSetHelperImpl*    mpHelperImpl;
+    std::unique_ptr<AccessibleRelationSetHelperImpl>    mpHelperImpl;
 };
 
 }

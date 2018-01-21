@@ -50,7 +50,7 @@ namespace dbaui
                 SAL_CALL Create(const css::uno::Reference< css::lang::XMultiServiceFactory >&);
 
         // UNO
-        DECLARE_UNO3_DEFAULTS(SbaExternalSourceBrowser, OGenericUnoController)
+        DECLARE_UNO3_DEFAULTS(SbaExternalSourceBrowser, SbaXDataBrowserController)
         virtual css::uno::Any  SAL_CALL queryInterface(const css::uno::Type& _rType) throw (css::uno::RuntimeException, std::exception) override;
         //  virtual css::uno::Sequence< css::uno::Reference< css::reflection::XIdlClass > >  getIdlClasses();
 
@@ -83,7 +83,7 @@ namespace dbaui
         virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames() throw(css::uno::RuntimeException, std::exception) override;
 
     protected:
-        virtual ~SbaExternalSourceBrowser();
+        virtual ~SbaExternalSourceBrowser() override;
 
         virtual css::uno::Reference< css::sdbc::XRowSet >  CreateForm() override;
         virtual bool InitializeForm( const css::uno::Reference< css::beans::XPropertySet >& i_formProperties ) override;

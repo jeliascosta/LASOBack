@@ -20,6 +20,10 @@
 #ifndef INCLUDED_STORE_SOURCE_STORCACH_HXX
 #define INCLUDED_STORE_SOURCE_STORCACH_HXX
 
+#include <sal/config.h>
+
+#include <memory>
+
 #include "sal/types.h"
 #include "rtl/ref.hxx"
 
@@ -43,7 +47,7 @@ class PageCache :
 {
     // Representation
     static size_t const theTableSize = 32;
-    static_assert(STORE_IMPL_ISP2(theTableSize), "must be the case");
+    static_assert((theTableSize & (theTableSize-1)) == 0, "table size should be a power of 2");
 
     Entry **     m_hash_table;
     Entry *      m_hash_table_0[theTableSize];
@@ -65,7 +69,7 @@ class PageCache :
     }
 
     Entry * lookup_Impl (Entry * entry, sal_uInt32 nOffset);
-    void rescale_Impl (sal_Size new_size);
+    void rescale_Impl (std::size_t new_size);
 
 public:
     // Construction
@@ -77,19 +81,19 @@ public:
     /** load.
      */
     storeError lookupPageAt (
-        PageHolder & rxPage,
+        std::shared_ptr<PageData> & rxPage,
         sal_uInt32   nOffset);
 
     /** insert.
      */
     storeError insertPageAt (
-        PageHolder const & rxPage,
+        std::shared_ptr<PageData> const & rxPage,
         sal_uInt32         nOffset);
 
     /** update, or insert.
      */
     storeError updatePageAt (
-        PageHolder const & rxPage,
+        std::shared_ptr<PageData> const & rxPage,
         sal_uInt32         nOffset);
 
     /** remove (invalidate).
@@ -99,7 +103,7 @@ public:
 
 protected:
     // Destruction
-    virtual ~PageCache();
+    virtual ~PageCache() override;
 };
 
 /*========================================================================

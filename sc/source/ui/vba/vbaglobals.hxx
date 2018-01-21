@@ -37,13 +37,13 @@ typedef ::cppu::ImplInheritanceHelper< VbaGlobalsBase, ov::excel::XGlobals > ScV
 class ScVbaGlobals : public ScVbaGlobals_BASE
 {
     css::uno::Reference< ov::excel::XApplication > mxApplication;
-    css::uno::Reference< ov::excel::XApplication > SAL_CALL getApplication()
+    css::uno::Reference< ov::excel::XApplication > const & SAL_CALL getApplication()
                         throw (css::uno::RuntimeException);
 public:
 
     ScVbaGlobals( css::uno::Sequence< css::uno::Any > const& aArgs,
                  css::uno::Reference< css::uno::XComponentContext >const& rxContext );
-    virtual ~ScVbaGlobals();
+    virtual ~ScVbaGlobals() override;
 
     // XGlobals
     virtual css::uno::Reference< ov::excel::XWorkbook > SAL_CALL getActiveWorkbook() throw (css::uno::RuntimeException, std::exception) override;

@@ -120,7 +120,7 @@ public:
 
 private:
     Implementation();
-    virtual ~Implementation();
+    virtual ~Implementation() override;
 
     class Deleter { public:
         void operator() (Implementation* pObject) { delete pObject; }
@@ -164,8 +164,6 @@ private:
 
     Size maSmallPreviewSizePixel;
     Size maLargePreviewSizePixel;
-
-    bool mbContainerCleaningPending;
 
     typedef ::std::pair<MasterPageContainerChangeEvent::EventType,Token> EventData;
 
@@ -494,9 +492,7 @@ MasterPageContainer::Implementation::Implementation()
       maSmallPreviewNotAvailable(),
       maChangeListeners(),
       maSmallPreviewSizePixel(),
-      maLargePreviewSizePixel(),
-      mbContainerCleaningPending(true)
-
+      maLargePreviewSizePixel()
 {
     UpdatePreviewSizePixel();
 }
@@ -639,8 +635,7 @@ MasterPageContainer::Token MasterPageContainer::Implementation::PutMasterPage (
 
         if ( ! bIgnore)
         {
-            if (mbContainerCleaningPending)
-                CleanContainer();
+            CleanContainer();
 
             aResult = maContainer.size();
             rpDescriptor->SetToken(aResult);
@@ -997,7 +992,6 @@ void MasterPageContainer::Implementation::ReleaseDescriptor (Token aToken)
     if (aToken>=0 && (unsigned)aToken<maContainer.size())
     {
         maContainer[aToken].reset();
-        mbContainerCleaningPending = true;
     }
 }
 

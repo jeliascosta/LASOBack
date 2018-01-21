@@ -112,7 +112,7 @@ struct XclRootData
     const bool          mbExport;           /// false = Import, true = Export.
 
     explicit            XclRootData( XclBiff eBiff, SfxMedium& rMedium,
-                            tools::SvRef<SotStorage> xRootStrg, ScDocument& rDoc,
+                            tools::SvRef<SotStorage> const & xRootStrg, ScDocument& rDoc,
                             rtl_TextEncoding eTextEnc, bool bExport );
     virtual             ~XclRootData();
 };
@@ -190,11 +190,11 @@ public:
     bool                HasVbaStorage() const;
 
     /** Tries to open a storage as child of the specified storage for reading or writing. */
-    tools::SvRef<SotStorage>       OpenStorage( tools::SvRef<SotStorage> xStrg, const OUString& rStrgName ) const;
+    tools::SvRef<SotStorage>       OpenStorage( tools::SvRef<SotStorage> const & xStrg, const OUString& rStrgName ) const;
     /** Tries to open a storage as child of the root storage for reading or writing. */
     tools::SvRef<SotStorage>       OpenStorage( const OUString& rStrgName ) const;
     /** Tries to open a new stream in the specified storage for reading or writing. */
-    tools::SvRef<SotStorageStream> OpenStream( tools::SvRef<SotStorage> xStrg, const OUString& rStrmName ) const;
+    tools::SvRef<SotStorageStream> OpenStream( tools::SvRef<SotStorage> const & xStrg, const OUString& rStrmName ) const;
     /** Tries to open a new stream in the root storage for reading or writing. */
     tools::SvRef<SotStorageStream> OpenStream( const OUString& rStrmName ) const;
 

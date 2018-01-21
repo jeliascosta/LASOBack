@@ -22,6 +22,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <o3tl/any.hxx>
 #include <tools/resary.hxx>
 #include <rtl/math.hxx>
 #include <sal/macros.h>
@@ -112,14 +113,14 @@ const FuncDataBase pFuncDatas[] =
     FUNCDATA( Imsech,           UNIQUE,     STDPAR,     1,          FDCat_Tech ),
     FUNCDATA( Imcsch,           UNIQUE,     STDPAR,     1,          FDCat_Tech ),
     FUNCDATA( Complex,          UNIQUE,     STDPAR,     3,          FDCat_Tech ),
-    FUNCDATA( Convert,          DOUBLE,     STDPAR,     3,          FDCat_Tech ),
+    FUNCDATA( Convert,          UNIQUE,     STDPAR,     3,          FDCat_Tech ),
     FUNCDATA( Amordegrc,        UNIQUE,     INTPAR,     7,          FDCat_Finance ),
     FUNCDATA( Amorlinc,         UNIQUE,     INTPAR,     7,          FDCat_Finance ),
     FUNCDATA( Accrint,          UNIQUE,     INTPAR,     7,          FDCat_Finance ),
     FUNCDATA( Accrintm,         UNIQUE,     INTPAR,     5,          FDCat_Finance ),
     FUNCDATA( Received,         UNIQUE,     INTPAR,     5,          FDCat_Finance ),
     FUNCDATA( Disc,             UNIQUE,     INTPAR,     5,          FDCat_Finance ),
-    FUNCDATA( Duration,         DOUBLE,     INTPAR,     6,          FDCat_Finance ),
+    FUNCDATA( Duration,         UNIQUE,     INTPAR,     6,          FDCat_Finance ),
     FUNCDATA( Effect,           DOUBLE,     STDPAR,     2,          FDCat_Finance ),
     FUNCDATA( Cumprinc,         DOUBLE,     STDPAR,     6,          FDCat_Finance ),
     FUNCDATA( Cumipmt,          DOUBLE,     STDPAR,     6,          FDCat_Finance ),
@@ -984,9 +985,6 @@ OUString GetString( double f, bool bLeadingSign, sal_uInt16 nMaxDig )
 double GetAmordegrc( sal_Int32 nNullDate, double fCost, sal_Int32 nDate, sal_Int32 nFirstPer,
     double fRestVal, double fPer, double fRate, sal_Int32 nBase ) throw( uno::RuntimeException, lang::IllegalArgumentException )
 {
-    if( nBase == 2 )
-        throw lang::IllegalArgumentException();
-
     sal_uInt32  nPer = sal_uInt32( fPer );
     double      fUsePer = 1.0 / fRate;
     double      fAmorCoeff;
@@ -1032,21 +1030,22 @@ double GetAmordegrc( sal_Int32 nNullDate, double fCost, sal_Int32 nDate, sal_Int
 double GetAmorlinc( sal_Int32 nNullDate, double fCost, sal_Int32 nDate, sal_Int32 nFirstPer,
     double fRestVal, double fPer, double fRate, sal_Int32 nBase ) throw( uno::RuntimeException, lang::IllegalArgumentException )
 {
-    if( nBase == 2 )
-        throw lang::IllegalArgumentException();
-
     sal_uInt32  nPer = sal_uInt32( fPer );
     double      fOneRate = fCost * fRate;
     double      fCostDelta = fCost - fRestVal;
     double      f0Rate = GetYearFrac( nNullDate, nDate, nFirstPer, nBase ) * fRate * fCost;
     sal_uInt32  nNumOfFullPeriods = sal_uInt32( ( fCost - fRestVal - f0Rate) / fOneRate );
 
+    double fResult = 0.0;
     if( nPer == 0 )
-        return f0Rate;
+        fResult = f0Rate;
     else if( nPer <= nNumOfFullPeriods )
-        return fOneRate;
+        fResult = fOneRate;
     else if( nPer == nNumOfFullPeriods + 1 )
-        return fCostDelta - fOneRate * nNumOfFullPeriods - f0Rate;
+        fResult = fCostDelta - fOneRate * nNumOfFullPeriods - f0Rate;
+
+    if ( fResult > 0.0 )
+        return fResult;
     else
         return 0.0;
 }
@@ -1591,8 +1590,9 @@ void ScaDoubleList::Append(
         const uno::Any& rAny,
         bool bIgnoreEmpty ) throw( uno::RuntimeException, lang::IllegalArgumentException )
 {
-    if( rAny.getValueTypeClass() == uno::TypeClass_SEQUENCE )
-        Append( rAnyConv, *static_cast< const uno::Sequence< uno::Sequence< uno::Any > >* >( rAny.getValue() ), bIgnoreEmpty );
+    if( auto s = o3tl::tryAccess<
+            css::uno::Sequence<css::uno::Sequence<css::uno::Any>>>(rAny) )
+        Append( rAnyConv, *s, bIgnoreEmpty );
     else
     {
         double fValue;
@@ -1748,7 +1748,7 @@ OUString Complex::GetString() const throw( uno::RuntimeException, lang::IllegalA
     bool bHasReal = !bHasImag || (r != 0.0);
 
     if( bHasReal )
-        aRet.append(::GetString( r ));
+        aRet.append(::GetString( r, false ));
     if( bHasImag )
     {
         if( i == 1.0 )
@@ -2120,10 +2120,10 @@ void ComplexList::Append( const uno::Sequence< uno::Any >& aMultPars, ComplListA
             case uno::TypeClass_VOID:       break;
             case uno::TypeClass_STRING:
                 {
-                const OUString*       pStr = static_cast<const OUString*>(r.getValue());
+                auto       pStr = o3tl::forceAccess<OUString>(r);
 
                 if( !pStr->isEmpty() )
-                    Append( new Complex( *static_cast<OUString const *>(r.getValue()) ) );
+                    Append( new Complex( *pStr ) );
                 else if( bEmpty0 )
                     Append( new Complex( 0.0 ) );
                 else if( bErrOnEmpty )
@@ -2131,7 +2131,7 @@ void ComplexList::Append( const uno::Sequence< uno::Any >& aMultPars, ComplListA
                 }
                 break;
             case uno::TypeClass_DOUBLE:
-                Append( new Complex( *static_cast<double const *>(r.getValue()), 0.0 ) );
+                Append( new Complex( *o3tl::forceAccess<double>(r), 0.0 ) );
                 break;
             case uno::TypeClass_SEQUENCE:
                 {
@@ -2153,18 +2153,17 @@ void ComplexList::Append( const uno::Sequence< uno::Any >& aMultPars, ComplListA
     }
 }
 
-
-ConvertData::ConvertData( const sal_Char p[], double fC, ConvertDataClass e, bool bPrefSupport ) : aName( p, strlen( p ), RTL_TEXTENCODING_MS_1252 )
+ConvertData::ConvertData(const sal_Char p[], double fC, ConvertDataClass e, bool bPrefSupport)
+    : fConst(fC)
+    , aName(p, strlen(p), RTL_TEXTENCODING_MS_1252)
+    , eClass(e)
+    , bPrefixSupport(bPrefSupport)
 {
-    fConst = fC;
-    eClass = e;
-    bPrefixSupport = bPrefSupport;
 }
 
 ConvertData::~ConvertData()
 {
 }
-
 
 sal_Int16 ConvertData::GetMatchingLevel( const OUString& rRef ) const
 {
@@ -2174,8 +2173,7 @@ sal_Int16 ConvertData::GetMatchingLevel( const OUString& rRef ) const
     if( nIndex > 0 && nIndex  == ( nLen - 2 ) )
     {
         const sal_Unicode*  p = aStr.getStr();
-        aStr = OUString( p, nLen - 2 );
-        aStr += OUString( p[ nLen - 1 ] );
+        aStr = OUString( p, nLen - 2 ) + OUStringLiteral1( p[ nLen - 1 ] );
     }
     if( aName.equals( aStr ) )
         return 0;
@@ -2184,7 +2182,7 @@ sal_Int16 ConvertData::GetMatchingLevel( const OUString& rRef ) const
         const sal_Unicode*  p = aStr.getStr();
 
         nLen = aStr.getLength();
-        bool bPref = IsPrefixSupport();
+        bool bPref = bPrefixSupport;
         bool bOneChar = (bPref && nLen > 1 && (aName == p + 1));
         if (bOneChar || (bPref && nLen > 2 && (aName == p + 2) &&
                     *p == 'd' && *(p+1) == 'a'))
@@ -2391,7 +2389,9 @@ ConvertDataList::ConvertDataList()
     NEWD( "ft",         3.2808398950131234E00,  CDC_Length ); // Foot               3,2808398950131233595800524934383
     NEWD( "yd",         1.0936132983377078E00,  CDC_Length ); // Yard               1,0936132983377077865266841644794
     NEWDP( "ang",       1.0000000000000000E10,  CDC_Length ); // Angstroem
-    NEWD( "Pica",       2.8346456692913386E03,  CDC_Length ); // Pica (1/72 Inch)   2834,6456692913385826771653543307
+    NEWD( "Pica",       2.8346456692913386E03,  CDC_Length ); // Pica Point (1/72 Inch)   2834,6456692913385826771653543307
+    NEWD( "picapt",     2.8346456692913386E03,  CDC_Length ); // Pica Point (1/72 Inch)   2834,6456692913385826771653543307
+    NEWD( "pica",       2.36220472441E02,       CDC_Length ); // pica (1/6 Inch)
     NEWD( "ell",        8.748906E-01,           CDC_Length ); // *** Ell
     NEWDP( "parsec",    3.240779E-17,           CDC_Length ); // *** Parsec
     NEWDP( "pc",        3.240779E-17,           CDC_Length ); // *** Parsec also
@@ -2480,7 +2480,9 @@ ConvertDataList::ConvertDataList()
     NEWD( "ft3",        3.5314666721488590E-02, CDC_Volume ); // *** Cubic Foot
     NEWD( "yd3",        1.3079506193143922E-03, CDC_Volume ); // *** Cubic Yard
     NEWDP( "ang3",      1.0000000000000000E27,  CDC_Volume ); // *** Cubic Angstroem
-    NEWD( "Pica3",      2.2776990435870636E07,  CDC_Volume ); // *** Cubic Pica
+    NEWD( "Pica3",      2.2776990435870636E07,  CDC_Volume ); // *** Cubic Pica Point (1/72 inch)
+    NEWD( "picapt3",    2.2776990435870636E07,  CDC_Volume ); // *** Cubic Pica Point (1/72 inch)
+    NEWD( "pica3",      1.31811287245E04,       CDC_Volume ); // *** Cubic Pica (1/6 inch)
     NEWD( "barrel",     6.2898107704321051E-03, CDC_Volume ); // *** Barrel (=42gal)
     NEWD( "bushel",     2.837759E-02,           CDC_Volume ); // *** Bushel
     NEWD( "regton",     3.531467E-04,           CDC_Volume ); // *** Register ton
@@ -2504,7 +2506,9 @@ ConvertDataList::ConvertDataList()
     NEWD( "ft2",        1.0763910416709722E01,  CDC_Area ); // *** Square Foot
     NEWD( "yd2",        1.1959900463010803E00,  CDC_Area ); // *** Square Yard
     NEWDP( "ang2",      1.0000000000000000E20,  CDC_Area ); // *** Square Angstroem
-    NEWD( "Pica2",      8.0352160704321409E06,  CDC_Area ); // *** Square Pica
+    NEWD( "Pica2",      8.0352160704321409E06,  CDC_Area ); // *** Square Pica Point (1/72 inch)
+    NEWD( "picapt2",    8.0352160704321409E06,  CDC_Area ); // *** Square Pica Point (1/72 inch)
+    NEWD( "pica2",      5.58001116002232E04,    CDC_Area ); // *** Square Pica (1/6 inch)
     NEWD( "Morgen",     4.0000000000000000E-04, CDC_Area ); // *** Morgen
     NEWDP( "ar",        1.000000E-02,           CDC_Area ); // *** Ar
     NEWD( "acre",       2.471053815E-04,        CDC_Area ); // *** Acre
@@ -2870,7 +2874,7 @@ bool ScaAnyConverter::getDouble(
         break;
         case uno::TypeClass_STRING:
         {
-            const OUString* pString = static_cast< const OUString* >( rAny.getValue() );
+            auto pString = o3tl::forceAccess< OUString >( rAny );
             if( !pString->isEmpty() )
                 rfResult = convertToDouble( *pString );
             else

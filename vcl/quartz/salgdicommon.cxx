@@ -73,7 +73,6 @@ extern int DBG_DRAW_ROUNDS, DBG_DRAW_COUNTER, DBG_DRAW_DEPTH;
 
 using namespace vcl;
 
-typedef std::vector<unsigned char> ByteVector;
 
 static const basegfx::B2DPoint aHalfPointOfs ( 0.5, 0.5 );
 
@@ -195,7 +194,7 @@ bool AquaSalGraphics::CreateFontSubset( const OUString& rToFile,
     }
 
     // get the raw-bytes from the font to be subset
-    ByteVector aBuffer;
+    std::vector<unsigned char> aBuffer;
     bool bCffOnly = false;
     if( !GetRawFontData( pFontData, aBuffer, &bCffOnly ) )
     {
@@ -1440,8 +1439,8 @@ void AquaSalGraphics::drawPolyLine( sal_uInt32 nPoints, const SalPoint *pPtAry )
         SAL_INFO( "vcl.cg", "CGContextAddLineToPoint(" << mrContext << "," << fX << "," << fY << ")" );
         CGContextAddLineToPoint( mrContext, fX, fY );
     }
-    SAL_INFO( "vcl.cg", "CGContextDrawPath(" << mrContext << ",kCGPathStroke)" );
-    CGContextDrawPath( mrContext, kCGPathStroke );
+    SAL_INFO( "vcl.cg", "CGContextStrokePath(" << mrContext << ")" );
+    CGContextStrokePath(mrContext);
 
     RefreshRect( nX, nY, nWidth, nHeight );
 
@@ -1545,10 +1544,9 @@ SalColor AquaSalGraphics::getPixel( long nX, long nY )
     return nSalColor;
 }
 
-#ifndef IOS
-
 void AquaSalGraphics::GetResolution( sal_Int32& rDPIX, sal_Int32& rDPIY )
 {
+#ifndef IOS
     if( !mnRealDPIY )
     {
         initResolution( (mbWindow && mpFrame) ? mpFrame->getNSWindow() : nil );
@@ -1556,9 +1554,10 @@ void AquaSalGraphics::GetResolution( sal_Int32& rDPIX, sal_Int32& rDPIY )
 
     rDPIX = mnRealDPIX;
     rDPIY = mnRealDPIY;
-}
-
+#else
+    rDPIX = rDPIY = 200; // FIXME
 #endif
+}
 
 void AquaSalGraphics::ImplDrawPixel( long nX, long nY, const RGBAColor& rColor )
 {
@@ -1893,8 +1892,8 @@ bool AquaSalGraphics::supportsOperation( OutDevSupportType eType ) const
     bool bRet = false;
     switch( eType )
     {
-    case OutDevSupport_TransparentRect:
-    case OutDevSupport_B2DDraw:
+    case OutDevSupportType::TransparentRect:
+    case OutDevSupportType::B2DDraw:
         bRet = true;
         break;
     default:
@@ -1969,7 +1968,7 @@ void AquaSalGraphics::SetROPLineColor( SalROPColor nROPColor )
     }
 }
 
-void AquaSalGraphics::SetXORMode( bool bSet, bool bInvertOnly )
+void AquaSalGraphics::SetXORMode( bool bSet )
 {
     // return early if XOR mode remains unchanged
     if( mbPrinter )
@@ -1982,7 +1981,7 @@ void AquaSalGraphics::SetXORMode( bool bSet, bool bInvertOnly )
         mnXorMode = 0;
         return;
     }
-    else if( bSet && bInvertOnly && mnXorMode == 0)
+    else if( bSet && mnXorMode == 0)
     {
         CGContextSetBlendMode( mrContext, kCGBlendModeDifference );
         mnXorMode = 2;
@@ -2028,7 +2027,7 @@ void AquaSalGraphics::SetXORMode( bool bSet, bool bInvertOnly )
 
 void AquaSalGraphics::updateResolution()
 {
-    DBG_ASSERT( mbWindow, "updateResolution on inappropriate graphics" );
+    SAL_WARN_IF( !mbWindow, "vcl", "updateResolution on inappropriate graphics" );
 
     initResolution( (mbWindow && mpFrame) ? mpFrame->getNSWindow() : nil );
 }

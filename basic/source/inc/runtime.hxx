@@ -107,12 +107,12 @@ class SbiRTLData
 {
 public:
 
-    ::osl::Directory* pDir;
+    std::unique_ptr<osl::Directory> pDir;
     SbAttributes nDirFlags;
     short   nCurDirPos;
 
     OUString sFullNameToBeChecked;
-    WildCard* pWildCard;
+    std::unique_ptr<WildCard> pWildCard;
 
     css::uno::Sequence< OUString > aDirSeq;
 
@@ -154,7 +154,6 @@ class SbiInstance
     ComponentVector_t ComponentVector;
 public:
     SbiRuntime*  pRun;              // Call-Stack
-    SbiInstance* pNext;             // instances chain
 
     // #31460 new concept for StepInto/Over/Out,
     // explanation see runtime.cxx at SbiInstance::CalcBreakCallLevel()
@@ -297,7 +296,7 @@ class SbiRuntime
 
     static bool implIsClass( SbxObject* pObj, const OUString& aClass );
 
-    void StepSETCLASS_impl( sal_uInt32 nOp1, bool bHandleDflt = false );
+    void StepSETCLASS_impl( sal_uInt32 nOp1, bool bHandleDflt );
 
     // the following routines are called by the single
     // stepper and implement the single opcodes
@@ -327,7 +326,7 @@ class SbiRuntime
     void StepGOSUB( sal_uInt32 ),   StepRETURN( sal_uInt32 );
     void StepTESTFOR( sal_uInt32 ), StepCASETO( sal_uInt32 ),   StepERRHDL( sal_uInt32 );
     void StepRESUME( sal_uInt32 ),  StepSETCLASS( sal_uInt32 ), StepVBASETCLASS( sal_uInt32 ),  StepTESTCLASS( sal_uInt32 ), StepLIB( sal_uInt32 );
-    bool checkClass_Impl( const SbxVariableRef& refVal, const OUString& aClass, bool bRaiseErrors, bool bDefault = true );
+    bool checkClass_Impl( const SbxVariableRef& refVal, const OUString& aClass, bool bRaiseErrors, bool bDefault );
     void StepCLOSE( sal_uInt32 ),   StepPRCHAR( sal_uInt32 ),   StepARGTYP( sal_uInt32 );
     // all opcodes with two operands
     void StepRTL( sal_uInt32, sal_uInt32 ),     StepPUBLIC( sal_uInt32, sal_uInt32 ),   StepPUBLIC_P( sal_uInt32, sal_uInt32 );

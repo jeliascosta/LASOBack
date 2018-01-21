@@ -72,7 +72,6 @@
 #include <istyleaccess.hxx>
 #include <dcontact.hxx>
 #include <docsh.hxx>
-#include <svl/smplhint.hxx>
 #include <algorithm>
 #include <map>
 #include <memory>
@@ -242,7 +241,7 @@ MakeTextAttrNesting(SwTextNode & rNode, SwTextAttrNesting & rNesting,
     return static_txtattr_cast<SwTextAttrNesting*>(pNew);
 }
 
-typedef ::std::vector<SwTextAttrNesting *> NestList_t;
+typedef std::vector<SwTextAttrNesting *> NestList_t;
 
 static void
 lcl_DoSplitNew(NestList_t & rSplits, SwTextNode & rNode,
@@ -253,7 +252,7 @@ lcl_DoSplitNew(NestList_t & rSplits, SwTextNode & rNode,
     const sal_Int32 nSplitPos( (bSplitAtStart) ? nOtherStart : nOtherEnd );
     // first find the portion that is split (not necessarily the last one!)
     NestList_t::iterator const iter(
-        ::std::find_if( rSplits.begin(), rSplits.end(),
+        std::find_if( rSplits.begin(), rSplits.end(),
             [nSplitPos](SwTextAttrEnd * const pAttr) {
                 return TextAttrContains(nSplitPos, pAttr);
             } ) );
@@ -985,7 +984,7 @@ SwTextAttr* MakeTextAttr(
     SfxPoolItem& rAttr,
     sal_Int32 const nStt,
     sal_Int32 const nEnd,
-    CopyOrNew_t const bIsCopy,
+    CopyOrNewType const bIsCopy,
     SwTextNode *const pTextNode )
 {
     if ( isCHRATR(rAttr.Which()) )
@@ -1004,7 +1003,7 @@ SwTextAttr* MakeTextAttr(
     {
         // If the attribute is an auto-style which refers to a pool that is
         // different from rDoc's pool, we have to correct this:
-        const StylePool::SfxItemSet_Pointer_t pAutoStyle = static_cast<const SwFormatAutoFormat&>(rAttr).GetStyleHandle();
+        const std::shared_ptr<SfxItemSet> pAutoStyle = static_cast<const SwFormatAutoFormat&>(rAttr).GetStyleHandle();
         std::unique_ptr<const SfxItemSet> pNewSet(
                 pAutoStyle->SfxItemSet::Clone( true, &rDoc.GetAttrPool() ));
         SwTextAttr* pNew = MakeTextAttr( rDoc, *pNewSet, nStt, nEnd );
@@ -1042,7 +1041,7 @@ SwTextAttr* MakeTextAttr(
     case RES_TXTATR_ANNOTATION:
         {
             pNew = new SwTextAnnotationField( static_cast<SwFormatField &>(rNew), nStt, rDoc.IsClipBoard() );
-            if (bIsCopy == COPY)
+            if (bIsCopy == CopyOrNewType::Copy)
             {
                 // On copy of the annotation field do not keep the annotated text range by removing
                 // the relation to its annotation mark (relation established via annotation field's name).
@@ -1090,7 +1089,7 @@ SwTextAttr* MakeTextAttr(
     case RES_TXTATR_META:
     case RES_TXTATR_METAFIELD:
         pNew = SwTextMeta::CreateTextMeta( rDoc.GetMetaFieldManager(), pTextNode,
-                static_cast<SwFormatMeta&>(rNew), nStt, nEnd, bIsCopy == COPY );
+                static_cast<SwFormatMeta&>(rNew), nStt, nEnd, bIsCopy == CopyOrNewType::Copy );
         break;
     default:
         assert(RES_TXTATR_AUTOFMT == rNew.Which());
@@ -1105,7 +1104,7 @@ SwTextAttr* MakeTextAttr( SwDoc & rDoc, const SfxItemSet& rSet,
                         sal_Int32 nStt, sal_Int32 nEnd )
 {
     IStyleAccess& rStyleAccess = rDoc.GetIStyleAccess();
-    const StylePool::SfxItemSet_Pointer_t pAutoStyle = rStyleAccess.getAutomaticStyle( rSet, IStyleAccess::AUTO_STYLE_CHAR );
+    const std::shared_ptr<SfxItemSet> pAutoStyle = rStyleAccess.getAutomaticStyle( rSet, IStyleAccess::AUTO_STYLE_CHAR );
     SwFormatAutoFormat aNewAutoFormat;
     aNewAutoFormat.SetStyleHandle( pAutoStyle );
     SwTextAttr* pNew = MakeTextAttr( rDoc, aNewAutoFormat, nStt, nEnd );
@@ -1223,7 +1222,7 @@ SwTextAttr* SwTextNode::InsertItem(
             rAttr,
             nStart,
             nEnd,
-            (nMode & SetAttrMode::IS_COPY) ? COPY : NEW,
+            (nMode & SetAttrMode::IS_COPY) ? CopyOrNewType::Copy : CopyOrNewType::New,
             this );
 
     if ( pNew )
@@ -1252,9 +1251,11 @@ bool SwTextNode::InsertHint( SwTextAttr * const pAttr, const SetAttrMode nMode )
 
     // translate from SetAttrMode to InsertMode (for hints with CH_TXTATR)
     const SwInsertFlags nInsertFlags =
-        (nMode & SetAttrMode::FORCEHINTEXPAND)
-        ? (SwInsertFlags::FORCEHINTEXPAND | SwInsertFlags::EMPTYEXPAND)
-        : SwInsertFlags::EMPTYEXPAND;
+        (nMode & SetAttrMode::NOHINTEXPAND)
+        ? SwInsertFlags::NOHINTEXPAND
+        : (nMode & SetAttrMode::FORCEHINTEXPAND)
+            ? (SwInsertFlags::FORCEHINTEXPAND | SwInsertFlags::EMPTYEXPAND)
+            : SwInsertFlags::EMPTYEXPAND;
 
     // need this after TryInsertHint, when pAttr may be deleted
     const sal_Int32 nStart( pAttr->GetStart() );
@@ -1399,6 +1400,10 @@ bool SwTextNode::InsertHint( SwTextAttr * const pAttr, const SetAttrMode nMode )
                         SwContentNode* pCNd = rNodes[ nSttIdx ]->GetContentNode();
                         if( nullptr != pCNd )
                             pCNd->DelFrames();
+                        else if (SwTableNode *const pTable = rNodes[nSttIdx]->GetTableNode())
+                        {
+                            pTable->DelFrames();
+                        }
                     }
                 }
 
@@ -1508,8 +1513,8 @@ bool SwTextNode::InsertHint( SwTextAttr * const pAttr, const SetAttrMode nMode )
                     if( !(SetAttrMode::NOTXTATRCHR & nMode) )
                     {
                         SwIndex aIdx( this, pAttr->GetStart() );
-                        const OUString aContent = OUStringLiteral1<CH_TXT_ATR_INPUTFIELDSTART>()
-                            + pTextInputField->GetFieldContent() + OUStringLiteral1<CH_TXT_ATR_INPUTFIELDEND>();
+                        const OUString aContent = OUStringLiteral1(CH_TXT_ATR_INPUTFIELDSTART)
+                            + pTextInputField->GetFieldContent() + OUStringLiteral1(CH_TXT_ATR_INPUTFIELDEND);
                         InsertText( aContent, aIdx, nInsertFlags );
 
                         sal_Int32* const pEnd(pAttr->GetEnd());
@@ -3296,7 +3301,7 @@ void SwpHints::DeleteAtPos( const size_t nPos )
 
     bool const done = m_HintsByEnd.erase(pHt);
     assert(done);
-    (void) done; // unused in NDEBUG
+    (void)done; // unused in NDEBUG
 
     if( pHint->Which() == RES_TXTATR_FIELD )
     {

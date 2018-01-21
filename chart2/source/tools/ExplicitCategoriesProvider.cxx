@@ -24,7 +24,6 @@
 #include "CommonConverters.hxx"
 #include "DataSourceHelper.hxx"
 #include "ChartModelHelper.hxx"
-#include "ContainerHelper.hxx"
 #include "macros.hxx"
 #include "NumberFormatterWrapper.hxx"
 #include <unonames.hxx>
@@ -227,7 +226,7 @@ public:
         : m_rSplitCategoriesList( rSplitCategoriesList )
         , mrModel( rModel )
     {}
-    virtual ~SplitCategoriesProvider_ForLabeledDataSequences()
+    virtual ~SplitCategoriesProvider_ForLabeledDataSequences() override
     {}
 
     virtual sal_Int32 getLevelCount() const override;
@@ -505,7 +504,7 @@ void ExplicitCategoriesProvider::init()
     }
 }
 
-Sequence< OUString > ExplicitCategoriesProvider::getSimpleCategories()
+Sequence< OUString > const & ExplicitCategoriesProvider::getSimpleCategories()
 {
     if( !m_bIsExplicitCategoriesInited )
     {

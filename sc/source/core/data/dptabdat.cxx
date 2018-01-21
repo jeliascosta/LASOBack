@@ -31,7 +31,6 @@
 #include <unotools/transliterationwrapper.hxx>
 #include <unotools/collatorwrapper.hxx>
 
-#include <com/sun/star/sheet/DataPilotFieldFilter.hpp>
 
 using namespace ::com::sun::star;
 using ::std::vector;
@@ -55,10 +54,10 @@ ScDPTableData::~ScDPTableData()
 {
 }
 
-OUString ScDPTableData::GetFormattedString(long nDim, const ScDPItemData& rItem) const
+OUString ScDPTableData::GetFormattedString(long nDim, const ScDPItemData& rItem, bool bLocaleIndependent) const
 {
     const ScDPCache& rCache = GetCacheTable().getCache();
-    return rCache.GetFormattedString(nDim, rItem);
+    return rCache.GetFormattedString(nDim, rItem, bLocaleIndependent);
 }
 
 long ScDPTableData::GetDatePart( long nDateVal, long nHierarchy, long nLevel )
@@ -225,6 +224,7 @@ void ScDPTableData::GetItemData(const ScDPFilteredCache& rCacheTable, sal_Int32 
                                 const vector<long>& rDims, vector<SCROW>& rItemData)
 {
     sal_Int32 nDimSize = rDims.size();
+    rItemData.reserve(rItemData.size() + nDimSize);
     for (sal_Int32 i = 0; i < nDimSize; ++i)
     {
         long nDim = rDims[i];
@@ -292,7 +292,7 @@ long ScDPTableData::Compare( long nDim, long nDataId1, long nDataId2)
         return -1;
 }
 
-#if DEBUG_PIVOT_TABLE
+#if DUMP_PIVOT_TABLE
 void ScDPTableData::Dump() const
 {
 }

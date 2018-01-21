@@ -24,7 +24,7 @@
 #include <com/sun/star/lang/DisposedException.hpp>
 #include <comphelper/interfacecontainer2.hxx>
 #include <cppuhelper/implbase.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 
 class EditView;
 
@@ -34,7 +34,7 @@ namespace frm
     typedef ::cppu::WeakImplHelper <   css::frame::XDispatch
                                     >   ORichTextFeatureDispatcher_Base;
 
-    class ORichTextFeatureDispatcher    :public ::comphelper::OBaseMutex
+    class ORichTextFeatureDispatcher    :public ::cppu::BaseMutex
                                         ,public ORichTextFeatureDispatcher_Base
     {
     private:
@@ -55,7 +55,7 @@ namespace frm
 
     protected:
         ORichTextFeatureDispatcher( EditView& _rView, const css::util::URL&  _rURL );
-        virtual ~ORichTextFeatureDispatcher( );
+        virtual ~ORichTextFeatureDispatcher( ) override;
 
     public:
         /// clean up resources associated with this instance
@@ -65,7 +65,6 @@ namespace frm
         void    invalidate();
 
     protected:
-        void            newStatusListener( const css::uno::Reference< css::frame::XStatusListener >& _rxListener );
         // overridables
         virtual void    disposing( ::osl::ClearableMutexGuard& _rClearBeforeNotify );
         virtual void    invalidateFeatureState_Broadcast();
@@ -79,7 +78,6 @@ namespace frm
                     const css::frame::FeatureStateEvent& _rEvent
                 );
 
-    protected:
         // XDispatch
         virtual void SAL_CALL addStatusListener( const css::uno::Reference< css::frame::XStatusListener >& _rxControl, const css::util::URL& _rURL ) throw (css::uno::RuntimeException, std::exception) override;
         virtual void SAL_CALL removeStatusListener( const css::uno::Reference< css::frame::XStatusListener >& _rxControl, const css::util::URL& _rURL ) throw (css::uno::RuntimeException, std::exception) override;

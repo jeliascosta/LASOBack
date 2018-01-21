@@ -17,9 +17,9 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <svgio/svgreader/svgusenode.hxx>
+#include <svgusenode.hxx>
 #include <drawinglayer/primitive2d/transformprimitive2d.hxx>
-#include <svgio/svgreader/svgdocument.hxx>
+#include <svgdocument.hxx>
 
 namespace svgio
 {
@@ -35,7 +35,8 @@ namespace svgio
             maY(),
             maWidth(),
             maHeight(),
-            maXLink()
+            maXLink(),
+            mbDecomposingSvgNode(false)
         {
         }
 
@@ -81,7 +82,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setX(aNum);
+                        maX = aNum;
                     }
                     break;
                 }
@@ -91,7 +92,7 @@ namespace svgio
 
                     if(readSingleNumber(aContent, aNum))
                     {
-                        setY(aNum);
+                        maY = aNum;
                     }
                     break;
                 }
@@ -103,7 +104,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            setWidth(aNum);
+                            maWidth = aNum;
                         }
                     }
                     break;
@@ -116,7 +117,7 @@ namespace svgio
                     {
                         if(aNum.isPositive())
                         {
-                            setHeight(aNum);
+                            maHeight = aNum;
                         }
                     }
                     break;
@@ -143,7 +144,7 @@ namespace svgio
             // try to access link to content
             const SvgNode* pXLink = getDocument().findSvgNodeById(maXLink);
 
-            if(pXLink && Display_none != pXLink->getDisplay())
+            if (pXLink && Display_none != pXLink->getDisplay() && !mbDecomposingSvgNode)
             {
                 // decompose children
                 drawinglayer::primitive2d::Primitive2DContainer aNewTarget;
@@ -151,9 +152,11 @@ namespace svgio
                 // todo: in case mpXLink is a SVGTokenSvg or SVGTokenSymbol the
                 // SVG docs want the getWidth() and getHeight() from this node
                 // to be valid for the subtree.
+                mbDecomposingSvgNode = true;
                 const_cast< SvgNode* >(pXLink)->setAlternativeParent(this);
                 pXLink->decomposeSvgNode(aNewTarget, true);
                 const_cast< SvgNode* >(pXLink)->setAlternativeParent();
+                mbDecomposingSvgNode = false;
 
                 if(!aNewTarget.empty())
                 {

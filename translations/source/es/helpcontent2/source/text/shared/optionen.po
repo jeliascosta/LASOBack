@@ -3,8 +3,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2016-12-27 21:50+0100\n"
-"PO-Revision-Date: 2017-03-21 07:04+0000\n"
+"POT-Creation-Date: 2017-04-11 22:27+0200\n"
+"PO-Revision-Date: 2017-10-19 21:31+0000\n"
 "Last-Translator: Adolfo Jayme Barrientos <fito@libreoffice.org>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: es\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Accelerator-Marker: ~\n"
 "X-Generator: Pootle 2.8\n"
-"X-POOTLE-MTIME: 1490079888.000000\n"
+"X-POOTLE-MTIME: 1508448670.000000\n"
 
 #: 01000000.xhp
 msgctxt ""
@@ -259,7 +259,7 @@ msgctxt ""
 "27\n"
 "help.text"
 msgid "User data is used by templates and Wizards in $[officename]. For example, the \"First name\" and \"Last name\" data fields are used to automatically insert your name as the author of a new document. You can see this under <emph>File - Properties</emph>."
-msgstr "Los datos de usuario los utilizan las plantillas y los asistentes de $[officename]. Por ejemplo, los campos \"Nombre\" y \"Apellidos\" se utilizan para insertar automáticamente su nombre como autor de un documento nuevo. Puede verlo en <emph>Archivo - Propiedades</emph>."
+msgstr "Los datos de usuario los utilizan las plantillas y los asistentes de $[officename]. Por ejemplo, los campos «Nombre(s)» y «Apellido(s)» se utilizan para insertar automáticamente su nombre como autor de un documento nuevo. Puede revisar esta información en <emph>Archivo ▸ Propiedades</emph>."
 
 #: 01010100.xhp
 msgctxt ""
@@ -928,7 +928,7 @@ msgctxt ""
 "21\n"
 "help.text"
 msgid "Save URLs relative to internet"
-msgstr "Guardar las URL relativas a Internet"
+msgstr "Guardar URL relativos a Internet"
 
 #: 01010200.xhp
 msgctxt ""
@@ -2015,7 +2015,7 @@ msgctxt ""
 "12\n"
 "help.text"
 msgid "Sets the minimum number of characters of the word to be hyphenated that must remain at the end of the line."
-msgstr "Establece el número mínimo de caracteres de la palabra que se va a separar que deben permanecer al final de la línea."
+msgstr "Establece el número mínimo de caracteres de la palabra que se dividirá que deben permanecer al final del renglón."
 
 #: 01010400.xhp
 msgctxt ""
@@ -2024,7 +2024,7 @@ msgctxt ""
 "13\n"
 "help.text"
 msgid "Characters after line break"
-msgstr "Carácter después del salto de línea"
+msgstr "Caracteres después del salto de renglón"
 
 #: 01010400.xhp
 msgctxt ""
@@ -2453,8 +2453,8 @@ msgctxt ""
 "01010500.xhp\n"
 "hd_id3154754\n"
 "help.text"
-msgid "<link href=\"text/shared/optionen/01010501.xhp\" name=\"Pick\">Pick</link><ahelp hid=\"cui/ui/colorpage/edit\"><embed href=\"text/shared/optionen/01010501.xhp#farbentext\"/></ahelp>"
-msgstr "<link href=\"text/shared/optionen/01010501.xhp\" name=\"Elegir\">Elegir</link><ahelp hid=\"cui/ui/colorpage/edit\"><embed href=\"text/shared/optionen/01010501.xhp#farbentext\"/></ahelp>"
+msgid "<link href=\"text/shared/optionen/01010501.xhp\" name=\"Pick\">Pick</link>"
+msgstr "<link href=\"text/shared/optionen/01010501.xhp\" name=\"Elegir\">Elegir</link>"
 
 #: 01010501.xhp
 msgctxt ""
@@ -3035,7 +3035,7 @@ msgctxt ""
 "25\n"
 "help.text"
 msgid "Font replacement also affects the display of fonts on the $[officename] user interface."
-msgstr "La sustitución de fuentes afecta también a la visualización de fuentes en la interfaz de usuario de $[officename]."
+msgstr "La sustitución de tipos de letra afecta también a la visualización de los tipos de letra en la interfaz de usuario de $[officename]."
 
 #: 01010700.xhp
 msgctxt ""
@@ -3529,7 +3529,7 @@ msgctxt ""
 "hd_id3146982\n"
 "help.text"
 msgid "Middle mouse button"
-msgstr "Botón central del ratón"
+msgstr "Botón central del ratón"
 
 #: 01010800.xhp
 msgctxt ""
@@ -3874,7 +3874,7 @@ msgctxt ""
 "71\n"
 "help.text"
 msgid "Transparency cannot be output directly to a printer. The areas of the document in which transparency is to be visible must therefore always be calculated as bitmaps and sent to the printer. Depending on the size of the bitmaps and the print resolution a large amount of data may result."
-msgstr "La transparencia no se puede enviar directamente a la impresora. Las zonas del documento en las que la transparencia debe ser visible deben calcularse siempre como bitmaps y enviarse a la impresora. En función del tamaño de los bitmaps y de la resolución de impresión, el tamaño del resultado puede ser muy grande."
+msgstr "La transparencia no puede enviarse directamente a una impresora. Las áreas de documento en que la transparencia deba ser visible deben, por este motivo, calcularse siempre como si fuesen mapas de bits antes de enviarse a imprimir. En función del tamaño de los mapas de bits y de la resolución de impresión, puede generarse una cantidad considerable de datos."
 
 #: 01010900.xhp
 msgctxt ""
@@ -4009,7 +4009,7 @@ msgctxt ""
 "65\n"
 "help.text"
 msgid "Gradient stripes"
-msgstr "Tiras de degradado"
+msgstr "Franjas de degradados"
 
 #: 01010900.xhp
 msgctxt ""
@@ -4045,7 +4045,7 @@ msgctxt ""
 "67\n"
 "help.text"
 msgid "Convert colors to grayscale"
-msgstr "Convertir colores en escalas de grises"
+msgstr "Convertir colores en escala de grises"
 
 #: 01010900.xhp
 msgctxt ""
@@ -4063,7 +4063,7 @@ msgctxt ""
 "50\n"
 "help.text"
 msgid "Printer warnings"
-msgstr "Avisos de la impresora"
+msgstr "Alertas de la impresora"
 
 #: 01010900.xhp
 msgctxt ""
@@ -4081,7 +4081,7 @@ msgctxt ""
 "52\n"
 "help.text"
 msgid "Paper size"
-msgstr "erróneo"
+msgstr "Tamaño del papel"
 
 #: 01010900.xhp
 msgctxt ""
@@ -4420,7 +4420,7 @@ msgctxt ""
 "12\n"
 "help.text"
 msgid "<ahelp hid=\"cui/ui/optappearancepage/delete\">Deletes the color scheme shown in the <emph>Scheme</emph> box. You cannot delete the Default scheme.</ahelp>"
-msgstr "<ahelp hid=\"cui/ui/optappearancepage/delete\">Borra el esquema de colores que se muestra en el cuadro <emph>Esquema</emph>. No es posible borrar el esquema Predeterminado.</ahelp>"
+msgstr "<ahelp hid=\"cui/ui/optappearancepage/delete\">Suprime el esquema de colores mostrado en el cuadro <emph>Esquema</emph>. No es posible eliminar el esquema Predeterminado.</ahelp>"
 
 #: 01012000.xhp
 msgctxt ""
@@ -4465,7 +4465,7 @@ msgctxt ""
 "20\n"
 "help.text"
 msgid "In order to enhance cursor visibility, if the user sets the application background color between 40% and 60% gray, it is automatically changed to 40% gray."
-msgstr "Para aumentar la visibilidad del cursor, si el usuario establece el color de fondo de la pantalla entre 40% gris y 60% gris, el cursor cambia automáticamente a 40% gris."
+msgstr "Para aumentar la visibilidad del cursor, si el usuario establece el color de fondo de la pantalla entre 40 y 60 % de gris, el cursor cambia automáticamente a un 40 % de gris."
 
 #: 01012000.xhp
 msgctxt ""
@@ -5300,7 +5300,7 @@ msgctxt ""
 "hd_id1972106\n"
 "help.text"
 msgid "Ctrl-click required to follow hyperlinks"
-msgstr "Ctrl-clic se requiere para seguir hipervínculos"
+msgstr "Ctrl + pulsación para abrir hiperenlaces"
 
 #: 01030300.xhp
 msgctxt ""
@@ -5308,7 +5308,7 @@ msgctxt ""
 "par_id79042\n"
 "help.text"
 msgid "<ahelp hid=\"cui/ui/securityoptionsdialog/ctrlclick\">If enabled, you must hold down the Ctrl key while clicking a hyperlink to follow that link. If not enabled, a click opens the hyperlink.</ahelp>"
-msgstr ""
+msgstr "<ahelp hid=\"cui/ui/securityoptionsdialog/ctrlclick\">Si se activa, debe mantener oprimida la tecla Ctrl mientras pulsa en un hiperenlace para que este se abra. Si, por el contrario, se desactiva esta opción, basta una pulsación del ratón para abrir el hiperenlace.</ahelp>"
 
 #: 01030300.xhp
 msgctxt ""
@@ -5316,7 +5316,7 @@ msgctxt ""
 "hd_id1972107\n"
 "help.text"
 msgid "Block any links from documents not among the trusted locations (see Macro Security)"
-msgstr ""
+msgstr "Bloquear enlaces de documentos fuera de las ubicaciones confiables (ver Seguridad de macros)"
 
 #: 01030300.xhp
 msgctxt ""
@@ -5324,7 +5324,7 @@ msgctxt ""
 "par_id79043\n"
 "help.text"
 msgid "<ahelp hid=\"cui/ui/securityoptionsdialog/blockuntrusted\">Blocks the use of links pointing to images not in the trusted locations defined on the <link href=\"text/shared/optionen/macrosecurity_ts.xhp\" name=\"Trusted Sources\">Trusted Sources</link> tab of the Macro Security dialog.</ahelp> This can increase security in case you work with documents from untrusted sources (e.g. the internet) and are worried about vulnerabilities in image processing software components. Blocking the use of links means that images are not loaded in documents, only a placeholder frame is visible."
-msgstr ""
+msgstr "<ahelp hid=\"cui/ui/securityoptionsdialog/blockuntrusted\">Bloquea la utilización de enlaces que apunten a imágenes fuera de las ubicaciones de confianza definidas en la pestaña <link href=\"text/shared/optionen/macrosecurity_ts.xhp\" name=\"Orígenes de confianza\">Orígenes de confianza</link> del cuadro de diálogo Seguridad de macros.</ahelp> Esto puede aumentar la seguridad si trabaja con documentos provenientes de orígenes no confiables (p. ej., la Internet) y le preocupan las vulnerabilidades que pueda haber en los componentes <em>software</em> de tratamiento de imágenes. Este bloqueo implica que no se cargarán las imágenes de los documentos: solo se mostrará un marco marcador de posición."
 
 #: 01030300.xhp
 msgctxt ""
@@ -5697,7 +5697,7 @@ msgctxt ""
 "29\n"
 "help.text"
 msgid "You must activate this option before you create the $[officename] Basic Script, since otherwise it will not be inserted. $[officename] Basic Scripts must be located in the header of the HTML document. Once you have created the macro in the $[officename] Basic IDE, it appears in the source text of the HTML document in the header."
-msgstr "Debe activar esta opción antes de crear el script de $[officename] Basic, porque de lo contrario no se añadirá. Los scripts de $[officename] deben colocarse en el encabezado del documento HTML. Después crear la macro en $[officename] Basic IDE, ésta se muestra en la cabecera del texto fuente del documento HTML."
+msgstr "Debe activar esta opción antes de crear la secuencia de órdenes en $[officename] Basic, porque de lo contrario no se añadirá. Las secuencias de órdenes de $[officename] deben colocarse en la cabecera del documento HTML. Después de crear la macro en el EID de Basic de $[officename], esta se muestra en la cabecera del código fuente del documento HTML."
 
 #: 01030500.xhp
 msgctxt ""
@@ -7128,7 +7128,7 @@ msgctxt ""
 "bm_id3144510\n"
 "help.text"
 msgid "<bookmark_value>non-printing characters (Writer)</bookmark_value><bookmark_value>displaying; non-printing characters (Writer)</bookmark_value><bookmark_value>paragraph marks; displaying (Writer)</bookmark_value><bookmark_value>characters; displaying only on screen (Writer)</bookmark_value><bookmark_value>optional hyphens (Writer)</bookmark_value><bookmark_value>soft hyphens (Writer)</bookmark_value><bookmark_value>hyphens; displaying custom (Writer)</bookmark_value><bookmark_value>custom hyphens (Writer)</bookmark_value><bookmark_value>spaces; displaying (Writer)</bookmark_value><bookmark_value>spaces; showing protected spaces (Writer)</bookmark_value><bookmark_value>protected spaces; showing (Writer)</bookmark_value><bookmark_value>non-breaking spaces (Writer)</bookmark_value><bookmark_value>tab stops; displaying (Writer)</bookmark_value><bookmark_value>break display (Writer)</bookmark_value><bookmark_value>hidden text;showing (Writer)</bookmark_value><bookmark_value>hidden fields display (Writer)</bookmark_value><bookmark_value>paragraphs; hidden paragraphs (Writer)</bookmark_value><bookmark_value>cursor; allowing in protected areas (Writer)</bookmark_value>"
-msgstr "<bookmark_value>caracteres no imprimibles (Writer)</bookmark_value><bookmark_value>mostrar; caracteres no imprimibles (Writer)</bookmark_value><bookmark_value>marcas de párrafo; mostrar (Writer)</bookmark_value><bookmark_value>caracteres; mostrar solo en pantalla (Writer)</bookmark_value><bookmark_value>guiones opcionales (Writer)</bookmark_value><bookmark_value>guiones de separación silábica (Writer)</bookmark_value><bookmark_value>guiones personalizados; mostrar (Writer)</bookmark_value><bookmark_value>guiones personalizados (Writer)</bookmark_value><bookmark_value>espacios; mostrar (Writer)</bookmark_value><bookmark_value>espacios; mostrar espacios protegidos (Writer)</bookmark_value><bookmark_value>espacios protegidos; mostrar (Writer)</bookmark_value><bookmark_value>espacios de no separación (Writer)</bookmark_value><bookmark_value>tabulaciones; mostrar (Writer)</bookmark_value><bookmark_value>mostrar saltos (Writer)</bookmark_value><bookmark_value>texto oculto;mostrar (Writer)</bookmark_value><bookmark_value>mostrar campos ocultos (Writer)</bookmark_value><bookmark_value>párrafos; párrafos ocultos (Writer)</bookmark_value><bookmark_value>cursor; permitir en áreas protegidas (Writer)</bookmark_value>"
+msgstr "<bookmark_value>caracteres no imprimibles (Writer)</bookmark_value><bookmark_value>mostrar; caracteres no imprimibles (Writer)</bookmark_value><bookmark_value>marcas de párrafo; mostrar (Writer)</bookmark_value><bookmark_value>caracteres; mostrar solo en pantalla (Writer)</bookmark_value><bookmark_value>guiones opcionales (Writer)</bookmark_value><bookmark_value>guiones discrecionales (Writer)</bookmark_value><bookmark_value>guiones; mostrar personalizados (Writer)</bookmark_value><bookmark_value>guiones personalizados (Writer)</bookmark_value><bookmark_value>espacios; mostrar (Writer)</bookmark_value><bookmark_value>espacios; mostrar espacios protegidos (Writer)</bookmark_value><bookmark_value>espacios protegidos; mostrar (Writer)</bookmark_value><bookmark_value>espacios indivisibles (Writer)</bookmark_value><bookmark_value>tabulaciones; mostrar (Writer)</bookmark_value><bookmark_value>mostrar saltos (Writer)</bookmark_value><bookmark_value>texto oculto;mostrar (Writer)</bookmark_value><bookmark_value>mostrar campos ocultos (Writer)</bookmark_value><bookmark_value>párrafos; párrafos ocultos (Writer)</bookmark_value><bookmark_value>cursor; permitir en áreas protegidas (Writer)</bookmark_value>"
 
 #: 01040600.xhp
 msgctxt ""
@@ -7191,7 +7191,7 @@ msgctxt ""
 "31\n"
 "help.text"
 msgid "Soft hyphens"
-msgstr "Guiones opcionales"
+msgstr "Guiones discrecionales"
 
 #: 01040600.xhp
 msgctxt ""
@@ -7200,7 +7200,7 @@ msgctxt ""
 "32\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/optformataidspage/hyphens\">Specifies whether soft hyphens (called also as optional or discretionary hyphens) are displayed. These are hidden user-defined delimiters that you enter within a word by pressing <switchinline select=\"sys\"><caseinline select=\"MAC\">Command+Hyphen(-) </caseinline><defaultinline>Ctrl+Hyphen(-).</defaultinline></switchinline> Words with soft hyphens are only separated at the end of a line at the point where a soft hyphen has been inserted, irrespective of whether the automatic hyphenation is activated or deactivated.</ahelp>"
-msgstr "<ahelp hid=\"modules/swriter/ui/optformataidspage/hyphens\">Especifica si se mostrarán los guiones opcionales (también llamados discrecionales o de separación; en inglés «soft hyphen»). Estos delimitadores definidos por el usuario pueden insertarse al presionar <switchinline select=\"sys\"><caseinline select=\"MAC\">⌘ + guion</caseinline><defaultinline>Ctrl + guion</defaultinline></switchinline>. Las palabras con guiones opcionales se separarán al final de la línea solo en el punto de inserción del guion, independientemente de que la división de palabras automática esté activada o no.</ahelp>"
+msgstr "<ahelp hid=\"modules/swriter/ui/optformataidspage/hyphens\">Especifica si se mostrarán los guiones discrecionales (también llamados opcionales o de división; en inglés «soft hyphen»). Estos delimitadores definidos por el usuario pueden insertarse al presionar <switchinline select=\"sys\"><caseinline select=\"MAC\">⌘ guion</caseinline><defaultinline>Ctrl + guion</defaultinline></switchinline>. Las palabras con guiones discrecionales se separarán a final de renglón solo en el punto de inserción del guion, independientemente de que la división de palabras automática esté activada o no.</ahelp>"
 
 #: 01040600.xhp
 msgctxt ""
@@ -7227,7 +7227,7 @@ msgctxt ""
 "35\n"
 "help.text"
 msgid "Non-breaking spaces"
-msgstr "Espacios protegidos"
+msgstr "Espacios indivisibles"
 
 #: 01040600.xhp
 msgctxt ""
@@ -7236,7 +7236,7 @@ msgctxt ""
 "36\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/optformataidspage/nonbreak\">Specifies that non-breaking spaces are shown as gray boxes. Non-breaking spaces are not broken at the end of a line and are entered with the <switchinline select=\"sys\"><caseinline select=\"MAC\">Command+Shift+Spacebar </caseinline><defaultinline>Ctrl+Shift+Spacebar</defaultinline></switchinline> shortcut keys.</ahelp>"
-msgstr "<ahelp hid=\"modules/swriter/ui/optformataidspage/nonbreak\">Establece que los espacios duros se muestren como zonas grises. Los espacios duros no desaparecen a final de renglón y se pueden insertar mediante la combinación de teclas <switchinline select=\"sys\"><caseinline select=\"MAC\">⌘ + Mayús + Barra espaciadora</caseinline><defaultinline>Ctrl + Mayús + Barra espaciadora</defaultinline></switchinline>.</ahelp>"
+msgstr "<ahelp hid=\"modules/swriter/ui/optformataidspage/nonbreak\">Establece que los espacios indivisibles se muestren como zonas grises. Los espacios indivisibles no desaparecen a final de renglón y se pueden insertar mediante la combinación de teclas <switchinline select=\"sys\"><caseinline select=\"MAC\">⌘⇧ Barra espaciadora</caseinline><defaultinline>Ctrl + Mayús + Barra espaciadora</defaultinline></switchinline>.</ahelp>"
 
 #: 01040600.xhp
 msgctxt ""
@@ -8367,7 +8367,7 @@ msgctxt ""
 "hd_id5240028\n"
 "help.text"
 msgid "Expand word space on lines with manual line breaks in justified paragraphs"
-msgstr "Amplia el espacio entre palabras en líneas con saltos de línea manual en parrajos justificados"
+msgstr "Ampliar espacio entre palabras en renglones de párrafos justificados con saltos manuales"
 
 #: 01041000.xhp
 msgctxt ""
@@ -8375,7 +8375,7 @@ msgctxt ""
 "par_id8599810\n"
 "help.text"
 msgid "If enabled, Writer adds spacing between words, in lines that end with Shift+Enter in justified paragraphs. If disabled, spacing between words will not be expanded to justify the lines."
-msgstr "Si se habilita, Writer agrega espacio entre palabras, en líneas que terminan con Mayuscula+Intro para parrafos justificados. Si se deshabilita, el espaciado entre palabras no se agregará para justificar las líneas."
+msgstr "Si se activa esta opción, Writer añadirá espacio entre las palabras de aquellos renglones que terminen con un salto manual (Mayús + Intro) en párrafos justificados. Si se desactiva, el espacio entre las palabras no se ampliará para justificar esos renglones."
 
 #: 01041000.xhp
 msgctxt ""
@@ -8383,7 +8383,7 @@ msgctxt ""
 "par_id8012634\n"
 "help.text"
 msgid "This setting is on by default for .odt text documents. It will be saved and loaded with the document in the .odt text document format. This setting cannot be saved in old .sxw text documents, so this setting is off for .sxw text documents."
-msgstr "Este ajuste esta habilitado en forma predeterminada para los documentos de texto .odt. Se guardará y cargará con el documento en el formato de documento de texto .odt. Este ajuste no se guarda´ra en el formato de documento de texto antigüo .sxw, por lo que  esta característica esta deshabilitada para documentos de text .sxw."
+msgstr "Esta opción está activada de manera predeterminada en documentos de texto .odt. Esta se guardará y cargará con el documento en el formato .odt. Como esta opción no puede guardarse en documentos en el antiguo formato .sxw, se desactivará para esos documentos."
 
 #: 01041000.xhp
 msgctxt ""
@@ -8439,7 +8439,7 @@ msgctxt ""
 "par_id4653767\n"
 "help.text"
 msgid "Expand word space on lines with manual line breaks in justified paragraphs"
-msgstr "Amplia el espacio entre palabras en líneas con saltos de línea manual en parrajos justificados"
+msgstr "Ampliar espacio entre palabras en renglones de párrafos justificados con saltos manuales"
 
 #: 01041100.xhp
 msgctxt ""
@@ -8447,7 +8447,7 @@ msgctxt ""
 "tit\n"
 "help.text"
 msgid "AutoCaption"
-msgstr "Autotítulo"
+msgstr "Leyenda automática"
 
 #: 01041100.xhp
 msgctxt ""
@@ -8455,7 +8455,7 @@ msgctxt ""
 "bm_id5164036\n"
 "help.text"
 msgid "<bookmark_value>automatic captions (Writer)</bookmark_value><bookmark_value>AutoCaption function in %PRODUCTNAME Writer</bookmark_value><bookmark_value>captions;automatic captions (Writer)</bookmark_value>"
-msgstr "<bookmark_value>Títulos automáticos  (Writer)</bookmark_value><bookmark_value>Función Autotítulo en %PRODUCTNAME Writer</bookmark_value><bookmark_value>Títulos;títulos automáticos (Writer)</bookmark_value>"
+msgstr "<bookmark_value>Leyendas automáticas (Writer)</bookmark_value><bookmark_value>Función Leyenda automática en %PRODUCTNAME Writer</bookmark_value><bookmark_value>leyendas;leyendas automáticas (Writer)</bookmark_value>"
 
 #: 01041100.xhp
 msgctxt ""
@@ -8463,7 +8463,7 @@ msgctxt ""
 "par_idN10561\n"
 "help.text"
 msgid "<link href=\"text/shared/optionen/01041100.xhp\">AutoCaption</link>"
-msgstr "<link href=\"text/shared/optionen/01041100.xhp\">Autotítulo</link>"
+msgstr "<link href=\"text/shared/optionen/01041100.xhp\">Leyenda automática</link>"
 
 #: 01041100.xhp
 msgctxt ""
@@ -8471,7 +8471,7 @@ msgctxt ""
 "par_idN10571\n"
 "help.text"
 msgid "Specifies the settings for captions that are automatically added to inserted objects."
-msgstr "Especifica la configuración para los títulos que se agregan automáticamente a los objetos insertados."
+msgstr "Especifica la configuración de las leyendas que se añaden automáticamente a los objetos insertados."
 
 #: 01041100.xhp
 msgctxt ""
@@ -8487,7 +8487,7 @@ msgctxt ""
 "par_idN1058C\n"
 "help.text"
 msgid "<ahelp hid=\".\">Select the object type for which the AutoCaption settings are to be valid.</ahelp>"
-msgstr "<ahelp hid=\".\">Seleccione el tipo de objeto para el que debe ser válida la configuración de Autotítulo.</ahelp>"
+msgstr "<ahelp hid=\".\">Seleccione el tipo de objeto para el que debe ser válida la configuración de leyenda automática.</ahelp>"
 
 #: 01041100.xhp
 msgctxt ""
@@ -8503,7 +8503,7 @@ msgctxt ""
 "par_idN10593\n"
 "help.text"
 msgid "Defines the options to be applied to the selected object type. These options are identical to those in the <emph>Insert - Caption</emph> menu, which is available when an object is selected. Below the settings is a preview of the object category, together with numbering type."
-msgstr "Define las opciones que se aplicarán al tipo de objeto seleccionado. Estas opciones son idénticas a las del menú <emph>Insertar - Título</emph>, disponible cuando se selecciona un objeto. Debajo de los parámetros hay una vista previa de la categoría del objeto, junto con el tipo de numeración."
+msgstr "Define las opciones que se aplicarán al tipo de objeto seleccionado. Estas opciones son idénticas a las del menú <emph>Insertar ▸ Leyenda</emph>, disponible cuando se selecciona un objeto. Debajo de los parámetros hay una previsualización de la categoría del objeto, junto con el tipo de numeración."
 
 #: 01041100.xhp
 msgctxt ""
@@ -8557,7 +8557,7 @@ msgctxt ""
 "17\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/optcaptionpage/separator\">Defines the character to be displayed after the number of the heading or chapter level.</ahelp>"
-msgstr "<ahelp hid=\"modules/swriter/ui/optcaptionpage/separator\">Define el carácter que se mostrará después del número del encabezado o nivel de capítulo.</ahelp>"
+msgstr "<ahelp hid=\"modules/swriter/ui/optcaptionpage/separator\">Define el carácter que se mostrará después del número del nivel de título o de capítulo.</ahelp>"
 
 #: 01041100.xhp
 msgctxt ""
@@ -8583,7 +8583,7 @@ msgctxt ""
 "par_idN1064E\n"
 "help.text"
 msgid "Numbering captions by chapter"
-msgstr "Numeración de títulos por capítulo"
+msgstr "Numeración de leyendas por capítulo"
 
 #: 01041100.xhp
 msgctxt ""
@@ -8601,7 +8601,7 @@ msgctxt ""
 "16\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/optcaptionpage/level\">Specifies the headings or chapter levels where you want the numbering to start.</ahelp>"
-msgstr "<ahelp hid=\"modules/swriter/ui/optcaptionpage/level\">Especifica los niveles de encabezados o capítulos en los que desea que se inicie la numeración.</ahelp>"
+msgstr "<ahelp hid=\"modules/swriter/ui/optcaptionpage/level\">Especifica los niveles de títulos o de capítulos en los que desea que se inicie la numeración.</ahelp>"
 
 #: 01041100.xhp
 msgctxt ""
@@ -8610,7 +8610,7 @@ msgctxt ""
 "17\n"
 "help.text"
 msgid "<ahelp hid=\"modules/swriter/ui/optcaptionpage/chapseparator\">Defines the character to be displayed after the number of the heading or chapter level.</ahelp>"
-msgstr "<ahelp hid=\"modules/swriter/ui/optcaptionpage/chapseparator\">Establece el carácter que se mostrará después del número del nivel del encabezado o del capítulo.</ahelp>"
+msgstr "<ahelp hid=\"modules/swriter/ui/optcaptionpage/chapseparator\">Establece el carácter que se mostrará después del número del nivel del título o del capítulo.</ahelp>"
 
 #: 01041100.xhp
 msgctxt ""
@@ -9626,7 +9626,7 @@ msgctxt ""
 "8\n"
 "help.text"
 msgid "Press Enter to switch to edit mode"
-msgstr "Tecla Entrar activa el modo Editar"
+msgstr "Cambiar al modo de edición al oprimir Intro"
 
 #: 01060300.xhp
 msgctxt ""
@@ -11643,7 +11643,7 @@ msgctxt ""
 "33\n"
 "help.text"
 msgid "<variable id=\"seittext\">The cursor or a contour line of the graphics object must be in the snap range.</variable>"
-msgstr "<variable id=\"seittext\">El cursor o una línea de contorno del objeto gráfico deben estar en el área de captura. </variable>"
+msgstr "<variable id=\"seittext\">El cursor o una línea de contorno del objeto gráfico deben situarse dentro del área de acoplamiento.</variable>"
 
 #: 01070300.xhp
 msgctxt ""
@@ -11679,7 +11679,7 @@ msgctxt ""
 "34\n"
 "help.text"
 msgid "<variable id=\"rahmtext\">The cursor or a contour line of the graphics object must be in the snap range.</variable>"
-msgstr "<variable id=\"rahmtext\">El cursor o una línea de contorno del objeto gráfico deben estar en el área de captura. </variable>"
+msgstr "<variable id=\"rahmtext\">El cursor o una línea de contorno del objeto gráfico deben situarse dentro del área de acoplamiento.</variable>"
 
 #: 01070300.xhp
 msgctxt ""
@@ -11715,7 +11715,7 @@ msgctxt ""
 "35\n"
 "help.text"
 msgid "<variable id=\"opunktetext\">This only applies if the cursor or a contour line of the graphics object is in the snap range.</variable>"
-msgstr "<variable id=\"opunktetext\">El cursor o una línea de contorno del objeto gráfico deben estar en el área de captura. </variable>"
+msgstr "<variable id=\"opunktetext\">Esto solo se aplica si el cursor o una línea de contorno del objeto gráfico se encuentra dentro del área de acoplamiento.</variable>"
 
 #: 01070300.xhp
 msgctxt ""
@@ -11733,7 +11733,7 @@ msgctxt ""
 "16\n"
 "help.text"
 msgid "Snap range"
-msgstr "Área de captura"
+msgstr "Área de acoplamiento"
 
 #: 01070300.xhp
 msgctxt ""
@@ -11742,7 +11742,7 @@ msgctxt ""
 "17\n"
 "help.text"
 msgid "<ahelp hid=\"svx/ui/optgridpage/mtrfldsnaparea\">Defines the snap distance between the mouse pointer and the object contour. $[officename] Impress snaps to a snap point if the mouse pointer is nearer than the distance selected in the <emph>Snap range</emph> control.</ahelp>"
-msgstr "<ahelp hid=\"svx/ui/optgridpage/mtrfldsnaparea\">Define la distancia de ajuste a la cuadrícula entre el puntero del ratón y el contorno del objeto. $[officename] Impress se ajuste a la punto de Ajuste a la cuadricula si el puntero es más cerca que la distancia configurado en el control <emph>Rango de Ajuste</emph>.</ahelp>"
+msgstr "<ahelp hid=\"svx/ui/optgridpage/mtrfldsnaparea\">Define la distancia de acoplamiento a la cuadrícula entre el puntero del ratón y el contorno del objeto. $[officename] Impress acoplará a un punto si el puntero está situado más próximo a este que la distancia configurada en el control <emph>Área de acoplamiento</emph>.</ahelp>"
 
 #: 01070300.xhp
 msgctxt ""
@@ -11920,7 +11920,7 @@ msgctxt ""
 "19\n"
 "help.text"
 msgid "Time"
-msgstr "Tiempo"
+msgstr "Hora"
 
 #: 01070400.xhp
 msgctxt ""
@@ -12082,7 +12082,7 @@ msgctxt ""
 "29\n"
 "help.text"
 msgid "Tile pages"
-msgstr "Páginas como azulejos"
+msgstr "Páginas en mosaico"
 
 #: 01070400.xhp
 msgctxt ""
@@ -12751,7 +12751,7 @@ msgctxt ""
 "21\n"
 "help.text"
 msgid "Ignore ~ and ' at the end of the line"
-msgstr "Ignorar ~ y ' al final de la línea"
+msgstr "Ignorar ~ y ' a final de renglón"
 
 #: 01090100.xhp
 msgctxt ""
@@ -13691,7 +13691,7 @@ msgctxt ""
 "5\n"
 "help.text"
 msgid "Western characters only"
-msgstr "Solo caracteres occidentales"
+msgstr "Solo texto occidental"
 
 #: 01150100.xhp
 msgctxt ""
@@ -13862,7 +13862,7 @@ msgctxt ""
 "24\n"
 "help.text"
 msgid "<ahelp hid=\"cui/ui/optasianpage/start\">Specifies the characters that should not appear alone at the beginning of a line.</ahelp> If a character typed here is positioned at the beginning of a line after a line break, it is automatically moved to the end of the previous line. For example, an exclamation point at the end of a sentence never appears at the start of a line if it is part of the <emph>Not at start of line</emph> list."
-msgstr "<ahelp hid=\"cui/ui/optasianpage/start\">Especifica los caracteres que no deben ir solos a comienzo de línea.</ahelp> Si el carácter que se escribe se ubica a comienzo de línea tras un salto de línea, se coloca automáticamente al final de la línea anterior. Por ejemplo, un signo de cierre de exclamación a final de línea nunca se ubica al comienzo de una línea si consta en la lista <emph>No a inicio de línea</emph>."
+msgstr "<ahelp hid=\"cui/ui/optasianpage/start\">Especifica los caracteres que no deben ir solos a comienzo de renglón.</ahelp> Si el carácter que se escribe se ubica a comienzo de renglón tras un salto de renglón, este se colocará automáticamente al final del renglón anterior. Por ejemplo, un signo de cierre de exclamación a final de renglón nunca se ubica al comienzo de un renglón si consta en la lista <emph>No a inicio de renglón</emph>."
 
 #: 01150100.xhp
 msgctxt ""
@@ -14481,7 +14481,7 @@ msgctxt ""
 "tit_BasicIDE\n"
 "help.text"
 msgid "Basic IDE Options"
-msgstr "IDE de Basic"
+msgstr "EID de Basic"
 
 #: BasicIDE.xhp
 msgctxt ""
@@ -14489,7 +14489,7 @@ msgctxt ""
 "bm_id4077578\n"
 "help.text"
 msgid "<bookmark_value>Basic IDE options;Autocorrection</bookmark_value>  <bookmark_value>Basic IDE options;Autocompletion</bookmark_value>  <bookmark_value>Basic IDE options;Autoclose quotes</bookmark_value>  <bookmark_value>Basic IDE options;Basic UNO extended types</bookmark_value>  <bookmark_value>Basic IDE options;Autoclose parenthesis</bookmark_value>  <bookmark_value>Basic IDE;options</bookmark_value>  <bookmark_value>options;Basic IDE</bookmark_value>"
-msgstr "<bookmark_value>IDE de Basic;Corrección automática</bookmark_value><bookmark_value>IDE de Basic;Compleción automática</bookmark_value><bookmark_value>IDE de Basic;Cerrar comillas automáticamente</bookmark_value><bookmark_value>IDE de Basic;tipos extendidos de UNO en Basic</bookmark_value><bookmark_value>IDE de Basic;Cerrar paréntesis automáticamente</bookmark_value><bookmark_value>IDE de Basic;opciones</bookmark_value><bookmark_value>opciones;IDE de Basic</bookmark_value>"
+msgstr "<bookmark_value>EID de Basic;Corrección automática</bookmark_value><bookmark_value>EID de Basic;Compleción automática</bookmark_value><bookmark_value>EID de Basic;Cerrar comillas automáticamente</bookmark_value><bookmark_value>EID de Basic;tipos extendidos de UNO en Basic</bookmark_value><bookmark_value>EID de Basic;Cerrar paréntesis automáticamente</bookmark_value><bookmark_value>EID de Basic;opciones</bookmark_value><bookmark_value>opciones;EID de Basic</bookmark_value>"
 
 #: BasicIDE.xhp
 msgctxt ""
@@ -14497,7 +14497,7 @@ msgctxt ""
 "par_idN10558\n"
 "help.text"
 msgid "<link href=\"text/shared/optionen/BasicIDE.xhp\">Basic IDE Options</link>"
-msgstr "<link href=\"text/shared/optionen/BasicIDE.xhp\">IDE de Basic</link>"
+msgstr "<link href=\"text/shared/optionen/BasicIDE.xhp\">EID de Basic</link>"
 
 #: BasicIDE.xhp
 msgctxt ""
@@ -14601,7 +14601,7 @@ msgctxt ""
 "par_id2507201509570353\n"
 "help.text"
 msgid "<ahelp hid=\"cui/ui/optbasicidepage/autocorrect\">Correct cases of Basic variables and keywords while typing.</ahelp> %PRODUCTNAME Basic IDE will modify the typing of Basic statements and Basic variables of your code to improve coding style and readability. Modifications of the code are based on the program's variables declarations and on the %PRODUCTNAME Basic commands parsed."
-msgstr "<ahelp hid=\"cui/ui/optbasicidepage/autocorrect\">Corrige instancias de variables y palabras clave de Basic mientras se escribe.</ahelp> El IDE de BAsic de %PRODUCTNAME modificará la escritura de instrucciones y variables de Basic en su código para mejorar el estilo y la legibilidad. Las modificaciones al código se basan en las declaraciones de variables del programa y en las órdenes de %PRODUCTNAME Basic que se analicen."
+msgstr "<ahelp hid=\"cui/ui/optbasicidepage/autocorrect\">Corrige instancias de variables y palabras clave de Basic mientras se escribe.</ahelp> El EID de Basic de %PRODUCTNAME modificará la escritura de instrucciones y variables de Basic en su código para mejorar el estilo y la legibilidad. Las modificaciones al código se basan en las declaraciones de variables del programa y en las órdenes de %PRODUCTNAME Basic que se analicen."
 
 #: BasicIDE.xhp
 msgctxt ""
@@ -14649,7 +14649,7 @@ msgctxt ""
 "par_id2507201509433451\n"
 "help.text"
 msgid "<ahelp hid=\"cui/ui/optbasicidepage/autoclose_quotes\">Automatically close open quotes.</ahelp> %PRODUCTNAME Basic IDE will add a closing quote each time you type an opening quote. Handy for inserting strings in the Basic code."
-msgstr "<ahelp hid=\"cui/ui/optbasicidepage/autoclose_quotes\">Completa automáticamente un par de comillas incompleto.</ahelp> El IDE de Basic de %PRODUCTNAME añadirá unas comillas de cierra siempre que escriba unas de apertura. Útil para insertar cadenas en el código en Basic."
+msgstr "<ahelp hid=\"cui/ui/optbasicidepage/autoclose_quotes\">Completa automáticamente un par de comillas incompleto.</ahelp> El EID de Basic de %PRODUCTNAME añadirá unas comillas de cierre siempre que escriba unas de apertura. Útil para insertar cadenas en el código en Basic."
 
 #: BasicIDE.xhp
 msgctxt ""
@@ -14665,7 +14665,7 @@ msgctxt ""
 "par_id2507201509433483\n"
 "help.text"
 msgid "<ahelp hid=\"cui/ui/optbasicidepage/autoclose_paren\">Automatically close open parenthesis.</ahelp> %PRODUCTNAME Basic IDE will add a closing parenthesis “)” each time you type an opening parenthesis “(“."
-msgstr "<ahelp hid=\"cui/ui/optbasicidepage/autoclose_paren\">Completa automáticamente un par de paréntesis incompleto.</ahelp> El IDE de Basic de %PRODUCTNAME añadirá un paréntesis de cierra «)» siempre que escriba uno de apertura «(»."
+msgstr "<ahelp hid=\"cui/ui/optbasicidepage/autoclose_paren\">Completa automáticamente un par de paréntesis incompleto.</ahelp> El EID de Basic de %PRODUCTNAME añadirá un paréntesis de cierre «)» siempre que escriba uno de apertura «(»."
 
 #: BasicIDE.xhp
 msgctxt ""
@@ -14681,7 +14681,7 @@ msgctxt ""
 "par_id2507201509433461\n"
 "help.text"
 msgid "<ahelp hid=\"cui/ui/optbasicidepage/autoclose_proc\">Automatically insert closing statements for procedures.</ahelp> %PRODUCTNAME Basic IDE will add a statement <item type=\"literal\">End Sub</item> or <item type=\"literal\">End Function</item> after you type a <item type=\"literal\">Sub</item> or <item type=\"literal\">Function</item> statement and press <item type=\"keycode\">Enter</item>."
-msgstr "<ahelp hid=\"cui/ui/optbasicidepage/autoclose_proc\">Inserta automáticamente instrucciones de cierre para los procedimientos.</ahelp> El IDE de Basic de %PRODUCTNAME añadirá una instrucción <item type=\"literal\">End Sub</item> o <item type=\"literal\">End Function</item> cuando escriba una instrucción <item type=\"literal\">Sub</item> o <item type=\"literal\">Function</item> y oprima <item type=\"keycode\">Intro</item>."
+msgstr "<ahelp hid=\"cui/ui/optbasicidepage/autoclose_proc\">Inserta automáticamente instrucciones de cierre para los procedimientos.</ahelp> El EID de Basic de %PRODUCTNAME añadirá una instrucción <item type=\"literal\">End Sub</item> o <item type=\"literal\">End Function</item> cuando escriba una instrucción <item type=\"literal\">Sub</item> o <item type=\"literal\">Function</item> y oprima <item type=\"keycode\">Intro</item>."
 
 #: BasicIDE.xhp
 msgctxt ""
@@ -14729,7 +14729,7 @@ msgctxt ""
 "par_id250720151836489\n"
 "help.text"
 msgid "<link href=\"text/sbasic/shared/01030100.xhp\">Basic IDE</link>"
-msgstr "<link href=\"text/sbasic/shared/01030100.xhp\">IDE de Basic</link>"
+msgstr "<link href=\"text/sbasic/shared/01030100.xhp\">EID de Basic</link>"
 
 #: experimental.xhp
 msgctxt ""
@@ -15145,7 +15145,7 @@ msgctxt ""
 "par_id3156345\n"
 "help.text"
 msgid "It enables macro recording, so the <link href=\"text/shared/guide/macro_recording.xhp\" name=\"Tools - Macros - Record Macro\"><item type=\"menuitem\">Tools - Macros - Record Macro</item></link> menu item will be available."
-msgstr "Activa la grabación de macros, de modo que el elemento del menú <link href=\"text/shared/guide/macro_recording.xhp\" name=\"Herramientas - Macros - Grabar macro\"><item type=\"menuitem\">Herramientas ▸ Macros ▸ Guardar macro</item></link> esté disponible."
+msgstr "Activa la grabación de macros, de modo que el elemento del menú <link href=\"text/shared/guide/macro_recording.xhp\" name=\"Herramientas - Macros - Grabar macro\"><item type=\"menuitem\">Herramientas ▸ Macros ▸ Grabar macro</item></link> esté disponible."
 
 #: java.xhp
 msgctxt ""
@@ -16313,7 +16313,7 @@ msgctxt ""
 "par_idN1054E\n"
 "help.text"
 msgid "On the <switchinline select=\"sys\"><caseinline select=\"MAC\">%PRODUCTNAME - Preferences</caseinline><defaultinline>Tools - Options</defaultinline></switchinline> - <link href=\"text/shared/optionen/mailmerge.xhp\">%PRODUCTNAME Writer - Mail Merge E-mail</link> tab page, click the <emph>Server Authentication</emph> button to specify the server security settings."
-msgstr "En la página de la pestaña <switchinline select=\"sys\"><caseinline select=\"MAC\">%PRODUCTNAME - Preferencias</caseinline><defaultinline>Herramientas - Opciones</defaultinline></switchinline> - <link href=\"text/shared/optionen/mailmerge.xhp\">%PRODUCTNAME Writer - Correo electrónico para la combinación de correspondencia</link>, haga clic en el botón <emph>Autenticación del servidor</emph> para especificar la configuración de seguridad del servidor."
+msgstr "En la pestaña <switchinline select=\"sys\"><caseinline select=\"MAC\">%PRODUCTNAME ▸ Preferencias</caseinline><defaultinline>Herramientas ▸ Opciones</defaultinline></switchinline> ▸ <link href=\"text/shared/optionen/mailmerge.xhp\">%PRODUCTNAME Writer ▸ Correo para combinar correspondencia</link>, pulse en el botón <emph>Autenticación del servidor</emph> para especificar la configuración de seguridad del servidor."
 
 #: serverauthentication.xhp
 msgctxt ""
@@ -16513,7 +16513,7 @@ msgctxt ""
 "par_idN10557\n"
 "help.text"
 msgid "When you enter settings on the <switchinline select=\"sys\"><caseinline select=\"MAC\">%PRODUCTNAME - Preferences</caseinline><defaultinline>Tools - Options</defaultinline></switchinline> - <link href=\"text/shared/optionen/mailmerge.xhp\">%PRODUCTNAME Writer - Mail Merge E-mail</link> tab page, you can click the <emph>Test Settings</emph> button to test your settings."
-msgstr "Al introducir las configuraciones en la pestaña <link href=\"text/shared/optionen/mailmerge.xhp\">%PRODUCTNAME Writer - Correo electrónico para la combinación de correspondencia</link> en <switchinline select=\"sys\"><caseinline select=\"MAC\">%PRODUCTNAME - Preferencias</caseinline><defaultinline>Herramientas - Opciones</defaultinline></switchinline>, puede hacer clic en el botón <emph>Probar configuración</emph> para verificar su configuración."
+msgstr "Tras proporcionar los parámetros de la pestaña <link href=\"text/shared/optionen/mailmerge.xhp\">%PRODUCTNAME Writer ▸ Correo para combinar correspondencia</link> en <switchinline select=\"sys\"><caseinline select=\"MAC\">%PRODUCTNAME ▸ Preferencias</caseinline><defaultinline>Herramientas ▸ Opciones</defaultinline></switchinline>, puede pulsar en el botón <emph>Probar configuración</emph> para verificarlos."
 
 #: testaccount.xhp
 msgctxt ""

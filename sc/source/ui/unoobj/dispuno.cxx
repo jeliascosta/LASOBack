@@ -19,7 +19,7 @@
 
 #include <sfx2/viewfrm.hxx>
 #include <svx/dataaccessdescriptor.hxx>
-#include <svl/smplhint.hxx>
+#include <svl/hint.hxx>
 #include <vcl/svapp.hxx>
 
 #include <com/sun/star/frame/XDispatchProviderInterception.hpp>
@@ -82,8 +82,7 @@ ScDispatchProviderInterceptor::~ScDispatchProviderInterceptor()
 
 void ScDispatchProviderInterceptor::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
         pViewShell = nullptr;
 }
 
@@ -209,8 +208,7 @@ ScDispatch::~ScDispatch()
 
 void ScDispatch::Notify( SfxBroadcaster&, const SfxHint& rHint )
 {
-    const SfxSimpleHint* pSimpleHint = dynamic_cast<const SfxSimpleHint*>(&rHint);
-    if ( pSimpleHint && pSimpleHint->GetId() == SFX_HINT_DYING )
+    if ( rHint.GetId() == SFX_HINT_DYING )
         pViewShell = nullptr;
 }
 
@@ -249,16 +247,16 @@ static void lcl_FillDataSource( frame::FeatureStateEvent& rEvent, const ScImport
                                                     sdb::CommandType::TABLE );
 
         aDescriptor.setDataSource(rParam.aDBName);
-        aDescriptor[svx::daCommand]     <<= rParam.aStatement;
-        aDescriptor[svx::daCommandType] <<= nType;
+        aDescriptor[svx::DataAccessDescriptorProperty::Command]     <<= rParam.aStatement;
+        aDescriptor[svx::DataAccessDescriptorProperty::CommandType] <<= nType;
     }
     else
     {
         //  descriptor has to be complete anyway
 
-        aDescriptor[svx::daDataSource]  <<= OUString();
-        aDescriptor[svx::daCommand]     <<= OUString();
-        aDescriptor[svx::daCommandType] <<= (sal_Int32)sdb::CommandType::TABLE;
+        aDescriptor[svx::DataAccessDescriptorProperty::DataSource]  <<= OUString();
+        aDescriptor[svx::DataAccessDescriptorProperty::Command]     <<= OUString();
+        aDescriptor[svx::DataAccessDescriptorProperty::CommandType] <<= (sal_Int32)sdb::CommandType::TABLE;
     }
     rEvent.State <<= aDescriptor.createPropertyValueSequence();
 }

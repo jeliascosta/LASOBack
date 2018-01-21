@@ -12,20 +12,30 @@
 
 #include <vcl/builder.hxx>
 #include <vcl/ctrl.hxx>
+#include <vcl/EnumContext.hxx>
+#include <sfx2/notebookbar/NotebookbarContextControl.hxx>
+#include <com/sun/star/ui/XContextChangeEventListener.hpp>
 
 /// This implements Widget Layout-based notebook-like menu bar.
-class NotebookBar : public Control, public VclBuilderContainer
+class VCL_DLLPUBLIC NotebookBar : public Control, public VclBuilderContainer
 {
+friend class NotebookBarContextChangeEventListener;
 public:
     NotebookBar(Window* pParent, const OString& rID, const OUString& rUIXMLDescription, const css::uno::Reference<css::frame::XFrame> &rFrame);
-    virtual ~NotebookBar();
+    virtual ~NotebookBar() override;
     virtual void dispose() SAL_OVERRIDE;
 
     virtual Size GetOptimalSize() const SAL_OVERRIDE;
     virtual void setPosSizePixel(long nX, long nY, long nWidth, long nHeight, PosSizeFlags nFlags = PosSizeFlags::All) SAL_OVERRIDE;
 
-    virtual void StateChanged(StateChangedType nType) override;
+    void SetIconClickHdl(Link<NotebookBar*, void> aHdl);
+
+    const css::uno::Reference<css::ui::XContextChangeEventListener>& getContextChangeEventListener() const { return m_pEventListener; }
+private:
+    css::uno::Reference<css::ui::XContextChangeEventListener> m_pEventListener;
+    NotebookbarContextControl* m_pContextContainer;
 };
+
 
 #endif // INCLUDED_VCL_NOTEBOOKBAR_HXX
 

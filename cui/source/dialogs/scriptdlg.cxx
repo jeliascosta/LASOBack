@@ -71,7 +71,7 @@ using namespace css::document;
 
 void ShowErrorDialog( const Any& aException )
 {
-    std::unique_ptr<SvxScriptErrorDialog> pDlg(new SvxScriptErrorDialog( nullptr, aException ));
+    ScopedVclPtrInstance<SvxScriptErrorDialog> pDlg( aException );
     pDlg->Execute();
 }
 
@@ -84,14 +84,12 @@ SFTreeListBox::SFTreeListBox(vcl::Window* pParent)
     , m_sMyMacros(CUI_RESSTR(RID_SVXSTR_MYMACROS))
     , m_sProdMacros(CUI_RESSTR(RID_SVXSTR_PRODMACROS))
 {
-    SetSelectionMode( SINGLE_SELECTION );
+    SetSelectionMode( SelectionMode::Single );
 
     SetStyle( GetStyle() | WB_CLIPCHILDREN | WB_HSCROLL |
                    WB_HASBUTTONS | WB_HASBUTTONSATROOT | WB_HIDESELECTION |
                    WB_HASLINES | WB_HASLINESATROOT | WB_TABSTOP );
     SetNodeDefaultImages();
-
-    nMode = 0xFF;    // everything
 }
 
 VCL_BUILDER_FACTORY(SFTreeListBox)
@@ -615,7 +613,7 @@ void SvxScriptOrgDialog::CheckButtons( Reference< browse::XBrowseNode >& node )
     }
 }
 
-IMPL_LINK_TYPED( SvxScriptOrgDialog, ScriptSelectHdl, SvTreeListBox *, pBox, void )
+IMPL_LINK( SvxScriptOrgDialog, ScriptSelectHdl, SvTreeListBox *, pBox, void )
 {
     if ( !pBox->IsSelected( pBox->GetHdlEntry() ) )
     {
@@ -639,7 +637,7 @@ IMPL_LINK_TYPED( SvxScriptOrgDialog, ScriptSelectHdl, SvTreeListBox *, pBox, voi
     }
 }
 
-IMPL_LINK_TYPED( SvxScriptOrgDialog, ButtonHdl, Button *, pButton, void )
+IMPL_LINK( SvxScriptOrgDialog, ButtonHdl, Button *, pButton, void )
 {
     if ( pButton == m_pCloseButton )
     {
@@ -906,8 +904,7 @@ void SvxScriptOrgDialog::createEntry( SvTreeListEntry* pEntry )
                     if (aUserSuppliedName+extn == childNodes[index]->getName())
                     {
                         bValid = false;
-                        OUString aError( m_createErrStr );
-                        aError += m_createDupStr;
+                        OUString aError = m_createErrStr + m_createDupStr;
                         ScopedVclPtrInstance< MessageDialog > aErrorBox(static_cast<vcl::Window*>(this), aError);
                         aErrorBox->SetText( m_createErrTitleStr );
                         aErrorBox->Execute();
@@ -1075,7 +1072,7 @@ void SvxScriptOrgDialog::deleteEntry( SvTreeListEntry* pEntry )
     Reference< browse::XBrowseNode > node = getBrowseNode( pEntry );
     // ISSUE L10N string & can we centre list?
     OUString aQuery = m_delQueryStr + getListOfChildren( node, 0 );
-    VclPtrInstance< MessageDialog > aQueryBox(static_cast<vcl::Window*>(this), aQuery, VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
+    VclPtrInstance< MessageDialog > aQueryBox(static_cast<vcl::Window*>(this), aQuery, VclMessageType::Question, VCL_BUTTONS_YES_NO);
     aQueryBox->SetText( m_delQueryTitleStr );
     if ( aQueryBox->Execute() == RET_NO )
     {
@@ -1208,6 +1205,8 @@ void SvxScriptOrgDialog::RestorePreviousSelection()
     m_pScriptsBox->SetCurEntry( pEntry );
 }
 
+namespace {
+
 OUString ReplaceString(
     const OUString& source,
     const OUString& token,
@@ -1241,18 +1240,12 @@ OUString FormatErrorString(
 
     if ( !type.isEmpty() )
     {
-        result += "\n\n" +
-                  OUString(CUI_RES(RID_SVXSTR_ERROR_TYPE_LABEL)) +
-                  " " +
-                  type;
+        result += "\n\n" + OUString(CUI_RES(RID_SVXSTR_ERROR_TYPE_LABEL)) + " " + type;
     }
 
     if ( !message.isEmpty() )
     {
-        result += "\n\n" +
-                  OUString(CUI_RES(RID_SVXSTR_ERROR_MESSAGE_LABEL)) +
-                  " " +
-                  message;
+        result += "\n\n" + OUString(CUI_RES(RID_SVXSTR_ERROR_MESSAGE_LABEL)) + " " + message;
     }
 
     return result;
@@ -1377,24 +1370,6 @@ OUString GetErrorMessage(
         unformatted, language, script, OUString(), OUString(), message );
 }
 
-OUString GetErrorMessage( const RuntimeException& re )
-{
-    Type t = cppu::UnoType<decltype(re)>::get();
-    OUString message = t.getTypeName();
-    message += re.Message;
-
-    return message;
-}
-
-OUString GetErrorMessage( const Exception& e )
-{
-    Type t = cppu::UnoType<decltype(e)>::get();
-    OUString message = t.getTypeName();
-    message += e.Message;
-
-    return message;
-}
-
 OUString GetErrorMessage( const css::uno::Any& aException )
 {
     if ( aException.getValueType() ==
@@ -1432,20 +1407,18 @@ OUString GetErrorMessage( const css::uno::Any& aException )
 
     }
     // unknown exception
+    auto msg = aException.getValueTypeName();
     Exception e;
-    RuntimeException rte;
-    if ( aException >>= rte )
+    if ( (aException >>= e) && !e.Message.isEmpty() )
     {
-        return GetErrorMessage( rte );
+        msg += ": " + e.Message;
     }
-
-    aException >>= e;
-    return GetErrorMessage( e );
+    return msg;
+}
 
 }
 
-SvxScriptErrorDialog::SvxScriptErrorDialog(
-    vcl::Window* , css::uno::Any aException )
+SvxScriptErrorDialog::SvxScriptErrorDialog( css::uno::Any aException )
     : m_sMessage()
 {
     SolarMutexGuard aGuard;
@@ -1469,7 +1442,7 @@ short SvxScriptErrorDialog::Execute()
     return 0;
 }
 
-IMPL_STATIC_LINK_TYPED( SvxScriptErrorDialog, ShowDialog, void*, p, void )
+IMPL_STATIC_LINK( SvxScriptErrorDialog, ShowDialog, void*, p, void )
 {
     OUString* pMessage = static_cast<OUString*>(p);
     OUString message;
@@ -1483,7 +1456,7 @@ IMPL_STATIC_LINK_TYPED( SvxScriptErrorDialog, ShowDialog, void*, p, void )
         message = OUString( CUI_RES( RID_SVXSTR_ERROR_TITLE ) );
     }
 
-    ScopedVclPtrInstance<MessageDialog> pBox( nullptr, message, VCL_MESSAGE_WARNING );
+    ScopedVclPtrInstance<MessageDialog> pBox( nullptr, message, VclMessageType::Warning );
     pBox->SetText( CUI_RES( RID_SVXSTR_ERROR_TITLE ) );
     pBox->Execute();
 

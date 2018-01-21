@@ -53,15 +53,24 @@ SvxOrientationItem::SvxOrientationItem( const SvxCellOrientation eOrientation,
 SvxOrientationItem::SvxOrientationItem( sal_Int32 nRotation, bool bStacked, const sal_uInt16 nId ) :
     SfxEnumItem( nId )
 {
-    SetFromRotation( nRotation, bStacked );
+    if( bStacked )
+    {
+        SetValue( SVX_ORIENTATION_STACKED );
+    }
+    else switch( nRotation )
+    {
+        case 9000:  SetValue( SVX_ORIENTATION_BOTTOMTOP );  break;
+        case 27000: SetValue( SVX_ORIENTATION_TOPBOTTOM );  break;
+        default:    SetValue( SVX_ORIENTATION_STANDARD );
+    }
 }
 
 
 bool SvxOrientationItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          /*eCoreUnit*/,
-    SfxMapUnit          /*ePresUnit*/,
+    MapUnit             /*eCoreUnit*/,
+    MapUnit             /*ePresUnit*/,
     OUString&           rText, const IntlWrapper * ) const
 {
     rText = GetValueText( GetValue() );
@@ -151,20 +160,6 @@ sal_Int32 SvxOrientationItem::GetRotation( sal_Int32 nStdAngle ) const
     return nAngle;
 }
 
-void SvxOrientationItem::SetFromRotation( sal_Int32 nRotation, bool bStacked )
-{
-    if( bStacked )
-    {
-        SetValue( SVX_ORIENTATION_STACKED );
-    }
-    else switch( nRotation )
-    {
-        case 9000:  SetValue( SVX_ORIENTATION_BOTTOMTOP );  break;
-        case 27000: SetValue( SVX_ORIENTATION_TOPBOTTOM );  break;
-        default:    SetValue( SVX_ORIENTATION_STANDARD );
-    }
-}
-
 SvxMarginItem::SvxMarginItem( const sal_uInt16 nId ) :
 
     SfxPoolItem( nId ),
@@ -206,8 +201,8 @@ SvxMarginItem::SvxMarginItem( const SvxMarginItem& rItem ) :
 bool SvxMarginItem::GetPresentation
 (
     SfxItemPresentation ePres,
-    SfxMapUnit          eCoreUnit,
-    SfxMapUnit          ePresUnit,
+    MapUnit             eCoreUnit,
+    MapUnit             ePresUnit,
     OUString&           rText, const IntlWrapper *pIntl
 )   const
 {
@@ -215,7 +210,7 @@ bool SvxMarginItem::GetPresentation
 
     switch ( ePres )
     {
-        case SFX_ITEM_PRESENTATION_NAMELESS:
+        case SfxItemPresentation::Nameless:
         {
             rText = GetMetricText( (long)nLeftMargin, eCoreUnit, ePresUnit, pIntl ) +
                         cpDelimTmp +
@@ -226,7 +221,7 @@ bool SvxMarginItem::GetPresentation
                         GetMetricText( (long)nBottomMargin, eCoreUnit, ePresUnit, pIntl );
             return true;
         }
-        case SFX_ITEM_PRESENTATION_COMPLETE:
+        case SfxItemPresentation::Complete:
         {
             rText = SVX_RESSTR(RID_SVXITEMS_MARGIN_LEFT) +
                         GetMetricText( (long)nLeftMargin, eCoreUnit, ePresUnit, pIntl ) +
@@ -253,7 +248,7 @@ bool SvxMarginItem::GetPresentation
 
 bool SvxMarginItem::operator==( const SfxPoolItem& rItem ) const
 {
-    DBG_ASSERT( SfxPoolItem::operator==( rItem ), "unequal type" );
+    assert(SfxPoolItem::operator==(rItem));
 
     return ( ( nLeftMargin == static_cast<const SvxMarginItem&>(rItem).nLeftMargin )   &&
              ( nTopMargin == static_cast<const SvxMarginItem&>(rItem).nTopMargin )     &&

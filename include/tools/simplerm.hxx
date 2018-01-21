@@ -30,9 +30,8 @@
 
 class InternalResMgr;
 
-class TOOLS_DLLPUBLIC SimpleResMgr
+class TOOLS_DLLPUBLIC SimpleResMgr final
 {
-protected:
     osl::Mutex              m_aAccessSafety;
     InternalResMgr*         m_pResImpl;
 
@@ -48,10 +47,10 @@ public:
                             SimpleResMgr( const sal_Char* pPrefixName,
                                           const LanguageTag& rLocale);
 
-    virtual                 ~SimpleResMgr();
+                            ~SimpleResMgr();
 
     static SimpleResMgr*    Create( const sal_Char* pPrefixName,
-                                    const LanguageTag& rLocale = LanguageTag( LANGUAGE_SYSTEM) );// only in VCL
+                                    const LanguageTag& rLocale );// only in VCL
 
     bool                    IsValid() const { return m_pResImpl != nullptr; }
 

@@ -20,7 +20,6 @@
 #include "cellform.hxx"
 
 #include <sfx2/objsh.hxx>
-#include <svl/smplhint.hxx>
 #include <svl/zforlist.hxx>
 #include <svl/sharedstring.hxx>
 
@@ -36,8 +35,7 @@ const ScFormulaCell* pLastFormulaTreeTop = nullptr;
 
 void ScCellFormat::GetString( ScRefCellValue& rCell, sal_uLong nFormat, OUString& rString,
                               Color** ppColor, SvNumberFormatter& rFormatter, const ScDocument* pDoc,
-                              bool bNullVals, bool bFormula, ScForceTextFmt eForceTextFmt,
-                              bool bUseStarFormat )
+                              bool bNullVals, bool bFormula, bool bUseStarFormat )
 {
     *ppColor = nullptr;
 
@@ -55,21 +53,7 @@ void ScCellFormat::GetString( ScRefCellValue& rCell, sal_uLong nFormat, OUString
             if (!bNullVals && nValue == 0.0)
                 rString.clear();
             else
-            {
-                if( eForceTextFmt == ftCheck )
-                {
-                    if( nFormat && rFormatter.IsTextFormat( nFormat ) )
-                        eForceTextFmt = ftForce;
-                }
-                if( eForceTextFmt == ftForce )
-                {
-                    OUString aTemp;
-                    rFormatter.GetOutputString( nValue, 0, aTemp, ppColor );
-                    rFormatter.GetOutputString( aTemp, nFormat, rString, ppColor );
-                }
-                else
-                    rFormatter.GetOutputString( nValue, nFormat, rString, ppColor, bUseStarFormat );
-            }
+                rFormatter.GetOutputString( nValue, nFormat, rString, ppColor, bUseStarFormat );
         }
         break;
         case CELLTYPE_FORMULA:
@@ -95,9 +79,9 @@ void ScCellFormat::GetString( ScRefCellValue& rCell, sal_uLong nFormat, OUString
                 }
                 else
                 {
-                    sal_uInt16 nErrCode = pFCell->GetErrCode();
+                    FormulaError nErrCode = pFCell->GetErrCode();
 
-                    if (nErrCode != 0)
+                    if (nErrCode != FormulaError::NONE)
                         rString = ScGlobal::GetErrorString(nErrCode);
                     else if ( pFCell->IsEmptyDisplayedAsString() )
                         rString.clear();
@@ -106,8 +90,6 @@ void ScCellFormat::GetString( ScRefCellValue& rCell, sal_uLong nFormat, OUString
                         double fValue = pFCell->GetValue();
                         if ( !bNullVals && fValue == 0.0 )
                             rString.clear();
-                        else if ( pFCell->IsHybridValueCell() )
-                            rString = pFCell->GetString().getString();
                         else
                             rFormatter.GetOutputString( fValue, nFormat, rString, ppColor, bUseStarFormat );
                     }
@@ -128,13 +110,13 @@ void ScCellFormat::GetString( ScRefCellValue& rCell, sal_uLong nFormat, OUString
 
 OUString ScCellFormat::GetString(
     ScDocument& rDoc, const ScAddress& rPos, sal_uLong nFormat, Color** ppColor,
-    SvNumberFormatter& rFormatter, bool bNullVals, bool bFormula, ScForceTextFmt eForceTextFmt )
+    SvNumberFormatter& rFormatter, bool bNullVals, bool bFormula )
 {
     OUString aString;
     *ppColor = nullptr;
 
     ScRefCellValue aCell(rDoc, rPos);
-    GetString(aCell, nFormat, aString, ppColor, rFormatter, &rDoc, bNullVals, bFormula, eForceTextFmt);
+    GetString(aCell, nFormat, aString, ppColor, rFormatter, &rDoc, bNullVals, bFormula);
     return aString;
 }
 
@@ -161,8 +143,8 @@ void ScCellFormat::GetInputString(
             else
                 aString = pFC->GetString().getString();
 
-            sal_uInt16 nErrCode = pFC->GetErrCode();
-            if (nErrCode != 0)
+            FormulaError nErrCode = pFC->GetErrCode();
+            if (nErrCode != FormulaError::NONE)
                 aString = EMPTY_OUSTRING;
         }
         break;

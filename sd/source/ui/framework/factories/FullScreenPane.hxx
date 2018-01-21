@@ -52,7 +52,7 @@ public:
         const css::uno::Reference<css::uno::XComponentContext>& rxComponentContext,
         const css::uno::Reference<css::drawing::framework::XResourceId>& rxPaneId,
         const vcl::Window* pViewShellWindow);
-    virtual ~FullScreenPane() throw();
+    virtual ~FullScreenPane() throw() override;
 
     virtual void SAL_CALL disposing() override;
 
@@ -71,7 +71,7 @@ public:
         const css::uno::Reference<css::accessibility::XAccessible>& rxAccessible)
         throw (css::uno::RuntimeException, std::exception) override;
 
-    DECL_LINK_TYPED(WindowEventHandler, VclWindowEvent&, void);
+    DECL_LINK(WindowEventHandler, VclWindowEvent&, void);
 
 protected:
     virtual css::uno::Reference<css::rendering::XCanvas>

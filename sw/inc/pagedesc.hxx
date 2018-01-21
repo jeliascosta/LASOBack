@@ -27,12 +27,20 @@
 #include <editeng/numitem.hxx>
 #include <editeng/borderline.hxx>
 #include <com/sun/star/drawing/TextVerticalAdjust.hpp>
+#include <o3tl/typed_flags_set.hxx>
+
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/identity.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/random_access_index.hpp>
 
 using namespace ::com::sun::star;
+
 
 class SfxPoolItem;
 class SwTextFormatColl;
 class SwNode;
+class SwPageDescs;
 
 /// Separator line adjustment.
 enum SwFootnoteAdj
@@ -115,25 +123,28 @@ public:
  * document (contents are created or removed according to SHARE-information).
  */
 
-typedef sal_uInt16 UseOnPage;
-namespace nsUseOnPage
+enum class UseOnPage : sal_uInt16
 {
-    const UseOnPage PD_NONE           = 0x0000; ///< For internal use only.
-    const UseOnPage PD_LEFT           = 0x0001;
-    const UseOnPage PD_RIGHT          = 0x0002;
-    const UseOnPage PD_ALL            = 0x0003;
-    const UseOnPage PD_MIRROR         = 0x0007;
-    const UseOnPage PD_HEADERSHARE    = 0x0040;
-    const UseOnPage PD_FOOTERSHARE    = 0x0080;
-    const UseOnPage PD_NOHEADERSHARE  = 0xFFBF; ///< For internal use only.
-    const UseOnPage PD_NOFOOTERSHARE  = 0xFF7F; ///< For internal use only.
-    const UseOnPage PD_FIRSTSHARE = 0x0100;
-    const UseOnPage PD_NOFIRSTSHARE = 0xFEFF;
+    NONE           = 0x0000, ///< For internal use only.
+    Left           = 0x0001,
+    Right          = 0x0002,
+    All            = 0x0003,
+    Mirror         = 0x0007,
+    HeaderShare    = 0x0040,
+    FooterShare    = 0x0080,
+    FirstShare     = 0x0100,
+    NoHeaderShare  = 0xFFBF, ///< For internal use only.
+    NoFooterShare  = 0xFF7F, ///< For internal use only.
+    NoFirstShare   = 0xFEFF
+};
+namespace o3tl {
+    template<> struct typed_flags<UseOnPage> : is_typed_flags<UseOnPage, 0xffff> {};
 }
 
 class SW_DLLPUBLIC SwPageDesc : public SwModify
 {
     friend class SwDoc;
+    friend class SwPageDescs;
 
     OUString    m_StyleName;
     SvxNumberType m_NumType;
@@ -154,6 +165,9 @@ class SW_DLLPUBLIC SwPageDesc : public SwModify
     /// Footnote information.
     SwPageFootnoteInfo m_IsFootnoteInfo;
 
+    /// Backref to the assigned SwPageDescs list to handle renames.
+    SwPageDescs  *m_pdList;
+
     /** Called for mirroring of Chg (doc).
        No adjustment at any other place. */
     SAL_DLLPRIVATE void Mirror();
@@ -162,12 +176,19 @@ class SW_DLLPUBLIC SwPageDesc : public SwModify
 
     SAL_DLLPRIVATE SwPageDesc(const OUString&, SwFrameFormat*, SwDoc *pDc );
 
+    struct change_name
+    {
+        change_name(const OUString &rName) : mName(rName) {}
+        void operator()(SwPageDesc *pPageDesc) { pPageDesc->m_StyleName = mName; }
+        const OUString &mName;
+    };
+
 protected:
    virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNewValue ) override;
 
 public:
     const OUString& GetName() const { return m_StyleName; }
-    void SetName(const OUString& rNewName) { m_StyleName = rNewName; }
+    bool SetName(const OUString& rNewName);
 
     bool GetLandscape() const { return m_IsLandscape; }
     void SetLandscape( bool bNew ) { m_IsLandscape = bNew; }
@@ -189,7 +210,7 @@ public:
     bool IsHidden() const { return m_IsHidden; }
     void SetHidden(bool const bValue) { m_IsHidden = bValue; }
 
-    /// Same as WriteUseOn(), but the >= PD_HEADERSHARE part of the bitfield is not modified.
+    /// Same as WriteUseOn(), but the >= HeaderShare part of the bitfield is not modified.
     inline void      SetUseOn( UseOnPage eNew );
     inline UseOnPage GetUseOn() const;
 
@@ -253,10 +274,24 @@ public:
     static SwPageDesc* GetByName(SwDoc& rDoc, const OUString& rName);
 
     SwPageDesc& operator=( const SwPageDesc& );
+    bool        operator<(const SwPageDesc& pd) const
+        { return m_StyleName < pd.m_StyleName; }
 
     SwPageDesc( const SwPageDesc& );
-    virtual ~SwPageDesc();
+    virtual ~SwPageDesc() override;
 };
+
+namespace std {
+   template<>
+   struct less<SwPageDesc*> {
+       bool operator()(const SwPageDesc *pPageDesc, const OUString &rName) const
+           { return pPageDesc->GetName() < rName; }
+       bool operator()(const OUString &rName, const SwPageDesc *pPageDesc) const
+           { return rName < pPageDesc->GetName(); }
+       bool operator()(const SwPageDesc *lhs, const SwPageDesc *rhs) const
+           { return lhs->GetName() < rhs->GetName(); }
+   };
+}
 
 inline void SwPageDesc::SetFollow( const SwPageDesc* pNew )
 {
@@ -265,44 +300,44 @@ inline void SwPageDesc::SetFollow( const SwPageDesc* pNew )
 
 inline bool SwPageDesc::IsHeaderShared() const
 {
-    return (m_eUse & nsUseOnPage::PD_HEADERSHARE) != 0;
+    return bool(m_eUse & UseOnPage::HeaderShare);
 }
 inline bool SwPageDesc::IsFooterShared() const
 {
-    return (m_eUse & nsUseOnPage::PD_FOOTERSHARE) != 0;
+    return bool(m_eUse & UseOnPage::FooterShare);
 }
 inline void SwPageDesc::ChgHeaderShare( bool bNew )
 {
     if ( bNew )
-        m_eUse = (UseOnPage) (m_eUse | nsUseOnPage::PD_HEADERSHARE);
+        m_eUse |= UseOnPage::HeaderShare;
     else
-        m_eUse = (UseOnPage) (m_eUse & nsUseOnPage::PD_NOHEADERSHARE);
+        m_eUse &= UseOnPage::NoHeaderShare;
 }
 inline void SwPageDesc::ChgFooterShare( bool bNew )
 {
     if ( bNew )
-        m_eUse = (UseOnPage) (m_eUse | nsUseOnPage::PD_FOOTERSHARE);
+        m_eUse |= UseOnPage::FooterShare;
     else
-        m_eUse = (UseOnPage) (m_eUse & nsUseOnPage::PD_NOFOOTERSHARE);
+        m_eUse &= UseOnPage::NoFooterShare;
 }
 inline void SwPageDesc::SetUseOn( UseOnPage eNew )
 {
-    UseOnPage eTmp = nsUseOnPage::PD_NONE;
-    if (m_eUse & nsUseOnPage::PD_HEADERSHARE)
-        eTmp = nsUseOnPage::PD_HEADERSHARE;
-    if (m_eUse & nsUseOnPage::PD_FOOTERSHARE)
-        eTmp = (UseOnPage) (eTmp | nsUseOnPage::PD_FOOTERSHARE);
-    if (m_eUse & nsUseOnPage::PD_FIRSTSHARE)
-        eTmp = (UseOnPage) (eTmp | nsUseOnPage::PD_FIRSTSHARE);
-    m_eUse = (UseOnPage) (eTmp | eNew);
+    UseOnPage eTmp = UseOnPage::NONE;
+    if (m_eUse & UseOnPage::HeaderShare)
+        eTmp = UseOnPage::HeaderShare;
+    if (m_eUse & UseOnPage::FooterShare)
+        eTmp |= UseOnPage::FooterShare;
+    if (m_eUse & UseOnPage::FirstShare)
+        eTmp |= UseOnPage::FirstShare;
+    m_eUse = eTmp | eNew;
 
 }
 inline UseOnPage SwPageDesc::GetUseOn() const
 {
     UseOnPage eRet = m_eUse;
-    eRet = (UseOnPage) (eRet & nsUseOnPage::PD_NOHEADERSHARE);
-    eRet = (UseOnPage) (eRet & nsUseOnPage::PD_NOFOOTERSHARE);
-    eRet = (UseOnPage) (eRet & nsUseOnPage::PD_NOFIRSTSHARE);
+    eRet &= UseOnPage::NoHeaderShare;
+    eRet &= UseOnPage::NoFooterShare;
+    eRet &= UseOnPage::NoFirstShare;
     return eRet;
 }
 
@@ -346,6 +381,63 @@ public:
 namespace sw {
     class PageFootnoteHint final : public SfxHint {};
 }
+
+typedef boost::multi_index_container<
+        SwPageDesc*,
+        boost::multi_index::indexed_by<
+            boost::multi_index::random_access<>,
+            boost::multi_index::ordered_unique<
+                boost::multi_index::identity<SwPageDesc*> >
+        >
+    >
+    SwPageDescsBase;
+
+class SwPageDescs final
+{
+    // function updating ByName index via modify
+    friend bool SwPageDesc::SetName( const OUString& rNewName );
+
+    typedef SwPageDescsBase::nth_index<0>::type ByPos;
+    typedef SwPageDescsBase::nth_index<1>::type ByName;
+    typedef ByPos::iterator iterator;
+
+    iterator find_( const OUString &name ) const;
+
+    SwPageDescsBase   m_Array;
+    ByPos            &m_PosIndex;
+    ByName           &m_NameIndex;
+
+public:
+    typedef ByPos::const_iterator const_iterator;
+    typedef SwPageDescsBase::size_type size_type;
+    typedef SwPageDescsBase::value_type value_type;
+
+    SwPageDescs();
+
+    // frees all SwPageDesc!
+    ~SwPageDescs();
+
+    void clear()        { return m_Array.clear(); }
+    bool empty()  const { return m_Array.empty(); }
+    size_t size() const { return m_Array.size(); }
+
+    std::pair<const_iterator,bool> push_back( const value_type& x );
+    void erase( const value_type& x );
+    void erase( size_type index );
+    void erase( const_iterator const& position );
+
+    const_iterator find( const OUString &name ) const
+        { return find_( name ); }
+    const value_type& operator[]( size_t index_ ) const
+        { return m_PosIndex.operator[]( index_ ); }
+    const value_type& front() const { return m_PosIndex.front(); }
+    const value_type& back() const { return m_PosIndex.back(); }
+    const_iterator begin() const { return m_PosIndex.begin(); }
+    const_iterator end() const { return m_PosIndex.end(); }
+
+    bool contains( const value_type& x ) const
+        { return x->m_pdList == this; }
+};
 
 #endif // INCLUDED_SW_INC_PAGEDESC_HXX
 

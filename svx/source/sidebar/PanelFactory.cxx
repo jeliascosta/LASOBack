@@ -25,6 +25,8 @@
 #include "graphic/GraphicPropertyPanel.hxx"
 #include "line/LinePropertyPanel.hxx"
 #include "possize/PosSizePropertyPanel.hxx"
+#include "shapes/DefaultShapesPanel.hxx"
+#include "media/MediaPlaybackPanel.hxx"
 #include "GalleryControl.hxx"
 #include "EmptyPanel.hxx"
 #include <sfx2/sidebar/SidebarPanelBase.hxx>
@@ -63,7 +65,7 @@ class PanelFactory
 {
 public:
     PanelFactory();
-    virtual ~PanelFactory();
+    virtual ~PanelFactory() override;
     PanelFactory(const PanelFactory&) = delete;
     PanelFactory& operator=(const PanelFactory&) = delete;
 
@@ -114,11 +116,11 @@ Reference<ui::XUIElement> SAL_CALL PanelFactory::createUIElement (
     Reference<ui::XSidebar> xSidebar (aArguments.getOrDefault("Sidebar", Reference<ui::XSidebar>()));
     const sal_uInt64 nBindingsValue (aArguments.getOrDefault("SfxBindings", sal_uInt64(0)));
     SfxBindings* pBindings = reinterpret_cast<SfxBindings*>(nBindingsValue);
-    ::sfx2::sidebar::EnumContext aContext (
+    vcl::EnumContext aContext (
         aArguments.getOrDefault("ApplicationName", OUString()),
         aArguments.getOrDefault("ContextName", OUString()));
 
-    vcl::Window* pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
+    VclPtr<vcl::Window> pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
     if ( ! xParentWindow.is() || pParentWindow==nullptr)
         throw RuntimeException(
             "PanelFactory::createUIElement called without ParentWindow",
@@ -166,6 +168,14 @@ Reference<ui::XUIElement> SAL_CALL PanelFactory::createUIElement (
     else if (rsResourceURL.endsWith("/PosSizePropertyPanel"))
     {
         pControl = PosSizePropertyPanel::Create(pParentWindow, xFrame, pBindings, xSidebar);
+    }
+    else if (rsResourceURL.endsWith("/DefaultShapesPanel"))
+    {
+        pControl = DefaultShapesPanel::Create(pParentWindow, xFrame);
+    }
+    else if (rsResourceURL.endsWith("/MediaPlaybackPanel"))
+    {
+        pControl = MediaPlaybackPanel::Create(pParentWindow, xFrame, pBindings);
     }
     else if (rsResourceURL.endsWith("/GalleryPanel"))
     {

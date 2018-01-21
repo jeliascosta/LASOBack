@@ -77,7 +77,7 @@ namespace cairocanvas
         uno::Reference< awt::XWindow > xParentWindow;
         maArguments[4] >>= xParentWindow;
 
-        vcl::Window* pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
+        VclPtr<vcl::Window> pParentWindow = VCLUnoHelper::GetWindow(xParentWindow);
         if( !pParentWindow )
             throw lang::NoSupportException(
                 "Parent window not VCL window, or canvas out-of-process!", nullptr);
@@ -165,7 +165,7 @@ namespace cairocanvas
         return SurfaceSharedPtr();
     }
 
-    SurfaceSharedPtr SpriteCanvas::changeSurface( bool, bool )
+    SurfaceSharedPtr SpriteCanvas::changeSurface()
     {
         // non-modifiable surface here
         return SurfaceSharedPtr();

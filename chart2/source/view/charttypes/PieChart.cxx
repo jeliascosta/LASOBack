@@ -98,7 +98,7 @@ class PiePositionHelper : public PolarPlottingPositionHelper
 {
 public:
     PiePositionHelper( NormalAxis eNormalAxis, double fAngleDegreeOffset );
-    virtual ~PiePositionHelper();
+    virtual ~PiePositionHelper() override;
 
     bool    getInnerAndOuterRadius( double fCategoryX, double& fLogicInnerRadius, double& fLogicOuterRadius, bool bUseRings, double fMaxOffset ) const;
 
@@ -230,7 +230,7 @@ uno::Reference< drawing::XShape > PieChart::createDataPoint(
 {
     //transform position:
     drawing::Direction3D aOffset;
-    if (!::rtl::math::approxEqual(rParam.mfExplodePercentage, 0.0))
+    if (rParam.mfExplodePercentage != 0.0)
     {
         double fAngle  = rParam.mfUnitCircleStartAngleDegree + rParam.mfUnitCircleWidthAngleDegree/2.0;
         double fRadius = (rParam.mfUnitCircleOuterRadius-rParam.mfUnitCircleInnerRadius)*rParam.mfExplodePercentage;
@@ -272,7 +272,7 @@ void PieChart::createTextLabelShape(
     ///to both normalized radii. (See notes for
     ///`PolarPlottingPositionHelper::transformToRadius`, especially example 3,
     ///and related comments).
-    if (!rtl::math::approxEqual(rParam.mfExplodePercentage, 0.0))
+    if (rParam.mfExplodePercentage != 0.0)
     {
         double fExplodeOffset = (rParam.mfUnitCircleOuterRadius-rParam.mfUnitCircleInnerRadius)*rParam.mfExplodePercentage;
         rParam.mfUnitCircleInnerRadius += fExplodeOffset;
@@ -288,14 +288,23 @@ void PieChart::createTextLabelShape(
     ///the label position is allowed; the `createTextLabelShape` treats the
     ///`AVOID_OVERLAP` as if it was of `CENTER` type;
 
+    double nVal = rSeries.getYValue(nPointIndex);
     //AVOID_OVERLAP is in fact "Best fit" in the UI.
     bool bMovementAllowed = ( nLabelPlacement == css::chart::DataLabelPlacement::AVOID_OVERLAP );
     if( bMovementAllowed )
+    {
         // Use center for "Best fit" for now. In the future we
         // may want to implement a real best fit algorithm.
         // But center is good enough, and close to what Excel
         // does.
-        nLabelPlacement = css::chart::DataLabelPlacement::CENTER;
+
+        // Place the label outside if the sector is too small
+        // The threshold is set to 2%, but can be improved by making it a function of
+        // label width and radius too ?
+        double fFrac = fabs( nVal / rParam.mfLogicYSum );
+        nLabelPlacement = ( fFrac <= 0.02 ) ? css::chart::DataLabelPlacement::OUTSIDE :
+            css::chart::DataLabelPlacement::CENTER;
+    }
 
     ///for `OUTSIDE` (`INSIDE`) label placements an offset of 150 (-150), in the
     ///radius direction, is added to the final screen position of the label
@@ -319,7 +328,7 @@ void PieChart::createTextLabelShape(
     awt::Point aScreenPosition2D(
         aPolarPosHelper.getLabelScreenPositionAndAlignmentForUnitCircleValues(eAlignment, nLabelPlacement
         , rParam.mfUnitCircleStartAngleDegree, rParam.mfUnitCircleWidthAngleDegree
-        , rParam.mfUnitCircleInnerRadius, rParam.mfUnitCircleOuterRadius, rParam.mfLogicZ+0.5 ));
+        , rParam.mfUnitCircleInnerRadius, rParam.mfUnitCircleOuterRadius, rParam.mfLogicZ+0.5, 0 ));
 
     ///the screen position of the pie/donut center is calculated.
     PieLabelInfo aPieLabelInfo;
@@ -354,7 +363,6 @@ void PieChart::createTextLabelShape(
     sal_Int32 nTextMaximumFrameWidth = ceil(fTextMaximumFrameWidth);
 
     ///the text shape for the label is created
-    double nVal = rSeries.getYValue(nPointIndex);
     aPieLabelInfo.xTextShape = createDataLabel(
         xTextTarget, rSeries, nPointIndex, nVal, rParam.mfLogicYSum,
         aScreenPosition2D, eAlignment, 0, nTextMaximumFrameWidth);
@@ -362,8 +370,13 @@ void PieChart::createTextLabelShape(
     ///a new `PieLabelInfo` instance is initialized with all the info related to
     ///the current label in order to simplify later label position rearrangement;
     uno::Reference< container::XChild > xChild( aPieLabelInfo.xTextShape, uno::UNO_QUERY );
-    if( xChild.is() )
-        aPieLabelInfo.xLabelGroupShape.set( xChild->getParent(), uno::UNO_QUERY );
+
+    ///text shape could be empty; in that case there is no need to add label info
+    if( !xChild.is() )
+        return;
+
+    aPieLabelInfo.xLabelGroupShape.set( xChild->getParent(), uno::UNO_QUERY );
+
     aPieLabelInfo.fValue = nVal;
     aPieLabelInfo.bMovementAllowed = bMovementAllowed;
     aPieLabelInfo.bMoved= false;
@@ -374,9 +387,7 @@ void PieChart::createTextLabelShape(
         performLabelBestFit(rParam, aPieLabelInfo);
     }
 
-
     m_aLabelInfoList.push_back(aPieLabelInfo);
-
 }
 
 void PieChart::addSeries( VDataSeries* pSeries, sal_Int32 /* zSlot */, sal_Int32 /* xSlot */, sal_Int32 /* ySlot */ )
@@ -1123,7 +1134,7 @@ void PieChart::rearrangeLabelToAvoidOverlapIfRequested( const awt::Size& rPageSi
         return;
 
     double fPageDiagonaleLength = sqrt( double( rPageSize.Width*rPageSize.Width + rPageSize.Height*rPageSize.Height) );
-    if( ::rtl::math::approxEqual( fPageDiagonaleLength, 0.0 ) )
+    if( fPageDiagonaleLength == 0.0 )
         return;
 
     ///initialize next and previous member of `PieLabelInfo` objects
@@ -1325,7 +1336,7 @@ bool PieChart::performLabelBestFitInnerPlacement(ShapeParam& rShapeParam, PieLab
               "      old anchor point = " << rPieLabelInfo.aFirstPosition );
 
 
-    if( ::rtl::math::approxEqual( fPieRadius, 0.0 ) )
+    if( fPieRadius == 0.0 )
         return false;
 
     // get label b.b. width and height
@@ -1417,7 +1428,7 @@ bool PieChart::performLabelBestFitInnerPlacement(ShapeParam& rShapeParam, PieLab
     // note that in the former case 0 <= f(alpha, beta) <= 180,
     // whilst in the latter case 180 <= f(alpha, beta) <= 360;
     double fAlphaMod90 = fmod( fAlphaDeg + 45, 90.0 ) - 45;
-    double fSign = ::rtl::math::approxEqual( fAlphaMod90, 0.0 )
+    double fSign = fAlphaMod90 == 0.0
                        ? 0.0
                        : ( fAlphaMod90 < 0 ) ? -1.0 : 1.0;
     double fThetaRad = fSign * fAlphaRad + M_PI_2 * (1 - fSign * nNearestEdgeIndex) + fBetaRad;
@@ -1430,7 +1441,7 @@ bool PieChart::performLabelBestFitInnerPlacement(ShapeParam& rShapeParam, PieLab
     // that is the distance between C and P
     double fDistanceCP;
     // when the bisector ray intersects the b.b. in F we have theta mod 180 == 0
-    if( ::rtl::math::approxEqual( fmod(fThetaRad, M_PI), 0.0 ))
+    if( fmod(fThetaRad, M_PI) == 0.0 )
     {
         fDistanceCP = fPieRadius - fDistancePF;
     }

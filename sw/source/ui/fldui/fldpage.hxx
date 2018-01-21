@@ -54,15 +54,15 @@ protected:
     SwField*            GetCurField()               { return m_pCurField;}
     SwWrtShell*         GetWrtShell() { return m_pWrtShell;}
 
-    DECL_LINK_TYPED( ListBoxInsertHdl, ListBox&, void );
-    DECL_LINK_TYPED( TreeListBoxInsertHdl, SvTreeListBox*, bool );
-    DECL_LINK_TYPED( NumFormatHdl, ListBox&, void );
+    DECL_LINK( ListBoxInsertHdl, ListBox&, void );
+    DECL_LINK( TreeListBoxInsertHdl, SvTreeListBox*, bool );
+    DECL_LINK( NumFormatHdl, ListBox&, void );
     void                InsertHdl(void *);
 
     void                Init();
     void                SavePos( const ListBox* pLst1);
     void                RestorePos( ListBox* pLst1 );
-    void                EnableInsert(bool bEnable = true);
+    void                EnableInsert(bool bEnable);
     inline bool         IsFieldEdit() const   { return m_bFieldEdit; }
 
     // insert field
@@ -80,7 +80,7 @@ public:
     SwFieldPage(vcl::Window *pParent, const OString& rID,
         const OUString& rUIXMLDescription, const SfxItemSet *pAttrSet);
 
-    virtual ~SwFieldPage();
+    virtual ~SwFieldPage() override;
 
     virtual void        ActivatePage() override;
 

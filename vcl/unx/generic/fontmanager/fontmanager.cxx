@@ -482,8 +482,8 @@ bool PrintFontManager::PrintFont::readAfmMetrics( MultiAtomProvider* pProvider, 
                 if( pChar->name )
                 {
                     pUnicodes[i] = 0;
-                    std::list< sal_Unicode > aCodes = rManager.getUnicodeFromAdobeName( pChar->name );
-                    for( std::list< sal_Unicode >::const_iterator it = aCodes.begin(); it != aCodes.end(); ++it )
+                    std::vector< sal_Unicode > aCodes = rManager.getUnicodeFromAdobeName( pChar->name );
+                    for( std::vector< sal_Unicode >::const_iterator it = aCodes.begin(); it != aCodes.end(); ++it )
                     {
                         if( *it != 0 )
                         {
@@ -541,8 +541,8 @@ bool PrintFontManager::PrintFont::readAfmMetrics( MultiAtomProvider* pProvider, 
 
             if( bFillEncodingvector && pChar->name )
             {
-                std::list< sal_Unicode > aCodes = rManager.getUnicodeFromAdobeName( pChar->name );
-                for( std::list< sal_Unicode >::const_iterator it = aCodes.begin(); it != aCodes.end(); ++it )
+                std::vector< sal_Unicode > aCodes = rManager.getUnicodeFromAdobeName( pChar->name );
+                for( std::vector< sal_Unicode >::const_iterator it = aCodes.begin(); it != aCodes.end(); ++it )
                 {
                     if( *it != 0 )
                     {
@@ -573,8 +573,8 @@ bool PrintFontManager::PrintFont::readAfmMetrics( MultiAtomProvider* pProvider, 
                 }
                 else if( pChar->name )
                 {
-                    std::list< sal_Unicode > aCodes = rManager.getUnicodeFromAdobeName( pChar->name );
-                    for( std::list< sal_Unicode >::const_iterator it = aCodes.begin(); it != aCodes.end(); ++it )
+                    std::vector< sal_Unicode > aCodes = rManager.getUnicodeFromAdobeName( pChar->name );
+                    for( std::vector< sal_Unicode >::const_iterator it = aCodes.begin(); it != aCodes.end(); ++it )
                     {
                         if( *it != 0 )
                             m_pMetrics->m_aMetrics[ *it ] = aMetric;
@@ -585,8 +585,8 @@ bool PrintFontManager::PrintFont::readAfmMetrics( MultiAtomProvider* pProvider, 
             {
                 if( pChar->name )
                 {
-                    std::list< sal_Unicode > aCodes = rManager.getUnicodeFromAdobeName( pChar->name );
-                    for( std::list< sal_Unicode >::const_iterator it = aCodes.begin(); it != aCodes.end(); ++it )
+                    std::vector< sal_Unicode > aCodes = rManager.getUnicodeFromAdobeName( pChar->name );
+                    for( std::vector< sal_Unicode >::const_iterator it = aCodes.begin(); it != aCodes.end(); ++it )
                     {
                         if( *it != 0 )
                             m_pMetrics->m_aMetrics[ *it ] = aMetric;
@@ -1234,9 +1234,8 @@ bool PrintFontManager::analyzeTrueTypeFile( PrintFont* pFont ) const
                 int nAlias = m_pAtoms->getAtom( ATOM_FAMILYNAME, *it );
                 if( nAlias != pFont->m_nFamilyName )
                 {
-                    std::list< int >::const_iterator al_it;
-                    for( al_it = pFont->m_aAliases.begin(); al_it != pFont->m_aAliases.end() && *al_it != nAlias; ++al_it )
-                        ;
+                    std::vector< int >::const_iterator al_it =
+                        std::find( pFont->m_aAliases.begin(), pFont->m_aAliases.end(), nAlias );
                     if( al_it == pFont->m_aAliases.end() )
                         pFont->m_aAliases.push_back( nAlias );
                 }
@@ -1539,8 +1538,8 @@ void PrintFontManager::fillPrintFontInfo( PrintFont* pFont, FastPrintFontInfo& r
     rInfo.m_bSubsettable = (pFont->m_eType == fonttype::TrueType); // TODO: rename to SfntType
 
     rInfo.m_aAliases.clear();
-    for( ::std::list< int >::iterator it = pFont->m_aAliases.begin(); it != pFont->m_aAliases.end(); ++it )
-        rInfo.m_aAliases.push_back( m_pAtoms->getString( ATOM_FAMILYNAME, *it ) );
+    for( int i : pFont->m_aAliases )
+        rInfo.m_aAliases.push_back( m_pAtoms->getString( ATOM_FAMILYNAME, i ) );
 }
 
 void PrintFontManager::fillPrintFontInfo( PrintFont* pFont, PrintFontInfo& rInfo ) const
@@ -1957,9 +1956,9 @@ bool PrintFontManager::createFontSubset(
         }
         else
         {
-            DBG_ASSERT( !(pGlyphIds[i] & 0x007f0000), "overlong glyph id" );
-            DBG_ASSERT( (int)pNewEncoding[i] < nGlyphs, "encoding wrong" );
-            DBG_ASSERT( pEnc[pNewEncoding[i]] == 0 && pGID[pNewEncoding[i]] == 0, "duplicate encoded glyph" );
+            SAL_WARN_IF( (pGlyphIds[i] & 0x007f0000), "vcl", "overlong glyph id" );
+            SAL_WARN_IF( (int)pNewEncoding[i] >= nGlyphs, "vcl", "encoding wrong" );
+            SAL_WARN_IF( pEnc[pNewEncoding[i]] != 0 || pGID[pNewEncoding[i]] != 0, "vcl", "duplicate encoded glyph" );
             pEnc[ pNewEncoding[i] ] = pNewEncoding[i];
             pGID[ pNewEncoding[i] ] = (sal_uInt16)pGlyphIds[ i ];
             pOldIndex[ pNewEncoding[i] ] = i;
@@ -2110,7 +2109,7 @@ void PrintFontManager::getGlyphWidths( fontID nFont,
                 CmapResult aCmapResult;
                 if( ParseCMAP( pCmapData, nCmapSize, aCmapResult ) )
                 {
-                    FontCharMapPtr xFontCharMap( new FontCharMap(aCmapResult) );
+                    FontCharMapRef xFontCharMap( new FontCharMap(aCmapResult) );
                     for( sal_uInt32 cOld = 0;;)
                     {
                         // get next unicode covered by font
@@ -2196,13 +2195,13 @@ std::list< OString > PrintFontManager::getAdobeNameFromUnicode( sal_Unicode aCha
     return aRet;
 }
 
-std::list< sal_Unicode >  PrintFontManager::getUnicodeFromAdobeName( const OString& rName ) const
+std::vector< sal_Unicode >  PrintFontManager::getUnicodeFromAdobeName( const OString& rName ) const
 {
     std::pair< std::unordered_multimap< OString, sal_Unicode, OStringHash >::const_iterator,
         std::unordered_multimap< OString, sal_Unicode, OStringHash >::const_iterator > range
         =  m_aAdobenameToUnicode.equal_range( rName );
 
-    std::list< sal_Unicode > aRet;
+    std::vector< sal_Unicode > aRet;
     for( ; range.first != range.second; ++range.first )
         aRet.push_back( range.first->second );
 

@@ -19,7 +19,9 @@
 #include <com/sun/star/drawing/ShapeCollection.hpp>
 #include <com/sun/star/drawing/XShapeGrouper.hpp>
 #include <com/sun/star/drawing/XDrawPage.hpp>
+#include <com/sun/star/frame/XModel.hpp>
 #include <com/sun/star/view/XSelectionSupplier.hpp>
+#include <ooo/vba/office/MsoShapeType.hpp>
 
 #include <vbahelper/vbahelper.hxx>
 #include <vbahelper/vbashaperange.hxx>
@@ -69,7 +71,7 @@ ScVbaShapeRange::Group() throw (uno::RuntimeException, std::exception)
     return uno::Reference< msforms::XShape >( new ScVbaShape( getParent(), mxContext, xShape, getShapes(), m_xModel, office::MsoShapeType::msoGroup ) );
 }
 
-uno::Reference< drawing::XShapes >
+uno::Reference< drawing::XShapes > const &
 ScVbaShapeRange::getShapes() throw (uno::RuntimeException)
 {
     if ( !m_xShapes.is() )

@@ -86,7 +86,7 @@ namespace cairocanvas
         return mpSurfaceProvider->createSurface(rBitmap);
     }
 
-    SurfaceSharedPtr CanvasBitmap::changeSurface( bool, bool )
+    SurfaceSharedPtr CanvasBitmap::changeSurface()
     {
         // non-modifiable surface here
         return SurfaceSharedPtr();
@@ -220,9 +220,7 @@ namespace cairocanvas
 
     uno::Sequence< OUString > SAL_CALL CanvasBitmap::getSupportedServiceNames(  ) throw (uno::RuntimeException, std::exception)
     {
-        uno::Sequence< OUString > aRet { "com.sun.star.rendering.CanvasBitmap" };
-
-        return aRet;
+        return { "com.sun.star.rendering.CanvasBitmap" };
     }
 
 }

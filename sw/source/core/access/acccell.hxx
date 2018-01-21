@@ -51,10 +51,11 @@ protected:
 
     virtual void InvalidateCursorPos_() override;
 
-    virtual ~SwAccessibleCell();
+    virtual ~SwAccessibleCell() override;
 
 public:
-    SwAccessibleCell( SwAccessibleMap* pInitMap, const SwCellFrame *pCellFrame );
+    SwAccessibleCell(std::shared_ptr<SwAccessibleMap> const& pInitMap,
+                     const SwCellFrame *pCellFrame);
 
     virtual bool HasCursor() override;   // required by map to remember that object
 
@@ -83,7 +84,7 @@ public:
         getSupportedServiceNames()
         throw (css::uno::RuntimeException, std::exception) override;
 
-    virtual void Dispose( bool bRecursive = false ) override;
+    virtual void Dispose(bool bRecursive, bool bCanSkipInvisible = true) override;
 
     virtual void InvalidatePosOrSize( const SwRect& rFrame ) override;
 

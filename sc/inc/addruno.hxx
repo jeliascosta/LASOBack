@@ -24,7 +24,6 @@
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <cppuhelper/implbase.hxx>
 #include <svl/lstner.hxx>
-#include "global.hxx"
 #include "address.hxx"
 
 class ScAddressConversionObj : public ::cppu::WeakImplHelper<
@@ -43,7 +42,7 @@ private:
 public:
 
                             ScAddressConversionObj(ScDocShell* pDocSh, bool bIsRange);
-    virtual                 ~ScAddressConversionObj();
+    virtual                 ~ScAddressConversionObj() override;
 
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 

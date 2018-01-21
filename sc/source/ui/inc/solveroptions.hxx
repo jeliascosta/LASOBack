@@ -45,10 +45,10 @@ class ScSolverOptionsDialog : public ModalDialog
     OUString        maEngine;
     css::uno::Sequence<css::beans::PropertyValue> maProperties;
 
-    DECL_LINK_TYPED( EngineSelectHdl, ListBox&, void );
-    DECL_LINK_TYPED( SettingsSelHdl, SvTreeListBox*, void );
-    DECL_LINK_TYPED( SettingsDoubleClickHdl, SvTreeListBox*, bool );
-    DECL_LINK_TYPED( ButtonHdl, Button*, void );
+    DECL_LINK( EngineSelectHdl, ListBox&, void );
+    DECL_LINK( SettingsSelHdl, SvTreeListBox*, void );
+    DECL_LINK( SettingsDoubleClickHdl, SvTreeListBox*, bool );
+    DECL_LINK( ButtonHdl, Button*, void );
 
     void    ReadFromComponent();
     void    FillListBox();
@@ -60,7 +60,7 @@ public:
                            const css::uno::Sequence<OUString>& rDescriptions,
                            const OUString& rEngine,
                            const css::uno::Sequence<css::beans::PropertyValue>& rProperties );
-    virtual ~ScSolverOptionsDialog();
+    virtual ~ScSolverOptionsDialog() override;
     virtual void dispose() override;
 
     // already updated in selection handler
@@ -75,7 +75,7 @@ class ScSolverIntegerDialog : public ModalDialog
 
 public:
     ScSolverIntegerDialog( vcl::Window * pParent );
-    virtual ~ScSolverIntegerDialog();
+    virtual ~ScSolverIntegerDialog() override;
     virtual void dispose() override;
 
     void        SetOptionName( const OUString& rName );
@@ -90,7 +90,7 @@ class ScSolverValueDialog : public ModalDialog
 
 public:
     ScSolverValueDialog( vcl::Window * pParent );
-    virtual ~ScSolverValueDialog();
+    virtual ~ScSolverValueDialog() override;
     virtual void dispose() override;
 
     void        SetOptionName( const OUString& rName );

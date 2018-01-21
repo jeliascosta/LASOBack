@@ -240,7 +240,7 @@ bool AccessibleBase::ImplUpdateChildren()
 
         ::std::sort( aModelChildren.begin(), aModelChildren.end());
 
-        ::std::vector< ObjectHierarchy::tOID > aChildrenToRemove, aChildrenToAdd;
+        ::std::vector< ObjectIdentifier > aChildrenToRemove, aChildrenToAdd;
         ::std::set_difference( aModelChildren.begin(), aModelChildren.end(),
                                aAccChildren.begin(), aAccChildren.end(),
                                ::std::back_inserter( aChildrenToAdd ));
@@ -248,7 +248,7 @@ bool AccessibleBase::ImplUpdateChildren()
                                aModelChildren.begin(), aModelChildren.end(),
                                ::std::back_inserter( aChildrenToRemove ));
 
-        ::std::vector< ObjectHierarchy::tOID >::const_iterator aIt( aChildrenToRemove.begin());
+        ::std::vector< ObjectIdentifier >::const_iterator aIt( aChildrenToRemove.begin());
         for( ; aIt != aChildrenToRemove.end(); ++aIt )
         {
             RemoveChildByOId( *aIt );
@@ -681,7 +681,7 @@ awt::Rectangle SAL_CALL AccessibleBase::getBounds()
         ExplicitValueProvider::getExplicitValueProvider( m_aAccInfo.m_xView ));
     if( pExplicitValueProvider )
     {
-        vcl::Window* pWindow( VCLUnoHelper::GetWindow( m_aAccInfo.m_xWindow ));
+        VclPtr<vcl::Window> pWindow( VCLUnoHelper::GetWindow( m_aAccInfo.m_xWindow ));
         awt::Rectangle aLogicRect( pExplicitValueProvider->getRectangleOfObject( m_aAccInfo.m_aOID.getObjectCID() ));
         if( pWindow )
         {
@@ -879,12 +879,10 @@ sal_Bool SAL_CALL AccessibleBase::supportsService( const OUString& ServiceName )
 uno::Sequence< OUString > SAL_CALL AccessibleBase::getSupportedServiceNames()
     throw (RuntimeException, std::exception)
 {
-    uno::Sequence< OUString > aSeq( 2 );
-    OUString* pStr = aSeq.getArray();
-    pStr[ 0 ] = "com.sun.star.accessibility.Accessible";
-    pStr[ 1 ] = "com.sun.star.accessibility.AccessibleContext";
-
-    return aSeq;
+    return {
+        "com.sun.star.accessibility.Accessible",
+        "com.sun.star.accessibility.AccessibleContext"
+    };
 }
 
 // ________ AccessibleBase::XEventListener ________

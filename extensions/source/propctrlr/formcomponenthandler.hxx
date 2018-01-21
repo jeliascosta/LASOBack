@@ -107,7 +107,7 @@ namespace pcr
         static css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames_static(  ) throw (css::uno::RuntimeException);
 
     protected:
-        virtual ~FormComponentPropertyHandler();
+        virtual ~FormComponentPropertyHandler() override;
 
     protected:
         virtual ::cppu::IPropertyArrayHelper* createArrayHelper( ) const override;
@@ -137,12 +137,6 @@ namespace pcr
         virtual void onNewComponent() override;
 
     private:
-        /** initializes some (cached) meta data about the component
-            @throws RuntimeException
-                if a serious error occurs, for instance if the component does not provide an XPropertySetInfo instance
-        */
-        void    impl_initComponentMetaData_throw();
-
         /** classifies our component, in case it's a control model, by ClassId
 
             Note that UNO dialog controls are also classified, though they don't have the ClassId property
@@ -190,10 +184,6 @@ namespace pcr
             force creation of a connection, you need to clear ->m_xRowSetConnection.
         */
         bool impl_ensureRowsetConnection_nothrow() const;
-
-        /** clears ->m_xRowSetConnection
-        */
-        void impl_clearRowsetConnection_nothrow();
 
         /** fills an ->LineDescriptor with information to represent a cursor source
             of our form - that is, a table, a query, or an SQL statement.
@@ -430,7 +420,7 @@ namespace pcr
         OUString impl_getDocumentURL_nothrow() const;
 
     private:
-        DECL_LINK_TYPED( OnDesignerClosed, SQLCommandDesigner&, void );
+        DECL_LINK( OnDesignerClosed, SQLCommandDesigner&, void );
 
     private:
         FormComponentPropertyHandler( const FormComponentPropertyHandler& ) = delete;

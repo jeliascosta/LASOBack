@@ -104,7 +104,7 @@ class ConfigurationAccess_WindowState : public  ::cppu::WeakImplHelper< XNameCon
 {
     public:
                                   ConfigurationAccess_WindowState( const OUString& aWindowStateConfigFile, const Reference< XComponentContext >& rxContext );
-        virtual                   ~ConfigurationAccess_WindowState();
+        virtual                   ~ConfigurationAccess_WindowState() override;
 
         // XNameAccess
         virtual css::uno::Any SAL_CALL getByName( const OUString& aName )
@@ -145,14 +145,6 @@ class ConfigurationAccess_WindowState : public  ::cppu::WeakImplHelper< XNameCon
     protected:
         enum WindowStateMask
         {
-            WINDOWSTATE_MASK_LOCKED         = 1,
-            WINDOWSTATE_MASK_DOCKED         = 2,
-            WINDOWSTATE_MASK_VISIBLE        = 4,
-            WINDOWSTATE_MASK_CONTEXT        = 8,
-            WINDOWSTATE_MASK_HIDEFROMMENU   = 16,
-            WINDOWSTATE_MASK_NOCLOSE        = 32,
-            WINDOWSTATE_MASK_SOFTCLOSE      = 64,
-            WINDOWSTATE_MASK_CONTEXTACTIVE  = 128,
             WINDOWSTATE_MASK_DOCKINGAREA    = 256,
             WINDOWSTATE_MASK_POS            = 512,
             WINDOWSTATE_MASK_SIZE           = 1024,
@@ -235,8 +227,8 @@ ConfigurationAccess_WindowState::ConfigurationAccess_WindowState( const OUString
     m_bModified( false )
 {
     // Create configuration hierarchical access name
-    m_aConfigWindowAccess += aModuleName;
-    m_aConfigWindowAccess += "/UIElements/States";
+    m_aConfigWindowAccess += aModuleName
+                          +  "/UIElements/States";
     m_xConfigProvider = theDefaultProvider::get( rxContext );
 
     // Initialize access array with property names.
@@ -1275,7 +1267,7 @@ class WindowStateConfiguration : private cppu::BaseMutex,
 {
 public:
     explicit WindowStateConfiguration( const css::uno::Reference< css::uno::XComponentContext >& rxContext );
-    virtual ~WindowStateConfiguration();
+    virtual ~WindowStateConfiguration() override;
 
     virtual OUString SAL_CALL getImplementationName()
         throw (css::uno::RuntimeException, std::exception) override
@@ -1292,8 +1284,7 @@ public:
     virtual css::uno::Sequence<OUString> SAL_CALL getSupportedServiceNames()
         throw (css::uno::RuntimeException, std::exception) override
     {
-        css::uno::Sequence< OUString > aSeq { "com.sun.star.ui.WindowStateConfiguration" };
-        return aSeq;
+        return {"com.sun.star.ui.WindowStateConfiguration"};
     }
 
     // XNameAccess

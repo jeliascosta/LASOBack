@@ -107,7 +107,7 @@ class ChartController   : public ::cppu::WeakImplHelper <
 public:
     ChartController() = delete;
     explicit ChartController(css::uno::Reference< css::uno::XComponentContext > const & xContext);
-    virtual ~ChartController();
+    virtual ~ChartController() override;
 
     OUString GetContextName();
 
@@ -118,9 +118,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // css::frame::XController (required interface)
     virtual void SAL_CALL
@@ -376,7 +373,9 @@ public:
     ViewElementListProvider getViewElementListProvider();
     DrawModelWrapper* GetDrawModelWrapper();
 
-    DECL_LINK_TYPED( NotifyUndoActionHdl, SdrUndoAction*, void );
+    DECL_LINK( NotifyUndoActionHdl, SdrUndoAction*, void );
+
+    css::uno::Reference<css::uno::XInterface> const & getChartView();
 
 private:
     DrawViewWrapper* GetDrawViewWrapper();
@@ -390,9 +389,8 @@ private:
             explicit TheModel( const css::uno::Reference<
                         css::frame::XModel > & xModel );
 
-            virtual ~TheModel();
+            virtual ~TheModel() override;
 
-            void        SetOwnership( bool bGetsOwnership );
             void        addListener( ChartController* pController );
             void        removeListener(  ChartController* pController );
             void        tryTermination();
@@ -407,14 +405,14 @@ private:
             //each controller might consider himself as owner of the model first
             bool m_bOwnership;
     };
-    class TheModelRef
+    class TheModelRef final
     {
         public:
             TheModelRef( TheModel* pTheModel, ::osl::Mutex& rMutex );
             TheModelRef( const TheModelRef& rTheModel, ::osl::Mutex& rMutex );
             TheModelRef& operator=(ChartController::TheModel* pTheModel);
             TheModelRef& operator=(const TheModelRef& rTheModel);
-            virtual ~TheModelRef();
+            ~TheModelRef();
             bool is() const;
                 TheModel* operator->() const { return m_pTheModel; }
         private:
@@ -426,7 +424,6 @@ private:
     mutable ::apphelper::LifeTimeManager m_aLifeTimeManager;
 
     bool m_bSuspended;
-    bool m_bCanClose;
 
     css::uno::Reference< css::uno::XComponentContext> m_xCC;
 
@@ -552,8 +549,8 @@ private:
     void impl_ShapeControllerDispatch( const css::util::URL& rURL,
         const css::uno::Sequence< css::beans::PropertyValue >& rArgs );
 
-    DECL_LINK_TYPED( DoubleClickWaitingHdl, Timer*, void );
-    void execute_DoubleClick( const Point* pMousePixel = nullptr );
+    DECL_LINK( DoubleClickWaitingHdl, Timer*, void );
+    void execute_DoubleClick( const Point* pMousePixel );
     void startDoubleClickWaiting();
     void stopDoubleClickWaiting();
 

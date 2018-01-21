@@ -75,13 +75,12 @@ class XInputStreamHelper : public cppu::WeakImplHelper<io::XInputStream>
     const sal_uInt8* m_pBuffer;
     const sal_Int32  m_nLength;
     sal_Int32        m_nPosition;
-    bool             m_bBmp;
 
     const sal_uInt8* m_pBMPHeader; //default BMP-header
     sal_Int32        m_nHeaderLength;
 public:
-    XInputStreamHelper(const sal_uInt8* buf, size_t len, bool bBmp);
-    virtual ~XInputStreamHelper();
+    XInputStreamHelper(const sal_uInt8* buf, size_t len);
+    virtual ~XInputStreamHelper() override;
 
     virtual ::sal_Int32 SAL_CALL readBytes( uno::Sequence< ::sal_Int8 >& aData, ::sal_Int32 nBytesToRead ) throw (io::NotConnectedException, io::BufferSizeExceededException, io::IOException, uno::RuntimeException, std::exception) override;
     virtual ::sal_Int32 SAL_CALL readSomeBytes( uno::Sequence< ::sal_Int8 >& aData, ::sal_Int32 nMaxBytesToRead ) throw (io::NotConnectedException, io::BufferSizeExceededException, io::IOException, uno::RuntimeException, std::exception) override;
@@ -90,16 +89,15 @@ public:
     virtual void SAL_CALL closeInput(  ) throw (io::NotConnectedException, io::IOException, uno::RuntimeException, std::exception) override;
 };
 
-XInputStreamHelper::XInputStreamHelper(const sal_uInt8* buf, size_t len, bool bBmp) :
+XInputStreamHelper::XInputStreamHelper(const sal_uInt8* buf, size_t len) :
         m_pBuffer( buf ),
         m_nLength( len ),
-        m_nPosition( 0 ),
-        m_bBmp( bBmp )
+        m_nPosition( 0 )
 {
     static const sal_uInt8 aHeader[] =
         {0x42, 0x4d, 0xe6, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00 };
     m_pBMPHeader = aHeader;
-    m_nHeaderLength = m_bBmp ? sizeof( aHeader ) / sizeof(sal_uInt8) : 0;
+    m_nHeaderLength = 0;
 }
 
 
@@ -238,7 +236,6 @@ public:
     sal_Int32           nCurrentBorderLine;
 
     bool            bIsGraphic;
-    bool            bIsBitmap;
 
     bool            bHoriFlip;
     bool            bVertFlip;
@@ -251,6 +248,7 @@ public:
     OUString sName;
     OUString sAlternativeText;
     OUString title;
+    OUString sHyperlinkURL;
     std::pair<OUString, OUString>& m_rPositionOffsets;
     std::pair<OUString, OUString>& m_rAligns;
     std::queue<OUString>& m_rPositivePercentages;
@@ -299,7 +297,6 @@ public:
         ,eColorMode( drawing::ColorMode_STANDARD )
         ,nCurrentBorderLine(BORDER_TOP)
         ,bIsGraphic(false)
-        ,bIsBitmap(false)
         ,bHoriFlip(false)
         ,bVertFlip(false)
         ,bSizeProtected(false)
@@ -394,6 +391,9 @@ public:
             uno::Reference< container::XNamed > xNamed( xGraphicObjectProperties, uno::UNO_QUERY_THROW );
             xNamed->setName(rDomainMapper.GetGraphicNamingHelper().NameGraphic(sName));
 
+            if ( sHyperlinkURL.getLength() > 0 )
+                xGraphicObjectProperties->setPropertyValue(getPropertyName( PROP_HYPER_LINK_U_R_L ),
+                    uno::makeAny ( sHyperlinkURL ));
             xGraphicObjectProperties->setPropertyValue(getPropertyName( PROP_DESCRIPTION ),
                 uno::makeAny( sAlternativeText ));
             xGraphicObjectProperties->setPropertyValue(getPropertyName( PROP_TITLE ),
@@ -406,7 +406,7 @@ public:
     }
 
     /// Getter for m_aInteropGrabBag, but also merges in the values from other members if they are set.
-    comphelper::SequenceAsHashMap getInteropGrabBag()
+    comphelper::SequenceAsHashMap const & getInteropGrabBag()
     {
         comphelper::SequenceAsHashMap aEffectExtent;
         if (m_oEffectExtentLeft)
@@ -504,6 +504,9 @@ void GraphicImport::lcl_attribute(Id nName, Value& rValue)
     sal_Int32 nIntValue = rValue.getInt();
     switch( nName )
     {
+        case NS_ooxml::LN_CT_Hyperlink_URL://90682;
+            m_pImpl->sHyperlinkURL = rValue.getString();
+        break;
         case NS_ooxml::LN_blip: //the binary graphic data in a shape
             {
             writerfilter::Reference<Properties>::Pointer_t pProperties = rValue.getProperties();
@@ -540,6 +543,12 @@ void GraphicImport::lcl_attribute(Id nName, Value& rValue)
         case NS_ooxml::LN_CT_PositiveSize2D_cy:
         {
             sal_Int32 nDim = oox::drawingml::convertEmuToHmm(nIntValue);
+            // drawingML equivalent of oox::vml::ShapeType::getAbsRectangle():
+            // make sure a shape isn't hidden implicitly just because it has
+            // zero height or width.
+            if (nDim == 0)
+                nDim = 1;
+
             if( nName == NS_ooxml::LN_CT_PositiveSize2D_cx )
                 m_pImpl->setXSize(nDim);
             else
@@ -1107,6 +1116,13 @@ void GraphicImport::lcl_sprm(Sprm& rSprm)
                     pProperties->resolve(*this);
             }
         break;
+        case NS_ooxml::LN_CT_NonVisualDrawingProps_a_hlinkClick: // 90689;
+            {
+                writerfilter::Reference<Properties>::Pointer_t pProperties = rSprm.getProps();
+                if( pProperties.get( ) )
+                    pProperties->resolve( *this );
+            }
+        break;
         default:
             SAL_WARN("writerfilter", "GraphicImport::lcl_sprm: unhandled token: " << nSprmId);
         break;
@@ -1367,7 +1383,7 @@ void GraphicImport::data(const sal_uInt8* buf, size_t len, writerfilter::Referen
         beans::PropertyValues aMediaProperties( 1 );
         aMediaProperties[0].Name = getPropertyName(PROP_INPUT_STREAM);
 
-        uno::Reference< io::XInputStream > xIStream = new XInputStreamHelper( buf, len, m_pImpl->bIsBitmap );
+        uno::Reference< io::XInputStream > xIStream = new XInputStreamHelper( buf, len );
         aMediaProperties[0].Value <<= xIStream;
 
         uno::Reference<beans::XPropertySet> xPropertySet;

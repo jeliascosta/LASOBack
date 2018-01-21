@@ -62,9 +62,8 @@ void SwClient::CheckRegistration( const SfxPoolItem* pOld, const SfxPoolItem* )
 
 void SwClient::SwClientNotify(const SwModify&, const SfxHint& rHint)
 {
-    if (typeid(rHint) == typeid(sw::LegacyModifyHint))
+    if (auto pLegacyHint = dynamic_cast<const sw::LegacyModifyHint*>(&rHint))
     {
-        auto pLegacyHint(static_cast<const sw::LegacyModifyHint*>(&rHint));
         Modify(pLegacyHint->m_pOld, pLegacyHint->m_pNew);
     }
 };
@@ -220,7 +219,8 @@ SwClient* SwModify::Remove( SwClient* pDepend )
     {
         for(auto& rIter : sw::ClientIteratorBase::our_pClientIters->GetRingContainer())
         {
-            if( rIter.m_pCurrent == pDepend || rIter.m_pPosition == pDepend )
+            if (&rIter.m_rRoot == this &&
+                (rIter.m_pCurrent == pDepend || rIter.m_pPosition == pDepend))
             {
                 // if object being removed is the current or next object in an
                 // iterator, advance this iterator

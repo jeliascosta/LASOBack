@@ -17,8 +17,6 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#ifndef IOS
-
 #include <sal/config.h>
 
 #include <cstring>
@@ -29,7 +27,7 @@
 
 #include <basegfx/vector/b2ivector.hxx>
 #include <basegfx/range/b2ibox.hxx>
-
+#include <o3tl/safeint.hxx>
 #include <vcl/salbtype.hxx>
 #include <vcl/bitmap.hxx>
 
@@ -112,7 +110,21 @@ BitmapBuffer* ImplCreateDIB(
             pDIB->mnFormat |= ScanlineFormat::TopDown;
             pDIB->mnWidth = rSize.Width();
             pDIB->mnHeight = rSize.Height();
-            pDIB->mnScanlineSize = AlignedWidth4Bytes( pDIB->mnWidth * nBitCount );
+            long nScanlineBase;
+            bool bFail = o3tl::checked_multiply<long>(pDIB->mnWidth, nBitCount, nScanlineBase);
+            if (bFail)
+            {
+                SAL_WARN("vcl.gdi", "checked multiply failed");
+                delete pDIB;
+                return nullptr;
+            }
+            pDIB->mnScanlineSize = AlignedWidth4Bytes(nScanlineBase);
+            if (pDIB->mnScanlineSize < nScanlineBase/8)
+            {
+                SAL_WARN("vcl.gdi", "scanline calculation wraparound");
+                delete pDIB;
+                return nullptr;
+            }
             pDIB->mnBitCount = nBitCount;
 
             if( nColors )
@@ -123,9 +135,27 @@ BitmapBuffer* ImplCreateDIB(
 
             try
             {
-                size_t size = pDIB->mnScanlineSize * pDIB->mnHeight;
+                size_t size;
+                bFail = o3tl::checked_multiply<size_t>(pDIB->mnHeight, pDIB->mnScanlineSize, size);
+                SAL_WARN_IF(bFail, "vcl.gdi", "checked multiply failed");
+                if (bFail)
+                {
+                    delete pDIB;
+                    return nullptr;
+                }
+
                 pDIB->mpBits = new sal_uInt8[size];
-                std::memset(pDIB->mpBits, 0, size);
+#ifdef __SANITIZE_ADDRESS__
+                if (!pDIB->mpBits)
+                {   // can only happen with ASAN allocator_may_return_null=1
+                    delete pDIB;
+                    pDIB = nullptr;
+                }
+                else
+#endif
+                {
+                    std::memset(pDIB->mpBits, 0, size);
+                }
             }
             catch (const std::bad_alloc&)
             {
@@ -256,7 +286,5 @@ bool SvpSalBitmap::Replace( const ::Color& /*rSearchColor*/, const ::Color& /*rR
 {
     return false;
 }
-
-#endif
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

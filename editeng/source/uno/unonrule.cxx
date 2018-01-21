@@ -150,9 +150,6 @@ Reference< XCloneable > SAL_CALL SvxUnoNumberingRules::createClone(  ) throw (Ru
     return new SvxUnoNumberingRules(maRule);
 }
 
-// XServiceInfo
-const char pSvxUnoNumberingRulesService[] = "com.sun.star.text.NumberingRules";
-
 OUString SAL_CALL SvxUnoNumberingRules::getImplementationName(  ) throw(RuntimeException, std::exception)
 {
     return OUString( "SvxUnoNumberingRules" );
@@ -165,13 +162,13 @@ sal_Bool SAL_CALL SvxUnoNumberingRules::supportsService( const OUString& Service
 
 Sequence< OUString > SAL_CALL SvxUnoNumberingRules::getSupportedServiceNames(  ) throw(RuntimeException, std::exception)
 {
-    OUString aService( pSvxUnoNumberingRulesService );
+    OUString aService( "com.sun.star.text.NumberingRules" );
     Sequence< OUString > aSeq( &aService, 1 );
     return aSeq;
 }
 
 Sequence<beans::PropertyValue> SvxUnoNumberingRules::getNumberingRuleByIndex(sal_Int32 nIndex) const
-    throw (RuntimeException)
+    throw (RuntimeException, std::exception)
 {
     //  NumberingRule aRule;
     const SvxNumberFormat& rFmt = maRule.GetLevel((sal_uInt16) nIndex);
@@ -218,7 +215,7 @@ Sequence<beans::PropertyValue> SvxUnoNumberingRules::getNumberingRuleByIndex(sal
     {
         awt::FontDescriptor aDesc;
         SvxUnoFontDescriptor::ConvertFromFont( *rFmt.GetBulletFont(), aDesc );
-        aVal.setValue(&aDesc, ::cppu::UnoType<awt::FontDescriptor>::get());
+        aVal <<= aDesc;
         pArray[nIdx++] = beans::PropertyValue( OUString(UNO_NAME_NRULE_BULLET_FONT), -1, aVal, beans::PropertyState_DIRECT_VALUE);
     }
 
@@ -469,7 +466,7 @@ void SvxUnoNumberingRules::setNumberingRuleByIndex(const Sequence<beans::Propert
     maRule.SetLevel( (sal_uInt16)nIndex, aFmt );
 }
 
-const SvxNumRule& SvxGetNumRule( Reference< XIndexReplace > xRule ) throw( IllegalArgumentException )
+const SvxNumRule& SvxGetNumRule( Reference< XIndexReplace > const & xRule ) throw( IllegalArgumentException )
 {
     SvxUnoNumberingRules* pRule = SvxUnoNumberingRules::getImplementation( xRule );
     if( pRule == nullptr )

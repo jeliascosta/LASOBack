@@ -67,9 +67,9 @@ void SbStdPicture::PropType( SbxVariable* pVar, SbxArray*, bool bWrite )
     GraphicType eType = aGraphic.GetType();
     sal_Int16 nType = 0;
 
-    if( eType == GRAPHIC_BITMAP )
+    if( eType == GraphicType::Bitmap )
         nType = 1;
-    else if( eType != GRAPHIC_NONE )
+    else if( eType != GraphicType::NONE )
         nType = 2;
 
     pVar->PutInteger( nType );
@@ -86,7 +86,7 @@ void SbStdPicture::PropWidth( SbxVariable* pVar, SbxArray*, bool bWrite )
 
     Size aSize = aGraphic.GetPrefSize();
     aSize = Application::GetAppWindow()->LogicToPixel( aSize, aGraphic.GetPrefMapMode() );
-    aSize = Application::GetAppWindow()->PixelToLogic( aSize, MapMode( MAP_TWIP ) );
+    aSize = Application::GetAppWindow()->PixelToLogic( aSize, MapMode( MapUnit::MapTwip ) );
 
     pVar->PutInteger( (sal_Int16)aSize.Width() );
 }
@@ -101,7 +101,7 @@ void SbStdPicture::PropHeight( SbxVariable* pVar, SbxArray*, bool bWrite )
 
     Size aSize = aGraphic.GetPrefSize();
     aSize = Application::GetAppWindow()->LogicToPixel( aSize, aGraphic.GetPrefMapMode() );
-    aSize = Application::GetAppWindow()->PixelToLogic( aSize, MapMode( MAP_TWIP ) );
+    aSize = Application::GetAppWindow()->PixelToLogic( aSize, MapMode( MapUnit::MapTwip ) );
 
     pVar->PutInteger( (sal_Int16)aSize.Height() );
 }
@@ -124,13 +124,6 @@ SbStdPicture::SbStdPicture() :
 
 SbStdPicture::~SbStdPicture()
 {
-}
-
-
-SbxVariable* SbStdPicture::Find( const OUString& rName, SbxClassType t )
-{
-    // entered already?
-    return SbxObject::Find( rName, t );
 }
 
 
@@ -209,7 +202,7 @@ void SbStdFont::PropName( SbxVariable* pVar, SbxArray*, bool bWrite )
 {
     if( bWrite )
     {
-        SetFontName( pVar->GetOUString() );
+        aName = pVar->GetOUString();
     }
     else
     {
@@ -251,11 +244,6 @@ SbStdFont::SbStdFont()
 
 SbStdFont::~SbStdFont()
 {
-}
-
-SbxVariable* SbStdFont::Find( const OUString& rName, SbxClassType t )
-{
-    return SbxObject::Find( rName, t );
 }
 
 void SbStdFont::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
@@ -412,13 +400,6 @@ SbStdClipboard::SbStdClipboard() :
 SbStdClipboard::~SbStdClipboard()
 {
 }
-
-
-SbxVariable* SbStdClipboard::Find( const OUString& rName, SbxClassType t )
-{
-    return SbxObject::Find( rName, t );
-}
-
 
 void SbStdClipboard::Notify( SfxBroadcaster& rBC, const SfxHint& rHint )
 {

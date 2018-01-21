@@ -33,6 +33,7 @@
 #include <vcl/keycodes.hxx>
 #include <vcl/region.hxx>
 #include <vcl/salnativewidgets.hxx>
+#include <vcl/uitest/factory.hxx>
 #include <rtl/ustring.hxx>
 #include <rtl/ref.hxx>
 #include <cppuhelper/weakref.hxx>
@@ -156,11 +157,11 @@ enum class PosSizeFlags
     Size             = Width | Height,
     PosSize          = Pos | Size,
     All              = PosSize,
-    Dropdown         = 0x0010,
 };
+
 namespace o3tl
 {
-    template<> struct typed_flags<PosSizeFlags> : is_typed_flags<PosSizeFlags, 0x001f> {};
+    template<> struct typed_flags<PosSizeFlags> : is_typed_flags<PosSizeFlags, 0x000f> {};
 }
 
 // Flags for Show()
@@ -253,15 +254,12 @@ enum class ScrollFlags
     Clip                     = 0x0001,
     Children                 = 0x0002,
     NoChildren               = 0x0004,
-    NoErase                  = 0x0008,
-    NoInvalidate             = 0x0010,
-    NoWindowInvalidate       = 0x0020,
-    UseClipRegion            = 0x0040,
-    Update                   = 0x0080,
+    UseClipRegion            = 0x0008,
+    Update                   = 0x0010,
 };
 namespace o3tl
 {
-    template<> struct typed_flags<ScrollFlags> : is_typed_flags<ScrollFlags, 0x00ff> {};
+    template<> struct typed_flags<ScrollFlags> : is_typed_flags<ScrollFlags, 0x001f> {};
 }
 
 // Flags for ParentClipMode
@@ -303,11 +301,11 @@ enum class StartTrackingFlags
     ButtonRepeat         = 0x0010,
     MouseButtonDown      = 0x0020,
     FocusCancel          = 0x0040,
-    UseToolKitDrag       = 0x0080,
 };
+
 namespace o3tl
 {
-    template<> struct typed_flags<StartTrackingFlags> : is_typed_flags<StartTrackingFlags, 0x00ff> {};
+    template<> struct typed_flags<StartTrackingFlags> : is_typed_flags<StartTrackingFlags, 0x007f> {};
 }
 
 // Flags for StartAutoScroll()
@@ -344,8 +342,7 @@ enum class StateChangedType : sal_uInt16
     ExtendedStyle      = 17,
     Mirroring          = 18,
     Layout             = 19,
-    ControlFocus       = 20,
-    User               = 10000
+    ControlFocus       = 20
 };
 
 // GetFocusFlags
@@ -380,13 +377,12 @@ enum class DrawFlags
     NoDisable           = 0x0008,
     NoMnemonic          = 0x0010,
     NoSelection         = 0x0020,
-    NoFocus             = 0x0040,
-    NoBackground        = 0x0080,
-    NoRollover          = 0x0100,
+    NoBackground        = 0x0040,
+    NoRollover          = 0x0080,
 };
 namespace o3tl
 {
-    template<> struct typed_flags<DrawFlags> : is_typed_flags<DrawFlags, 0x01ff> {};
+    template<> struct typed_flags<DrawFlags> : is_typed_flags<DrawFlags, 0x00ff> {};
 }
 
 // DialogControl-Flags
@@ -395,12 +391,11 @@ enum class DialogControlFlags
     NONE                       = 0x0000,
     Return                     = 0x0001,
     WantFocus                  = 0x0002,
-    Mod1Tab                    = 0x0004,
-    FloatWinPopupModeEndCancel = 0x0008,
+    FloatWinPopupModeEndCancel = 0x0004,
 };
 namespace o3tl
 {
-    template<> struct typed_flags<DialogControlFlags> : is_typed_flags<DialogControlFlags, 0x000f> {};
+    template<> struct typed_flags<DialogControlFlags> : is_typed_flags<DialogControlFlags, 0x0007> {};
 }
 
 // EndExtTextInput() Flags
@@ -465,15 +460,6 @@ class MenuFloatingWindow;
 class LifecycleTest;
 
 namespace svt { class PopupWindowControllerImpl; }
-enum class RSWND;
-
-struct WindowResHeader
-{
-    sal_uLong nObjMask;
-    OString   aHelpId;
-    RSWND     nRSStyle;
-};
-
 enum class WindowHitTest {
     NONE        = 0x0000,
     Inside      = 0x0001,
@@ -482,7 +468,6 @@ enum class WindowHitTest {
 namespace o3tl {
     template<> struct typed_flags<WindowHitTest> : is_typed_flags<WindowHitTest, 0x0003> {};
 };
-
 
 namespace vcl {
 
@@ -537,7 +522,7 @@ private:
     //       Please do *not* add new members or inline functions to class Window,
     //       but use class WindowImpl instead
 
-    WindowImpl* mpWindowImpl;
+    std::unique_ptr<WindowImpl> mpWindowImpl;
 
 #ifdef DBG_UTIL
     friend const char* ::ImplDbgCheckWindow( const void* pObj );
@@ -545,11 +530,11 @@ private:
 
 public:
 
-    DECL_DLLPRIVATE_LINK_TYPED( ImplHandlePaintHdl, Idle*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplGenerateMouseMoveHdl, void*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplTrackTimerHdl, Timer*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplAsyncFocusHdl, void*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( ImplHandleResizeTimerHdl, Idle*, void );
+    DECL_DLLPRIVATE_LINK( ImplHandlePaintHdl, Idle*, void );
+    DECL_DLLPRIVATE_LINK( ImplGenerateMouseMoveHdl, void*, void );
+    DECL_DLLPRIVATE_LINK( ImplTrackTimerHdl, Timer*, void );
+    DECL_DLLPRIVATE_LINK( ImplAsyncFocusHdl, void*, void );
+    DECL_DLLPRIVATE_LINK( ImplHandleResizeTimerHdl, Idle*, void );
 
 
     SAL_DLLPRIVATE static void          ImplInitAppFontData( vcl::Window* pWindow );
@@ -579,7 +564,7 @@ public:
 
     SAL_DLLPRIVATE void                 ImplIsInTaskPaneList( bool mbIsInTaskList );
 
-    SAL_DLLPRIVATE WindowImpl*          ImplGetWindowImpl() const { return mpWindowImpl; }
+    SAL_DLLPRIVATE WindowImpl*          ImplGetWindowImpl() const { return mpWindowImpl.get(); }
 
     SAL_DLLPRIVATE Point                ImplFrameToOutput( const Point& rPos );
 
@@ -635,12 +620,8 @@ protected:
 
     SAL_DLLPRIVATE void                 ImplScroll( const Rectangle& rRect, long nHorzScroll, long nVertScroll, ScrollFlags nFlags );
 
-    SAL_DLLPRIVATE bool                 ImplSetClipFlagChildren( bool bSysObjOnlySmaller = false );
+    SAL_DLLPRIVATE bool                 ImplSetClipFlagChildren( bool bSysObjOnlySmaller );
     SAL_DLLPRIVATE bool                 ImplSetClipFlagOverlapWindows( bool bSysObjOnlySmaller = false );
-
-    SAL_DLLPRIVATE WinBits              ImplInitRes( const ResId& rResId );
-    SAL_DLLPRIVATE WindowResHeader      ImplLoadResHeader( const ResId& rResId );
-    SAL_DLLPRIVATE void                 ImplLoadRes( const ResId& rResId );
 
     SAL_DLLPRIVATE void                 PushPaintHelper(PaintHelper* pHelper, vcl::RenderContext& rRenderContext);
     SAL_DLLPRIVATE void                 PopPaintHelper(PaintHelper* pHelper);
@@ -654,7 +635,7 @@ private:
 
     SAL_DLLPRIVATE SalGraphics*         ImplGetFrameGraphics() const;
 
-    SAL_DLLPRIVATE void                 ImplCallFocusChangeActivate( vcl::Window* pNewOverlapWindow, vcl::Window* pOldOverlapWindow );
+    SAL_DLLPRIVATE static void          ImplCallFocusChangeActivate( vcl::Window* pNewOverlapWindow, vcl::Window* pOldOverlapWindow );
     SAL_DLLPRIVATE vcl::Window*         ImplGetFirstOverlapWindow();
     SAL_DLLPRIVATE const vcl::Window*   ImplGetFirstOverlapWindow() const;
 
@@ -707,7 +688,6 @@ private:
     SAL_DLLPRIVATE void                 ImplCallPaint(const vcl::Region* pRegion, sal_uInt16 nPaintFlags);
 
     SAL_DLLPRIVATE void                 ImplCallOverlapPaint();
-    SAL_DLLPRIVATE void                 ImplPostPaint();
 
     SAL_DLLPRIVATE void                 ImplUpdateWindowPtr( vcl::Window* pWindow );
     SAL_DLLPRIVATE void                 ImplUpdateWindowPtr();
@@ -734,15 +714,12 @@ private:
     SAL_DLLPRIVATE void                 ImplDlgCtrlFocusChanged( vcl::Window* pWindow, bool bGetFocus );
     SAL_DLLPRIVATE vcl::Window*         ImplFindDlgCtrlWindow( vcl::Window* pWindow );
 
-    SAL_DLLPRIVATE long                 ImplLogicUnitToPixelX( long nX, MapUnit eUnit );
-    SAL_DLLPRIVATE long                 ImplLogicUnitToPixelY( long nY, MapUnit eUnit );
-
     SAL_DLLPRIVATE static void          ImplNewInputContext();
 
     SAL_DLLPRIVATE void                 ImplCallActivateListeners(vcl::Window*);
     SAL_DLLPRIVATE void                 ImplCallDeactivateListeners(vcl::Window*);
 
-    SAL_DLLPRIVATE void                 ImplHandleScroll( ScrollBar* pHScrl, long nX, ScrollBar* pVScrl, long nY );
+    SAL_DLLPRIVATE static void          ImplHandleScroll(ScrollBar* pHScrl, double nX, ScrollBar* pVScrl, double nY);
 
     SAL_DLLPRIVATE Rectangle            ImplOutputToUnmirroredAbsoluteScreenPixel( const Rectangle& rRect ) const;
     SAL_DLLPRIVATE long                 ImplGetUnmirroredOutOffX();
@@ -782,15 +759,9 @@ protected:
     // FIXME: this is a hack to workaround missing layout functionality
     SAL_DLLPRIVATE void                 ImplAdjustNWFSizes();
 
-    virtual void                        CopyDeviceArea( SalTwoRect& aPosAry, bool bWindowInvalidate = false) override;
+    virtual void                        CopyDeviceArea( SalTwoRect& aPosAry, bool bWindowInvalidate) override;
     virtual void                        ClipToPaintRegion( Rectangle& rDstRect ) override;
     virtual bool                        UsePolyPolygonForComplexGradient() override;
-
-    virtual void DrawGradientWallpaper(long nX, long nY, long nWidth, long nHeight,
-                                       const Wallpaper& rWallpaper) override
-    {
-        OutputDevice::DrawGradientWallpaper(nX, nY, nWidth, nHeight, rWallpaper);
-    }
 
     virtual void ApplySettings(vcl::RenderContext& rRenderContext);
 public:
@@ -800,8 +771,7 @@ public:
     // Single argument ctors shall be explicit.
     explicit                            Window( vcl::Window* pParent, WinBits nStyle = 0 );
 
-                                        Window( vcl::Window* pParent, const ResId& rResId );
-    virtual                             ~Window();
+    virtual                             ~Window() override;
 
     ::OutputDevice const*               GetOutDev() const;
     ::OutputDevice*                     GetOutDev();
@@ -814,17 +784,10 @@ public:
     virtual void                        KeyUp( const KeyEvent& rKEvt );
     virtual void                        PrePaint(vcl::RenderContext& rRenderContext);
     virtual void                        Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect);
+    virtual void                        PostPaint(vcl::RenderContext& rRenderContext);
+
+    using OutputDevice::Erase;
     void                                Erase(vcl::RenderContext& rRenderContext);
-
-    virtual void Erase() override
-    {
-        OutputDevice::Erase();
-    }
-
-    virtual void Erase(const Rectangle& rRect) override
-    {
-        OutputDevice::Erase(rRect);
-    }
 
     virtual void                        Draw( ::OutputDevice* pDev, const Point& rPos, const Size& rSize, DrawFlags nFlags );
     virtual void                        Move();
@@ -1179,6 +1142,16 @@ public:
     void                                SetHelpId( const OString& );
     const OString&                      GetHelpId() const;
 
+    /** String ID of this window for the purpose of creating a screenshot
+
+        In default implementation this ID is the same as HelpId. Override this method
+        in windows (dialogs,tabpages) that need different IDs for different configurations
+        they can be in
+
+        @return screenshot ID of this window
+    */
+    virtual OString                     GetScreenshotId() const;
+
     vcl::Window*                        FindWindow( const Point& rPos ) const;
 
     sal_uInt16                          GetChildCount() const;
@@ -1195,15 +1168,12 @@ public:
 
     // transparent background for selected or checked items in toolboxes etc.
     void                                DrawSelectionBackground( const Rectangle& rRect, sal_uInt16 highlight, bool bChecked, bool bDrawBorder );
-    // support rounded edges in the selection rect
-    void                                DrawSelectionBackground( const Rectangle& rRect, sal_uInt16 highlight, bool bChecked, bool bDrawBorder, Color* pSelectionTextColor, Color* pPaintColor );
 
     void                                ShowTracking( const Rectangle& rRect,
                                                       ShowTrackFlags nFlags = ShowTrackFlags::Small );
     void                                HideTracking();
-    void                                InvertTracking( const Rectangle& rRect,
-                                                        ShowTrackFlags nFlags = ShowTrackFlags::Small );
-    void                                InvertTracking( const tools::Polygon& rPoly, ShowTrackFlags nFlags = ShowTrackFlags::NONE );
+    void                                InvertTracking( const Rectangle& rRect, ShowTrackFlags nFlags );
+    void                                InvertTracking( const tools::Polygon& rPoly, ShowTrackFlags nFlags );
 
     void                                StartTracking( StartTrackingFlags nFlags = StartTrackingFlags::NONE );
     void                                EndTracking( TrackingEventFlags nFlags = TrackingEventFlags::NONE );
@@ -1213,8 +1183,8 @@ public:
     void                                EndAutoScroll();
 
     bool                                HandleScrollCommand( const CommandEvent& rCmd,
-                                                             ScrollBar* pHScrl = nullptr,
-                                                             ScrollBar* pVScrl = nullptr );
+                                                             ScrollBar* pHScrl,
+                                                             ScrollBar* pVScrl );
 
     void                                SaveBackground( const Point& rPos, const Size& rSize,
                                                         const Point& rDestOff, VirtualDevice& rSaveDevice );
@@ -1226,7 +1196,7 @@ public:
     virtual css::uno::Reference< css::awt::XWindowPeer >
                                         GetComponentInterface( bool bCreate = true );
 
-    void                        SetComponentInterface( css::uno::Reference< css::awt::XWindowPeer > xIFace );
+    void                        SetComponentInterface( css::uno::Reference< css::awt::XWindowPeer > const & xIFace );
 
     /** @name Accessibility
      */
@@ -1336,7 +1306,7 @@ public:
 
     // set and retrieve for Toolkit
     VCLXWindow*                         GetWindowPeer() const;
-    void                                SetWindowPeer( css::uno::Reference< css::awt::XWindowPeer > xPeer, VCLXWindow* pVCLXWindow );
+    void                                SetWindowPeer( css::uno::Reference< css::awt::XWindowPeer > const & xPeer, VCLXWindow* pVCLXWindow );
 
     // remember if it was generated by Toolkit
     bool                                IsCreatedWithToolkit() const;
@@ -1350,7 +1320,7 @@ public:
     // Clipboard/Selection interfaces
     css::uno::Reference< css::datatransfer::clipboard::XClipboard > GetClipboard();
     /// Sets a custom clipboard for the window's frame, instead of creating it on-demand using css::datatransfer::clipboard::SystemClipboard.
-    void SetClipboard(css::uno::Reference<css::datatransfer::clipboard::XClipboard> xClipboard);
+    void SetClipboard(css::uno::Reference<css::datatransfer::clipboard::XClipboard> const & xClipboard);
     css::uno::Reference< css::datatransfer::clipboard::XClipboard > GetPrimarySelection();
 
     /*
@@ -1533,6 +1503,16 @@ public:
      */
     void reorderWithinParent(sal_uInt16 nNewPosition);
 
+    /**
+     * Sets an ID.
+     */
+    void set_id(const OUString& rID);
+
+    /**
+     * Get the ID of the window.
+     */
+    const OUString& get_id() const;
+
 
     //  Native Widget Rendering functions
 
@@ -1566,6 +1546,8 @@ public:
 
     virtual OUString GetSurroundingText() const;
     virtual Selection GetSurroundingTextSelection() const;
+
+    virtual FactoryFunction GetUITestFactory() const;
 };
 
 }

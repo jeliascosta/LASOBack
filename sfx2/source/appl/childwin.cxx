@@ -61,7 +61,6 @@ struct SfxChildWindow_Impl
     SfxChildWinFactory* pFact;
     bool                bHideNotDelete;
     bool                bVisible;
-    bool                bHideAtToggle;
     bool                bWantsFocus;
     SfxModule*          pContextModule;
     SfxWorkWindow*      pWorkWin;
@@ -162,7 +161,6 @@ SfxChildWindow::SfxChildWindow(vcl::Window *pParentWindow, sal_uInt16 nId)
 {
     pImpl->pFact = nullptr;
     pImpl->bHideNotDelete = false;
-    pImpl->bHideAtToggle = false;
     pImpl->bWantsFocus = true;
     pImpl->bVisible = true;
     pImpl->pContextModule = nullptr;
@@ -521,26 +519,22 @@ SfxChildWindowContext::~SfxChildWindowContext()
     pWindow.disposeAndClear();
 }
 
-FloatingWindow* SfxChildWindowContext::GetFloatingWindow() const
+FloatingWindow* SfxChildWindowContext::GetFloatingWindow(vcl::Window *pParent)
 {
-    vcl::Window *pParent = pWindow->GetParent();
     if (pParent->GetType() == WINDOW_DOCKINGWINDOW || pParent->GetType() == WINDOW_TOOLBOX)
     {
         return static_cast<DockingWindow*>(pParent)->GetFloatingWindow();
     }
-    else if (pParent->GetType() == WINDOW_FLOATINGWINDOW)
+    if (pParent->GetType() == WINDOW_FLOATINGWINDOW)
     {
         return static_cast<FloatingWindow*>(pParent);
     }
-    else
-    {
-        OSL_FAIL("No FloatingWindow-Context!");
-        return nullptr;
-    }
+    return nullptr;
 }
 
-void SfxChildWindowContext::Resizing( Size& )
+FloatingWindow* SfxChildWindowContext::GetFloatingWindow() const
 {
+    return SfxChildWindowContext::GetFloatingWindow(pWindow->GetParent());
 }
 
 void SfxChildWindow::SetFactory_Impl( SfxChildWinFactory *pF )
@@ -556,11 +550,6 @@ void SfxChildWindow::SetHideNotDelete( bool bOn )
 bool SfxChildWindow::IsHideNotDelete() const
 {
     return pImpl->bHideNotDelete;
-}
-
-bool SfxChildWindow::IsHideAtToggle() const
-{
-    return pImpl->bHideAtToggle;
 }
 
 void SfxChildWindow::SetWantsFocus( bool bSet )
@@ -663,10 +652,6 @@ void SfxChildWindow::Activate_Impl()
 {
     if(pImpl->pWorkWin!=nullptr)
         pImpl->pWorkWin->SetActiveChild_Impl( pWindow );
-}
-
-void SfxChildWindow::Deactivate_Impl()
-{
 }
 
 bool SfxChildWindow::QueryClose()

@@ -45,9 +45,9 @@ class SFX2_DLLPUBLIC SfxHTMLParser : public HTMLParser
 
 protected:
 
-    SfxHTMLParser( SvStream& rStream, bool bNewDoc=true, SfxMedium *pMedium=nullptr );
+    SfxHTMLParser( SvStream& rStream, bool bNewDoc, SfxMedium *pMedium );
 
-    virtual ~SfxHTMLParser();
+    virtual ~SfxHTMLParser() override;
 
 public:
     // Read the options of an image map
@@ -58,11 +58,11 @@ public:
     { return ParseMapOptions(pImageMap, GetOptions()); }
     static bool ParseAreaOptions(ImageMap * pImageMap, const OUString& rBaseURL,
                                  const HTMLOptions& rOptions,
-                                 sal_uInt16 nEventMouseOver = 0,
-                                 sal_uInt16 nEventMouseOut = 0 );
+                                 sal_uInt16 nEventMouseOver,
+                                 sal_uInt16 nEventMouseOut );
     inline bool ParseAreaOptions(ImageMap * pImageMap, const OUString& rBaseURL,
-                                 sal_uInt16 nEventMouseOver = 0,
-                                 sal_uInt16 nEventMouseOut = 0);
+                                 sal_uInt16 nEventMouseOver,
+                                 sal_uInt16 nEventMouseOut);
 
     // <TD SDVAL="..." SDNUM="...">
     static double GetTableDataOptionsValNum( sal_uInt32& nNumForm,

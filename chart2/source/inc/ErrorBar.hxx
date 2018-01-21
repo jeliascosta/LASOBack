@@ -22,27 +22,28 @@
 #include "MutexContainer.hxx"
 #include "ModifyListenerHelper.hxx"
 #include "charttoolsdllapi.hxx"
-#include "LineProperties.hxx"
 
 #include <cppuhelper/implbase.hxx>
 #include <comphelper/uno3.hxx>
 
-#include <com/sun/star/uno/XComponentContext.hpp>
-#include <com/sun/star/lang/XServiceInfo.hpp>
-#include <com/sun/star/lang/XServiceName.hpp>
-#include <com/sun/star/util/XCloneable.hpp>
+#include <com/sun/star/beans/XPropertySet.hpp>
+#include <com/sun/star/beans/XPropertyState.hpp>
 #include <com/sun/star/container/XChild.hpp>
 #include <com/sun/star/chart2/data/XDataSink.hpp>
 #include <com/sun/star/chart2/data/XDataSource.hpp>
-#include <com/sun/star/beans/XPropertySet.hpp>
-#include <com/sun/star/beans/XPropertyState.hpp>
 #include <com/sun/star/chart/ErrorBarStyle.hpp>
+#include <com/sun/star/drawing/LineStyle.hpp>
+#include <com/sun/star/drawing/LineJoint.hpp>
+#include <com/sun/star/drawing/LineDash.hpp>
+#include <com/sun/star/lang/XServiceInfo.hpp>
+#include <com/sun/star/lang/XServiceName.hpp>
+#include <com/sun/star/uno/Any.hxx>
+#include <com/sun/star/uno/XComponentContext.hpp>
+#include <com/sun/star/util/XCloneable.hpp>
+#include <com/sun/star/util/Color.hpp>
 
 namespace chart
 {
-
-OOO_DLLPUBLIC_CHARTTOOLS    css::uno::Reference< css::beans::XPropertySet > createErrorBar(
-    const css::uno::Reference< css::uno::XComponentContext > & xContext );
 
 namespace impl
 {
@@ -60,10 +61,16 @@ typedef ::cppu::WeakImplHelper<
 
 class ErrorBar :
         public MutexContainer,
-        public impl::ErrorBar_Base,
-        public LineProperties
+        public impl::ErrorBar_Base
 {
 private:
+    OUString maDashName;
+    css::drawing::LineDash maLineDash;
+    sal_Int32 mnLineWidth;
+    css::drawing::LineStyle meLineStyle;
+    css::util::Color maLineColor;
+    sal_Int16 mnLineTransparence;
+    css::drawing::LineJoint meLineJoint;
     bool mbShowPositiveError;
     bool mbShowNegativeError;
     double mfPositiveError;
@@ -72,8 +79,8 @@ private:
     sal_Int32 meStyle;
 
 public:
-    explicit ErrorBar( const css::uno::Reference< css::uno::XComponentContext > & xContext );
-    virtual ~ErrorBar();
+    OOO_DLLPUBLIC_CHARTTOOLS explicit ErrorBar();
+    virtual ~ErrorBar() override;
 
     /// XServiceInfo declarations
     virtual OUString SAL_CALL getImplementationName()
@@ -82,9 +89,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     // XPropertySet
     virtual css::uno::Reference< css::beans::XPropertySetInfo > SAL_CALL
@@ -147,9 +151,6 @@ protected:
         throw (css::uno::RuntimeException, std::exception) override;
 
 private:
-    css::uno::Reference< css::uno::XComponentContext >
-                        m_xContext;
-
     typedef ::std::vector< css::uno::Reference<
             css::chart2::data::XLabeledDataSequence > > tDataSequenceContainer;
     tDataSequenceContainer m_aDataSequences;

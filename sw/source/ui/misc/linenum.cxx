@@ -81,18 +81,18 @@ SwLineNumberingDlg::SwLineNumberingDlg(SwView *pVw)
     get(m_pNumberingOnCB, "shownumbering");
     get(m_pNumberingOnFooterHeader, "showfooterheadernumbering");
 
-    OUString sIntervalName = m_pDivIntervalFT->GetAccessibleName();
-    sIntervalName += "(";
-    sIntervalName += m_pDivRowsFT->GetAccessibleName();
-    sIntervalName += ")";
+    OUString sIntervalName = m_pDivIntervalFT->GetAccessibleName()
+                             + "("
+                             + m_pDivRowsFT->GetAccessibleName()
+                             + ")";
     m_pDivIntervalNF->SetAccessibleName(sIntervalName);
 
     vcl::Window *pNumIntervalFT = get<vcl::Window>("interval");
     vcl::Window *pNumRowsFT = get<vcl::Window>("intervallines");
-    sIntervalName = pNumIntervalFT->GetAccessibleName();
-    sIntervalName += "(";
-    sIntervalName += pNumRowsFT->GetAccessibleName();
-    sIntervalName += ")";
+    sIntervalName = pNumIntervalFT->GetAccessibleName()
+                    + "("
+                    + pNumRowsFT->GetAccessibleName()
+                    + ")";
     m_pNumIntervalNF->SetAccessibleName(sIntervalName);
 
     // char styles
@@ -193,7 +193,7 @@ void SwLineNumberingDlg::dispose()
 }
 
 
-IMPL_LINK_NOARG_TYPED(SwLineNumberingDlg, OKHdl, Button*, void)
+IMPL_LINK_NOARG(SwLineNumberingDlg, OKHdl, Button*, void)
 {
     SwLineNumberInfo aInf(pSh->GetLineNumberInfo());
 
@@ -255,7 +255,7 @@ IMPL_LINK_NOARG_TYPED(SwLineNumberingDlg, OKHdl, Button*, void)
 }
 
 // modify
-IMPL_LINK_NOARG_TYPED(SwLineNumberingDlg, ModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(SwLineNumberingDlg, ModifyHdl, Edit&, void)
 {
     bool bEnable = m_pNumberingOnCB->IsChecked() && !m_pDivisorED->GetText().isEmpty();
 
@@ -265,7 +265,7 @@ IMPL_LINK_NOARG_TYPED(SwLineNumberingDlg, ModifyHdl, Edit&, void)
 }
 
 // On/Off
-IMPL_LINK_NOARG_TYPED(SwLineNumberingDlg, LineOnOffHdl, Button*, void)
+IMPL_LINK_NOARG(SwLineNumberingDlg, LineOnOffHdl, Button*, void)
 {
     bool bEnable = m_pNumberingOnCB->IsChecked();
     m_pBodyContent->Enable(bEnable);

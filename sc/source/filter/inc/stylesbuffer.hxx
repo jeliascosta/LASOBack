@@ -23,7 +23,6 @@
 #include <com/sun/star/awt/FontDescriptor.hpp>
 #include <com/sun/star/table/CellHoriJustify.hpp>
 #include <com/sun/star/table/CellOrientation.hpp>
-#include <com/sun/star/table/CellVertJustify2.hpp>
 #include <com/sun/star/table/BorderLine2.hpp>
 #include <com/sun/star/util/CellProtection.hpp>
 #include <oox/drawingml/color.hxx>
@@ -334,8 +333,6 @@ public:
     inline const ApiAlignmentData& getApiData() const { return maApiData; }
 
     void                fillToItemSet( SfxItemSet& rItemSet, bool bSkipPoolDefs = false ) const;
-    /** Writes all alignment attributes to the passed property map. */
-    void                writeToPropertyMap( PropertyMap& rPropMap ) const;
 
 private:
     ::SvxCellHorJustify GetScHorAlign() const;
@@ -383,8 +380,6 @@ public:
     /** Returns the converted API protection data struct. */
     inline const ApiProtectionData& getApiData() const { return maApiData; }
 
-    /** Writes all protection attributes to the passed property map. */
-    void                writeToPropertyMap( PropertyMap& rPropMap ) const;
     void                fillToItemSet( SfxItemSet& rItemSet, bool bSkipPoolDefs = false ) const;
 private:
     ProtectionModel     maModel;            /// Protection model data.
@@ -438,8 +433,6 @@ struct ApiBorderData
     bool                hasAnyOuterBorder() const;
 };
 
-bool operator==( const ApiBorderData& rLeft, const ApiBorderData& rRight );
-
 class Border : public WorkbookHelper
 {
 public:
@@ -464,11 +457,6 @@ public:
     inline const ApiBorderData& getApiData() const { return maApiData; }
 
     void fillToItemSet( SfxItemSet& rItemSet, bool bSkipPoolDefs = false ) const;
-
-    /** Writes all border attributes to the passed property map. */
-    void                writeToPropertyMap( PropertyMap& rPropMap ) const;
-
-    bool                hasBorder() const;
 
 private:
     /** Returns the border line struct specified by the passed XML token identifier. */
@@ -534,8 +522,6 @@ struct ApiSolidFillData
     explicit            ApiSolidFillData();
 };
 
-bool operator==( const ApiSolidFillData& rLeft, const ApiSolidFillData& rRight );
-
 /** Contains cell fill attributes, either a pattern fill or a gradient fill. */
 class Fill : public WorkbookHelper
 {
@@ -569,12 +555,7 @@ public:
     /** Final processing after import of all style settings. */
     void                finalizeImport();
 
-    /** Returns the converted API fill data struct. */
-    inline const ApiSolidFillData& getApiData() const { return maApiData; }
-
     void                fillToItemSet( SfxItemSet& rItemSet, bool bSkipPoolDefs = false ) const;
-    /** Writes all fill attributes to the passed property map. */
-    void                writeToPropertyMap( PropertyMap& rPropMap ) const;
 
 private:
     typedef std::shared_ptr< PatternFillModel >   PatternModelRef;
@@ -655,11 +636,6 @@ public:
     void applyPatternToAttrList(
         AttrList& rAttrs, SCROW nRow1, SCROW nRow2, sal_Int32 nForceScNumFmt );
 
-    /** Writes all formatting attributes to the passed property map. */
-    void                writeToPropertyMap( PropertyMap& rPropMap ) const;
-    /** Writes all formatting attributes to the passed property set. */
-    void                writeToPropertySet( PropertySet& rPropSet ) const;
-
     void writeToDoc( ScDocumentImport& rDoc, const css::table::CellRangeAddress& rRange );
 
     const ::ScPatternAttr& createPattern( bool bSkipPoolDefs = false );
@@ -687,11 +663,11 @@ public:
     explicit            Dxf( const WorkbookHelper& rHelper );
 
     /** Creates a new empty font object. */
-    FontRef             createFont( bool bAlwaysNew = true );
+    FontRef const &     createFont( bool bAlwaysNew = true );
     /** Creates a new empty border object. */
-    BorderRef           createBorder( bool bAlwaysNew = true );
+    BorderRef const &   createBorder( bool bAlwaysNew = true );
     /** Creates a new empty fill object. */
-    FillRef             createFill( bool bAlwaysNew = true );
+    FillRef const &     createFill( bool bAlwaysNew = true );
 
     /** Inserts a new number format code. */
     void                importNumFmt( const AttributeList& rAttribs );
@@ -790,7 +766,7 @@ public:
 
 private:
     /** Inserts the passed cell style object into the internal maps. */
-    void                insertCellStyle( CellStyleRef xCellStyle );
+    void                insertCellStyle( CellStyleRef const & xCellStyle );
     /** Creates the style sheet described by the passed cell style object. */
     static OUString     createCellStyle( const CellStyleRef& rxCellStyle );
     static ::ScStyleSheet* getCellStyleSheet( const CellStyleRef& rxCellStyle );
@@ -875,9 +851,9 @@ public:
     const FontModel&    getDefaultFontModel() const;
 
     /** Returns true, if the specified borders are equal. */
-    bool                equalBorders( sal_Int32 nBorderId1, sal_Int32 nBorderId2 ) const;
+    static bool         equalBorders( sal_Int32 nBorderId1, sal_Int32 nBorderId2 );
     /** Returns true, if the specified fills are equal. */
-    bool                equalFills( sal_Int32 nFillId1, sal_Int32 nFillId2 ) const;
+    static bool         equalFills( sal_Int32 nFillId1, sal_Int32 nFillId2 );
 
     /** Returns the default style sheet for unused cells. */
     OUString     getDefaultStyleName() const;
@@ -887,18 +863,12 @@ public:
     /** Creates the style sheet described by the DXF with the passed identifier. */
     OUString     createDxfStyle( sal_Int32 nDxfId ) const;
 
-    void                writeFontToItemSet( SfxItemSet& rItemSet, sal_Int32 nFontId, bool bSkipPoolDefs = false ) const;
-    /** Writes the font attributes of the specified font data to the passed property map. */
-    void                writeFontToPropertyMap( PropertyMap& rPropMap, sal_Int32 nFontId ) const;
-    sal_uLong           writeNumFmtToItemSet( SfxItemSet& rItemSet, sal_Int32 nNumFmtId, bool bSkipPoolDefs = false ) const;
+    void                writeFontToItemSet( SfxItemSet& rItemSet, sal_Int32 nFontId, bool bSkipPoolDefs ) const;
+    sal_uLong           writeNumFmtToItemSet( SfxItemSet& rItemSet, sal_Int32 nNumFmtId, bool bSkipPoolDefs ) const;
     /** Writes the specified number format to the passed property map. */
-    void                writeNumFmtToPropertyMap( PropertyMap& rPropMap, sal_Int32 nNumFmtId ) const;
-    void                writeBorderToItemSet( SfxItemSet& rItemSet, sal_Int32 nBorderId, bool bSkipPoolDefs = false ) const;
-    /** Writes the border attributes of the specified border data to the passed property map. */
-    void                writeBorderToPropertyMap( PropertyMap& rPropMap, sal_Int32 nBorderId ) const;
+    void                writeBorderToItemSet( SfxItemSet& rItemSet, sal_Int32 nBorderId, bool bSkipPoolDefs ) const;
     /** Writes the fill attributes of the specified fill data to the passed property map. */
-    void                writeFillToItemSet( SfxItemSet& rItemSet, sal_Int32 nFillId, bool bSkipPoolDefs = false ) const;
-    void                writeFillToPropertyMap( PropertyMap& rPropMap, sal_Int32 nFillId ) const;
+    void                writeFillToItemSet( SfxItemSet& rItemSet, sal_Int32 nFillId, bool bSkipPoolDefs ) const;
 
     /** Writes the cell formatting attributes of the specified XF to the passed property set. */
     void                writeCellXfToDoc( ScDocumentImport& rDoc, const css::table::CellRangeAddress& rRange, sal_Int32 nXfId ) const;

@@ -46,8 +46,9 @@ using ::std::map;
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
 
-MacroChooser::MacroChooser( vcl::Window* pParnt, bool bCreateEntries )
+MacroChooser::MacroChooser( vcl::Window* pParnt, const Reference< frame::XFrame >& xDocFrame, bool bCreateEntries )
     : SfxModalDialog(pParnt, "BasicMacroDialog", "modules/BasicIDE/ui/basicmacrodialog.ui")
+    , m_xDocumentFrame(xDocFrame)
     , bNewDelIsDel(true)
     // the Sfx doesn't ask the BasicManager whether modified or not
     // => start saving in case of a change without a into the BasicIDE.
@@ -70,7 +71,7 @@ MacroChooser::MacroChooser( vcl::Window* pParnt, bool bCreateEntries )
     get(m_pNewLibButton, "newlibrary");
     get(m_pNewModButton, "newmodule");
 
-    m_pMacroBox->SetSelectionMode( SINGLE_SELECTION );
+    m_pMacroBox->SetSelectionMode( SelectionMode::Single );
     m_pMacroBox->SetHighlightRange(); // select over the whole width
 
     m_pRunButton->SetClickHdl( LINK( this, MacroChooser, ButtonHdl ) );
@@ -269,7 +270,7 @@ SbMethod* MacroChooser::GetMacro()
         if ( pEntry )
         {
             OUString aMacroName( m_pMacroBox->GetEntryText( pEntry ) );
-            pMethod = static_cast<SbMethod*>(pModule->GetMethods()->Find( aMacroName, SbxClassType::Method ));
+            pMethod = pModule->FindMethod( aMacroName, SbxClassType::Method );
         }
     }
     return pMethod;
@@ -361,16 +362,16 @@ SbMethod* MacroChooser::CreateMacro()
             pModule = pBasic->FindModule( aModName );
         }
         else if ( !pBasic->GetModules().empty() )
-            pModule = pBasic->GetModules().front();
+            pModule = pBasic->GetModules().front().get();
 
         if ( !pModule )
         {
             pModule = createModImpl( static_cast<vcl::Window*>( this ),
-                aDocument, *m_pBasicBox, aLibName, aModName );
+                aDocument, *m_pBasicBox, aLibName, aModName, false );
         }
 
         OUString aSubName = m_pMacroNameEdit->GetText();
-        DBG_ASSERT( !pModule || !pModule->GetMethods()->Find( aSubName, SbxClassType::Method ), "Macro existiert schon!" );
+        DBG_ASSERT( !pModule || !pModule->FindMethod( aSubName, SbxClassType::Method ), "Macro existiert schon!" );
         pMethod = pModule ? basctl::CreateMacro( pModule, aSubName ) : nullptr;
     }
 
@@ -456,7 +457,7 @@ void MacroChooser::CheckButtons()
 }
 
 
-IMPL_LINK_NOARG_TYPED(MacroChooser, MacroDoubleClickHdl, SvTreeListBox*, bool)
+IMPL_LINK_NOARG(MacroChooser, MacroDoubleClickHdl, SvTreeListBox*, bool)
 {
     StoreMacroDescription();
     if (nMode == Recording)
@@ -470,7 +471,7 @@ IMPL_LINK_NOARG_TYPED(MacroChooser, MacroDoubleClickHdl, SvTreeListBox*, bool)
     return false;
 }
 
-IMPL_LINK_TYPED( MacroChooser, MacroSelectHdl, SvTreeListBox *, pBox, void )
+IMPL_LINK( MacroChooser, MacroSelectHdl, SvTreeListBox *, pBox, void )
 {
     // Is also called if deselected!
     // Two function calls in every SelectHdl because
@@ -483,7 +484,7 @@ IMPL_LINK_TYPED( MacroChooser, MacroSelectHdl, SvTreeListBox *, pBox, void )
     }
 }
 
-IMPL_LINK_TYPED( MacroChooser, BasicSelectHdl, SvTreeListBox *, pBox, void )
+IMPL_LINK( MacroChooser, BasicSelectHdl, SvTreeListBox *, pBox, void )
 {
     // Is also called if deselected!
     // Two function calls in every SelectHdl because
@@ -497,11 +498,7 @@ IMPL_LINK_TYPED( MacroChooser, BasicSelectHdl, SvTreeListBox *, pBox, void )
     m_pMacroBox->Clear();
     if ( pModule )
     {
-        OUString aStr = m_aMacrosInTxtBaseStr;
-        aStr += " " ;
-        aStr += pModule->GetName();
-
-        m_pMacrosInTxt->SetText( aStr );
+        m_pMacrosInTxt->SetText( m_aMacrosInTxtBaseStr + " " + pModule->GetName() );
 
         // The macros should be called in the same order that they
         // are written down in the module.
@@ -537,7 +534,7 @@ IMPL_LINK_TYPED( MacroChooser, BasicSelectHdl, SvTreeListBox *, pBox, void )
 }
 
 
-IMPL_LINK_NOARG_TYPED( MacroChooser, EditModifyHdl, Edit&, void )
+IMPL_LINK_NOARG( MacroChooser, EditModifyHdl, Edit&, void )
 {
     // select the module in which the macro is put at Neu (new),
     // if BasicManager or Lib is selecting
@@ -594,7 +591,7 @@ IMPL_LINK_NOARG_TYPED( MacroChooser, EditModifyHdl, Edit&, void )
 }
 
 
-IMPL_LINK_TYPED( MacroChooser, ButtonHdl, Button *, pButton, void )
+IMPL_LINK( MacroChooser, ButtonHdl, Button *, pButton, void )
 {
     // apart from New/Record the Description is done by LoseFocus
     if (pButton == m_pRunButton)
@@ -613,7 +610,7 @@ IMPL_LINK_TYPED( MacroChooser, ButtonHdl, Button *, pButton, void )
                 ScriptDocument aDocument( ScriptDocument::getDocumentForBasicManager( pBasMgr ) );
                 if ( aDocument.isDocument() && !aDocument.allowMacros() )
                 {
-                    ScopedVclPtrInstance<MessageDialog>(this, IDEResId(RID_STR_CANNOTRUNMACRO), VCL_MESSAGE_WARNING)->Execute();
+                    ScopedVclPtrInstance<MessageDialog>(this, IDEResId(RID_STR_CANNOTRUNMACRO), VclMessageType::Warning)->Execute();
                     return;
                 }
             }
@@ -739,7 +736,12 @@ IMPL_LINK_TYPED( MacroChooser, ButtonHdl, Button *, pButton, void )
         OUString aComment( GetInfo( pMethod ) );
         SfxMacroInfoItem aItem( SID_MACROINFO, pBasMgr, aLib, aMod, aSub, aComment );
         SfxAllItemSet Args( SfxGetpApp()->GetPool() );
-        SfxRequest aRequest( SID_CONFIG, SfxCallMode::SYNCHRON, Args );
+
+        SfxAllItemSet aInternalSet(SfxGetpApp()->GetPool());
+        if (m_xDocumentFrame.is())
+            aInternalSet.Put(SfxUnoFrameItem(SID_FILLFRAME, m_xDocumentFrame));
+
+        SfxRequest aRequest(SID_CONFIG, SfxCallMode::SYNCHRON, Args, aInternalSet);
         aRequest.AppendItem( aItem );
         SfxGetpApp()->ExecuteSlot( aRequest );
     }

@@ -287,17 +287,14 @@ bool SfxSingleRecordReader::FindHeader_Impl(sal_uInt16 nTypes, sal_uInt16 nTag)
  * @param nRecordType  sub class record type
  * @param pStream      Stream to write the record to
  * @param nContentTag  Content type
- * @param nContentVer  Content version
  *
  * Internal method for sub classes
  */
 SfxMultiFixRecordWriter::SfxMultiFixRecordWriter(sal_uInt8  nRecordType,
                                                  SvStream*  pStream,
-                                                 sal_uInt16 nContentTag,
-                                                 sal_uInt8  nContentVer)
-    :  SfxSingleRecordWriter( nRecordType, pStream, nContentTag, nContentVer )
+                                                 sal_uInt16 nContentTag)
+    :  SfxSingleRecordWriter( nRecordType, pStream, nContentTag, 0 )
     , _nContentStartPos(0)
-    , _nContentSize(0)
     , _nContentCount(0)
 {
     // space for own header
@@ -317,7 +314,7 @@ sal_uInt32 SfxMultiFixRecordWriter::Close()
 
         // write extended header after SfxSingleRecord
         _pStream->WriteUInt16( _nContentCount );
-        _pStream->WriteUInt32( _nContentSize );
+        _pStream->WriteUInt32( 0 );
 
         // seek to end of record or stay after the header
         _pStream->Seek(nEndPos);
@@ -340,7 +337,7 @@ sal_uInt32 SfxMultiFixRecordWriter::Close()
 SfxMultiVarRecordWriter::SfxMultiVarRecordWriter(sal_uInt8  nRecordType,
                                                  SvStream*  pStream,
                                                  sal_uInt16 nRecordTag)
-:   SfxMultiFixRecordWriter( nRecordType, pStream, nRecordTag, 0 ),
+:   SfxMultiFixRecordWriter( nRecordType, pStream, nRecordTag ),
     _nContentVer( 0 )
 {
 }
@@ -362,8 +359,7 @@ SfxMultiVarRecordWriter::SfxMultiVarRecordWriter(sal_uInt8  nRecordType,
  */
 SfxMultiVarRecordWriter::SfxMultiVarRecordWriter(SvStream*  pStream,
                                                  sal_uInt16 nRecordTag)
-:   SfxMultiFixRecordWriter( SFX_REC_TYPE_VARSIZE,
-                             pStream, nRecordTag, 0 ),
+:   SfxMultiFixRecordWriter( SFX_REC_TYPE_VARSIZE, pStream, nRecordTag ),
     _nContentVer( 0 )
 {
 }
@@ -501,10 +497,9 @@ bool SfxMultiRecordReader::ReadHeader_Impl()
                      _nContentCount << " claimed, truncating");
             _nContentCount = nMaxRecords;
         }
-        _pContentOfs = new sal_uInt32[_nContentCount];
-        memset(_pContentOfs, 0, _nContentCount*sizeof(sal_uInt32));
+        _pContentOfs = new sal_uInt32[_nContentCount]{};
         #if defined(OSL_LITENDIAN)
-        _pStream->Read( _pContentOfs, sizeof(sal_uInt32)*_nContentCount );
+        _pStream->ReadBytes( _pContentOfs, sizeof(sal_uInt32)*_nContentCount );
         #else
         // (loop without braces)
         for ( sal_uInt16 n = 0; n < _nContentCount; ++n )

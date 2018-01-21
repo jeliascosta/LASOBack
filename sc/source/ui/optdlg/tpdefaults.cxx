@@ -79,9 +79,9 @@ void ScTpDefaultsOptions::Reset(const SfxItemSet* rCoreSet)
     m_pEdSheetPrefix->SaveValue();
 }
 
-SfxTabPage::sfxpg ScTpDefaultsOptions::DeactivatePage(SfxItemSet* /*pSet*/)
+DeactivateRC ScTpDefaultsOptions::DeactivatePage(SfxItemSet* /*pSet*/)
 {
-    return KEEP_PAGE;
+    return DeactivateRC::KeepPage;
 }
 
 void ScTpDefaultsOptions::CheckNumSheets()
@@ -122,17 +122,17 @@ void ScTpDefaultsOptions::OnFocusPrefixInput(Edit* pEdit)
     maOldPrefixValue = pEdit->GetText();
 }
 
-IMPL_LINK_NOARG_TYPED(ScTpDefaultsOptions, NumModifiedHdl, Edit&, void)
+IMPL_LINK_NOARG(ScTpDefaultsOptions, NumModifiedHdl, Edit&, void)
 {
     CheckNumSheets();
 }
 
-IMPL_LINK_TYPED( ScTpDefaultsOptions, PrefixModifiedHdl, Edit&, rEdit, void )
+IMPL_LINK( ScTpDefaultsOptions, PrefixModifiedHdl, Edit&, rEdit, void )
 {
     CheckPrefix(&rEdit);
 }
 
-IMPL_LINK_TYPED( ScTpDefaultsOptions, PrefixEditOnFocusHdl, Control&, rControl, void )
+IMPL_LINK( ScTpDefaultsOptions, PrefixEditOnFocusHdl, Control&, rControl, void )
 {
     OnFocusPrefixInput(static_cast<Edit*>(&rControl));
 }

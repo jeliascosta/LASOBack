@@ -37,7 +37,6 @@
 #include <com/sun/star/sheet/ValidationAlertStyle.hpp>
 #include <com/sun/star/sheet/ValidationType.hpp>
 #include <com/sun/star/sheet/ConditionOperator.hpp>
-#include <com/sun/star/table/CellAddress.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 #include <com/sun/star/util/XNumberFormatTypes.hpp>
 #include <com/sun/star/sheet/XSheetCellRangeContainer.hpp>
@@ -72,23 +71,6 @@ enum ScXMLDocTokens
     XML_TOK_DOC_BODY,
     XML_TOK_DOC_SETTINGS,
     XML_TOK_OFFICE_END=XML_TOK_UNKNOWN
-};
-
-enum ScXMLStylesTokens
-{
-    XML_TOK_STYLES_STYLE
-};
-
-enum ScXMLStylesAttrTokens
-{
-    XML_TOK_STYLES_STYLE_NAME,
-    XML_TOK_STYLES_STYLE_FAMILY,
-    XML_TOK_STYLES_STYLE_PARENT_STYLE_NAME
-};
-
-enum ScXMLStyleTokens
-{
-    XML_TOK_STYLE_PROPERTIES
 };
 
 enum ScXMLBodyTokens
@@ -979,7 +961,7 @@ public:
         const css::uno::Reference< css::uno::XComponentContext >& rContext,
         OUString const & implementationName, SvXMLImportFlags nImportFlag);
 
-    virtual ~ScXMLImport() throw();
+    virtual ~ScXMLImport() throw() override;
 
     // XInitialization
     virtual void SAL_CALL initialize( const css::uno::Sequence<css::uno::Any>& aArguments )
@@ -1115,15 +1097,12 @@ public:
         m_pMyNamedExpressions->push_back(std::unique_ptr<ScMyNamedExpression>(pMyNamedExpression));
     }
 
-    ScMyNamedExpressions* GetNamedExpressions() { return m_pMyNamedExpressions; }
-
     void AddNamedExpression(SCTAB nTab, ScMyNamedExpression* pNamedExp);
 
     void    AddLabelRange(const ScMyLabelRange* pMyLabelRange) {
         if (!pMyLabelRanges)
             pMyLabelRanges = new ScMyLabelRanges();
         pMyLabelRanges->push_back(pMyLabelRange); }
-    ScMyLabelRanges* GetLabelRanges() { return pMyLabelRanges; }
 
     void AddValidation(const ScMyImportValidation& rValidation) {
         if (!pValidations)
@@ -1244,7 +1223,7 @@ public:
             const OUString& rAttrValue,
             bool bRestrictToExternalNmsp = false ) const;
 
-    bool IsFormulaErrorConstant( const OUString& rStr ) const;
+    FormulaError GetFormulaErrorConstant( const OUString& rStr ) const;
 
     ScEditEngineDefaulter* GetEditEngine();
     const ScXMLEditAttributeMap& GetEditAttributeMap() const;

@@ -156,11 +156,6 @@ void OApplicationController::pasteFormat(SotClipboardFormatId _nFormatId)
     }
 }
 
-void OApplicationController::openDataSourceAdminDialog()
-{
-    openDialog( "com.sun.star.sdb.DatasourceAdministrationDialog" );
-}
-
 void OApplicationController::openDialog( const OUString& _sServiceName )
 {
     try
@@ -221,11 +216,6 @@ void OApplicationController::openDialog( const OUString& _sServiceName )
     }
 }
 
-void OApplicationController::openTableFilterDialog()
-{
-    openDialog( "com.sun.star.sdb.TableFilterDialog" );
-}
-
 void OApplicationController::refreshTables()
 {
     if ( getContainer() && getContainer()->getDetailView() )
@@ -246,11 +236,6 @@ void OApplicationController::refreshTables()
         getContainer()->getDetailView()->clearPages(false);
         getContainer()->getDetailView()->createTablesPage( ensureConnection() );
     }
-}
-
-void OApplicationController::openDirectSQLDialog()
-{
-    openDialog( SERVICE_SDB_DIRECTSQLDIALOG );
 }
 
 void SAL_CALL OApplicationController::propertyChange( const PropertyChangeEvent& evt ) throw (RuntimeException, std::exception)
@@ -532,7 +517,7 @@ void OApplicationController::askToReconnect()
         bool bClear = true;
         if ( !m_pSubComponentManager->empty() )
         {
-            ScopedVclPtrInstance< MessageDialog > aQry(getView(), ModuleRes(STR_QUERY_CLOSEDOCUMENTS), VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO);
+            ScopedVclPtrInstance< MessageDialog > aQry(getView(), ModuleRes(STR_QUERY_CLOSEDOCUMENTS), VclMessageType::Question, VCL_BUTTONS_YES_NO);
             switch (aQry->Execute())
             {
                 case RET_YES:

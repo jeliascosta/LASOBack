@@ -106,7 +106,7 @@ SwViewShellImp::SwViewShellImp( SwViewShell *pParent ) :
 
 SwViewShellImp::~SwViewShellImp()
 {
-    delete m_pAccessibleMap;
+    m_pAccessibleMap.reset();
 
     delete m_pPagePreviewLayout;
 
@@ -297,18 +297,29 @@ void SwViewShellImp::UpdateAccessible()
     OSL_ENSURE( pWin, "no window, no access" );
 
     if( IsAccessible() && rIDLA.GetCurrentViewShell() && pWin )
-        GetAccessibleMap().GetDocumentView();
+    {
+        try
+        {
+            GetAccessibleMap().GetDocumentView();
+        }
+        catch (uno::Exception const& e)
+        {
+            SAL_WARN("sw.a11y", "exception: " << e.Message);
+            assert(!"SwViewShellImp::UpdateAccessible: unhandled exception");
+        }
+    }
 }
 
-void SwViewShellImp::DisposeAccessible( const SwFrame *pFrame,
-                                   const SdrObject *pObj,
-                                   bool bRecursive )
+void SwViewShellImp::DisposeAccessible(const SwFrame *pFrame,
+                                       const SdrObject *pObj,
+                                       bool bRecursive,
+                                       bool bCanSkipInvisible)
 {
     OSL_ENSURE( !pFrame || pFrame->IsAccessibleFrame(), "frame is not accessible" );
     for(SwViewShell& rTmp : GetShell()->GetRingContainer())
     {
         if( rTmp.Imp()->IsAccessible() )
-            rTmp.Imp()->GetAccessibleMap().Dispose( pFrame, pObj, nullptr, bRecursive );
+            rTmp.Imp()->GetAccessibleMap().A11yDispose( pFrame, pObj, nullptr, bRecursive, bCanSkipInvisible );
     }
 }
 
@@ -438,9 +449,9 @@ void SwViewShellImp::InvalidateAccessiblePreviewSelection( sal_uInt16 nSelPage )
 
 SwAccessibleMap *SwViewShellImp::CreateAccessibleMap()
 {
-    OSL_ENSURE( !m_pAccessibleMap, "accessible map exists" );
-    m_pAccessibleMap = new SwAccessibleMap( GetShell() );
-    return m_pAccessibleMap;
+    assert(!m_pAccessibleMap);
+    m_pAccessibleMap.reset(new SwAccessibleMap(GetShell()));
+    return m_pAccessibleMap.get();
 }
 
 void SwViewShellImp::FireAccessibleEvents()

@@ -65,7 +65,7 @@ namespace dbaui
                             m_aURLPrefixes;
 
     public:
-        virtual ~OGeneralPage();
+        virtual ~OGeneralPage() override;
         virtual void dispose() override;
 
         /// set a handler which gets called every time the user selects a new type
@@ -97,7 +97,7 @@ namespace dbaui
         /// sets the title of the parent dialog
         virtual void setParentTitle( const OUString& _sURLPrefix );
 
-        DECL_LINK_TYPED(OnDatasourceTypeSelected, ListBox&, void);
+        DECL_LINK(OnDatasourceTypeSelected, ListBox&, void);
     };
 
     // OGeneralPageDialog
@@ -118,7 +118,7 @@ namespace dbaui
     {
     public:
         OGeneralPageWizard( vcl::Window* pParent, const SfxItemSet& _rItems );
-        virtual ~OGeneralPageWizard();
+        virtual ~OGeneralPageWizard() override;
         virtual void dispose() override;
     public:
         enum CreationMode
@@ -185,11 +185,11 @@ namespace dbaui
         void initializeEmbeddedDBList();
 
     protected:
-        DECL_LINK_TYPED( OnEmbeddedDBTypeSelected, ListBox&, void );
-        DECL_LINK_TYPED( OnCreateDatabaseModeSelected, Button*, void );
-        DECL_LINK_TYPED( OnSetupModeSelected, Button*, void );
-        DECL_LINK_TYPED( OnDocumentSelected, ListBox&, void );
-        DECL_LINK_TYPED( OnOpenDocument, Button*, void );
+        DECL_LINK( OnEmbeddedDBTypeSelected, ListBox&, void );
+        DECL_LINK( OnCreateDatabaseModeSelected, Button*, void );
+        DECL_LINK( OnSetupModeSelected, Button*, void );
+        DECL_LINK( OnDocumentSelected, ListBox&, void );
+        DECL_LINK( OnOpenDocument, Button*, void );
     };
 
 }   // namespace dbaui

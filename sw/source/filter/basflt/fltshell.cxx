@@ -615,7 +615,7 @@ void SwFltControlStack::SetAttrInDoc(const SwPosition& rTmpPos,
                       IDocumentMarkAccess::IsLegalPaMForCrossRefHeadingBookmark( aRegion ) )
                     ? IDocumentMarkAccess::MarkType::CROSSREF_HEADING_BOOKMARK
                     : IDocumentMarkAccess::MarkType::BOOKMARK;
-                pDoc->getIDocumentMarkAccess()->makeMark( aRegion, rName, eBookmarkType );
+                pDoc->getIDocumentMarkAccess()->makeMark(aRegion, rName, eBookmarkType, sw::mark::InsertMode::New);
             }
         }
         break;
@@ -699,9 +699,9 @@ void SwFltControlStack::SetAttrInDoc(const SwPosition& rTmpPos,
         {
             if (rEntry.MakeRegion(pDoc, aRegion, true))
             {
-              pDoc->getIDocumentRedlineAccess().SetRedlineMode((RedlineMode_t)(   nsRedlineMode_t::REDLINE_ON
-                                              | nsRedlineMode_t::REDLINE_SHOW_INSERT
-                                              | nsRedlineMode_t::REDLINE_SHOW_DELETE ));
+              pDoc->getIDocumentRedlineAccess().SetRedlineFlags( RedlineFlags::On
+                                              | RedlineFlags::ShowInsert
+                                              | RedlineFlags::ShowDelete );
                 SwFltRedline& rFltRedline = *static_cast<SwFltRedline*>(rEntry.pAttr);
 
                 if( USHRT_MAX != rFltRedline.nAutorNoPrev )
@@ -721,9 +721,9 @@ void SwFltControlStack::SetAttrInDoc(const SwPosition& rTmpPos,
                                     nullptr
                                     );
                 pDoc->getIDocumentRedlineAccess().AppendRedline( new SwRangeRedline(aData, aRegion), true );
-                pDoc->getIDocumentRedlineAccess().SetRedlineMode((RedlineMode_t)( nsRedlineMode_t::REDLINE_NONE
-                                                | nsRedlineMode_t::REDLINE_SHOW_INSERT
-                                                | nsRedlineMode_t::REDLINE_SHOW_DELETE ));
+                pDoc->getIDocumentRedlineAccess().SetRedlineFlags( RedlineFlags::NONE
+                                                | RedlineFlags::ShowInsert
+                                                | RedlineFlags::ShowDelete );
             }
         }
         break;

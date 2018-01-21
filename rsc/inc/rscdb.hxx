@@ -36,16 +36,9 @@ class RscError;
 class RscTupel;
 class RscCont;
 class RscCmdLine;
-enum class SymbolType : sal_uInt16;
-enum class ToolBoxItemBits;
-enum class WindowBorderStyle : sal_Int16;
 enum class KeyFuncType : sal_Int32;
 enum class MenuItemBits : sal_Int16;
-enum class ToolBoxItemType;
-enum class ButtonType;
-enum class WindowAlign;
-enum class SfxStyleFamily;
-enum class RSWND;
+enum class MapUnit;
 
 struct WriteRcContext
 {
@@ -85,77 +78,12 @@ class RscTypCont
     ::std::vector< RscSysEntry* >
                         aSysLst;            // list of system resources
 
-    Atom                nWinBitVarId;       // name of the winbit variable
-    Atom                nBorderId;
-    Atom                nHideId;
-    Atom                nClipChildrenId;
-    Atom                nSizeableId;
-    Atom                nMoveableId;
-    Atom                nMinimizeId;
-    Atom                nMaximizeId;
-    Atom                nCloseableId;
-    Atom                nStdPopupId;
-    Atom                nAppId;
-    Atom                nTabstopId;
-    Atom                nGroupId;
-    Atom                nSysmodalId;
-    Atom                nLeftId;
-    Atom                nCenterId;
-    Atom                nRightId;
-    Atom                nTopId;
-    Atom                nVCenterId;
-    Atom                nBottomId;
-    Atom                nHScrollId;
-    Atom                nVScrollId;
-    Atom                nSortId;
-    Atom                nDefaultId;
-    Atom                nSVLookId;
-    Atom                nRepeatId;
-    Atom                nDropDownId;
-    Atom                nPassWordId;
-    Atom                nReadOnlyId;
-    Atom                nAutoSizeId;
-    Atom                nSpinId;
-    Atom                nTabControlId;
-    Atom                nSimpleModeId;
-    Atom                nDragId;
-    Atom                nScrollId;
-    Atom                nZoomableId;
-    Atom                nHideWhenDeactivateId;
-    Atom                nAutoHScrollId;
-    Atom                nAutoVScrollId;
-    Atom                nDDExtraWidthId;
-    Atom                nWordBreakId;
-    Atom                nLeftLabelId;
-    Atom                nHasLinesId;
-    Atom                nHasButtonsId;
-    Atom                nRectStyleId;
-    Atom                nLineSpacingId;
-    Atom                nSmallStyleId;
-    Atom                nEnableResizingId;
-    Atom                nDockableId;
-    Atom                nScaleId;
-    Atom                nIgnoreTabId;
-    Atom                nNoSplitDrawId;
-    Atom                nTopImageId;
-    Atom                nNoLabelId;
-    Atom                nVertId;
-    Atom                nSysWinId;
-
     void        Init();         // initializes classes and tables
     void        SETCONST( RscConst *, const char *, sal_uInt32 );
     void        SETCONST( RscConst *, Atom, sal_uInt32 );
-    inline void SETCONST( RscConst *p1, const char * p2, SymbolType p3 ) { SETCONST(p1, p2, static_cast<sal_uInt32>(p3)); }
-    inline void SETCONST( RscConst *p1, Atom p2, ToolBoxItemBits p3 ) { SETCONST(p1, p2, static_cast<sal_uInt32>(p3)); }
-    inline void SETCONST( RscConst *p1, Atom p2, RSWND p3 ) { SETCONST(p1, p2, static_cast<sal_uInt32>(p3)); }
-    inline void SETCONST( RscConst *p1, Atom p2, WindowBorderStyle p3 ) { SETCONST(p1, p2, static_cast<sal_uInt32>(p3)); }
     inline void SETCONST( RscConst *p1, const char * p2, KeyFuncType p3 ) { SETCONST(p1, p2, static_cast<sal_uInt32>(p3)); }
     inline void SETCONST( RscConst *p1, Atom p2, MenuItemBits p3 ) { SETCONST(p1, p2, static_cast<sal_uInt32>(p3)); }
-    inline void SETCONST( RscConst *p1, const char * p2, ToolBoxItemType p3 ) { SETCONST(p1, p2, static_cast<sal_uInt32>(p3)); }
-    inline void SETCONST( RscConst *p1, const char * p2, ButtonType p3 ) { SETCONST(p1, p2, static_cast<sal_uInt32>(p3)); }
-    inline void SETCONST( RscConst *p1, const char * p2, WindowAlign p3 ) { SETCONST(p1, p2, static_cast<sal_uInt32>(p3)); }
-    inline void SETCONST( RscConst *p1, const char * p2, SfxStyleFamily p3 ) { SETCONST(p1, p2, static_cast<sal_uInt16>(p3)); }
-    void        InitLangType();
+    inline void SETCONST( RscConst *p1, const char * p2, MapUnit p3 ) { SETCONST(p1, p2, static_cast<sal_uInt16>(p3)); }
     RscEnum *   InitFieldUnitsType();
     RscEnum *   InitColor();
     RscEnum *   InitMapUnit();
@@ -175,54 +103,11 @@ class RscTypCont
     RscTop *    InitClassMgr();
     RscTop *    InitClassString( RscTop * pSuper );
     RscTop *    InitClassBitmap( RscTop * pSuper );
-    RscTop *    InitClassColor( RscTop * pSuper, RscEnum * pColor );
-    RscTop *    InitClassImage( RscTop * pSuper, RscTop *pClassBitmap,
-                                RscTop * pClassColor );
-    RscTop *    InitClassImageList( RscTop * pSuper,
-                                    RscTop * pClassColor, RscCont * pStrLst );
-    RscTop *    InitClassWindow( RscTop * pSuper, RscEnum * pMapUnit,
-                                 RscArray * pLangGeo );
-    RscTop *    InitClassControl( RscTop * pSuper );
-    RscTop *    InitClassCheckBox( RscTop * pSuper );
-    RscTop *    InitClassPushButton( RscTop * pSuper );
-    RscTop *    InitClassImageButton( RscTop * pSuper, RscTop * pClassImage,
-                                    RscEnum * pTriState );
-    RscTop *    InitClassEdit( RscTop * pSuper );
-    RscTop *    InitClassListBox( RscTop * pSuper, RscArray * pStrLst );
-    RscTop *    InitClassComboBox( RscTop * pSuper, RscArray * pStrLst );
-    RscTop *    InitClassFixedText( RscTop * pSuper );
-    RscTop *    InitClassFixedImage( RscTop * pSuper, RscTop * pClassImage );
-    RscTop *    InitClassRadioButton( RscTop * pSuper );
+    RscTop *    InitClassImage( RscTop * pSuper, RscTop *pClassBitmap );
+    RscTop *    InitClassImageList( RscTop * pSuper, RscCont * pStrLst );
     RscTop *    InitClassKeyCode( RscTop * pSuper, RscEnum * pKey );
-    RscTop *    InitClassAccel( RscTop * pSuper, RscTop * pClassAccelItem );
-    RscTop *    InitClassMenuItem( RscTop * pSuper, RscTop * pClassBitmap );
+    RscTop *    InitClassMenuItem( RscTop * pSuper );
     RscTop *    InitClassMenu( RscTop * pSuper, RscTop * pMenuItem );
-
-    RscTop *    InitClassNumericFormatter( RscTop * pSuper );
-    RscTop *    InitClassMetricFormatter( RscTop * pSuper,
-                                          RscEnum * pFieldUnits );
-
-    RscTop *    InitClassSpinField( RscTop * pSuper );
-    RscTop *    InitClassNumericField( RscTop * pSuper );
-    RscTop *    InitClassMetricField( RscTop * pSuper );
-
-    RscTop *    InitClassDockingWindow( RscTop * pSuper,
-                                        RscEnum * pMapUnit );
-    RscTop *    InitClassToolBoxItem( RscTop * pSuper, RscTop * pClassBitmap,
-                                      RscTop * pClassImage,
-                                      RscEnum * pTriState );
-    RscTop *    InitClassToolBox( RscTop * pSuper, RscTop * pClassToolBoxItem,
-                                  RscTop * pClassImageList );
-    RscTop *    InitClassSfxStyleFamilyItem( RscTop * pSuper,
-                                             RscTop * pClassBitmap,
-                                             RscTop * pClassImage,
-                                             RscArray * pStrLst );
-    RscTop *    InitClassSfxTemplateDialog(  RscTop * pSuper,
-                                             RscTop * pStyleFamily );
-    RscTop *    InitClassSfxSlotInfo( RscTop * pSuper );
-
-    void        InsWinBit( RscTop * pClass, const OString& rName,
-                           Atom nVal );
 
 public:
     RscBool             aBool;
@@ -236,12 +121,8 @@ public:
     RscIdRange          aIdLong;
     RscString           aString;
     RscString           aStringLiteral;
-    RscFlag             aWinBits;
     RscLangEnum         aLangType;
     RscLangArray        aLangString;
-    RscLangArray        aLangShort;
-
-    Atom                nAcceleratorType;
 
     RscError*           pEH;        // error handler
     RscNameTable        aNmTb;      // name table
@@ -267,14 +148,8 @@ public:
                           }
     const OString&    GetSearchPath() const { return aSearchPath; }
     void              SetSysSearchPath( const OString& rStr ) { aSysSearchPath = rStr; }
-    void              InsertType( RscTop * pType )
-                          {
-                              aBaseLst.push_back( pType );
-                          }
-    RscTop  *         SearchType( Atom nTypId );
                       // deletes all resource objects of this file
     void              Delete( RscFileTab::Index lFileKey );
-    RscTop  *         GetRoot()         { return pRoot; }
     sal_uInt32        PutSysName( sal_uInt32 nRscTyp, char * pName );
     void              ClearSysNames();
     ERRTYPE           WriteRc( WriteRcContext& rContext );

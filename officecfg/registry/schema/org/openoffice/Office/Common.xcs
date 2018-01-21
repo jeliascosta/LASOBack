@@ -851,6 +851,13 @@
       <info>
         <desc>Contains settings for VCL.</desc>
       </info>
+      <prop oor:name="TextLayoutEngine" oor:type="xs:string" oor:nillable="false">
+        <info>
+	   <desc>Specifies which text layout engine should be use. Possible
+		 values are ("old", "new").</desc>
+        </info>
+        <value>new</value>
+      </prop>
       <prop oor:name="UseOpenGL" oor:type="xs:boolean" oor:nillable="false">
         <info>
            <desc>Specifies if OpenGL rendering should be used in VCL backends
@@ -1486,7 +1493,7 @@
             objects.</desc>
             <label>Total Image Cache Size</label>
           </info>
-          <value>67110000</value>
+          <value>200000000</value>
         </prop>
         <prop oor:name="ObjectCacheSize" oor:type="xs:int" oor:nillable="false">
           <info>
@@ -2621,29 +2628,6 @@
       <info>
         <desc>Contains window and dialog settings.</desc>
       </info>
-      <prop oor:name="FontScaling" oor:type="xs:short" oor:nillable="false">
-        <!--OldPath: General/View -->
-        <!--OldLocation: soffice.cfg-->
-        <!--UIHints: Tools  Options - General  View  [Section] Display-->
-        <info>
-          <desc>Specifies the scaling only of the screen representation
-          [UNIT=%].</desc>
-          <label>Scaling</label>
-        </info>
-        <constraints>
-          <minInclusive oor:value="50">
-            <info>
-              <desc>Specifies the minimum range of the scaling.</desc>
-            </info>
-          </minInclusive>
-          <maxInclusive oor:value="200">
-            <info>
-              <desc>Specifies the maximum range of the scaling.</desc>
-            </info>
-          </maxInclusive>
-        </constraints>
-        <value>100</value>
-      </prop>
       <group oor:name="NewDocumentHandling">
         <info>
           <desc>Contains settings to change new document window behavior.</desc>
@@ -2781,39 +2765,6 @@
           <value>1</value>
         </prop>
       </group>
-      <group oor:name="Localisation">
-        <info>
-          <desc>Contains localization specific settings.</desc>
-        </info>
-        <prop oor:name="AutoMnemonic" oor:type="xs:boolean" oor:localized="true">
-          <!-- OldPath: International/AutoMnemonic -->
-          <!-- OldLocation: soffice.ini -->
-          <info>
-            <desc>Specifies if shortcuts are assigned automatically.</desc>
-          </info>
-        </prop>
-        <prop oor:name="DialogScale" oor:type="xs:int" oor:localized="true">
-          <!-- OldPath: International/DialogScaleX -->
-          <!-- OldLocation: soffice.ini -->
-          <info>
-            <desc>Specifies the percentage for enlarging controls.</desc>
-          </info>
-          <constraints>
-            <minInclusive oor:value="0">
-              <info>
-                <desc>Specifies the upper limit for enlarging the controls is
-                100%.</desc>
-              </info>
-            </minInclusive>
-            <maxInclusive oor:value="100">
-              <info>
-                <desc>Specifies the upper limit for enlarging the controls is
-                100%.</desc>
-              </info>
-            </maxInclusive>
-          </constraints>
-        </prop>
-      </group>
       <group oor:name="Menu">
         <info>
           <desc>Contains menu view settings.</desc>
@@ -2854,6 +2805,32 @@
             <label>Menu follows mouse pointer</label>
           </info>
           <value>true</value>
+        </prop>
+        <prop oor:name="ShortcutsInContextMenus" oor:type="xs:short" oor:nillable="false">
+          <!-- UIHints: Tools  Options - General  View  [Section] Options -->
+          <info>
+            <desc>Indicates whether keyboard shortcuts should be displayed in
+            context menus.</desc>
+            <label>Shortcuts in context menus</label>
+          </info>
+          <constraints>
+            <enumeration oor:value="0">
+              <info>
+                <desc>Hide</desc>
+              </info>
+            </enumeration>
+            <enumeration oor:value="1">
+              <info>
+                <desc>Show</desc>
+              </info>
+            </enumeration>
+            <enumeration oor:value="2">
+              <info>
+                <desc>Use the default setting for the current platform.</desc>
+              </info>
+            </enumeration>
+          </constraints>
+          <value>2</value>
         </prop>
       </group>
       <group oor:name="Window">
@@ -3460,6 +3437,41 @@
           <desc>Defines if a XML package is added to the Draw binary
           files.</desc>
         </info>
+      </prop>
+    </group>
+    <group oor:name="UserColors">
+      <info>
+        <desc>Contains recent colors and custom colors</desc>
+      </info>
+      <prop oor:name="RecentColor" oor:type="oor:int-list" oor:nillable="false">
+        <info>
+          <desc>List of Recent colors</desc>
+        </info>
+        <value/>
+      </prop>
+      <prop oor:name="RecentColorName" oor:type="oor:string-list" oor:nillable="false">
+        <info>
+          <desc>List of Recent color names</desc>
+        </info>
+        <value/>
+      </prop>
+      <prop oor:name="PaletteName" oor:type="xs:string" oor:nillable="false">
+        <info>
+          <desc>Name of selected palette</desc>
+        </info>
+        <value>standard</value>
+      </prop>
+      <prop oor:name="CustomColor" oor:type="oor:int-list" oor:nillable="false">
+        <info>
+          <desc>List of Custom colors</desc>
+        </info>
+        <value/>
+      </prop>
+      <prop oor:name="CustomColorName" oor:type="oor:string-list" oor:nillable="false">
+        <info>
+          <desc>List of Custom color names</desc>
+        </info>
+        <value/>
       </prop>
     </group>
     <group oor:name="Help">
@@ -5168,6 +5180,13 @@
             </info>
             <value>true</value>
           </prop>
+          <prop oor:name="ExportHiddenSlides" oor:type="xs:boolean" oor:nillable="false">
+            <info>
+              <desc>Specifies if hidden slides are exported to PDF. (Hidden slides
+              are available in Impress documents only).</desc>
+            </info>
+            <value>false</value>
+          </prop>
           <prop oor:name="ExportFormFields" oor:type="xs:boolean" oor:nillable="false">
             <info>
               <desc>Specifies whether form fields are exported as widgets or
@@ -5562,6 +5581,13 @@
           be open at the same time. NIL will be interpreted as infinite!</desc>
         </info>
       </prop>
+      <prop oor:name="EmojiFont" oor:type="xs:string" oor:nillable="false">
+        <!-- UIHints: Emoji Control -->
+        <info>
+          <desc>Special font for rendering of emojis</desc>
+        </info>
+        <value>EmojiOne Color</value>
+      </prop>
       <prop oor:name="PluginsEnabled" oor:type="xs:boolean" oor:nillable="false">
         <!-- OldPath: ? -->
         <!-- OldLocation: soffice.ini -->
@@ -5632,6 +5658,12 @@
         </info>
         <value>false</value>
       </prop>
+      <prop oor:name="ScreenshotMode" oor:type="xs:boolean" oor:nillable="false">
+        <info>
+          <desc>Determines whether the interactive screenshot mode should be enabled.</desc>
+        </info>
+        <value>false</value>
+      </prop>
       <prop oor:name="CollectUsageInformation" oor:type="xs:boolean" oor:nillable="false">
         <info>
           <desc>Determines whether the usage information (like what actions
@@ -5663,7 +5695,7 @@
       </prop>
       <prop oor:name="SelectedOpenCLDeviceIdentifier" oor:type="xs:string" oor:nillable="false">
         <info>
-          <desc>The OpenCL device identifier of a device that was successfully selected and passed the OpenCL calculation tests.</desc>
+          <desc>A string identifying the OpenCL device that was successfully selected and passed the OpenCL calculation tests. The syntax of this value is purposely not documented. For LibreOffice internal use only, do not inspect this value or try to modify it from any level of user code.</desc>
         </info>
         <value>none</value>
       </prop>
@@ -5695,11 +5727,66 @@
           </enumeration>
           <enumeration oor:value="1">
             <info>
-              <desc>larger icons</desc>
+              <desc>26x26 pixel icons</desc>
+            </info>
+          </enumeration>
+          <enumeration oor:value="3">
+            <info>
+              <desc>32x32 pixel icons</desc>
             </info>
           </enumeration>
         </constraints>
         <value>2</value>
+      </prop>
+      <prop oor:name="SidebarIconSize" oor:type="xs:short" oor:nillable="false">
+        <!-- UIHints: Tools  Options General View -->
+        <info>
+          <desc>Specifies which size of the icons is used for the
+          sidebar.</desc>
+        </info>
+        <constraints>
+          <enumeration oor:value="0">
+            <info>
+              <desc>will let the toolbox decide about its size</desc>
+            </info>
+          </enumeration>
+          <enumeration oor:value="1">
+            <info>
+              <desc>small icons</desc>
+            </info>
+          </enumeration>
+          <enumeration oor:value="2">
+            <info>
+              <desc>large icons</desc>
+            </info>
+          </enumeration>
+        </constraints>
+        <value>0</value>
+      </prop>
+      <prop oor:name="NotebookbarIconSize" oor:type="xs:short" oor:nillable="false">
+        <!-- UIHints: Tools  Options General View -->
+        <info>
+          <desc>Specifies which size of the icons is used for the
+          notebookbar.</desc>
+        </info>
+        <constraints>
+          <enumeration oor:value="0">
+            <info>
+              <desc>will let the toolbox decide about its size</desc>
+            </info>
+          </enumeration>
+          <enumeration oor:value="1">
+            <info>
+              <desc>small icons</desc>
+            </info>
+          </enumeration>
+          <enumeration oor:value="2">
+            <info>
+              <desc>large icons</desc>
+            </info>
+          </enumeration>
+        </constraints>
+        <value>0</value>
       </prop>
       <prop oor:name="SymbolStyle" oor:type="xs:string" oor:nillable="false">
         <!-- UIHints: Tools  Options General View -->
@@ -6628,6 +6715,17 @@
       <prop oor:name="Preview" oor:type="xs:boolean" oor:nillable="false">
         <info>
            <desc>Specifies if the styles and formatting preview is enabled.</desc>
+        </info>
+        <value>true</value>
+      </prop>
+    </group>
+    <group oor:name="PackageKit">
+      <info>
+        <desc>Contains settings related to PackageKit (Unix only).</desc>
+      </info>
+      <prop oor:name="EnableFontInstallation" oor:type="xs:boolean" oor:nillable="false">
+        <info>
+           <desc>Specifies if missing font installation should be triggered.</desc>
         </info>
         <value>true</value>
       </prop>

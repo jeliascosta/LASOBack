@@ -114,7 +114,7 @@ namespace slideshow
 
             virtual css::uno::Reference< css::drawing::XShape > getXShape() const override;
 
-            virtual ~DrawShape();
+            virtual ~DrawShape() override;
 
 
             // View layer methods
@@ -199,7 +199,7 @@ namespace slideshow
                 crafted metafile, usable to display drawing layer text
                 animations.
             */
-            GDIMetaFileSharedPtr forceScrollTextMetaFile();
+            GDIMetaFileSharedPtr const & forceScrollTextMetaFile();
 
         private:
             /** Create a shape for the given XShape

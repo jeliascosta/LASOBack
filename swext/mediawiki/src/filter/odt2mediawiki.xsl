@@ -874,7 +874,7 @@
 				</otherwise>
 			</choose>
  		</when>
- 		<when test="boolean(./following::*[1]/self::text:h) or boolean(./following::*[1]/self::table:table) or boolean(./following::*[1]/self::text:bibliography)">
+		<when test="not(boolean(ancestor::text:note)) and (boolean(./following::*[1]/self::text:h) or boolean(./following::*[1]/self::table:table) or boolean(./following::*[1]/self::text:bibliography))">
  			<!-- Newline before following heading or table. -->
  			<value-of select="$NL"/>
  			<value-of select="$NL"/>
@@ -1431,7 +1431,7 @@
 				<value-of select="'}'"/>
 				 -->
 
-				<if test="$superscript and not($superscript-left)">
+				<if test="$superscript and not($superscript-left) and not(boolean(ancestor::text:note))">
 					<text>&lt;sup&gt;</text>
 				</if>
 				<if test="$subscript and not($subscript-left)">
@@ -1469,7 +1469,7 @@
 				<if test="$subscript and not($subscript-right)">
 					<text>&lt;/sub&gt;</text>
 				</if>
-				<if test="$superscript and not($superscript-right)">
+				<if test="$superscript and not($superscript-right) and not(boolean(ancestor::text:note))">
 					<text>&lt;/sup&gt;</text>
 				</if>
 

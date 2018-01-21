@@ -90,6 +90,16 @@ void ScColumn::BroadcastCells( const std::vector<SCROW>& rRows, sal_uInt32 nHint
     }
 }
 
+void ScColumn::BroadcastRows( SCROW nStartRow, SCROW nEndRow )
+{
+    sc::SingleColumnSpanSet aSpanSet;
+    aSpanSet.scan(*this, nStartRow, nEndRow);
+    std::vector<SCROW> aRows;
+    aSpanSet.getRows(aRows);
+    BroadcastCells(aRows, SC_HINT_DATACHANGED);
+}
+
+
 struct DirtyCellInterpreter
 {
     void operator() (size_t, ScFormulaCell* p)
@@ -541,21 +551,33 @@ class DeleteAreaHandler
     bool mbNumeric:1;
     bool mbString:1;
     bool mbFormula:1;
+    bool mbDateTime:1;
+    ScColumn& mrCol;
 
 public:
-    DeleteAreaHandler(ScDocument& rDoc, InsertDeleteFlags nDelFlag) :
+    DeleteAreaHandler(ScDocument& rDoc, InsertDeleteFlags nDelFlag, ScColumn& rCol) :
         mrDoc(rDoc),
         mbNumeric(nDelFlag & InsertDeleteFlags::VALUE),
         mbString(nDelFlag & InsertDeleteFlags::STRING),
-        mbFormula(nDelFlag & InsertDeleteFlags::FORMULA) {}
+        mbFormula(nDelFlag & InsertDeleteFlags::FORMULA),
+        mbDateTime(nDelFlag & InsertDeleteFlags::DATETIME),
+        mrCol(rCol) {}
 
     void operator() (const sc::CellStoreType::value_type& node, size_t nOffset, size_t nDataSize)
     {
         switch (node.type)
         {
             case sc::element_type_numeric:
-                if (!mbNumeric)
+                // Numeric type target datetime and number, thus we have a dedicated function
+                if (!mbNumeric && !mbDateTime)
                     return;
+
+                // If numeric and datetime selected, delete full range
+                if (mbNumeric && mbDateTime)
+                    break;
+
+                deleteNumeric(node, nOffset, nDataSize);
+                return;
             break;
             case sc::element_type_string:
             case sc::element_type_edittext:
@@ -585,6 +607,55 @@ public:
         SCROW nRow1 = node.position + nOffset;
         SCROW nRow2 = nRow1 + nDataSize - 1;
         maDeleteRanges.set(nRow1, nRow2, true);
+    }
+
+    void deleteNumeric(const sc::CellStoreType::value_type& node, size_t nOffset, size_t nDataSize)
+    {
+        size_t nStart = node.position + nOffset;
+        size_t nElements = 1;
+        bool bLastTypeDateTime = isDateTime(nStart); // true = datetime, false = numeric
+        size_t nCount = nStart + nDataSize;
+
+        for (size_t i = nStart + 1; i < nCount; i++)
+        {
+            bool bIsDateTime = isDateTime(i);
+
+            // same type as previous
+            if (bIsDateTime == bLastTypeDateTime)
+            {
+                nElements++;
+            }
+            // type switching
+            else
+            {
+                deleteNumberOrDateTime(nStart, nStart + nElements - 1, bLastTypeDateTime);
+                nStart += nElements;
+                nElements = 1;
+            }
+
+            bLastTypeDateTime = bIsDateTime;
+        }
+
+        // delete last cells
+        deleteNumberOrDateTime(nStart, nStart + nElements - 1, bLastTypeDateTime);
+    }
+
+    void deleteNumberOrDateTime(SCROW nRow1, SCROW nRow2, bool dateTime)
+    {
+        if (!dateTime && !mbNumeric) // numeric flag must be selected
+            return;
+        if (dateTime && !mbDateTime) // datetime flag must be selected
+            return;
+        maDeleteRanges.set(nRow1, nRow2, true);
+    }
+
+    bool isDateTime(size_t position)
+    {
+        short nType = mrDoc.GetFormatTable()->GetType(static_cast<const SfxUInt32Item&>(
+                          mrCol.GetAttr(position, ATTR_VALUE_FORMAT)).GetValue());
+
+        return (nType == css::util::NumberFormat::DATE) || (nType == css::util::NumberFormat::TIME) ||
+               (nType == css::util::NumberFormat::DATETIME);
     }
 
     void endFormulas()
@@ -639,7 +710,7 @@ void ScColumn::DeleteCells(
     sc::SingleColumnSpanSet& rDeleted )
 {
     // Determine which cells to delete based on the deletion flags.
-    DeleteAreaHandler aFunc(*pDocument, nDelFlag);
+    DeleteAreaHandler aFunc(*pDocument, nDelFlag, *this);
     sc::CellStoreType::iterator itPos = maCells.position(rBlockPos.miCellPos, nRow1).first;
     sc::ProcessBlock(itPos, maCells, aFunc, nRow1, nRow2);
     aFunc.endFormulas(); // Have the formula cells stop listening.
@@ -936,8 +1007,8 @@ public:
                         // Always just copy the original row to the Undo Documen;
                         // do not create Value/string cells from formulas
 
-                        sal_uInt16 nErr = rSrcCell.GetErrCode();
-                        if (nErr)
+                        FormulaError nErr = rSrcCell.GetErrCode();
+                        if (nErr != FormulaError::NONE)
                         {
                             // error codes are cloned with values
                             if (bNumeric)
@@ -952,6 +1023,11 @@ public:
                                         maDestBlockPos, nSrcRow + mnRowOffset, pErrCell);
                                 }
                             }
+                        }
+                        else if (rSrcCell.IsEmptyDisplayedAsString())
+                        {
+                            // Empty stays empty and doesn't become 0.
+                            continue;
                         }
                         else if (rSrcCell.IsValue())
                         {
@@ -1190,7 +1266,7 @@ class MixDataHandler
             ScAddress aPos(mrDestColumn.GetCol(), nDestRow, mrDestColumn.GetTab());
 
             ScFormulaCell* pFC = new ScFormulaCell(&mrDestColumn.GetDoc(), aPos);
-            pFC->SetErrCode(errNoValue);
+            pFC->SetErrCode(FormulaError::NoValue);
 
             miNewCellsPos = maNewCells.set(miNewCellsPos, nDestRow-mnRowOffset, pFC);
         }
@@ -1545,7 +1621,7 @@ void ScColumn::MixData(
 
 ScAttrIterator* ScColumn::CreateAttrIterator( SCROW nStartRow, SCROW nEndRow ) const
 {
-    return new ScAttrIterator( pAttrArray, nStartRow, nEndRow );
+    return new ScAttrIterator( pAttrArray, nStartRow, nEndRow, pDocument->GetDefPattern() );
 }
 
 namespace {
@@ -1922,12 +1998,15 @@ bool ScColumn::SetFormulaCells( SCROW nRow, std::vector<ScFormulaCell*>& rCells 
     // Detach all formula cells that will be overwritten.
     DetachFormulaCells(aPos, rCells.size());
 
-    for (size_t i = 0, n = rCells.size(); i < n; ++i)
+    if (!pDocument->IsClipOrUndo())
     {
-        SCROW nThisRow = nRow + i;
-        sal_uInt32 nFmt = GetNumberFormat(nThisRow);
-        if ((nFmt % SV_COUNTRY_LANGUAGE_OFFSET) == 0)
-            rCells[i]->SetNeedNumberFormat(true);
+        for (size_t i = 0, n = rCells.size(); i < n; ++i)
+        {
+            SCROW nThisRow = nRow + i;
+            sal_uInt32 nFmt = GetNumberFormat(nThisRow);
+            if ((nFmt % SV_COUNTRY_LANGUAGE_OFFSET) == 0)
+                rCells[i]->SetNeedNumberFormat(true);
+        }
     }
 
     std::vector<sc::CellTextAttr> aDefaults(rCells.size(), sc::CellTextAttr());
@@ -1998,8 +2077,8 @@ class FilterEntriesHandler
             case CELLTYPE_FORMULA:
             {
                 ScFormulaCell* pFC = rCell.mpFormula;
-                sal_uInt16 nErr = pFC->GetErrCode();
-                if (nErr)
+                FormulaError nErr = pFC->GetErrCode();
+                if (nErr != FormulaError::NONE)
                 {
                     // Error cell is evaluated as string (for now).
                     OUString aErr = ScGlobal::GetErrorString(nErr);
@@ -2344,7 +2423,7 @@ void ScColumn::RemoveProtected( SCROW nStartRow, SCROW nEndRow )
     FormulaToValueHandler aFunc;
     sc::CellStoreType::const_iterator itPos = maCells.begin();
 
-    ScAttrIterator aAttrIter( pAttrArray, nStartRow, nEndRow );
+    ScAttrIterator aAttrIter( pAttrArray, nStartRow, nEndRow, pDocument->GetDefPattern() );
     SCROW nTop = -1;
     SCROW nBottom = -1;
     const ScPatternAttr* pPattern = aAttrIter.Next( nTop, nBottom );
@@ -2365,7 +2444,7 @@ void ScColumn::RemoveProtected( SCROW nStartRow, SCROW nEndRow )
     aFunc.commitCells(*this);
 }
 
-void ScColumn::SetError( SCROW nRow, const sal_uInt16 nError)
+void ScColumn::SetError( SCROW nRow, const FormulaError nError)
 {
     if (!ValidRow(nRow))
         return;
@@ -2605,15 +2684,15 @@ SCSIZE ScColumn::GetCellCount() const
     return aFunc.getCount();
 }
 
-sal_uInt16 ScColumn::GetErrCode( SCROW nRow ) const
+FormulaError ScColumn::GetErrCode( SCROW nRow ) const
 {
     std::pair<sc::CellStoreType::const_iterator,size_t> aPos = maCells.position(nRow);
     sc::CellStoreType::const_iterator it = aPos.first;
     if (it == maCells.end())
-        return 0;
+        return FormulaError::NONE;
 
     if (it->type != sc::element_type_formula)
-        return 0;
+        return FormulaError::NONE;
 
     const ScFormulaCell* p = sc::formula_block::at(*it->data, aPos.second);
     return const_cast<ScFormulaCell*>(p)->GetErrCode();

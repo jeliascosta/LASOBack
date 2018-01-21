@@ -46,7 +46,6 @@
 #include <comphelper/fileurl.hxx>
 #include <comphelper/processfactory.hxx>
 #include <comphelper/sequenceashashmap.hxx>
-#include <comphelper/stillreadwriteinteraction.hxx>
 #include <comphelper/string.hxx>
 #include <comphelper/types.hxx>
 #include <tools/urlobj.hxx>
@@ -289,7 +288,7 @@ void FileDialogHelper_Impl::handleControlStateChanged( const FilePickerEvent& aE
             break;
 
         case ExtendedFilePickerElementIds::CHECKBOX_PREVIEW:
-            updatePreviewState();
+            updatePreviewState(true);
             break;
     }
 }
@@ -349,17 +348,12 @@ void FileDialogHelper_Impl::LoadLastUsedFilter( const OUString& _rContextIdentif
     }
 }
 
-void FileDialogHelper_Impl::SaveLastUsedFilter( const OUString& _rContextIdentifier )
-{
-    SvtViewOptions( E_DIALOG, IODLG_CONFIGNAME ).SetUserItem( _rContextIdentifier,
-                        makeAny( getFilterWithExtension( getFilter() ) ) );
-}
-
 void FileDialogHelper_Impl::SaveLastUsedFilter()
 {
     const OUString* pConfigId = GetLastFilterConfigId( meContext );
     if( pConfigId )
-        SaveLastUsedFilter( *pConfigId );
+        SvtViewOptions( E_DIALOG, IODLG_CONFIGNAME ).SetUserItem( *pConfigId,
+                            makeAny( getFilterWithExtension( getFilter() ) ) );
 }
 
 std::shared_ptr<const SfxFilter> FileDialogHelper_Impl::getCurentSfxFilter()
@@ -433,8 +427,10 @@ bool FileDialogHelper_Impl::isInOpenMode() const
         case FILEOPEN_SIMPLE:
         case FILEOPEN_LINK_PREVIEW_IMAGE_TEMPLATE:
         case FILEOPEN_PLAY:
+        case FILEOPEN_LINK_PLAY:
         case FILEOPEN_READONLY_VERSION:
         case FILEOPEN_LINK_PREVIEW:
+        case FILEOPEN_PREVIEW:
             bRet = true;
     }
 
@@ -661,7 +657,7 @@ void FileDialogHelper_Impl::updateVersions()
     }
 }
 
-IMPL_LINK_NOARG_TYPED(FileDialogHelper_Impl, TimeOutHdl_Impl, Idle *, void)
+IMPL_LINK_NOARG(FileDialogHelper_Impl, TimeOutHdl_Impl, Idle *, void)
 {
     if ( !mbHasPreview )
         return;
@@ -826,8 +822,10 @@ static open_or_save_t lcl_OpenOrSave(sal_Int16 const nDialogType)
         case FILEOPEN_SIMPLE:
         case FILEOPEN_LINK_PREVIEW_IMAGE_TEMPLATE:
         case FILEOPEN_PLAY:
+        case FILEOPEN_LINK_PLAY:
         case FILEOPEN_READONLY_VERSION:
         case FILEOPEN_LINK_PREVIEW:
+        case FILEOPEN_PREVIEW:
             return OPEN;
         case FILESAVE_SIMPLE:
         case FILESAVE_AUTOEXTENSION_PASSWORD:
@@ -996,6 +994,10 @@ FileDialogHelper_Impl::FileDialogHelper_Impl(
                 nTemplateDescription = TemplateDescription::FILEOPEN_PLAY;
                 break;
 
+            case FILEOPEN_LINK_PLAY:
+                nTemplateDescription = TemplateDescription::FILEOPEN_LINK_PLAY;
+                break;
+
             case FILEOPEN_READONLY_VERSION:
                 nTemplateDescription = TemplateDescription::FILEOPEN_READONLY_VERSION;
                 mbHasVersions = true;
@@ -1015,6 +1017,14 @@ FileDialogHelper_Impl::FileDialogHelper_Impl(
                 mbIsSaveDlg = true;
                 break;
 
+            case FILEOPEN_PREVIEW:
+                nTemplateDescription = TemplateDescription::FILEOPEN_PREVIEW;
+                mbHasPreview = true;
+                // aPreviewTimer
+                maPreviewIdle.SetPriority( SchedulerPriority::LOWEST );
+                maPreviewIdle.SetIdleHdl( LINK( this, FileDialogHelper_Impl, TimeOutHdl_Impl ) );
+                break;
+
             default:
                 SAL_WARN( "sfx.dialog", "FileDialogHelper::ctor with unknown type" );
                 break;
@@ -1031,7 +1041,7 @@ FileDialogHelper_Impl::FileDialogHelper_Impl(
         {
             aInitArguments[0] <<= nTemplateDescription;
             if ( mpPreferredParentWindow )
-                aInitArguments[1] <<= makeAny( VCLUnoHelper::GetInterface( mpPreferredParentWindow ) );
+                aInitArguments[1] = makeAny( VCLUnoHelper::GetInterface( mpPreferredParentWindow ) );
         }
         else
         {
@@ -1163,7 +1173,7 @@ void FileDialogHelper_Impl::setControlHelpIds( const sal_Int16* _pControlId, con
     }
 }
 
-IMPL_LINK_NOARG_TYPED( FileDialogHelper_Impl, InitControls, void*, void )
+IMPL_LINK_NOARG( FileDialogHelper_Impl, InitControls, void*, void )
 {
     mnPostUserEventId = nullptr;
     enablePasswordBox( true );
@@ -1312,8 +1322,7 @@ void FileDialogHelper_Impl::implGetAndCacheFiles(const uno::Reference< XInterfac
     if (pFilter)
     {
         sExtension = pFilter->GetDefaultExtension ();
-        sExtension = comphelper::string::remove(sExtension, '*');
-        sExtension = comphelper::string::remove(sExtension, '.');
+        sExtension = sExtension.replaceAll("*", "").replaceAll(".", "");
     }
 
     // a) the new way (optional!)
@@ -1614,6 +1623,8 @@ void FileDialogHelper_Impl::verifyPath()
         maPath = SvtPathOptions().GetWorkPath();
         mxFileDlg->setDisplayDirectory( maPath );
     }
+#else
+    (void) this;
 #endif
 }
 
@@ -2015,7 +2026,9 @@ namespace
             sPathCheck += ".";
             try
             {
-                ::ucbhelper::Content aContent( sPathCheck, uno::Reference< ucb::XCommandEnvironment >(), comphelper::getProcessComponentContext() );
+                ::ucbhelper::Content aContent( sPathCheck,
+                                               utl::UCBContentHelper::getDefaultCommandEnvironment(),
+                                               comphelper::getProcessComponentContext() );
                 bValid = aContent.isFolder();
             }
             catch( const Exception& ) {}
@@ -2298,7 +2311,7 @@ void FileDialogHelper::SetContext( Context _eNewContext )
     mpImpl->SetContext( _eNewContext );
 }
 
-IMPL_LINK_NOARG_TYPED(FileDialogHelper, ExecuteSystemFilePicker, void*, void)
+IMPL_LINK_NOARG(FileDialogHelper, ExecuteSystemFilePicker, void*, void)
 {
     m_nError = mpImpl->execute();
     m_aDialogClosedLink.Call( this );
@@ -2580,16 +2593,24 @@ ErrCode FileOpenDialog_Impl( sal_Int16 nDialogType,
                              const css::uno::Sequence< OUString >& rBlackList )
 {
     ErrCode nRet;
-    FileDialogHelper aDialog( nDialogType, nFlags,
-            rFact, nDialog, SfxFilterFlags::NONE, SfxFilterFlags::NONE, rStandardDir, rBlackList );
+    std::unique_ptr<FileDialogHelper> pDialog;
+    // Sign existing PDF: only works with PDF files and they are opened
+    // read-only to discourage editing (which would invalidate existing
+    // signatures).
+    if (nFlags & FileDialogFlags::SignPDF)
+        pDialog.reset(new FileDialogHelper(nDialogType, nFlags, SfxResId(STR_SFX_FILTERNAME_PDF).toString(), "pdf", rStandardDir, rBlackList));
+    else
+        pDialog.reset(new FileDialogHelper(nDialogType, nFlags, rFact, nDialog, SfxFilterFlags::NONE, SfxFilterFlags::NONE, rStandardDir, rBlackList));
 
     OUString aPath;
     if ( pPath )
         aPath = *pPath;
 
-    nRet = aDialog.Execute( rpURLList, rpSet, rFilter, aPath );
+    nRet = pDialog->Execute(rpURLList, rpSet, rFilter, aPath);
     DBG_ASSERT( rFilter.indexOf(": ") == -1, "Old filter name used!");
 
+    if (rpSet && nFlags & FileDialogFlags::SignPDF)
+        rpSet->Put(SfxBoolItem(SID_DOC_READONLY, true));
     return nRet;
 }
 

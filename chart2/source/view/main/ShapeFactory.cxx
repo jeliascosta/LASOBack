@@ -89,7 +89,7 @@ void ShapeFactory::setPageSize(uno::Reference< drawing::XShapes >, const awt::Si
 //  diverse tools::PolyPolygon create methods
 
 uno::Any createPolyPolygon_Cube(
-            const drawing::Direction3D& rSize, double fRoundedEdge, bool bRounded = true )
+            const drawing::Direction3D& rSize, double fRoundedEdge, bool bRounded )
 {
     OSL_PRECOND(fRoundedEdge>=0, "fRoundedEdge needs to be >= 0");
 
@@ -609,7 +609,7 @@ uno::Reference<drawing::XShape>
           , const drawing::Position3D& rPosition, const drawing::Direction3D& rSize
           , double fTopHeight, sal_Int32 nRotateZAngleHundredthDegree )
 {
-    return impl_createConeOrCylinder( xTarget, rPosition, rSize, fTopHeight, nRotateZAngleHundredthDegree );
+    return impl_createConeOrCylinder( xTarget, rPosition, rSize, fTopHeight, nRotateZAngleHundredthDegree, false );
 }
 
 uno::Reference<drawing::XShape>
@@ -2225,15 +2225,18 @@ uno::Reference< drawing::XShape >
         //set whole text shape properties
         PropertyMapper::setMultiProperties( rPropNames, rPropValues, xProp );
 
-        //set position matrix
-        //the matrix needs to be set at the end behind autogrow and such position influencing properties
-        try
+        if (rATransformation.hasValue())
         {
-            xProp->setPropertyValue( "Transformation", rATransformation );
-        }
-        catch( const uno::Exception& e )
-        {
-            ASSERT_EXCEPTION( e );
+            //set position matrix
+            //the matrix needs to be set at the end behind autogrow and such position influencing properties
+            try
+            {
+                xProp->setPropertyValue( "Transformation", rATransformation );
+            }
+            catch( const uno::Exception& e )
+            {
+                ASSERT_EXCEPTION( e );
+            }
         }
     }
     return xShape;

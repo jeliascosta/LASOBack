@@ -87,10 +87,9 @@ struct PropEntry
 {
     sal_uInt32  mnId;
     sal_uInt32  mnSize;
-    sal_uInt16  mnTextEnc;
     sal_uInt8*  mpBuf;
 
-    PropEntry( sal_uInt32 nId, const sal_uInt8* pBuf, sal_uInt32 nBufSize, sal_uInt16 nTextEnc );
+    PropEntry( sal_uInt32 nId, const sal_uInt8* pBuf, sal_uInt32 nBufSize );
     PropEntry( const PropEntry& rProp );
     ~PropEntry() { delete[] mpBuf; } ;
 
@@ -111,8 +110,6 @@ public:
     void            SetTextEncoding( sal_uInt16 nTextEnc ){ mnTextEnc = nTextEnc; };
     bool            Read( OUString& rString, sal_uInt32 nType = VT_EMPTY, bool bDwordAlign = true );
     PropItem&       operator=( PropItem& rPropItem );
-
-    using SvStream::Read;
 };
 
 class Section
@@ -149,14 +146,12 @@ class PropRead
         sal_uInt8               mApplicationCLSID[ 16 ];
         std::vector<std::unique_ptr<Section> > maSections;
 
-        void                    AddSection( Section& rSection );
-
     public:
                                 PropRead( SotStorage& rSvStorage, const OUString& rName );
 
         PropRead&               operator=( const PropRead& rPropRead );
         const Section*          GetSection( const sal_uInt8* pFMTID );
-        bool                IsValid() const { return mbStatus; };
+        bool                    IsValid() const { return mbStatus; };
         void                    Read();
 };
 

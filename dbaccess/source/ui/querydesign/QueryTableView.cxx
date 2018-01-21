@@ -689,11 +689,6 @@ bool OQueryTableView::RemoveConnection(VclPtr<OTableConnection>& rConnection, bo
     return bRet;
 }
 
-void OQueryTableView::KeyInput( const KeyEvent& rEvt )
-{
-    OJoinTableView::KeyInput( rEvt );
-}
-
 OQueryTableWindow* OQueryTableView::FindTable(const OUString& rAliasName)
 {
     OSL_ENSURE(!rAliasName.isEmpty(), "OQueryTableView::FindTable : the  AliasName should not be empty !");
@@ -746,7 +741,7 @@ void OQueryTableView::RemoveTabWin(OTableWindow* pTabWin)
         OQueryDesignView* pParent = static_cast<OQueryDesignView*>(getDesignView());
 
         SfxUndoManager& rUndoMgr = m_pView->getController().GetUndoManager();
-        rUndoMgr.EnterListAction( OUString( ModuleRes(STR_QUERY_UNDO_TABWINDELETE) ), OUString() );
+        rUndoMgr.EnterListAction( OUString( ModuleRes(STR_QUERY_UNDO_TABWINDELETE) ), OUString(), 0, -1 );
 
         // add the Undo-Action
         OQueryTabWinDelUndoAct* pUndoAction = new OQueryTabWinDelUndoAct(this);

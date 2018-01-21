@@ -46,15 +46,12 @@ namespace pcr
     {
     public:
         TabOrderListBox( vcl::Window* pParent, WinBits nBits  );
-        virtual ~TabOrderListBox();
+        virtual ~TabOrderListBox() override;
 
         void            MoveSelection( long nRelPos );
 
     protected:
         virtual void    ModelHasMoved(SvTreeListEntry* pSource ) override;
-
-    private:
-        using SvTreeListBox::MoveSelection;
     };
 
 
@@ -81,10 +78,10 @@ namespace pcr
 
         ImageList*                  pImageList;
 
-        DECL_LINK_TYPED( MoveUpClickHdl, Button*, void );
-        DECL_LINK_TYPED( MoveDownClickHdl, Button*, void );
-        DECL_LINK_TYPED( AutoOrderClickHdl, Button*, void );
-        DECL_LINK_TYPED( OKClickHdl, Button*, void );
+        DECL_LINK( MoveUpClickHdl, Button*, void );
+        DECL_LINK( MoveDownClickHdl, Button*, void );
+        DECL_LINK( AutoOrderClickHdl, Button*, void );
+        DECL_LINK( OKClickHdl, Button*, void );
 
         void FillList();
         Image GetImage(
@@ -99,7 +96,7 @@ namespace pcr
             const css::uno::Reference< css::uno::XComponentContext >& _rxORB
         );
 
-        virtual ~TabOrderDialog();
+        virtual ~TabOrderDialog() override;
         virtual void dispose() override;
 
         void SetModified();

@@ -58,9 +58,6 @@ struct SW_DLLPUBLIC SwPosition
     explicit SwPosition( const SwNode& rNode );
     explicit SwPosition( SwContentNode& rNode, const sal_Int32 nOffset = 0 );
 
-    SwPosition( const SwPosition & );
-    SwPosition &operator=(const SwPosition &);
-
     /**
        Returns the document this position is in.
 
@@ -139,22 +136,18 @@ SwComparePosition ComparePosition(
 
 /// SwPointAndMark / SwPaM
 struct SwMoveFnCollection;
-typedef SwMoveFnCollection* SwMoveFn;
-SW_DLLPUBLIC extern SwMoveFn fnMoveForward; ///< SwPam::Move()/Find() default argument.
-SW_DLLPUBLIC extern SwMoveFn fnMoveBackward;
+SW_DLLPUBLIC extern SwMoveFnCollection const & fnMoveForward; ///< SwPam::Move()/Find() default argument.
+SW_DLLPUBLIC extern SwMoveFnCollection const & fnMoveBackward;
 
-// also works: using SwGoInDoc = bool (*) (SwPaM& rPam, SwMoveFn fnMove);
-// no works: using SwGoInDoc = [](SwPaM& rPam, SwMoveFn fnMove) -> bool;
-using SwGoInDoc = auto (*)(SwPaM& rPam, SwMoveFn fnMove) -> bool;
-SW_DLLPUBLIC extern SwGoInDoc fnGoDoc;
-extern SwGoInDoc fnGoSection;
-SW_DLLPUBLIC extern SwGoInDoc fnGoNode;
-SW_DLLPUBLIC extern SwGoInDoc fnGoContent; ///< SwPam::Move() default argument.
-extern SwGoInDoc fnGoContentCells;
-extern SwGoInDoc fnGoContentSkipHidden;
-extern SwGoInDoc fnGoContentCellsSkipHidden;
+using SwGoInDoc = auto (*)(SwPaM& rPam, SwMoveFnCollection const & fnMove) -> bool;
+SW_DLLPUBLIC bool GoInDoc( SwPaM&, SwMoveFnCollection const &);
+SW_DLLPUBLIC bool GoInSection( SwPaM&, SwMoveFnCollection const &);
+SW_DLLPUBLIC bool GoInNode( SwPaM&, SwMoveFnCollection const &);
+SW_DLLPUBLIC bool GoInContent( SwPaM&, SwMoveFnCollection const &);
+SW_DLLPUBLIC bool GoInContentCells( SwPaM&, SwMoveFnCollection const &);
+SW_DLLPUBLIC bool GoInContentSkipHidden( SwPaM&, SwMoveFnCollection const &);
+SW_DLLPUBLIC bool GoInContentCellsSkipHidden( SwPaM&, SwMoveFnCollection const &);
 
-class SwPaM;
 /// PaM is Point and Mark: a selection of the document model.
 class SW_DLLPUBLIC SwPaM : public sw::Ring<SwPaM>
 {
@@ -164,7 +157,7 @@ class SW_DLLPUBLIC SwPaM : public sw::Ring<SwPaM>
     SwPosition * m_pMark;  ///< points at either m_Bound1 or m_Bound2
     bool m_bIsInFrontOfLabel;
 
-    SwPaM* MakeRegion( SwMoveFn fnMove, const SwPaM * pOrigRg = nullptr );
+    SwPaM* MakeRegion( SwMoveFnCollection const & fnMove, const SwPaM * pOrigRg );
 
     SwPaM(SwPaM const& rPaM) = delete;
 
@@ -181,7 +174,7 @@ public:
             const SwNode& rPt, sal_Int32 nPtContent, SwPaM* pRing = nullptr );
     SwPaM( const SwNode& rNd, sal_Int32 nContent = 0, SwPaM* pRing = nullptr );
     SwPaM( const SwNodeIndex& rNd, sal_Int32 nContent = 0, SwPaM* pRing = nullptr );
-    virtual ~SwPaM();
+    virtual ~SwPaM() override;
 
     /// this takes a second parameter, which indicates the Ring that
     /// the new PaM should be part of (may be null)
@@ -190,27 +183,27 @@ public:
     SwPaM& operator=( const SwPaM & );
 
     /// Movement of cursor.
-    bool Move( SwMoveFn fnMove = fnMoveForward,
-                SwGoInDoc fnGo = fnGoContent );
+    bool Move( SwMoveFnCollection const & fnMove = fnMoveForward,
+                SwGoInDoc fnGo = GoInContent );
 
     /// Search.
     bool Find(  const css::util::SearchOptions2& rSearchOpt,
                 bool bSearchInNotes,
                 utl::TextSearch& rSText,
-                SwMoveFn fnMove = fnMoveForward,
+                SwMoveFnCollection const & fnMove = fnMoveForward,
                 const SwPaM *pPam =nullptr, bool bInReadOnly = false);
     bool Find(  const SwFormat& rFormat,
-                SwMoveFn fnMove = fnMoveForward,
+                SwMoveFnCollection const & fnMove = fnMoveForward,
                 const SwPaM *pPam =nullptr, bool bInReadOnly = false);
-    bool Find(  const SfxPoolItem& rAttr, bool bValue = true,
-                SwMoveFn fnMove = fnMoveForward,
+    bool Find(  const SfxPoolItem& rAttr, bool bValue,
+                SwMoveFnCollection const & fnMove = fnMoveForward,
                 const SwPaM *pPam =nullptr, bool bInReadOnly = false );
     bool Find(  const SfxItemSet& rAttr, bool bNoColls,
-                SwMoveFn fnMove,
+                SwMoveFnCollection const & fnMove,
                 const SwPaM *pPam, bool bInReadOnly, bool bMoveFirst );
 
     bool DoSearch( const css::util::SearchOptions2& rSearchOpt, utl::TextSearch& rSText,
-                   SwMoveFn fnMove, bool bSrchForward, bool bRegSearch, bool bChkEmptyPara, bool bChkParaEnd,
+                   SwMoveFnCollection const & fnMove, bool bSrchForward, bool bRegSearch, bool bChkEmptyPara, bool bChkParaEnd,
                    sal_Int32 &nStart, sal_Int32 &nEnd, sal_Int32 nTextLen, SwNode* pNode, SwPaM* pPam);
 
     inline bool IsInFrontOfLabel() const        { return m_bIsInFrontOfLabel; }

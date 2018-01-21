@@ -61,7 +61,7 @@ namespace dbaui
 
     public:
         OScrollWindowHelper( vcl::Window* pParent);
-        virtual ~OScrollWindowHelper();
+        virtual ~OScrollWindowHelper() override;
         virtual void dispose() override;
 
         void setTableView(OJoinTableView* _pTableView);
@@ -103,7 +103,7 @@ namespace dbaui
 
         bool                    m_bTrackingInitiallyMoved;
 
-        DECL_LINK_TYPED(OnDragScrollTimer, Idle*, void);
+        DECL_LINK(OnDragScrollTimer, Idle*, void);
 
     protected:
         VclPtr<OTableWindow>               m_pLastFocusTabWin;
@@ -112,7 +112,7 @@ namespace dbaui
 
     public:
         OJoinTableView( vcl::Window* pParent, OJoinDesignView* pView );
-        virtual ~OJoinTableView();
+        virtual ~OJoinTableView() override;
         virtual void dispose() override;
 
         // window override
@@ -126,7 +126,7 @@ namespace dbaui
         // own methods
         ScrollBar& GetHScrollBar() { return static_cast<OScrollWindowHelper*>(GetParent())->GetHScrollBar(); }
         ScrollBar& GetVScrollBar() { return static_cast<OScrollWindowHelper*>(GetParent())->GetVScrollBar(); }
-        DECL_LINK_TYPED( ScrollHdl, ScrollBar*, void );
+        DECL_LINK( ScrollHdl, ScrollBar*, void );
 
         void DrawConnections(vcl::RenderContext& rRenderContext, const Rectangle& rRect);
         void InvalidateConnections();
@@ -199,7 +199,7 @@ namespace dbaui
         */
         sal_Int32 getConnectionCount(const OTableWindow* _pFromWin) const;
 
-        OTableConnection* GetTabConn(const OTableWindow* pLhs,const OTableWindow* pRhs,bool _bSupressCrossOrNaturalJoin = false,const OTableConnection* _rpFirstAfter = nullptr) const;
+        OTableConnection* GetTabConn(const OTableWindow* pLhs,const OTableWindow* pRhs,bool _bSupressCrossOrNaturalJoin = false) const;
 
         /** clear the window map and connection vector without destroying it
 
@@ -318,7 +318,7 @@ namespace dbaui
             modified
             @param _pAction a possible undo action to add at the controller
         */
-        void invalidateAndModify(SfxUndoAction *_pAction=nullptr);
+        void invalidateAndModify(SfxUndoAction *_pAction);
 
     private:
         using Window::Scroll;

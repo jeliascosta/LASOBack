@@ -136,6 +136,8 @@
 #include <i18nlangtag/languagetag.hxx>
 #include <unotools/fltrcfg.hxx>
 #include <o3tl/enumrange.hxx>
+#include <calbck.hxx>
+
 
 using ::editeng::SvxBorderLine;
 using namespace ::com::sun::star;
@@ -294,8 +296,6 @@ void MSWordExportBase::OutputItemSet( const SfxItemSet& rSet, bool bPapFormat, b
         m_pISet = nullptr;                      // fuer Doppel-Attribute
     }
 }
-
-#include <calbck.hxx>
 
 void MSWordExportBase::GatherChapterFields()
 {
@@ -490,7 +490,7 @@ void MSWordExportBase::OutputSectionBreaks( const SfxItemSet *pSet, const SwNode
                     // #i76301# - assure that there is a page break before set at the node.
                     const SvxFormatBreakItem* pBreak = dynamic_cast<const SvxFormatBreakItem*>(pItem);
                     if ( pBreak &&
-                         pBreak->GetBreak() == SVX_BREAK_PAGE_BEFORE )
+                         pBreak->GetBreak() == SvxBreak::PageBefore )
                     {
                         bNewPageDesc |= SetAktPageDescFromNode( rNd );
                     }
@@ -517,7 +517,7 @@ void MSWordExportBase::OutputSectionBreaks( const SfxItemSet *pSet, const SwNode
         {
             const SvxFormatBreakItem &rBreak =
                 ItemGet<SvxFormatBreakItem>( *pNd, RES_BREAK );
-            if ( rBreak.GetBreak() == SVX_BREAK_PAGE_BEFORE )
+            if ( rBreak.GetBreak() == SvxBreak::PageBefore )
                 bHackInBreak = true;
             else
             {   // Even a pagedesc item is set, the break item can be set 'NONE',
@@ -630,7 +630,7 @@ void MSWordExportBase::CorrectTabStopInSet( SfxItemSet& rSet, sal_uInt16 nAbsLef
         for ( sal_uInt16 nCnt = 0; nCnt < aTStop.Count(); ++nCnt )
         {
             SvxTabStop& rTab = (SvxTabStop&)aTStop[ nCnt ];
-            if ( SVX_TAB_ADJUST_DEFAULT != rTab.GetAdjustment() &&
+            if ( SvxTabAdjust::Default != rTab.GetAdjustment() &&
                 rTab.GetTabPos() >= nAbsLeft )
             {
                 rTab.GetTabPos() -= nAbsLeft;
@@ -1387,8 +1387,8 @@ void WW8AttributeOutput::CharRelief( const SvxCharReliefItem& rRelief )
     sal_uInt16 nId;
     switch ( rRelief.GetValue() )
     {
-        case RELIEF_EMBOSSED:   nId = NS_sprm::LN_CFEmboss;     break;
-        case RELIEF_ENGRAVED:   nId = NS_sprm::LN_CFImprint;    break;
+        case FontRelief::Embossed:   nId = NS_sprm::LN_CFEmboss;     break;
+        case FontRelief::Engraved:   nId = NS_sprm::LN_CFImprint;    break;
         default:                nId = 0;                        break;
     }
 
@@ -1551,7 +1551,7 @@ void WW8AttributeOutput::TextINetFormat( const SwFormatINetFormat& rINet )
 // add optional parameter <bIncludeEmptyPicLocation>
 // It is needed to write an empty picture location for page number field separators
 static void InsertSpecialChar( WW8Export& rWrt, sal_uInt8 c,
-                               OUString* pLinkStr = nullptr,
+                               OUString* pLinkStr,
                                bool bIncludeEmptyPicLocation = false )
 {
     ww::bytes aItems;
@@ -1583,7 +1583,7 @@ static void InsertSpecialChar( WW8Export& rWrt, sal_uInt8 c,
         const sal_uInt16 nEmptyHdrLen = 0x44;
         sal_uInt8 aEmptyHeader[ nEmptyHdrLen ] = { 0 };
         aEmptyHeader[ 4 ] = 0x44;
-        rStrm.Write( aEmptyHeader, nEmptyHdrLen );
+        rStrm.WriteBytes( aEmptyHeader, nEmptyHdrLen );
         // writer fixed header
         const sal_uInt16 nFixHdrLen = 0x19;
         sal_uInt8 aFixHeader[ nFixHdrLen ] =
@@ -1593,7 +1593,7 @@ static void InsertSpecialChar( WW8Export& rWrt, sal_uInt8 c,
             0x0B, 0x02, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00,
             0x00,
         };
-        rStrm.Write( aFixHeader, nFixHdrLen );
+        rStrm.WriteBytes( aFixHeader, nFixHdrLen );
         // write reference string including length+1
         sal_uInt32 nStrLen( pLinkStr->getLength() + 1 );
         SwWW8Writer::WriteLong( rStrm, nStrLen );
@@ -1603,9 +1603,7 @@ static void InsertSpecialChar( WW8Export& rWrt, sal_uInt8 c,
         // write length of hyperlink data
         const sal_uInt32 nCurrPos = rStrm.Tell();
         rStrm.Seek( nLinkPosInDataStrm );
-        SVBT32 nLen;
-        UInt32ToSVBT32( nCurrPos - nLinkPosInDataStrm, nLen );
-        rStrm.Write( nLen, 4 );
+        rStrm.WriteUInt32(nCurrPos - nLinkPosInDataStrm);
         rStrm.Seek( nCurrPos );
 
         // write attributes of hyperlink character 0x01
@@ -2539,7 +2537,7 @@ void AttributeOutputBase::TextField( const SwFormatField& rField )
             SwDBData aData = GetExport().m_pDoc->GetDBData();
             const OUString sStr = FieldString(ww::eDATABASE)
                 + aData.sDataSource
-                + OUString(DB_DELIM)
+                + OUStringLiteral1(DB_DELIM)
                 + aData.sCommand;
             GetExport().OutputField(pField, ww::eDATABASE, sStr);
         }
@@ -2547,7 +2545,7 @@ void AttributeOutputBase::TextField( const SwFormatField& rField )
     case RES_AUTHORFLD:
         {
             ww::eField eField =
-                (AF_SHORTCUT & pField->GetFormat() ? ww::eUSERINITIALS : ww::eUSERNAME);
+                ((AF_SHORTCUT & pField->GetFormat()) ? ww::eUSERINITIALS : ww::eUSERNAME);
             GetExport().OutputField(pField, eField, FieldString(eField));
         }
         break;
@@ -2981,22 +2979,23 @@ void WW8AttributeOutput::ParaVerticalAlign( const SvxParaVertAlignItem& rAlign )
 
     m_rWW8Export.InsUInt16( NS_sprm::LN_PWAlignFont );
 
-    sal_Int16 nVal = rAlign.GetValue();
-    switch ( nVal )
+    SvxParaVertAlignItem::Align nAlign = rAlign.GetValue();
+    sal_uInt16 nVal;
+    switch ( nAlign )
     {
-        case SvxParaVertAlignItem::BASELINE:
+        case SvxParaVertAlignItem::Align::Baseline:
             nVal = 2;
             break;
-        case SvxParaVertAlignItem::TOP:
+        case SvxParaVertAlignItem::Align::Top:
             nVal = 0;
             break;
-        case SvxParaVertAlignItem::CENTER:
+        case SvxParaVertAlignItem::Align::Center:
             nVal = 1;
             break;
-        case SvxParaVertAlignItem::BOTTOM:
+        case SvxParaVertAlignItem::Align::Bottom:
             nVal = 3;
             break;
-        case SvxParaVertAlignItem::AUTOMATIC:
+        case SvxParaVertAlignItem::Align::Automatic:
             nVal = 4;
             break;
         default:
@@ -3352,7 +3351,7 @@ sal_uLong WW8Export::ReplaceCr( sal_uInt8 nChar )
     SvStream& rStrm = Strm();
     sal_uLong nRetPos = 0, nPos = rStrm.Tell();
     //If there is at least two characters already output
-    if (nPos - 2 >= sal_uLong(pFib->fcMin))
+    if (nPos - 2 >= sal_uLong(pFib->m_fcMin))
     {
         sal_uInt16 nUCode=0;
 
@@ -3362,7 +3361,7 @@ sal_uLong WW8Export::ReplaceCr( sal_uInt8 nChar )
         if (nUCode == 0x0d)             // CR ?
         {
             if ((nChar == 0x0c) &&
-                (nPos - 4 >= sal_uLong(pFib->fcMin)))
+                (nPos - 4 >= sal_uLong(pFib->m_fcMin)))
             {
                 rStrm.SeekRel(-4);
                 rStrm.ReadUInt16( nUCode );
@@ -3424,7 +3423,7 @@ void AttributeOutputBase::FormatPageDescription( const SwFormatPageDesc& rPageDe
     {
         const SwTextFormatColl* pC = static_cast<const SwTextFormatColl*>(GetExport().m_pOutFormatNode);
         if ( (SfxItemState::SET != pC->GetItemState( RES_BREAK, false ) ) && rPageDesc.KnowsPageDesc() )
-            FormatBreak( SvxFormatBreakItem( SVX_BREAK_PAGE_BEFORE, RES_BREAK ) );
+            FormatBreak( SvxFormatBreakItem( SvxBreak::PageBefore, RES_BREAK ) );
     }
 }
 
@@ -3445,9 +3444,9 @@ void AttributeOutputBase::FormatBreak( const SvxFormatBreakItem& rBreak )
     {
         switch ( rBreak.GetBreak() )
         {
-            case SVX_BREAK_NONE:
-            case SVX_BREAK_PAGE_BEFORE:
-            case SVX_BREAK_PAGE_BOTH:
+            case SvxBreak::NONE:
+            case SvxBreak::PageBefore:
+            case SvxBreak::PageBoth:
                 PageBreakBefore( rBreak.GetValue() );
                 break;
             default:
@@ -3463,23 +3462,23 @@ void AttributeOutputBase::FormatBreak( const SvxFormatBreakItem& rBreak )
 
         switch ( rBreak.GetBreak() )
         {
-            case SVX_BREAK_NONE:                                // Ausgeschaltet
+            case SvxBreak::NONE:                                // Ausgeschaltet
                 if ( !GetExport().m_bBreakBefore )
                     PageBreakBefore( false );
                 return;
 
-            case SVX_BREAK_COLUMN_BEFORE:                       // ColumnBreak
+            case SvxBreak::ColumnBefore:                       // ColumnBreak
                 bBefore = true;
                 SAL_FALLTHROUGH;
-            case SVX_BREAK_COLUMN_AFTER:
-            case SVX_BREAK_COLUMN_BOTH:
+            case SvxBreak::ColumnAfter:
+            case SvxBreak::ColumnBoth:
                 if ( GetExport().Sections().CurrentNumberOfColumns( *GetExport().m_pDoc ) > 1 || GetExport().SupportsOneColumnBreak() )
                 {
                     nC = msword::ColumnBreak;
                 }
                 break;
 
-            case SVX_BREAK_PAGE_BEFORE:                         // PageBreak
+            case SvxBreak::PageBefore:                         // PageBreak
                 // From now on(fix for #i77900#) we prefer to save a page break
                 // as paragraph attribute (if the exporter is OK with that),
                 // this has to be done after the export of the paragraph ( =>
@@ -3491,8 +3490,8 @@ void AttributeOutputBase::FormatBreak( const SvxFormatBreakItem& rBreak )
                     break;
                 }
                 SAL_FALLTHROUGH;
-            case SVX_BREAK_PAGE_AFTER:
-            case SVX_BREAK_PAGE_BOTH:
+            case SvxBreak::PageAfter:
+            case SvxBreak::PageBoth:
                 nC = msword::PageBreak;
                 // #i76300# - check for follow page description,
                 // if current writing attributes of a paragraph.
@@ -3637,8 +3636,8 @@ void WW8AttributeOutput::FormatLRSpace( const SvxLRSpaceItem& rLR )
         const SfxPoolItem* pItem = m_rWW8Export.HasItem( RES_BOX );
         if ( pItem )
         {
-            nRDist = static_cast<const SvxBoxItem*>(pItem)->CalcLineSpace( SvxBoxItemLine::LEFT );
-            nLDist = static_cast<const SvxBoxItem*>(pItem)->CalcLineSpace( SvxBoxItemLine::RIGHT );
+            nRDist = static_cast<const SvxBoxItem*>(pItem)->CalcLineSpace( SvxBoxItemLine::LEFT, /*bEvenIfNoLine*/true );
+            nLDist = static_cast<const SvxBoxItem*>(pItem)->CalcLineSpace( SvxBoxItemLine::RIGHT, /*bEvenIfNoLine*/true );
         }
         else
             nLDist = nRDist = 0;
@@ -4290,15 +4289,15 @@ void AttributeOutputBase::ParaLineSpacing( const SvxLineSpacingItem& rSpacing )
     {
         default:
             break;
-        case SVX_LINE_SPACE_FIX: // Fix
+        case SvxLineSpaceRule::Fix: // Fix
             nSpace = -(short)rSpacing.GetLineHeight();
             break;
-        case SVX_LINE_SPACE_MIN: // At least
+        case SvxLineSpaceRule::Min: // At least
             nSpace = (short)rSpacing.GetLineHeight();
             break;
-        case SVX_LINE_SPACE_AUTO:
+        case SvxLineSpaceRule::Auto:
         {
-            if( rSpacing.GetInterLineSpaceRule() == SVX_INTER_LINE_SPACE_FIX ) // Leading
+            if( rSpacing.GetInterLineSpaceRule() == SvxInterLineSpaceRule::Fix ) // Leading
             {
                 // gibt es aber nicht in WW - also wie kommt man an
                 // die MaxLineHeight heran?
@@ -4508,11 +4507,15 @@ void WW8AttributeOutput::ParaWidows( const SvxWidowsItem& rWidows )
 
 class SwWW8WrTabu
 {
-    sal_uInt8* pDel;                 // DelArray
-    sal_uInt8* pAddPos;              // AddPos-Array
-    sal_uInt8* pAddTyp;              // AddTyp-Array
+    sal_uInt8* pDel;            // DelArray
+    sal_uInt8* pAddPos;         // AddPos-Array
+    sal_uInt8* pAddTyp;         // AddTyp-Array
     sal_uInt16 nAdd;            // so viele Tabs kommen hinzu
     sal_uInt16 nDel;            // so viele Tabs fallen weg
+
+    SwWW8WrTabu(const SwWW8WrTabu&) = delete;
+    SwWW8WrTabu& operator=(const SwWW8WrTabu&) = delete;
+
 public:
     SwWW8WrTabu(sal_uInt16 nDelMax, sal_uInt16 nAddMax);
     ~SwWW8WrTabu();
@@ -4548,13 +4551,13 @@ void SwWW8WrTabu::Add(const SvxTabStop & rTS, long nAdjustment)
     sal_uInt8 nPara = 0;
     switch (rTS.GetAdjustment())
     {
-        case SVX_TAB_ADJUST_RIGHT:
+        case SvxTabAdjust::Right:
             nPara = 2;
             break;
-        case SVX_TAB_ADJUST_CENTER:
+        case SvxTabAdjust::Center:
             nPara = 1;
             break;
-        case SVX_TAB_ADJUST_DECIMAL:
+        case SvxTabAdjust::Decimal:
             /*
             Theres nothing we can do btw the decimal separator has been
             customized, but if you think different remember that different
@@ -4635,7 +4638,7 @@ static void ParaTabStopAdd( WW8Export& rWrt,
     {
         const SvxTabStop& rTS = rTStops[n];
         // Def-Tabs ignorieren
-        if (SVX_TAB_ADJUST_DEFAULT != rTS.GetAdjustment())
+        if (SvxTabAdjust::Default != rTS.GetAdjustment())
             aTab.Add(rTS, nLParaMgn);
     }
     aTab.PutAll( rWrt );
@@ -4670,7 +4673,7 @@ static void ParaTabStopDelAdd( WW8Export& rWrt,
         {
             pTO = &rTStyle[ nO ];
             nOP = pTO->GetTabPos() + nLStypeMgn;
-            if( SVX_TAB_ADJUST_DEFAULT == pTO->GetAdjustment() )
+            if( SvxTabAdjust::Default == pTO->GetAdjustment() )
             {
                 nO++;                                // Default-Tab ignorieren
                 continue;
@@ -4688,7 +4691,7 @@ static void ParaTabStopDelAdd( WW8Export& rWrt,
         {
             pTN = &rTNew[ nN ];
             nNP = pTN->GetTabPos() + nLParaMgn;
-            if( SVX_TAB_ADJUST_DEFAULT == pTN->GetAdjustment() )
+            if( SvxTabAdjust::Default == pTN->GetAdjustment() )
             {
                 nN++;                               // Default-Tab ignorieren
                 continue;
@@ -4748,7 +4751,7 @@ void WW8AttributeOutput::ParaTabStop( const SvxTabStopItem& rTabStops )
          m_rWW8Export.m_pCurrentStyle != nullptr &&
          m_rWW8Export.m_pCurrentStyle->DerivedFrom() != nullptr )
     {
-        SvxTabStopItem aParentTabs( 0, 0, SVX_TAB_ADJUST_DEFAULT, RES_PARATR_TABSTOP );
+        SvxTabStopItem aParentTabs( 0, 0, SvxTabAdjust::Default, RES_PARATR_TABSTOP );
         const SwFormat *pParentStyle = m_rWW8Export.m_pCurrentStyle->DerivedFrom();
         {
             if (const SvxTabStopItem* pParentTabs = pParentStyle->GetAttrSet().GetItem<SvxTabStopItem>(RES_PARATR_TABSTOP))
@@ -5040,7 +5043,7 @@ void AttributeOutputBase::OutputItem( const SfxPoolItem& rHt )
     }
 }
 
-void AttributeOutputBase::OutputStyleItemSet( const SfxItemSet& rSet, bool bDeep, bool bTestForDefault )
+void AttributeOutputBase::OutputStyleItemSet( const SfxItemSet& rSet, bool bTestForDefault )
 {
     // based on OutputItemSet() from wrt_fn.cxx
 
@@ -5048,9 +5051,6 @@ void AttributeOutputBase::OutputStyleItemSet( const SfxItemSet& rSet, bool bDeep
     const SfxItemSet* pSet = &rSet;
     if ( !pSet->Count() )
     {
-        if ( !bDeep )
-            return;
-
         while ( nullptr != ( pSet = pSet->GetParent() ) && !pSet->Count() )
             ;
 
@@ -5059,7 +5059,7 @@ void AttributeOutputBase::OutputStyleItemSet( const SfxItemSet& rSet, bool bDeep
     }
 
     const SfxPoolItem* pItem;
-    if ( !bDeep || !pSet->GetParent() )
+    if ( !pSet->GetParent() )
     {
         OSL_ENSURE( rSet.Count(), "Wurde doch schon behandelt oder?" );
         SfxItemIter aIter( *pSet );
@@ -5074,7 +5074,7 @@ void AttributeOutputBase::OutputStyleItemSet( const SfxItemSet& rSet, bool bDeep
         sal_uInt16 nWhich = aIter.FirstWhich();
         while ( nWhich )
         {
-            if ( SfxItemState::SET == pSet->GetItemState( nWhich, bDeep, &pItem ) &&
+            if ( SfxItemState::SET == pSet->GetItemState( nWhich, true/*bDeep*/, &pItem ) &&
                  ( !bTestForDefault ||
                    *pItem != rPool.GetDefaultItem( nWhich ) ||
                    ( pSet->GetParent() && *pItem != pSet->GetParent()->Get( nWhich ) ) ) )
@@ -5172,8 +5172,10 @@ void AttributeOutputBase::CharBackgroundBase( const SvxBrushItem& rBrush )
     bool bHasShadingMarker = false;
 
     // Check shading marker
+    const SfxPoolItem* pItem = GetExport().HasItem(RES_CHRATR_GRABBAG);
+    if( pItem )
     {
-        const SfxGrabBagItem& aGrabBag = static_cast< const SfxGrabBagItem& >( GetExport().GetItem( RES_CHRATR_GRABBAG ) );
+        const SfxGrabBagItem aGrabBag = static_cast< const SfxGrabBagItem& >(*pItem);
         const std::map<OUString, css::uno::Any>& rMap = aGrabBag.GetGrabBag();
         auto aIterator = rMap.find("CharShadingMarker");
         if( aIterator != rMap.end() )

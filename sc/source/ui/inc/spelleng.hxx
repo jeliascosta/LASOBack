@@ -36,7 +36,7 @@ public:
                             SfxItemPool* pEnginePool, ScViewData& rViewData,
                             ScDocument* pUndoDoc, ScDocument* pRedoDoc );
 
-    virtual             ~ScConversionEngineBase();
+    virtual             ~ScConversionEngineBase() override;
 
     /** Derived classes implement to convert all cells in the selection or sheet. */
     virtual void        ConvertAll( EditView& rEditView ) = 0;
@@ -99,7 +99,7 @@ public:
                             ScViewData& rViewData,
                             ScDocument* pUndoDoc,
                             ScDocument* pRedoDoc,
-                            css::uno::Reference< css::linguistic2::XSpellChecker1 > xSpeller );
+                            css::uno::Reference< css::linguistic2::XSpellChecker1 > const & xSpeller );
 
     /** Checks spelling of all cells in the selection or sheet. */
     virtual void        ConvertAll( EditView& rEditView ) override;

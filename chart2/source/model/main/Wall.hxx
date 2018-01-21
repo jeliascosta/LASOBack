@@ -49,7 +49,7 @@ class Wall :
 {
 public:
     Wall();
-    virtual ~Wall();
+    virtual ~Wall() override;
 
     /// merge XInterface implementations
      DECLARE_XINTERFACE()
@@ -94,8 +94,6 @@ protected:
     // ____ OPropertySet ____
     virtual void firePropertyChangeEvent() override;
     using OPropertySet::disposing;
-
-    void fireModifyEvent();
 
 private:
 

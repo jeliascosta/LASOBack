@@ -20,6 +20,7 @@
 #include "scitems.hxx"
 #include <editeng/eeitem.hxx>
 
+#include <sfx2/lokhelper.hxx>
 #include <sfx2/viewfrm.hxx>
 #include <editeng/adjustitem.hxx>
 #include <svx/algitem.hxx>
@@ -59,9 +60,10 @@
 #include <gridwin.hxx>
 #include <rtl/ustrbuf.hxx>
 #include <boost/checked_delete.hpp>
+#include <comphelper/flagguard.hxx>
+#include <comphelper/lok.hxx>
 #include <comphelper/processfactory.hxx>
 #include <comphelper/string.hxx>
-#include <comphelper/lok.hxx>
 
 #include <com/sun/star/container/XNameContainer.hpp>
 #include <com/sun/star/document/NamedPropertyValues.hpp>
@@ -73,8 +75,21 @@ using namespace com::sun::star;
 
 #define TAG_TABBARWIDTH "tw:"
 
-static bool bMoveArea = false;                  // Member?
-sal_uInt16 nEditAdjust = SVX_ADJUST_LEFT;       // Member!
+namespace {
+
+void lcl_LOKRemoveWindow(ScTabViewShell* pTabViewShell, ScSplitPos eWhich)
+{
+    if (comphelper::LibreOfficeKit::isActive())
+    {
+        auto lRemoveWindows =
+                [pTabViewShell, eWhich] (ScTabViewShell* pOtherViewShell)
+                { pOtherViewShell->RemoveWindowFromForeignEditView(pTabViewShell, eWhich); };
+
+        SfxLokHelper::forEachOtherView(pTabViewShell, lRemoveWindows);
+    }
+}
+
+} // anonymous namespace
 
 ScViewDataTable::ScViewDataTable() :
                 eZoomType( SvxZoomType::PERCENT ),
@@ -112,7 +127,7 @@ ScViewDataTable::~ScViewDataTable()
 {
 }
 
-void ScViewDataTable::WriteUserDataSequence(uno::Sequence <beans::PropertyValue>& rSettings, const ScViewData& /*rViewData*/, SCTAB /*nTab*/) const
+void ScViewDataTable::WriteUserDataSequence(uno::Sequence <beans::PropertyValue>& rSettings, const ScViewData& rViewData, SCTAB /*nTab*/) const
 {
     rSettings.realloc(SC_TABLE_VIEWSETTINGS_COUNT);
     beans::PropertyValue* pSettings = rSettings.getArray();
@@ -159,6 +174,9 @@ void ScViewDataTable::WriteUserDataSequence(uno::Sequence <beans::PropertyValue>
         pSettings[SC_TABLE_SHOWGRID].Name = SC_UNO_SHOWGRID;
         pSettings[SC_TABLE_SHOWGRID].Value <<= bShowGrid;
     }
+
+    // Common SdrModel processing
+    rViewData.GetDocument()->GetDrawLayer()->WriteUserDataSequence(rSettings);
 }
 
 void ScViewDataTable::ReadUserDataSequence(const uno::Sequence <beans::PropertyValue>& aSettings, ScViewData& rViewData, SCTAB nTab, bool& rHasZoom )
@@ -288,6 +306,8 @@ void ScViewDataTable::ReadUserDataSequence(const uno::Sequence <beans::PropertyV
                 pDoc->SetTabBgColor(nTab, Color(static_cast<ColorData>(nColor)));
             }
         }
+        // Fallback to common SdrModel processing
+        else rViewData.GetDocument()->GetDrawLayer()->ReadUserDataSequenceValue(&aSettings[i]);
     }
     if (eHSplitMode == SC_SPLIT_FIX)
         nFixPosX = SanitizeCol( static_cast<SCCOL>( bHasHSplitInTwips ? nTempPosHTw : nTempPosH ));
@@ -308,7 +328,7 @@ ScViewData::ScViewData( ScDocShell* pDocSh, ScTabViewShell* pViewSh ) :
         pViewShell  ( pViewSh ),
         pOptions    ( new ScViewOptions ),
         pSpellingView ( nullptr ),
-        aLogicMode  ( MAP_100TH_MM ),
+        aLogicMode  ( MapUnit::Map100thMM ),
         eDefZoomType( SvxZoomType::PERCENT ),
         aDefZoomX   ( 1,1 ),
         aDefZoomY   ( 1,1 ),
@@ -330,11 +350,15 @@ ScViewData::ScViewData( ScDocShell* pDocSh, ScTabViewShell* pViewSh ) :
         nPasteFlags ( SC_PASTE_NONE ),
         eEditActivePart( SC_SPLIT_BOTTOMLEFT ),
         nFillMode   ( ScFillMode::NONE ),
+        eEditAdjust ( SVX_ADJUST_LEFT ),
         bActive     ( true ),                   // how to initialize?
         bIsRefMode  ( false ),
         bDelMarkValid( false ),
         bPagebreak  ( false ),
-        bSelCtrlMouseClick( false )
+        bSelCtrlMouseClick( false ),
+        bMoveArea ( false ),
+        bGrowing (false),
+        m_nLOKPageUpDownOffset( 0 )
 {
     mpMarkData->SelectOneTable(0); // Sync with nTabNo
 
@@ -418,11 +442,15 @@ ScViewData::ScViewData( const ScViewData& rViewData ) :
         nPasteFlags ( SC_PASTE_NONE ),
         eEditActivePart( rViewData.eEditActivePart ),
         nFillMode   ( ScFillMode::NONE ),
+        eEditAdjust ( rViewData.eEditAdjust ),
         bActive     ( true ),                               // how to initialize?
         bIsRefMode  ( false ),
         bDelMarkValid( false ),
         bPagebreak  ( rViewData.bPagebreak ),
-        bSelCtrlMouseClick( rViewData.bSelCtrlMouseClick )
+        bSelCtrlMouseClick( rViewData.bSelCtrlMouseClick ),
+        bMoveArea ( rViewData.bMoveArea ),
+        bGrowing( rViewData.bGrowing ),
+        m_nLOKPageUpDownOffset( rViewData.m_nLOKPageUpDownOffset )
 {
 
     SetGridMode     ( rViewData.IsGridMode() );
@@ -798,7 +826,7 @@ void ScViewData::GetMultiArea( ScRangeListRef& rRange ) const
     if (bMulti)
     {
         rRange = new ScRangeList;
-        aNewMark.FillRangeListWithMarks( rRange, false );
+        aNewMark.FillRangeListWithMarks( rRange.get(), false );
     }
     else
     {
@@ -849,7 +877,7 @@ bool ScViewData::IsMultiMarked()
     return (eType & SC_MARK_SIMPLE) != SC_MARK_SIMPLE;
 }
 
-bool ScViewData::SelectionForbidsPaste()
+bool ScViewData::SelectionForbidsCellFill()
 {
     ScRange aSelRange( ScAddress::UNINITIALIZED );
     ScMarkType eMarkType = GetSimpleArea( aSelRange);
@@ -945,6 +973,10 @@ void ScViewData::SetEditEngine( ScSplitPos eWhich,
                                 ScEditEngineDefaulter* pNewEngine,
                                 vcl::Window* pWin, SCCOL nNewX, SCROW nNewY )
 {
+    if (comphelper::LibreOfficeKit::isActive()
+        && GetViewShell() != SfxViewShell::Current())
+        return;
+
     bool bLayoutRTL = pDoc->IsLayoutRTL( nTabNo );
     ScHSplitPos eHWhich = WhichH(eWhich);
 
@@ -953,12 +985,18 @@ void ScViewData::SetEditEngine( ScSplitPos eWhich,
     {
         //  if the view is already there don't call anything that changes the cursor position
         if (bEditActive[eWhich])
+        {
             bWasThere = true;
+        }
         else
+        {
+            lcl_LOKRemoveWindow(GetViewShell(), eWhich);
             pEditView[eWhich]->SetEditEngine(pNewEngine);
+        }
 
         if (pEditView[eWhich]->GetWindow() != pWin)
         {
+            lcl_LOKRemoveWindow(GetViewShell(), eWhich);
             pEditView[eWhich]->SetWindow(pWin);
             OSL_FAIL("EditView Window has changed");
         }
@@ -967,10 +1005,27 @@ void ScViewData::SetEditEngine( ScSplitPos eWhich,
     {
         pEditView[eWhich] = new EditView( pNewEngine, pWin );
 
-        if (pDoc->GetDrawLayer() && comphelper::LibreOfficeKit::isActive())
+        if (comphelper::LibreOfficeKit::isActive())
         {
-            pEditView[eWhich]->registerLibreOfficeKitCallback(pDoc->GetDrawLayer());
+            pEditView[eWhich]->RegisterViewShell(pViewShell);
         }
+    }
+
+    // add windows from other views
+    if (comphelper::LibreOfficeKit::isActive())
+    {
+        ScTabViewShell* pThisViewShell = GetViewShell();
+        SCTAB nThisTabNo = GetTabNo();
+        auto lAddWindows =
+                [pThisViewShell, nThisTabNo, eWhich] (ScTabViewShell* pOtherViewShell)
+                {
+                    ScViewData& rOtherViewData = pOtherViewShell->GetViewData();
+                    SCTAB nOtherTabNo = rOtherViewData.GetTabNo();
+                    if (nThisTabNo == nOtherTabNo)
+                        pOtherViewShell->AddWindowToForeignEditView(pThisViewShell, eWhich);
+                };
+
+        SfxLokHelper::forEachOtherView(pThisViewShell, lAddWindows);
     }
 
     //  bei IdleFormat wird manchmal ein Cursor gemalt, wenn die View schon weg ist (23576)
@@ -998,7 +1053,7 @@ void ScViewData::SetEditEngine( ScSplitPos eWhich,
 
     //  when right-aligned, leave space for the cursor
     //  in vertical mode, editing is always right-aligned
-    if ( nEditAdjust == SVX_ADJUST_RIGHT || bAsianVertical )
+    if ( GetEditAdjust() == SVX_ADJUST_RIGHT || bAsianVertical )
         aPixRect.Right() += 1;
 
     Rectangle aOutputArea = pWin->PixelToLogic( aPixRect, GetLogicMode() );
@@ -1074,12 +1129,12 @@ void ScViewData::SetEditEngine( ScSplitPos eWhich,
         Size aPaper = pNewEngine->GetPaperSize();
         Rectangle aVis = pEditView[eWhich]->GetVisArea();
         long nDiff = aVis.Right() - aVis.Left();
-        if ( nEditAdjust == SVX_ADJUST_RIGHT )
+        if ( GetEditAdjust() == SVX_ADJUST_RIGHT )
         {
             aVis.Right() = aPaper.Width() - 1;
             bMoveArea = !bLayoutRTL;
         }
-        else if ( nEditAdjust == SVX_ADJUST_CENTER )
+        else if ( GetEditAdjust() == SVX_ADJUST_CENTER )
         {
             aVis.Right() = ( aPaper.Width() - 1 + nDiff ) / 2;
             bMoveArea = true;   // always
@@ -1130,7 +1185,7 @@ void ScViewData::SetEditEngine( ScSplitPos eWhich,
     //  needed, wenn position changed
 }
 
-IMPL_LINK_TYPED( ScViewData, EditEngineHdl, EditStatus&, rStatus, void )
+IMPL_LINK( ScViewData, EditEngineHdl, EditStatus&, rStatus, void )
 {
     EditStatusFlags nStatus = rStatus.GetStatusWord();
     if (nStatus & (EditStatusFlags::HSCROLL | EditStatusFlags::TEXTHEIGHTCHANGED | EditStatusFlags::TEXTWIDTHCHANGED | EditStatusFlags::CURSOROUT))
@@ -1149,6 +1204,16 @@ IMPL_LINK_TYPED( ScViewData, EditEngineHdl, EditStatus&, rStatus, void )
 
 void ScViewData::EditGrowX()
 {
+    // It is insane to call EditGrowX while the output area is already growing.
+    // That could occur because of the call to SetDefaultItem later.
+    // We end up with wrong start/end edit columns and the changes
+    // to the output area performed by the inner call to this method are
+    // useless since they are discarded by the outer call.
+    if (bGrowing)
+        return;
+
+    comphelper::FlagRestorationGuard aFlagGuard(bGrowing, true);
+
     ScDocument* pLocalDoc = GetDocument();
 
     ScSplitPos eWhich = GetActivePart();
@@ -1164,6 +1229,7 @@ void ScViewData::EditGrowX()
         static_cast<ScEditEngineDefaulter*>( pCurView->GetEditEngine() );
     vcl::Window* pWin = pCurView->GetWindow();
 
+    // Get the left- and right-most column positions.
     SCCOL nLeft = GetPosX(eHWhich);
     SCCOL nRight = nLeft + VisibleCellsX(eHWhich);
 
@@ -1171,7 +1237,7 @@ void ScViewData::EditGrowX()
     Rectangle   aArea = pCurView->GetOutputArea();
     long        nOldRight = aArea.Right();
 
-    //  Margin ist schon bei der urspruenglichen Breite beruecksichtigt
+    // Margin is already included in the original width.
     long nTextWidth = pEngine->CalcTextWidth();
 
     bool bChanged = false;
@@ -1326,11 +1392,19 @@ void ScViewData::EditGrowX()
         else if ( !bAsianVertical && !bGrowToLeft && !bGrowCentered )
             aArea.Left() = nOldRight;
         pWin->Invalidate(aArea);
+
+        // invalidate other views
+        pCurView->InvalidateOtherViewWindows(aArea);
     }
 }
 
 void ScViewData::EditGrowY( bool bInitial )
 {
+    if (bGrowing)
+        return;
+
+    comphelper::FlagRestorationGuard aFlagGuard(bGrowing, true);
+
     ScSplitPos eWhich = GetActivePart();
     ScVSplitPos eVWhich = WhichV(eWhich);
     EditView* pCurView = pEditView[eWhich];
@@ -1362,7 +1436,7 @@ void ScViewData::EditGrowY( bool bInitial )
     //  to be clipped before extending to following rows, to avoid obscuring cells for
     //  reference input (next row is likely to be useful in formulas).
     long nAllowedExtra = SC_GROWY_SMALL_EXTRA;
-    if ( nEditEndRow == nEditRow && !( pDoc->GetRowFlags( nEditRow, nTabNo ) & CR_MANUALSIZE ) &&
+    if ( nEditEndRow == nEditRow && !( pDoc->GetRowFlags( nEditRow, nTabNo ) & CRFlags::ManualSize ) &&
             pEngine->GetParagraphCount() <= 1 )
     {
         //  If the (only) paragraph starts with a '=', it's a formula.
@@ -1406,6 +1480,9 @@ void ScViewData::EditGrowY( bool bInitial )
 
         aArea.Top() = nOldBottom;
         pWin->Invalidate(aArea);
+
+        // invalidate other views
+        pCurView->InvalidateOtherViewWindows(aArea);
     }
 }
 
@@ -1417,6 +1494,7 @@ void ScViewData::ResetEditView()
         {
             if (bEditActive[i])
             {
+                lcl_LOKRemoveWindow(GetViewShell(), (ScSplitPos)(i));
                 pEngine = pEditView[i]->GetEditEngine();
                 pEngine->RemoveView(pEditView[i]);
                 pEditView[i]->SetOutputArea( Rectangle() );
@@ -1430,11 +1508,16 @@ void ScViewData::ResetEditView()
 
 void ScViewData::KillEditView()
 {
+    EditEngine* pEngine = nullptr;
     for (sal_uInt16 i=0; i<4; i++)
         if (pEditView[i])
         {
             if (bEditActive[i])
-                pEditView[i]->GetEditEngine()->RemoveView(pEditView[i]);
+            {
+                pEngine = pEditView[i]->GetEditEngine();
+                if (pEngine)
+                    pEngine->RemoveView(pEditView[i]);
+            }
             delete pEditView[i];
             pEditView[i] = nullptr;
         }
@@ -1864,7 +1947,7 @@ void ScViewData::GetPosFromPixel( long nClickX, long nClickY, ScSplitPos eWhich,
                 SCROW nEndRow = MAXROW;
                 pDoc->ExtendMerge( 0,0, nEndCol,nEndRow, nTabNo, true );
                 if (pDocShell)
-                    pDocShell->PostPaint( ScRange(0,0,nTabNo,MAXCOL,MAXROW,nTabNo), PAINT_GRID );
+                    pDocShell->PostPaint( ScRange(0,0,nTabNo,MAXCOL,MAXROW,nTabNo), PaintPartFlags::Grid );
             }
         }
     }
@@ -2248,7 +2331,7 @@ void ScViewData::WriteUserData(OUString& rData)
                  ( maTabData[i]->eVSplitMode == SC_SPLIT_FIX &&
                     maTabData[i]->nFixPosY > MAXROW_30 ) )
             {
-                cTabSep = OUStringLiteral1<SC_NEW_TABSEP>(); // in order to not kill a 3.1-version
+                cTabSep = OUStringLiteral1(SC_NEW_TABSEP); // in order to not kill a 3.1-version
             }
 
             rData += OUString::number( maTabData[i]->nCurX ) + cTabSep +
@@ -2396,7 +2479,7 @@ void ScViewData::WriteExtOptions( ScExtDocOptions& rDocOpt ) const
     // width of the tabbar, relative to frame window width
     rDocSett.mfTabBarWidth = pView->GetPendingRelTabBarWidth();
     if( rDocSett.mfTabBarWidth < 0.0 )
-        rDocSett.mfTabBarWidth = pView->GetRelTabBarWidth();
+        rDocSett.mfTabBarWidth = ScTabView::GetRelTabBarWidth();
 
     // sheet settings
     for( SCTAB nTab = 0; nTab < static_cast<SCTAB>(maTabData.size()); ++nTab )
@@ -2422,7 +2505,7 @@ void ScViewData::WriteExtOptions( ScExtDocOptions& rDocOpt ) const
             {
                 Point& rSplitPos = rTabSett.maSplitPos;
                 rSplitPos = Point( bHSplit ? pViewTab->nHSplitPos : 0, bVSplit ? pViewTab->nVSplitPos : 0 );
-                rSplitPos = Application::GetDefaultDevice()->PixelToLogic( rSplitPos, MapMode( MAP_TWIP ) );
+                rSplitPos = Application::GetDefaultDevice()->PixelToLogic( rSplitPos, MapMode( MapUnit::MapTwip ) );
                 if( pDocShell )
                     rSplitPos.X() = (long)((double)rSplitPos.X() / pDocShell->GetOutputFactor());
             }
@@ -2558,7 +2641,7 @@ void ScViewData::ReadExtOptions( const ScExtDocOptions& rDocOpt )
             else
             {
                 Point aPixel = Application::GetDefaultDevice()->LogicToPixel(
-                                rTabSett.maSplitPos, MapMode( MAP_TWIP ) );  //! Zoom?
+                                rTabSett.maSplitPos, MapMode( MapUnit::MapTwip ) );  //! Zoom?
                 // the test for use of printer metrics for text formatting here
                 // effectively results in the nFactor = 1.0 regardless of the Option setting.
                 if( pDocShell && SC_MOD()->GetInputOptions().GetTextWysiwyg())
@@ -2730,7 +2813,7 @@ void ScViewData::WriteUserDataSequence(uno::Sequence <beans::PropertyValue>& rSe
             pSettings[SC_SHEETTABS].Value <<= pOptions->GetOption( VOPT_TABCONTROLS );
             pSettings[SC_OUTLSYMB].Name = SC_UNO_OUTLSYMB;
             pSettings[SC_OUTLSYMB].Value <<= pOptions->GetOption( VOPT_OUTLINER );
-            pSettings[SC_VALUE_HIGHLIGHTING].Name = rtl::OUString( RTL_CONSTASCII_USTRINGPARAM( SC_UNO_VALUEHIGH ) );
+            pSettings[SC_VALUE_HIGHLIGHTING].Name = SC_UNO_VALUEHIGH;
             pSettings[SC_VALUE_HIGHLIGHTING].Value <<= pOptions->GetOption( VOPT_SYNTAX );
 
             const ScGridOptions& aGridOpt = pOptions->GetGridOptions();
@@ -2750,6 +2833,9 @@ void ScViewData::WriteUserDataSequence(uno::Sequence <beans::PropertyValue>& rSe
             pSettings[SC_RASTERSYNC].Value <<= aGridOpt.GetSynchronize();
         }
     }
+
+    // Common SdrModel processing
+    GetDocument()->GetDrawLayer()->WriteUserDataSequence(rSettings);
 }
 
 void ScViewData::ReadUserDataSequence(const uno::Sequence <beans::PropertyValue>& rSettings)
@@ -2903,6 +2989,9 @@ void ScViewData::ReadUserDataSequence(const uno::Sequence <beans::PropertyValue>
                 aGridOpt.SetFieldDivisionY( static_cast <sal_uInt32> ( ScUnoHelpFunctions::GetInt32FromAny( rSettings[i].Value ) ) );
             else if ( sName == SC_UNO_RASTERSYNC )
                 aGridOpt.SetSynchronize( ScUnoHelpFunctions::GetBoolFromAny( rSettings[i].Value ) );
+            // Fallback to common SdrModel processing
+            else GetDocument()->GetDrawLayer()->ReadUserDataSequenceValue(&rSettings[i]);
+
             pOptions->SetGridOptions(aGridOpt);
         }
     }

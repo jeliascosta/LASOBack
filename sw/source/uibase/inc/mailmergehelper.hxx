@@ -19,7 +19,6 @@
 #ifndef INCLUDED_SW_SOURCE_UIBASE_INC_MAILMERGEHELPER_HXX
 #define INCLUDED_SW_SOURCE_UIBASE_INC_MAILMERGEHELPER_HXX
 
-#include <svtools/stdctrl.hxx>
 #include <unotools/configitem.hxx>
 #include <com/sun/star/uno/Sequence.h>
 #include <com/sun/star/mail/XAuthenticator.hpp>
@@ -73,11 +72,11 @@ class SW_DLLPUBLIC SwAddressPreview : public vcl::Window
     virtual void StateChanged( StateChangedType nStateChange ) override;
     void UpdateScrollBar();
 
-    DECL_LINK_TYPED(ScrollHdl, ScrollBar*,void);
+    DECL_LINK(ScrollHdl, ScrollBar*,void);
 
 public:
-    SwAddressPreview(vcl::Window* pParent, WinBits nStyle=WB_BORDER);
-    virtual ~SwAddressPreview();
+    SwAddressPreview(vcl::Window* pParent, WinBits nStyle);
+    virtual ~SwAddressPreview() override;
     virtual void dispose() override;
 
     void positionScrollBar();
@@ -153,7 +152,7 @@ public:
         , m_aPassword(password)
         , m_pParentWindow(pParent)
     {}
-    virtual ~SwAuthenticator();
+    virtual ~SwAuthenticator() override;
 
     virtual OUString SAL_CALL getUserName() throw (css::uno::RuntimeException, std::exception) override;
     virtual OUString SAL_CALL getPassword() throw (css::uno::RuntimeException, std::exception) override;
@@ -168,7 +167,7 @@ class SW_DLLPUBLIC SwConnectionContext : public cppu::WeakImplHelper<css::uno::X
 
 public:
     SwConnectionContext(const OUString& rMailServer, sal_Int16 nPort, const OUString& rConnectionType);
-    virtual ~SwConnectionContext();
+    virtual ~SwConnectionContext() override;
 
     virtual css::uno::Any SAL_CALL getValueByName(const OUString& Name)
         throw (css::uno::RuntimeException, std::exception) override;
@@ -190,7 +189,7 @@ public:
     SwConnectionListener() :
         cppu::WeakComponentImplHelper<css::mail::XConnectionListener>(m_aMutex)
     {}
-    virtual ~SwConnectionListener();
+    virtual ~SwConnectionListener() override;
 
     virtual void SAL_CALL connected(const css::lang::EventObject& aEvent)
         throw (css::uno::RuntimeException, std::exception) override;
@@ -215,7 +214,7 @@ class SW_DLLPUBLIC SwMailTransferable :
     public:
     SwMailTransferable(const OUString& rURL, const OUString& rName, const OUString& rMimeType);
     SwMailTransferable(const OUString& rBody, const OUString& rMimeType);
-    virtual ~SwMailTransferable();
+    virtual ~SwMailTransferable() override;
     virtual css::uno::Any SAL_CALL getTransferData(const css::datatransfer::DataFlavor& aFlavor)
                 throw (css::datatransfer::UnsupportedFlavorException, css::io::IOException,
                        css::uno::RuntimeException, std::exception) override;
@@ -274,7 +273,7 @@ class SW_DLLPUBLIC SwMailMessage :
     css::uno::Sequence<css::mail::MailAttachment> m_aAttachments;
 public:
     SwMailMessage();
-    virtual ~SwMailMessage();
+    virtual ~SwMailMessage() override;
 
     // attributes
     virtual OUString SAL_CALL getSenderName() throw (css::uno::RuntimeException, std::exception) override;

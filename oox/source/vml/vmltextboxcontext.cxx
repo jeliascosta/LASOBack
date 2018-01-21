@@ -17,6 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
+#include <oox/helper/attributelist.hxx>
 #include "oox/vml/vmlformatting.hxx"
 #include "oox/vml/vmltextboxcontext.hxx"
 #include "oox/vml/vmlshape.hxx"
@@ -137,6 +138,12 @@ void TextPortionContext::onStartElement(const AttributeList& rAttribs)
         case W_TOKEN(r):
         case W_TOKEN(rPr):
         case W_TOKEN(t):
+        break;
+        case W_TOKEN(rFonts):
+            // See https://msdn.microsoft.com/en-us/library/documentformat.openxml.wordprocessing.runfonts(v=office.14).aspx
+            maFont.moName = rAttribs.getString(W_TOKEN(ascii));
+            maFont.moNameAsian = rAttribs.getString(W_TOKEN(eastAsia));
+            maFont.moNameComplex = rAttribs.getString(W_TOKEN(cs));
         break;
         default:
             SAL_INFO("oox", "unhandled: 0x" << std::hex<< getCurrentElement());

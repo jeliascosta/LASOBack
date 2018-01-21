@@ -153,10 +153,10 @@ void MasterPageObserver::Implementation::RegisterDocument (
 {
     // Gather the names of all the master pages in the given document.
     MasterPageContainer::mapped_type aMasterPageSet;
-    sal_uInt16 nMasterPageCount = rDocument.GetMasterSdPageCount(PK_STANDARD);
+    sal_uInt16 nMasterPageCount = rDocument.GetMasterSdPageCount(PageKind::Standard);
     for (sal_uInt16 nIndex=0; nIndex<nMasterPageCount; nIndex++)
     {
-        SdPage* pMasterPage = rDocument.GetMasterSdPage (nIndex, PK_STANDARD);
+        SdPage* pMasterPage = rDocument.GetMasterSdPage (nIndex, PageKind::Standard);
         if (pMasterPage != nullptr)
             aMasterPageSet.insert (pMasterPage->GetName());
     }
@@ -226,7 +226,7 @@ void MasterPageObserver::Implementation::Notify(
     {
         switch (pSdrHint->GetKind())
         {
-            case HINT_PAGEORDERCHG:
+            case SdrHintKind::PageOrderChange:
                 // Process the modified set of pages only when the number of
                 // standard and notes master pages are equal.  This test
                 // filters out events that are sent in between the insertion
@@ -236,8 +236,8 @@ void MasterPageObserver::Implementation::Notify(
                 {
                     SdDrawDocument& rDocument (
                         static_cast<SdDrawDocument&>(rBroadcaster));
-                    if (rDocument.GetMasterSdPageCount(PK_STANDARD)
-                        == rDocument.GetMasterSdPageCount(PK_NOTES))
+                    if (rDocument.GetMasterSdPageCount(PageKind::Standard)
+                        == rDocument.GetMasterSdPageCount(PageKind::Notes))
                     {
                         AnalyzeUsedMasterPages (rDocument);
                     }
@@ -254,11 +254,11 @@ void MasterPageObserver::Implementation::AnalyzeUsedMasterPages (
     SdDrawDocument& rDocument)
 {
     // Create a set of names of the master pages used by the given document.
-    sal_uInt16 nMasterPageCount = rDocument.GetMasterSdPageCount(PK_STANDARD);
+    sal_uInt16 nMasterPageCount = rDocument.GetMasterSdPageCount(PageKind::Standard);
     ::std::set<OUString> aCurrentMasterPages;
     for (sal_uInt16 nIndex=0; nIndex<nMasterPageCount; nIndex++)
     {
-        SdPage* pMasterPage = rDocument.GetMasterSdPage (nIndex, PK_STANDARD);
+        SdPage* pMasterPage = rDocument.GetMasterSdPage (nIndex, PageKind::Standard);
         if (pMasterPage != nullptr)
             aCurrentMasterPages.insert (pMasterPage->GetName());
         OSL_TRACE("currently used master page %d is %s",

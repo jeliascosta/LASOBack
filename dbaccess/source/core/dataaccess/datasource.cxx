@@ -117,7 +117,7 @@ public:
 
 protected:
     FlushNotificationAdapter( const Reference< XFlushable >& _rxBroadcaster, const Reference< XFlushListener >& _rxListener );
-    virtual ~FlushNotificationAdapter();
+    virtual ~FlushNotificationAdapter() override;
 
     void SAL_CALL impl_dispose();
 
@@ -295,7 +295,7 @@ class OSharedConnectionManager : public ::cppu::WeakImplHelper< XEventListener >
     Reference< XProxyFactory >  m_xProxyFactory;
 
 protected:
-    virtual ~OSharedConnectionManager();
+    virtual ~OSharedConnectionManager() override;
 
 public:
     explicit OSharedConnectionManager(const Reference< XComponentContext >& _rxContext);
@@ -721,7 +721,7 @@ Reference< XPropertySetInfo >  ODatabaseSource::getPropertySetInfo() throw (Runt
     return *getArrayHelper();
 }
 
-sal_Bool ODatabaseSource::convertFastPropertyValue(Any & rConvertedValue, Any & rOldValue, sal_Int32 nHandle, const Any& rValue ) throw( IllegalArgumentException  )
+sal_Bool ODatabaseSource::convertFastPropertyValue(Any & rConvertedValue, Any & rOldValue, sal_Int32 nHandle, const Any& rValue ) throw( IllegalArgumentException, RuntimeException, std::exception )
 {
     bool bModified(false);
     if ( m_pImpl.is() )

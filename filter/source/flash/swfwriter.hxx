@@ -109,16 +109,6 @@ sal_uInt32 getFixed( double fValue );
 
 typedef ::std::map<BitmapChecksum, sal_uInt16> ChecksumCache;
 
-/** unsigned int 16 compare operation for stl */
-struct ltuint16
-{
-  bool operator()(sal_uInt16 s1, sal_uInt16 s2) const
-  {
-    return s1 < s2;
-  }
-};
-
-
 /** container class to create bit structures */
 class BitStream
 {
@@ -159,7 +149,7 @@ public:
 
 private:
     const vcl::Font maFont;
-    std::map<sal_uInt16, sal_uInt16, ltuint16> maGlyphIndex;
+    std::map<sal_uInt16, sal_uInt16> maGlyphIndex;
     sal_uInt16 mnNextIndex;
     sal_uInt16 mnId;
     BitStream maGlyphData;
@@ -257,7 +247,7 @@ public:
         An invisible shape with the size of the document is placed at depth 1
         and it clips all shapes on depth 2 and 3.
     */
-    Writer( sal_Int32 nDocWidthInput, sal_Int32 nDocHeightInput, sal_Int32 nDocWidth, sal_Int32 nDocHeight, sal_Int32 nJPEGcompressMode = -1 );
+    Writer( sal_Int32 nDocWidthInput, sal_Int32 nDocHeightInput, sal_Int32 nDocWidth, sal_Int32 nDocHeight, sal_Int32 nJPEGcompressMode );
     ~Writer();
 
     void storeTo( css::uno::Reference< css::io::XOutputStream > &xOutStream );
@@ -368,7 +358,7 @@ private:
                                    const double P3x, const double P3y,
                                    const double P4x, const double P4y );
 
-    css::uno::Reference < css::i18n::XBreakIterator > Impl_GetBreakIterator();
+    css::uno::Reference < css::i18n::XBreakIterator > const & Impl_GetBreakIterator();
 
 private:
     css::uno::Reference< css::i18n::XBreakIterator > mxBreakIterator;

@@ -41,7 +41,7 @@
 #include <cppuhelper/interfacecontainer.h>
 #include <cppuhelper/compbase6.hxx>
 #include <cppuhelper/compbase7.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <comphelper/servicehelper.hxx>
 #include <svx/rectenum.hxx>
 #include <vcl/vclptr.hxx>
@@ -68,17 +68,15 @@ typedef ::cppu::WeakAggComponentImplHelper6<
             css::lang::XServiceInfo >
             SvxRectCtlAccessibleContext_Base;
 
-class SvxRectCtlAccessibleContext : public ::comphelper::OBaseMutex, public SvxRectCtlAccessibleContext_Base
+class SvxRectCtlAccessibleContext : public ::cppu::BaseMutex, public SvxRectCtlAccessibleContext_Base
 {
 public:
     // internal
     SvxRectCtlAccessibleContext(
         const css::uno::Reference< css::accessibility::XAccessible>& rxParent,
-        SvxRectCtl&             rRepresentation,
-        const OUString*  pName = nullptr,
-        const OUString*  pDescription = nullptr );
+        SvxRectCtl&      rRepresentation );
 protected:
-    virtual ~SvxRectCtlAccessibleContext();
+    virtual ~SvxRectCtlAccessibleContext() override;
 public:
     // XAccessible
     virtual css::uno::Reference< css::accessibility::XAccessibleContext> SAL_CALL
@@ -204,8 +202,6 @@ protected:
     // internals
     void checkChildIndex( long nIndexOfChild ) throw( css::lang::IndexOutOfBoundsException );
 
-    void checkChildIndexOnSelection( long nIndexOfChild ) throw( css::lang::IndexOutOfBoundsException );
-
     /** Selects a new child by index.
 
         <p>If the child was not selected before, the state of the child will
@@ -225,8 +221,8 @@ public:
         @param eButton
             Button which belongs to the child which should be selected.
     */
-    void selectChild( RECT_POINT ePoint );
-    void FireChildFocus( RECT_POINT eButton );
+    void selectChild( RectPoint ePoint );
+    void FireChildFocus( RectPoint eButton );
 
 protected:
 
@@ -236,16 +232,10 @@ protected:
     /// @Return the object's current bounding box relative to the parent object.
     Rectangle GetBoundingBox() throw( css::uno::RuntimeException );
 
-    /// Calls all Listener to tell they the change.
-    void CommitChange( const css::accessibility::AccessibleEventObject& rEvent );
-
     virtual void SAL_CALL disposing() override;
 
     /// @returns true if it's disposed or in disposing
     inline bool IsAlive() const;
-
-    /// @returns true if it's not disposed and no in disposing
-    inline bool IsNotAlive() const;
 
     /// throws the exception DisposedException if it's not alive
     void ThrowExceptionIfNotAlive() throw( css::lang::DisposedException );
@@ -285,11 +275,6 @@ inline bool SvxRectCtlAccessibleContext::IsAlive() const
     return !rBHelper.bDisposed && !rBHelper.bInDispose;
 }
 
-inline bool SvxRectCtlAccessibleContext::IsNotAlive() const
-{
-    return rBHelper.bDisposed || rBHelper.bInDispose;
-}
-
 typedef ::cppu::WeakAggComponentImplHelper7<
             css::accessibility::XAccessible,
             css::accessibility::XAccessibleComponent,
@@ -310,7 +295,7 @@ public:
         const Rectangle& rBoundingBox,
         long nIndexInParent );
 protected:
-    virtual ~SvxRectCtlChildAccessibleContext();
+    virtual ~SvxRectCtlChildAccessibleContext() override;
 public:
     // XAccessible
     virtual css::uno::Reference< css::accessibility::XAccessibleContext> SAL_CALL
@@ -427,7 +412,7 @@ public:
 protected:
     Rectangle GetBoundingBoxOnScreen() throw( css::uno::RuntimeException );
 
-    Rectangle GetBoundingBox() throw( css::uno::RuntimeException );
+    Rectangle const & GetBoundingBox() throw( css::uno::RuntimeException );
 
     void CommitChange( const css::accessibility::AccessibleEventObject& rEvent );
 
@@ -435,9 +420,6 @@ protected:
 
     /// @returns true if it's disposed or in disposing
     inline bool IsAlive() const;
-
-    /// @returns true if it's not disposed and no in disposing
-    inline bool IsNotAlive() const;
 
     /// throws the exception DisposedException if it's not alive
     void ThrowExceptionIfNotAlive() throw( css::lang::DisposedException );
@@ -481,11 +463,6 @@ private:
 inline bool SvxRectCtlChildAccessibleContext::IsAlive() const
 {
     return !rBHelper.bDisposed && !rBHelper.bInDispose;
-}
-
-inline bool SvxRectCtlChildAccessibleContext::IsNotAlive() const
-{
-    return rBHelper.bDisposed || rBHelper.bInDispose;
 }
 
 

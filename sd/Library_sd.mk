@@ -175,11 +175,13 @@ $(eval $(call gb_Library_add_exception_objects,sd,\
 	sd/source/ui/accessibility/AccessibleViewForwarder \
 	sd/source/ui/accessibility/SdShapeTypes \
     sd/source/ui/animations/CategoryListBox \
+	sd/source/ui/animations/CustomAnimationBox \
 	sd/source/ui/animations/CustomAnimationDialog \
 	sd/source/ui/animations/CustomAnimationList \
 	sd/source/ui/animations/CustomAnimationPane \
 	sd/source/ui/animations/STLPropertySet \
 	sd/source/ui/animations/SlideTransitionPane \
+	sd/source/ui/animations/SlideTransitionBox \
 	sd/source/ui/animations/motionpathtag \
 	sd/source/ui/annotations/annotationmanager \
 	sd/source/ui/annotations/annotationtag \
@@ -287,7 +289,6 @@ $(eval $(call gb_Library_add_exception_objects,sd,\
 	sd/source/ui/func/fuoaprms \
 	sd/source/ui/func/fuolbull \
 	sd/source/ui/func/fuoltext \
-	sd/source/ui/func/fuoutl \
 	sd/source/ui/func/fupage \
 	sd/source/ui/func/fuparagr \
 	sd/source/ui/func/fupoor \
@@ -398,6 +399,7 @@ $(eval $(call gb_Library_add_exception_objects,sd,\
 	sd/source/ui/slidesorter/view/SlsTheme \
 	sd/source/ui/slidesorter/view/SlsToolTip \
 	sd/source/ui/slidesorter/view/SlsViewCacheContext \
+	sd/source/ui/table/TableDesignBox \
 	sd/source/ui/table/TableDesignPane \
 	sd/source/ui/table/tablefunction \
 	sd/source/ui/table/tableobjectbar \
@@ -411,6 +413,7 @@ $(eval $(call gb_Library_add_exception_objects,sd,\
 	sd/source/ui/tools/SdGlobalResourceContainer \
 	sd/source/ui/tools/SlotStateListener \
 	sd/source/ui/tools/TimerBasedTaskExecution \
+	sd/source/ui/uitest/uiobject \
 	sd/source/ui/unoidl/DrawController \
 	sd/source/ui/unoidl/SdUnoDrawView \
 	sd/source/ui/unoidl/SdUnoOutlineView \
@@ -472,6 +475,7 @@ $(eval $(call gb_Library_add_exception_objects,sd,\
 	sd/source/ui/view/drviewsh \
 	sd/source/ui/view/drviewsi \
 	sd/source/ui/view/drviewsj \
+	sd/source/ui/view/drviewsk \
 	sd/source/ui/view/drvwshrg \
 	sd/source/ui/view/frmview \
 	sd/source/ui/view/grviewsh \
@@ -573,5 +577,8 @@ $(eval $(call gb_Library_add_defs,sd,\
 endif # ENABLE_SDREMOTE_BLUETOOTH=TRUE
 
 endif # ENABLE_SDREMOTE=TRUE
+
+# Runtime dependency for unit-tests
+$(eval $(call gb_Library_use_restarget,sd,sd))
 
 # vim: set noet sw=4 ts=4:

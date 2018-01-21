@@ -205,7 +205,7 @@ void SwViewShell::InitPrt( OutputDevice *pOutDev )
 
         maPrtOffst += pOutDev->GetMapMode().GetOrigin();
         MapMode aMapMode( pOutDev->GetMapMode() );
-        aMapMode.SetMapUnit( MAP_TWIP );
+        aMapMode.SetMapUnit( MapUnit::MapTwip );
         pOutDev->SetMapMode( aMapMode );
         pOutDev->SetLineColor();
         pOutDev->SetFillColor();
@@ -223,7 +223,7 @@ void SwViewShell::ChgAllPageOrientation( Orientation eOri )
     SET_CURR_SHELL( this );
 
     const size_t nAll = GetDoc()->GetPageDescCnt();
-    bool bNewOri = eOri != ORIENTATION_PORTRAIT;
+    bool bNewOri = eOri != Orientation::Portrait;
 
     for( size_t i = 0; i < nAll; ++ i )
     {

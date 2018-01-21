@@ -19,6 +19,7 @@
 #include "stringutil.hxx"
 #include "dbdocfun.hxx"
 
+#include <formula/errorcodes.hxx>
 #include <com/sun/star/sheet/DataPilotFieldOrientation.hpp>
 #include <com/sun/star/sheet/DataPilotFieldGroupBy.hpp>
 #include <com/sun/star/sheet/DataPilotFieldReference.hpp>
@@ -730,8 +731,8 @@ void Test::testPivotTableNamedSource()
     OUString aTabName;
     m_pDoc->GetName(0, aTabName);
     CPPUNIT_ASSERT_EQUAL_MESSAGE( "Wrong sheet name.", OUString("Table"), aTabName);
-    CPPUNIT_ASSERT_MESSAGE("Pivot table output is on the wrong sheet!",
-                           pDPObj->GetOutRange().aStart.Tab() == 0);
+    CPPUNIT_ASSERT_EQUAL_MESSAGE("Pivot table output is on the wrong sheet!",
+                           static_cast<SCTAB>(0), pDPObj->GetOutRange().aStart.Tab());
 
     CPPUNIT_ASSERT_MESSAGE("Moving the pivot table to another sheet shouldn't have changed the cache state.",
                            pDPs->GetNameCaches().size() == 1 && pDPs->GetSheetCaches().size() == 0);
@@ -2304,11 +2305,10 @@ void Test::testFuncGETPIVOTDATALeafAccess()
 
     m_pDoc->CalcAll();
 
-    const sal_uInt16 nNoError = 0; // no error
     for (size_t i = 0; i < SAL_N_ELEMENTS(aChecks); ++i)
     {
-        sal_uInt16 nErr = m_pDoc->GetErrCode(ScAddress(4,i,1));
-        CPPUNIT_ASSERT_EQUAL(nNoError, nErr);
+        FormulaError nErr = m_pDoc->GetErrCode(ScAddress(4,i,1));
+        CPPUNIT_ASSERT_EQUAL((sal_uInt16)FormulaError::NONE, (sal_uInt16)nErr);
         double fVal = m_pDoc->GetValue(ScAddress(4,i,1));
         CPPUNIT_ASSERT_EQUAL(aChecks[i].mfResult, fVal);
     }

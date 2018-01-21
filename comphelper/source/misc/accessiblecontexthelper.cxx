@@ -74,30 +74,28 @@ namespace comphelper
 
     OAccessibleContextHelper::OAccessibleContextHelper( IMutex* _pExternalLock )
         :OAccessibleContextHelper_Base( GetMutex() )
-        ,m_pImpl( nullptr )
+        ,m_pImpl(new OContextHelper_Impl)
     {
         assert(_pExternalLock);
-        m_pImpl = new OContextHelper_Impl();
         m_pImpl->setExternalLock( _pExternalLock );
-    }
-
-
-    void OAccessibleContextHelper::forgetExternalLock()
-    {
-        m_pImpl->setExternalLock( nullptr );
     }
 
 
     OAccessibleContextHelper::~OAccessibleContextHelper( )
     {
-        forgetExternalLock();
+        /* forgets the reference to the external lock, if present.
+
+           <p>This means any further locking will not be guard the external lock anymore, never.</p>
+
+           <p>To be used in derived classes which do not supply the external lock themself, but instead get
+           them passed from own derivees (or clients).</p>
+        */
+        m_pImpl->setExternalLock( nullptr );
+
             // this ensures that the lock, which may be already destroyed as part of the derivee,
             // is not used anymore
 
         ensureDisposed();
-
-        delete m_pImpl;
-        m_pImpl = nullptr;
     }
 
 
@@ -191,7 +189,7 @@ namespace comphelper
 
     bool OAccessibleContextHelper::isAlive() const
     {
-        return !GetBroadcastHelper().bDisposed && !GetBroadcastHelper().bInDispose;
+        return !rBHelper.bDisposed && !rBHelper.bInDispose;
     }
 
 
@@ -204,7 +202,7 @@ namespace comphelper
 
     void OAccessibleContextHelper::ensureDisposed( )
     {
-        if ( !GetBroadcastHelper().bDisposed )
+        if ( !rBHelper.bDisposed )
         {
             OSL_ENSURE( 0 == m_refCount, "OAccessibleContextHelper::ensureDisposed: this method _has_ to be called from without your dtor only!" );
             acquire();

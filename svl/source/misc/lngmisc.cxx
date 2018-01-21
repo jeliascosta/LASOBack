@@ -38,8 +38,8 @@ namespace linguistic
     bool RemoveHyphens(OUString &rTxt)
     {
         sal_Int32 n = rTxt.getLength();
-        rTxt = comphelper::string::remove(rTxt, SVT_SOFT_HYPHEN);
-        rTxt = comphelper::string::remove(rTxt, SVT_HARD_HYPHEN);
+        rTxt = rTxt.replaceAll(OUStringLiteral1(SVT_SOFT_HYPHEN), "");
+        rTxt = rTxt.replaceAll(OUStringLiteral1(SVT_HARD_HYPHEN), "");
         return n != rTxt.getLength();
     }
 

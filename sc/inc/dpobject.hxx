@@ -46,6 +46,7 @@ namespace com { namespace sun { namespace star {
     }
 
     namespace sheet {
+        class XMembersAccess;
         struct DataPilotTablePositionData;
         struct DataPilotTableHeaderData;
         struct DataPilotFieldFilter;
@@ -93,7 +94,6 @@ private:
                                             // cached data
     css::uno::Reference<css::sheet::XDimensionsSupplier> xSource;
     ScDPOutput*             pOutput;
-    sal_uInt16              mnAutoFormatIndex;
     long                    nHeaderRows;    // page fields plus filter button
     bool                    mbHeaderLayout:1;  // true : grid, false : standard
     bool                    bAllowMove:1;
@@ -150,7 +150,7 @@ public:
     const ScImportSourceDesc* GetImportSourceDesc() const   { return pImpDesc; }
     const ScDPServiceDesc* GetDPServiceDesc() const { return pServDesc; }
 
-    css::uno::Reference<css::sheet::XDimensionsSupplier> GetSource();
+    css::uno::Reference<css::sheet::XDimensionsSupplier> const & GetSource();
 
     bool                IsSheetData() const;
     bool                IsImportData() const { return(pImpDesc != nullptr); }
@@ -186,7 +186,7 @@ public:
     bool ParseFilters(
         OUString& rDataFieldName,
         std::vector<css::sheet::DataPilotFieldFilter>& rFilters,
-        std::vector<css::sheet::GeneralFunction>& rFilterFuncs,
+        std::vector<sal_Int16>& rFilterFuncs,
         const OUString& rFilterList );
 
     void GetMemberResultNames(ScDPUniqueStringSet& rNames, long nDimension);
@@ -202,8 +202,8 @@ public:
 
     sal_Int32           GetUsedHierarchy( sal_Int32 nDim );
 
-    bool                GetMembersNA( sal_Int32 nDim, css::uno::Reference< css::container::XNameAccess >& xMembers );
-    bool                GetMembersNA( sal_Int32 nDim, sal_Int32 nHier, css::uno::Reference< css::container::XNameAccess >& xMembers );
+    bool                GetMembersNA( sal_Int32 nDim, css::uno::Reference< css::sheet::XMembersAccess >& xMembers );
+    bool                GetMembersNA( sal_Int32 nDim, sal_Int32 nHier, css::uno::Reference< css::sheet::XMembersAccess >& xMembers );
 
     bool                GetMemberNames( sal_Int32 nDim, css::uno::Sequence< OUString >& rNames );
     bool                GetMembers( sal_Int32 nDim, sal_Int32 nHier, ::std::vector<ScDPLabelData::Member>& rMembers );
@@ -250,7 +250,8 @@ public:
 
     static bool         IsOrientationAllowed( sal_uInt16 nOrient, sal_Int32 nDimFlags );
 
-#if DEBUG_PIVOT_TABLE
+#if DUMP_PIVOT_TABLE
+    void Dump() const;
     void DumpCache() const;
 #endif
 };

@@ -26,10 +26,11 @@
 #include <basegfx/range/b2irectangle.hxx>
 #include <basegfx/tuple/b2ituple.hxx>
 #include <cppuhelper/compbase.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <comphelper/listenernotification.hxx>
 #include "celltypes.hxx"
 
+struct _xmlTextWriter;
 
 namespace sdr { namespace table {
 
@@ -51,7 +52,7 @@ protected:
 
 typedef ::cppu::WeakComponentImplHelper< css::table::XTable, css::util::XBroadcaster > TableModelBase;
 
-class TableModel : public ::comphelper::OBaseMutex,
+class TableModel : public ::cppu::BaseMutex,
                    public TableModelBase,
                    public ICellRange
 {
@@ -70,7 +71,7 @@ class TableModel : public ::comphelper::OBaseMutex,
 public:
     explicit TableModel( SdrTableObj* pTableObj );
     TableModel( SdrTableObj* pTableObj, const TableModelRef& xSourceTable );
-    virtual ~TableModel();
+    virtual ~TableModel() override;
 
     void init( sal_Int32 nColumns, sal_Int32 nRows );
 
@@ -83,6 +84,8 @@ public:
     void merge( sal_Int32 nCol, sal_Int32 nRow, sal_Int32 nColSpan, sal_Int32 nRowSpan );
     /// Get the width of all columns in this table.
     std::vector<sal_Int32> getColumnWidths();
+
+    void dumpAsXml(struct _xmlTextWriter * pWriter) const;
 
     // ICellRange
     virtual sal_Int32 getLeft() override;
@@ -99,8 +102,6 @@ public:
 
     // XComponent
     virtual void SAL_CALL dispose(  ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL addEventListener( const css::uno::Reference< css::lang::XEventListener >& xListener ) throw (css::uno::RuntimeException, std::exception) override;
-    virtual void SAL_CALL removeEventListener( const css::uno::Reference< css::lang::XEventListener >& aListener ) throw (css::uno::RuntimeException, std::exception) override;
 
     // XModifiable
     virtual sal_Bool SAL_CALL isModified(  ) throw (css::uno::RuntimeException, std::exception) override;

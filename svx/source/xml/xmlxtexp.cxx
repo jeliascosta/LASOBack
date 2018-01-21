@@ -79,7 +79,7 @@ class SvxXMLColorEntryExporter : public SvxXMLTableEntryExporter
 {
 public:
     explicit SvxXMLColorEntryExporter( SvXMLExport& rExport );
-    virtual ~SvxXMLColorEntryExporter();
+    virtual ~SvxXMLColorEntryExporter() override;
 
     virtual void exportEntry( const OUString& rStrName, const Any& rValue ) override;
 };
@@ -88,7 +88,7 @@ class SvxXMLLineEndEntryExporter : public SvxXMLTableEntryExporter
 {
 public:
     explicit SvxXMLLineEndEntryExporter( SvXMLExport& rExport );
-    virtual ~SvxXMLLineEndEntryExporter();
+    virtual ~SvxXMLLineEndEntryExporter() override;
 
     virtual void exportEntry( const OUString& rStrName, const Any& rValue ) override;
 private:
@@ -99,7 +99,7 @@ class SvxXMLDashEntryExporter : public SvxXMLTableEntryExporter
 {
 public:
     explicit SvxXMLDashEntryExporter( SvXMLExport& rExport );
-    virtual ~SvxXMLDashEntryExporter();
+    virtual ~SvxXMLDashEntryExporter() override;
 
     virtual void exportEntry( const OUString& rStrName, const Any& rValue ) override;
 
@@ -111,7 +111,7 @@ class SvxXMLHatchEntryExporter : public SvxXMLTableEntryExporter
 {
 public:
     explicit SvxXMLHatchEntryExporter( SvXMLExport& rExport );
-    virtual ~SvxXMLHatchEntryExporter();
+    virtual ~SvxXMLHatchEntryExporter() override;
 
     virtual void exportEntry( const OUString& rStrName, const Any& rValue ) override;
 private:
@@ -122,7 +122,7 @@ class SvxXMLGradientEntryExporter : public SvxXMLTableEntryExporter
 {
 public:
     explicit SvxXMLGradientEntryExporter( SvXMLExport& rExport );
-    virtual ~SvxXMLGradientEntryExporter();
+    virtual ~SvxXMLGradientEntryExporter() override;
 
     virtual void exportEntry( const OUString& rStrName, const Any& rValue ) override;
 private:
@@ -133,12 +133,9 @@ class SvxXMLBitmapEntryExporter : public SvxXMLTableEntryExporter
 {
 public:
     explicit SvxXMLBitmapEntryExporter( SvXMLExport& rExport );
-    virtual ~SvxXMLBitmapEntryExporter();
+    virtual ~SvxXMLBitmapEntryExporter() override;
 
     virtual void exportEntry( const OUString& rStrName, const Any& rValue ) override;
-
-private:
-    XMLImageStyle maImageStyle;
 };
 
 
@@ -194,7 +191,7 @@ static void createStorageStream( uno::Reference < io::XOutputStream > *xOut,
     xStream = xSubStorage->openStreamElement(
                         "Content.xml",
                         embed::ElementModes::WRITE );
-    *ppGraphicHelper = SvXMLGraphicHelper::Create( xSubStorage, GRAPHICHELPER_MODE_WRITE );
+    *ppGraphicHelper = SvXMLGraphicHelper::Create( xSubStorage, SvXMLGraphicHelperMode::Write );
     initializeStreamMetadata( xStream );
     *xOut = xStream->getOutputStream();
 }
@@ -293,7 +290,7 @@ bool SvxXMLXTableExportComponent::save(
 
         // Finally do the export
         const OUString aName;
-        uno::Reference< SvxXMLXTableExportComponent > xExporter( new SvxXMLXTableExportComponent( xContext, aName, xHandler, xTable, xGrfResolver ) );
+        rtl::Reference< SvxXMLXTableExportComponent > xExporter( new SvxXMLXTableExportComponent( xContext, aName, xHandler, xTable, xGrfResolver ) );
         bRet = xExporter->exportTable();
 
         if( pGraphicHelper )
@@ -521,7 +518,7 @@ SvxXMLBitmapEntryExporter::~SvxXMLBitmapEntryExporter()
 
 void SvxXMLBitmapEntryExporter::exportEntry( const OUString& rStrName, const Any& rValue )
 {
-    maImageStyle.exportXML( rStrName, rValue, mrExport );
+    XMLImageStyle::exportXML( rStrName, rValue, mrExport );
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -19,14 +19,13 @@
 #ifndef INCLUDED_SC_INC_BRDCST_HXX
 #define INCLUDED_SC_INC_BRDCST_HXX
 
-#include "global.hxx"
 #include "address.hxx"
 #include "simplehintids.hxx"
 #include <svl/hint.hxx>
 
 class SvtBroadcaster;
 
-class ScHint : public SfxSimpleHint
+class ScHint : public SfxHint
 {
     ScAddress   aAddress;
 

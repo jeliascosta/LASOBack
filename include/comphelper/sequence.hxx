@@ -32,7 +32,7 @@ namespace comphelper
     /** search the given string within the given sequence, return the positions where it was found.
         if _bOnlyFirst is sal_True, only the first occurrence will be returned.
     */
-    COMPHELPER_DLLPUBLIC css::uno::Sequence<sal_Int16> findValue(const css::uno::Sequence< OUString >& _rList, const OUString& _rValue, bool _bOnlyFirst = false);
+    COMPHELPER_DLLPUBLIC css::uno::Sequence<sal_Int16> findValue(const css::uno::Sequence< OUString >& _rList, const OUString& _rValue, bool _bOnlyFirst);
 
     namespace internal
     {
@@ -291,6 +291,15 @@ namespace comphelper
         return result;
     }
 
+    // this one does better type deduction, but does not allow us to copy into a different element type
+    template < typename SrcType >
+    inline css::uno::Sequence< typename SrcType::value_type > containerToSequence( const SrcType& i_Container )
+    {
+        css::uno::Sequence< typename SrcType::value_type > result( i_Container.size() );
+        ::std::copy( i_Container.begin(), i_Container.end(), result.getArray() );
+        return result;
+    }
+
     template <typename T>
     inline css::uno::Sequence<T> containerToSequence(
         ::std::vector<T> const& v )
@@ -325,6 +334,15 @@ namespace comphelper
      */
     template < typename DstType, typename SrcType >
     inline DstType sequenceToContainer( const css::uno::Sequence< SrcType >& i_Sequence )
+    {
+        DstType result( i_Sequence.getLength() );
+        ::std::copy( i_Sequence.begin(), i_Sequence.end(), result.begin() );
+        return result;
+    }
+
+    // this one does better type deduction, but does not allow us to copy into a different element type
+    template < typename DstType >
+    inline DstType sequenceToContainer( const css::uno::Sequence< typename DstType::value_type >& i_Sequence )
     {
         DstType result( i_Sequence.getLength() );
         ::std::copy( i_Sequence.begin(), i_Sequence.end(), result.begin() );

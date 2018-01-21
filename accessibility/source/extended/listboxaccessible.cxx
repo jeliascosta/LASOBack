@@ -17,7 +17,7 @@
  *   the License at http://www.apache.org/licenses/LICENSE-2.0 .
  */
 
-#include <accessibility/extended/listboxaccessible.hxx>
+#include <extended/listboxaccessible.hxx>
 #include <svtools/treelistbox.hxx>
 #include <vcl/svapp.hxx>
 
@@ -41,27 +41,14 @@ namespace accessibility
         }
     }
 
-    IMPL_LINK_TYPED( ListBoxAccessibleBase, WindowEventListener, VclWindowEvent&, rEvent, void )
+    IMPL_LINK( ListBoxAccessibleBase, WindowEventListener, VclWindowEvent&, rEvent, void )
     {
         OSL_ENSURE( rEvent.GetWindow() , "ListBoxAccessibleBase::WindowEventListener: no event window!" );
         OSL_ENSURE( rEvent.GetWindow() == m_pWindow, "ListBoxAccessibleBase::WindowEventListener: where did this come from?" );
 
-        ProcessWindowEvent( rEvent );
-    }
-
-    void ListBoxAccessibleBase::disposing()
-    {
-        SolarMutexGuard g;
-        if ( m_pWindow )
-            m_pWindow->RemoveEventListener( LINK( this, ListBoxAccessibleBase, WindowEventListener ) );
-        m_pWindow = nullptr;
-    }
-
-    void ListBoxAccessibleBase::ProcessWindowEvent( const VclWindowEvent& _rVclWindowEvent )
-    {
         if ( isAlive() )
         {
-            switch ( _rVclWindowEvent.GetId() )
+            switch ( rEvent.GetId() )
             {
                 case  VCLEVENT_OBJECT_DYING :
                 {
@@ -74,6 +61,15 @@ namespace accessibility
             }
         }
     }
+
+    void ListBoxAccessibleBase::disposing()
+    {
+        SolarMutexGuard g;
+        if ( m_pWindow )
+            m_pWindow->RemoveEventListener( LINK( this, ListBoxAccessibleBase, WindowEventListener ) );
+        m_pWindow = nullptr;
+    }
+
 }   // namespace accessibility
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

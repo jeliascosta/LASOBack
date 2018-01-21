@@ -132,6 +132,8 @@ Reference < XDispatch > SAL_CALL SfxAppDispatchProvider::queryDispatch(
     const OUString& /*sTargetFrameName*/,
     FrameSearchFlags /*eSearchFlags*/ ) throw( RuntimeException, std::exception )
 {
+    SolarMutexGuard guard;
+
     sal_uInt16                  nId( 0 );
     bool                bMasterCommand( false );
     Reference < XDispatch > xDisp;
@@ -181,7 +183,7 @@ throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
-    std::list< sal_Int16 > aGroupList;
+    std::vector< sal_Int16 > aGroupList;
     SfxSlotPool* pAppSlotPool = &SfxGetpApp()->GetAppSlotPool_Impl();
 
     const SfxSlotMode nMode( SfxSlotMode::TOOLBOXCONFIG|SfxSlotMode::ACCELCONFIG|SfxSlotMode::MENUCONFIG );
@@ -203,10 +205,7 @@ throw (uno::RuntimeException, std::exception)
         }
     }
 
-    uno::Sequence< sal_Int16 > aSeq =
-        comphelper::containerToSequence< sal_Int16, std::list< sal_Int16 > >( aGroupList );
-
-    return aSeq;
+    return comphelper::containerToSequence( aGroupList );
 }
 
 Sequence< frame::DispatchInformation > SAL_CALL SfxAppDispatchProvider::getConfigurableDispatchInformation( sal_Int16 nCmdGroup )
@@ -250,10 +249,7 @@ throw (uno::RuntimeException, std::exception)
         }
     }
 
-    uno::Sequence< frame::DispatchInformation > aSeq =
-        comphelper::containerToSequence< frame::DispatchInformation, std::list< frame::DispatchInformation > >( aCmdList );
-
-    return aSeq;
+    return comphelper::containerToSequence( aCmdList );
 }
 
 }

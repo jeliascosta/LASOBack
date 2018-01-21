@@ -105,7 +105,7 @@ public:
     const Graphic&      GetIntermediateGraphic();
 
     explicit            GIFReader( SvStream& rStm );
-    virtual             ~GIFReader();
+    virtual             ~GIFReader() override;
 };
 
 GIFReader::GIFReader( SvStream& rStm )
@@ -227,13 +227,13 @@ bool GIFReader::ReadGlobalHeader()
     sal_uInt8   nAspect;
     bool    bRet = false;
 
-    rIStm.Read( pBuf, 6 );
+    rIStm.ReadBytes( pBuf, 6 );
     if( NO_PENDING( rIStm ) )
     {
         pBuf[ 6 ] = 0;
         if( !strcmp( pBuf, "GIF87a" ) || !strcmp( pBuf, "GIF89a" ) )
         {
-            rIStm.Read( pBuf, 7 );
+            rIStm.ReadBytes( pBuf, 7 );
             if( NO_PENDING( rIStm ) )
             {
                 SvMemoryStream aMemStm;
@@ -270,7 +270,7 @@ void GIFReader::ReadPaletteEntries( BitmapPalette* pPal, sal_uLong nCount )
     if (nLen > nMaxPossible)
         nLen = nMaxPossible;
     std::unique_ptr<sal_uInt8[]> pBuf(new sal_uInt8[ nLen ]);
-    sal_Size nRead = rIStm.Read(pBuf.get(), nLen);
+    std::size_t nRead = rIStm.ReadBytes(pBuf.get(), nLen);
     nCount = nRead/3UL;
     if( NO_PENDING( rIStm ) )
     {
@@ -417,7 +417,7 @@ bool GIFReader::ReadExtension()
                 std::unique_ptr<sal_uInt8[]> pBuffer(new sal_uInt8[nCount]);
 
                 bRet = false;
-                sal_Size nRead = rIStm.Read(pBuffer.get(), nCount);
+                std::size_t nRead = rIStm.ReadBytes(pBuffer.get(), nCount);
                 if (NO_PENDING(rIStm) && cSize < nRead)
                 {
                     cSize = pBuffer[cSize];
@@ -437,7 +437,7 @@ bool GIFReader::ReadLocalHeader()
     sal_uInt8   pBuf[ 9 ];
     bool    bRet = false;
 
-    sal_Size nRead = rIStm.Read(pBuf, 9);
+    std::size_t nRead = rIStm.ReadBytes(pBuf, 9);
     if (NO_PENDING(rIStm) && nRead == 9)
     {
         SvMemoryStream  aMemStm;
@@ -493,7 +493,7 @@ sal_uLong GIFReader::ReadNextBlock()
             nRet = 2UL;
         else
         {
-            rIStm.Read( pSrcBuf, cBlockSize );
+            rIStm.ReadBytes( pSrcBuf, cBlockSize );
 
             if( NO_PENDING( rIStm ) )
             {
@@ -874,7 +874,7 @@ ReadState GIFReader::ReadGIF( Graphic& rGraphic )
         if( nLogWidth100 && nLogHeight100 )
         {
             rGraphic.SetPrefSize( Size( nLogWidth100, nLogHeight100 ) );
-            rGraphic.SetPrefMapMode( MAP_100TH_MM );
+            rGraphic.SetPrefMapMode( MapUnit::Map100thMM );
         }
     }
     else
@@ -885,18 +885,21 @@ ReadState GIFReader::ReadGIF( Graphic& rGraphic )
 
 VCL_DLLPUBLIC bool ImportGIF( SvStream & rStm, Graphic& rGraphic )
 {
-    std::unique_ptr<GIFReader>  xGIFReader(static_cast<GIFReader*>(rGraphic.GetContext()));
+    std::shared_ptr<GraphicReader> pContext = rGraphic.GetContext();
     rGraphic.SetContext(nullptr);
+    GIFReader* pGIFReader = dynamic_cast<GIFReader*>( pContext.get() );
+    if (!pGIFReader)
+    {
+        pContext = std::make_shared<GIFReader>( rStm );
+        pGIFReader = static_cast<GIFReader*>( pContext.get() );
+    }
 
     SvStreamEndian nOldFormat = rStm.GetEndian();
     rStm.SetEndian( SvStreamEndian::LITTLE );
 
-    if (!xGIFReader)
-        xGIFReader.reset(new GIFReader(rStm));
-
     bool bRet = true;
 
-    ReadState eReadState = xGIFReader->ReadGIF(rGraphic);
+    ReadState eReadState = pGIFReader->ReadGIF(rGraphic);
 
     if (eReadState == GIFREAD_ERROR)
     {
@@ -904,8 +907,8 @@ VCL_DLLPUBLIC bool ImportGIF( SvStream & rStm, Graphic& rGraphic )
     }
     else if (eReadState == GIFREAD_NEED_MORE)
     {
-        rGraphic = xGIFReader->GetIntermediateGraphic();
-        rGraphic.SetContext(xGIFReader.release());
+        rGraphic = pGIFReader->GetIntermediateGraphic();
+        rGraphic.SetContext(pContext);
     }
 
     rStm.SetEndian(nOldFormat);

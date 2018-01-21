@@ -45,13 +45,6 @@ enum SvNumberformatLimitOps
     NUMBERFORMAT_OP_GE  = 6             // Operator >=
 };
 
-// SYSTEM-german to SYSTEM-xxx and vice versa conversion hack onLoad
-enum NfHackConversion
-{
-    NF_CONVERT_NONE,
-    NF_CONVERT_GERMAN_ENGLISH,
-    NF_CONVERT_ENGLISH_GERMAN
-};
 
 struct ImpSvNumberformatInfo            // Struct for FormatInfo
 {
@@ -80,17 +73,13 @@ class SvNumberNatNum
 public:
 
     static  sal_uInt8    MapDBNumToNatNum( sal_uInt8 nDBNum, LanguageType eLang, bool bDate );
-#ifdef THE_FUTURE
     static  sal_uInt8    MapNatNumToDBNum( sal_uInt8 nNatNum, LanguageType eLang, bool bDate );
-#endif
 
                     SvNumberNatNum() : eLang( LANGUAGE_DONTKNOW ), nNum(0),
                                         bDBNum(false), bDate(false), bSet(false) {}
     bool            IsComplete() const  { return bSet && eLang != LANGUAGE_DONTKNOW; }
     sal_uInt8       GetNatNum() const   { return bDBNum ? MapDBNumToNatNum( nNum, eLang, bDate ) : nNum; }
-#ifdef THE_FUTURE
     sal_uInt8       GetDBNum() const    { return bDBNum ? nNum : MapNatNumToDBNum( nNum, eLang, bDate ); }
-#endif
     LanguageType    GetLang() const     { return eLang; }
     void            SetLang( LanguageType e ) { eLang = e; }
     void            SetNum( sal_uInt8 nNumber, bool bDBNumber )
@@ -180,6 +169,9 @@ public:
     /// Get type of format, may include css::util::NumberFormat::DEFINED bit
     short GetType() const                       { return eType; }
 
+    /// Get type of format, does not include css::util::NumberFormat::DEFINED
+    short GetMaskedType() const                 { return eType & ~css::util::NumberFormat::DEFINED; }
+
     void SetType(const short eSetType)          { eType = eSetType; }
     // Standard means the I18N defined standard format of this type
     void SetStandard()                          { bStandard = true; }
@@ -195,7 +187,8 @@ public:
 
     // Build a format string of application defined keywords
     OUString GetMappedFormatstring( const NfKeywordTable& rKeywords,
-                                    const LocaleDataWrapper& rLoc ) const;
+                                    const LocaleDataWrapper& rLoc,
+                                    LanguageType nOriginalLang = LANGUAGE_DONTKNOW ) const;
 
     void SetStarFormatSupport( bool b )         { bStarFlag = b; }
 
@@ -222,11 +215,22 @@ public:
                               sal_uInt16& nPrecision,
                               sal_uInt16& nAnzLeading) const;
 
+    /// Get index of subformat (0..3) according to conditions and fNumber value
+    sal_uInt16 GetSubformatIndex( double fNumber ) const;
+
     /// Count of decimal precision
-    sal_uInt16 GetFormatPrecision() const   { return NumFor[0].Info().nCntPost; }
+    sal_uInt16 GetFormatPrecision( sal_uInt16 nIx = 0 ) const
+        { return NumFor[nIx].Info().nCntPost; }
 
     /// Count of integer digits
-    sal_uInt16 GetFormatIntegerDigits() const { return NumFor[0].Info().nCntPre; }
+    sal_uInt16 GetFormatIntegerDigits( sal_uInt16 nIx = 0 ) const
+        { return NumFor[nIx].Info().nCntPre; }
+
+    /** Count of hidden integer digits with thousands dividor:
+     * formats like "0," to show only thousands
+     */
+    sal_uInt16 GetThousandDivisorPrecision( sal_uInt16 nIx = 0 ) const
+        { return NumFor[nIx].Info().nThousand * 3; }
 
     //! Read/write access on a special sal_uInt16 component, may only be used on the
     //! standard format 0, 5000, ... and only by the number formatter!
@@ -250,6 +254,11 @@ public:
     short GetNumForType( sal_uInt16 nNumFor, sal_uInt16 nPos ) const;
 
     OUString GetDenominatorString( sal_uInt16 nNumFor ) const;
+    OUString GetNumeratorString( sal_uInt16 nNumFor ) const;
+    OUString GetIntegerFractionDelimiterString( sal_uInt16 nNumFor ) const;
+    /// Round fNumber to its fraction representation
+    double GetRoundFractionValue ( double fNumber ) const;
+
     /** If the count of string elements (substrings, ignoring [modifiers] and
         so on) in a subformat code nNumFor (0..3) is equal to the given number.
         Used by ImpSvNumberInputScan::IsNumberFormatMain() to detect a matched
@@ -478,7 +487,7 @@ private:
         @returns one of css::i18n::CalendarDisplayCode values
             according to eCodeType and the check executed (or passed).
      */
-    SVL_DLLPRIVATE sal_Int32 ImpUseMonthCase( int & io_nState, const ImpSvNumFor& rNumFor, NfKeywordIndex eCodeType ) const;
+    SVL_DLLPRIVATE static sal_Int32 ImpUseMonthCase( int & io_nState, const ImpSvNumFor& rNumFor, NfKeywordIndex eCodeType );
 
     /// Whether it's a (YY)YY-M(M)-D(D) format.
     SVL_DLLPRIVATE bool ImpIsIso8601( const ImpSvNumFor& rNumFor );
@@ -550,12 +559,9 @@ private:
     // check subcondition
     // OP undefined => -1
     // else 0 or 1
-    SVL_DLLPRIVATE short ImpCheckCondition(double& fNumber,
+    SVL_DLLPRIVATE static short ImpCheckCondition(double& fNumber,
                          double& fLimit,
                          SvNumberformatLimitOps eOp);
-
-    SVL_DLLPRIVATE sal_uLong ImpGGT(sal_uLong x, sal_uLong y);
-    SVL_DLLPRIVATE sal_uLong ImpGGTRound(sal_uLong x, sal_uLong y);
 
     // Helper function for number strings
     // append string symbols, insert leading 0 or ' ', or ...
@@ -564,7 +570,8 @@ private:
                     sal_Int32& k,
                     sal_uInt16& j,
                     sal_uInt16 nIx,
-                    short eSymbolType );
+                    short eSymbolType,
+                    bool bInsertRightBlank = false );
 
     // Helper function to fill in the integer part and the group (AKA thousand) separators
     SVL_DLLPRIVATE bool ImpNumberFillWithThousands( OUStringBuffer& sStr,
@@ -590,6 +597,19 @@ private:
                                  sal_uInt16 nIx,
                                  bool bInteger );
 
+    /** Calculate each element of fraction:
+     * integer part, numerator part, denominator part
+     * @param fNumber value to be represented as fraction. Will contain absolute fractional part
+     * @param nIx subformat number 0..3
+     * @param fIntPart integral part of fraction
+     * @param nFrac numerator of fraction
+     * @param nDic denominator of fraction
+     */
+    SVL_DLLPRIVATE void ImpGetFractionElements( double& fNumber,
+                                                sal_uInt16 nIx,
+                                                double& fIntPart,
+                                                sal_uInt64& nFrac,
+                                                sal_uInt64& nDiv ) const;
     SVL_DLLPRIVATE bool ImpGetFractionOutput(double fNumber,
                                              sal_uInt16 nIx,
                                              OUStringBuffer& OutString);
@@ -629,7 +649,7 @@ private:
     // normal digits or other digits, depending on ImpSvNumFor.aNatNum,
     // [NatNum1], [NatNum2], ...
     SVL_DLLPRIVATE OUString ImpGetNatNumString( const SvNumberNatNum& rNum, sal_Int32 nVal,
-                                              sal_uInt16 nMinDigits = 0  ) const;
+                                              sal_uInt16 nMinDigits  ) const;
 
     OUString ImpIntToString( sal_uInt16 nIx, sal_Int32 nVal, sal_uInt16 nMinDigits = 0 ) const
     {

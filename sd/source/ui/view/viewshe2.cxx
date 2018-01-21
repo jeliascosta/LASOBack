@@ -134,7 +134,7 @@ void ViewShell::UpdateScrollBars()
 /**
  * Handling for horizontal Scrollbars
  */
-IMPL_LINK_TYPED(ViewShell, HScrollHdl, ScrollBar *, pHScroll, void )
+IMPL_LINK(ViewShell, HScrollHdl, ScrollBar *, pHScroll, void )
 {
     VirtHScrollHdl(pHScroll);
 }
@@ -188,7 +188,7 @@ void ViewShell::VirtHScrollHdl(ScrollBar* pHScroll)
 /**
  * handling for vertical Scrollbars
  */
-IMPL_LINK_TYPED(ViewShell, VScrollHdl, ScrollBar *, pVScroll, void )
+IMPL_LINK(ViewShell, VScrollHdl, ScrollBar *, pVScroll, void )
 {
     VirtVScrollHdl(pVScroll);
 }
@@ -513,8 +513,8 @@ void ViewShell::SetPageSizeAndBorder(PageKind ePageKind, const Size& rNewSize,
         pPage->SetPaperBin( nPaperBin );
         pPage->SetBackgroundFullSize( bBackgroundFullSize );
 
-        if ( ePageKind == PK_STANDARD )
-            GetDoc()->GetMasterSdPage(i, PK_NOTES)->CreateTitleAndLayout();
+        if ( ePageKind == PageKind::Standard )
+            GetDoc()->GetMasterSdPage(i, PageKind::Notes)->CreateTitleAndLayout();
 
         pPage->CreateTitleAndLayout();
     }
@@ -561,9 +561,9 @@ void ViewShell::SetPageSizeAndBorder(PageKind ePageKind, const Size& rNewSize,
         pPage->SetPaperBin( nPaperBin );
         pPage->SetBackgroundFullSize( bBackgroundFullSize );
 
-        if ( ePageKind == PK_STANDARD )
+        if ( ePageKind == PageKind::Standard )
         {
-            SdPage* pNotesPage = GetDoc()->GetSdPage(i, PK_NOTES);
+            SdPage* pNotesPage = GetDoc()->GetSdPage(i, PageKind::Notes);
             pNotesPage->SetAutoLayout( pNotesPage->GetAutoLayout() );
         }
 
@@ -571,8 +571,8 @@ void ViewShell::SetPageSizeAndBorder(PageKind ePageKind, const Size& rNewSize,
     }
 
     // adjust handout page to new format of the standard page
-    if( (ePageKind == PK_STANDARD) || (ePageKind == PK_HANDOUT) )
-        GetDoc()->GetSdPage(0, PK_HANDOUT)->CreateTitleAndLayout(true);
+    if( (ePageKind == PageKind::Standard) || (ePageKind == PageKind::Handout) )
+        GetDoc()->GetSdPage(0, PageKind::Handout)->CreateTitleAndLayout(true);
 
     // handed over undo group to undo manager
     pViewShell->GetViewFrame()->GetObjectShell()

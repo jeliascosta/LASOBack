@@ -92,7 +92,6 @@ using namespace ::com::sun::star::ui;
 using namespace ::com::sun::star::frame;
 
 static const char STATUS_BAR_ALIAS[] = "private:resource/statusbar/statusbar";
-static const char PROGRESS_BAR_ALIAS[] = "private:resource/progressbar/progressbar";
 
 namespace framework
 {
@@ -134,7 +133,6 @@ LayoutManager::LayoutManager( const Reference< XComponentContext >& xContext ) :
         , m_xToolbarManager( nullptr )
 {
     // Initialize statusbar member
-    const sal_Bool bRefreshVisibility = false;
     m_aStatusBarElement.m_aType = "statusbar";
     m_aStatusBarElement.m_aName = STATUS_BAR_ALIAS;
 
@@ -151,7 +149,7 @@ LayoutManager::LayoutManager( const Reference< XComponentContext >& xContext ) :
     registerProperty( LAYOUTMANAGER_PROPNAME_ASCII_HIDECURRENTUI, LAYOUTMANAGER_PROPHANDLE_HIDECURRENTUI, beans::PropertyAttribute::TRANSIENT, &m_bHideCurrentUI, cppu::UnoType<decltype(m_bHideCurrentUI)>::get() );
     registerProperty( LAYOUTMANAGER_PROPNAME_ASCII_LOCKCOUNT, LAYOUTMANAGER_PROPHANDLE_LOCKCOUNT, beans::PropertyAttribute::TRANSIENT | beans::PropertyAttribute::READONLY, &m_nLockCount, cppu::UnoType<decltype(m_nLockCount)>::get()  );
     registerProperty( LAYOUTMANAGER_PROPNAME_MENUBARCLOSER, LAYOUTMANAGER_PROPHANDLE_MENUBARCLOSER, beans::PropertyAttribute::TRANSIENT, &m_bMenuBarCloseButton, cppu::UnoType<decltype(m_bMenuBarCloseButton)>::get() );
-    registerPropertyNoMember( LAYOUTMANAGER_PROPNAME_ASCII_REFRESHVISIBILITY, LAYOUTMANAGER_PROPHANDLE_REFRESHVISIBILITY, beans::PropertyAttribute::TRANSIENT, cppu::UnoType<decltype(bRefreshVisibility)>::get(), &bRefreshVisibility );
+    registerPropertyNoMember( LAYOUTMANAGER_PROPNAME_ASCII_REFRESHVISIBILITY, LAYOUTMANAGER_PROPHANDLE_REFRESHVISIBILITY, beans::PropertyAttribute::TRANSIENT, cppu::UnoType<bool>::get(), css::uno::Any(false) );
     registerProperty( LAYOUTMANAGER_PROPNAME_ASCII_PRESERVE_CONTENT_SIZE, LAYOUTMANAGER_PROPHANDLE_PRESERVE_CONTENT_SIZE, beans::PropertyAttribute::TRANSIENT, &m_bPreserveContentSize, cppu::UnoType<decltype(m_bPreserveContentSize)>::get() );
 }
 
@@ -209,7 +207,7 @@ void LayoutManager::impl_clearUpMenuBar()
     }
 
     // reset inplace menubar manager
-    Menu *pMenuBar = nullptr;
+    VclPtr<Menu> pMenuBar;
     if (m_pInplaceMenuBar)
     {
         pMenuBar = m_pInplaceMenuBar->GetMenuBar();
@@ -220,7 +218,7 @@ void LayoutManager::impl_clearUpMenuBar()
         m_xInplaceMenuBar->dispose();
         m_xInplaceMenuBar.clear();
     }
-    delete pMenuBar;
+    pMenuBar.disposeAndClear();
 
     Reference< XComponent > xComp( m_xMenuBar, UNO_QUERY );
     if ( xComp.is() )
@@ -615,6 +613,10 @@ bool LayoutManager::readWindowStateData( const OUString& aName, UIElement& rElem
                 }
             }
 
+            const bool bDockingSupportCrippled = !StyleSettings::GetDockingFloatsSupported();
+            if (bDockingSupportCrippled)
+                rElementData.m_bFloating = false;
+
             return true;
         }
         catch (const NoSuchElementException&)
@@ -899,10 +901,10 @@ void LayoutManager::implts_createProgressBar()
         Reference< awt::XWindow > xStatusBarWindow = pWrapper->getStatusBar();
 
         SolarMutexGuard aGuard;
-        vcl::Window* pStatusBarWnd = VCLUnoHelper::GetWindow( xStatusBarWindow );
+        VclPtr<vcl::Window> pStatusBarWnd = VCLUnoHelper::GetWindow( xStatusBarWindow );
         if ( !pStatusBarWnd )
         {
-            vcl::Window* pWindow = VCLUnoHelper::GetWindow( xContainerWindow );
+            VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xContainerWindow );
             if ( pWindow )
             {
                 VclPtrInstance<StatusBar> pStatusBar( pWindow, WinBits( WB_LEFT | WB_3DLOOK ) );
@@ -984,14 +986,14 @@ void LayoutManager::implts_setStatusBarPosSize( const ::Point& rPos, const ::Siz
     if ( xWindow.is() )
     {
         SolarMutexGuard aGuard;
-        vcl::Window* pParentWindow = VCLUnoHelper::GetWindow( xContainerWindow );
-        vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
+        VclPtr<vcl::Window> pParentWindow = VCLUnoHelper::GetWindow( xContainerWindow );
+        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
         if ( pParentWindow && ( pWindow && pWindow->GetType() == WINDOW_STATUSBAR ))
         {
             vcl::Window* pOldParentWindow = pWindow->GetParent();
             if ( pParentWindow != pOldParentWindow )
                 pWindow->SetParent( pParentWindow );
-            static_cast<StatusBar *>(pWindow)->SetPosSizePixel( rPos, rSize );
+            static_cast<StatusBar *>(pWindow.get())->SetPosSizePixel( rPos, rSize );
         }
     }
 }
@@ -1026,7 +1028,7 @@ bool LayoutManager::implts_showProgressBar()
     /* SAFE AREA ----------------------------------------------------------------------------------------------- */
 
     SolarMutexGuard aGuard;
-    vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
     if ( pWindow )
     {
         if ( !pWindow->IsVisible() )
@@ -1066,7 +1068,7 @@ bool LayoutManager::implts_hideProgressBar()
     implts_readStatusBarState( STATUS_BAR_ALIAS );
     bHideStatusBar = !m_aStatusBarElement.m_bVisible;
 
-    vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
+    VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
     if ( pWindow && pWindow->IsVisible() && ( bHideStatusBar || bInternalStatusBar ))
     {
         implts_setOffset( 0 );
@@ -1091,7 +1093,7 @@ bool LayoutManager::implts_showStatusBar( bool bStoreState )
         Reference< awt::XWindow > xWindow( xStatusBar->getRealInterface(), UNO_QUERY );
 
         SolarMutexGuard aGuard;
-        vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
+        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
         if ( pWindow && !pWindow->IsVisible() )
         {
             implts_setOffset( pWindow->GetSizePixel().Height() );
@@ -1117,7 +1119,7 @@ bool LayoutManager::implts_hideStatusBar( bool bStoreState )
         Reference< awt::XWindow > xWindow( xStatusBar->getRealInterface(), UNO_QUERY );
 
         SolarMutexGuard aGuard;
-        vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
+        VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
         if ( pWindow && pWindow->IsVisible() )
         {
             implts_setOffset( 0 );
@@ -1151,7 +1153,7 @@ throw (uno::RuntimeException, std::exception)
         SolarMutexGuard aGuard;
 
         // Reset old inplace menubar!
-        Menu *pOldMenuBar = nullptr;
+        VclPtr<Menu> pOldMenuBar;
         if (m_pInplaceMenuBar)
         {
             pOldMenuBar = m_pInplaceMenuBar->GetMenuBar();
@@ -1162,7 +1164,7 @@ throw (uno::RuntimeException, std::exception)
             m_xInplaceMenuBar->dispose();
             m_xInplaceMenuBar.clear();
         }
-        delete pOldMenuBar;
+        pOldMenuBar.disposeAndClear();
 
         m_bInplaceMenuSet = false;
 
@@ -1171,8 +1173,8 @@ throw (uno::RuntimeException, std::exception)
             OUString aModuleIdentifier;
             Reference< XDispatchProvider > xDispatchProvider;
 
-            MenuBar* pMenuBar = new MenuBar;
-            m_pInplaceMenuBar = new MenuBarManager( m_xContext, m_xFrame, m_xURLTransformer, xDispatchProvider, aModuleIdentifier, pMenuBar, true, true );
+            VclPtr<MenuBar> pMenuBar = VclPtr<MenuBar>::Create();
+            m_pInplaceMenuBar = new MenuBarManager( m_xContext, m_xFrame, m_xURLTransformer, xDispatchProvider, aModuleIdentifier, pMenuBar, true );
             m_pInplaceMenuBar->SetItemContainer( xMergedMenuBar );
 
             SystemWindow* pSysWindow = getTopSystemWindow( m_xContainerWindow );
@@ -1211,7 +1213,7 @@ throw (uno::RuntimeException)
     }
 
     // Remove inplace menu bar
-    Menu *pMenuBar = nullptr;
+    VclPtr<Menu> pMenuBar;
     if (m_pInplaceMenuBar)
     {
         pMenuBar = m_pInplaceMenuBar->GetMenuBar();
@@ -1222,7 +1224,7 @@ throw (uno::RuntimeException)
         m_xInplaceMenuBar->dispose();
         m_xInplaceMenuBar.clear();
     }
-    delete pMenuBar;
+    pMenuBar.disposeAndClear();
 }
 
 void SAL_CALL LayoutManager::attachFrame( const Reference< XFrame >& xFrame )
@@ -1303,7 +1305,7 @@ throw ( RuntimeException, std::exception )
         if ( pToolbarManager )
             pToolbarManager->resetDockingArea();
 
-        vcl::Window* pContainerWindow = VCLUnoHelper::GetWindow( xWindow );
+        VclPtr<vcl::Window> pContainerWindow = VCLUnoHelper::GetWindow( xWindow );
         if ( pContainerWindow )
             pContainerWindow->RemoveChildEventListener( LINK( this, LayoutManager, WindowEventListener ) );
     }
@@ -1325,7 +1327,7 @@ throw ( RuntimeException, std::exception )
         // and we get no notification anymore
         {
             SolarMutexGuard aGuard;
-            vcl::Window* pContainerWindow = VCLUnoHelper::GetWindow( m_xContainerWindow );
+            VclPtr<vcl::Window> pContainerWindow = VCLUnoHelper::GetWindow( m_xContainerWindow );
             if( pContainerWindow )
                 m_bParentWindowVisible = pContainerWindow->IsVisible();
         }
@@ -1341,7 +1343,7 @@ throw ( RuntimeException, std::exception )
         SolarMutexGuard aGuard;
 
         // Add layout manager as listener to get notifications about toolbar button activities
-        vcl::Window* pContainerWindow = VCLUnoHelper::GetWindow( m_xContainerWindow );
+        VclPtr<vcl::Window> pContainerWindow = VCLUnoHelper::GetWindow( m_xContainerWindow );
         if ( pContainerWindow )
             pContainerWindow->AddChildEventListener( LINK( this, LayoutManager, WindowEventListener ) );
 
@@ -1396,8 +1398,8 @@ void LayoutManager::implts_reparentChildWindows()
     if ( xStatusBarWindow.is() )
     {
         SolarMutexGuard aGuard;
-        vcl::Window* pContainerWindow = VCLUnoHelper::GetWindow( xContainerWindow );
-        vcl::Window* pWindow          = VCLUnoHelper::GetWindow( xStatusBarWindow );
+        VclPtr<vcl::Window> pContainerWindow = VCLUnoHelper::GetWindow( xContainerWindow );
+        VclPtr<vcl::Window> pWindow          = VCLUnoHelper::GetWindow( xStatusBarWindow );
         if ( pWindow && pContainerWindow )
             pWindow->SetParent( pContainerWindow );
     }
@@ -1417,7 +1419,7 @@ uno::Reference< ui::XUIElement > LayoutManager::implts_createDockingWindow( cons
     return xUIElement;
 }
 
-IMPL_LINK_TYPED( LayoutManager, WindowEventListener, VclWindowEvent&, rEvent, void )
+IMPL_LINK( LayoutManager, WindowEventListener, VclWindowEvent&, rEvent, void )
 {
     vcl::Window* pWindow = rEvent.GetWindow();
     if ( pWindow && pWindow->GetType() == WINDOW_TOOLBOX )
@@ -1668,7 +1670,7 @@ throw (uno::RuntimeException, std::exception)
                 // we need VCL here to pass special flags to Show()
                 SolarMutexGuard aGuard;
                 Reference< awt::XWindow > xWindow( xUIElement->getRealInterface(), UNO_QUERY );
-                vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
+                VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
                 if ( pWindow )
                 {
                     pWindow->Show( true, ShowFlags::NoFocusChange | ShowFlags::NoActivate );
@@ -2120,7 +2122,7 @@ throw (RuntimeException, std::exception)
             if ( xWindow.is() )
             {
                 SolarMutexGuard g;
-                vcl::Window* pWindow = VCLUnoHelper::GetWindow( xWindow );
+                VclPtr<vcl::Window> pWindow = VCLUnoHelper::GetWindow( xWindow );
                 if ( pWindow && pWindow->IsVisible() )
                     return true;
                 else
@@ -2494,7 +2496,7 @@ throw (uno::RuntimeException, std::exception)
 {
     SolarMutexClearableGuard aReadLock;
     bool bStatusBarVisible( isElementVisible( STATUS_BAR_ALIAS ));
-    bool bProgressBarVisible( isElementVisible( PROGRESS_BAR_ALIAS ));
+    bool bProgressBarVisible( isElementVisible( "private:resource/progressbar/progressbar" ));
     bool bVisible( m_bVisible );
     Reference< XUIElement > xStatusBar( m_aStatusBarElement.m_xUIElement );
     Reference< XUIElement > xProgressBar( m_aProgressBarElement.m_xUIElement );
@@ -2611,7 +2613,7 @@ bool LayoutManager::implts_resetMenuBar()
     return false;
 }
 
-IMPL_LINK_NOARG_TYPED(LayoutManager, MenuBarClose, void*, void)
+IMPL_LINK_NOARG(LayoutManager, MenuBarClose, void*, void)
 {
     SolarMutexClearableGuard aReadLock;
     uno::Reference< frame::XDispatchProvider >   xProvider(m_xFrame, uno::UNO_QUERY);
@@ -2754,7 +2756,7 @@ void SAL_CALL LayoutManager::windowHidden( const lang::EventObject& aEvent ) thr
     }
 }
 
-IMPL_LINK_NOARG_TYPED(LayoutManager, AsyncLayoutHdl, Timer *, void)
+IMPL_LINK_NOARG(LayoutManager, AsyncLayoutHdl, Timer *, void)
 {
     SolarMutexClearableGuard aReadLock;
     m_aAsyncLayoutTimer.Stop();
@@ -2831,7 +2833,7 @@ throw( RuntimeException, std::exception )
         implts_destroyElements();
         impl_clearUpMenuBar();
         m_xMenuBar.clear();
-        Menu *pMenuBar = nullptr;
+        VclPtr<Menu> pMenuBar;
         if (m_pInplaceMenuBar)
         {
             pMenuBar = m_pInplaceMenuBar->GetMenuBar();
@@ -2842,7 +2844,7 @@ throw( RuntimeException, std::exception )
             m_xInplaceMenuBar->dispose();
             m_xInplaceMenuBar.clear();
         }
-        delete pMenuBar;
+        pMenuBar.disposeAndClear();
         m_xContainerWindow.clear();
         m_xContainerTopWindow.clear();
 
@@ -2895,7 +2897,7 @@ throw( RuntimeException, std::exception )
         }
         impl_clearUpMenuBar();
         m_xMenuBar.clear();
-        Menu *pMenuBar = nullptr;
+        VclPtr<Menu> pMenuBar;
         if (m_pInplaceMenuBar)
         {
             pMenuBar = m_pInplaceMenuBar->GetMenuBar();
@@ -2906,7 +2908,7 @@ throw( RuntimeException, std::exception )
             m_xInplaceMenuBar->dispose();
             m_xInplaceMenuBar.clear();
         }
-        delete pMenuBar;
+        pMenuBar.disposeAndClear();
         m_xContainerWindow.clear();
         m_xContainerTopWindow.clear();
     }
@@ -3111,16 +3113,6 @@ void SAL_CALL LayoutManager::elementReplaced( const ui::ConfigurationEvent& Even
     }
 }
 
-//      OPropertySetHelper
-
-sal_Bool SAL_CALL LayoutManager::convertFastPropertyValue( Any&       aConvertedValue,
-                                                           Any&       aOldValue,
-                                                           sal_Int32  nHandle,
-                                                           const Any& aValue ) throw( lang::IllegalArgumentException )
-{
-    return LayoutManager_PBase::convertFastPropertyValue( aConvertedValue, aOldValue, nHandle, aValue );
-}
-
 void SAL_CALL LayoutManager::setFastPropertyValue_NoBroadcast( sal_Int32       nHandle,
                                                                const uno::Any& aValue  ) throw( uno::Exception, std::exception )
 {
@@ -3154,11 +3146,6 @@ void SAL_CALL LayoutManager::setFastPropertyValue_NoBroadcast( sal_Int32       n
             break;
         default: break;
     }
-}
-
-void SAL_CALL LayoutManager::getFastPropertyValue( uno::Any& aValue, sal_Int32 nHandle ) const
-{
-    LayoutManager_PBase::getFastPropertyValue( aValue, nHandle );
 }
 
 namespace detail

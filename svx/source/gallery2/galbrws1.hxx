@@ -77,8 +77,9 @@ class GalleryBrowser1 : public Control, public SfxListener
 
 private:
 
-    VclPtr<GalleryButton>   maNewTheme;
+    VclPtr<GalleryButton>        maNewTheme;
     VclPtr<GalleryThemeListBox>  mpThemes;
+    VclPtr<VclAbstractDialog2>   mpThemePropertiesDialog; // to keep it alive during execution
     Gallery*                mpGallery;
     ExchangeData*           mpExchangeData;
     SfxItemSet*             mpThemePropsDlgItemSet;
@@ -105,13 +106,13 @@ private:
     // SfxListener
     virtual void            Notify( SfxBroadcaster& rBC, const SfxHint& rHint ) override;
 
-                            DECL_LINK_TYPED( ClickNewThemeHdl, Button*, void );
-                            DECL_LINK_TYPED( SelectThemeHdl, ListBox&, void );
-                            DECL_LINK_TYPED( ShowContextMenuHdl, void*, void );
-                            DECL_LINK_TYPED( PopupMenuHdl, Menu*, bool );
-                            DECL_LINK_TYPED( EndNewThemePropertiesDlgHdl, Dialog&, void );
-                            DECL_LINK_TYPED( EndThemePropertiesDlgHdl, Dialog&, void );
-                            DECL_LINK_TYPED( DestroyThemePropertiesDlgHdl, void*, void );
+                            DECL_LINK( ClickNewThemeHdl, Button*, void );
+                            DECL_LINK( SelectThemeHdl, ListBox&, void );
+                            DECL_LINK( ShowContextMenuHdl, void*, void );
+                            DECL_LINK( PopupMenuHdl, Menu*, bool );
+                            DECL_LINK( EndNewThemePropertiesDlgHdl, Dialog&, void );
+                            DECL_LINK( EndThemePropertiesDlgHdl, Dialog&, void );
+                            DECL_LINK( DestroyThemePropertiesDlgHdl, void*, void );
 
 public:
 
@@ -120,7 +121,7 @@ public:
                                 Gallery* pGallery,
                                 const ::std::function<sal_Bool (const KeyEvent&,Window*)>& rKeyInputHandler,
                                 const ::std::function<void ()>& rThemeSlectionHandler);
-                            virtual ~GalleryBrowser1();
+                            virtual ~GalleryBrowser1() override;
     virtual void            dispose() override;
 
     void                    SelectTheme( sal_uInt16 nThemePos ) { mpThemes->SelectEntryPos( nThemePos ); SelectThemeHdl( *mpThemes ); }

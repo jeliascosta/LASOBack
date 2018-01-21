@@ -146,7 +146,7 @@ FmSearchDialog::FmSearchDialog(vcl::Window* pParent, const OUString& sInitialTex
     }
 
     m_pSearchEngine = new FmSearchEngine(
-        ::comphelper::getProcessComponentContext(), fmscInitial.xCursor, fmscInitial.strUsedFields, fmscInitial.arrFields, SM_ALLOWSCHEDULE );
+        ::comphelper::getProcessComponentContext(), fmscInitial.xCursor, fmscInitial.strUsedFields, fmscInitial.arrFields );
     initCommon( fmscInitial.xCursor );
 
     if ( !fmscInitial.sFieldDisplayNames.isEmpty() )
@@ -289,7 +289,7 @@ bool FmSearchDialog::Close()
     return ModalDialog::Close();
 }
 
-IMPL_LINK_TYPED(FmSearchDialog, OnClickedFieldRadios, Button*, pButton, void)
+IMPL_LINK(FmSearchDialog, OnClickedFieldRadios, Button*, pButton, void)
 {
     if ((pButton == m_prbSearchForText) || (pButton == m_prbSearchForNull) || (pButton == m_prbSearchForNotNull))
     {
@@ -309,7 +309,7 @@ IMPL_LINK_TYPED(FmSearchDialog, OnClickedFieldRadios, Button*, pButton, void)
         }
 }
 
-IMPL_LINK_NOARG_TYPED(FmSearchDialog, OnClickedSearchAgain, Button*, void)
+IMPL_LINK_NOARG(FmSearchDialog, OnClickedSearchAgain, Button*, void)
 {
     if (m_pbClose->IsEnabled())
     {   // the button has the function 'search'
@@ -346,31 +346,29 @@ IMPL_LINK_NOARG_TYPED(FmSearchDialog, OnClickedSearchAgain, Button*, void)
     }
     else
     {   // the button has the function 'cancel'
-        DBG_ASSERT(m_pSearchEngine->GetSearchMode() != SM_BRUTE, "FmSearchDialog, OnClickedSearchAgain : falscher Modus !");
             // the CancelButton is usually only disabled, when working in a thread or with reschedule
         m_pSearchEngine->CancelSearch();
             // the ProgressHandler is called when it's really finished, here it's only a demand
     }
 }
 
-IMPL_LINK_TYPED(FmSearchDialog, OnClickedSpecialSettings, Button*, pButton, void )
+IMPL_LINK(FmSearchDialog, OnClickedSpecialSettings, Button*, pButton, void )
 {
     if (m_ppbApproxSettings == pButton)
     {
-        std::unique_ptr<AbstractSvxSearchSimilarityDialog> pDlg;
-
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-        if ( pFact )
-            pDlg.reset(pFact->CreateSvxSearchSimilarityDialog( this, m_pSearchEngine->GetLevRelaxed(), m_pSearchEngine->GetLevOther(),
-                        m_pSearchEngine->GetLevShorter(), m_pSearchEngine->GetLevLonger() ));
-        DBG_ASSERT( pDlg, "FmSearchDialog, OnClickedSpecialSettings: could not load the dialog!" );
-
-        if ( pDlg && pDlg->Execute() == RET_OK )
+        if (pFact)
         {
-            m_pSearchEngine->SetLevRelaxed( pDlg->IsRelaxed() );
-            m_pSearchEngine->SetLevOther( pDlg->GetOther() );
-            m_pSearchEngine->SetLevShorter(pDlg->GetShorter() );
-            m_pSearchEngine->SetLevLonger( pDlg->GetLonger() );
+            ScopedVclPtr<AbstractSvxSearchSimilarityDialog> pDlg(pFact->CreateSvxSearchSimilarityDialog( this, m_pSearchEngine->GetLevRelaxed(), m_pSearchEngine->GetLevOther(),
+                        m_pSearchEngine->GetLevShorter(), m_pSearchEngine->GetLevLonger() ));
+            DBG_ASSERT( pDlg, "FmSearchDialog, OnClickedSpecialSettings: could not load the dialog!" );
+            if (pDlg && pDlg->Execute() == RET_OK)
+            {
+                m_pSearchEngine->SetLevRelaxed( pDlg->IsRelaxed() );
+                m_pSearchEngine->SetLevOther( pDlg->GetOther() );
+                m_pSearchEngine->SetLevShorter(pDlg->GetShorter() );
+                m_pSearchEngine->SetLevLonger( pDlg->GetLonger() );
+            }
         }
     }
     else if (m_pSoundsLikeCJKSettings == pButton)
@@ -379,7 +377,7 @@ IMPL_LINK_TYPED(FmSearchDialog, OnClickedSpecialSettings, Button*, pButton, void
         SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
         if(pFact)
         {
-            std::unique_ptr<AbstractSvxJSearchOptionsDialog> aDlg(pFact->CreateSvxJSearchOptionsDialog( this, aSet, m_pSearchEngine->GetTransliterationFlags() ));
+            ScopedVclPtr<AbstractSvxJSearchOptionsDialog> aDlg(pFact->CreateSvxJSearchOptionsDialog( this, aSet, m_pSearchEngine->GetTransliterationFlags() ));
             DBG_ASSERT(aDlg, "Dialog creation failed!");
             aDlg->Execute();
 
@@ -395,7 +393,7 @@ IMPL_LINK_TYPED(FmSearchDialog, OnClickedSpecialSettings, Button*, pButton, void
     }
 }
 
-IMPL_LINK_NOARG_TYPED(FmSearchDialog, OnSearchTextModified, Edit&, void)
+IMPL_LINK_NOARG(FmSearchDialog, OnSearchTextModified, Edit&, void)
 {
     if ((!m_pcmbSearchText->GetText().isEmpty()) || !m_prbSearchForText->IsChecked())
         m_pbSearchAgain->Enable();
@@ -405,19 +403,19 @@ IMPL_LINK_NOARG_TYPED(FmSearchDialog, OnSearchTextModified, Edit&, void)
     m_pSearchEngine->InvalidatePreviousLoc();
 }
 
-IMPL_LINK_NOARG_TYPED(FmSearchDialog, OnFocusGrabbed, Control&, void)
+IMPL_LINK_NOARG(FmSearchDialog, OnFocusGrabbed, Control&, void)
 {
     m_pcmbSearchText->SetSelection( Selection( SELECTION_MIN, SELECTION_MAX ) );
 }
 
-IMPL_LINK_TYPED(FmSearchDialog, OnPositionSelected, ListBox&, rBox, void)
+IMPL_LINK(FmSearchDialog, OnPositionSelected, ListBox&, rBox, void)
 {
     DBG_ASSERT(rBox.GetSelectEntryCount() == 1, "FmSearchDialog::OnMethodSelected : unerwartet : nicht genau ein Eintrag selektiert !");
 
     m_pSearchEngine->SetPosition(m_plbPosition->GetSelectEntryPos());
 }
 
-IMPL_LINK_TYPED(FmSearchDialog, OnFieldSelected, ListBox&, rBox, void)
+IMPL_LINK(FmSearchDialog, OnFieldSelected, ListBox&, rBox, void)
 {
     DBG_ASSERT(rBox.GetSelectEntryCount() == 1, "FmSearchDialog::OnFieldSelected : unerwartet : nicht genau ein Eintrag selektiert !");
 
@@ -429,7 +427,7 @@ IMPL_LINK_TYPED(FmSearchDialog, OnFieldSelected, ListBox&, rBox, void)
         m_arrContextFields[nCurrentContext] = m_plbField->GetSelectEntry();
 }
 
-IMPL_LINK_TYPED(FmSearchDialog, OnCheckBoxToggled, CheckBox&, rBox, void)
+IMPL_LINK(FmSearchDialog, OnCheckBoxToggled, CheckBox&, rBox, void)
 {
     bool bChecked = rBox.IsChecked();
 
@@ -554,7 +552,7 @@ void FmSearchDialog::InitContext(sal_Int16 nContext)
     m_pftRecord->SetText(OUString::number(fmscContext.xCursor->getRow()));
 }
 
-IMPL_LINK_TYPED( FmSearchDialog, OnContextSelection, ListBox&, rBox, void)
+IMPL_LINK( FmSearchDialog, OnContextSelection, ListBox&, rBox, void)
 {
     InitContext(rBox.GetSelectEntryPos());
 }
@@ -587,26 +585,23 @@ void FmSearchDialog::EnableSearchUI(bool bEnable)
     OUString sButtonText( bEnable ? m_sSearch : m_sCancel );
     m_pbSearchAgain->SetText( sButtonText );
 
-    if (m_pSearchEngine->GetSearchMode() != SM_BRUTE)
-    {
-        m_prbSearchForText->Enable    (bEnable);
-        m_prbSearchForNull->Enable    (bEnable);
-        m_prbSearchForNotNull->Enable (bEnable);
-        m_plbForm->Enable             (bEnable);
-        m_prbAllFields->Enable        (bEnable);
-        m_prbSingleField->Enable      (bEnable);
-        m_plbField->Enable            (bEnable && m_prbSingleField->IsChecked());
-        m_pcbBackwards->Enable        (bEnable);
-        m_pcbStartOver->Enable        (bEnable);
-        m_pbClose->Enable            (bEnable);
-        EnableSearchForDependees    (bEnable);
+    m_prbSearchForText->Enable    (bEnable);
+    m_prbSearchForNull->Enable    (bEnable);
+    m_prbSearchForNotNull->Enable (bEnable);
+    m_plbForm->Enable             (bEnable);
+    m_prbAllFields->Enable        (bEnable);
+    m_prbSingleField->Enable      (bEnable);
+    m_plbField->Enable            (bEnable && m_prbSingleField->IsChecked());
+    m_pcbBackwards->Enable        (bEnable);
+    m_pcbStartOver->Enable        (bEnable);
+    m_pbClose->Enable            (bEnable);
+    EnableSearchForDependees    (bEnable);
 
-        if ( !bEnable )
-        {   // this means we're preparing for starting a search
-            // In this case, EnableSearchForDependees disabled the search button
-            // But as we're about to use it for cancelling the search, we really need to enable it, again
-            m_pbSearchAgain->Enable();
-        }
+    if ( !bEnable )
+    {   // this means we're preparing for starting a search
+        // In this case, EnableSearchForDependees disabled the search button
+        // But as we're about to use it for cancelling the search, we really need to enable it, again
+        m_pbSearchAgain->Enable();
     }
 
     if (!bEnable)
@@ -674,7 +669,7 @@ void FmSearchDialog::EnableControlPaint(bool bEnable)
         }
 }
 
-IMPL_LINK_NOARG_TYPED(FmSearchDialog, OnDelayedPaint, Timer *, void)
+IMPL_LINK_NOARG(FmSearchDialog, OnDelayedPaint, Timer *, void)
 {
     EnableControlPaint(true);
 }
@@ -697,7 +692,7 @@ void FmSearchDialog::OnFound(const css::uno::Any& aCursorPos, sal_Int16 nFieldPo
     m_pcmbSearchText->GrabFocus();
 }
 
-IMPL_LINK_TYPED(FmSearchDialog, OnSearchProgress, const FmSearchProgress*, pProgress, void)
+IMPL_LINK(FmSearchDialog, OnSearchProgress, const FmSearchProgress*, pProgress, void)
 {
     SolarMutexGuard aGuard;
         // make this single method thread-safe (it's an overkill to block the whole application for this,
@@ -705,7 +700,7 @@ IMPL_LINK_TYPED(FmSearchDialog, OnSearchProgress, const FmSearchProgress*, pProg
 
     switch (pProgress->aSearchState)
     {
-        case FmSearchProgress::STATE_PROGRESS:
+        case FmSearchProgress::State::Progress:
             if (pProgress->bOverflow)
             {
                 OUString sHint( CUI_RES( m_pcbBackwards->IsChecked() ? RID_STR_OVERFLOW_BACKWARD : RID_STR_OVERFLOW_FORWARD ) );
@@ -717,7 +712,7 @@ IMPL_LINK_TYPED(FmSearchDialog, OnSearchProgress, const FmSearchProgress*, pProg
             m_pftRecord->Invalidate();
             break;
 
-        case FmSearchProgress::STATE_PROGRESS_COUNTING:
+        case FmSearchProgress::State::ProgressCounting:
             m_pftHint->SetText(CUI_RESSTR(RID_STR_SEARCH_COUNTING));
             m_pftHint->Invalidate();
 
@@ -725,21 +720,21 @@ IMPL_LINK_TYPED(FmSearchDialog, OnSearchProgress, const FmSearchProgress*, pProg
             m_pftRecord->Invalidate();
             break;
 
-        case FmSearchProgress::STATE_SUCCESSFULL:
+        case FmSearchProgress::State::Successful:
             OnFound(pProgress->aBookmark, (sal_Int16)pProgress->nFieldIndex);
             EnableSearchUI(true);
             break;
 
-        case FmSearchProgress::STATE_ERROR:
-        case FmSearchProgress::STATE_NOTHINGFOUND:
+        case FmSearchProgress::State::Error:
+        case FmSearchProgress::State::NothingFound:
         {
-            sal_uInt16 nErrorId = (FmSearchProgress::STATE_ERROR == pProgress->aSearchState)
+            sal_uInt16 nErrorId = (FmSearchProgress::State::Error == pProgress->aSearchState)
                 ? RID_STR_SEARCH_GENERAL_ERROR
                 : RID_STR_SEARCH_NORECORD;
             ScopedVclPtrInstance<MessageDialog>(this, CUI_RES(nErrorId))->Execute();
             SAL_FALLTHROUGH;
         }
-        case FmSearchProgress::STATE_CANCELED:
+        case FmSearchProgress::State::Canceled:
             EnableSearchUI(true);
             if (m_lnkCanceledNotFoundHdl.IsSet())
             {

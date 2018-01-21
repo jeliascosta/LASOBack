@@ -107,7 +107,7 @@ public:
     // #i37011# render geometry shadow
     SdrObject*                                          mpLastShadowGeometry;
 
-    css::uno::Reference< css::drawing::XCustomShapeEngine > GetCustomShapeEngine() const;
+    css::uno::Reference< css::drawing::XCustomShapeEngine > const & GetCustomShapeEngine() const;
 
 //  SVX_DLLPRIVATE css::uno::Sequence< css::uno::Reference< css::drawing::XCustomShapeHandle > >
 //      SdrObjCustomShape::GetInteraction( const SdrObjCustomShape* pCustomShape ) const;
@@ -145,7 +145,6 @@ protected:
     // and object sizes
     virtual void AdaptTextMinSize() override;
 
-    OUString      aName;
     Size          m_aSuggestedTextFrameSize;
 
 public:
@@ -162,7 +161,7 @@ public:
     double GetExtraTextRotation( const bool bPreRotation = false ) const;
 
     SdrObjCustomShape();
-    virtual ~SdrObjCustomShape();
+    virtual ~SdrObjCustomShape() override;
 
     /* is merging default attributes from type-shape into the SdrCustomShapeGeometryItem. If pType
     is NULL then the type is being taken from the "Type" property of the SdrCustomShapeGeometryItem.
@@ -170,17 +169,17 @@ public:
     void MergeDefaultAttributes( const OUString* pType = nullptr );
 
     /* the method is checking if the geometry data is unchanged/default, in this case the data might not be stored */
-    enum DefaultType
+    enum class DefaultType
     {
-        DEFAULT_PATH,
-        DEFAULT_VIEWBOX,
-        DEFAULT_SEGMENTS,
-        DEFAULT_GLUEPOINTS,
-        DEFAULT_STRETCHX,
-        DEFAULT_STRETCHY,
-        DEFAULT_EQUATIONS,
-        DEFAULT_HANDLES,
-        DEFAULT_TEXTFRAMES
+        Path,
+        Viewbox,
+        Segments,
+        Gluepoints,
+        StretchX,
+        StretchY,
+        Equations,
+        Handles,
+        TextFrames
     };
     bool IsDefaultGeometry( const DefaultType eDefaultType ) const;
 
@@ -189,14 +188,7 @@ public:
 
     virtual void SetModel(SdrModel* pNewModel) override;
 
-    virtual void RecalcSnapRect() override;
-
-    virtual const Rectangle& GetSnapRect()  const override;
-    virtual const Rectangle& GetCurrentBoundRect() const override;
-    virtual const Rectangle& GetLogicRect() const override;
-
     virtual void Move(const Size& rSiz) override;
-    virtual void Resize(const Point& rRef, const Fraction& xFact, const Fraction& yFact, bool bUnsetRelative = true) override;
     virtual void Shear(const Point& rRef, long nAngle, double tn, bool bVShear) override;
     virtual void SetSnapRect(const Rectangle& rRect) override;
     virtual void SetLogicRect(const Rectangle& rRect) override;
@@ -218,7 +210,6 @@ public:
     virtual bool beginSpecialDrag(SdrDragStat& rDrag) const override;
     virtual bool applySpecialDrag(SdrDragStat& rDrag) override;
 
-    virtual bool BegCreate( SdrDragStat& rStat ) override;
     virtual bool MovCreate(SdrDragStat& rStat) override; // #i37448#
     virtual bool EndCreate(SdrDragStat& rStat, SdrCreateCmd eCmd) override;
 
@@ -234,12 +225,11 @@ public:
     virtual bool IsAutoGrowHeight() const override;
     virtual bool IsAutoGrowWidth() const override;
     virtual void SetVerticalWriting( bool bVertical ) override;
-    virtual bool BegTextEdit( SdrOutliner& rOutl ) override;
     virtual void TakeTextEditArea(Size* pPaperMin, Size* pPaperMax, Rectangle* pViewInit, Rectangle* pViewMin) const override;
     virtual void EndTextEdit( SdrOutliner& rOutl ) override;
     virtual void TakeTextAnchorRect( Rectangle& rAnchorRect ) const override;
-    virtual void TakeTextRect( SdrOutliner& rOutliner, Rectangle& rTextRect, bool bNoEditText = false,
-        Rectangle* pAnchorRect=nullptr, bool bLineWidth = true ) const override;
+    virtual void TakeTextRect( SdrOutliner& rOutliner, Rectangle& rTextRect, bool bNoEditText,
+        Rectangle* pAnchorRect, bool bLineWidth = true ) const override;
     virtual SdrObjCustomShape* Clone() const override;
     SdrObjCustomShape& operator=(const SdrObjCustomShape& rObj);
 

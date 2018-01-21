@@ -31,7 +31,7 @@ using namespace ooo::vba;
 
 ScVbaCommandBar::ScVbaCommandBar( const uno::Reference< ov::XHelperInterface >& xParent,
                                   const uno::Reference< uno::XComponentContext >& xContext,
-                                  VbaCommandBarHelperRef pHelper,
+                                  VbaCommandBarHelperRef const & pHelper,
                                   const uno::Reference< container::XIndexAccess >& xBarSettings,
                                   const OUString& sResourceUrl, bool bIsMenu ) throw( uno::RuntimeException )
    : CommandBar_BASE( xParent, xContext ), pCBarHelper( pHelper ), m_xBarSettings( xBarSettings ), m_sResourceUrl( sResourceUrl ), m_bIsMenu( bIsMenu )
@@ -197,10 +197,9 @@ ScVbaCommandBar::getServiceNames()
 VbaDummyCommandBar::VbaDummyCommandBar(
         const uno::Reference< ov::XHelperInterface >& xParent,
         const uno::Reference< uno::XComponentContext >& xContext,
-        const OUString& rName, sal_Int32 nType ) throw( uno::RuntimeException ) :
+        const OUString& rName ) throw( uno::RuntimeException ) :
     CommandBar_BASE( xParent, xContext ),
-    maName( rName ),
-    mnType( nType )
+    maName( rName )
 {
 }
 
@@ -253,7 +252,7 @@ uno::Any SAL_CALL VbaDummyCommandBar::Controls( const uno::Any& aIndex ) throw (
 
 sal_Int32 SAL_CALL VbaDummyCommandBar::Type() throw (script::BasicErrorException, uno::RuntimeException, std::exception)
 {
-    return mnType;
+    return office::MsoBarType::msoBarTypePopup;
 }
 
 uno::Any SAL_CALL VbaDummyCommandBar::FindControl( const uno::Any& /*aType*/, const uno::Any& /*aId*/, const uno::Any& /*aTag*/, const uno::Any& /*aVisible*/, const uno::Any& /*aRecursive*/ ) throw (script::BasicErrorException, uno::RuntimeException, std::exception)

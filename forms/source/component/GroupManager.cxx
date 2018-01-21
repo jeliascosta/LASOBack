@@ -62,7 +62,7 @@ OGroupCompAcc::OGroupCompAcc(const Reference<XPropertySet>& rxElement, const OGr
 
 bool OGroupCompAcc::operator==( const OGroupCompAcc& rCompAcc ) const
 {
-    return (m_xComponent == rCompAcc.GetComponent());
+    return m_xComponent == rCompAcc.m_xComponent;
 }
 
 class OGroupCompAccLess : public ::std::binary_function<OGroupCompAcc, OGroupCompAcc, sal_Bool>
@@ -83,8 +83,7 @@ OGroupComp::OGroupComp()
 }
 
 OGroupComp::OGroupComp(const OGroupComp& _rSource)
-    :m_aName( _rSource.m_aName )
-    ,m_xComponent( _rSource.m_xComponent )
+    :m_xComponent( _rSource.m_xComponent )
     ,m_xControlModel(_rSource.m_xControlModel)
     ,m_nPos( _rSource.m_nPos )
     ,m_nTabIndex( _rSource.m_nTabIndex )
@@ -92,8 +91,7 @@ OGroupComp::OGroupComp(const OGroupComp& _rSource)
 }
 
 OGroupComp::OGroupComp(const Reference<XPropertySet>& rxSet, sal_Int32 nInsertPos )
-    : m_aName( OGroupManager::GetGroupName( rxSet ) )
-    , m_xComponent( rxSet )
+    : m_xComponent( rxSet )
     , m_xControlModel(rxSet,UNO_QUERY)
     , m_nPos( nInsertPos )
     , m_nTabIndex(0)

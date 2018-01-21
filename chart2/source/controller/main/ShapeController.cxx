@@ -64,11 +64,6 @@ ShapeController::~ShapeController()
 {
 }
 
-void ShapeController::initialize()
-{
-    FeatureCommandDispatchBase::initialize();
-}
-
 // WeakComponentImplHelperBase
 void ShapeController::disposing()
 {
@@ -229,7 +224,7 @@ void ShapeController::describeSupportedFeatures()
     implDescribeSupportedFeature( ".uno:ParagraphDialog",           COMMAND_ID_PARAGRAPH_DIALOG,            CommandGroup::EDIT );
 }
 
-IMPL_LINK_TYPED( ShapeController, CheckNameHdl, AbstractSvxObjectNameDialog&, rDialog, bool )
+IMPL_LINK( ShapeController, CheckNameHdl, AbstractSvxObjectNameDialog&, rDialog, bool )
 {
     OUString aName;
     rDialog.GetName( aName );
@@ -265,7 +260,7 @@ void ShapeController::executeDispatch_FormatLine()
             SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
             if ( pFact )
             {
-                std::unique_ptr< SfxAbstractTabDialog > pDlg(
+                ScopedVclPtr< SfxAbstractTabDialog > pDlg(
                     pFact->CreateSvxLineTabDialog( pParent, &aAttr, &pDrawModelWrapper->getSdrModel(),
                         pSelectedObj, bHasMarked ) );
                 if ( pDlg->Execute() == RET_OK )
@@ -304,7 +299,7 @@ void ShapeController::executeDispatch_FormatArea()
             SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
             if ( pFact )
             {
-                std::unique_ptr< AbstractSvxAreaTabDialog > pDlg(
+                ScopedVclPtr< AbstractSvxAreaTabDialog > pDlg(
                     pFact->CreateSvxAreaTabDialog( pParent, &aAttr, &pDrawModelWrapper->getSdrModel(), true ) );
                 if ( pDlg.get() )
                 {
@@ -346,7 +341,7 @@ void ShapeController::executeDispatch_TextAttributes()
             SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
             if ( pFact )
             {
-                std::unique_ptr< SfxAbstractTabDialog > pDlg(
+                ScopedVclPtr< SfxAbstractTabDialog > pDlg(
                     pFact->CreateTextTabDialog( pParent, &aAttr, pDrawViewWrapper ) );
                 if ( pDlg.get() && ( pDlg->Execute() == RET_OK ) )
                 {
@@ -385,7 +380,7 @@ void ShapeController::executeDispatch_TransformDialog()
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 if ( pFact )
                 {
-                    std::unique_ptr< SfxAbstractTabDialog > pDlg(
+                    ScopedVclPtr< SfxAbstractTabDialog > pDlg(
                         pFact->CreateCaptionDialog( pParent, pDrawViewWrapper ) );
                     if ( pDlg.get() )
                     {
@@ -409,7 +404,7 @@ void ShapeController::executeDispatch_TransformDialog()
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 if ( pFact )
                 {
-                    std::unique_ptr< SfxAbstractTabDialog > pDlg(
+                    ScopedVclPtr< SfxAbstractTabDialog > pDlg(
                         pFact->CreateSvxTransformTabDialog( pParent, &aGeoAttr, pDrawViewWrapper ) );
                     if ( pDlg.get() && ( pDlg->Execute() == RET_OK ) )
                     {
@@ -438,7 +433,7 @@ void ShapeController::executeDispatch_ObjectTitleDescription()
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 if ( pFact )
                 {
-                    std::unique_ptr< AbstractSvxObjectTitleDescDialog > pDlg(
+                    ScopedVclPtr< AbstractSvxObjectTitleDescDialog > pDlg(
                         pFact->CreateSvxObjectTitleDescDialog( aTitle, aDescription ) );
                     if ( pDlg.get() && ( pDlg->Execute() == RET_OK ) )
                     {
@@ -468,7 +463,7 @@ void ShapeController::executeDispatch_RenameObject()
                 SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
                 if ( pFact )
                 {
-                    std::unique_ptr< AbstractSvxObjectNameDialog > pDlg(
+                    ScopedVclPtr< AbstractSvxObjectNameDialog > pDlg(
                         pFact->CreateSvxObjectNameDialog( aName ) );
                     pDlg->SetCheckNameHdl( LINK( this, ShapeController, CheckNameHdl ) );
                     if ( pDlg.get() && ( pDlg->Execute() == RET_OK ) )
@@ -580,7 +575,7 @@ void ShapeController::executeDispatch_ParagraphDialog()
                                     0 );
             aNewAttr.Put( aAttr );
             aNewAttr.Put( SvxHyphenZoneItem( false, SID_ATTR_PARA_HYPHENZONE ) );
-            aNewAttr.Put( SvxFormatBreakItem( SVX_BREAK_NONE, SID_ATTR_PARA_PAGEBREAK ) );
+            aNewAttr.Put( SvxFormatBreakItem( SvxBreak::NONE, SID_ATTR_PARA_PAGEBREAK ) );
             aNewAttr.Put( SvxFormatSplitItem( true, SID_ATTR_PARA_SPLIT)  );
             aNewAttr.Put( SvxWidowsItem( 0, SID_ATTR_PARA_WIDOWS) );
             aNewAttr.Put( SvxOrphansItem( 0, SID_ATTR_PARA_ORPHANS) );

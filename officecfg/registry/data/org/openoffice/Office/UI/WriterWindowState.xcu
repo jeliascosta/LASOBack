@@ -105,7 +105,7 @@
       </node>
       <node oor:name="private:resource/toolbar/findbar" oor:op="replace">
         <prop oor:name="DockPos" oor:type="xs:string">
-          <value>0,3</value>
+          <value>0,1</value>
         </prop>
         <prop oor:name="Docked" oor:type="xs:boolean">
           <value>true</value>
@@ -191,6 +191,17 @@
           <value>true</value>
         </prop>
       </node>
+      <node oor:name="private:resource/toolbar/arrowsbar" oor:op="replace">
+        <prop oor:name="Docked" oor:type="xs:boolean">
+          <value>false</value>
+        </prop>
+        <prop oor:name="UIName" oor:type="xs:string">
+          <value xml:lang="en-US">Arrows</value>
+        </prop>
+        <prop oor:name="Visible" oor:type="xs:boolean">
+          <value>false</value>
+        </prop>
+      </node>
       <node oor:name="private:resource/toolbar/classificationbar" oor:op="replace">
         <prop oor:name="DockPos" oor:type="xs:string">
           <value>0,2</value>
@@ -205,12 +216,12 @@
           <value>false</value>
         </prop>
         <prop oor:name="UIName" oor:type="xs:string">
-          <value xml:lang="en-US">Classification</value>
+          <value xml:lang="en-US">TSCP Classification</value>
         </prop>
       </node>
       <node oor:name="private:resource/toolbar/tableobjectbar" oor:op="replace">
         <prop oor:name="DockPos" oor:type="xs:string">
-          <value>0,1</value>
+          <value>0,2</value>
         </prop>
         <prop oor:name="DockingArea" oor:type="xs:int">
           <value>1</value>
@@ -230,7 +241,7 @@
       </node>
       <node oor:name="private:resource/toolbar/numobjectbar" oor:op="replace">
         <prop oor:name="DockPos" oor:type="xs:string">
-          <value>0,2</value>
+          <value>0,3</value>
         </prop>
         <prop oor:name="DockingArea" oor:type="xs:int">
           <value>1</value>

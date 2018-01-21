@@ -24,7 +24,7 @@
 #include <com/sun/star/container/XNameContainer.hpp>
 #include <com/sun/star/beans/XPropertySet.hpp>
 
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <cppuhelper/implbase.hxx>
 #include <rtl/ref.hxx>
 
@@ -35,7 +35,7 @@ namespace dbaccess
 
     class OPropertyForward;
 
-    class OContainerMediator :   public ::comphelper::OBaseMutex
+    class OContainerMediator :   public ::cppu::BaseMutex
                                 ,public ::cppu::WeakImplHelper< css::container::XContainerListener >
     {
     private:
@@ -46,7 +46,7 @@ namespace dbaccess
         css::uno::Reference< css::container::XContainer >     m_xContainer;   // can not be weak
 
     protected:
-        virtual ~OContainerMediator();
+        virtual ~OContainerMediator() override;
 
     public:
         OContainerMediator(

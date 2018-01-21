@@ -49,7 +49,6 @@ public:
     OUString                    maSoundFile;    ///< Path to the sound file in MS DOS notation
     bool                        mbSoundOn;      ///< Sound on / off
     bool                        mbPlayFull;     ///< play sound completely.
-    SdrPathObj*                 mpPathObj;      ///< The path object
     css::presentation::ClickAction     meClickAction;  ///< Action at mouse click
     css::presentation::AnimationEffect meSecondEffect; ///< for object fading.
     css::presentation::AnimationSpeed  meSecondSpeed;  ///< for object fading.
@@ -57,7 +56,6 @@ public:
     bool                        mbSecondSoundOn;   ///< for object fading.
     bool                        mbSecondPlayFull;  ///< for object fading.
     sal_uInt16                  mnVerb;            ///< for OLE object
-    sal_uLong                   mnPresOrder;
     SdrObject&                  mrObject;
 
     void           SetBookmark( const OUString& rBookmark );
@@ -65,7 +63,7 @@ public:
 public:
                             SAL_DLLPRIVATE SdAnimationInfo(SdrObject& rObject);
                             SAL_DLLPRIVATE SdAnimationInfo(const SdAnimationInfo& rAnmInfo, SdrObject& rObject);
-    SAL_DLLPRIVATE virtual                 ~SdAnimationInfo();
+    SAL_DLLPRIVATE virtual                 ~SdAnimationInfo() override;
 
     SAL_DLLPRIVATE virtual SdrObjUserData* Clone(SdrObject* pObject) const override;
 };

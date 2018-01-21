@@ -305,7 +305,7 @@ namespace
         virtual void SAL_CALL run() override;
         virtual void SAL_CALL onTerminated() override;
     protected:
-        virtual ~RelationLoader(){}
+        virtual ~RelationLoader() override {}
 
         void loadTableData(const Any& _aTable);
     };
@@ -465,7 +465,7 @@ void ORelationController::mergeData(const TTableConnectionData& _aConnectionData
     }
 }
 
-IMPL_LINK_NOARG_TYPED( ORelationController, OnThreadFinished, void*, void )
+IMPL_LINK_NOARG( ORelationController, OnThreadFinished, void*, void )
 {
     ::SolarMutexGuard aSolarGuard;
     ::osl::MutexGuard aGuard( getMutex() );

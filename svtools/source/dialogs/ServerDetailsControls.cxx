@@ -32,8 +32,7 @@ using namespace com::sun::star::task;
 using namespace com::sun::star::ucb;
 using namespace com::sun::star::uno;
 
-DetailsContainer::DetailsContainer( VclBuilderContainer* pBuilder ) :
-    m_bIsActive ( true )
+DetailsContainer::DetailsContainer( VclBuilderContainer* pBuilder )
 {
     pBuilder->get( m_pDetailsGrid, "Details" );
     pBuilder->get( m_pHostBox, "HostDetails" );
@@ -52,7 +51,7 @@ DetailsContainer::~DetailsContainer( )
 
 void DetailsContainer::show( bool )
 {
-    m_pDetailsGrid->Enable( m_bIsActive );
+    m_pDetailsGrid->Enable();
 
     m_pEDHost->SetModifyHdl( LINK( this, DetailsContainer, ValueChangeHdl ) );
     m_pEDPort->SetModifyHdl( LINK( this, DetailsContainer, ValueChangeHdl ) );
@@ -77,7 +76,7 @@ void DetailsContainer::notifyChange( )
     m_aChangeHdl.Call( this );
 }
 
-IMPL_LINK_NOARG_TYPED( DetailsContainer, ValueChangeHdl, Edit&, void )
+IMPL_LINK_NOARG( DetailsContainer, ValueChangeHdl, Edit&, void )
 {
     notifyChange( );
 }
@@ -185,7 +184,7 @@ bool DavDetailsContainer::verifyScheme( const OUString& rScheme )
     return bValid;
 }
 
-IMPL_LINK_TYPED( DavDetailsContainer, ToggledDavsHdl, CheckBox&, rCheckBox, void )
+IMPL_LINK( DavDetailsContainer, ToggledDavsHdl, CheckBox&, rCheckBox, void )
 {
     // Change default port if needed
     bool bCheckedDavs = rCheckBox.IsChecked();
@@ -397,7 +396,7 @@ void CmisDetailsContainer::selectRepository( )
     }
 }
 
-IMPL_LINK_NOARG_TYPED( CmisDetailsContainer, RefreshReposHdl, Button*, void  )
+IMPL_LINK_NOARG( CmisDetailsContainer, RefreshReposHdl, Button*, void  )
 {
     Reference< XComponentContext > xContext = ::comphelper::getProcessComponentContext();
     Reference< XPasswordContainer2 > xMasterPasswd = PasswordContainer::create( xContext );
@@ -491,7 +490,7 @@ IMPL_LINK_NOARG_TYPED( CmisDetailsContainer, RefreshReposHdl, Button*, void  )
     {}
 }
 
-IMPL_LINK_NOARG_TYPED( CmisDetailsContainer, SelectRepoHdl, ListBox&, void )
+IMPL_LINK_NOARG( CmisDetailsContainer, SelectRepoHdl, ListBox&, void )
 {
     selectRepository( );
 }

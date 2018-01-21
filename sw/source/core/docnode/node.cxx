@@ -67,6 +67,7 @@
 #include "ndole.hxx"
 #include <memory>
 #include <swcrsr.hxx>
+#include <svl/itemiter.hxx>
 
 using namespace ::com::sun::star::i18n;
 
@@ -117,12 +118,12 @@ void SetParent( std::shared_ptr<const SfxItemSet>& rpAttrSet,
 
         if ( pParentFormat )
         {
-            SwStyleNameMapper::FillProgName( pParentFormat->GetName(), sVal, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, true );
+            SwStyleNameMapper::FillProgName( pParentFormat->GetName(), sVal, SwGetPoolIdFromName::TxtColl, true );
             const SfxStringItem aAnyFormatColl( RES_FRMATR_STYLE_NAME, sVal );
             aNewSet.Put( aAnyFormatColl );
 
             if ( pConditionalFormat != pParentFormat )
-                SwStyleNameMapper::FillProgName( pConditionalFormat->GetName(), sVal, nsSwGetPoolIdFromName::GET_POOLID_TXTCOLL, true );
+                SwStyleNameMapper::FillProgName( pConditionalFormat->GetName(), sVal, SwGetPoolIdFromName::TxtColl, true );
 
             const SfxStringItem aFormatColl( RES_FRMATR_CONDITIONAL_STYLE_NAME, sVal );
             aNewSet.Put( aFormatColl );
@@ -592,12 +593,12 @@ const SwPageDesc* SwNode::FindPageDesc( size_t* pPgDescNdIdx ) const
                     if( SwHeaderStartNode == pSttNd->GetStartNodeType())
                     {
                         nId = RES_HEADER;
-                        eAskUse = nsUseOnPage::PD_HEADERSHARE;
+                        eAskUse = UseOnPage::HeaderShare;
                     }
                     else
                     {
                         nId = RES_FOOTER;
-                        eAskUse = nsUseOnPage::PD_FOOTERSHARE;
+                        eAskUse = UseOnPage::FooterShare;
                     }
 
                     for( size_t n = pDoc->GetPageDescCnt(); n && !pPgDesc; )
@@ -833,7 +834,7 @@ sal_uInt8 SwNode::HasPrevNextLayNode() const
         if( IsValidNextPrevNd( aIdx.GetNode() ))
             nRet |= ND_HAS_PREV_LAYNODE;
         // #i77805# - skip section start and end nodes
-        aIdx = SwNodeIndex( *this, +1 );
+        aIdx.Assign(*this, +1);
         while ( aIdx.GetNode().IsSectionNode() ||
                 ( aIdx.GetNode().IsEndNode() &&
                   aIdx.GetNode().StartOfSectionNode()->IsSectionNode() ) )
@@ -1031,14 +1032,14 @@ void SwContentNode::Modify( const SfxPoolItem* pOldValue, const SfxPoolItem* pNe
                 if( pFormat->GetRegisteredIn() )
                 {
                     // If Parent, register anew in the new Parent
-                    static_cast<SwModify*>(pFormat->GetRegisteredIn())->Add( this );
+                    pFormat->GetRegisteredIn()->Add( this );
                     if ( GetpSwAttrSet() )
                         AttrSetHandleHelper::SetParent( mpAttrSet, *this, GetFormatColl(), GetFormatColl() );
                 }
                 else
                 {
                     // Else register anyways when dying
-                    static_cast<SwModify*>(GetRegisteredIn())->Remove( this );
+                    GetRegisteredIn()->Remove( this );
                     if ( GetpSwAttrSet() )
                         AttrSetHandleHelper::SetParent( mpAttrSet, *this, nullptr, nullptr );
                 }
@@ -1364,7 +1365,7 @@ void SwContentNode::DelFrames( bool bIsDisposeAccTable )
                 nullptr != ( pCFrame = pFootnote->GetRefFromAttr()) && pCFrame->IsFollow() )
             {
                 OSL_ENSURE( pCFrame->IsTextFrame(), "NoTextFrame has Footnote?" );
-                static_cast<SwTextFrame*>(pCFrame->FindMaster())->Prepare( PREP_FTN_GONE );
+                pCFrame->FindMaster()->Prepare( PREP_FTN_GONE );
             }
         }
         //Set acc table dispose state
@@ -1453,8 +1454,6 @@ bool SwContentNode::SetAttr(const SfxPoolItem& rAttr )
     }
     return bRet;
 }
-
-#include <svl/itemiter.hxx>
 
 bool SwContentNode::SetAttr( const SfxItemSet& rSet )
 {

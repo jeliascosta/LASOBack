@@ -46,11 +46,11 @@ class SVT_DLLPUBLIC Breadcrumb : public VclHBox
         void appendField();
         bool showField( unsigned int nIndex, unsigned int nWidthMax );
 
-        DECL_LINK_TYPED( ClickLinkHdl, FixedHyperlink&, void );
+        DECL_LINK( ClickLinkHdl, FixedHyperlink&, void );
 
     public:
         Breadcrumb( vcl::Window* pParent );
-        virtual ~Breadcrumb();
+        virtual ~Breadcrumb() override;
 
         void dispose() override;
         void EnableFields( bool bEnable );

@@ -32,29 +32,29 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE hInst, DWORD nReason, LPVOID)
 
 HCURSOR ImplLoadSalCursor( int nId )
 {
-    DBG_ASSERT( aSalShlData.mhInst, "no DLL instance handle" );
+    SAL_WARN_IF( !aSalShlData.mhInst, "vcl", "no DLL instance handle" );
 
     HCURSOR hCursor = LoadCursor( aSalShlData.mhInst, MAKEINTRESOURCE( nId ) );
 
-    DBG_ASSERT( hCursor, "cursor not found in sal resource" );
+    SAL_WARN_IF( !hCursor, "vcl", "cursor not found in sal resource" );
 
     return hCursor;
 }
 
 HBITMAP ImplLoadSalBitmap( int nId )
 {
-    DBG_ASSERT( aSalShlData.mhInst, "no DLL instance handle" );
+    SAL_WARN_IF( !aSalShlData.mhInst, "vcl", "no DLL instance handle" );
 
     HBITMAP hBitmap = LoadBitmap( aSalShlData.mhInst, MAKEINTRESOURCE( nId ) );
 
-    DBG_ASSERT( hBitmap, "bitmap not found in sal resource" );
+    SAL_WARN_IF( !hBitmap, "vcl", "bitmap not found in sal resource" );
 
     return hBitmap;
 }
 
 bool ImplLoadSalIcon( int nId, HICON& rIcon, HICON& rSmallIcon )
 {
-    DBG_ASSERT( aSalShlData.mhInst, "no DLL instance handle" );
+    SAL_WARN_IF( !aSalShlData.mhInst, "vcl", "no DLL instance handle" );
 
     SalData* pSalData = GetSalData();
 
@@ -68,35 +68,35 @@ bool ImplLoadSalIcon( int nId, HICON& rIcon, HICON& rSmallIcon )
         {
             rIcon       = pSalIcon->hIcon;
             rSmallIcon  = pSalIcon->hSmallIcon;
-            return (rSmallIcon != 0);
+            return (rSmallIcon != nullptr);
         }
     }
 
     // Try at first to load the icons from the application exe file
-    rIcon = (HICON)LoadImage( pSalData->mhInst, MAKEINTRESOURCE( nId ),
+    rIcon = static_cast<HICON>(LoadImage( pSalData->mhInst, MAKEINTRESOURCE( nId ),
                                            IMAGE_ICON, GetSystemMetrics( SM_CXICON ), GetSystemMetrics( SM_CYICON ),
-                                           LR_DEFAULTCOLOR );
+                                           LR_DEFAULTCOLOR ));
     if ( !rIcon )
     {
         // If the application don't provide these icons, then we try
         // to load the icon from the VCL resource
-        rIcon = (HICON)LoadImage( aSalShlData.mhInst, MAKEINTRESOURCE( nId ),
+        rIcon = static_cast<HICON>(LoadImage( aSalShlData.mhInst, MAKEINTRESOURCE( nId ),
                                            IMAGE_ICON, GetSystemMetrics( SM_CXICON ), GetSystemMetrics( SM_CYICON ),
-                                           LR_DEFAULTCOLOR );
+                                           LR_DEFAULTCOLOR ));
         if ( rIcon )
         {
-            rSmallIcon = (HICON)LoadImage( aSalShlData.mhInst, MAKEINTRESOURCE( nId ),
+            rSmallIcon = static_cast<HICON>(LoadImage( aSalShlData.mhInst, MAKEINTRESOURCE( nId ),
                                            IMAGE_ICON, GetSystemMetrics( SM_CXSMICON ), GetSystemMetrics( SM_CYSMICON ),
-                                           LR_DEFAULTCOLOR );
+                                           LR_DEFAULTCOLOR ));
         }
         else
-            rSmallIcon = 0;
+            rSmallIcon = nullptr;
     }
     else
     {
-        rSmallIcon = (HICON)LoadImage( pSalData->mhInst, MAKEINTRESOURCE( nId ),
+        rSmallIcon = static_cast<HICON>(LoadImage( pSalData->mhInst, MAKEINTRESOURCE( nId ),
                                        IMAGE_ICON, GetSystemMetrics( SM_CXSMICON ), GetSystemMetrics( SM_CYSMICON ),
-                                       LR_DEFAULTCOLOR );
+                                       LR_DEFAULTCOLOR ));
     }
 
     if( rIcon )
@@ -110,7 +110,7 @@ bool ImplLoadSalIcon( int nId, HICON& rIcon, HICON& rSmallIcon )
         pSalData->mpFirstIcon = pSalIcon;
     }
 
-    return (rSmallIcon != 0);
+    return (rSmallIcon != nullptr);
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

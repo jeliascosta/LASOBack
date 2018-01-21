@@ -177,11 +177,6 @@ css::uno::Sequence< css::uno::Type > SAL_CALL FTPContent::getTypes()
 OUString SAL_CALL FTPContent::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString FTPContent::getImplementationName_Static()
-{
     return OUString( "com.sun.star.comp.FTPContent");
 }
 
@@ -194,13 +189,7 @@ sal_Bool SAL_CALL FTPContent::supportsService( const OUString& ServiceName )
 css::uno::Sequence< OUString > SAL_CALL FTPContent::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
-}
-
-css::uno::Sequence< OUString > FTPContent::getSupportedServiceNames_Static()
-{
-    css::uno::Sequence<OUString> aSNS { "com.sun.star.ucb.FTPContent" };
-    return aSNS;
+    return { "com.sun.star.ucb.FTPContent" };
 }
 
 
@@ -221,42 +210,27 @@ void SAL_CALL FTPContent::abort( sal_Int32 /*CommandId*/ )
 {
 }
 
-/***************************************************************************/
-/*                                                                         */
-/*                     Internal implementation class.                      */
-/*                                                                         */
-/***************************************************************************/
 
-class ResultSetFactoryI : public ResultSetFactory
-{
-public:
-
-    ResultSetFactoryI(const Reference<XComponentContext >&  rxContext,
-                      const Reference<XContentProvider >&  xProvider,
-                      const Sequence<Property>& seq,
-                      const std::vector<FTPDirentry>& dirvec)
+ResultSetFactory::ResultSetFactory(const Reference<XComponentContext >&  rxContext,
+                  const Reference<XContentProvider >&  xProvider,
+                  const Sequence<Property>& seq,
+                  const std::vector<FTPDirentry>& dirvec)
         : m_xContext(rxContext),
           m_xProvider(xProvider),
           m_seq(seq),
           m_dirvec(dirvec)
-    {
-    }
+{
+}
 
-    virtual ResultSetBase* createResultSet() override
-    {
-        return new ResultSetI(m_xContext,
-                              m_xProvider,
-                              m_seq,
-                              m_dirvec);
-    }
 
-public:
+ResultSetBase* ResultSetFactory::createResultSet()
+{
+    return new ResultSetI(m_xContext,
+                          m_xProvider,
+                          m_seq,
+                          m_dirvec);
+}
 
-    Reference< XComponentContext >                  m_xContext;
-    Reference< XContentProvider >                   m_xProvider;
-    Sequence< Property >                            m_seq;
-    std::vector<FTPDirentry>                        m_dirvec;
-};
 
 // XCommandProcessor methods.
 
@@ -547,10 +521,10 @@ Any SAL_CALL FTPContent::execute( const Command& aCommand,
                         = new DynamicResultSet(
                             m_xContext,
                             aOpenCommand,
-                            new ResultSetFactoryI(m_xContext,
-                                                  m_xProvider.get(),
-                                                  aOpenCommand.Properties,
-                                                  resvec));
+                            new ResultSetFactory(m_xContext,
+                                                 m_xProvider.get(),
+                                                 aOpenCommand.Properties,
+                                                 resvec));
                     aRet <<= xSet;
                 }
                 else if(aOpenCommand.Mode ==
@@ -816,7 +790,7 @@ Reference< XRow > FTPContent::getPropertyValues(
         else if(aDirEntry.m_nMode != INETCOREFTP_FILEMODE_UNKNOWN) {
             if(Name == "ContentType")
                 xRow->appendString(seqProp[i],
-                                   aDirEntry.m_nMode&INETCOREFTP_FILEMODE_ISDIR
+                                   (aDirEntry.m_nMode & INETCOREFTP_FILEMODE_ISDIR)
                                    ? OUString(FTP_FOLDER)
                                    : OUString(FTP_FILE) );
             else if(Name == "IsReadOnly")

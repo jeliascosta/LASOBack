@@ -90,6 +90,10 @@ String STR_READONLY_DOCUMENT
 {
     Text [ en-US ] = "This document is open in read-only mode." ;
 };
+String STR_READONLY_PDF
+{
+    Text [ en-US ] = "This PDF is open in read-only mode to allow signing the existing file." ;
+};
 
 String STR_CLASSIFIED_DOCUMENT
 {
@@ -121,17 +125,19 @@ String STR_CLASSIFIED_EXPORT_CONTROL
     Text [ en-US ] = "Export Control:" ;
 };
 
-PushButton BT_CHECKOUT
+String STR_CHECKOUT
 {
-    Pos = MAP_APPFONT( 0 , 0 );
-    Size = MAP_APPFONT( 30 , 0 );
     Text[ en-US ] = "Check Out";
 };
-PushButton BT_READONLY_EDIT
+
+String STR_READONLY_EDIT
 {
-    Pos = MAP_APPFONT( 0 , 0 );
-    Size = MAP_APPFONT( 70 , 0 );
     Text[ en-US ] = "Edit Document";
+};
+
+String STR_READONLY_SIGN
+{
+    Text[ en-US ] = "Sign Document";
 };
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

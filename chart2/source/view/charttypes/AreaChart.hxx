@@ -36,7 +36,7 @@ public:
              , sal_Int32 nDimensionCount
              , bool bCategoryXAxis, bool bNoArea=false
              );
-    virtual ~AreaChart();
+    virtual ~AreaChart() override;
 
     virtual void createShapes() override;
     virtual void addSeries( VDataSeries* pSeries, sal_Int32 zSlot = -1, sal_Int32 xSlot = -1,sal_Int32 ySlot = -1 ) override;
@@ -45,11 +45,10 @@ public:
 
     // MinimumAndMaximumSupplier
     virtual double getMaximumX() override;
-    virtual bool isExpandIfValuesCloseToBorder( sal_Int32 nDimensionIndex ) override;
     virtual bool isSeparateStackingForDifferentSigns( sal_Int32 nDimensionIndex ) override;
 
     virtual LegendSymbolStyle getLegendSymbolStyle() override;
-    virtual css::uno::Any getExplicitSymbol( const VDataSeries& rSeries, sal_Int32 nPointIndex=-1/*-1 for series symbol*/ ) override;
+    virtual css::uno::Any getExplicitSymbol( const VDataSeries& rSeries, sal_Int32 nPointIndex/*-1 for series symbol*/ ) override;
 
 private: //methods
     void impl_createSeriesShapes();

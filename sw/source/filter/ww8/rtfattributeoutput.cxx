@@ -219,7 +219,7 @@ void RtfAttributeOutput::RTLAndCJKState(bool bIsRTL, sal_uInt16 nScript)
 void RtfAttributeOutput::StartParagraph(ww8::WW8TableNodeInfo::Pointer_t pTextNodeInfo)
 {
     // Output table/table row/table cell starts if needed
-    if (pTextNodeInfo.get())
+    if (pTextNodeInfo)
     {
         sal_uInt32 nRow = pTextNodeInfo->getRow();
         sal_uInt32 nCell = pTextNodeInfo->getCell();
@@ -1090,7 +1090,7 @@ void RtfAttributeOutput::EndTable()
 
 void RtfAttributeOutput::FinishTableRowCell(const ww8::WW8TableNodeInfoInner::Pointer_t& pInner, bool /*bForceEmptyParagraph*/)
 {
-    if (pInner.get())
+    if (pInner)
     {
         // Where are we in the table
         sal_uInt32 nRow = pInner->getRow();
@@ -1129,7 +1129,7 @@ void RtfAttributeOutput::EndStyles(sal_uInt16 /*nNumberOfStyles*/)
     m_rExport.Strm().WriteChar('}');
 }
 
-void RtfAttributeOutput::DefaultStyle(sal_uInt16 /*nStyle*/)
+void RtfAttributeOutput::DefaultStyle()
 {
     /* noop, the default style is always 0 in RTF */
 }
@@ -1604,18 +1604,18 @@ void RtfAttributeOutput::WriteField_Impl(const SwField* pField, ww::eField eType
 
 void RtfAttributeOutput::WriteBookmarks_Impl(std::vector< OUString >& rStarts, std::vector< OUString >& rEnds)
 {
-    for (std::vector< OUString >::const_iterator it = rStarts.begin(), end = rStarts.end(); it != end; ++it)
+    for (const auto& rStart : rStarts)
     {
         m_aRun->append("{" OOO_STRING_SVTOOLS_RTF_IGNORE OOO_STRING_SVTOOLS_RTF_BKMKSTART " ");
-        m_aRun->append(msfilter::rtfutil::OutString(*it, m_rExport.m_eCurrentEncoding));
+        m_aRun->append(msfilter::rtfutil::OutString(rStart, m_rExport.m_eCurrentEncoding));
         m_aRun->append('}');
     }
     rStarts.clear();
 
-    for (std::vector< OUString >::const_iterator it = rEnds.begin(), end = rEnds.end(); it != end; ++it)
+    for (const auto& rEnd : rEnds)
     {
         m_aRun->append("{" OOO_STRING_SVTOOLS_RTF_IGNORE OOO_STRING_SVTOOLS_RTF_BKMKEND " ");
-        m_aRun->append(msfilter::rtfutil::OutString(*it, m_rExport.m_eCurrentEncoding));
+        m_aRun->append(msfilter::rtfutil::OutString(rEnd, m_rExport.m_eCurrentEncoding));
         m_aRun->append('}');
     }
     rEnds.clear();
@@ -1623,9 +1623,9 @@ void RtfAttributeOutput::WriteBookmarks_Impl(std::vector< OUString >& rStarts, s
 
 void RtfAttributeOutput::WriteAnnotationMarks_Impl(std::vector< OUString >& rStarts, std::vector< OUString >& rEnds)
 {
-    for (std::vector< OUString >::const_iterator i = rStarts.begin(), end = rStarts.end(); i != end; ++i)
+    for (const auto& rStart : rStarts)
     {
-        OString rName = OUStringToOString(*i, RTL_TEXTENCODING_UTF8);
+        OString rName = OUStringToOString(rStart, RTL_TEXTENCODING_UTF8);
 
         // Output the annotation mark
         const sal_Int32 nId = m_nNextAnnotationMarkId++;
@@ -1636,12 +1636,12 @@ void RtfAttributeOutput::WriteAnnotationMarks_Impl(std::vector< OUString >& rSta
     }
     rStarts.clear();
 
-    for (std::vector< OUString >::const_iterator i = rEnds.begin(), end = rEnds.end(); i != end; ++i)
+    for (const auto& rEnd : rEnds)
     {
-        OString rName = OUStringToOString(*i, RTL_TEXTENCODING_UTF8);
+        OString rName = OUStringToOString(rEnd, RTL_TEXTENCODING_UTF8);
 
         // Get the id of the annotation mark
-        std::map<OString, sal_Int32>::iterator it = m_rOpenedAnnotationMarksIds.find(rName);
+        auto it = m_rOpenedAnnotationMarksIds.find(rName);
         if (it != m_rOpenedAnnotationMarksIds.end())
         {
             const sal_Int32 nId = it->second;
@@ -1752,7 +1752,7 @@ void lcl_TextFrameRelativeSize(std::vector< std::pair<OString, OString> >& rFlyP
             aRelation = "0"; // margin
             break;
         }
-        rFlyProperties.push_back(std::make_pair("sizerelh", aRelation));
+        rFlyProperties.emplace_back(std::make_pair("sizerelh", aRelation));
     }
     const sal_uInt8 nHeightPercent = rSize.GetHeightPercent();
     if (nHeightPercent && nHeightPercent != SwFormatFrameSize::SYNCED)
@@ -1769,7 +1769,7 @@ void lcl_TextFrameRelativeSize(std::vector< std::pair<OString, OString> >& rFlyP
             aRelation = "0"; // margin
             break;
         }
-        rFlyProperties.push_back(std::make_pair("sizerelv", aRelation));
+        rFlyProperties.emplace_back(std::make_pair("sizerelv", aRelation));
     }
 }
 
@@ -1826,7 +1826,7 @@ void RtfAttributeOutput::writeTextFrame(const ww8::Frame& rFrame, bool bTextBox)
 
         // Restore table state.
         m_rExport.m_pTableInfo = pTableInfoOrig;
-        m_pTableWrt.reset(pTableWrt.release());
+        m_pTableWrt = std::move(pTableWrt);
         m_nTableDepth = nTableDepth;
     }
 
@@ -1852,7 +1852,7 @@ void RtfAttributeOutput::OutputFlyFrame_Impl(const ww8::Frame& rFrame, const Poi
     case ww8::Frame::eTextBox:
     {
         // If this is a TextBox of a shape, then ignore: it's handled in RtfSdrExport::StartShape().
-        if (m_rExport.SdrExporter().isTextBox(rFrame.GetFrameFormat()))
+        if (RtfSdrExport::isTextBox(rFrame.GetFrameFormat()))
             break;
 
         OSL_ENSURE(m_aRunText.getLength() == 0, "m_aRunText is not empty");
@@ -1957,12 +1957,11 @@ void RtfAttributeOutput::OutputFlyFrame_Impl(const ww8::Frame& rFrame, const Poi
         m_aRun->append("{" OOO_STRING_SVTOOLS_RTF_FIELD);
         m_aRun->append("{" OOO_STRING_SVTOOLS_RTF_IGNORE OOO_STRING_SVTOOLS_RTF_FLDINST);
 
-        if (pObject && pObject->GetObjInventor() == FmFormInventor)
+        if (pObject && pObject->GetObjInventor() == SdrInventor::FmForm)
         {
             if (const SdrUnoObj* pFormObj = dynamic_cast< const SdrUnoObj*>(pObject))
             {
-                uno::Reference< awt::XControlModel > xControlModel =
-                    pFormObj->GetUnoControlModel();
+                const uno::Reference<awt::XControlModel>& xControlModel = pFormObj->GetUnoControlModel();
                 uno::Reference< lang::XServiceInfo > xInfo(xControlModel, uno::UNO_QUERY);
                 if (xInfo.is())
                 {
@@ -2206,10 +2205,7 @@ void RtfAttributeOutput::CharCrossedOut(const SvxCrossedOutItem& rCrossedOut)
     switch (rCrossedOut.GetStrikeout())
     {
     case STRIKEOUT_NONE:
-        if (!m_bStrikeDouble)
-            m_aStyles.append(OOO_STRING_SVTOOLS_RTF_STRIKE);
-        else
-            m_aStyles.append(OOO_STRING_SVTOOLS_RTF_STRIKED);
+        m_aStyles.append(OOO_STRING_SVTOOLS_RTF_STRIKE);
         m_aStyles.append((sal_Int32)0);
         break;
     case STRIKEOUT_DOUBLE:
@@ -2592,10 +2588,10 @@ void RtfAttributeOutput::CharRelief(const SvxCharReliefItem& rRelief)
     const sal_Char* pStr;
     switch (rRelief.GetValue())
     {
-    case RELIEF_EMBOSSED:
+    case FontRelief::Embossed:
         pStr = OOO_STRING_SVTOOLS_RTF_EMBO;
         break;
-    case RELIEF_ENGRAVED:
+    case FontRelief::Engraved:
         pStr = OOO_STRING_SVTOOLS_RTF_IMPR;
         break;
     default:
@@ -2754,7 +2750,7 @@ void RtfAttributeOutput::ParaTabStop(const SvxTabStopItem& rTabStop)
     for (sal_uInt16 n = 0; n < rTabStop.Count(); n++)
     {
         const SvxTabStop& rTS = rTabStop[ n ];
-        if (SVX_TAB_ADJUST_DEFAULT != rTS.GetAdjustment())
+        if (SvxTabAdjust::Default != rTS.GetAdjustment())
         {
             const char* pFill = nullptr;
             switch (rTS.GetFill())
@@ -2783,13 +2779,13 @@ void RtfAttributeOutput::ParaTabStop(const SvxTabStopItem& rTabStop)
             const sal_Char* pAdjStr = nullptr;
             switch (rTS.GetAdjustment())
             {
-            case SVX_TAB_ADJUST_RIGHT:
+            case SvxTabAdjust::Right:
                 pAdjStr = OOO_STRING_SVTOOLS_RTF_TQR;
                 break;
-            case SVX_TAB_ADJUST_DECIMAL:
+            case SvxTabAdjust::Decimal:
                 pAdjStr = OOO_STRING_SVTOOLS_RTF_TQDEC;
                 break;
-            case SVX_TAB_ADJUST_CENTER:
+            case SvxTabAdjust::Center:
                 pAdjStr = OOO_STRING_SVTOOLS_RTF_TQC;
                 break;
             default:
@@ -2908,16 +2904,16 @@ void RtfAttributeOutput::ParaVerticalAlign(const SvxParaVertAlignItem& rAlign)
     const char* pStr;
     switch (rAlign.GetValue())
     {
-    case SvxParaVertAlignItem::TOP:
+    case SvxParaVertAlignItem::Align::Top:
         pStr = OOO_STRING_SVTOOLS_RTF_FAHANG;
         break;
-    case SvxParaVertAlignItem::BOTTOM:
+    case SvxParaVertAlignItem::Align::Bottom:
         pStr = OOO_STRING_SVTOOLS_RTF_FAVAR;
         break;
-    case SvxParaVertAlignItem::CENTER:
+    case SvxParaVertAlignItem::Align::Center:
         pStr = OOO_STRING_SVTOOLS_RTF_FACENTER;
         break;
-    case SvxParaVertAlignItem::BASELINE:
+    case SvxParaVertAlignItem::Align::Baseline:
         pStr = OOO_STRING_SVTOOLS_RTF_FAROMAN;
         break;
 
@@ -3264,7 +3260,7 @@ void RtfAttributeOutput::FormatBox(const SvxBoxItem& rBox)
         OOO_STRING_SVTOOLS_RTF_BRDRT, OOO_STRING_SVTOOLS_RTF_BRDRL, OOO_STRING_SVTOOLS_RTF_BRDRB, OOO_STRING_SVTOOLS_RTF_BRDRR
     };
 
-    sal_uInt16 nDist = rBox.GetDistance();
+    sal_uInt16 const nDist = rBox.GetSmallestDistance();
 
     if (m_rExport.m_bRTFFlySyntax)
     {
@@ -3443,7 +3439,7 @@ void RtfAttributeOutput::PostitField(const SwField* pField)
     const SwPostItField& rPField = *static_cast<const SwPostItField*>(pField);
 
     OString aName = OUStringToOString(rPField.GetName(), RTL_TEXTENCODING_UTF8);
-    std::map<OString, sal_Int32>::iterator it = m_rOpenedAnnotationMarksIds.find(aName);
+    auto it = m_rOpenedAnnotationMarksIds.find(aName);
     if (it != m_rOpenedAnnotationMarksIds.end())
     {
         // In case this field is inside annotation marks, we want to write the
@@ -3494,7 +3490,6 @@ RtfAttributeOutput::RtfAttributeOutput(RtfExport& rExport)
     : m_rExport(rExport),
       m_nStyleId(0),
       m_nListId(0),
-      m_bStrikeDouble(false),
       m_nNextAnnotationMarkId(0),
       m_nCurrentAnnotationMarkId(-1),
       m_bTableCellOpen(false),
@@ -3506,7 +3501,6 @@ RtfAttributeOutput::RtfAttributeOutput(RtfExport& rExport)
       m_bLastTable(true),
       m_bWroteCellInfo(false),
       m_bTableRowEnded(false),
-      m_aCells(),
       m_bSingleEmptyRun(false),
       m_bInRun(false),
       m_pFlyFrameSize(nullptr),
@@ -3514,9 +3508,7 @@ RtfAttributeOutput::RtfAttributeOutput(RtfExport& rExport)
 {
 }
 
-RtfAttributeOutput::~RtfAttributeOutput()
-{
-}
+RtfAttributeOutput::~RtfAttributeOutput() = default;
 
 MSWordExportBase& RtfAttributeOutput::GetExport()
 {
@@ -3843,7 +3835,7 @@ void RtfAttributeOutput::FlyFrameGraphic(const SwFlyFrameFormat* pFlyFrameFormat
     const Graphic& rGraphic(pGrfNode->GetGrf());
 
     // If there is no graphic there is not much point in parsing it
-    if (rGraphic.GetType()==GRAPHIC_NONE)
+    if (rGraphic.GetType()==GraphicType::NONE)
         return;
 
     ConvertDataFormat aConvertDestinationFormat = ConvertDataFormat::WMF;
@@ -3863,25 +3855,25 @@ void RtfAttributeOutput::FlyFrameGraphic(const SwFlyFrameFormat* pFlyFrameFormat
         // to PNG, else the BMP array will be used.
         // It may work using direct DIB data, but that needs to be checked eventually
         //
-        // #i15508# before GFX_LINK_TYPE_NATIVE_BMP was added the graphic data
+        // #i15508# before GfxLinkType::NativeBmp was added the graphic data
         // (to be hold in pGraphicAry) was not available; thus for now to stay
         // compatible, keep it that way by assigning NULL value to pGraphicAry
-        case GFX_LINK_TYPE_NATIVE_BMP:
+        case GfxLinkType::NativeBmp:
             //    pBLIPType = OOO_STRING_SVTOOLS_RTF_WBITMAP;
             pGraphicAry = nullptr;
             break;
 
-        case GFX_LINK_TYPE_NATIVE_JPG:
+        case GfxLinkType::NativeJpg:
             pBLIPType = OOO_STRING_SVTOOLS_RTF_JPEGBLIP;
             break;
-        case GFX_LINK_TYPE_NATIVE_PNG:
+        case GfxLinkType::NativePng:
             pBLIPType = OOO_STRING_SVTOOLS_RTF_PNGBLIP;
             break;
-        case GFX_LINK_TYPE_NATIVE_WMF:
+        case GfxLinkType::NativeWmf:
             pBLIPType =
                 IsEMF(pGraphicAry, nSize) ? OOO_STRING_SVTOOLS_RTF_EMFBLIP : OOO_STRING_SVTOOLS_RTF_WMETAFILE;
             break;
-        case GFX_LINK_TYPE_NATIVE_GIF:
+        case GfxLinkType::NativeGif:
             // GIF is not supported by RTF, but we override default conversion to WMF, PNG seems fits better here.
             aConvertDestinationFormat = ConvertDataFormat::PNG;
             pConvertDestinationBLIPType = OOO_STRING_SVTOOLS_RTF_PNGBLIP;
@@ -3895,9 +3887,9 @@ void RtfAttributeOutput::FlyFrameGraphic(const SwFlyFrameFormat* pFlyFrameFormat
     if (!pGraphicAry)
     {
         if (ERRCODE_NONE == GraphicConverter::Export(aStream, rGraphic,
-                (eGraphicType == GRAPHIC_BITMAP) ? ConvertDataFormat::PNG : ConvertDataFormat::WMF))
+                (eGraphicType == GraphicType::Bitmap) ? ConvertDataFormat::PNG : ConvertDataFormat::WMF))
         {
-            pBLIPType = (eGraphicType == GRAPHIC_BITMAP) ?
+            pBLIPType = (eGraphicType == GraphicType::Bitmap) ?
                         OOO_STRING_SVTOOLS_RTF_PNGBLIP : OOO_STRING_SVTOOLS_RTF_WMETAFILE;
             aStream.Seek(STREAM_SEEK_TO_END);
             nSize = aStream.Tell();
@@ -3905,7 +3897,7 @@ void RtfAttributeOutput::FlyFrameGraphic(const SwFlyFrameFormat* pFlyFrameFormat
         }
     }
 
-    Size aMapped(eGraphicType == GRAPHIC_BITMAP ? rGraphic.GetSizePixel() : rGraphic.GetPrefSize());
+    Size aMapped(eGraphicType == GraphicType::Bitmap ? rGraphic.GetSizePixel() : rGraphic.GetPrefSize());
 
     const SwCropGrf& rCr = static_cast<const SwCropGrf&>(pGrfNode->GetAttr(RES_GRFATR_CROPGRF));
 
@@ -3918,11 +3910,11 @@ void RtfAttributeOutput::FlyFrameGraphic(const SwFlyFrameFormat* pFlyFrameFormat
     aRendered.Height() = rS.GetHeight();
 
     ww8::Frame* pFrame = nullptr;
-    for (ww8::FrameIter it = m_rExport.m_aFrames.begin(); it != m_rExport.m_aFrames.end(); ++it)
+    for (auto& rFrame : m_rExport.m_aFrames)
     {
-        if (pFlyFrameFormat == &it->GetFrameFormat())
+        if (pFlyFrameFormat == &rFrame.GetFrameFormat())
         {
-            pFrame = &(*it);
+            pFrame = &rFrame;
             break;
         }
     }

@@ -81,14 +81,13 @@ public:
         SdDrawDocument& rDrawDoc,
         OutputDevice* pOutDev,
         ViewShell* pViewSh=nullptr);
-    virtual ~View();
+    virtual ~View() override;
 
     void                    CompleteRedraw( OutputDevice* pOutDev, const vcl::Region& rReg, sdr::contact::ViewObjectContactRedirector* pRedirector = nullptr) override;
 
     virtual void            GetAttributes( SfxItemSet& rTargetSet, bool bOnlyHardAttr = false ) const;
     virtual bool            SetAttributes(const SfxItemSet& rSet, bool bReplaceAll = false);
     virtual void            MarkListHasChanged() override;
-    virtual void            ModelHasChanged() override;
     void                    SelectAll();
     void                    DoCut(vcl::Window* pWindow=nullptr);
     void                    DoCopy(vcl::Window* pWindow=nullptr);
@@ -100,14 +99,14 @@ public:
     virtual sal_Int8 AcceptDrop (
         const AcceptDropEvent& rEvt,
         DropTargetHelper& rTargetHelper,
-        ::sd::Window* pTargetWindow = nullptr,
-        sal_uInt16 nPage = SDRPAGE_NOTFOUND,
-        sal_uInt16 nLayer = SDRPAGE_NOTFOUND);
+        ::sd::Window* pTargetWindow,
+        sal_uInt16 nPage,
+        sal_uInt16 nLayer);
     virtual sal_Int8 ExecuteDrop (
         const ExecuteDropEvent& rEvt,
-        ::sd::Window* pTargetWindow = nullptr,
-        sal_uInt16 nPage = SDRPAGE_NOTFOUND,
-        sal_uInt16 nLayer = SDRPAGE_NOTFOUND);
+        ::sd::Window* pTargetWindow,
+        sal_uInt16 nPage,
+        sal_uInt16 nLayer);
 
     css::uno::Reference<css::datatransfer::XTransferable>
         CreateClipboardDataObject (::sd::View*, vcl::Window& rWindow);
@@ -122,6 +121,7 @@ public:
     inline DrawDocShell* GetDocSh() const { return mpDocSh; }
     inline SdDrawDocument& GetDoc() const;
     inline ViewShell* GetViewShell() const { return mpViewSh; }
+    SfxViewShell* GetSfxViewShell() const override;
 
     virtual bool SdrBeginTextEdit(SdrObject* pObj, SdrPageView* pPV = nullptr, vcl::Window* pWin = nullptr, bool bIsNewObj = false,
         SdrOutliner* pGivenOutliner = nullptr, OutlinerView* pGivenOutlinerView = nullptr,
@@ -177,12 +177,6 @@ public:
 
     virtual void onAccessibilityOptionsChanged() override;
 
-    virtual SdrModel*   GetMarkedObjModel() const override;
-    virtual bool Paste(
-        const SdrModel& rMod, const Point& rPos, SdrObjList* pLst, SdrInsertFlags nOptions) override;
-
-    using SdrExchangeView::Paste;
-
     /** returns true if we have an undo manager and there is an open list undo action */
     bool isRecordingUndo() const;
 
@@ -235,8 +229,8 @@ public:
     SdrObject* GetSelectedSingleObject(SdPage* pPage);
 
 protected:
-    DECL_LINK_TYPED( OnParagraphInsertedHdl, ::Outliner *, void );
-    DECL_LINK_TYPED( OnParagraphRemovingHdl, ::Outliner *, void );
+    DECL_LINK( OnParagraphInsertedHdl, ::Outliner::ParagraphHdlParam, void );
+    DECL_LINK( OnParagraphRemovingHdl, ::Outliner::ParagraphHdlParam, void );
 
     virtual void OnBeginPasteOrDrop( PasteOrDropInfos* pInfo ) override;
     virtual void OnEndPasteOrDrop( PasteOrDropInfos* pInfo ) override;
@@ -256,9 +250,9 @@ protected:
     sal_uInt16              mnLockRedrawSmph;
     bool                    mbIsDropAllowed;
 
-                            DECL_LINK_TYPED( DropErrorHdl, Idle*, void );
-                            DECL_LINK_TYPED( DropInsertFileHdl, Idle*, void );
-                            DECL_LINK_TYPED( ExecuteNavigatorDrop, void*, void );
+                            DECL_LINK( DropErrorHdl, Idle*, void );
+                            DECL_LINK( DropInsertFileHdl, Idle*, void );
+                            DECL_LINK( ExecuteNavigatorDrop, void*, void );
 
     void ImplClearDrawDropMarker();
 

@@ -61,7 +61,7 @@ namespace sd
     {
     public:
         CustomAnimationClonerImpl();
-        Reference< XAnimationNode > Clone( const Reference< XAnimationNode >& xSourceNode, const SdPage* pSource = nullptr, const SdPage* pTarget = nullptr );
+        Reference< XAnimationNode > Clone( const Reference< XAnimationNode >& xSourceNode, const SdPage* pSource, const SdPage* pTarget );
 
     private:
         void transformNode( const Reference< XAnimationNode >& xNode );
@@ -96,8 +96,8 @@ namespace sd
             // create a dictionary to map source to cloned shapes
             if( pSourcePage && pTargetPage )
             {
-                SdrObjListIter aSourceIter( *pSourcePage, IM_DEEPWITHGROUPS );
-                SdrObjListIter aTargetIter( *pTargetPage, IM_DEEPWITHGROUPS );
+                SdrObjListIter aSourceIter( *pSourcePage, SdrIterMode::DeepWithGroups );
+                SdrObjListIter aTargetIter( *pTargetPage, SdrIterMode::DeepWithGroups );
 
                 while( aSourceIter.IsMore() && aTargetIter.IsMore() )
                 {

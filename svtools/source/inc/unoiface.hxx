@@ -61,7 +61,7 @@ protected:
 
 public:
                     VCLXMultiLineEdit();
-                    virtual ~VCLXMultiLineEdit();
+                    virtual ~VCLXMultiLineEdit() override;
 
     // css::uno::XInterface
     css::uno::Any                  SAL_CALL queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
@@ -105,8 +105,8 @@ public:
     // css::awt::XWindow
     void SAL_CALL setFocus(  ) throw(css::uno::RuntimeException, std::exception) override;
 
-    static void     ImplGetPropertyIds( std::list< sal_uInt16 > &aIds );
-    virtual void    GetPropertyIds( std::list< sal_uInt16 > &aIds ) override { return ImplGetPropertyIds( aIds ); }
+    static void     ImplGetPropertyIds( std::vector< sal_uInt16 > &aIds );
+    virtual void    GetPropertyIds( std::vector< sal_uInt16 > &aIds ) override { return ImplGetPropertyIds( aIds ); }
 };
 
 
@@ -115,13 +115,13 @@ public:
 class VCLXFileControl : public css::awt::XTextComponent, public css::awt::XTextLayoutConstrains, public VCLXWindow
 {
 protected:
-    DECL_LINK_TYPED(ModifyHdl, Edit&, void);
+    DECL_LINK(ModifyHdl, Edit&, void);
     void ModifyHdl();
     TextListenerMultiplexer maTextListeners;
 
 public:
                     VCLXFileControl();
-                    virtual ~VCLXFileControl();
+                    virtual ~VCLXFileControl() override;
 
     virtual void SetWindow( const VclPtr< vcl::Window > &pWindow ) override;
 
@@ -159,8 +159,8 @@ public:
 
     void SAL_CALL setProperty( const OUString& PropertyName, const css::uno::Any& Value) throw(css::uno::RuntimeException, std::exception) override;
 
-    static void     ImplGetPropertyIds( std::list< sal_uInt16 > &aIds );
-    virtual void    GetPropertyIds( std::list< sal_uInt16 > &aIds ) override { return ImplGetPropertyIds( aIds ); }
+    static void     ImplGetPropertyIds( std::vector< sal_uInt16 > &aIds );
+    virtual void    GetPropertyIds( std::vector< sal_uInt16 > &aIds ) override { return ImplGetPropertyIds( aIds ); }
 };
 
 
@@ -170,21 +170,20 @@ public:
 class SVTXFormattedField : public VCLXSpinField
 {
 protected:
-    SvNumberFormatsSupplierObj* m_pCurrentSupplier;
+    rtl::Reference<SvNumberFormatsSupplierObj> m_xCurrentSupplier;
     bool                    bIsStandardSupplier;
 
     sal_Int32                   nKeyToSetDelayed;
 
 public:
     SVTXFormattedField();
-    virtual ~SVTXFormattedField();
+    virtual ~SVTXFormattedField() override;
 
     // css::awt::XVclWindowPeer
     void SAL_CALL setProperty( const OUString& PropertyName, const css::uno::Any& Value ) throw(css::uno::RuntimeException, std::exception) override;
     css::uno::Any SAL_CALL getProperty( const OUString& PropertyName ) throw(css::uno::RuntimeException, std::exception) override;
 
 protected:
-    css::uno::Reference< css::util::XNumberFormatsSupplier >  getFormatsSupplier() const;
     void    setFormatsSupplier(const css::uno::Reference< css::util::XNumberFormatsSupplier > & xSupplier);
     sal_Int32   getFormatKey() const;
     void    setFormatKey(sal_Int32 nKey);
@@ -209,8 +208,8 @@ protected:
 
     virtual void    SetWindow( const VclPtr< vcl::Window > &_pWindow) override;
 
-    static void     ImplGetPropertyIds( std::list< sal_uInt16 > &aIds );
-    virtual void    GetPropertyIds( std::list< sal_uInt16 > &aIds ) override { return ImplGetPropertyIds( aIds ); }
+    static void     ImplGetPropertyIds( std::vector< sal_uInt16 > &aIds );
+    virtual void    GetPropertyIds( std::vector< sal_uInt16 > &aIds ) override { return ImplGetPropertyIds( aIds ); }
 };
 
 
@@ -246,7 +245,7 @@ private:
 protected:
     virtual void ProcessWindowEvent( const VclWindowEvent& rVclWindowEvent ) override;
 
-    virtual ~SVTXRoadmap();
+    virtual ~SVTXRoadmap() override;
 
 public:
     SVTXRoadmap();
@@ -275,8 +274,8 @@ protected:
     // VCLXGraphicControl overridables
     virtual void    ImplSetNewImage() override;
 
-    static void     ImplGetPropertyIds( std::list< sal_uInt16 > &aIds );
-    virtual void    GetPropertyIds( std::list< sal_uInt16 > &aIds ) override { return ImplGetPropertyIds( aIds ); }
+    static void     ImplGetPropertyIds( std::vector< sal_uInt16 > &aIds );
+    virtual void    GetPropertyIds( std::vector< sal_uInt16 > &aIds ) override { return ImplGetPropertyIds( aIds ); }
 };
 
 
@@ -286,7 +285,7 @@ class SVTXNumericField : public css::awt::XNumericField, public SVTXFormattedFie
 {
 public:
                     SVTXNumericField();
-                    virtual ~SVTXNumericField();
+                    virtual ~SVTXNumericField() override;
 
     // css::uno::XInterface
     css::uno::Any                  SAL_CALL queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
@@ -315,8 +314,7 @@ public:
     void SAL_CALL setStrictFormat( sal_Bool bStrict ) throw(css::uno::RuntimeException, std::exception) override;
     sal_Bool SAL_CALL isStrictFormat(  ) throw(css::uno::RuntimeException, std::exception) override;
 
-    static void     ImplGetPropertyIds( std::list< sal_uInt16 > &aIds );
-    virtual void    GetPropertyIds( std::list< sal_uInt16 > &aIds ) override { return ImplGetPropertyIds( aIds ); }
+    virtual void    GetPropertyIds( std::vector< sal_uInt16 > &aIds ) override;
 };
 
 
@@ -326,7 +324,7 @@ class SVTXCurrencyField : public css::awt::XCurrencyField, public SVTXFormattedF
 {
 public:
                     SVTXCurrencyField();
-                    virtual ~SVTXCurrencyField();
+                    virtual ~SVTXCurrencyField() override;
 
     // css::uno::XInterface
     css::uno::Any                  SAL_CALL queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
@@ -359,8 +357,8 @@ public:
     void SAL_CALL setStrictFormat( sal_Bool bStrict ) throw(css::uno::RuntimeException, std::exception) override;
     sal_Bool SAL_CALL isStrictFormat(  ) throw(css::uno::RuntimeException, std::exception) override;
 
-    static void     ImplGetPropertyIds( std::list< sal_uInt16 > &aIds );
-    virtual void    GetPropertyIds( std::list< sal_uInt16 > &aIds ) override { return ImplGetPropertyIds( aIds ); }
+    static void     ImplGetPropertyIds( std::vector< sal_uInt16 > &aIds );
+    virtual void    GetPropertyIds( std::vector< sal_uInt16 > &aIds ) override { return ImplGetPropertyIds( aIds ); }
 };
 
 
@@ -379,7 +377,7 @@ protected:
 
 public:
                     VCLXProgressBar();
-                    virtual ~VCLXProgressBar();
+                    virtual ~VCLXProgressBar() override;
 
     // css::uno::XInterface
     css::uno::Any                  SAL_CALL queryInterface( const css::uno::Type & rType ) throw(css::uno::RuntimeException, std::exception) override;
@@ -401,8 +399,8 @@ public:
     void SAL_CALL setProperty( const OUString& PropertyName, const css::uno::Any& Value ) throw(css::uno::RuntimeException, std::exception) override;
     css::uno::Any SAL_CALL getProperty( const OUString& PropertyName ) throw(css::uno::RuntimeException, std::exception) override;
 
-    static void     ImplGetPropertyIds( std::list< sal_uInt16 > &aIds );
-    virtual void    GetPropertyIds( std::list< sal_uInt16 > &aIds ) override { return ImplGetPropertyIds( aIds ); }
+    static void     ImplGetPropertyIds( std::vector< sal_uInt16 > &aIds );
+    virtual void    GetPropertyIds( std::vector< sal_uInt16 > &aIds ) override { return ImplGetPropertyIds( aIds ); }
 };
 
 
@@ -412,13 +410,13 @@ class SVTXDateField : public VCLXDateField
 {
 public:
                     SVTXDateField();
-                    virtual ~SVTXDateField();
+                    virtual ~SVTXDateField() override;
 
     // css::awt::VclWindowPeer
     void SAL_CALL setProperty( const OUString& PropertyName, const css::uno::Any& Value ) throw(css::uno::RuntimeException, std::exception) override;
 
-    static void     ImplGetPropertyIds( std::list< sal_uInt16 > &aIds );
-    virtual void    GetPropertyIds( std::list< sal_uInt16 > &aIds ) override { return ImplGetPropertyIds( aIds ); }
+    static void     ImplGetPropertyIds( std::vector< sal_uInt16 > &aIds );
+    virtual void    GetPropertyIds( std::vector< sal_uInt16 > &aIds ) override { return ImplGetPropertyIds( aIds ); }
 };
 
 #endif // INCLUDED_SVTOOLS_SOURCE_INC_UNOIFACE_HXX

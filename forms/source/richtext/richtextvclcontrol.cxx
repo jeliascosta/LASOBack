@@ -52,7 +52,7 @@ namespace frm
 
     void RichTextControl::implInit( RichTextEngine* _pEngine, ITextAttributeListener* _pTextAttribListener, ITextSelectionListener* _pSelectionListener )
     {
-        m_pImpl = new RichTextControlImpl( this, _pEngine, _pTextAttribListener, _pSelectionListener );
+        m_pImpl.reset( new RichTextControlImpl( this, _pEngine, _pTextAttribListener, _pSelectionListener ) );
         SetCompoundControl( true );
     }
 
@@ -64,7 +64,7 @@ namespace frm
 
     void RichTextControl::dispose()
     {
-        delete m_pImpl;
+        m_pImpl.reset();
         Control::dispose();
     }
 
@@ -160,7 +160,7 @@ namespace frm
 
     void RichTextControl::GetFocus()
     {
-        getViewport().GrabFocus();
+        m_pImpl->getViewport( RichTextControlImpl::GrantAccess() )->GrabFocus();
     }
 
 
@@ -317,12 +317,6 @@ namespace frm
     EditEngine& RichTextControl::getEngine() const
     {
         return *m_pImpl->getEngine( RichTextControlImpl::GrantAccess() );
-    }
-
-
-    vcl::Window& RichTextControl::getViewport() const
-    {
-        return *m_pImpl->getViewport( RichTextControlImpl::GrantAccess() );
     }
 
 

@@ -52,8 +52,9 @@ public:
         The window is necessary, since our views can display on multiple windows
      */
     SvxTextEditSource( SdrObject& rObj, SdrText* pText, SdrView& rView, const vcl::Window& rViewWindow );
-
-    virtual ~SvxTextEditSource();
+    SvxTextEditSource(const SvxTextEditSource&) = delete;
+    SvxTextEditSource& operator=(const SvxTextEditSource&) = delete;
+    virtual ~SvxTextEditSource() override;
 
     virtual SvxEditSource*          Clone() const override;
     virtual SvxTextForwarder*       GetTextForwarder() override;
@@ -83,7 +84,7 @@ public:
 private:
     SVX_DLLPRIVATE SvxTextEditSource( SvxTextEditSourceImpl* pImpl );
 
-    SvxTextEditSourceImpl*  mpImpl;
+    rtl::Reference<SvxTextEditSourceImpl>  mpImpl;
 };
 
 #endif

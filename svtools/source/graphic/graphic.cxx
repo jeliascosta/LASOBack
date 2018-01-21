@@ -22,7 +22,6 @@
 #include <com/sun/star/graphic/GraphicType.hpp>
 #include <com/sun/star/graphic/XGraphicTransformer.hpp>
 #include <vcl/dibtools.hxx>
-#include <vcl/graph.hxx>
 #include "graphic.hxx"
 #include <comphelper/servicehelper.hxx>
 #include <cppuhelper/supportsservice.hxx>
@@ -34,24 +33,19 @@ using namespace com::sun::star;
 namespace unographic {
 
 Graphic::Graphic() :
-    mpGraphic( nullptr )
+    maGraphic()
 {
 }
 
-
-Graphic::~Graphic()
-    throw()
+Graphic::~Graphic() throw()
 {
-    delete mpGraphic;
 }
-
 
 void Graphic::init( const ::Graphic& rGraphic )
     throw()
 {
-    delete mpGraphic;
-    mpGraphic = new ::Graphic( rGraphic );
-    ::unographic::GraphicDescriptor::init( *mpGraphic );
+    maGraphic = ::Graphic(rGraphic);
+    unographic::GraphicDescriptor::init(maGraphic);
 }
 
 
@@ -66,9 +60,9 @@ uno::Any SAL_CALL Graphic::queryAggregation( const uno::Type& rType )
     else if( rType == cppu::UnoType<lang::XUnoTunnel>::get())
         aAny <<= uno::Reference< lang::XUnoTunnel >(this);
     else
-        aAny <<= ::unographic::GraphicDescriptor::queryAggregation( rType );
+        aAny = ::unographic::GraphicDescriptor::queryAggregation( rType );
 
-    return aAny ;
+    return aAny;
 }
 
 
@@ -85,33 +79,19 @@ uno::Any SAL_CALL Graphic::queryInterface( const uno::Type & rType )
 void SAL_CALL Graphic::acquire()
     throw()
 {
-    ::unographic::GraphicDescriptor::acquire();
+    unographic::GraphicDescriptor::acquire();
 }
 
 
 void SAL_CALL Graphic::release() throw()
 {
-    ::unographic::GraphicDescriptor::release();
-}
-
-OUString Graphic::getImplementationName_Static()
-    throw()
-{
-    return OUString( "com.sun.star.comp.graphic.Graphic" );
-}
-
-
-uno::Sequence< OUString > Graphic::getSupportedServiceNames_Static()
-    throw()
-{
-    uno::Sequence< OUString > aSeq { "com.sun.star.graphic.Graphic" };
-    return aSeq;
+    unographic::GraphicDescriptor::release();
 }
 
 OUString SAL_CALL Graphic::getImplementationName()
     throw( uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
+    return OUString( "com.sun.star.comp.graphic.Graphic" );
 }
 
 sal_Bool SAL_CALL Graphic::supportsService( const OUString& rServiceName )
@@ -124,7 +104,7 @@ uno::Sequence< OUString > SAL_CALL Graphic::getSupportedServiceNames()
     throw( uno::RuntimeException, std::exception )
 {
     uno::Sequence< OUString >    aRet( ::unographic::GraphicDescriptor::getSupportedServiceNames() );
-    uno::Sequence< OUString >    aNew( getSupportedServiceNames_Static() );
+    uno::Sequence< OUString >    aNew { "com.sun.star.graphic.Graphic" };
     sal_Int32                           nOldCount = aRet.getLength();
 
     aRet.realloc( nOldCount + aNew.getLength() );
@@ -156,13 +136,21 @@ uno::Sequence< sal_Int8 > SAL_CALL Graphic::getImplementationId()
 }
 
 
-::sal_Int8 SAL_CALL Graphic::getType()
+sal_Int8 SAL_CALL Graphic::getType()
      throw (uno::RuntimeException, std::exception)
 {
-    ::sal_Int8 cRet = graphic::GraphicType::EMPTY;
+    sal_Int8 cRet = graphic::GraphicType::EMPTY;
 
-    if( mpGraphic && ( mpGraphic->GetType() != GRAPHIC_NONE ) )
-        cRet = ( ( mpGraphic->GetType() == GRAPHIC_BITMAP ) ? graphic::GraphicType::PIXEL : graphic::GraphicType::VECTOR );
+    if (!!maGraphic)
+    {
+        ::GraphicType eType = maGraphic.GetType();
+
+        if (eType != ::GraphicType::NONE)
+        {
+            cRet = (eType == ::GraphicType::Bitmap) ? graphic::GraphicType::PIXEL
+                                                  : graphic::GraphicType::VECTOR;
+        }
+    }
 
     return cRet;
 }
@@ -170,29 +158,29 @@ uno::Sequence< sal_Int8 > SAL_CALL Graphic::getImplementationId()
 
 // XBitmap
 
-
-awt::Size SAL_CALL Graphic::getSize(  ) throw (uno::RuntimeException, std::exception)
+awt::Size SAL_CALL Graphic::getSize() throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
-    ::Size aVclSize;
-    if( mpGraphic && ( mpGraphic->GetType() != GRAPHIC_NONE ) )
-        aVclSize = mpGraphic->GetSizePixel();
-
-    return awt::Size( aVclSize.Width(), aVclSize.Height() );
+    Size aVclSize;
+    if (!!maGraphic && maGraphic.GetType() != ::GraphicType::NONE)
+    {
+        aVclSize = maGraphic.GetSizePixel();
+    }
+    return awt::Size(aVclSize.Width(), aVclSize.Height());
 }
 
 
-uno::Sequence< ::sal_Int8 > SAL_CALL Graphic::getDIB(  ) throw (uno::RuntimeException, std::exception)
+uno::Sequence<sal_Int8> SAL_CALL Graphic::getDIB() throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
-    if( mpGraphic && ( mpGraphic->GetType() != GRAPHIC_NONE ) )
+    if (!!maGraphic && maGraphic.GetType() != ::GraphicType::NONE)
     {
-        SvMemoryStream aMem;
+        SvMemoryStream aMemoryStream;
 
-        WriteDIB(mpGraphic->GetBitmapEx().GetBitmap(), aMem, false, true);
-        return css::uno::Sequence<sal_Int8>( static_cast<sal_Int8 const *>(aMem.GetData()), aMem.Tell() );
+        WriteDIB(maGraphic.GetBitmapEx().GetBitmap(), aMemoryStream, false, true);
+        return css::uno::Sequence<sal_Int8>(static_cast<sal_Int8 const *>(aMemoryStream.GetData()), aMemoryStream.Tell());
     }
     else
     {
@@ -201,16 +189,16 @@ uno::Sequence< ::sal_Int8 > SAL_CALL Graphic::getDIB(  ) throw (uno::RuntimeExce
 }
 
 
-uno::Sequence< ::sal_Int8 > SAL_CALL Graphic::getMaskDIB(  ) throw (uno::RuntimeException, std::exception)
+uno::Sequence<sal_Int8> SAL_CALL Graphic::getMaskDIB() throw (uno::RuntimeException, std::exception)
 {
     SolarMutexGuard aGuard;
 
-    if( mpGraphic && ( mpGraphic->GetType() != GRAPHIC_NONE ) )
+    if (!!maGraphic && maGraphic.GetType() != ::GraphicType::NONE)
     {
-        SvMemoryStream aMem;
+        SvMemoryStream aMemoryStream;
 
-        WriteDIB(mpGraphic->GetBitmapEx().GetMask(), aMem, false, true);
-        return css::uno::Sequence<sal_Int8>( static_cast<sal_Int8 const *>(aMem.GetData()), aMem.Tell() );
+        WriteDIB(maGraphic.GetBitmapEx().GetMask(), aMemoryStream, false, true);
+        return css::uno::Sequence<sal_Int8>( static_cast<sal_Int8 const *>(aMemoryStream.GetData()), aMemoryStream.Tell() );
     }
     else
     {
@@ -231,8 +219,7 @@ sal_Int64 SAL_CALL Graphic::getSomething( const uno::Sequence< sal_Int8 >& rId )
     throw( uno::RuntimeException, std::exception )
 {
     return( ( rId.getLength() == 16 && 0 == memcmp( ::Graphic::getUnoTunnelId().getConstArray(), rId.getConstArray(), 16 ) ) ?
-            reinterpret_cast< sal_Int64 >( mpGraphic ) :
-            0 );
+            reinterpret_cast<sal_Int64>(&maGraphic) : 0 );
 }
 
 }

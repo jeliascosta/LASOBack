@@ -52,7 +52,7 @@ DataEditor::DataEditor(vcl::Window* pParent,
     m_xBrwData->set_hexpand(true);
     m_xBrwData->set_vexpand(true);
     m_xBrwData->set_expand(true);
-    Size aSize(m_xBrwData->LogicToPixel(Size(232, 121), MAP_APPFONT));
+    Size aSize(m_xBrwData->LogicToPixel(Size(232, 121), MapUnit::MapAppFont));
     m_xBrwData->set_width_request(aSize.Width());
     m_xBrwData->set_height_request(aSize.Height());
     m_xBrwData->Show();
@@ -71,7 +71,7 @@ DataEditor::DataEditor(vcl::Window* pParent,
 
     m_xBrwData->SetCursorMovedHdl( LINK( this, DataEditor, BrowserCursorMovedHdl ));
 
-    UpdateData();
+    m_xBrwData->SetDataFromModel( m_xChartDoc, m_xContext );
     GrabFocus();
     m_xBrwData->GrabFocus();
 
@@ -111,7 +111,7 @@ void DataEditor::dispose()
 }
 
 // react on click (or keypress) on toolbar icon
-IMPL_LINK_NOARG_TYPED(DataEditor, ToolboxHdl, ToolBox *, void)
+IMPL_LINK_NOARG(DataEditor, ToolboxHdl, ToolBox *, void)
 {
     sal_uInt16 nId = m_pTbxData->GetCurItemId();
 
@@ -132,7 +132,7 @@ IMPL_LINK_NOARG_TYPED(DataEditor, ToolboxHdl, ToolBox *, void)
 }
 
 // refresh toolbar icons according to currently selected cell in browse box
-IMPL_LINK_NOARG_TYPED(DataEditor, BrowserCursorMovedHdl, DataBrowser*, void)
+IMPL_LINK_NOARG(DataEditor, BrowserCursorMovedHdl, DataBrowser*, void)
 {
     if( m_bReadOnly )
         return;
@@ -167,17 +167,12 @@ void DataEditor::SetReadOnly( bool bReadOnly )
     m_xBrwData->SetReadOnly( m_bReadOnly );
 }
 
-IMPL_LINK_NOARG_TYPED(DataEditor, MiscHdl, LinkParamNone*, void)
+IMPL_LINK_NOARG(DataEditor, MiscHdl, LinkParamNone*, void)
 {
     SvtMiscOptions aMiscOptions;
     sal_Int16 nStyle( aMiscOptions.GetToolboxStyle() );
 
     m_pTbxData->SetOutStyle( nStyle );
-}
-
-void DataEditor::UpdateData()
-{
-    m_xBrwData->SetDataFromModel( m_xChartDoc, m_xContext );
 }
 
 bool DataEditor::Close()

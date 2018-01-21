@@ -38,6 +38,7 @@
 
 #include <basegfx/matrix/b2dhommatrixtools.hxx>
 #include <memory>
+#include <comphelper/lok.hxx>
 
 void OutputDevice::DrawBitmap( const Point& rDestPt, const Bitmap& rBitmap )
 {
@@ -68,7 +69,7 @@ void OutputDevice::DrawBitmap( const Point& rDestPt, const Size& rDestSize,
     {
         return;
     }
-    if ( ROP_INVERT == meRasterOp )
+    if ( RasterOp::Invert == meRasterOp )
     {
         DrawRect( Rectangle( rDestPt, rDestSize ) );
         return;
@@ -195,7 +196,7 @@ Bitmap OutputDevice::GetDownsampledBitmap( const Size& rDstSz,
         if( !aBmp.IsEmpty() )
         {
             // do downsampling if necessary
-            Size aDstSizeTwip( PixelToLogic( LogicToPixel( rDstSz ), MAP_TWIP ) );
+            Size aDstSizeTwip( PixelToLogic( LogicToPixel( rDstSz ), MapUnit::MapTwip ) );
 
             // #103209# Normalize size (mirroring has to happen outside of this method)
             aDstSizeTwip = Size( labs(aDstSizeTwip.Width()), labs(aDstSizeTwip.Height()) );
@@ -246,7 +247,7 @@ void OutputDevice::DrawBitmapEx( const Point& rDestPt,
     if( ImplIsRecordLayout() )
         return;
 
-    if( TRANSPARENT_NONE == rBitmapEx.GetTransparentType() )
+    if( TransparentType::NONE == rBitmapEx.GetTransparentType() )
     {
         DrawBitmap( rDestPt, rBitmapEx.GetBitmap() );
     }
@@ -265,7 +266,7 @@ void OutputDevice::DrawBitmapEx( const Point& rDestPt, const Size& rDestSize,
     if( ImplIsRecordLayout() )
         return;
 
-    if ( TRANSPARENT_NONE == rBitmapEx.GetTransparentType() )
+    if ( TransparentType::NONE == rBitmapEx.GetTransparentType() )
     {
         DrawBitmap( rDestPt, rDestSize, rBitmapEx.GetBitmap() );
     }
@@ -285,7 +286,7 @@ void OutputDevice::DrawBitmapEx( const Point& rDestPt, const Size& rDestSize,
     if( ImplIsRecordLayout() )
         return;
 
-    if( TRANSPARENT_NONE == rBitmapEx.GetTransparentType() )
+    if( TransparentType::NONE == rBitmapEx.GetTransparentType() )
     {
         DrawBitmap( rDestPt, rDestSize, rSrcPtPixel, rSrcSizePixel, rBitmapEx.GetBitmap() );
     }
@@ -294,7 +295,7 @@ void OutputDevice::DrawBitmapEx( const Point& rDestPt, const Size& rDestSize,
         if ( mnDrawMode & DrawModeFlags::NoBitmap )
             return;
 
-        if ( ROP_INVERT == meRasterOp )
+        if ( RasterOp::Invert == meRasterOp )
         {
             DrawRect( Rectangle( rDestPt, rDestSize ) );
             return;
@@ -1177,7 +1178,6 @@ void OutputDevice::DrawTransformedBitmapEx(
     if ( mnDrawMode & DrawModeFlags::NoBitmap )
         return;
 
-
     // decompose matrix to check rotation and shear
     basegfx::B2DVector aScale, aTranslate;
     double fRotate, fShearX;
@@ -1188,26 +1188,37 @@ void OutputDevice::DrawTransformedBitmapEx(
     const bool bMirroredY(basegfx::fTools::less(aScale.getY(), 0.0));
 
     static bool bForceToOwnTransformer(false);
+    const bool bMetafile = mpMetaFile != nullptr;
 
     if(!bForceToOwnTransformer && !bRotated && !bSheared && !bMirroredX && !bMirroredY)
     {
         // with no rotation, shear or mirroring it can be mapped to DrawBitmapEx
         // do *not* execute the mirroring here, it's done in the fallback
         // #i124580# the correct DestSize needs to be calculated based on MaxXY values
-        const Point aDestPt(basegfx::fround(aTranslate.getX()), basegfx::fround(aTranslate.getY()));
+        Point aDestPt(basegfx::fround(aTranslate.getX()), basegfx::fround(aTranslate.getY()));
         const Size aDestSize(
             basegfx::fround(aScale.getX() + aTranslate.getX()) - aDestPt.X(),
             basegfx::fround(aScale.getY() + aTranslate.getY()) - aDestPt.Y());
+        const Point aOrigin = GetMapMode().GetOrigin();
+        if (!bMetafile && comphelper::LibreOfficeKit::isActive() && GetMapMode().GetMapUnit() != MapUnit::MapPixel)
+        {
+            aDestPt.Move(aOrigin.getX(), aOrigin.getY());
+            EnableMapMode(false);
+        }
 
         DrawBitmapEx(aDestPt, aDestSize, rBitmapEx);
+        if (!bMetafile && comphelper::LibreOfficeKit::isActive() && GetMapMode().GetMapUnit() != MapUnit::MapPixel)
+        {
+            EnableMapMode();
+            aDestPt.Move(-aOrigin.getX(), -aOrigin.getY());
+        }
         return;
     }
 
     // we have rotation,shear or mirror, check if some crazy mode needs the
     // created transformed bitmap
-    const bool bInvert(ROP_INVERT == meRasterOp);
+    const bool bInvert(RasterOp::Invert == meRasterOp);
     const bool bBitmapChangedColor(mnDrawMode & (DrawModeFlags::BlackBitmap | DrawModeFlags::WhiteBitmap | DrawModeFlags::GrayBitmap | DrawModeFlags::GhostedBitmap));
-    const bool bMetafile(mpMetaFile);
     bool bDone(false);
     const basegfx::B2DHomMatrix aFullTransform(GetViewTransformation() * rTransformation);
     const bool bTryDirectPaint(!bInvert && !bBitmapChangedColor && !bMetafile );
@@ -1241,7 +1252,7 @@ void OutputDevice::DrawTransformedBitmapEx(
         // limit maximum area to something looking good for non-pixel-based targets (metafile, printer)
         // by using a fixed minimum (allow at least, but no need to utilize) for good smoothing and an area
         // dependent of original size for good quality when e.g. rotated/sheared. Still, limit to a maximum
-        // to avoid crashes/ressource problems (ca. 1500x3000 here)
+        // to avoid crashes/resource problems (ca. 1500x3000 here)
         const Size& rOriginalSizePixel(rBitmapEx.GetSizePixel());
         const double fOrigArea(rOriginalSizePixel.Width() * rOriginalSizePixel.Height() * 0.5);
         const double fOrigAreaScaled(bSheared || bRotated ? fOrigArea * 1.44 : fOrigArea);

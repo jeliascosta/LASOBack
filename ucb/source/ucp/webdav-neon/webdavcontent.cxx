@@ -35,9 +35,10 @@
 
 #include <comphelper/processfactory.hxx>
 #include <osl/diagnose.h>
-#include "osl/doublecheckedlocking.h"
+#include <osl/doublecheckedlocking.h>
 #include <rtl/uri.hxx>
 #include <rtl/ustrbuf.hxx>
+#include <officecfg/Inet.hxx>
 #include <ucbhelper/contentidentifier.hxx>
 #include <ucbhelper/propertyvalueset.hxx>
 #include <ucbhelper/simpleinteractionrequest.hxx>
@@ -57,9 +58,9 @@
 #include <com/sun/star/ucb/InsertCommandArgument.hpp>
 #include <com/sun/star/ucb/InteractiveBadTransferURLException.hpp>
 #include <com/sun/star/ucb/InteractiveAugmentedIOException.hpp>
-#include "com/sun/star/ucb/InteractiveLockingLockedException.hpp"
-#include "com/sun/star/ucb/InteractiveLockingLockExpiredException.hpp"
-#include "com/sun/star/ucb/InteractiveLockingNotLockedException.hpp"
+#include <com/sun/star/ucb/InteractiveLockingLockedException.hpp>
+#include <com/sun/star/ucb/InteractiveLockingLockExpiredException.hpp>
+#include <com/sun/star/ucb/InteractiveLockingNotLockedException.hpp>
 #include <com/sun/star/ucb/InteractiveNetworkConnectException.hpp>
 #include <com/sun/star/ucb/InteractiveNetworkGeneralException.hpp>
 #include <com/sun/star/ucb/InteractiveNetworkReadException.hpp>
@@ -92,6 +93,124 @@
 using namespace com::sun::star;
 using namespace webdav_ucp;
 
+namespace
+{
+    // implement a GET to substitute HEAD, when HEAD not available
+    void lcl_sendPartialGETRequest( bool &bError,
+                                           DAVException &aLastException,
+                                           const std::vector< rtl::OUString >& rProps,
+                                           std::vector< rtl::OUString > &aHeaderNames,
+                                           const std::unique_ptr< DAVResourceAccess > &xResAccess,
+                                           std::unique_ptr< ContentProperties > &xProps,
+                                           const uno::Reference< ucb::XCommandEnvironment >& xEnv )
+    {
+        bool bIsRequestSize = false;
+        DAVResource aResource;
+        DAVRequestHeaders aPartialGet;
+        aPartialGet.push_back( DAVRequestHeader( OUString( "Range" ), // see <https://tools.ietf.org/html/rfc7233#section-3.1>
+                                                 OUString( "bytes=0-0" ) ) );
+
+        for ( std::vector< rtl::OUString >::const_iterator it = aHeaderNames.begin();
+              it != aHeaderNames.end(); ++it )
+        {
+            if ( *it == "Content-Length" )
+            {
+                bIsRequestSize = true;
+                break;
+            }
+        }
+
+        if ( bIsRequestSize )
+        {
+            // we need to know if the server accepts range requests for a resource
+            // and the range unit it uses
+            aHeaderNames.push_back( OUString( "Accept-Ranges" ) ); // see <https://tools.ietf.org/html/rfc7233#section-2.3>
+            aHeaderNames.push_back( OUString( "Content-Range" ) ); // see <https://tools.ietf.org/html/rfc7233#section-4.2>
+        }
+        try
+        {
+            xResAccess->GET0( aPartialGet, aHeaderNames, aResource, xEnv );
+            bError = false;
+
+            if ( bIsRequestSize )
+            {
+                // the ContentProperties maps "Content-Length" to the UCB "Size" property
+                // This would have an unrealistic value of 1 byte because we did only a partial GET
+                // Solution: if "Content-Range" is present, map it with UCB "Size" property
+                rtl::OUString aAcceptRanges, aContentRange, aContentLength;
+                std::vector< DAVPropertyValue > &aResponseProps = aResource.properties;
+                for ( std::vector< DAVPropertyValue >::const_iterator it = aResponseProps.begin();
+                      it != aResponseProps.end(); ++it )
+                {
+                    if ( it->Name == "Accept-Ranges" )
+                        it->Value >>= aAcceptRanges;
+                    else if ( it->Name == "Content-Range" )
+                        it->Value >>= aContentRange;
+                    else if ( it->Name == "Content-Length" )
+                        it->Value >>= aContentLength;
+                }
+
+                sal_Int64 nSize = 1;
+                if ( aContentLength.getLength() )
+                {
+                    nSize = aContentLength.toInt64();
+                }
+
+                // according to <> http://tools.ietf.org/html/rfc2616#section-3.12
+                // <https://tools.ietf.org/html/rfc7233#section-2>
+                // needs some explanation for this
+                // probably some changes?
+                // the only range unit defined is "bytes" and implementations
+                // MAY ignore ranges specified using other units.
+                if ( nSize == 1 &&
+                     aContentRange.getLength() &&
+                     aAcceptRanges == "bytes" )
+                {
+                    // Parse the Content-Range to get the size
+                    // vid. http://tools.ietf.org/html/rfc2616#section-14.16
+                    // Content-Range: <range unit> <bytes range>/<size>
+                    sal_Int32 nSlash = aContentRange.lastIndexOf( '/' );
+                    if ( nSlash != -1 )
+                    {
+                        rtl::OUString aSize = aContentRange.copy( nSlash + 1 );
+                        // "*" means that the instance-length is unknown at the time when the response was generated
+                        if ( aSize != "*" )
+                        {
+                            for ( std::vector< DAVPropertyValue >::iterator it = aResponseProps.begin();
+                                  it != aResponseProps.end(); ++it )
+                            {
+                                if (it->Name == "Content-Length")
+                                {
+                                    it->Value <<= aSize;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if ( xProps.get() )
+                xProps->addProperties(
+                    rProps,
+                    ContentProperties( aResource ) );
+            else
+                xProps.reset ( new ContentProperties( aResource ) );
+        }
+        catch ( DAVException const & ex )
+        {
+            aLastException = ex;
+        }
+    }
+}
+
+
+// Static value, to manage a simple OPTIONS cache
+// Key is the URL, element is the DAVOptions resulting from an OPTIONS call.
+// Cached DAVOptions have a lifetime that depends on the errors received or not received
+// and on the value of received options.
+static DAVOptionsCache aStaticDAVOptionsCache;
+
 
 // Content Implementation.
 
@@ -102,18 +221,18 @@ Content::Content(
           ContentProvider* pProvider,
           const uno::Reference< ucb::XContentIdentifier >& Identifier,
           rtl::Reference< DAVSessionFactory > const & rSessionFactory )
-  throw ( ucb::ContentCreationException )
+  throw (ucb::ContentCreationException, css::uno::RuntimeException)
 : ContentImplHelper( rxContext, pProvider, Identifier ),
   m_eResourceType( UNKNOWN ),
   m_eResourceTypeForLocks( UNKNOWN ),
   m_pProvider( pProvider ),
-  m_rSessionFactory( rSessionFactory ),
   m_bTransient( false ),
   m_bCollection( false ),
   m_bDidGetOrHead( false )
 {
     try
     {
+        initOptsCacheLifeTime();
         m_xResAccess.reset( new DAVResourceAccess(
                 rxContext,
                 rSessionFactory,
@@ -136,7 +255,7 @@ Content::Content(
             const uno::Reference< ucb::XContentIdentifier >& Identifier,
             rtl::Reference< DAVSessionFactory > const & rSessionFactory,
             bool isCollection )
-  throw ( ucb::ContentCreationException )
+  throw (ucb::ContentCreationException, css::uno::RuntimeException)
 : ContentImplHelper( rxContext, pProvider, Identifier ),
   m_eResourceType( UNKNOWN ),
   m_eResourceTypeForLocks( UNKNOWN ),
@@ -147,6 +266,7 @@ Content::Content(
 {
     try
     {
+        initOptsCacheLifeTime();
         m_xResAccess.reset( new DAVResourceAccess(
             rxContext, rSessionFactory, Identifier->getContentIdentifier() ) );
     }
@@ -529,6 +649,9 @@ uno::Any SAL_CALL Content::execute(
                 osl::Guard< osl::Mutex > aGuard( m_aMutex );
                 xResAccess.reset( new DAVResourceAccess( *m_xResAccess.get() ) );
             }
+            aStaticDAVOptionsCache.removeDAVOptions( xResAccess->getURL() );
+            // clean cached value of PROPFIND property names
+            removeCachedPropertyNames( xResAccess->getURL() );
             xResAccess->DESTROY( Environment );
             {
                 osl::Guard< osl::Mutex > aGuard( m_aMutex );
@@ -614,8 +737,9 @@ uno::Any SAL_CALL Content::execute(
     {
 
         // unlock
-        if ( resourceTypeForLocks( Environment ) == DAV )
-            unlock( Environment );
+        // do not check for a DAV resource
+        // the lock store will be checked before sending
+        unlock( Environment );
     }
     else if ( aCommand.Name == "createNewContent" && isFolder( Environment ) )
     {
@@ -815,6 +939,10 @@ void Content::addProperty( const ucb::PropertyCommandArgument& aCmdArg,
             osl::Guard< osl::Mutex > aGuard( m_aMutex );
             xResAccess.reset( new DAVResourceAccess( *m_xResAccess.get() ) );
         }
+        aStaticDAVOptionsCache.removeDAVOptions( xResAccess->getURL() );
+        // clean cached value of PROPFIND property names
+        // PROPPATCH can change them
+        removeCachedPropertyNames( xResAccess->getURL() );
         xResAccess->PROPPATCH( aProppatchValues, xEnv );
         {
             osl::Guard< osl::Mutex > aGuard( m_aMutex );
@@ -905,6 +1033,10 @@ void Content::removeProperty( const OUString& Name,
             osl::Guard< osl::Mutex > aGuard( m_aMutex );
             xResAccess.reset( new DAVResourceAccess( *m_xResAccess.get() ) );
         }
+        aStaticDAVOptionsCache.removeDAVOptions( xResAccess->getURL() );
+        // clean cached value of PROPFIND property names
+        // PROPPATCH can change them
+        removeCachedPropertyNames( xResAccess->getURL() );
         xResAccess->PROPPATCH( aProppatchValues, xEnv );
         {
             osl::Guard< osl::Mutex > aGuard( m_aMutex );
@@ -1338,6 +1470,36 @@ uno::Reference< sdbc::XRow > Content::getPropertyValues(
 
                         if ( 1 == resources.size() )
                         {
+#if defined SAL_LOG_INFO
+                            {//debug
+                                // print received resources
+                                std::vector< DAVPropertyValue >::const_iterator it = resources[0].properties.begin();
+                                std::vector< DAVPropertyValue >::const_iterator end = resources[0].properties.end();
+                                while ( it != end )
+                                {
+                                    OUString aPropValue;
+                                    bool    bValue;
+                                    uno::Sequence< ucb::LockEntry > aSupportedLocks;
+                                    if( (*it).Value >>= aPropValue )
+                                        SAL_INFO( "ucb.ucp.webdav", "PROPFIND (getPropertyValues) - returned property: " << (*it).Name << ":" << aPropValue );
+                                    else if( (*it).Value >>= bValue )
+                                        SAL_INFO( "ucb.ucp.webdav", "PROPFIND (getPropertyValues) - returned property: " << (*it).Name << ":" <<
+                                                  ( bValue ? "true" : "false" ) );
+                                    else if( (*it).Value >>= aSupportedLocks )
+                                    {
+                                        SAL_INFO( "ucb.ucp.webdav", "PROPFIND (getPropertyValues) - returned property: " << (*it).Name << ":" );
+                                        for ( sal_Int32 n = 0; n < aSupportedLocks.getLength(); ++n )
+                                        {
+                                            SAL_INFO( "ucb.ucp.webdav","      scope: "
+                                                      << ( aSupportedLocks[ n ].Scope ? "shared":"exclusive" )
+                                                      << ", type: "
+                                                      << ( aSupportedLocks[ n ].Type ? "" : "write" ) );
+                                        }
+                                    }
+                                    ++it;
+                                }
+                            }
+#endif
                             if ( xProps.get())
                                 xProps->addProperties(
                                     aPropNames,
@@ -1364,9 +1526,6 @@ uno::Reference< sdbc::XRow > Content::getPropertyValues(
 
         if ( bNetworkAccessAllowed )
         {
-            if( eType != DAV )
-                m_bDidGetOrHead = false;
-
             // All properties obtained already?
             std::vector< OUString > aMissingProps;
             if ( !( xProps.get()
@@ -1382,11 +1541,45 @@ uno::Reference< sdbc::XRow > Content::getPropertyValues(
                     rProperties,
                     aHeaderNames );
 
+                if( eType != DAV )
+                {
+                    // in case of not DAV PROFIND (previously in program flow) failed
+                    // so we need to add the only prop that's common
+                    // to DAV and NON_DAV: MediaType, that maps to Content-Type
+                    aHeaderNames.push_back( "Content-Type" );
+                }
+
                 if ( !aHeaderNames.empty() )
                 {
+                    DAVOptions aDAVOptions;
+                    OUString   aTargetURL = xResAccess->getURL();
+                    // retrieve the cached options if any
+                    aStaticDAVOptionsCache.getDAVOptions( aTargetURL, aDAVOptions );
                     try
                     {
                         DAVResource resource;
+                        // clean cached value of PROPFIND property names
+                        // PROPPATCH can change them
+                        removeCachedPropertyNames( aTargetURL );
+                        // test if HEAD allowed, if not, throw, will be catched immediately
+                        // SC_GONE used internally by us, see comment below
+                        // in the catch scope
+                        if ( aDAVOptions.getHttpResponseStatusCode() != SC_GONE &&
+                             !aDAVOptions.isHeadAllowed() )
+                        {
+                            throw DAVException( DAVException::DAV_HTTP_ERROR, "405 Not Implemented", SC_METHOD_NOT_ALLOWED );
+                        }
+                        // if HEAD is enabled on this site
+                        // check if there is a relevant HTTP response status code cached
+                        if ( aDAVOptions.getHttpResponseStatusCode() != SC_NONE )
+                        {
+                            // throws exception as if there was a server error, a DAV exception
+                            throw DAVException( DAVException::DAV_HTTP_ERROR,
+                                                aDAVOptions.getHttpResponseStatusText(),
+                                                aDAVOptions.getHttpResponseStatusCode() );
+                            // Unreachable
+                        }
+
                         xResAccess->HEAD( aHeaderNames, resource, xEnv );
                         m_bDidGetOrHead = true;
 
@@ -1405,13 +1598,68 @@ uno::Reference< sdbc::XRow > Content::getPropertyValues(
                     }
                     catch ( DAVException const & e )
                     {
-                        bNetworkAccessAllowed
-                            = shouldAccessNetworkAfterException( e );
+                        // non "general-purpose servers" may not support HEAD requests
+                        // see http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html#sec5.1.1
+                        // In this case, perform a partial GET only to get the header info
+                        // vid. http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.35
+                        // WARNING if the server does not support partial GETs,
+                        // the GET will transfer the whole content
+                        bool bError = true;
+                        DAVException aLastException = e;
 
-                        if ( !bNetworkAccessAllowed )
+                        if ( e.getError() == DAVException::DAV_HTTP_ERROR )
                         {
-                            cancelCommandExecution( e, xEnv );
-                            // unreachable
+                            // According to the spec. the origin server SHOULD return
+                            // * 405 (Method Not Allowed):
+                            //      the method is known but not allowed for the requested resource
+                            // * 501 (Not Implemented):
+                            //      the method is unrecognized or not implemented
+                            // * 404 (SC_NOT_FOUND)
+                            //      is for google-code server and for MS IIS 10.0 Web server
+                            //      when only GET is enabled
+                            if ( aLastException.getStatus() == SC_NOT_IMPLEMENTED ||
+                                 aLastException.getStatus() == SC_METHOD_NOT_ALLOWED ||
+                                 aLastException.getStatus() == SC_NOT_FOUND )
+                            {
+                                SAL_WARN( "ucb.ucp.webdav", "HEAD probably not implemented: fall back to a partial GET" );
+                                aStaticDAVOptionsCache.setHeadAllowed( aTargetURL, false );
+                                lcl_sendPartialGETRequest( bError,
+                                                           aLastException,
+                                                           aMissingProps,
+                                                           aHeaderNames,
+                                                           xResAccess,
+                                                           xProps,
+                                                           xEnv );
+                                m_bDidGetOrHead = !bError;
+                            }
+                        }
+
+                        if ( bError )
+                        {
+                            DAVOptions aDAVOptionsException;
+
+                            aDAVOptionsException.setURL( aTargetURL );
+                            // check if the error was SC_NOT_FOUND, meaning that the
+                            // GET fall back didn't succeeded and the element is really missing
+                            // we will consider the resource SC_GONE (410) for some time
+                            // we use SC_GONE because has the same meaning of SC_NOT_FOUND (404)
+                            // see:
+                            // <https://tools.ietf.org/html/rfc7231#section-6.5.9> (retrieved 2016-10-09)
+                            // apparently it's not used to mark the missing HEAD method (so far...)
+                            sal_uInt16 ResponseStatusCode =
+                                ( aLastException.getStatus() == SC_NOT_FOUND ) ?
+                                SC_GONE :
+                                aLastException.getStatus();
+                            aDAVOptionsException.setHttpResponseStatusCode( ResponseStatusCode );
+                            aDAVOptionsException.setHttpResponseStatusText( aLastException.getData() );
+                            aStaticDAVOptionsCache.addDAVOptions( aDAVOptionsException,
+                                                                  m_nOptsCacheLifeNotFound );
+
+                            if ( !shouldAccessNetworkAfterException( aLastException ) )
+                            {
+                                cancelCommandExecution( aLastException, xEnv );
+                                // unreachable
+                            }
                         }
                     }
                 }
@@ -1467,6 +1715,30 @@ uno::Reference< sdbc::XRow > Content::getPropertyValues(
         if (m_bTransient)
             xProps.reset( new ContentProperties( aUnescapedTitle,
                                                  m_bCollection ) );
+    }
+
+    // Add a default for the properties requested but not found.
+    // Determine still missing properties, add a default.
+    // Some client function doesn't expect a void uno::Any,
+    // but instead wants some sort of default.
+    std::vector< OUString > aMissingProps;
+    if ( !xProps->containsAllNames(
+                rProperties, aMissingProps ) )
+    {
+        //
+        for ( std::vector< rtl::OUString >::const_iterator it = aMissingProps.begin();
+              it != aMissingProps.end(); ++it )
+        {
+            // For the time being only a couple of properties need to be added
+            if ( (*it) == "DateModified"  || (*it) == "DateCreated" )
+            {
+                util::DateTime aDate;
+                xProps->addProperty(
+                    (*it),
+                    uno::makeAny( aDate ),
+                    true );
+            }
+        }
     }
 
     sal_Int32 nCount = rProperties.getLength();
@@ -1794,7 +2066,11 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
     {
         try
         {
+            // clean cached value of PROPFIND property names
+            // PROPPATCH can change them
+            removeCachedPropertyNames( xResAccess->getURL() );
             // Set property values at server.
+            aStaticDAVOptionsCache.removeDAVOptions( xResAccess->getURL() );
             xResAccess->PROPPATCH( aProppatchValues, xEnv );
 
             std::vector< ProppatchValue >::const_iterator it
@@ -1835,14 +2111,21 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
         uno::Reference< ucb::XContentIdentifier > xNewId
             = new ::ucbhelper::ContentIdentifier( aNewURL );
 
+        NeonUri sourceURI( xIdentifier->getContentIdentifier() );
+        NeonUri targetURI( xNewId->getContentIdentifier() );
+
         try
         {
-            NeonUri sourceURI( xIdentifier->getContentIdentifier() );
-            NeonUri targetURI( xNewId->getContentIdentifier() );
             targetURI.SetScheme( sourceURI.GetScheme() );
 
+            // clean cached value of PROPFIND property names
+            removeCachedPropertyNames( sourceURI.GetURI() );
+            removeCachedPropertyNames( targetURI.GetURI() );
+            aStaticDAVOptionsCache.removeDAVOptions( sourceURI.GetURI() );
+            aStaticDAVOptionsCache.removeDAVOptions( targetURI.GetURI() );
             xResAccess->MOVE(
                 sourceURI.GetPath(), targetURI.GetURI(), false, xEnv );
+
             // @@@ Should check for resources that could not be moved
             //     (due to source access or target overwrite) and send
             //     this information through the interaction handler.
@@ -1880,7 +2163,7 @@ uno::Sequence< uno::Any > Content::setPropertyValues(
             aNewTitle.clear();
 
             // Set error .
-            aRet[ nTitlePos ] <<= MapDAVException( e, true );
+            aRet[ nTitlePos ] = MapDAVException( e, true );
         }
     }
 
@@ -1997,6 +2280,7 @@ uno::Any Content::open(
                 DAVResource aResource;
                 std::vector< OUString > aHeaders;
 
+                removeCachedPropertyNames( xResAccess->getURL() );
                 xResAccess->GET( xOut, aHeaders, aResource, xEnv );
                 m_bDidGetOrHead = true;
 
@@ -2026,6 +2310,7 @@ uno::Any Content::open(
             if ( xDataSink.is() )
             {
                 // PULL: wait for client read
+                OUString aTargetURL =  m_xIdentifier->getContentIdentifier();
                 try
                 {
                     std::unique_ptr< DAVResourceAccess > xResAccess;
@@ -2035,13 +2320,30 @@ uno::Any Content::open(
                         xResAccess.reset(
                             new DAVResourceAccess( *m_xResAccess.get() ) );
                     }
-
                     xResAccess->setFlags( rArg.OpeningFlags );
 
                     // fill inputsream sync; return if all data present
                     DAVResource aResource;
                     std::vector< OUString > aHeaders;
 
+                    aTargetURL = xResAccess->getURL();
+                    removeCachedPropertyNames( aTargetURL );
+                    // check if the resource was present on the server
+                    // first update it, if necessary
+                    // if the open is called directly, without the default open sequence,
+                    // e.g. the one used when opening a file looking for properties
+                    // first this call will have no effect, since OPTIONS would have already been called
+                    // as a consequence of getPropertyValues()
+                    DAVOptions aDAVOptions;
+                    getResourceOptions( xEnv, aDAVOptions, xResAccess );
+
+                    if ( aDAVOptions.getHttpResponseStatusCode() != SC_NONE )
+                    {
+                        // throws exception as if there was a server error, a DAV exception
+                        throw DAVException( DAVException::DAV_HTTP_ERROR,
+                                            aDAVOptions.getHttpResponseStatusText(),
+                                            aDAVOptions.getHttpResponseStatusCode() );
+                    }
                     uno::Reference< io::XInputStream > xIn
                         = xResAccess->GET( aHeaders, aResource, xEnv );
                     m_bDidGetOrHead = true;
@@ -2065,6 +2367,7 @@ uno::Any Content::open(
                 }
                 catch ( DAVException const & e )
                 {
+                    //TODO cache the http error if not yet cached
                     cancelCommandExecution( e, xEnv );
                     // Unreachable
                 }
@@ -2106,6 +2409,7 @@ void Content::post(
                     new DAVResourceAccess( *m_xResAccess.get() ) );
             }
 
+            removeCachedPropertyNames( xResAccess->getURL() );
             uno::Reference< io::XInputStream > xResult
                 = xResAccess->POST( rArg.MediaType,
                                     rArg.Referer,
@@ -2140,6 +2444,7 @@ void Content::post(
                         new DAVResourceAccess( *m_xResAccess.get() ) );
                 }
 
+                removeCachedPropertyNames( xResAccess->getURL() );
                 xResAccess->POST( rArg.MediaType,
                                   rArg.Referer,
                                   rArg.Source,
@@ -2296,25 +2601,24 @@ void Content::insert(
                 rtl::Reference< ucbhelper::SimpleInteractionRequest > xRequest
                     = new ucbhelper::SimpleInteractionRequest(
                         aExAsAny,
-                        ucbhelper::CONTINUATION_APPROVE
-                            | ucbhelper::CONTINUATION_DISAPPROVE );
+                        ContinuationFlags::Approve | ContinuationFlags::Disapprove );
                 xIH->handle( xRequest.get() );
 
-                const sal_Int32 nResp = xRequest->getResponse();
+                const ContinuationFlags nResp = xRequest->getResponse();
 
                 switch ( nResp )
                 {
-                    case ucbhelper::CONTINUATION_UNKNOWN:
+                    case ContinuationFlags::NONE:
                         // Not handled; throw.
                         throw aEx;
 //                            break;
 
-                    case ucbhelper::CONTINUATION_APPROVE:
+                    case ContinuationFlags::Approve:
                         // Continue -> Overwrite.
                         bReplaceExisting = true;
                         break;
 
-                    case ucbhelper::CONTINUATION_DISAPPROVE:
+                    case ContinuationFlags::Disapprove:
                         // Abort.
                         throw ucb::CommandFailedException(
                                     OUString(),
@@ -2354,10 +2658,19 @@ void Content::insert(
             xResAccess->setURL( aURL );
 
             if ( bCollection )
+            {
+                aStaticDAVOptionsCache.removeDAVOptions( xResAccess->getURL() );
+                removeCachedPropertyNames( xResAccess->getURL() );
                 xResAccess->MKCOL( Environment );
+            }
             else
             {
+                // remove options from cache, PUT may change it
+                // it will be refreshed when needed
+                aStaticDAVOptionsCache.removeDAVOptions( xResAccess->getURL() );
+                removeCachedPropertyNames( xResAccess->getURL() );
                 xResAccess->PUT( xInputStream, Environment );
+                // clean cached value of PROPFIND properties names
             }
             // no error , set the resourcetype to unknown type
             // the resource may have transitioned from NOT FOUND or UNKNOWN to something else
@@ -2381,6 +2694,7 @@ void Content::insert(
                         // Destroy old resource.
                         try
                         {
+                            removeCachedPropertyNames( xResAccess->getURL() );
                             xResAccess->DESTROY( Environment );
                         }
                         catch ( DAVException const & e )
@@ -2455,8 +2769,14 @@ void Content::insert(
             // Unreachable
         }
 
+        // save the URL since it may change due to redirection
+        OUString    aTargetUrl = xResAccess->getURL();
         try
         {
+            removeCachedPropertyNames( xResAccess->getURL() );
+            // remove options from cache, PUT may change it
+            // it will be refreshed when needed
+            aStaticDAVOptionsCache.removeDAVOptions( aTargetUrl );
             xResAccess->PUT( xInputStream, Environment );
         }
         catch ( DAVException const & e )
@@ -2490,11 +2810,12 @@ void Content::transfer(
         xResAccess.reset( new DAVResourceAccess( *m_xResAccess.get() ) );
     }
 
+    NeonUri sourceURI( rArgs.SourceURL );
+    NeonUri targetURI( xIdentifier->getContentIdentifier() );
+
     OUString aTargetURI;
     try
     {
-        NeonUri sourceURI( rArgs.SourceURL );
-        NeonUri targetURI( xIdentifier->getContentIdentifier() );
         aTargetURI = targetURI.GetPathBaseNameUnescaped();
 
         // Check source's and target's URL scheme
@@ -2610,6 +2931,8 @@ void Content::transfer(
             // destination resource.  If the Overwrite header is set to
             // "F" then the operation will fail.
 
+            aStaticDAVOptionsCache.removeDAVOptions( sourceURI.GetURI() );
+            aStaticDAVOptionsCache.removeDAVOptions( targetURI.GetURI() );
             aSourceAccess.MOVE( sourceURI.GetPath(),
                                 targetURI.GetURI(),
                                 rArgs.NameClash
@@ -2637,6 +2960,8 @@ void Content::transfer(
             // destination resource.  If the Overwrite header is set to
             // "F" then the operation will fail.
 
+            aStaticDAVOptionsCache.removeDAVOptions( sourceURI.GetURI() );
+            aStaticDAVOptionsCache.removeDAVOptions( targetURI.GetURI() );
             aSourceAccess.COPY( sourceURI.GetPath(),
                                 targetURI.GetURI(),
                                 rArgs.NameClash
@@ -2746,7 +3071,8 @@ void Content::destroy( bool bDeletePhysical )
 
 // returns the resource type, to be checked for locks
 Content::ResourceType Content::resourceTypeForLocks(
-  const uno::Reference< ucb::XCommandEnvironment >& Environment )
+    const uno::Reference< ucb::XCommandEnvironment >& Environment,
+    const std::unique_ptr< DAVResourceAccess > & rResAccess)
 {
     ResourceType eResourceTypeForLocks = UNKNOWN;
     {
@@ -2778,12 +3104,6 @@ Content::ResourceType Content::resourceTypeForLocks(
     if ( eResourceTypeForLocks == UNKNOWN )
     {
         // resource type for lock/unlock operations still unknown, need to ask the server
-        std::unique_ptr< DAVResourceAccess > xResAccess;
-
-        xResAccess.reset( new DAVResourceAccess(
-                              m_xContext,
-                              m_rSessionFactory,
-                              rURL ) );
 
         const OUString aScheme(
             rURL.copy( 0, rURL.indexOf( ':' ) ).toAsciiLowerCase() );
@@ -2794,89 +3114,124 @@ Content::ResourceType Content::resourceTypeForLocks(
         }
         else
         {
-            try
+            DAVOptions aDAVOptions;
+            getResourceOptions( Environment, aDAVOptions, rResAccess );
+            if( aDAVOptions.isClass1() ||
+                aDAVOptions.isClass2() ||
+                aDAVOptions.isClass3() )
             {
-                // we need only DAV:supportedlock
-                std::vector< DAVResource > resources;
-                std::vector< OUString > aPropNames;
-                uno::Sequence< beans::Property > aProperties( 1 );
-                aProperties[ 0 ].Name = DAVProperties::SUPPORTEDLOCK;
-
-                ContentProperties::UCBNamesToDAVNames( aProperties, aPropNames );
-                xResAccess->PROPFIND( DAVZERO, aPropNames, resources, Environment );
-
-                // only one resource should be returned
-                if ( resources.size() == 1 )
+                // this is at least a DAV, lock to be confirmed
+                // class 2 is needed for full lock support
+                // see
+                // <https://tools.ietf.org/html/rfc4918#section-18.2>
+                eResourceTypeForLocks = DAV_NOLOCK;
+                if( aDAVOptions.isClass2() )
                 {
-                    // we may have received a bunch of other properties
-                    // (some servers seems to do so)
-                    // but we need only supported lock for this check
-                    // all returned properties are in
-                    // resources.properties[n].Name/.Value
-
-                    std::vector< DAVPropertyValue >::iterator it;
-
-                    for ( it = resources[0].properties.begin();
-                          it != resources[0].properties.end(); ++it)
+                    // ok, possible lock, check for it
+                    try
                     {
-                        if ( (*it).Name ==  DAVProperties::SUPPORTEDLOCK )
+                        // we need only DAV:supportedlock
+                        std::vector< DAVResource > resources;
+                        std::vector< OUString > aPropNames;
+                        uno::Sequence< beans::Property > aProperties( 1 );
+                        aProperties[ 0 ].Name = DAVProperties::SUPPORTEDLOCK;
+
+                        ContentProperties::UCBNamesToDAVNames( aProperties, aPropNames );
+                        rResAccess->PROPFIND( DAVZERO, aPropNames, resources, Environment );
+
+                        bool wasSupportedlockFound = false;
+
+                        // only one resource should be returned
+                        if ( resources.size() == 1 )
                         {
-                            uno::Sequence< ucb::LockEntry > aSupportedLocks;
-                            if ( (*it).Value >>= aSupportedLocks )
+                            // we may have received a bunch of other properties
+                            // (some servers seems to do so)
+                            // but we need only supported lock for this check
+                            // all returned properties are in
+                            // resources.properties[n].Name/.Value
+
+                            std::vector< DAVPropertyValue >::iterator it;
+
+                            for ( it = resources[0].properties.begin();
+                                  it != resources[0].properties.end(); ++it)
                             {
-                                // this is at least a DAV, no lock confirmed yet
-                                eResourceTypeForLocks = DAV_NOLOCK;
-                                for ( sal_Int32 n = 0; n < aSupportedLocks.getLength(); ++n )
+                                if ( (*it).Name ==  DAVProperties::SUPPORTEDLOCK )
                                 {
-                                    if ( aSupportedLocks[ n ].Scope == ucb::LockScope_EXCLUSIVE &&
-                                         aSupportedLocks[ n ].Type == ucb::LockType_WRITE )
+                                    wasSupportedlockFound = true;
+                                    uno::Sequence< ucb::LockEntry > aSupportedLocks;
+                                    if ( (*it).Value >>= aSupportedLocks )
                                     {
-                                        // requested locking mode is supported
-                                        eResourceTypeForLocks = DAV;
-                                        SAL_INFO( "ucb.ucp.webdav", "resourceTypeForLocks - URL: <"
-                                                  << m_xIdentifier->getContentIdentifier() << ">, DAV lock/unlock supported");
+                                        for ( sal_Int32 n = 0; n < aSupportedLocks.getLength(); ++n )
+                                        {
+                                            // TODO: if the lock type is changed from 'exclusive write' to 'shared write'
+                                            // e.g. to implement 'Calc shared file feature', the ucb::LockScope_EXCLUSIVE
+                                            // value should be checked as well, adaptation the code may be needed
+                                            if ( aSupportedLocks[ n ].Scope == ucb::LockScope_EXCLUSIVE &&
+                                                 aSupportedLocks[ n ].Type == ucb::LockType_WRITE )
+                                            {
+                                                // requested locking mode is supported
+                                                eResourceTypeForLocks = DAV;
+                                                SAL_INFO( "ucb.ucp.webdav", "resourceTypeForLocks - URL: <"
+                                                          << m_xIdentifier->getContentIdentifier() << ">, DAV lock/unlock supported");
+                                                break;
+                                            }
+                                        }
                                         break;
                                     }
                                 }
-                                break;
                             }
+                        }
+                        // check if this is still only a DAV_NOLOCK
+                        // a fallback for resources that do not have DAVProperties::SUPPORTEDLOCK property
+                        // we check for the returned OPTION if LOCK is allowed on the resource
+                        if ( !wasSupportedlockFound && eResourceTypeForLocks == DAV_NOLOCK )
+                        {
+                            SAL_INFO( "ucb.ucp.webdav", "This WebDAV server has no supportedlock property, check for allowed LOCK method in OPTIONS" );
+                            // ATTENTION: if the lock type is changed from 'exclusive write' to 'shared write'
+                            // e.g. to implement 'Calc shared file feature' on WebDAV directly, and we arrive to this fallback
+                            // and the LOCK is allowed, we should assume that only exclusive write lock is available
+                            // this is just a reminder...
+                            if ( aDAVOptions.isLockAllowed() )
+                                eResourceTypeForLocks = DAV;
+                        }
+                    }
+                    catch ( DAVException const & e )
+                    {
+                        rResAccess->resetUri();
+                        //grab the error code
+                        switch( e.getStatus() )
+                        {
+                            case SC_NOT_FOUND:
+                                SAL_WARN( "ucb.ucp.webdav", "resourceTypeForLocks() - URL: <"
+                                          << m_xIdentifier->getContentIdentifier() << "> was not found. ");
+                                eResourceTypeForLocks = NOT_FOUND;
+                                break;
+                                // some servers returns SC_FORBIDDEN, instead
+                                // the meaning of SC_FORBIDDEN is, according to <http://tools.ietf.org/html/rfc7231#section-6.5.3>:
+                                // The 403 (Forbidden) status code indicates that the server understood
+                                // the request but refuses to authorize it
+                            case SC_FORBIDDEN:
+                                // Errors SC_NOT_IMPLEMENTED and SC_METHOD_NOT_ALLOWED are
+                                // part of base http 1.1 RFCs
+                            case SC_NOT_IMPLEMENTED:        // <http://tools.ietf.org/html/rfc7231#section-6.6.2>
+                            case SC_METHOD_NOT_ALLOWED:     // <http://tools.ietf.org/html/rfc7231#section-6.5.5>
+                                // they all mean the resource is NON_DAV
+                                SAL_WARN( "ucb.ucp.webdav", "resourceTypeForLocks() DAVException (SC_FORBIDDEN, SC_NOT_IMPLEMENTED or SC_METHOD_NOT_ALLOWED) - URL: <"
+                                          << m_xIdentifier->getContentIdentifier() << ">, DAV ExceptionCode: " << e.getError() << ", HTTP error: " << e.getStatus() );
+                                eResourceTypeForLocks = NON_DAV;
+                                break;
+                            default:
+                                //fallthrough
+                                SAL_WARN( "ucb.ucp.webdav", "resourceTypeForLocks() DAVException - URL: <"
+                                          << m_xIdentifier->getContentIdentifier() << ">, DAV ExceptionCode: " << e.getError() << ", HTTP error: " << e.getStatus() );
+                                eResourceTypeForLocks = UNKNOWN;
                         }
                     }
                 }
             }
-            catch ( DAVException const & e )
-            {
-                xResAccess->resetUri();
-                //grab the error code
-                switch( e.getStatus() )
-                {
-                    case SC_NOT_FOUND:
-                        SAL_WARN( "ucb.ucp.webdav", "resourceTypeForLocks() - URL: <"
-                                  << m_xIdentifier->getContentIdentifier() << "> was not found. ");
-                        eResourceTypeForLocks = NOT_FOUND;
-                        break;
-                        // some servers returns SC_FORBIDDEN, instead
-                        // TODO: probably remove it, when OPTIONS implemented
-                        // the meaning of SC_FORBIDDEN is, according to <http://tools.ietf.org/html/rfc7231#section-6.5.3>:
-                        // The 403 (Forbidden) status code indicates that the server understood
-                        // the request but refuses to authorize it
-                    case SC_FORBIDDEN:
-                        // Errors SC_NOT_IMPLEMENTED and SC_METHOD_NOT_ALLOWED are
-                        // part of base http 1.1 RFCs
-                    case SC_NOT_IMPLEMENTED:        // <http://tools.ietf.org/html/rfc7231#section-6.6.2>
-                    case SC_METHOD_NOT_ALLOWED:     // <http://tools.ietf.org/html/rfc7231#section-6.5.5>
-                        // they all mean the resource is NON_DAV
-                        SAL_WARN( "ucb.ucp.webdav", "resourceTypeForLocks() DAVException (SC_FORBIDDEN, SC_NOT_IMPLEMENTED or SC_METHOD_NOT_ALLOWED) - URL: <"
-                                  << m_xIdentifier->getContentIdentifier() << ">, DAV error: " << e.getError() << ", HTTP error: " << e.getStatus() );
-                        eResourceTypeForLocks = NON_DAV;
-                        break;
-                    default:
-                        //fallthrough
-                        SAL_WARN( "ucb.ucp.webdav", "resourceTypeForLocks() DAVException - URL: <"
-                                  << m_xIdentifier->getContentIdentifier() << ">, DAV error: " << e.getError() << ", HTTP error: " << e.getStatus() );
-                        eResourceTypeForLocks = UNKNOWN;
-                }
-            }
+            else
+                eResourceTypeForLocks = NON_DAV;
+
         }
     }
     osl::MutexGuard g(m_aMutex);
@@ -2896,6 +3251,21 @@ Content::ResourceType Content::resourceTypeForLocks(
     return m_eResourceTypeForLocks;
 }
 
+Content::ResourceType Content::resourceTypeForLocks(
+    const uno::Reference< ucb::XCommandEnvironment >& Environment )
+{
+    std::unique_ptr< DAVResourceAccess > xResAccess;
+    {
+        osl::MutexGuard aGuard( m_aMutex );
+        xResAccess.reset( new DAVResourceAccess( *m_xResAccess.get() ) );
+    }
+    Content::ResourceType ret = resourceTypeForLocks( Environment, xResAccess );
+    {
+        osl::Guard< osl::Mutex > aGuard( m_aMutex );
+        m_xResAccess.reset( new DAVResourceAccess( *xResAccess.get() ) );
+    }
+    return ret;
+}
 
 void Content::lock(
         const uno::Reference< ucb::XCommandEnvironment >& Environment )
@@ -2937,6 +3307,9 @@ void Content::lock(
             //-1, // infinite lock
             uno::Sequence< OUString >() );
 
+        // OPTIONS may change as a consequence of the lock operation
+        aStaticDAVOptionsCache.removeDAVOptions( xResAccess->getURL() );
+        removeCachedPropertyNames( xResAccess->getURL() );
         xResAccess->LOCK( aLock, Environment );
 
         {
@@ -2950,7 +3323,7 @@ void Content::lock(
         // this exception is mapped directly to the ucb correct one, without
         // going into the cancelCommandExecution() user interaction
         // this exception should be managed by the issuer of 'lock' command
-        switch(e.getError())
+        switch( e.getError() )
         {
             case DAVException::DAV_LOCKED:
             {
@@ -2991,6 +3364,10 @@ void Content::lock(
                 //grab the error code
                 switch( e.getStatus() )
                 {
+                    // The 'case SC_NOT_FOUND' just below tries to solve a problem in eXo Platform
+                    // WebDAV connector which apparently fail on resource first creation
+                    // rfc4918 section-7.3 (see link below)
+                    case SC_NOT_FOUND:              // <http://tools.ietf.org/html/rfc7231#section-6.5.4>
                     // The 'case SC_PRECONDITION_FAILED' just below tries to solve a problem
                     // in SharePoint when locking the resource on first creation fails due to this:
                     // <https://msdn.microsoft.com/en-us/library/jj575265%28v=office.12%29.aspx#id15>
@@ -3000,8 +3377,8 @@ void Content::lock(
                         // part of base http 1.1 RFCs
                     case SC_NOT_IMPLEMENTED:        // <http://tools.ietf.org/html/rfc7231#section-6.6.2>
                     case SC_METHOD_NOT_ALLOWED:     // <http://tools.ietf.org/html/rfc7231#section-6.5.5>
-                        SAL_WARN( "ucb.ucp.webdav", "lock() DAVException (SC_PRECONDITION_FAILED, SC_NOT_IMPLEMENTED or SC_METHOD_NOT_ALLOWED) - URL: <"
-                                  << m_xIdentifier->getContentIdentifier() << ">, DAV error: " << e.getError() << ", HTTP error: " << e.getStatus() );
+                        SAL_WARN( "ucb.ucp.webdav", "lock() DAVException (SC_NOT_FOUND, SC_PRECONDITION_FAILED, SC_NOT_IMPLEMENTED or SC_METHOD_NOT_ALLOWED) - URL: <"
+                                  << m_xIdentifier->getContentIdentifier() << ">, DAV ExceptionCode: " << e.getError() << ", HTTP error: " << e.getStatus() );
                         // act as nothing happened
                         // that's because when a resource is first created
                         // the lock is sent before the put, so the resource
@@ -3031,7 +3408,7 @@ void Content::lock(
         }
 
         SAL_WARN( "ucb.ucp.webdav","lock() DAVException - URL: <"
-                  << m_xIdentifier->getContentIdentifier() << ">, DAV error: " << e.getError() << ", HTTP error: " << e.getStatus() );
+                  << m_xIdentifier->getContentIdentifier() << ">, DAV ExceptionCode: " << e.getError() << ", HTTP error: " << e.getStatus() );
         cancelCommandExecution( e, Environment );
         // Unreachable
     }
@@ -3042,6 +3419,7 @@ void Content::unlock(
         const uno::Reference< ucb::XCommandEnvironment >& Environment )
     throw( uno::Exception, std::exception )
 {
+
     try
     {
         std::unique_ptr< DAVResourceAccess > xResAccess;
@@ -3050,7 +3428,20 @@ void Content::unlock(
             xResAccess.reset( new DAVResourceAccess( *m_xResAccess.get() ) );
         }
 
-        xResAccess->UNLOCK( Environment );
+        // check if the target URL is a Class1 DAV
+        DAVOptions aDAVOptions;
+        getResourceOptions( Environment, aDAVOptions, xResAccess );
+
+        // at least class one is needed
+        if( aDAVOptions.isClass1() )
+        {
+            // remove options from cache, unlock may change it
+            // it will be refreshed when needed
+            aStaticDAVOptionsCache.removeDAVOptions( xResAccess->getURL() );
+            // clean cached value of PROPFIND properties names
+            removeCachedPropertyNames( xResAccess->getURL() );
+            xResAccess->UNLOCK( Environment );
+        }
 
         {
             osl::Guard< osl::Mutex > aGuard( m_aMutex );
@@ -3080,7 +3471,7 @@ void Content::unlock(
                     case SC_NOT_IMPLEMENTED:        // <http://tools.ietf.org/html/rfc7231#section-6.6.2>
                     case SC_METHOD_NOT_ALLOWED:     // <http://tools.ietf.org/html/rfc7231#section-6.5.5>
                         SAL_WARN( "ucb.ucp.webdav", "unlock() DAVException (SC_NOT_IMPLEMENTED or SC_METHOD_NOT_ALLOWED) - URL: <"
-                                  << m_xIdentifier->getContentIdentifier() << ">, DAV error: " << e.getError() << ", HTTP error: " << e.getStatus() );
+                                  << m_xIdentifier->getContentIdentifier() << ">, DAV ExceptionCode: " << e.getError() << ", HTTP error: " << e.getStatus() );
                         return;
                         break;
                     default:
@@ -3093,7 +3484,7 @@ void Content::unlock(
                 ;
         }
         SAL_WARN( "ucb.ucp.webdav","unlock() DAVException - URL: <"
-                  << m_xIdentifier->getContentIdentifier() << ">, DAV error: " << e.getError() << ", HTTP error: " << e.getStatus() );
+                  << m_xIdentifier->getContentIdentifier() << ">, DAV ExceptionCode: " << e.getError() << ", HTTP error: " << e.getStatus() );
         cancelCommandExecution( e, Environment );
         // Unreachable
     }
@@ -3358,6 +3749,7 @@ uno::Any Content::MapDAVException( const DAVException & e, bool bWrite )
 bool Content::shouldAccessNetworkAfterException( const DAVException & e )
 {
     if ( ( e.getStatus() == SC_NOT_FOUND ) ||
+         ( e.getStatus() == SC_GONE ) ||
          ( e.getError() == DAVException::DAV_HTTP_TIMEOUT ) ||
          ( e.getError() == DAVException::DAV_HTTP_LOOKUP ) ||
          ( e.getError() == DAVException::DAV_HTTP_CONNECT ) ||
@@ -3424,6 +3816,7 @@ Content::ResourceType Content::getResourceType(
     }
 
     ResourceType eResourceType = UNKNOWN;
+    DAVOptions aDAVOptions;
 
     const OUString & rURL = rResAccess->getURL();
     const OUString aScheme(
@@ -3435,57 +3828,147 @@ Content::ResourceType Content::getResourceType(
     }
     else
     {
-        try
+        getResourceOptions( xEnv, aDAVOptions, rResAccess, networkAccessAllowed );
+
+        // at least class one is needed
+        if( aDAVOptions.isClass1() )
         {
-            // Try to fetch some frequently used property value, e.g. those
-            // used when loading documents... along with identifying whether
-            // this is a DAV resource.
-            std::vector< DAVResource > resources;
-            std::vector< OUString > aPropNames;
-            uno::Sequence< beans::Property > aProperties( 5 );
-            aProperties[ 0 ].Name = "IsFolder";
-            aProperties[ 1 ].Name = "IsDocument";
-            aProperties[ 2 ].Name = "IsReadOnly";
-            aProperties[ 3 ].Name = "MediaType";
-            aProperties[ 4 ].Name = DAVProperties::SUPPORTEDLOCK;
-
-            ContentProperties::UCBNamesToDAVNames( aProperties, aPropNames );
-
-            rResAccess->PROPFIND( DAVZERO, aPropNames, resources, xEnv );
-
-            if ( resources.size() == 1 )
+            try
             {
-                osl::MutexGuard g(m_aMutex);
-                m_xCachedProps.reset(
-                    new CachableContentProperties( ContentProperties( resources[ 0 ] ) ) );
-                m_xCachedProps->containsAllNames(
-                    aProperties, m_aFailedPropNames );
+                // Try to fetch some frequently used property value, e.g. those
+                // used when loading documents... along with identifying whether
+                // this is a DAV resource.
+                std::vector< DAVResource > resources;
+                std::vector< OUString > aPropNames;
+                uno::Sequence< beans::Property > aProperties( 5 );
+                aProperties[ 0 ].Name = "IsFolder";
+                aProperties[ 1 ].Name = "IsDocument";
+                aProperties[ 2 ].Name = "IsReadOnly";
+                aProperties[ 3 ].Name = "MediaType";
+                aProperties[ 4 ].Name = DAVProperties::SUPPORTEDLOCK;
+
+                ContentProperties::UCBNamesToDAVNames( aProperties, aPropNames );
+
+                rResAccess->PROPFIND( DAVZERO, aPropNames, resources, xEnv );
+
+                if ( resources.size() == 1 )
+                {
+#if defined SAL_LOG_INFO
+                    {//debug
+                        // print received resources
+                        std::vector< DAVPropertyValue >::const_iterator it = resources[0].properties.begin();
+                        std::vector< DAVPropertyValue >::const_iterator end = resources[0].properties.end();
+                        while ( it != end )
+                        {
+                            OUString aPropValue;
+                            bool    bValue;
+                            uno::Sequence< ucb::LockEntry > aSupportedLocks;
+                            if((*it).Value >>= aPropValue )
+                                SAL_INFO( "ucb.ucp.webdav", "PROPFIND (getResourceType) - ret'd prop: " << (*it).Name << ":" << aPropValue );
+                            else if( (*it).Value >>= bValue )
+                                SAL_INFO( "ucb.ucp.webdav", "PROPFIND (getResourceType) - ret'd prop: " << (*it).Name << ":" <<
+                                          ( bValue ? "true" : "false" ) );
+                            else if( (*it).Value >>= aSupportedLocks )
+                            {
+                                SAL_INFO( "ucb.ucp.webdav", "PROPFIND (getResourceType) - ret'd prop: " << (*it).Name << ":" );
+                                for ( sal_Int32 n = 0; n < aSupportedLocks.getLength(); ++n )
+                                {
+                                    SAL_INFO( "ucb.ucp.webdav","PROPFIND (getResourceType) -       supportedlock[" << n <<"]: scope: "
+                                              << ( aSupportedLocks[ n ].Scope ? "shared":"exclusive" )
+                                              << ", type: "
+                                              << ( aSupportedLocks[ n ].Type ? "" : "write" ) );
+                                }
+                            }
+                            ++it;
+                        }
+                    }
+#endif
+                    osl::MutexGuard g(m_aMutex);
+                    m_xCachedProps.reset(
+                        new CachableContentProperties( ContentProperties( resources[ 0 ] ) ) );
+                    m_xCachedProps->containsAllNames(
+                        aProperties, m_aFailedPropNames );
+                }
+                eResourceType = DAV;
             }
-            eResourceType = DAV;
+            catch ( DAVException const & e )
+            {
+                rResAccess->resetUri();
+
+                SAL_WARN( "ucb.ucp.webdav", "Content::getResourceType returned errors, DAV ExceptionCode: " << e.getError() << ", HTTP error: "  << e.getStatus() );
+
+                if ( e.getStatus() == SC_METHOD_NOT_ALLOWED )
+                {
+                    // Status SC_METHOD_NOT_ALLOWED is a safe indicator that the
+                    // resource is NON_DAV
+                    eResourceType = NON_DAV;
+                }
+                else if (networkAccessAllowed != nullptr)
+                {
+                    *networkAccessAllowed = *networkAccessAllowed
+                        && shouldAccessNetworkAfterException(e);
+                }
+                if ( e.getStatus() == SC_NOT_FOUND )
+                {
+                    // arrives here if OPTIONS is still cached for a resource prevously available
+                    // operate on the OPTIONS cache:
+                    // if OPTIONS was not found, do nothing
+                    // else OPTIONS returned on a resource not existent  (example a server that allows lock on null resource) set
+                    // not found and adjust lifetime accordingly
+                    DAVOptions aDAVOptionsInner;
+                    if( aStaticDAVOptionsCache.getDAVOptions( rURL, aDAVOptionsInner ) )
+                    {
+                        // TODO? get redirected url
+                        aDAVOptionsInner.setHttpResponseStatusCode( e.getStatus() );
+                        aDAVOptionsInner.setHttpResponseStatusText( e.getData() );
+                        aStaticDAVOptionsCache.addDAVOptions( aDAVOptionsInner,
+                                                              m_nOptsCacheLifeNotFound );
+                    }
+                }
+                // if the two net events below happen, something
+                // is going on to the connection so break the command flow
+                if ( ( e.getError() == DAVException::DAV_HTTP_TIMEOUT ) ||
+                     ( e.getError() == DAVException::DAV_HTTP_CONNECT ) )
+                {
+                    cancelCommandExecution( e, xEnv );
+                    // unreachable
+                }
+            }
         }
-        catch ( DAVException const & e )
+        else
         {
             rResAccess->resetUri();
 
-            if ( e.getStatus() == SC_METHOD_NOT_ALLOWED )
+            // first check if the cached error can be mapped to DAVException::DAV_HTTP_TIMEOUT or mapped to DAVException::DAV_HTTP_CONNECT
+            if ( aDAVOptions.getHttpResponseStatusCode() == USC_CONNECTION_TIMED_OUT )
             {
-                // Status SC_METHOD_NOT_ALLOWED is a safe indicator that the
-                // resource is NON_DAV
+                // behave same as DAVException::DAV_HTTP_TIMEOUT or DAVException::DAV_HTTP_CONNECT was thrown
+                try
+                {
+                    // extract host name and connection port
+                    NeonUri   theUri( rURL );
+                    OUString  aHostName  = theUri.GetHost();
+                    sal_Int32 nPort      = theUri.GetPort();
+                    throw DAVException( DAVException::DAV_HTTP_TIMEOUT,
+                                        NeonUri::makeConnectionEndPointString( aHostName,
+                                                                               nPort ) );
+                }
+                catch ( DAVException& exp )
+                {
+                    cancelCommandExecution( exp, xEnv );
+                }
+            }
+
+            if ( aDAVOptions.getHttpResponseStatusCode() != SC_NOT_FOUND &&
+                 aDAVOptions.getHttpResponseStatusCode() != SC_GONE ) // the cached OPTIONS can have SC_GONE
+            {
                 eResourceType = NON_DAV;
             }
-            else if (networkAccessAllowed != nullptr)
+            else
             {
-                *networkAccessAllowed = *networkAccessAllowed
-                    && shouldAccessNetworkAfterException(e);
-            }
-            // if the two net events below happen, something
-            // is going on to the connection so break the command flow
-            if ( ( e.getError() == DAVException::DAV_HTTP_TIMEOUT ) ||
-                 ( e.getError() == DAVException::DAV_HTTP_CONNECT ) )
-            {
-                cancelCommandExecution( e, xEnv );
-                // unreachable
-            }
+                //resource doesn't exist
+                if ( networkAccessAllowed != nullptr )
+                    *networkAccessAllowed = false;            }
         }
     }
 
@@ -3519,5 +4002,337 @@ Content::ResourceType Content::getResourceType(
     }
     return ret;
 }
+
+
+void Content::initOptsCacheLifeTime()
+{
+    // see description in
+    // officecfg/registry/schema/org/openoffice/Inet.xcs
+    // for use of these filed values.
+    sal_uInt32 nAtime;
+    nAtime = officecfg::Inet::Settings::OptsCacheLifeImplWeb::get( m_xContext );
+    m_nOptsCacheLifeImplWeb = std::max( sal_uInt32( 0 ),
+                                        std::min( nAtime, sal_uInt32( 3600 ) ) );
+
+    nAtime = officecfg::Inet::Settings::OptsCacheLifeDAV::get( m_xContext );
+    m_nOptsCacheLifeDAV = std::max( sal_uInt32( 0 ),
+                                    std::min( nAtime, sal_uInt32( 3600 ) ) );
+
+    nAtime = officecfg::Inet::Settings::OptsCacheLifeDAVLocked::get( m_xContext );
+    m_nOptsCacheLifeDAVLocked = std::max( sal_uInt32( 0 ),
+                                    std::min( nAtime, sal_uInt32( 3600 ) ) );
+
+    nAtime = officecfg::Inet::Settings::OptsCacheLifeNotImpl::get( m_xContext );
+    m_nOptsCacheLifeNotImpl = std::max( sal_uInt32( 0 ),
+                                              std::min( nAtime, sal_uInt32( 43200 ) ) );
+
+    nAtime = officecfg::Inet::Settings::OptsCacheLifeNotFound::get( m_xContext );
+    m_nOptsCacheLifeNotFound = std::max( sal_uInt32( 0 ),
+                                              std::min( nAtime, sal_uInt32( 30 ) ) );
+}
+
+
+void Content::getResourceOptions(
+                    const css::uno::Reference< css::ucb::XCommandEnvironment >& xEnv,
+                    DAVOptions& rDAVOptions,
+                    const std::unique_ptr< DAVResourceAccess > & rResAccess,
+                    bool * networkAccessAllowed )
+    throw ( css::uno::Exception, std::exception )
+{
+    OUString aRedirURL;
+    OUString aTargetURL = rResAccess->getURL();
+    DAVOptions aDAVOptions;
+    // first check if in cache, if not, then send method to server
+    if ( !aStaticDAVOptionsCache.getDAVOptions( aTargetURL, aDAVOptions ) )
+    {
+        try
+        {
+            rResAccess->OPTIONS( aDAVOptions, xEnv );
+            // IMPORTANT:the correctly implemented server will answer without errors, even if the resource is not present
+            sal_uInt32 nLifeTime = ( aDAVOptions.isClass1() ||
+                                     aDAVOptions.isClass2() ||
+                                     aDAVOptions.isClass3() ) ?
+                m_nOptsCacheLifeDAV : // a WebDAV site
+                m_nOptsCacheLifeImplWeb;  // a site implementing OPTIONS but
+                                          // it's not DAV
+            // if resource is locked, will use a
+            // different lifetime
+            if( aDAVOptions.isLocked() )
+                nLifeTime = m_nOptsCacheLifeDAVLocked;
+
+            // check if redirected
+            aRedirURL = rResAccess->getURL();
+            if( aRedirURL == aTargetURL)
+            { // no redirection
+                aRedirURL.clear();
+            }
+            // cache this URL's option
+            aDAVOptions.setURL( aTargetURL );
+            aDAVOptions.setRedirectedURL( aRedirURL );
+            aStaticDAVOptionsCache.addDAVOptions( aDAVOptions,
+                                                  nLifeTime );
+        }
+        catch ( DAVException const & e )
+        {
+            // first, remove from cache, will be added if needed, depending on the error received
+            aStaticDAVOptionsCache.removeDAVOptions( aTargetURL );
+            rResAccess->resetUri();
+
+            aDAVOptions.setURL( aTargetURL );
+            aDAVOptions.setRedirectedURL( aRedirURL );
+            switch( e.getError() )
+            {
+                case DAVException::DAV_HTTP_TIMEOUT:
+                case DAVException::DAV_HTTP_CONNECT:
+                {
+                    // something bad happened to the connection
+                    // not same as not found, this instead happens when the server does'n exist or does'n aswer at all
+                    // probably a new bit stating 'timed out' should be added to opts var?
+                    // in any case abort the command
+                    SAL_WARN( "ucb.ucp.webdav", "OPTIONS - DAVException: DAV_HTTP_TIMEOUT or DAV_HTTP_CONNECT for URL <" << m_xIdentifier->getContentIdentifier() << ">" );
+                    // cache the internal unofficial status code
+
+                    aDAVOptions.setHttpResponseStatusCode( USC_CONNECTION_TIMED_OUT );
+                    // used only internally, so the text doesn't really matter..
+                    aStaticDAVOptionsCache.addDAVOptions( aDAVOptions,
+                                                          m_nOptsCacheLifeNotFound );
+                    if ( networkAccessAllowed != nullptr )
+                    {
+                        *networkAccessAllowed = *networkAccessAllowed
+                            && shouldAccessNetworkAfterException(e);
+                    }
+                }
+                break;
+                case DAVException::DAV_HTTP_LOOKUP:
+                {
+                    SAL_WARN( "ucb.ucp.webdav", "OPTIONS - DAVException: DAV_HTTP_LOOKUP for URL <" << m_xIdentifier->getContentIdentifier() << ">" );
+                    aDAVOptions.setHttpResponseStatusCode( USC_LOOKUP_FAILED );
+                    // used only internally, so the text doesn't really matter..
+                    aStaticDAVOptionsCache.addDAVOptions( aDAVOptions,
+                                                          m_nOptsCacheLifeNotFound );
+                    if ( networkAccessAllowed != nullptr )
+                    {
+                        *networkAccessAllowed = *networkAccessAllowed
+                            && shouldAccessNetworkAfterException(e);
+                    }
+                }
+                break;
+                case DAVException::DAV_HTTP_AUTH:
+                {
+                    SAL_WARN( "ucb.ucp.webdav", "OPTIONS - DAVException: DAV_HTTP_AUTH for URL <" << m_xIdentifier->getContentIdentifier() << ">" );
+                    // - the remote site is a WebDAV with special configuration: read/only for read operations
+                    //   and read/write for write operations, the user is not allowed to lock/write and
+                    //   she cancelled the credentials request.
+                    //   this is not actually an error, it means only that for current user this is a standard web,
+                    //   though possibly DAV enabled
+                    aDAVOptions.setHttpResponseStatusCode( USC_AUTH_FAILED );
+                    // used only internally, so the text doesn't really matter..
+                    aStaticDAVOptionsCache.addDAVOptions( aDAVOptions,
+                                                          m_nOptsCacheLifeNotFound );
+                    if ( networkAccessAllowed != nullptr )
+                    {
+                        *networkAccessAllowed = *networkAccessAllowed
+                            && shouldAccessNetworkAfterException(e);
+                    }
+                }
+                break;
+                case DAVException::DAV_HTTP_AUTHPROXY:
+                {
+                    SAL_WARN( "ucb.ucp.webdav", "OPTIONS - DAVException: DAV_HTTP_AUTHPROXY for URL <" << m_xIdentifier->getContentIdentifier() << ">" );
+                    aDAVOptions.setHttpResponseStatusCode( USC_AUTHPROXY_FAILED );
+                    // used only internally, so the text doesn't really matter..
+                    aStaticDAVOptionsCache.addDAVOptions( aDAVOptions,
+                                                          m_nOptsCacheLifeNotFound );
+                    if ( networkAccessAllowed != nullptr )
+                    {
+                        *networkAccessAllowed = *networkAccessAllowed
+                            && shouldAccessNetworkAfterException(e);
+                    }
+                }
+                break;
+                case DAVException::DAV_HTTP_ERROR:
+                {
+                    switch( e.getStatus() )
+                    {
+                        case SC_FORBIDDEN:
+                        {
+                            SAL_WARN( "ucb.ucp.webdav","OPTIONS - SC_FORBIDDEN for URL <" << m_xIdentifier->getContentIdentifier() << ">" );
+                            // cache it, so OPTIONS won't be called again, this URL does not support it
+                            aStaticDAVOptionsCache.addDAVOptions( aDAVOptions,
+                                                                  m_nOptsCacheLifeNotImpl );
+                        }
+                        break;
+                        case SC_BAD_REQUEST:
+                        case SC_INTERNAL_SERVER_ERROR:
+                        {
+                            SAL_WARN( "ucb.ucp.webdav","OPTIONS - SC_BAD_REQUEST or SC_INTERNAL_SERVER_ERROR for URL <" << m_xIdentifier->getContentIdentifier() << ">, HTTP error: "<< e.getStatus()
+                                      << ", '" << e.getData() << "'" );
+                            // cache it, so OPTIONS won't be called again, this URL detect some problem while answering the method
+                            aDAVOptions.setHttpResponseStatusCode( e.getStatus() );
+                            aDAVOptions.setHttpResponseStatusText( e.getData() );
+                            aStaticDAVOptionsCache.addDAVOptions( aDAVOptions,
+                                                                  m_nOptsCacheLifeNotFound );
+                        }
+                        break;
+                        case SC_NOT_IMPLEMENTED:
+                        case SC_METHOD_NOT_ALLOWED:
+                        {
+                            // OPTIONS method must be implemented in DAV
+                            // resource is NON_DAV, or not advertising it
+                            SAL_WARN( "ucb.ucp.webdav","OPTIONS - SC_NOT_IMPLEMENTED or SC_METHOD_NOT_ALLOWED for URL <" << m_xIdentifier->getContentIdentifier() << ">, HTTP error: "<< e.getStatus()
+                                      << ", '" << e.getData() << "'" );
+                            // cache it, so OPTIONS won't be called again, this URL does not support it
+                            aStaticDAVOptionsCache.addDAVOptions( aDAVOptions,
+                                                                  m_nOptsCacheLifeNotImpl );
+                        }
+                        break;
+                        case SC_NOT_FOUND:
+                        {
+                            // Apparently on IIS 10.0, if you disabled OPTIONS method, this error is the one reported,
+                            // instead of SC_NOT_IMPLEMENTED or SC_METHOD_NOT_ALLOWED.
+                            // So check if this is an available resource, or a real 'Not Found' event.
+                            sal_uInt32 nLifeTime = m_nOptsCacheLifeNotFound;
+                            if( isResourceAvailable( xEnv, rResAccess, aDAVOptions ) )
+                            {
+                                SAL_WARN( "ucb.ucp.webdav", "OPTIONS - Got an SC_NOT_FOUND, but the URL <" << m_xIdentifier->getContentIdentifier() << "> resource exists" );
+                                nLifeTime = m_nOptsCacheLifeNotImpl;
+                            }
+                            else
+                            {
+                                SAL_WARN( "ucb.ucp.webdav", "OPTIONS - SC_NOT_FOUND for URL <" << m_xIdentifier->getContentIdentifier() << ">" );
+                                if ( networkAccessAllowed != nullptr )
+                                {
+                                    *networkAccessAllowed = *networkAccessAllowed
+                                        && shouldAccessNetworkAfterException(e);
+                                }
+                            }
+                            aStaticDAVOptionsCache.addDAVOptions( aDAVOptions,
+                                                                  nLifeTime );
+                        }
+                        break;
+                        default:
+                        {
+                            SAL_WARN( "ucb.ucp.webdav", "OPTIONS - DAV_HTTP_ERROR, for URL <" << m_xIdentifier->getContentIdentifier() << ">, HTTP error: "<< e.getStatus()
+                                      << ", '" << e.getData() << "'" );
+                            aDAVOptions.setHttpResponseStatusCode( e.getStatus() );
+                            aDAVOptions.setHttpResponseStatusText( e.getData() );
+                            // cache it, so OPTIONS won't be called again, this URL does not support it
+                            aStaticDAVOptionsCache.addDAVOptions( aDAVOptions,
+                                                                  m_nOptsCacheLifeNotImpl );
+                        }
+                        break;
+                    }
+                }
+                break;
+                // The 'DAVException::DAV_HTTP_REDIRECT' means we reached the maximum
+                // number of redirections, consider the resource type as UNKNOWN
+                // possibly a normal web site, not DAV
+                case DAVException::DAV_HTTP_REDIRECT:
+                default:
+                {
+                    SAL_WARN( "ucb.ucp.webdav","OPTIONS - General DAVException (or max DAV_HTTP_REDIRECT reached) for URL <" << m_xIdentifier->getContentIdentifier() << ">, DAV ExceptionCode: "
+                              << e.getError() << ", HTTP error: "<< e.getStatus() );
+                    aStaticDAVOptionsCache.addDAVOptions( aDAVOptions,
+                                                          m_nOptsCacheLifeNotImpl );
+                }
+                break;
+            }
+        }
+    }
+    else
+    {
+        // check current response status code, perhaps we need to set networkAccessAllowed
+        sal_uInt16 CachedResponseStatusCode = aDAVOptions.getHttpResponseStatusCode();
+        if ( networkAccessAllowed != nullptr &&
+             ( ( CachedResponseStatusCode == SC_NOT_FOUND ) ||
+               ( CachedResponseStatusCode == SC_GONE ) ||
+               ( CachedResponseStatusCode == USC_CONNECTION_TIMED_OUT ) ||
+               ( CachedResponseStatusCode == USC_LOOKUP_FAILED ) ||
+               ( CachedResponseStatusCode == USC_AUTH_FAILED ) ||
+               ( CachedResponseStatusCode == USC_AUTHPROXY_FAILED )
+                 )
+            )
+        {
+            *networkAccessAllowed = *networkAccessAllowed && false;
+        }
+    }
+    rDAVOptions = aDAVOptions;
+}
+
+
+//static
+bool Content::isResourceAvailable( const css::uno::Reference< css::ucb::XCommandEnvironment >& xEnv,
+                                  const std::unique_ptr< DAVResourceAccess > & rResAccess,
+                                  DAVOptions& rDAVOptions )
+{
+    std::vector< rtl::OUString > aHeaderNames;
+    DAVResource aResource;
+
+    try
+    {
+        // To check for the physical URL resource availability, first
+        // try using a simple HEAD command
+        // if HEAD is successfull, set element found,
+        rResAccess->HEAD( aHeaderNames, aResource, xEnv );
+        rDAVOptions.setHttpResponseStatusCode( 0 );
+        OUString aNoText;
+        rDAVOptions.setHttpResponseStatusText( aNoText );
+        return true;
+    }
+    catch ( DAVException const & e )
+    {
+        if ( e.getError() == DAVException::DAV_HTTP_ERROR )
+        {
+            if ( e.getStatus() == SC_NOT_IMPLEMENTED ||
+                 e.getStatus() == SC_METHOD_NOT_ALLOWED ||
+                 e.getStatus() == SC_NOT_FOUND )
+            {
+                SAL_WARN( "ucb.ucp.webdav", "HEAD probably not implemented: fall back to a partial GET" );
+                // set in cached OPTIONS "HEAD not implemented"
+                // so it won't be used again on this resource
+                rDAVOptions.setHeadAllowed( false );
+                try
+                {
+                    // do a GET with a payload of 0, the server does not
+                    // support HEAD (or has HEAD disabled)
+                    DAVRequestHeaders aPartialGet;
+                    aPartialGet.push_back(
+                        DAVRequestHeader(
+                            OUString( "Range" ),
+                            OUString( "bytes=0-0" )));
+
+                    rResAccess->GET0( aPartialGet,
+                                     aHeaderNames,
+                                     aResource,
+                                     xEnv );
+                    return true;
+                }
+                catch ( DAVException const & ex )
+                {
+                    if ( ex.getError() == DAVException::DAV_HTTP_ERROR )
+                    {
+                        rDAVOptions.setHttpResponseStatusCode( ex.getStatus() );
+                        rDAVOptions.setHttpResponseStatusText( ex.getData() );
+                    }
+                }
+            }
+            else
+            {
+                rDAVOptions.setHttpResponseStatusCode( e.getStatus() );
+                rDAVOptions.setHttpResponseStatusText( e.getData() );
+            }
+        }
+        return false;
+    }
+    catch ( ... )
+    {
+    }
+    // set SC_NOT_IMPLEMENTED since at a minimum GET must be implemented in a basic Web server
+    rDAVOptions.setHttpResponseStatusCode( SC_NOT_IMPLEMENTED );
+    OUString HttpResponseStatusText;
+    rDAVOptions.setHttpResponseStatusText( HttpResponseStatusText );
+    return false;
+}
+
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -59,7 +59,7 @@ namespace dbaccess
 
     public:
         OComponentDefinition_Impl();
-        virtual ~OComponentDefinition_Impl();
+        virtual ~OComponentDefinition_Impl() override;
 
         inline size_t size() const { return m_aColumns.size(); }
 
@@ -86,11 +86,11 @@ class OComponentDefinition  :public OContentHelper
                             ,public ::comphelper::OPropertyArrayUsageHelper< OComponentDefinition >
 {
 protected:
-    css::uno::Reference< OColumns >     m_xColumns;
+    rtl::Reference< OColumns >     m_xColumns;
     rtl::Reference<OColumnPropertyListener> m_xColumnPropertyListener;
     bool                        m_bTable;
 
-    virtual ~OComponentDefinition();
+    virtual ~OComponentDefinition() override;
     virtual void SAL_CALL disposing() override;
 
     const   OComponentDefinition_Impl& getDefinition() const { return dynamic_cast< const OComponentDefinition_Impl& >( *m_pImpl.get() ); }
@@ -139,7 +139,7 @@ public:
     virtual css::uno::Reference< css::beans::XPropertySet > createColumnDescriptor() override;
     virtual void columnAppended( const css::uno::Reference< css::beans::XPropertySet >& _rxSourceDescriptor ) override;
     virtual void columnDropped(const OUString& _sName) override;
-    virtual void notifyDataSourceModified() override { OContentHelper::notifyDataSourceModified(); }
+    using OContentHelper::notifyDataSourceModified;
 
 protected:
 // OPropertyArrayUsageHelper

@@ -53,12 +53,9 @@ class TreeControlPeer : public ::cppu::ImplInheritanceHelper< VCLXWindow, css::a
     friend class UnoTreeListEntry;
 public:
     TreeControlPeer();
-    virtual ~TreeControlPeer();
+    virtual ~TreeControlPeer() override;
 
     vcl::Window* createVclControl( vcl::Window* pParent, sal_Int64 nWinStyle );
-
-    // VCLXWindow
-    virtual void SetWindow( const VclPtr< vcl::Window > &pWindow ) override;
 
     // css::view::XSelectionSupplier
     virtual sal_Bool SAL_CALL select( const css::uno::Any& xSelection ) throw (css::lang::IllegalArgumentException, css::uno::RuntimeException, std::exception) override;
@@ -126,7 +123,7 @@ private:
     void fillTree( UnoTreeListBoxImpl& rTree, const css::uno::Reference< css::awt::tree::XTreeDataModel >& xDataModel );
     void addNode( UnoTreeListBoxImpl& rTree, const css::uno::Reference< css::awt::tree::XTreeNode >& xNode, UnoTreeListEntry* pParentEntry );
 
-    UnoTreeListEntry* createEntry( const css::uno::Reference< css::awt::tree::XTreeNode >& xNode, UnoTreeListEntry* pParent, sal_uLong nPos = TREELIST_APPEND );
+    UnoTreeListEntry* createEntry( const css::uno::Reference< css::awt::tree::XTreeNode >& xNode, UnoTreeListEntry* pParent, sal_uLong nPos );
     void updateEntry( UnoTreeListEntry* pEntry );
 
     void updateTree( const css::awt::tree::TreeDataModelEvent& rEvent );

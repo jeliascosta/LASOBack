@@ -46,12 +46,11 @@ using ::osl::MutexGuard;
 namespace
 {
 
-static const char lcl_aImplementationName[] =  "com.sun.star.comp.chart2.RegressionEquation";
-static const char lcl_aServiceName[] =  "com.sun.star.chart2.RegressionEquation";
-
 enum
 {
     PROP_EQUATION_SHOW,
+    PROP_EQUATION_XNAME,
+    PROP_EQUATION_YNAME,
     PROP_EQUATION_SHOW_CORRELATION_COEFF,
     PROP_EQUATION_REF_PAGE_SIZE,
     PROP_EQUATION_REL_POS,
@@ -65,6 +64,20 @@ void lcl_AddPropertiesToVector(
         Property( "ShowEquation",
                   PROP_EQUATION_SHOW,
                   cppu::UnoType<bool>::get(),
+                  beans::PropertyAttribute::BOUND
+                  | beans::PropertyAttribute::MAYBEDEFAULT ));
+
+    rOutProperties.push_back(
+        Property( "XName",
+                  PROP_EQUATION_XNAME,
+                  cppu::UnoType<OUString>::get(),
+                  beans::PropertyAttribute::BOUND
+                  | beans::PropertyAttribute::MAYBEDEFAULT ));
+
+    rOutProperties.push_back(
+        Property( "YName",
+                  PROP_EQUATION_YNAME,
+                  cppu::UnoType<OUString>::get(),
                   beans::PropertyAttribute::BOUND
                   | beans::PropertyAttribute::MAYBEDEFAULT ));
 
@@ -113,6 +126,8 @@ private:
         ::chart::CharacterProperties::AddDefaultsToMap( rOutMap );
 
         ::chart::PropertyHelper::setPropertyValueDefault( rOutMap, PROP_EQUATION_SHOW, false );
+        ::chart::PropertyHelper::setPropertyValueDefault( rOutMap, PROP_EQUATION_XNAME, OUString("x") );
+        ::chart::PropertyHelper::setPropertyValueDefault( rOutMap, PROP_EQUATION_YNAME, OUString("f(x)") );
         ::chart::PropertyHelper::setPropertyValueDefault( rOutMap, PROP_EQUATION_SHOW_CORRELATION_COEFF, false );
         //::chart::PropertyHelper::setPropertyValueDefault( rOutMap, PROP_EQUATION_SEPARATOR, OUString( '\n' ));
 
@@ -299,30 +314,10 @@ void SAL_CALL RegressionEquation::setText( const uno::Sequence< uno::Reference< 
     fireModifyEvent();
 }
 
-uno::Sequence< OUString > RegressionEquation::getSupportedServiceNames_Static()
-{
-    const sal_Int32 nNumServices( 5 );
-    sal_Int32 nI = 0;
-    uno::Sequence< OUString > aServices( nNumServices );
-    aServices[ nI++ ] = lcl_aServiceName;
-    aServices[ nI++ ] = "com.sun.star.beans.PropertySet";
-    aServices[ nI++ ] = "com.sun.star.drawing.FillProperties";
-    aServices[ nI++ ] = "com.sun.star.drawing.LineProperties";
-    aServices[ nI++ ] = "com.sun.star.style.CharacterProperties";
-    OSL_ASSERT( nNumServices == nI );
-    return aServices;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL RegressionEquation::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString RegressionEquation::getImplementationName_Static()
-{
-    return OUString(lcl_aImplementationName);
+    return OUString("com.sun.star.comp.chart2.RegressionEquation");
 }
 
 sal_Bool SAL_CALL RegressionEquation::supportsService( const OUString& rServiceName )
@@ -334,7 +329,11 @@ sal_Bool SAL_CALL RegressionEquation::supportsService( const OUString& rServiceN
 css::uno::Sequence< OUString > SAL_CALL RegressionEquation::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return { "com.sun.star.chart2.RegressionEquation",
+             "com.sun.star.beans.PropertySet",
+             "com.sun.star.drawing.FillProperties",
+             "com.sun.star.drawing.LineProperties",
+             "com.sun.star.style.CharacterProperties" };
 }
 
 using impl::RegressionEquation_Base;

@@ -149,7 +149,7 @@ Sequence< Locale > SAL_CALL Hyphenator::getLocales()
         {
             // get supported locales from the dictionaries-to-use...
             sal_Int32 k = 0;
-            std::set< OUString, lt_rtl_OUString > aLocaleNamesSet;
+            std::set<OUString> aLocaleNamesSet;
             std::list< SvtLinguConfigDictionaryEntry >::const_iterator aDictIt;
             for (aDictIt = aDics.begin();  aDictIt != aDics.end();  ++aDictIt)
             {
@@ -162,7 +162,7 @@ Sequence< Locale > SAL_CALL Hyphenator::getLocales()
             }
             // ... and add them to the resulting sequence
             aSuppLocales.realloc( aLocaleNamesSet.size() );
-            std::set< OUString, lt_rtl_OUString >::const_iterator aItB;
+            std::set<OUString>::const_iterator aItB;
             k = 0;
             for (aItB = aLocaleNamesSet.begin();  aItB != aLocaleNamesSet.end();  ++aItB)
             {
@@ -282,7 +282,7 @@ Reference< XHyphenatedWord > SAL_CALL Hyphenator::hyphenate( const OUString& aWo
         int nHyphenationPosAlt = -1;
         int nHyphenationPosAltHyph = -1;
 
-        // if this dictinary has not been loaded yet do that
+        // if this dictionary has not been loaded yet do that
         if (!aDicts[k].aPtr)
         {
             OUString DictFN = aDicts[k].aName + ".dic";
@@ -467,7 +467,7 @@ Reference< XHyphenatedWord > SAL_CALL Hyphenator::hyphenate( const OUString& aWo
                 // handle shortening
                 sal_Int16 nPos = (sal_Int16) ((nHyphenationPosAltHyph < nHyphenationPos) ?
                 nHyphenationPosAltHyph : nHyphenationPos);
-                // dicretionary hyphenation
+                // discretionary hyphenation
                 xRes = HyphenatedWord::CreateHyphenatedWord( aWord, LinguLocaleToLanguage( aLocale ), nPos,
                     aWord.replaceAt(nHyphenationPosAlt + 1, cut[nHyphenationPos], repHyph),
                     (sal_Int16) nHyphenationPosAltHyph);
@@ -563,7 +563,7 @@ Reference< XPossibleHyphens > SAL_CALL Hyphenator::createPossibleHyphens( const 
     if (k != -1)
     {
         HyphenDict *dict = nullptr;
-        // if this dictioanry has not been loaded yet do that
+        // if this dictionary has not been loaded yet do that
         if (!aDicts[k].aPtr)
         {
             OUString DictFN = aDicts[k].aName + ".dic";

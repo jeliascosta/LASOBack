@@ -132,12 +132,12 @@ private:
                             const SfxPoolItem *pItem,
                             SfxItemState eItemState );
     SAL_DLLPRIVATE SfxStateCache* GetStateCache( sal_uInt16 nId, sal_uInt16 *pPos);
-    DECL_DLLPRIVATE_LINK_TYPED( NextJob, Timer *, void );
+    DECL_DLLPRIVATE_LINK( NextJob, Timer *, void );
     SAL_DLLPRIVATE bool NextJob_Impl(Timer * pTimer);
 
 public:
                      SfxBindings();
-                     virtual ~SfxBindings();
+                     virtual ~SfxBindings() override;
 
     void             HidePopups( bool bHide = true );
     SAL_DLLPRIVATE void HidePopupCtrls_Impl( bool bHide = true );
@@ -167,19 +167,17 @@ public:
     SfxItemState     QueryState( sal_uInt16 nSID, std::unique_ptr<SfxPoolItem> &rpState );
 
     const SfxPoolItem*  ExecuteSynchron( sal_uInt16 nSlot,
-                                 const SfxPoolItem **pArgs = nullptr,
-                                 const SfxPoolItem **pInternalArgs = nullptr);
+                                 const SfxPoolItem **pArgs = nullptr);
     bool             Execute( sal_uInt16 nSlot,
                                  const SfxPoolItem **pArgs = nullptr,
-                                 SfxCallMode nCall = SfxCallMode::SLOT,
-                                 const SfxPoolItem **pInternalArgs = nullptr);
+                                 SfxCallMode nCall = SfxCallMode::SLOT);
 
     SAL_DLLPRIVATE void SetDispatchProvider_Impl( const css::uno::Reference< css::frame::XDispatchProvider > & rFrame );
     void             SetActiveFrame( const css::uno::Reference< css::frame::XFrame > & rFrame );
     const css::uno::Reference< css::frame::XFrame > GetActiveFrame() const;
                      // Reconfig
-    sal_uInt16           EnterRegistrations(const char *pFile = nullptr, int nLine = 0);
-    void             LeaveRegistrations( sal_uInt16 nLevel = USHRT_MAX, const char *pFile = nullptr, int nLine = 0 );
+    sal_uInt16       EnterRegistrations(const char *pFile = nullptr, int nLine = 0);
+    void             LeaveRegistrations( const char *pFile = nullptr, int nLine = 0 );
     void             Register( SfxControllerItem& rBinding );
     void             Release( SfxControllerItem& rBinding );
     SfxDispatcher*   GetDispatcher() const
@@ -204,11 +202,11 @@ public:
 
 #ifdef DBG_UTIL
 #define ENTERREGISTRATIONS() EnterRegistrations(__FILE__, __LINE__)
-#define LEAVEREGISTRATIONS() LeaveRegistrations(USHRT_MAX, __FILE__, __LINE__)
+#define LEAVEREGISTRATIONS() LeaveRegistrations(__FILE__, __LINE__)
 #define DENTERREGISTRATIONS() \
         EnterRegistrations( OStringBuffer(__FILE__).append('(').append(reinterpret_cast<sal_Int64>(this)).append(')').getStr(), __LINE__ )
 #define DLEAVEREGISTRATIONS(  ) \
-        LeaveRegistrations( USHRT_MAX, OStringBuffer(__FILE__).append('(').append(reinterpret_cast<sal_Int64>(this)).append(')').getStr(), __LINE__ )
+        LeaveRegistrations( OStringBuffer(__FILE__).append('(').append(reinterpret_cast<sal_Int64>(this)).append(')').getStr(), __LINE__ )
 #else
 #define ENTERREGISTRATIONS() EnterRegistrations()
 #define LEAVEREGISTRATIONS() LeaveRegistrations()

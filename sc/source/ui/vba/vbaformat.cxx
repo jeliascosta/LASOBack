@@ -30,6 +30,7 @@
 #include <com/sun/star/text/WritingMode.hpp>
 #include <com/sun/star/util/CellProtection.hpp>
 
+#include <basic/sberrors.hxx>
 #include <rtl/math.hxx>
 
 #include "excelvbahelper.hxx"
@@ -572,7 +573,7 @@ ScVbaFormat< Ifc... >::getLocked(  ) throw (script::BasicErrorException, uno::Ru
             else // fallback to propertyset
             {
                 util::CellProtection cellProtection;
-                mxPropertySet->getPropertyValue(sCellProt) >>= aCellProtection;
+                mxPropertySet->getPropertyValue(sCellProt) >>= cellProtection;
                 aCellProtection = uno::makeAny( cellProtection.IsLocked );
             }
         }
@@ -729,7 +730,7 @@ ScVbaFormat< Ifc... >::getNumberFormat(  ) throw (script::BasicErrorException, u
         {
             initializeNumberFormats();
 
-            sal_Int32 nNewFormat = xNumberFormatTypes->getFormatForLocale(nFormat, getDefaultLocale() );
+            sal_Int32 nNewFormat = xNumberFormatTypes->getFormatForLocale(nFormat, m_aDefaultLocale );
             OUString sFormat;
             xNumberFormats->getByKey(nNewFormat)->getPropertyValue( FORMATSTRING ) >>= sFormat;
             aFormat = uno::makeAny( sFormat );
@@ -772,7 +773,7 @@ ScVbaFormat< Ifc... >::initializeNumberFormats() throw ( script::BasicErrorExcep
 }
 
 template< typename... Ifc >
-uno::Reference< beans::XPropertyState >
+uno::Reference< beans::XPropertyState > const &
 ScVbaFormat< Ifc... >::getXPropertyState() throw ( uno::RuntimeException )
 {
     if ( !xPropertyState.is() )

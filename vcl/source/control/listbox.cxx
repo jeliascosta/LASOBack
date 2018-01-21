@@ -29,6 +29,7 @@
 #include <vcl/lstbox.hxx>
 #include <vcl/combobox.hxx>
 #include <vcl/settings.hxx>
+#include <vcl/uitest/uiobject.hxx>
 
 #include "svdata.hxx"
 #include "controldata.hxx"
@@ -53,19 +54,6 @@ ListBox::ListBox( vcl::Window* pParent, WinBits nStyle ) : Control( WINDOW_LISTB
 {
     ImplInitListBoxData();
     ImplInit( pParent, nStyle );
-}
-
-ListBox::ListBox( vcl::Window* pParent, const ResId& rResId ) :
-    Control( WINDOW_LISTBOX )
-{
-    rResId.SetRT( RSC_LISTBOX );
-    WinBits nStyle = ImplInitRes( rResId );
-    ImplInitListBoxData();
-    ImplInit( pParent, nStyle );
-    ImplLoadRes( rResId );
-
-    if ( !(nStyle & WB_HIDE ) )
-        Show();
 }
 
 ListBox::~ListBox()
@@ -188,29 +176,7 @@ WinBits ListBox::ImplInitStyle( WinBits nStyle )
     return nStyle;
 }
 
-void ListBox::ImplLoadRes( const ResId& rResId )
-{
-    Control::ImplLoadRes( rResId );
-
-    // The resource short is actually to be treated as unsigned short.
-    sal_uInt16 nResPos = static_cast<sal_uInt16>(ReadShortRes());
-    sal_Int32 nSelPos = (nResPos == SAL_MAX_UINT16) ? LISTBOX_ENTRY_NOTFOUND : nResPos;
-    sal_Int32 nNumber = ReadLongRes();
-
-    for( sal_Int32 i = 0; i < nNumber; i++ )
-    {
-        sal_Int32 nPos = InsertEntry( ReadStringRes() );
-
-        sal_IntPtr nId = ReadLongRes();
-        if( nId )
-            SetEntryData( nPos, reinterpret_cast<void *>(nId) ); // ID as UserData
-    }
-
-    if( nSelPos < nNumber )
-        SelectEntryPos( nSelPos );
-}
-
-IMPL_LINK_NOARG_TYPED(ListBox, ImplSelectHdl, LinkParamNone*, void)
+IMPL_LINK_NOARG(ListBox, ImplSelectHdl, LinkParamNone*, void)
 {
     bool bPopup = IsInDropDown();
     if( IsDropDownBox() )
@@ -235,28 +201,28 @@ IMPL_LINK_NOARG_TYPED(ListBox, ImplSelectHdl, LinkParamNone*, void)
         Select();
 }
 
-IMPL_LINK_TYPED( ListBox, ImplFocusHdl, sal_Int32, nPos, void )
+IMPL_LINK( ListBox, ImplFocusHdl, sal_Int32, nPos, void )
 {
     CallEventListeners( VCLEVENT_LISTBOX_FOCUS, reinterpret_cast<void*>(nPos) );
 }
 
-IMPL_LINK_NOARG_TYPED( ListBox, ImplListItemSelectHdl, LinkParamNone*, void )
+IMPL_LINK_NOARG( ListBox, ImplListItemSelectHdl, LinkParamNone*, void )
 {
     CallEventListeners( VCLEVENT_DROPDOWN_SELECT );
 }
 
-IMPL_LINK_NOARG_TYPED(ListBox, ImplScrollHdl, ImplListBox*, void)
+IMPL_LINK_NOARG(ListBox, ImplScrollHdl, ImplListBox*, void)
 {
     CallEventListeners( VCLEVENT_LISTBOX_SCROLLED );
 }
 
-IMPL_LINK_NOARG_TYPED(ListBox, ImplCancelHdl, LinkParamNone*, void)
+IMPL_LINK_NOARG(ListBox, ImplCancelHdl, LinkParamNone*, void)
 {
     if( IsInDropDown() )
         mpFloatWin->EndPopupMode();
 }
 
-IMPL_LINK_TYPED( ListBox, ImplSelectionChangedHdl, sal_Int32, nChanged, void )
+IMPL_LINK( ListBox, ImplSelectionChangedHdl, sal_Int32, nChanged, void )
 {
     if ( !mpImplLB->IsTrackingSelect() )
     {
@@ -285,12 +251,12 @@ IMPL_LINK_TYPED( ListBox, ImplSelectionChangedHdl, sal_Int32, nChanged, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ListBox, ImplDoubleClickHdl, ImplListBoxWindow*, void)
+IMPL_LINK_NOARG(ListBox, ImplDoubleClickHdl, ImplListBoxWindow*, void)
 {
     DoubleClick();
 }
 
-IMPL_LINK_NOARG_TYPED(ListBox, ImplClickBtnHdl, void*, void)
+IMPL_LINK_NOARG(ListBox, ImplClickBtnHdl, void*, void)
 {
     if( !mpFloatWin->IsInPopupMode() )
     {
@@ -308,7 +274,7 @@ IMPL_LINK_NOARG_TYPED(ListBox, ImplClickBtnHdl, void*, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ListBox, ImplPopupModeEndHdl, FloatingWindow*, void)
+IMPL_LINK_NOARG(ListBox, ImplPopupModeEndHdl, FloatingWindow*, void)
 {
     if( mpFloatWin->IsPopupModeCanceled() )
     {
@@ -411,7 +377,8 @@ void ListBox::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, Dr
         }
     }
 
-    long nOnePixel = GetDrawPixel( pDev, 1 );
+    const long nOnePixel = GetDrawPixel( pDev, 1 );
+    const long nOffX = 3*nOnePixel;
     DrawTextFlags nTextStyle = DrawTextFlags::VCenter;
     Rectangle aTextRect( aPos, aSize );
 
@@ -422,15 +389,14 @@ void ListBox::Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, Dr
     else
         nTextStyle |= DrawTextFlags::Left;
 
-    aTextRect.Left() += 3*nOnePixel;
-    aTextRect.Right() -= 3*nOnePixel;
+    aTextRect.Left() += nOffX;
+    aTextRect.Right() -= nOffX;
 
     if ( IsDropDownBox() )
     {
         OUString   aText = GetSelectEntry();
         long       nTextHeight = pDev->GetTextHeight();
         long       nTextWidth = pDev->GetTextWidth( aText );
-        long       nOffX = 3*nOnePixel;
         long       nOffY = (aSize.Height()-nTextHeight) / 2;
 
         // Clipping?
@@ -594,7 +560,7 @@ void ListBox::setPosSizePixel( long nX, long nY, long nWidth, long nHeight, PosS
             aPrefSz.Width() = nWidth;
         mpFloatWin->SetPrefSize( aPrefSz );
 
-        if ( IsAutoSizeEnabled() && ! (nFlags & PosSizeFlags::Dropdown) )
+        if (IsAutoSizeEnabled())
             nHeight = mnDDHeight;
     }
 
@@ -743,7 +709,7 @@ long ListBox::GetIndexForPoint( const Point& rPoint, sal_Int32& rPos ) const
         else
             rPos = nEntry;
 
-        DBG_ASSERT( nIndex != -1, "found index for point, but relative index failed" );
+        SAL_WARN_IF( nIndex == -1, "vcl", "found index for point, but relative index failed" );
     }
 
     // Get line relative index
@@ -1189,8 +1155,6 @@ void ListBox::EnableMultiSelection( bool bMulti, bool bStackSelection )
 
 bool ListBox::IsMultiSelectionEnabled() const
 {
-    if (!mpImplLB)
-        return false;
     return mpImplLB->IsMultiSelectionEnabled();
 }
 
@@ -1366,7 +1330,7 @@ void ListBox::GetMaxVisColumnsAndLines( sal_uInt16& rnCols, sal_uInt16& rnLines 
     }
 }
 
-IMPL_LINK_TYPED( ListBox, ImplUserDrawHdl, UserDrawEvent*, pEvent, void )
+IMPL_LINK( ListBox, ImplUserDrawHdl, UserDrawEvent*, pEvent, void )
 {
     UserDraw( *pEvent );
 }
@@ -1381,13 +1345,6 @@ void ListBox::DrawEntry(const UserDrawEvent& rEvt, bool bDrawImage, bool bDrawTe
         mpImplLB->GetMainWindow()->DrawEntry(*rEvt.GetRenderContext(), rEvt.GetItemId(), bDrawImage, true/*bDrawText*/, bDrawTextAtImagePos );
     else if (rEvt.GetWindow() == mpImplWin)
         mpImplWin->DrawEntry(*rEvt.GetRenderContext(), bDrawImage, bDrawTextAtImagePos);
-}
-
-void ListBox::SetUserItemSize( const Size& rSz )
-{
-    mpImplLB->GetMainWindow()->SetUserItemSize( rSz );
-    if ( mpImplWin )
-        mpImplWin->SetUserItemSize( rSz );
 }
 
 void ListBox::EnableUserDraw( bool bUserDraw )
@@ -1491,6 +1448,11 @@ void ListBox::SetEdgeBlending(bool bNew)
 
         Invalidate();
     }
+}
+
+FactoryFunction ListBox::GetUITestFactory() const
+{
+    return ListBoxUIObject::create;
 }
 
 MultiListBox::MultiListBox( vcl::Window* pParent, WinBits nStyle ) :

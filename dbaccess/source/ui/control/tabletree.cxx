@@ -75,14 +75,7 @@ OTableTreeListBox::OTableTreeListBox(vcl::Window* pParent, WinBits nWinStyle)
     implSetDefaultImages();
 }
 
-VCL_BUILDER_DECL_FACTORY(OTableTreeListBox)
-{
-    WinBits nWinStyle = 0;
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-        nWinStyle |= WB_BORDER;
-    rRet = VclPtr<OTableTreeListBox>::Create(pParent, nWinStyle);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(OTableTreeListBox, 0)
 
 void OTableTreeListBox::implSetDefaultImages()
 {
@@ -113,7 +106,7 @@ void OTableTreeListBox::notifyHiContrastChanged()
         for (size_t i=0;i<nCount;++i)
         {
             SvLBoxItem& rItem = pEntryLoop->GetItem(i);
-            if (rItem.GetType() == SV_ITEM_ID_LBOXCONTEXTBMP)
+            if (rItem.GetType() == SvLBoxItemType::ContextBmp)
             {
                 SvLBoxContextBmp& rContextBitmapItem = static_cast< SvLBoxContextBmp& >( rItem );
 
@@ -404,7 +397,7 @@ void OTableTreeListBox::InitEntry(SvTreeListEntry* _pEntry, const OUString& _rSt
     OMarkableTreeListBox::InitEntry(_pEntry, _rString, _rCollapsedBitmap, _rExpandedBitmap, _eButtonKind);
 
     // replace the text item with our own one
-    SvLBoxItem* pTextItem = _pEntry->GetFirstItem(SV_ITEM_ID_LBOXSTRING);
+    SvLBoxItem* pTextItem = _pEntry->GetFirstItem(SvLBoxItemType::String);
     OSL_ENSURE(pTextItem, "OTableTreeListBox::InitEntry: no text item!?");
     size_t nTextPos = _pEntry->GetPos(pTextItem);
     OSL_ENSURE(SvTreeListEntry::ITEM_NOT_FOUND != nTextPos, "OTableTreeListBox::InitEntry: no text item pos!");

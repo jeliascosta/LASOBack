@@ -193,7 +193,7 @@ bool View::InsertMetaFile( TransferableDataHelper& rDataHelper, const Point& rPo
                 case MetaActionType::BMPSCALE:
                 case MetaActionType::BMPEX:
                 case MetaActionType::BMPEXSCALE:
-                    if( aGraphic.GetType() != GRAPHIC_NONE )
+                    if( aGraphic.GetType() != GraphicType::NONE )
                     {
                         bVector = true;
                     }
@@ -238,7 +238,7 @@ bool View::InsertMetaFile( TransferableDataHelper& rDataHelper, const Point& rPo
     }
 
     // it is not a vector metafile but it also has no graphic?
-    if( !bVector && (aGraphic.GetType() == GRAPHIC_NONE) )
+    if( !bVector && (aGraphic.GetType() == GraphicType::NONE) )
         bVector = true;
 
     // restrict movement to WorkArea
@@ -286,7 +286,7 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
     if( bDrag )
     {
         SdrPageView* pPV = nullptr;
-        PickObj( rPos, getHitTolLog(), pPickObj, pPV );
+        pPickObj = PickObj(rPos, getHitTolLog(), pPV);
     }
 
     if( nPage != SDRPAGE_NOTFOUND )
@@ -327,14 +327,16 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
 
     bool bTable = false;
     // check special cases for pasting table formats as RTL
-    if( !bLink && (nFormat == SotClipboardFormatId::NONE || (nFormat == SotClipboardFormatId::RTF)) )
+    if( !bLink && (nFormat == SotClipboardFormatId::NONE || (nFormat == SotClipboardFormatId::RTF) || (nFormat == SotClipboardFormatId::RICHTEXT)) )
     {
         // if the objekt supports rtf and there is a table involved, default is to create a table
-        if( aDataHelper.HasFormat( SotClipboardFormatId::RTF ) && ! aDataHelper.HasFormat( SotClipboardFormatId::DRAWING ) )
+        bool bIsRTF = aDataHelper.HasFormat( SotClipboardFormatId::RTF );
+        if( ( bIsRTF || aDataHelper.HasFormat( SotClipboardFormatId::RICHTEXT ) )
+            && ! aDataHelper.HasFormat( SotClipboardFormatId::DRAWING ) )
         {
             ::tools::SvRef<SotStorageStream> xStm;
 
-            if( aDataHelper.GetSotStorageStream( SotClipboardFormatId::RTF, xStm ) )
+            if( aDataHelper.GetSotStorageStream( bIsRTF ? SotClipboardFormatId::RTF : SotClipboardFormatId::RICHTEXT, xStm ) )
             {
                 xStm->Seek( 0 );
 
@@ -345,7 +347,7 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
                     if (x != -1)
                     {
                         bTable = true;
-                        nFormat = SotClipboardFormatId::RTF;
+                        nFormat = bIsRTF ? SotClipboardFormatId::RTF : SotClipboardFormatId::RICHTEXT;
                         break;
                     }
                 }
@@ -363,7 +365,7 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
         // Paste only if SfxClassificationHelper recommends so.
         const SfxObjectShellRef& pSource = pOwnData->GetDocShell();
         SfxObjectShell* pDestination = mrDoc.GetDocSh();
-        if (pSource && pDestination)
+        if (pSource.Is() && pDestination)
         {
             SfxClassificationCheckPasteResult eResult = SfxClassificationHelper::CheckPaste(pSource->getDocProperties(), pDestination->getDocProperties());
             if (!SfxClassificationHelper::ShowPasteInfo(eResult))
@@ -375,7 +377,7 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
     {
         const View* pSourceView = pOwnData->GetView();
 
-        if( pOwnData->GetDocShell() && pOwnData->IsPageTransferable() )
+        if( pOwnData->GetDocShell().Is() && pOwnData->IsPageTransferable() )
         {
             mpClipboard->HandlePageDrop (*pOwnData);
             bReturn = true;
@@ -642,7 +644,7 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
         else
         {
             SdDrawDocument* pWorkModel = const_cast<SdDrawDocument*>(pOwnData->GetWorkDocument());
-            SdPage*         pWorkPage = pWorkModel->GetSdPage( 0, PK_STANDARD );
+            SdPage*         pWorkPage = pWorkModel->GetSdPage( 0, PageKind::Standard );
 
             pWorkPage->SetRectsDirty();
 
@@ -657,7 +659,7 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
             {
                 SdPage* pP = static_cast< SdPage* >( pWorkModel->GetPage( (sal_uInt16) i ) );
 
-                if( pP->GetPageKind() != PK_STANDARD )
+                if( pP->GetPageKind() != PageKind::Standard )
                     pWorkModel->DeletePage( (sal_uInt16) i );
             }
 
@@ -680,7 +682,7 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
 
         if( aDataHelper.GetSotStorageStream( SotClipboardFormatId::DRAWING, xStm ) )
         {
-            DrawDocShellRef xShell = new DrawDocShell(SfxObjectCreateMode::INTERNAL);
+            DrawDocShellRef xShell = new DrawDocShell(SfxObjectCreateMode::INTERNAL, false);
             xShell->DoInitNew();
 
             SdDrawDocument* pModel = xShell->GetDoc();
@@ -702,13 +704,12 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
 
                 if( bReturn )
                 {
-                    if( pModel->GetSdPage( 0, PK_STANDARD )->GetObjCount() == 1 )
+                    if( pModel->GetSdPage( 0, PageKind::Standard )->GetObjCount() == 1 )
                     {
                         // only one object
-                        SdrObject*      pObj = pModel->GetSdPage( 0, PK_STANDARD )->GetObj( 0 );
-                        SdrObject*      pPickObj2 = nullptr;
+                        SdrObject*      pObj = pModel->GetSdPage( 0, PageKind::Standard )->GetObj( 0 );
                         SdrPageView*    pPV = nullptr;
-                        PickObj( rPos, getHitTolLog(), pPickObj2, pPV );
+                        SdrObject* pPickObj2 = PickObj(rPos, getHitTolLog(), pPV);
 
                         if( ( mnAction & DND_ACTION_MOVE ) && pPickObj2 && pObj )
                         {
@@ -809,7 +810,7 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
 
                 if( !bChanged )
                 {
-                    SdrPage* pWorkPage = pModel->GetSdPage( 0, PK_STANDARD );
+                    SdrPage* pWorkPage = pModel->GetSdPage( 0, PageKind::Standard );
 
                     pWorkPage->SetRectsDirty();
 
@@ -883,7 +884,7 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
                 if( xDocShRef->DoLoad( pMedium ) )
                 {
                     SdDrawDocument* pModel = xDocShRef->GetDoc();
-                    SdPage*         pWorkPage = pModel->GetSdPage( 0, PK_STANDARD );
+                    SdPage*         pWorkPage = pModel->GetSdPage( 0, PageKind::Standard );
 
                     pWorkPage->SetRectsDirty();
 
@@ -901,7 +902,7 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
                     {
                         SdPage* pP = static_cast< SdPage* >( pModel->GetPage( (sal_uInt16) i ) );
 
-                        if( pP->GetPageKind() != PK_STANDARD )
+                        if( pP->GetPageKind() != PageKind::Standard )
                             pModel->DeletePage( (sal_uInt16) i );
                     }
 
@@ -948,7 +949,7 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
                             aSize = aObjDesc.maSize;
                         else
                         {
-                            MapMode aMapMode( MAP_100TH_MM );
+                            MapMode aMapMode( MapUnit::Map100thMM );
                             aSize = aObjRef.GetSize( &aMapMode );
                         }
                     }
@@ -958,7 +959,7 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
                         MapUnit aMapUnit = VCLUnoHelper::UnoEmbed2VCLMapUnit( xObj->getMapUnit( aObjDesc.mnViewAspect ) );
                         if( aObjDesc.maSize.Width() && aObjDesc.maSize.Height() )
                         {
-                            Size aTmp( OutputDevice::LogicToLogic( aObjDesc.maSize, MAP_100TH_MM, aMapUnit ) );
+                            Size aTmp( OutputDevice::LogicToLogic( aObjDesc.maSize, MapUnit::Map100thMM, aMapUnit ) );
                             aSz.Width = aTmp.Width();
                             aSz.Height = aTmp.Height();
                             xObj->setVisualAreaSize( aObjDesc.mnViewAspect, aSz );
@@ -979,13 +980,13 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
                         {
                             aSize.Width()  = 14100;
                             aSize.Height() = 10000;
-                            aSize = OutputDevice::LogicToLogic( Size(14100, 10000), MAP_100TH_MM, aMapUnit );
+                            aSize = OutputDevice::LogicToLogic( Size(14100, 10000), MapUnit::Map100thMM, aMapUnit );
                             aSz.Width = aSize.Width();
                             aSz.Height = aSize.Height();
                             xObj->setVisualAreaSize( aObjDesc.mnViewAspect, aSz );
                         }
 
-                        aSize = OutputDevice::LogicToLogic( aSize, aMapUnit, MAP_100TH_MM );
+                        aSize = OutputDevice::LogicToLogic( aSize, aMapUnit, MapUnit::Map100thMM );
                     }
 
                     Size aMaxSize( mrDoc.GetMaxObjSize() );
@@ -1117,7 +1118,7 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
                             aSize = aObjDesc.maSize;
                         else
                         {
-                            MapMode aMapMode( MAP_100TH_MM );
+                            MapMode aMapMode( MapUnit::Map100thMM );
                             aSize = aObjRef.GetSize( &aMapMode );
                         }
                     }
@@ -1136,7 +1137,7 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
 
                         if( aObjDesc.maSize.Width() && aObjDesc.maSize.Height() )
                         {
-                            Size aTmp( OutputDevice::LogicToLogic( aObjDesc.maSize, MAP_100TH_MM, aMapUnit ) );
+                            Size aTmp( OutputDevice::LogicToLogic( aObjDesc.maSize, MapUnit::Map100thMM, aMapUnit ) );
                             if ( aSz.Width != aTmp.Width() || aSz.Height != aTmp.Height() )
                             {
                                 aSz.Width = aTmp.Width();
@@ -1149,13 +1150,13 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
 
                         if( !aSize.Width() || !aSize.Height() )
                         {
-                            aSize = OutputDevice::LogicToLogic( Size(14100, 10000), MAP_100TH_MM, aMapUnit );
+                            aSize = OutputDevice::LogicToLogic( Size(14100, 10000), MapUnit::Map100thMM, aMapUnit );
                             aSz.Width = aSize.Width();
                             aSz.Height = aSize.Height();
                             xObj->setVisualAreaSize( aObjDesc.mnViewAspect, aSz );
                         }
 
-                        aSize = OutputDevice::LogicToLogic( aSize, aMapUnit, MAP_100TH_MM );
+                        aSize = OutputDevice::LogicToLogic( aSize, aMapUnit, MapUnit::Map100thMM );
                     }
 
                     Size aMaxSize( mrDoc.GetMaxObjSize() );
@@ -1212,7 +1213,7 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
             {
                 const SdDrawDocument*   pWorkModel = pOwnData->GetWorkDocument();
                 SdrPage*                pWorkPage = const_cast<SdrPage*>( ( pWorkModel->GetPageCount() > 1 ) ?
-                                                    pWorkModel->GetSdPage( 0, PK_STANDARD ) :
+                                                    pWorkModel->GetSdPage( 0, PageKind::Standard ) :
                                                     pWorkModel->GetPage( 0 ) );
 
                 pWorkPage->SetRectsDirty();
@@ -1226,7 +1227,7 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
 
             // restrict movement to WorkArea
             Size aImageMapSize = OutputDevice::LogicToLogic(aGraphic.GetPrefSize(),
-                aGraphic.GetPrefMapMode(), MapMode(MAP_100TH_MM));
+                aGraphic.GetPrefMapMode(), MapMode(MapUnit::Map100thMM));
 
             ImpCheckInsertPos(aInsertPos, aImageMapSize, GetWorkArea());
 
@@ -1244,7 +1245,7 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
         {
             const SdDrawDocument*   pWorkModel = pOwnData->GetWorkDocument();
             SdrPage*                pWorkPage = const_cast<SdrPage*>( ( pWorkModel->GetPageCount() > 1 ) ?
-                                                pWorkModel->GetSdPage( 0, PK_STANDARD ) :
+                                                pWorkModel->GetSdPage( 0, PageKind::Standard ) :
                                                 pWorkModel->GetPage( 0 ) );
 
             pWorkPage->SetRectsDirty();
@@ -1293,7 +1294,7 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
             {
                 const SdDrawDocument*   pWorkModel = pOwnData->GetWorkDocument();
                 SdrPage*                pWorkPage = const_cast<SdrPage*>( ( pWorkModel->GetPageCount() > 1 ) ?
-                                                    pWorkModel->GetSdPage( 0, PK_STANDARD ) :
+                                                    pWorkModel->GetSdPage( 0, PageKind::Standard ) :
                                                     pWorkModel->GetPage( 0 ) );
 
                 pWorkPage->SetRectsDirty();
@@ -1420,11 +1421,12 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
         }
     }
 
-    if(!bReturn && !bLink && CHECK_FORMAT_TRANS(SotClipboardFormatId::RTF))
+    bool bIsRTF = false;
+    if(!bReturn && !bLink && (( bIsRTF = CHECK_FORMAT_TRANS(SotClipboardFormatId::RTF) ) || CHECK_FORMAT_TRANS(SotClipboardFormatId::RICHTEXT) ))
     {
         ::tools::SvRef<SotStorageStream> xStm;
 
-        if( aDataHelper.GetSotStorageStream( SotClipboardFormatId::RTF, xStm ) )
+        if( aDataHelper.GetSotStorageStream( bIsRTF ? SotClipboardFormatId::RTF : SotClipboardFormatId::RICHTEXT, xStm ) )
         {
             xStm->Seek( 0 );
 
@@ -1521,9 +1523,9 @@ bool View::InsertData( const TransferableDataHelper& rDataHelper,
 
 bool View::PasteRTFTable( const ::tools::SvRef<SotStorageStream>& xStm, SdrPage* pPage, SdrInsertFlags nPasteOptions )
 {
-    std::unique_ptr<SdDrawDocument> pModel(new SdDrawDocument( DOCUMENT_TYPE_IMPRESS, mpDocSh ));
+    std::unique_ptr<SdDrawDocument> pModel(new SdDrawDocument( DocumentType::Impress, mpDocSh ));
     pModel->NewOrLoadCompleted(NEW_DOC);
-    pModel->GetItemPool().SetDefaultMetric(SFX_MAPUNIT_100TH_MM);
+    pModel->GetItemPool().SetDefaultMetric(MapUnit::Map100thMM);
     pModel->InsertPage(pModel->AllocPage(false));
 
     Reference< XComponent > xComponent( new SdXImpressDocument( pModel.get(), true ) );

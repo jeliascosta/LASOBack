@@ -49,9 +49,7 @@ protected:
 public:
     OOo2OasisTransformer( const sal_Char *pImplName=nullptr,
                           const sal_Char *pSubServiceName=nullptr ) throw();
-    virtual ~OOo2OasisTransformer() throw();
-
-    static const css::uno::Sequence< sal_Int8 > & getUnoTunnelId() throw();
+    virtual ~OOo2OasisTransformer() throw() override;
 
     // XInterface
 

@@ -68,6 +68,9 @@
 #include <svx/svdpagv.hxx>
 #include <svx/extrusionbar.hxx>
 #include <vcl/svapp.hxx>
+#include <comphelper/lok.hxx>
+#include <sfx2/lokhelper.hxx>
+#include <LibreOfficeKit/LibreOfficeKitEnums.h>
 
 using namespace ::com::sun::star;
 
@@ -102,10 +105,10 @@ void SwView::ExecDraw(SfxRequest& rReq)
             }
         }
     }
-    else if( nSlotId == SID_FM_CREATE_FIELDCONTROL)
+    else if (nSlotId == SID_FM_CREATE_FIELDCONTROL)
     {
-        FmFormView* pFormView = dynamic_cast<FmFormView*>( pSdrView  );
-        if ( pFormView )
+        FmFormView* pFormView = dynamic_cast<FmFormView*>(pSdrView);
+        if (pFormView)
         {
             const SfxUnoAnyItem* pDescriptorItem = rReq.GetArg<SfxUnoAnyItem>(SID_FM_DATACCESS_DESCRIPTOR);
             OSL_ENSURE( pDescriptorItem, "SwView::ExecDraw(SID_FM_CREATE_FIELDCONTROL): invalid request args!" );
@@ -173,9 +176,9 @@ void SwView::ExecDraw(SfxRequest& rReq)
                 if( aPrefSize.Width() && aPrefSize.Height() )
                 {
                     if( pWin )
-                        aSize = pWin->PixelToLogic( aPrefSize, MAP_TWIP );
+                        aSize = pWin->PixelToLogic( aPrefSize, MapUnit::MapTwip );
                     else
-                        aSize = Application::GetDefaultDevice()->PixelToLogic( aPrefSize, MAP_TWIP );
+                        aSize = Application::GetDefaultDevice()->PixelToLogic( aPrefSize, MapUnit::MapTwip );
                 }
                 else
                     aSize = Size( 2835, 2835 );
@@ -242,7 +245,16 @@ void SwView::ExecDraw(SfxRequest& rReq)
             m_sDrawCustom.clear();
             break;
 
+        case SID_LINE_ARROW_END:
+        case SID_LINE_ARROW_CIRCLE:
+        case SID_LINE_ARROW_SQUARE:
+        case SID_LINE_ARROW_START:
+        case SID_LINE_CIRCLE_ARROW:
+        case SID_LINE_SQUARE_ARROW:
+        case SID_LINE_ARROWS:
         case SID_DRAW_LINE:
+        case SID_DRAW_XLINE:
+        case SID_DRAW_MEASURELINE:
         case SID_DRAW_RECT:
         case SID_DRAW_ELLIPSE:
         case SID_DRAW_TEXT:
@@ -423,7 +435,7 @@ void SwView::NoRotate()
 {
     if (IsDrawRotate())
     {
-        m_pWrtShell->SetDragMode(SDRDRAG_MOVE);
+        m_pWrtShell->SetDragMode(SdrDragMode::Move);
         FlipDrawRotate();
 
         const SfxBoolItem aTmp( SID_OBJECT_ROTATE, false );
@@ -438,15 +450,13 @@ static bool lcl_isTextBox(SdrObject* pObject)
     if (SwDrawContact* pDrawContact = static_cast<SwDrawContact*>(pObject->GetUserCall()))
     {
         if (SwFrameFormat* pFormat = pDrawContact->GetFormat())
-            return SwTextBoxHelper::findTextBox(pFormat);
+            return SwTextBoxHelper::isTextBox(pFormat, RES_DRAWFRMFMT);
     }
     return false;
 }
 
 bool SwView::EnterDrawTextMode(const Point& aDocPos)
 {
-    SdrObject* pObj;
-    SdrPageView* pPV;
     SwWrtShell *pSh = &GetWrtShell();
     SdrView *pSdrView = pSh->GetDrawView();
     OSL_ENSURE( pSdrView, "EnterDrawTextMode without DrawView?" );
@@ -456,16 +466,18 @@ bool SwView::EnterDrawTextMode(const Point& aDocPos)
     sal_uInt16 nOld = pSdrView->GetHitTolerancePixel();
     pSdrView->SetHitTolerancePixel( 2 );
 
-    if( pSdrView->IsMarkedHit( aDocPos ) &&
-        !pSdrView->PickHandle( aDocPos ) && IsTextTool() &&
-        pSdrView->PickObj( aDocPos, pSdrView->getHitTolLog(), pObj, pPV, SdrSearchOptions::PICKTEXTEDIT ) &&
+    SdrObject* pObj = nullptr;
+    SdrPageView* pPV = nullptr;
+    if (pSdrView->IsMarkedHit(aDocPos) && !pSdrView->PickHandle(aDocPos) && IsTextTool())
+        pObj = pSdrView->PickObj(aDocPos, pSdrView->getHitTolLog(), pPV, SdrSearchOptions::PICKTEXTEDIT);
 
+    if (pObj &&
         // To allow SwDrawVirtObj text objects to be activated, allow their type, too.
         ( dynamic_cast< const SdrTextObj *>( pObj ) !=  nullptr ||
           ( dynamic_cast< const SwDrawVirtObj *>( pObj ) !=  nullptr &&
             dynamic_cast< const SdrTextObj *>(&static_cast<SwDrawVirtObj*>(pObj)->GetReferencedObj() ) != nullptr ) ) &&
 
-        m_pWrtShell->IsSelObjProtected(FlyProtectFlags::Content) == FlyProtectFlags::NONE )
+        m_pWrtShell->IsSelObjProtected(FlyProtectFlags::Content) == FlyProtectFlags::NONE)
     {
         // Refuse to edit editeng text of the shape if it has textbox attached.
         if (!lcl_isTextBox(pObj))
@@ -541,9 +553,8 @@ bool SwView::BeginTextEdit(SdrObject* pObj, SdrPageView* pPV, vcl::Window* pWin,
     // OutlinerView.
     Point aNewTextEditOffset(0, 0);
 
-    if(dynamic_cast< const SwDrawVirtObj *>( pObj ) !=  nullptr)
+    if (SwDrawVirtObj* pVirtObj = dynamic_cast<SwDrawVirtObj *>(pObj))
     {
-        SwDrawVirtObj* pVirtObj = static_cast<SwDrawVirtObj*>(pObj);
         pToBeActivated = &const_cast<SdrObject&>(pVirtObj->GetReferencedObj());
         aNewTextEditOffset = pVirtObj->GetOffset();
     }
@@ -574,6 +585,12 @@ bool SwView::BeginTextEdit(SdrObject* pObj, SdrPageView* pPV, vcl::Window* pWin,
         if (pView)
         {
             pView->SetSelection(aNewSelection);
+
+            if (comphelper::LibreOfficeKit::isActive())
+            {
+                OString sRect = pView->GetOutputArea().toString();
+                SfxLokHelper::notifyOtherViews(this, LOK_CALLBACK_VIEW_LOCK, "rectangle", sRect);
+            }
         }
     }
 
@@ -584,8 +601,8 @@ bool SwView::BeginTextEdit(SdrObject* pObj, SdrPageView* pPV, vcl::Window* pWin,
 
 bool SwView::IsTextTool() const
 {
-    sal_uInt16 nId;
-    sal_uInt32 nInvent;
+    sal_uInt16  nId;
+    SdrInventor nInvent;
     SdrView *pSdrView = GetWrtShell().GetDrawView();
     OSL_ENSURE( pSdrView, "IsTextTool without DrawView?" );
 
@@ -593,7 +610,7 @@ bool SwView::IsTextTool() const
         pSdrView->SetCreateMode(false);
 
     pSdrView->TakeCurrentObj(nId,nInvent);
-    return (nInvent==SdrInventor);
+    return nInvent == SdrInventor::Default;
 }
 
 SdrView* SwView::GetDrawView() const
@@ -647,7 +664,7 @@ bool SwView::AreOnlyFormsSelected() const
             // Except controls, are still normal draw objects selected?
             SdrObject *pSdrObj = rMarkList.GetMark(i)->GetMarkedSdrObj();
 
-            if (!HasOnlyObj(pSdrObj, FmFormInventor))
+            if (!HasOnlyObj(pSdrObj, SdrInventor::FmForm))
             {
                 bForm = false;
                 break;
@@ -673,13 +690,13 @@ bool SwView::HasDrwObj(SdrObject *pSdrObj) const
             if ((bRet = HasDrwObj(pList->GetObj(i))))
                 break;
     }
-    else if (SdrInventor == pSdrObj->GetObjInventor() || pSdrObj->Is3DObj())
+    else if (SdrInventor::Default == pSdrObj->GetObjInventor() || pSdrObj->Is3DObj())
         return true;
 
     return bRet;
 }
 
-bool SwView::HasOnlyObj(SdrObject *pSdrObj, sal_uInt32 eObjInventor) const
+bool SwView::HasOnlyObj(SdrObject *pSdrObj, SdrInventor eObjInventor) const
 {
     bool bRet = false;
 
@@ -699,7 +716,7 @@ bool SwView::HasOnlyObj(SdrObject *pSdrObj, sal_uInt32 eObjInventor) const
 }
 
 //#i87414# mod
-IMPL_LINK_TYPED(SwView, OnlineSpellCallback, SpellCallbackInfo&, rInfo, void)
+IMPL_LINK(SwView, OnlineSpellCallback, SpellCallbackInfo&, rInfo, void)
 {
     if (rInfo.nCommand == SpellCallbackCommand::STARTSPELLDLG)
         GetViewFrame()->GetDispatcher()->Execute( FN_SPELL_GRAMMAR_DIALOG, SfxCallMode::ASYNCHRON);

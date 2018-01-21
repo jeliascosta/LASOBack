@@ -48,21 +48,20 @@ protected:
 
 public:
     SdrVirtObj(SdrObject& rNewObj);
-    virtual ~SdrVirtObj();
+    virtual ~SdrVirtObj() override;
     SdrObject& ReferencedObj();
     const SdrObject& GetReferencedObj() const;
     virtual void NbcSetAnchorPos(const Point& rAnchorPos) override;
     virtual void SetModel(SdrModel* pNewModel) override;
 
     virtual void TakeObjInfo(SdrObjTransformInfoRec& rInfo) const override;
-    virtual sal_uInt32 GetObjInventor() const override;
+    virtual SdrInventor GetObjInventor() const override;
     virtual sal_uInt16 GetObjIdentifier() const override;
     virtual SdrObjList* GetSubList() const override;
 
     virtual const Rectangle& GetCurrentBoundRect() const override;
     virtual const Rectangle& GetLastBoundRect() const override;
     virtual void RecalcBoundRect() override;
-    virtual void SetChanged() override;
     virtual SdrVirtObj* Clone() const override;
     SdrVirtObj& operator=(const SdrVirtObj& rObj);
 

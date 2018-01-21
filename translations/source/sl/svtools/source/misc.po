@@ -1,16 +1,16 @@
 #. extracted from svtools/source/misc
 msgid ""
 msgstr ""
-"Project-Id-Version: LibreOffice 5.4\n"
+"Project-Id-Version: LibreOffice 5.3\n"
 "Report-Msgid-Bugs-To: https://bugs.libreoffice.org/enter_bug.cgi?product=LibreOffice&bug_status=UNCONFIRMED&component=UI\n"
-"POT-Creation-Date: 2017-03-27 10:49+0200\n"
-"PO-Revision-Date: 2017-03-17 16:59+0200\n"
+"POT-Creation-Date: 2017-01-17 09:45+0100\n"
+"PO-Revision-Date: 2017-01-17 23:28+0200\n"
 "Last-Translator: Martin Srebotnjak <miles@filmsi.net>\n"
 "Language-Team: sl.libreoffice.org\n"
+"Language: sl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: sl\n"
 "Plural-Forms: nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);\n"
 "X-Generator: Virtaal 0.7.1\n"
 "X-Accelerator-Marker: ~\n"
@@ -1018,11 +1018,10 @@ msgid "English (UK)"
 msgstr "angleški (Združeno kraljestvo)"
 
 #: langtab.src
-#, fuzzy
 msgctxt ""
 "langtab.src\n"
 "STR_ARR_SVT_LANGUAGE_TABLE\n"
-"LANGUAGE_USER_ENGLISH_UK_OXENDICT\n"
+"LANGUAGE_USER_ENGLISH_UK_OED\n"
 "pairedlist.text"
 msgid "English, OED spelling (UK)"
 msgstr "angleški, črkovanje OED (Združeno kraljestvo)"
@@ -3898,25 +3897,6 @@ msgctxt ""
 msgid "English (Malaysia)"
 msgstr "angleški (Malezija)"
 
-#: langtab.src
-msgctxt ""
-"langtab.src\n"
-"STR_ARR_SVT_LANGUAGE_TABLE\n"
-"LANGUAGE_USER_MANCHU\n"
-"pairedlist.text"
-msgid "Manchu"
-msgstr "mančujski"
-
-#: langtab.src
-#, fuzzy
-msgctxt ""
-"langtab.src\n"
-"STR_ARR_SVT_LANGUAGE_TABLE\n"
-"LANGUAGE_USER_XIBE\n"
-"pairedlist.text"
-msgid "Xibe"
-msgstr "sibejski"
-
 #: svtools.src
 msgctxt ""
 "svtools.src\n"
@@ -3978,7 +3958,7 @@ msgctxt ""
 "svtools.src\n"
 "STR_SVT_ESTIMATED_SIZE_PIX_1\n"
 "string.text"
-msgid "The image needs about %1 KB of memory."
+msgid "The picture needs about %1 KB of memory."
 msgstr "Slika zahteva približno %1 kB pomnilnika."
 
 #: svtools.src
@@ -3986,7 +3966,7 @@ msgctxt ""
 "svtools.src\n"
 "STR_SVT_ESTIMATED_SIZE_PIX_2\n"
 "string.text"
-msgid "The image needs about %1 KB of memory, the file size is %2 KB."
+msgid "The picture needs about %1 KB of memory, the file size is %2 KB."
 msgstr "Slika zahteva približno %1 kB pomnilnika, velikost datoteke je %2 kB."
 
 #: svtools.src
@@ -3996,22 +3976,6 @@ msgctxt ""
 "string.text"
 msgid "The file size is %1 KB."
 msgstr "Velikost datoteke je %1 kB."
-
-#: svtools.src
-msgctxt ""
-"svtools.src\n"
-"STR_SVT_HOST\n"
-"string.text"
-msgid "host"
-msgstr "gostitelj"
-
-#: svtools.src
-msgctxt ""
-"svtools.src\n"
-"STR_SVT_PORT\n"
-"string.text"
-msgid "port"
-msgstr "vrata"
 
 #: svtools.src
 msgctxt ""

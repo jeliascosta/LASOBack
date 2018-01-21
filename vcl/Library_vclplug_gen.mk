@@ -52,7 +52,9 @@ $(eval $(call gb_Library_use_externals,vclplug_gen,\
 	cairo \
 	graphite \
 	glew \
+	glm_headers \
 	harfbuzz \
+	icu_headers \
 	icuuc \
 	valgrind \
 	Xrender \

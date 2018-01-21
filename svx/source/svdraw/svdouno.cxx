@@ -192,17 +192,6 @@ SdrUnoObj::~SdrUnoObj()
     {
         OSL_FAIL( "SdrUnoObj::~SdrUnoObj: caught an exception!" );
     }
-    delete m_pImpl;
-}
-
-void SdrUnoObj::SetModel(SdrModel* pNewModel)
-{
-    SdrRectObj::SetModel(pNewModel);
-}
-
-void SdrUnoObj::SetPage(SdrPage* pNewPage)
-{
-    SdrRectObj::SetPage(pNewPage);
 }
 
 void SdrUnoObj::TakeObjInfo(SdrObjTransformInfoRec& rInfo) const

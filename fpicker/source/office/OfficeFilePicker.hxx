@@ -83,7 +83,7 @@ protected:
 
 public:
                        SvtFilePicker();
-    virtual           ~SvtFilePicker();
+    virtual           ~SvtFilePicker() override;
 
 
     // disambiguate XInterface
@@ -222,7 +222,7 @@ protected:
 
     void                prepareExecute( );
 
-    DECL_LINK_TYPED(    DialogClosedHdl, Dialog&, void );
+    DECL_LINK(    DialogClosedHdl, Dialog&, void );
 };
 
 // SvtRemoteFilePicker

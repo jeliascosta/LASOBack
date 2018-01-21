@@ -148,7 +148,7 @@ protected:
 
     virtual void SetAttrInDoc(const SwPosition& rTmpPos, SwFltStackEntry& rEntry);
     virtual sal_Int32 GetCurrAttrCP() const {return -1;}
-    virtual bool IsParaEndInCPs(sal_Int32 nStart,sal_Int32 nEnd,bool bSdOD=true) const;
+    virtual bool IsParaEndInCPs(sal_Int32 nStart,sal_Int32 nEnd,bool bSdOD) const;
 
     //Clear the para end position recorded in reader intermittently for the least impact on loading performance
     virtual void ClearParaEndPosition(){};
@@ -165,9 +165,7 @@ public:
         BOOK_TO_VAR_REF,
         BOOK_AND_REF,
         TAGS_IN_TEXT,
-        ALLOW_FLD_CR,
-        NO_FLD_CR,
-        DONT_HARD_PROTECT
+        ALLOW_FLD_CR
     };
 
     SwFltControlStack(SwDoc* pDo, sal_uLong nFieldFl);
@@ -177,12 +175,12 @@ public:
 
     void NewAttr(const SwPosition& rPos, const SfxPoolItem & rAttr );
 
-    virtual SwFltStackEntry* SetAttr(const SwPosition& rPos, sal_uInt16 nAttrId=0, bool bTstEnde=true, long nHand = LONG_MAX, bool consumedByField=false);
+    virtual SwFltStackEntry* SetAttr(const SwPosition& rPos, sal_uInt16 nAttrId, bool bTstEnde=true, long nHand = LONG_MAX, bool consumedByField=false);
 
     void StealAttr(const SwNodeIndex& rNode);
     void MarkAllAttrsOld();
     void KillUnlockedAttrs(const SwPosition& pPos);
-    SfxPoolItem* GetFormatStackAttr(sal_uInt16 nWhich, sal_uInt16 * pPos = nullptr);
+    SfxPoolItem* GetFormatStackAttr(sal_uInt16 nWhich, sal_uInt16 * pPos);
     const SfxPoolItem* GetOpenStackAttr(const SwPosition& rPos, sal_uInt16 nWhich);
     void Delete(const SwPaM &rPam);
 
@@ -203,7 +201,7 @@ class SW_DLLPUBLIC SwFltAnchor : public SfxPoolItem
 public:
     SwFltAnchor(SwFrameFormat* pFlyFormat);
     SwFltAnchor(const SwFltAnchor&);
-    virtual ~SwFltAnchor();
+    virtual ~SwFltAnchor() override;
 
     // "pure virtual Methoden" vom SfxPoolItem
     virtual bool operator==(const SfxPoolItem&) const override;
@@ -237,15 +235,12 @@ public:
                  sal_uInt16          nAutorNo_,
                  const DateTime& rStamp_,
                  RedlineType_t   eTypePrev_    = nsRedlineType_t::REDLINE_INSERT,
-                 sal_uInt16          nAutorNoPrev_ = USHRT_MAX,
-                 const DateTime* pStampPrev_   = nullptr)
+                 sal_uInt16          nAutorNoPrev_ = USHRT_MAX)
         : SfxPoolItem(RES_FLTR_REDLINE), aStamp(rStamp_),
         aStampPrev( DateTime::EMPTY ),
         eType(eType_),
         eTypePrev(eTypePrev_), nAutorNo(nAutorNo_), nAutorNoPrev(nAutorNoPrev_)
     {
-            if( pStampPrev_ )
-                aStampPrev = *pStampPrev_;
     }
 
     SwFltRedline(const SwFltRedline& rCpy):

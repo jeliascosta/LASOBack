@@ -63,13 +63,14 @@
 #include <svx/sdr/table/tablecontroller.hxx>
 #include <drawinglayer/processor2d/processor2dtools.hxx>
 #include <comphelper/lok.hxx>
+#include <sfx2/viewsh.hxx>
+#include <svx/svdviter.hxx>
 
 #include <memory>
 
 void SdrObjEditView::ImpClearVars()
 {
     bQuickTextEditMode=true;
-    bMacroMode=true;
     pTextEditOutliner=nullptr;
     pTextEditOutlinerView=nullptr;
     pTextEditPV=nullptr;
@@ -132,6 +133,77 @@ void SdrObjEditView::BrkAction()
     SdrGlueEditView::BrkAction();
 }
 
+SdrPageView* SdrObjEditView::ShowSdrPage(SdrPage* pPage)
+{
+    SdrPageView* pPageView = SdrGlueEditView::ShowSdrPage(pPage);
+
+    if (comphelper::LibreOfficeKit::isActive() && pPageView)
+    {
+        // Check if other views have an active text edit on the same page as
+        // this one.
+        SdrViewIter aIter(pPageView->GetPage());
+        for (SdrView* pView = aIter.FirstView(); pView; pView = aIter.NextView())
+        {
+            if (pView == this || !pView->IsTextEdit())
+                continue;
+
+            OutputDevice* pOutDev = GetFirstOutputDevice();
+            if (!pOutDev || pOutDev->GetOutDevType() != OUTDEV_WINDOW)
+                continue;
+
+            // Found one, so create an outliner view, to get invalidations when
+            // the text edit changes.
+            bool bEmpty = pView->GetTextEditObject()->GetOutlinerParaObject() == nullptr;
+            // Call GetSfxViewShell() to make sure ImpMakeOutlinerView()
+            // registers the view shell of this draw view, and not the view
+            // shell of pView.
+            OutlinerView* pOutlinerView = pView->ImpMakeOutlinerView(static_cast<vcl::Window*>(pOutDev), !bEmpty, nullptr, GetSfxViewShell());
+            pOutlinerView->HideCursor();
+            pView->GetTextEditOutliner()->InsertView(pOutlinerView);
+        }
+    }
+
+    return pPageView;
+}
+
+/// Removes outliner views registered in other draw views that use pOutputDevice.
+void lcl_RemoveTextEditOutlinerViews(SdrObjEditView* pThis, SdrPageView* pPageView, OutputDevice* pOutputDevice)
+{
+    if (!comphelper::LibreOfficeKit::isActive())
+        return;
+
+    if (!pPageView)
+        return;
+
+    if (!pOutputDevice || pOutputDevice->GetOutDevType() != OUTDEV_WINDOW)
+        return;
+
+    SdrViewIter aIter(pPageView->GetPage());
+    for (SdrView* pView = aIter.FirstView(); pView; pView = aIter.NextView())
+    {
+        if (pView == pThis || !pView->IsTextEdit())
+            continue;
+
+        SdrOutliner* pOutliner = pView->GetTextEditOutliner();
+        for (size_t nView = 0; nView < pOutliner->GetViewCount(); ++nView)
+        {
+            OutlinerView* pOutlinerView = pOutliner->GetView(nView);
+            if (pOutlinerView->GetWindow() != pOutputDevice)
+                continue;
+
+            pOutliner->RemoveView(pOutlinerView);
+            delete pOutlinerView;
+        }
+    }
+}
+
+void SdrObjEditView::HideSdrPage()
+{
+    lcl_RemoveTextEditOutlinerViews(this, GetSdrPageView(), GetFirstOutputDevice());
+
+    SdrGlueEditView::HideSdrPage();
+}
+
 void SdrObjEditView::TakeActionRect(Rectangle& rRect) const
 {
     if (IsMacroObj()) {
@@ -148,16 +220,16 @@ void SdrObjEditView::Notify(SfxBroadcaster& rBC, const SfxHint& rHint)
     const SdrHint* pSdrHint = dynamic_cast<const SdrHint*>(&rHint);
     if (pSdrHint!=nullptr && pTextEditOutliner!=nullptr) {
         SdrHintKind eKind=pSdrHint->GetKind();
-        if (eKind==HINT_REFDEVICECHG) {
+        if (eKind==SdrHintKind::RefDeviceChange) {
             pTextEditOutliner->SetRefDevice(mpModel->GetRefDevice());
         }
-        if (eKind==HINT_DEFAULTTABCHG) {
+        if (eKind==SdrHintKind::DefaultTabChange) {
             pTextEditOutliner->SetDefTab(mpModel->GetDefaultTabulator());
         }
-        if (eKind==HINT_DEFFONTHGTCHG) {
+        if (eKind==SdrHintKind::DefaultFontHeightChange) {
 
         }
-        if (eKind==HINT_MODELSAVED) {
+        if (eKind==SdrHintKind::ModelSaved) {
             pTextEditOutliner->ClearModifyFlag();
         }
     }
@@ -384,7 +456,7 @@ void SdrObjEditView::ImpPaintOutlinerView(OutlinerView& rOutlView, const Rectang
         }
     }
 
-    rOutlView.ShowCursor();
+    rOutlView.ShowCursor(/*bGotoCursor=*/true, /*bActivate=*/true);
 }
 
 void SdrObjEditView::ImpInvalidateOutlinerView(OutlinerView& rOutlView) const
@@ -436,7 +508,7 @@ void SdrObjEditView::ImpInvalidateOutlinerView(OutlinerView& rOutlView) const
     }
 }
 
-OutlinerView* SdrObjEditView::ImpMakeOutlinerView(vcl::Window* pWin, bool /*bNoPaint*/, OutlinerView* pGivenView) const
+OutlinerView* SdrObjEditView::ImpMakeOutlinerView(vcl::Window* pWin, bool /*bNoPaint*/, OutlinerView* pGivenView, SfxViewShell* pViewShell) const
 {
     // background
     Color aBackground(GetTextEditBackgroundColor(*this));
@@ -460,7 +532,14 @@ OutlinerView* SdrObjEditView::ImpMakeOutlinerView(vcl::Window* pWin, bool /*bNoP
     }
     pOutlView->SetControlWord(nStat);
     pOutlView->SetBackgroundColor( aBackground );
-    pOutlView->registerLibreOfficeKitCallback(GetModel());
+
+    // In case we're in the process of constructing a new view shell,
+    // SfxViewShell::Current() may still point to the old one. So if possible,
+    // depend on the application owning this draw view to provide the view
+    // shell.
+    SfxViewShell* pSfxViewShell = pViewShell ? pViewShell : GetSfxViewShell();
+    pOutlView->RegisterViewShell(pSfxViewShell ? pSfxViewShell : SfxViewShell::Current());
+
     if (pText!=nullptr)
     {
         pOutlView->SetAnchorMode((EVAnchorMode)(pText->GetOutlinerViewAnchorMode()));
@@ -473,7 +552,7 @@ OutlinerView* SdrObjEditView::ImpMakeOutlinerView(vcl::Window* pWin, bool /*bNoP
     return pOutlView;
 }
 
-IMPL_LINK_TYPED(SdrObjEditView,ImpOutlinerStatusEventHdl, EditStatus&, rEditStat, void)
+IMPL_LINK(SdrObjEditView,ImpOutlinerStatusEventHdl, EditStatus&, rEditStat, void)
 {
     if(pTextEditOutliner )
     {
@@ -547,7 +626,7 @@ void SdrObjEditView::ImpChainingEventHdl()
 
 }
 
-IMPL_LINK_NOARG_TYPED(SdrObjEditView,ImpAfterCutOrPasteChainingEventHdl, LinkParamNone*, void)
+IMPL_LINK_NOARG(SdrObjEditView,ImpAfterCutOrPasteChainingEventHdl, LinkParamNone*, void)
 {
     SdrTextObj* pTextObj = dynamic_cast< SdrTextObj * >( GetTextEditObject());
     if (!pTextObj)
@@ -580,7 +659,7 @@ void SdrObjEditView::ImpMoveCursorAfterChainingEvent(TextChainCursorManager *pCu
 }
 
 
-IMPL_LINK_TYPED(SdrObjEditView,ImpOutlinerCalcFieldValueHdl,EditFieldInfo*,pFI,void)
+IMPL_LINK(SdrObjEditView,ImpOutlinerCalcFieldValueHdl,EditFieldInfo*,pFI,void)
 {
     bool bOk=false;
     OUString& rStr=pFI->GetRepresentation();
@@ -614,7 +693,7 @@ IMPL_LINK_TYPED(SdrObjEditView,ImpOutlinerCalcFieldValueHdl,EditFieldInfo*,pFI,v
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SdrObjEditView, EndTextEditHdl, SdrUndoManager*, void)
+IMPL_LINK_NOARG(SdrObjEditView, EndTextEditHdl, SdrUndoManager*, void)
 {
     SdrEndTextEdit();
 }
@@ -813,6 +892,32 @@ bool SdrObjEditView::SdrBeginTextEdit(
                         pTextEditOutliner->InsertView(pOutlView, (sal_uInt16)i);
                     }
                 }
+
+                if (comphelper::LibreOfficeKit::isActive())
+                {
+                    // Register an outliner view for all other sdr views that
+                    // show the same page, so that when the text edit changes,
+                    // all interested windows get an invalidation.
+                    SdrViewIter aIter(pObj->GetPage());
+                    for (SdrView* pView = aIter.FirstView(); pView; pView = aIter.NextView())
+                    {
+                        if (pView == this)
+                            continue;
+
+                        for(sal_uInt32 nViewPaintWindow = 0; nViewPaintWindow < pView->PaintWindowCount(); ++nViewPaintWindow)
+                        {
+                            SdrPaintWindow* pPaintWindow = pView->GetPaintWindow(nViewPaintWindow);
+                            OutputDevice& rOutDev = pPaintWindow->GetOutputDevice();
+
+                            if(&rOutDev != pWin && OUTDEV_WINDOW == rOutDev.GetOutDevType())
+                            {
+                                OutlinerView* pOutlView = ImpMakeOutlinerView(static_cast<vcl::Window*>(&rOutDev), !bEmpty, nullptr);
+                                pOutlView->HideCursor();
+                                pTextEditOutliner->InsertView(pOutlView);
+                            }
+                        }
+                    }
+                }
             }
 
             pTextEditOutlinerView->ShowCursor();
@@ -833,8 +938,7 @@ bool SdrObjEditView::SdrBeginTextEdit(
 
             if( GetModel() )
             {
-                SdrHint aHint(*pTextObj);
-                aHint.SetKind(HINT_BEGEDIT);
+                SdrHint aHint(SdrHintKind::BeginEdit, *pTextObj);
                 GetModel()->Broadcast(aHint);
             }
 
@@ -914,7 +1018,7 @@ bool SdrObjEditView::SdrBeginTextEdit(
 
 SdrEndTextEditKind SdrObjEditView::SdrEndTextEdit(bool bDontDeleteReally)
 {
-    SdrEndTextEditKind eRet=SDRENDTEXTEDIT_UNCHANGED;
+    SdrEndTextEditKind eRet=SdrEndTextEditKind::Unchanged;
     SdrTextObj* pTEObj = dynamic_cast< SdrTextObj* >( mxTextEditObj.get() );
     vcl::Window*       pTEWin         =pTextEditWin;
     SdrOutliner*  pTEOutliner    =pTextEditOutliner;
@@ -968,8 +1072,7 @@ SdrEndTextEditKind SdrObjEditView::SdrEndTextEdit(bool bDontDeleteReally)
 
     if( GetModel() && mxTextEditObj.is() )
     {
-        SdrHint aHint(*mxTextEditObj.get());
-        aHint.SetKind(HINT_ENDEDIT);
+        SdrHint aHint(SdrHintKind::EndEdit, *mxTextEditObj.get());
         GetModel()->Broadcast(aHint);
     }
 
@@ -1045,7 +1148,7 @@ SdrEndTextEditKind SdrObjEditView::SdrEndTextEdit(bool bDontDeleteReally)
                         !pTextObj->HasFill() &&
                         !pTextObj->HasLine();
 
-                if(pTEObj->IsInserted() && bDelObj && pTextObj->GetObjInventor()==SdrInventor && !bDontDeleteReally)
+                if(pTEObj->IsInserted() && bDelObj && pTextObj->GetObjInventor()==SdrInventor::Default && !bDontDeleteReally)
                 {
                     SdrObjKind eIdent=(SdrObjKind)pTextObj->GetObjIdentifier();
                     if(eIdent==OBJ_TEXT || eIdent==OBJ_TEXTEXT)
@@ -1058,7 +1161,7 @@ SdrEndTextEditKind SdrObjEditView::SdrEndTextEdit(bool bDontDeleteReally)
             {
                 if( bUndo )
                     AddUndo(pTxtUndo);
-                eRet=SDRENDTEXTEDIT_CHANGED;
+                eRet=SdrEndTextEditKind::Changed;
             }
             if (pDelUndo!=nullptr)
             {
@@ -1070,7 +1173,7 @@ SdrEndTextEditKind SdrObjEditView::SdrEndTextEdit(bool bDontDeleteReally)
                 {
                     delete pDelUndo;
                 }
-                eRet=SDRENDTEXTEDIT_DELETED;
+                eRet=SdrEndTextEditKind::Deleted;
                 DBG_ASSERT(pTEObj->GetObjList()!=nullptr,"SdrObjEditView::SdrEndTextEdit(): Fatal: Object edited doesn't have an ObjList!");
                 if (pTEObj->GetObjList()!=nullptr)
                 {
@@ -1080,7 +1183,7 @@ SdrEndTextEditKind SdrObjEditView::SdrEndTextEdit(bool bDontDeleteReally)
             }
             else if (bDelObj)
             { // for Writer: the app has to do the deletion itself.
-                eRet=SDRENDTEXTEDIT_SHOULDBEDELETED;
+                eRet=SdrEndTextEditKind::ShouldBeDeleted;
             }
 
             if( bUndo )
@@ -1129,7 +1232,7 @@ SdrEndTextEditKind SdrObjEditView::SdrEndTextEdit(bool bDontDeleteReally)
             pTEWin->SetCursor(pTECursorMerker);
         }
         maHdlList.SetMoveOutside(false);
-        if (eRet!=SDRENDTEXTEDIT_UNCHANGED)
+        if (eRet!=SdrEndTextEditKind::Unchanged)
         {
             GetMarkedObjectListWriteAccess().SetNameDirty();
         }
@@ -1147,8 +1250,7 @@ SdrEndTextEditKind SdrObjEditView::SdrEndTextEdit(bool bDontDeleteReally)
         !pTEObj->GetModel()->isLocked() &&
         pTEObj->GetBroadcaster())
     {
-        SdrHint aHint(HINT_ENDEDIT);
-        aHint.SetObject(pTEObj);
+        SdrHint aHint(SdrHintKind::EndEdit, *pTEObj);
         const_cast<SfxBroadcaster*>(pTEObj->GetBroadcaster())->Broadcast(aHint);
     }
 
@@ -1235,7 +1337,7 @@ bool SdrObjEditView::IsTextEditHit(const Point& rHit) const
             long nHitTol = 2000;
             OutputDevice* pRef = pTextEditOutliner->GetRefDevice();
             if( pRef )
-                nHitTol = OutputDevice::LogicToLogic( nHitTol, MAP_100TH_MM, pRef->GetMapMode().GetMapUnit() );
+                nHitTol = OutputDevice::LogicToLogic( nHitTol, MapUnit::Map100thMM, pRef->GetMapMode().GetMapUnit() );
 
             bOk = pTextEditOutliner->IsTextPos( aPnt, (sal_uInt16)nHitTol );
         }
@@ -1815,6 +1917,8 @@ void SdrObjEditView::DeleteWindowFromPaintView(OutputDevice* pOldWin)
             }
         }
     }
+
+    lcl_RemoveTextEditOutlinerViews(this, GetSdrPageView(), pOldWin);
 }
 
 bool SdrObjEditView::IsTextEditInSelectionMode() const
@@ -1976,7 +2080,7 @@ void SdrObjEditView::MarkListHasChanged()
     {
         const SdrObject* pObj= rMarkList.GetMark(0)->GetMarkedSdrObj();
         // check for table
-        if( pObj && (pObj->GetObjInventor() == SdrInventor ) && (pObj->GetObjIdentifier() == OBJ_TABLE) )
+        if( pObj && (pObj->GetObjInventor() == SdrInventor::Default ) && (pObj->GetObjIdentifier() == OBJ_TABLE) )
         {
             mxSelectionController = sdr::table::CreateTableController( this, pObj, mxLastSelectionController );
             if( mxSelectionController.is() )
@@ -1988,12 +2092,12 @@ void SdrObjEditView::MarkListHasChanged()
     }
 }
 
-IMPL_LINK_TYPED( SdrObjEditView, EndPasteOrDropHdl, PasteOrDropInfos*, pInfo, void )
+IMPL_LINK( SdrObjEditView, EndPasteOrDropHdl, PasteOrDropInfos*, pInfo, void )
 {
     OnEndPasteOrDrop( pInfo );
 }
 
-IMPL_LINK_TYPED( SdrObjEditView, BeginPasteOrDropHdl, PasteOrDropInfos*, pInfo, void )
+IMPL_LINK( SdrObjEditView, BeginPasteOrDropHdl, PasteOrDropInfos*, pInfo, void )
 {
     OnBeginPasteOrDrop( pInfo );
 }
@@ -2040,9 +2144,9 @@ sal_uInt16 SdrObjEditView::GetSelectionLevel() const
     return nLevel;
 }
 
-bool SdrObjEditView::SupportsFormatPaintbrush( sal_uInt32 nObjectInventor, sal_uInt16 nObjectIdentifier )
+bool SdrObjEditView::SupportsFormatPaintbrush( SdrInventor nObjectInventor, sal_uInt16 nObjectIdentifier )
 {
-    if( nObjectInventor != SdrInventor && nObjectInventor != E3dInventor )
+    if( nObjectInventor != SdrInventor::Default && nObjectInventor != SdrInventor::E3d )
         return false;
     switch(nObjectIdentifier)
     {
@@ -2129,12 +2233,11 @@ void SdrObjEditView::TakeFormatPaintBrush( std::shared_ptr< SfxItemSet >& rForma
 
         // check for cloning from table cell, in which case we need to copy cell-specific formatting attributes
         const SdrObject* pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
-        if( pObj && (pObj->GetObjInventor() == SdrInventor ) && (pObj->GetObjIdentifier() == OBJ_TABLE) )
+        if( pObj && (pObj->GetObjInventor() == SdrInventor::Default ) && (pObj->GetObjIdentifier() == OBJ_TABLE) )
         {
             auto pTable = static_cast<const sdr::table::SdrTableObj*>(pObj);
-            if (pTable->getActiveCell().is()) {
-                SfxItemSet const & rSet = pTable->GetActiveCellItemSet();
-                rFormatSet->Put(rSet);
+            if (mxSelectionController.is() && pTable->getActiveCell().is()) {
+                mxSelectionController->GetAttributes(*rFormatSet, false);
             }
         }
     }
@@ -2278,11 +2381,11 @@ void SdrObjEditView::ApplyFormatPaintBrush( SfxItemSet& rFormatSet, bool bNoChar
 
     // check for cloning to table cell, in which case we need to copy cell-specific formatting attributes
     SdrObject* pObj = rMarkList.GetMark(0)->GetMarkedSdrObj();
-    if( pObj && (pObj->GetObjInventor() == SdrInventor) && (pObj->GetObjIdentifier() == OBJ_TABLE) )
+    if( pObj && (pObj->GetObjInventor() == SdrInventor::Default) && (pObj->GetObjIdentifier() == OBJ_TABLE) )
     {
         auto pTable = static_cast<sdr::table::SdrTableObj*>(pObj);
-        if (pTable->getActiveCell().is()) {
-            pTable->SetMergedItemSetAndBroadcastOnActiveCell(rFormatSet, false/*bClearAllItems*/);
+        if (pTable->getActiveCell().is() && mxSelectionController.is()){
+            mxSelectionController->SetAttributes(rFormatSet, false);
         }
     }
 }

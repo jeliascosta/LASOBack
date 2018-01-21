@@ -882,8 +882,7 @@ bool PDFObject::emit( EmitContext& rWriteContext ) const
                 if( pOutBytes != reinterpret_cast<sal_uInt8*>(pStream) )
                     rtl_freeMemory( pOutBytes );
                 rtl_freeMemory( pStream );
-                if( pEData )
-                    pEData->setDecryptObject( 0, 0 );
+                pEData->setDecryptObject( 0, 0 );
                 return bRet;
             }
             if( pOutBytes != reinterpret_cast<sal_uInt8*>(pStream) )
@@ -1261,23 +1260,6 @@ bool PDFFile::setupDecryptionData( const OString& rPwd ) const
     }
 
     return bValid;
-}
-
-OUString PDFFile::getDecryptionKey() const
-{
-    OUStringBuffer aBuf( ENCRYPTION_KEY_LEN * 2 );
-    if( impl_getData()->m_bIsEncrypted )
-    {
-        for( sal_uInt32 i = 0; i < m_pData->m_nKeyLength; i++ )
-        {
-            static const sal_Unicode pHexTab[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
-                                                     '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-            aBuf.append( pHexTab[(m_pData->m_aDecryptionKey[i] >> 4) & 0x0f] );
-            aBuf.append( pHexTab[(m_pData->m_aDecryptionKey[i] & 0x0f)] );
-        }
-
-    }
-    return aBuf.makeStringAndClear();
 }
 
 PDFFileImplData* PDFFile::impl_getData() const

@@ -84,8 +84,8 @@ namespace bib
 
     public:
 
-            BibGridwin(vcl::Window* pParent, WinBits nStyle = WB_3DLOOK );
-            virtual ~BibGridwin();
+            BibGridwin(vcl::Window* pParent, WinBits nStyle );
+            virtual ~BibGridwin() override;
             virtual void dispose() override;
 
             void createGridWin(const Reference< awt::XControlModel > & xDbForm);
@@ -184,8 +184,8 @@ namespace bib
             m_xGridWin->setFocus();
     }
 
-    BibBeamer::BibBeamer( vcl::Window* _pParent, BibDataManager* _pDM, WinBits _nStyle )
-        :BibSplitWindow( _pParent, _nStyle | WB_NOSPLITDRAW )
+    BibBeamer::BibBeamer( vcl::Window* _pParent, BibDataManager* _pDM )
+        :BibSplitWindow( _pParent, WB_3DLOOK | WB_NOSPLITDRAW )
         ,pDatMan( _pDM )
         ,pToolBar( nullptr )
         ,pGridWin( nullptr )
@@ -267,7 +267,7 @@ namespace bib
             pGridWin->GrabFocus();
     }
 
-    IMPL_LINK_NOARG_TYPED( BibBeamer, RecalcLayout_Impl, void*, void )
+    IMPL_LINK_NOARG( BibBeamer, RecalcLayout_Impl, void*, void )
     {
         long nHeight = pToolBar->get_preferred_size().Height();
         SetItemSize( ID_TOOLBAR, nHeight );

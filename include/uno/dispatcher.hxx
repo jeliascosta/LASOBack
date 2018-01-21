@@ -58,6 +58,12 @@ public:
     inline UnoInterfaceReference( uno_Interface * pUnoI );
     inline UnoInterfaceReference( UnoInterfaceReference const & ref );
 
+#if defined LIBO_INTERNAL_ONLY
+    UnoInterfaceReference(UnoInterfaceReference && other):
+        m_pUnoI(other.m_pUnoI)
+    { other.m_pUnoI = nullptr; }
+#endif
+
     inline uno_Interface * get() const
         { return m_pUnoI; }
 
@@ -74,15 +80,20 @@ public:
         uno_Interface * pUnoI )
         { return set( pUnoI ); }
 
+#if defined LIBO_INTERNAL_ONLY
+    UnoInterfaceReference & operator =(UnoInterfaceReference && other) {
+        if (m_pUnoI != nullptr) {
+            (*m_pUnoI->release)(m_pUnoI);
+        }
+        m_pUnoI = other.m_pUnoI;
+        other.m_pUnoI = nullptr;
+        return *this;
+    }
+#endif
+
     inline void dispatch(
         struct _typelib_TypeDescription const * pMemberType,
         void * pReturn, void * pArgs [], uno_Any ** ppException ) const;
-
-private:
-    inline bool operator == ( UnoInterfaceReference const & ); // not impl
-    inline bool operator != ( UnoInterfaceReference const & ); // not impl
-    inline bool operator == ( uno_Interface * ); // not impl
-    inline bool operator != ( uno_Interface * ); // not impl
 };
 
 

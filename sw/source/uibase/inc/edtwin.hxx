@@ -44,6 +44,7 @@ struct  SwApplyTemplate;
 struct  QuickHelpData;
 class   SdrDropMarkerOverlay;
 class   SwFrameControlsManager;
+enum class SdrHitKind;
 
 // input window
 
@@ -107,7 +108,7 @@ friend void     PageNumNotify(  SwViewShell* pVwSh,
 
     SwView         &m_rView;
 
-    int             m_aActHitType;    // current mouse pointer
+    SdrHitKind      m_aActHitType;    // current mouse pointer
 
     SotClipboardFormatId m_nDropFormat;  // format from the last QueryDrop
     sal_uInt8       m_nDropAction;       // action from the last QueryDrop
@@ -146,7 +147,7 @@ friend void     PageNumNotify(  SwViewShell* pVwSh,
 
     void            RstMBDownFlags();
 
-    void            ChangeFly( sal_uInt8 nDir, bool bWeb = false );
+    void            ChangeFly( sal_uInt8 nDir, bool bWeb );
     void            ChangeDrawing( sal_uInt8 nDir );
 
     bool            EnterDrawMode(const MouseEvent& rMEvt, const Point& aDocPos);
@@ -166,19 +167,19 @@ friend void     PageNumNotify(  SwViewShell* pVwSh,
      * The selection is regularly increased towards the mouse
      * position.
      */
-    DECL_LINK_TYPED( TimerHandler, Timer *, void );
+    DECL_LINK( TimerHandler, Timer *, void );
     void            StartDDTimer();
     void            StopDDTimer(SwWrtShell *, const Point &);
-    DECL_LINK_TYPED( DDHandler, Timer *, void );
+    DECL_LINK( DDHandler, Timer *, void );
 
     // timer for ANY-KeyInut question without a following KeyInputEvent
-    DECL_LINK_TYPED( KeyInputFlushHandler, Timer *, void );
+    DECL_LINK( KeyInputFlushHandler, Timer *, void );
 
     // timer for overlapping KeyInputs (e.g. for tables)
-    DECL_LINK_TYPED( KeyInputTimerHandler, Timer *, void );
+    DECL_LINK( KeyInputTimerHandler, Timer *, void );
 
     // timer for ApplyTemplates via mouse (in disguise Drag&Drop)
-    DECL_LINK_TYPED( TemplateTimerHdl, Idle *, void );
+    DECL_LINK( TemplateTimerHdl, Idle *, void );
 
     void            MoveCursor( SwWrtShell &rSh, const Point& rDocPos,
                                 const bool bOnlyText, bool bLockView );
@@ -290,7 +291,7 @@ public:
     SwFrameControlsManager& GetFrameControlsManager();
 
     SwEditWin(vcl::Window *pParent, SwView &);
-    virtual ~SwEditWin();
+    virtual ~SwEditWin() override;
     virtual void dispose() override;
 
     virtual void    Command( const CommandEvent& rCEvt ) override;
@@ -307,6 +308,8 @@ public:
     void SetCursorTwipPosition(const Point& rPosition, bool bPoint, bool bClearMark);
     /// Allows starting or ending a graphic move or resize action.
     void SetGraphicTwipPosition(bool bStart, const Point& rPosition);
+
+    virtual FactoryFunction GetUITestFactory() const override;
 };
 
 #endif

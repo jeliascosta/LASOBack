@@ -511,7 +511,7 @@ void OWriteStream_Impl::DisposeWrappers()
     }
 }
 
-OUString OWriteStream_Impl::GetFilledTempFileIfNo( const uno::Reference< io::XInputStream >& xStream )
+OUString const & OWriteStream_Impl::GetFilledTempFileIfNo( const uno::Reference< io::XInputStream >& xStream )
 {
     if ( !m_aTempURL.getLength() )
     {
@@ -560,7 +560,7 @@ OUString OWriteStream_Impl::GetFilledTempFileIfNo( const uno::Reference< io::XIn
     return m_aTempURL;
 }
 
-OUString OWriteStream_Impl::FillTempGetFileName()
+OUString const & OWriteStream_Impl::FillTempGetFileName()
 {
     // should try to create cache first, if the amount of contents is too big, the temp file should be taken
     if ( !m_xCacheStream.is() && m_aTempURL.isEmpty() )
@@ -955,7 +955,7 @@ void OWriteStream_Impl::Revert()
     }
 }
 
-uno::Sequence< beans::PropertyValue > OWriteStream_Impl::GetStreamProperties()
+uno::Sequence< beans::PropertyValue > const & OWriteStream_Impl::GetStreamProperties()
 {
     if ( !m_aProps.getLength() )
         m_aProps = ReadPackageStreamProperties();
@@ -1696,7 +1696,7 @@ OWriteStream::OWriteStream( OWriteStream_Impl* pImpl, bool bTransacted )
     m_pData.reset(new WSInternalData_Impl(pImpl->m_rMutexRef, m_pImpl->m_nStorageType));
 }
 
-OWriteStream::OWriteStream( OWriteStream_Impl* pImpl, uno::Reference< io::XStream > xStream, bool bTransacted )
+OWriteStream::OWriteStream( OWriteStream_Impl* pImpl, uno::Reference< io::XStream > const & xStream, bool bTransacted )
 : m_pImpl( pImpl )
 , m_bInStreamDisconnected( false )
 , m_bInitOnDemand( false )
@@ -1866,7 +1866,7 @@ uno::Any SAL_CALL OWriteStream::queryInterface( const uno::Type& rType )
     uno::Any aReturn;
 
     // common interfaces
-    aReturn <<= ::cppu::queryInterface
+    aReturn = ::cppu::queryInterface
                 (   rType
                     ,   static_cast<lang::XTypeProvider*> ( this )
                     ,   static_cast<io::XInputStream*> ( this )
@@ -1883,14 +1883,14 @@ uno::Any SAL_CALL OWriteStream::queryInterface( const uno::Type& rType )
 
     if ( m_pData->m_nStorageType == embed::StorageFormats::PACKAGE )
     {
-        aReturn <<= ::cppu::queryInterface
+        aReturn = ::cppu::queryInterface
                     (   rType
                         ,   static_cast<embed::XEncryptionProtectedSource2*> ( this )
                         ,   static_cast<embed::XEncryptionProtectedSource*> ( this ) );
     }
     else if ( m_pData->m_nStorageType == embed::StorageFormats::OFOPXML )
     {
-        aReturn <<= ::cppu::queryInterface
+        aReturn = ::cppu::queryInterface
                     (   rType
                         ,   static_cast<embed::XRelationshipAccess*> ( this ) );
     }
@@ -1900,7 +1900,7 @@ uno::Any SAL_CALL OWriteStream::queryInterface( const uno::Type& rType )
 
     if ( m_bTransacted )
     {
-        aReturn <<= ::cppu::queryInterface
+        aReturn = ::cppu::queryInterface
                     (   rType
                         ,   static_cast<embed::XTransactedObject*> ( this )
                         ,   static_cast<embed::XTransactionBroadcaster*> ( this ) );

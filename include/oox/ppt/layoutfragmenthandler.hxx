@@ -20,9 +20,14 @@
 #ifndef INCLUDED_OOX_PPT_LAYOUTFRAGMENTHANDLER_HXX
 #define INCLUDED_OOX_PPT_LAYOUTFRAGMENTHANDLER_HXX
 
+#include <oox/core/contexthandler.hxx>
 #include <oox/ppt/slidefragmenthandler.hxx>
+#include <oox/ppt/slidepersist.hxx>
+#include <rtl/ustring.hxx>
+#include <sal/types.h>
 
-#include <vector>
+namespace oox { class AttributeList; }
+namespace oox { namespace core { class XmlFilterBase; } }
 
 namespace oox { namespace ppt {
 
@@ -30,7 +35,7 @@ class LayoutFragmentHandler : public SlideFragmentHandler
 {
 public:
     LayoutFragmentHandler( ::oox::core::XmlFilterBase& rFilter, const OUString& rFragmentPath, SlidePersistPtr pMasterPersistPtr ) throw();
-    virtual ~LayoutFragmentHandler() throw();
+    virtual ~LayoutFragmentHandler() throw() override;
 
     virtual ::oox::core::ContextHandlerRef onCreateContext( sal_Int32 aElementToken, const AttributeList& rAttribs ) override;
 };

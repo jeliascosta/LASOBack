@@ -30,6 +30,7 @@
 #include <editeng/unolingu.hxx>
 #include <editeng/langitem.hxx>
 #include <editeng/misspellrange.hxx>
+#include <editeng/langitem.hxx>
 #include <svx/svdetc.hxx>
 #include <editeng/editobj.hxx>
 #include <sfx2/dispatch.hxx>
@@ -52,6 +53,8 @@
 #include <svx/svditer.hxx>
 #include <svx/svdocapt.hxx>
 #include <svx/svdpagv.hxx>
+
+#include <o3tl/make_unique.hxx>
 
 #include <com/sun/star/sheet/DataPilotFieldFilter.hpp>
 #include <com/sun/star/sheet/DataPilotFieldOrientation.hpp>
@@ -129,6 +132,8 @@
 #include "dociter.hxx"
 #include "hints.hxx"
 #include "spellcheckcontext.hxx"
+#include "uiobject.hxx"
+#include "scabstdlg.hxx"
 
 #include <svx/sdrpagewindow.hxx>
 #include <svx/sdr/overlay/overlaymanager.hxx>
@@ -136,6 +141,7 @@
 #include <svx/sdr/overlay/overlayselection.hxx>
 #include <comphelper/string.hxx>
 #include <comphelper/lok.hxx>
+#include <sfx2/lokhelper.hxx>
 
 #include <LibreOfficeKit/LibreOfficeKitEnums.h>
 
@@ -144,10 +150,6 @@
 
 using namespace css;
 using namespace css::uno;
-
-const sal_uInt8 SC_NESTEDBUTTON_NONE = 0;
-const sal_uInt8 SC_NESTEDBUTTON_DOWN = 1;
-const sal_uInt8 SC_NESTEDBUTTON_UP   = 2;
 
 #define SC_AUTOFILTER_ALL       0
 #define SC_AUTOFILTER_TOP10     1
@@ -209,22 +211,19 @@ private:
     VclPtr<ScGridWindow>   pGridWin;
     SCCOL           nCol;
     SCROW           nRow;
-    bool            bButtonDown;
     bool            bInit;
     bool            bCancelled;
     bool            bInSelect;
-    bool            mbListHasDates;
     sal_uLong           nSel;
     ScFilterBoxMode eMode;
 
 protected:
-    virtual void    LoseFocus() override;
     void            SelectHdl();
 
 public:
                 ScFilterListBox( vcl::Window* pParent, ScGridWindow* pGrid,
                                  SCCOL nNewCol, SCROW nNewRow, ScFilterBoxMode eNewMode );
-                virtual ~ScFilterListBox();
+                virtual ~ScFilterListBox() override;
     virtual void dispose() override;
 
     virtual bool    PreNotify( NotifyEvent& rNEvt ) override;
@@ -237,7 +236,6 @@ public:
     bool            IsInInit() const        { return bInit; }
     void            SetCancelled()          { bCancelled = true; }
     bool            IsInSelect() const      { return bInSelect; }
-    bool            HasDates() const        { return mbListHasDates; }
 };
 
 //  ListBox in a FloatingWindow (pParent)
@@ -247,11 +245,9 @@ ScFilterListBox::ScFilterListBox( vcl::Window* pParent, ScGridWindow* pGrid,
     pGridWin( pGrid ),
     nCol( nNewCol ),
     nRow( nNewRow ),
-    bButtonDown( false ),
     bInit( true ),
     bCancelled( false ),
     bInSelect( false ),
-    mbListHasDates(false),
     nSel( 0 ),
     eMode( eNewMode )
 {
@@ -279,11 +275,6 @@ void ScFilterListBox::EndInit()
         nSel = nPos;
 
     bInit = false;
-}
-
-void ScFilterListBox::LoseFocus()
-{
-    vcl::Window::LoseFocus();
 }
 
 bool ScFilterListBox::PreNotify( NotifyEvent& rNEvt )
@@ -326,13 +317,10 @@ void ScFilterListBox::SelectHdl()
         if ( LISTBOX_ENTRY_NOTFOUND != nPos )
         {
             nSel = nPos;
-            if (!bButtonDown)
-            {
-                // #i81298# set bInSelect flag, so the box isn't deleted from modifications within FilterSelect
-                bInSelect = true;
-                pGridWin->FilterSelect( nSel );
-                bInSelect = false;
-            }
+            // #i81298# set bInSelect flag, so the box isn't deleted from modifications within FilterSelect
+            bInSelect = true;
+            pGridWin->FilterSelect( nSel );
+            bInSelect = false;
         }
     }
 }
@@ -341,8 +329,8 @@ void ScFilterListBox::SelectHdl()
 class ScFilterFloatingWindow : public FloatingWindow
 {
 public:
-    ScFilterFloatingWindow( vcl::Window* pParent, WinBits nStyle = WB_STDFLOATWIN );
-    virtual ~ScFilterFloatingWindow();
+    ScFilterFloatingWindow( vcl::Window* pParent, WinBits nStyle );
+    virtual ~ScFilterFloatingWindow() override;
     virtual void dispose() override;
 };
 
@@ -454,7 +442,7 @@ ScGridWindow::ScGridWindow( vcl::Window* pParent, ScViewData* pData, ScSplitPos 
             nCursorHideCount( 0 ),
             nButtonDown( 0 ),
             nMouseStatus( SC_GM_NONE ),
-            nNestedButtonState( SC_NESTEDBUTTON_NONE ),
+            nNestedButtonState( ScNestedButtonState::NONE ),
             nDPField( 0 ),
             pDragDPObj( nullptr ),
             nRFIndex( 0 ),
@@ -469,7 +457,6 @@ ScGridWindow::ScGridWindow( vcl::Window* pParent, ScViewData* pData, ScSplitPos 
             nDragEndX( -1 ),
             nDragEndY( -1 ),
             meDragInsertMode( INS_NONE ),
-            nCurrentPointer( 0 ),
             aComboButton( this ),
             aCurMousePos( 0,0 ),
             nPaintCount( 0 ),
@@ -486,6 +473,7 @@ ScGridWindow::ScGridWindow( vcl::Window* pParent, ScViewData* pData, ScSplitPos 
             bAutoMarkVisible( false ),
             bListValButton( false )
 {
+    set_id("grid_window");
     switch(eWhich)
     {
         case SC_SPLIT_TOPLEFT:
@@ -561,14 +549,14 @@ void ScGridWindow::ClickExtern()
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ScGridWindow, PopupModeEndHdl, FloatingWindow*, void)
+IMPL_LINK_NOARG(ScGridWindow, PopupModeEndHdl, FloatingWindow*, void)
 {
     if (mpFilterBox)
         mpFilterBox->SetCancelled();     // cancel select
     GrabFocus();
 }
 
-IMPL_LINK_TYPED( ScGridWindow, PopupSpellingHdl, SpellCallbackInfo&, rInfo, void )
+IMPL_LINK( ScGridWindow, PopupSpellingHdl, SpellCallbackInfo&, rInfo, void )
 {
     if( rInfo.nCommand == SpellCallbackCommand::STARTSPELLDLG )
         pViewData->GetDispatcher().Execute( SID_SPELL_DIALOG, SfxCallMode::ASYNCHRON );
@@ -657,13 +645,16 @@ class AddItemToEntry : public std::unary_function<OUString, void>
 public:
     AddItemToEntry(ScQueryEntry::QueryItemsType& rItems, svl::SharedStringPool& rPool) :
         mrItems(rItems), mrPool(rPool) {}
-    void operator() (const OUString& rSelected)
+    void operator() (const ScCheckListMenuWindow::ResultEntry& rEntry)
     {
-        ScQueryEntry::Item aNew;
-        aNew.maString = mrPool.intern(rSelected);
-        aNew.meType = ScQueryEntry::ByString;
-        aNew.mfVal = 0.0;
-        mrItems.push_back(aNew);
+        if (rEntry.bValid)
+        {
+            ScQueryEntry::Item aNew;
+            aNew.maString = mrPool.intern(rEntry.aName);
+            aNew.meType = rEntry.bDate ? ScQueryEntry::ByDate : ScQueryEntry::ByString;
+            aNew.mfVal = 0.0;
+            mrItems.push_back(aNew);
+        }
     }
 };
 
@@ -726,6 +717,7 @@ void ScGridWindow::LaunchAutoFilterMenu(SCCOL nCol, SCROW nRow)
     std::vector<ScTypedStrData> aStrings;
     pDoc->GetFilterEntries(nCol, nRow, nTab, aStrings, bHasDates);
 
+    mpAutoFilterPopup->setHasDates(bHasDates);
     mpAutoFilterPopup->setMemberSize(aStrings.size());
     std::vector<ScTypedStrData>::const_iterator it = aStrings.begin(), itEnd = aStrings.end();
     for (; it != itEnd; ++it)
@@ -810,6 +802,7 @@ void ScGridWindow::UpdateAutoFilterFromMenu(AutoFilterMode eMode)
             aSortParam.bByRow = true;
             aSortParam.bCaseSens = false;
             aSortParam.bNaturalSort = false;
+            aSortParam.bIncludeComments = false;
             aSortParam.bIncludePattern = true;
             aSortParam.bInplace = true;
             aSortParam.maKeyState[0].bDoSort = true;
@@ -865,17 +858,10 @@ void ScGridWindow::UpdateAutoFilterFromMenu(AutoFilterMode eMode)
 
                 ScCheckListMenuWindow::ResultType aResult;
                 mpAutoFilterPopup->getResult(aResult);
-                std::vector<OUString> aSelected;
-                ScCheckListMenuWindow::ResultType::const_iterator itr = aResult.begin(), itrEnd = aResult.end();
-                for (; itr != itrEnd; ++itr)
-                {
-                    if (itr->second)
-                        aSelected.push_back(itr->first);
-                }
 
                 ScQueryEntry::QueryItemsType& rItems = pEntry->GetQueryItems();
                 rItems.clear();
-                std::for_each(aSelected.begin(), aSelected.end(), AddItemToEntry(rItems, rPool));
+                std::for_each(aResult.begin(), aResult.end(), AddItemToEntry(rItems, rPool));
             }
             break;
             case Top10:
@@ -989,7 +975,7 @@ void ScGridWindow::DoScenarioMenu( const ScRange& rScenRange )
         vcl::Font aOldFont = GetFont();
         SetFont(mpFilterBox->GetFont());
         MapMode aOldMode = GetMapMode();
-        SetMapMode( MAP_PIXEL );
+        SetMapMode( MapUnit::MapPixel );
 
         nHeight  = GetTextHeight();
         nHeight *= SC_FILTERLISTBOX_LINES;
@@ -1115,7 +1101,7 @@ void ScGridWindow::LaunchDataSelectMenu( SCCOL nCol, SCROW nRow )
         vcl::Font aOldFont = GetFont();
         SetFont(mpFilterBox->GetFont());
         MapMode aOldMode = GetMapMode();
-        SetMapMode(MAP_PIXEL);
+        SetMapMode(MapUnit::MapPixel);
 
         nHeight  = GetTextHeight();
         nHeight *= SC_FILTERLISTBOX_LINES;
@@ -1247,7 +1233,7 @@ void ScGridWindow::FilterSelect( sal_uLong nSel )
             ExecDataSelect(nCol, nRow, aString);
             break;
         case SC_FILTERBOX_FILTER:
-            ExecFilter(nSel, nCol, nRow, aString, mpFilterBox->HasDates());
+            ExecFilter(nSel, nCol, nRow, aString);
             break;
         case SC_FILTERBOX_SCENARIO:
             pViewData->GetView()->UseScenario(aString);
@@ -1280,7 +1266,7 @@ void ScGridWindow::ExecDataSelect( SCCOL nCol, SCROW nRow, const OUString& rStr 
 
 void ScGridWindow::ExecFilter( sal_uLong nSel,
                                SCCOL nCol, SCROW nRow,
-                               const OUString& aValue, bool bCheckForDates )
+                               const OUString& aValue )
 {
     SCTAB nTab = pViewData->GetTabNo();
     ScDocument* pDoc = pViewData->GetDocument();
@@ -1353,7 +1339,7 @@ void ScGridWindow::ExecFilter( sal_uLong nSel,
                     ScQueryEntry::Item& rItem = rNewEntry.GetQueryItem();
                     rNewEntry.bDoQuery       = true;
                     rNewEntry.nField         = nCol;
-                    rItem.meType = bCheckForDates ? ScQueryEntry::ByDate : ScQueryEntry::ByString;
+                    rItem.meType = ScQueryEntry::ByString;
 
                     if ( nSel == SC_AUTOFILTER_TOP10 )
                     {
@@ -1400,12 +1386,6 @@ void ScGridWindow::ExecFilter( sal_uLong nSel,
     {
         OSL_FAIL("Where is the database range?");
     }
-}
-
-void ScGridWindow::SetPointer( const Pointer& rPointer )
-{
-    nCurrentPointer = 0;
-    Window::SetPointer( rPointer );
 }
 
 void ScGridWindow::MoveMouseStatus( ScGridWindow& rDestWin )
@@ -1536,14 +1516,14 @@ bool ScGridWindow::TestMouse( const MouseEvent& rMEvt, bool bAction )
 
 void ScGridWindow::MouseButtonDown( const MouseEvent& rMEvt )
 {
-    nNestedButtonState = SC_NESTEDBUTTON_DOWN;
+    nNestedButtonState = ScNestedButtonState::Down;
 
     MouseEventState aState;
     HandleMouseButtonDown(rMEvt, aState);
     if (aState.mbActivatePart)
         pViewData->GetView()->ActivatePart(eWhich);
 
-    if ( nNestedButtonState == SC_NESTEDBUTTON_UP )
+    if ( nNestedButtonState == ScNestedButtonState::Up )
     {
         // #i41690# If an object is deactivated from MouseButtonDown, it might reschedule,
         // so MouseButtonUp comes before the MouseButtonDown call is finished. In this case,
@@ -1555,7 +1535,7 @@ void ScGridWindow::MouseButtonDown( const MouseEvent& rMEvt )
         if ( IsTracking() )
             EndTracking();      // normally done in VCL as part of MouseButtonUp handling
     }
-    nNestedButtonState = SC_NESTEDBUTTON_NONE;
+    nNestedButtonState = ScNestedButtonState::NONE;
 }
 
 bool ScGridWindow::IsCellCoveredByText(SCsCOL nPosX, SCsROW nPosY, SCTAB nTab, SCsCOL &rTextStartPosX)
@@ -1580,7 +1560,7 @@ bool ScGridWindow::IsCellCoveredByText(SCsCOL nPosX, SCsROW nPosY, SCTAB nTab, S
 
     // to the left, there is no cell that would contain (potentially
     // overrunning) text
-    if (nNonEmptyX < 0 || pDoc->HasAttrib(nNonEmptyX, nPosY, nTab, nPosX, nPosY, nTab, HASATTR_MERGED | HASATTR_OVERLAPPED))
+    if (nNonEmptyX < 0 || pDoc->HasAttrib(nNonEmptyX, nPosY, nTab, nPosX, nPosY, nTab, HasAttrFlags::Merged | HasAttrFlags::Overlapped))
         return false;
 
     double nPPTX = pViewData->GetPPTX();
@@ -1596,7 +1576,7 @@ bool ScGridWindow::IsCellCoveredByText(SCsCOL nPosX, SCsROW nPosY, SCTAB nTab, S
             &aZoomX, &aZoomY);
 
     MapMode aCurrentMapMode(GetMapMode());
-    SetMapMode(MAP_PIXEL);
+    SetMapMode(MapUnit::MapPixel);
 
     // obtain the bounding box of the text in first non-empty cell
     // to the left
@@ -1976,8 +1956,8 @@ void ScGridWindow::MouseButtonUp( const MouseEvent& rMEvt )
     // #i41690# detect a MouseButtonUp call from within MouseButtonDown
     // (possible through Reschedule from storing an OLE object that is deselected)
 
-    if ( nNestedButtonState == SC_NESTEDBUTTON_DOWN )
-        nNestedButtonState = SC_NESTEDBUTTON_UP;
+    if ( nNestedButtonState == ScNestedButtonState::Down )
+        nNestedButtonState = ScNestedButtonState::Up;
 
     if (nButtonDown != rMEvt.GetButtons())
         nMouseStatus = SC_GM_IGNORE;            // reset and return
@@ -2270,7 +2250,7 @@ void ScGridWindow::MouseButtonUp( const MouseEvent& rMEvt )
         bool bEditAllowed = true;
         if ( pProtect && pProtect->isProtected() )
         {
-            bool bCellProtected = pDoc->HasAttrib(nPosX, nPosY, nTab, nPosX, nPosY, nTab, HASATTR_PROTECTED);
+            bool bCellProtected = pDoc->HasAttrib(nPosX, nPosY, nTab, nPosX, nPosY, nTab, HasAttrFlags::Protected);
             bool bSkipProtected = !pProtect->isOptionEnabled(ScTableProtection::SELECT_LOCKED_CELLS);
             bool bSkipUnprotected = !pProtect->isOptionEnabled(ScTableProtection::SELECT_UNLOCKED_CELLS);
 
@@ -2331,7 +2311,7 @@ void ScGridWindow::MouseButtonUp( const MouseEvent& rMEvt )
             // ScGlobal::OpenURL() only understands Calc A1 style syntax.
             // Convert it to Calc A1 before calling OpenURL().
             if (pDoc->GetAddressConvention() == formula::FormulaGrammar::CONV_OOO)
-                ScGlobal::OpenURL(aUrl, aTarget, pViewData->GetDocument()->GetDrawLayer());
+                ScGlobal::OpenURL(aUrl, aTarget);
             else
             {
                 ScAddress aTempAddr;
@@ -2584,7 +2564,7 @@ void ScGridWindow::MouseMove( const MouseEvent& rMEvt )
         // range finder
 
         RfCorner rCorner = NONE;
-        if ( HitRangeFinder( rMEvt.GetPosPixel(), rCorner ) )
+        if ( HitRangeFinder( rMEvt.GetPosPixel(), rCorner, nullptr, nullptr, nullptr ) )
         {
             if (rCorner != NONE)
                 SetPointer( Pointer( PointerStyle::Cross ) );
@@ -2597,7 +2577,7 @@ void ScGridWindow::MouseMove( const MouseEvent& rMEvt )
 
         sal_uInt16 nBreakType;
         if ( !nButtonDown && pViewData->IsPagebreakMode() &&
-                ( nBreakType = HitPageBreak( rMEvt.GetPosPixel() ) ) != 0 )
+                ( nBreakType = HitPageBreak( rMEvt.GetPosPixel(), nullptr, nullptr, nullptr ) ) != 0 )
         {
             PointerStyle eNew = PointerStyle::Arrow;
             switch ( nBreakType )
@@ -2855,6 +2835,12 @@ void ScGridWindow::Command( const CommandEvent& rCEvt )
     ScModule* pScMod = SC_MOD();
     OSL_ENSURE( nCmd != CommandEventId::StartDrag, "ScGridWindow::Command called with CommandEventId::StartDrag" );
 
+    if (nCmd == CommandEventId::ModKeyChange)
+    {
+        Window::Command(rCEvt);
+        return;
+    }
+
     if ( nCmd == CommandEventId::StartExtTextInput ||
          nCmd == CommandEventId::EndExtTextInput ||
          nCmd == CommandEventId::ExtTextInput ||
@@ -2970,7 +2956,7 @@ void ScGridWindow::Command( const CommandEvent& rCEvt )
             if ( pProtect && pProtect->isProtected() )
             {
                 // This sheet is protected.  Check if a context menu is allowed on this cell.
-                bool bCellProtected = pDoc->HasAttrib(nCellX, nCellY, nTab, nCellX, nCellY, nTab, HASATTR_PROTECTED);
+                bool bCellProtected = pDoc->HasAttrib(nCellX, nCellY, nTab, nCellX, nCellY, nTab, HasAttrFlags::Protected);
                 bool bSelProtected   = pProtect->isOptionEnabled(ScTableProtection::SELECT_LOCKED_CELLS);
                 bool bSelUnprotected = pProtect->isOptionEnabled(ScTableProtection::SELECT_UNLOCKED_CELLS);
 
@@ -3265,6 +3251,35 @@ void ScGridWindow::KeyInput(const KeyEvent& rKEvt)
 {
     // Cursor control for ref input dialog
     const vcl::KeyCode& rKeyCode = rKEvt.GetKeyCode();
+
+#ifdef DBG_UTIL
+
+    if (rKeyCode.IsMod1() && rKeyCode.IsShift())
+    {
+        if (rKeyCode.GetCode() == KEY_F12)
+        {
+            dumpColumnInformationPixel();
+        }
+        else if (rKeyCode.GetCode() == KEY_F11)
+        {
+            dumpGraphicInformation();
+        }
+        else if (rKeyCode.GetCode() == KEY_F10)
+        {
+            dumpColumnInformationHmm();
+        }
+        else if (rKeyCode.GetCode() == KEY_F9)
+        {
+            dumpCellProperties();
+        }
+        else if (rKeyCode.GetCode() == KEY_F8)
+        {
+            dumpColumnCellStorage();
+        }
+    }
+
+#endif
+
     if( SC_MOD()->IsRefDialogOpen() )
     {
         if( !rKeyCode.GetModifier() && (rKeyCode.GetCode() == KEY_F2) )
@@ -3376,29 +3391,6 @@ void ScGridWindow::KeyInput(const KeyEvent& rKEvt)
         }
 
     }
-#ifdef DBG_UTIL
-
-    if (rKeyCode.IsMod1() && rKeyCode.IsShift())
-    {
-        if (rKeyCode.GetCode() == KEY_F12)
-        {
-            dumpColumnInformationPixel();
-        }
-        else if (rKeyCode.GetCode() == KEY_F11)
-        {
-            dumpGraphicInformation();
-        }
-        else if (rKeyCode.GetCode() == KEY_F10)
-        {
-            dumpColumnInformationHmm();
-        }
-        else if (rKeyCode.GetCode() == KEY_F9)
-        {
-            dumpCellProperties();
-        }
-    }
-
-#endif
 
     Window::KeyInput(rKEvt);
 }
@@ -3560,7 +3552,7 @@ sal_Int8 ScGridWindow::AcceptPrivateDrop( const AcceptDropEvent& rEvt )
             }
         }
 
-        if ( rData.pCellTransfer->GetDragSourceFlags() & SC_DROP_TABLE )        // whole sheet?
+        if (rData.pCellTransfer->GetDragSourceFlags() & ScDragSrc::Table) // whole sheet?
         {
             bool bOk = pThisDoc->IsDocEditable();
             return bOk ? rEvt.mnAction : 0;                     // don't draw selection frame
@@ -3833,6 +3825,7 @@ sal_Int8 ScGridWindow::AcceptDrop( const AcceptDropEvent& rEvt )
                                  IsDropFormatSupported( SotClipboardFormatId::DRAWING ) ||
                                  IsDropFormatSupported( SotClipboardFormatId::SVXB ) ||
                                  IsDropFormatSupported( SotClipboardFormatId::RTF ) ||
+                                 IsDropFormatSupported( SotClipboardFormatId::RICHTEXT ) ||
                                  IsDropFormatSupported( SotClipboardFormatId::GDIMETAFILE ) ||
                                  IsDropFormatSupported( SotClipboardFormatId::PNG ) ||
                                  IsDropFormatSupported( SotClipboardFormatId::BITMAP ) ||
@@ -3896,7 +3889,7 @@ sal_Int8 ScGridWindow::AcceptDrop( const AcceptDropEvent& rEvt )
     return nRet;
 }
 
-static SotClipboardFormatId lcl_GetDropFormatId( const uno::Reference<datatransfer::XTransferable>& xTransfer, bool bPreferText = false )
+static SotClipboardFormatId lcl_GetDropFormatId( const uno::Reference<datatransfer::XTransferable>& xTransfer, bool bPreferText )
 {
     TransferableDataHelper aDataHelper( xTransfer );
 
@@ -3932,10 +3925,10 @@ static SotClipboardFormatId lcl_GetDropFormatId( const uno::Reference<datatransf
             tools::SvRef<SotStorage> xStore( new SotStorage( *xStm ) );
             bDoRtf = ( ( aObjDesc.maClassName == SvGlobalName( SO3_SW_CLASSID ) ||
                          aObjDesc.maClassName == SvGlobalName( SO3_SWWEB_CLASSID ) )
-                       && aDataHelper.HasFormat( SotClipboardFormatId::RTF ) );
+                       && ( aDataHelper.HasFormat( SotClipboardFormatId::RTF ) || aDataHelper.HasFormat( SotClipboardFormatId::RICHTEXT ) ) );
         }
         if ( bDoRtf )
-            nFormatId = SotClipboardFormatId::RTF;
+            nFormatId = aDataHelper.HasFormat( SotClipboardFormatId::RTF ) ? SotClipboardFormatId::RTF : SotClipboardFormatId::RICHTEXT;
         else
             nFormatId = SotClipboardFormatId::EMBED_SOURCE;
     }
@@ -3957,6 +3950,8 @@ static SotClipboardFormatId lcl_GetDropFormatId( const uno::Reference<datatransf
         nFormatId = SotClipboardFormatId::LINK_SOURCE_OLE;
     else if ( aDataHelper.HasFormat( SotClipboardFormatId::RTF ) )
         nFormatId = SotClipboardFormatId::RTF;
+    else if ( aDataHelper.HasFormat( SotClipboardFormatId::RICHTEXT ) )
+        nFormatId = SotClipboardFormatId::RICHTEXT;
     else if ( aDataHelper.HasFormat( SotClipboardFormatId::HTML ) )
         nFormatId = SotClipboardFormatId::HTML;
     else if ( aDataHelper.HasFormat( SotClipboardFormatId::HTML_SIMPLE ) )
@@ -4034,9 +4029,9 @@ sal_Int8 ScGridWindow::DropTransferObj( ScTransferObj* pTransObj, SCCOL nDestPos
     ScDocument* pThisDoc   = pViewData->GetDocument();
     ScViewFunc* pView      = pViewData->GetView();
     SCTAB       nThisTab   = pViewData->GetTabNo();
-    sal_uInt16 nFlags = pTransObj->GetDragSourceFlags();
+    ScDragSrc   nFlags     = pTransObj->GetDragSourceFlags();
 
-    bool bIsNavi = ( nFlags & SC_DROP_NAVIGATOR ) != 0;
+    bool bIsNavi = (nFlags & ScDragSrc::Navigator) == ScDragSrc::Navigator;
     bool bIsMove = ( nDndAction == DND_ACTION_MOVE && !bIsNavi );
 
     // workaround for wrong nDndAction on Windows when pressing solely
@@ -4074,7 +4069,7 @@ sal_Int8 ScGridWindow::DropTransferObj( ScTransferObj* pTransObj, SCCOL nDestPos
     bool bFiltered = (bIsMove && pTransObj->HasFilteredRows());
     if (!bFiltered)
     {
-        if (pSourceDoc != pThisDoc && ((nFlags & SC_DROP_TABLE) ||
+        if (pSourceDoc != pThisDoc && ((nFlags & ScDragSrc::Table) ||
                     (!bIsLink && meDragInsertMode == INS_NONE)))
         {
             // Nothing. Either entire sheet to be dropped, or the one case
@@ -4091,7 +4086,7 @@ sal_Int8 ScGridWindow::DropTransferObj( ScTransferObj* pTransObj, SCCOL nDestPos
 
     if (!bFiltered && pSourceDoc == pThisDoc)
     {
-        if ( nFlags & SC_DROP_TABLE )           // whole sheet?
+        if (nFlags & ScDragSrc::Table) // whole sheet?
         {
             if ( pThisDoc->IsDocEditable() )
             {
@@ -4129,7 +4124,7 @@ sal_Int8 ScGridWindow::DropTransferObj( ScTransferObj* pTransObj, SCCOL nDestPos
                         nSourceTab != nThisTab )
             {
                 OUString aUndo = ScGlobal::GetRscString( bIsMove ? STR_UNDO_MOVE : STR_UNDO_COPY );
-                pDocSh->GetUndoManager()->EnterListAction( aUndo, aUndo );
+                pDocSh->GetUndoManager()->EnterListAction( aUndo, aUndo, 0, pViewData->GetViewShell()->GetViewShellId() );
 
                 SCsCOL nCorrectCursorPosCol = 0;
                 SCsROW nCorrectCursorPosRow = 0;
@@ -4241,7 +4236,7 @@ sal_Int8 ScGridWindow::DropTransferObj( ScTransferObj* pTransObj, SCCOL nDestPos
     }
     else if ( !bFiltered && pSourceDoc )                        // between documents
     {
-        if ( nFlags & SC_DROP_TABLE )           // copy/link sheets between documents
+        if (nFlags & ScDragSrc::Table)          // copy/link sheets between documents
         {
             if ( pThisDoc->IsDocEditable() )
             {
@@ -4283,7 +4278,7 @@ sal_Int8 ScGridWindow::DropTransferObj( ScTransferObj* pTransObj, SCCOL nDestPos
             if (pSourceSh)
             {
                 OUString aUndo = ScGlobal::GetRscString( STR_UNDO_COPY );
-                pDocSh->GetUndoManager()->EnterListAction( aUndo, aUndo );
+                pDocSh->GetUndoManager()->EnterListAction( aUndo, aUndo, 0, pViewData->GetViewShell()->GetViewShellId() );
 
                 bDone = true;
                 if ( meDragInsertMode != INS_NONE )
@@ -4343,7 +4338,7 @@ sal_Int8 ScGridWindow::DropTransferObj( ScTransferObj* pTransObj, SCCOL nDestPos
             //! or don't start dragging on a part of a matrix
 
             OUString aUndo = ScGlobal::GetRscString( bIsMove ? STR_UNDO_MOVE : STR_UNDO_COPY );
-            pDocSh->GetUndoManager()->EnterListAction( aUndo, aUndo );
+            pDocSh->GetUndoManager()->EnterListAction( aUndo, aUndo, 0, pViewData->GetViewShell()->GetViewShellId() );
 
             bDone = true;
             if ( meDragInsertMode != INS_NONE )
@@ -4434,9 +4429,9 @@ sal_Int8 ScGridWindow::ExecuteDrop( const ExecuteDropEvent& rEvt )
 
     if (!bIsLink && rData.pDrawTransfer)
     {
-        sal_uInt16 nFlags = rData.pDrawTransfer->GetDragSourceFlags();
+        ScDragSrc nFlags = rData.pDrawTransfer->GetDragSourceFlags();
 
-        bool bIsNavi = ( nFlags & SC_DROP_NAVIGATOR ) != 0;
+        bool bIsNavi = (nFlags & ScDragSrc::Navigator) == ScDragSrc::Navigator;
         bool bIsMove = ( rEvt.mnAction == DND_ACTION_MOVE && !bIsNavi );
 
         bPasteIsMove = bIsMove;
@@ -4482,7 +4477,7 @@ sal_Int8 ScGridWindow::ExecuteDrop( const ExecuteDropEvent& rEvt )
 
     SotClipboardFormatId nFormatId = bIsLink ?
                         lcl_GetDropLinkId( rEvt.maDropEvent.Transferable ) :
-                        lcl_GetDropFormatId( rEvt.maDropEvent.Transferable );
+                        lcl_GetDropFormatId( rEvt.maDropEvent.Transferable, false );
     if ( nFormatId != SotClipboardFormatId::NONE )
     {
         pScMod->SetInExecuteDrop( true );   // #i28468# prevent error messages from PasteDataFormat
@@ -4618,7 +4613,7 @@ void ScGridWindow::ScrollPixel( long nDifX, long nDifY )
 
     bIsInScroll = true;
 
-    SetMapMode(MAP_PIXEL);
+    SetMapMode(MapUnit::MapPixel);
     Scroll( nDifX, nDifY, ScrollFlags::Children );
     SetMapMode( GetDrawMapMode() );             // generated shifted MapMode
 
@@ -4931,16 +4926,16 @@ static void lcl_PaintOneRange( ScDocShell* pDocSh, const ScRange& rRange, sal_uI
     {
         // Only along the edges (The corners are hit twice)
         if ( nEdges & SCE_TOP )
-            pDocSh->PostPaint( nCol1, nRow1, nTab1, nCol2, nRow1, nTab2, PAINT_MARKS );
+            pDocSh->PostPaint( nCol1, nRow1, nTab1, nCol2, nRow1, nTab2, PaintPartFlags::Marks );
         if ( nEdges & SCE_LEFT )
-            pDocSh->PostPaint( nCol1, nRow1, nTab1, nCol1, nRow2, nTab2, PAINT_MARKS );
+            pDocSh->PostPaint( nCol1, nRow1, nTab1, nCol1, nRow2, nTab2, PaintPartFlags::Marks );
         if ( nEdges & SCE_RIGHT )
-            pDocSh->PostPaint( nCol2, nRow1, nTab1, nCol2, nRow2, nTab2, PAINT_MARKS );
+            pDocSh->PostPaint( nCol2, nRow1, nTab1, nCol2, nRow2, nTab2, PaintPartFlags::Marks );
         if ( nEdges & SCE_BOTTOM )
-            pDocSh->PostPaint( nCol1, nRow2, nTab1, nCol2, nRow2, nTab2, PAINT_MARKS );
+            pDocSh->PostPaint( nCol1, nRow2, nTab1, nCol2, nRow2, nTab2, PaintPartFlags::Marks );
     }
     else    // everything in one call
-        pDocSh->PostPaint( nCol1, nRow1, nTab1, nCol2, nRow2, nTab2, PAINT_MARKS );
+        pDocSh->PostPaint( nCol1, nRow1, nTab1, nCol2, nRow2, nTab2, PaintPartFlags::Marks );
 }
 
 static void lcl_PaintRefChanged( ScDocShell* pDocSh, const ScRange& rOldUn, const ScRange& rNewUn )
@@ -5198,7 +5193,7 @@ std::shared_ptr<ScFieldEditEngine> createEditEngine( ScDocShell* pDocSh, const S
     std::shared_ptr<ScFieldEditEngine> pEngine(new ScFieldEditEngine(&rDoc, rDoc.GetEditPool()));
     ScSizeDeviceProvider aProv(pDocSh);
     pEngine->SetRefDevice(aProv.GetDevice());
-    pEngine->SetRefMapMode(MAP_100TH_MM);
+    pEngine->SetRefMapMode(MapUnit::Map100thMM);
     SfxItemSet aDefault = pEngine->GetEmptyItemSet();
     rPat.FillEditItemSet(&aDefault);
     aDefault.Put( SvxAdjustItem(toSvxAdjust(rPat), EE_PARA_JUST) );
@@ -5429,7 +5424,7 @@ bool ScGridWindow::HasScenarioButton( const Point& rPosPixel, ScRange& rScenRang
 
         ScMarkData aMarks;
         for (SCTAB i=nTab+1; i<nTabCount && pDoc->IsScenario(i); i++)
-            pDoc->MarkScenario( i, nTab, aMarks, false, SC_SCENARIO_SHOWFRAME );
+            pDoc->MarkScenario( i, nTab, aMarks, false, ScScenarioFlags::ShowFrame );
         ScRangeList aRanges;
         aMarks.FillRangeListWithMarks( &aRanges, false );
 
@@ -5488,10 +5483,10 @@ struct SpellCheckStatus
 
     SpellCheckStatus() : mbModified(false) {};
 
-    DECL_LINK_TYPED( EventHdl, EditStatus&, void );
+    DECL_LINK( EventHdl, EditStatus&, void );
 };
 
-IMPL_LINK_TYPED(SpellCheckStatus, EventHdl, EditStatus&, rStatus, void)
+IMPL_LINK(SpellCheckStatus, EventHdl, EditStatus&, rStatus, void)
 {
     EditStatusFlags nStatus = rStatus.GetStatusWord();
     if (nStatus & EditStatusFlags::WRONGWORDCHANGED)
@@ -5519,9 +5514,7 @@ bool ScGridWindow::ContinueOnlineSpelling()
     ScHorizontalCellIterator aIter(
         pDoc, nTab, maVisibleRange.mnCol1, mpSpellCheckCxt->maPos.mnRow, maVisibleRange.mnCol2, maVisibleRange.mnRow2);
 
-    ScRangeList aPivotRanges;
-    if (pDPs)
-        aPivotRanges = pDPs->GetAllTableRanges(nTab);
+    ScRangeList aPivotRanges = pDPs ? pDPs->GetAllTableRanges(nTab) : ScRangeList();
 
     SCCOL nCol;
     SCROW nRow;
@@ -5578,6 +5571,22 @@ bool ScGridWindow::ContinueOnlineSpelling()
         {
             ++nTextCellCount;
 
+            // NB: For spell-checking, we currently only use the primary
+            // language; not CJK nor CTL.
+            const ScPatternAttr* pPattern = pDoc->GetPattern(nCol, nRow, nTab);
+            LanguageType nCellLang =
+                static_cast<const SvxLanguageItem&>(pPattern->GetItem(ATTR_FONT_LANGUAGE)).GetValue();
+
+            if (nCellLang == LANGUAGE_SYSTEM)
+                nCellLang = Application::GetSettings().GetLanguageTag().getLanguageType();   // never use SYSTEM for spelling
+
+            if (nCellLang == LANGUAGE_NONE)
+            {
+                // No need to spell check this cell.
+                pCell = aIter.GetNext(nCol, nRow);
+                continue;
+            }
+
             if (!pEngine)
             {
                 //  ScTabEditEngine is needed
@@ -5592,14 +5601,10 @@ bool ScGridWindow::ContinueOnlineSpelling()
 
                 uno::Reference<linguistic2::XSpellChecker1> xXSpellChecker1(LinguMgr::GetSpellChecker());
                 pEngine->SetSpeller(xXSpellChecker1);
+                pEngine->SetDefaultLanguage(ScGlobal::GetEditDefaultLanguage());
             }
 
-            const ScPatternAttr* pPattern = pDoc->GetPattern(nCol, nRow, nTab);
-            sal_uInt16 nCellLang =
-                static_cast<const SvxLanguageItem&>(pPattern->GetItem(ATTR_FONT_LANGUAGE)).GetValue();
-            if (nCellLang == LANGUAGE_SYSTEM)
-                nCellLang = Application::GetSettings().GetLanguageTag().getLanguageType();   // never use SYSTEM for spelling
-            pEngine->SetDefaultLanguage(nCellLang);
+            pEngine->SetDefaultItem(SvxLanguageItem(nCellLang, EE_CHAR_LANGUAGE));
 
             if (eType == CELLTYPE_STRING)
                 pEngine->SetText(pCell->mpString->getString());
@@ -5620,7 +5625,7 @@ bool ScGridWindow::ContinueOnlineSpelling()
                 }
 
                 // Broadcast for re-paint.
-                ScPaintHint aHint(ScRange(nCol, nRow, nTab), PAINT_GRID);
+                ScPaintHint aHint(ScRange(nCol, nRow, nTab), PaintPartFlags::Grid);
                 aHint.SetPrintFlag(false);
                 pDoc->GetDocumentShell()->Broadcast(aHint);
             }
@@ -5709,7 +5714,8 @@ OString ScGridWindow::getCellCursor( int nOutputWidth, int nOutputHeight,
     return getCellCursor(zoomX, zoomY);
 }
 
-OString ScGridWindow::getCellCursor(const Fraction& rZoomX, const Fraction& rZoomY) {
+OString ScGridWindow::getCellCursor(const Fraction& rZoomX, const Fraction& rZoomY) const
+{
     // GridWindow stores a shown cell cursor in mpOOCursors, hence
     // we can use that to determine whether we would want to be showing
     // one (client-side) for tiled rendering too.
@@ -5741,12 +5747,22 @@ OString ScGridWindow::getCellCursor(const Fraction& rZoomX, const Fraction& rZoo
     return aRect.toString();
 }
 
-void ScGridWindow::updateLibreOfficeKitCellCursor()
+void ScGridWindow::updateLibreOfficeKitCellCursor(SfxViewShell* pOtherShell) const
 {
-    ScDocument* pDoc = pViewData->GetDocument();
-    ScDrawLayer* pDrawLayer = pDoc->GetDrawLayer();
     OString aCursor = getCellCursor(pViewData->GetZoomX(), pViewData->GetZoomY());
-    pDrawLayer->libreOfficeKitCallback(LOK_CALLBACK_CELL_CURSOR, aCursor.getStr());
+    ScTabViewShell* pViewShell = pViewData->GetViewShell();
+    if (pOtherShell)
+    {
+        if (pOtherShell == pViewShell)
+            pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_CELL_CURSOR, aCursor.getStr());
+        else
+            SfxLokHelper::notifyOtherView(pViewShell, pOtherShell, LOK_CALLBACK_CELL_VIEW_CURSOR, "rectangle", aCursor);
+    }
+    else
+    {
+        pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_CELL_CURSOR, aCursor.getStr());
+        SfxLokHelper::notifyOtherViews(pViewShell, LOK_CALLBACK_CELL_VIEW_CURSOR, "rectangle", aCursor);
+    }
 }
 
 void ScGridWindow::CursorChanged()
@@ -5789,10 +5805,9 @@ void ScGridWindow::UpdateAllOverlays()
 
 void ScGridWindow::DeleteCursorOverlay()
 {
-    ScDocument* pDoc = pViewData->GetDocument();
-    ScDrawLayer* pDrawLayer = pDoc->GetDrawLayer();
-    if (pDrawLayer)
-        pDrawLayer->libreOfficeKitCallback(LOK_CALLBACK_CELL_CURSOR, "EMPTY");
+    ScTabViewShell* pViewShell = pViewData->GetViewShell();
+    pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_CELL_CURSOR, "EMPTY");
+    SfxLokHelper::notifyOtherViews(pViewShell, LOK_CALLBACK_CELL_VIEW_CURSOR, "rectangle", "EMPTY");
     mpOOCursors.reset();
 }
 
@@ -5863,7 +5878,7 @@ void ScGridWindow::UpdateCopySourceOverlay()
  *
  * @param pLogicRects - if not 0, then don't invoke the callback, just collect the rectangles in the pointed vector.
  */
-static void updateLibreOfficeKitSelection(ScViewData* pViewData, ScDrawLayer* pDrawLayer, const std::vector<Rectangle>& rRectangles, std::vector<Rectangle>* pLogicRects = nullptr)
+static void updateLibreOfficeKitSelection(ScViewData* pViewData, const std::vector<Rectangle>& rRectangles, std::vector<Rectangle>* pLogicRects = nullptr)
 {
     if (!comphelper::LibreOfficeKit::isActive())
         return;
@@ -5898,15 +5913,19 @@ static void updateLibreOfficeKitSelection(ScViewData* pViewData, ScDrawLayer* pD
     // selection start handle
     Rectangle aStart(aBoundingBox.Left() / nPPTX, aBoundingBox.Top() / nPPTY,
             aBoundingBox.Left() / nPPTX, (aBoundingBox.Top() / nPPTY) + 256);
-    pDrawLayer->libreOfficeKitCallback(LOK_CALLBACK_TEXT_SELECTION_START, aStart.toString().getStr());
 
     // selection end handle
     Rectangle aEnd(aBoundingBox.Right() / nPPTX, (aBoundingBox.Bottom() / nPPTY) - 256,
             aBoundingBox.Right() / nPPTX, aBoundingBox.Bottom() / nPPTY);
-    pDrawLayer->libreOfficeKitCallback(LOK_CALLBACK_TEXT_SELECTION_END, aEnd.toString().getStr());
 
     // the selection itself
-    pDrawLayer->libreOfficeKitCallback(LOK_CALLBACK_TEXT_SELECTION, comphelper::string::join("; ", aRectangles).getStr());
+    OString aSelection = comphelper::string::join("; ", aRectangles).getStr();
+
+    ScTabViewShell* pViewShell = pViewData->GetViewShell();
+    pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_TEXT_SELECTION_START, aStart.toString().getStr());
+    pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_TEXT_SELECTION_END, aEnd.toString().getStr());
+    pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_TEXT_SELECTION, aSelection.getStr());
+    SfxLokHelper::notifyOtherViews(pViewShell, LOK_CALLBACK_TEXT_VIEW_SELECTION, "selection", aSelection.getStr());
 }
 
 void ScGridWindow::UpdateCursorOverlay()
@@ -5998,9 +6017,9 @@ void ScGridWindow::UpdateCursorOverlay()
             // show the cursor as 4 (thin) rectangles
             Rectangle aRect(aScrPos, Size(nSizeXPix - 1, nSizeYPix - 1));
 
-            sal_Int32 nScale = GetDPIScaleFactor();
+            float fScaleFactor = GetDPIScaleFactor();
 
-            long aCursorWidth = 1 * nScale;
+            long aCursorWidth = 1 * fScaleFactor;
 
             Rectangle aLeft = Rectangle(aRect);
             aLeft.Top()    -= aCursorWidth;
@@ -6034,7 +6053,7 @@ void ScGridWindow::UpdateCursorOverlay()
         if (comphelper::LibreOfficeKit::isActive())
         {
             mpOOCursors.reset(new sdr::overlay::OverlayObjectList);
-            updateLibreOfficeKitCellCursor();
+            updateLibreOfficeKitCellCursor(nullptr);
         }
         else
         {
@@ -6058,7 +6077,7 @@ void ScGridWindow::UpdateCursorOverlay()
                 }
 
                 sdr::overlay::OverlayObject* pOverlay = new sdr::overlay::OverlaySelection(
-                    sdr::overlay::OVERLAY_SOLID,
+                    sdr::overlay::OverlayType::Solid,
                     aCursorColor,
                     aRanges,
                     false);
@@ -6068,7 +6087,7 @@ void ScGridWindow::UpdateCursorOverlay()
                 mpOOCursors->append(*pOverlay);
 
                 // notify the LibreOfficeKit too
-                updateLibreOfficeKitSelection(pViewData, pDoc->GetDrawLayer(), aPixelRects);
+                updateLibreOfficeKitSelection(pViewData, aPixelRects);
             }
         }
     }
@@ -6081,7 +6100,7 @@ void ScGridWindow::GetCellSelection(std::vector<Rectangle>& rLogicRects)
 {
     std::vector<Rectangle> aPixelRects;
     GetSelectionRects(aPixelRects);
-    updateLibreOfficeKitSelection(pViewData, pViewData->GetDocument()->GetDrawLayer(), aPixelRects, &rLogicRects);
+    updateLibreOfficeKitSelection(pViewData, aPixelRects, &rLogicRects);
 }
 
 void ScGridWindow::DeleteSelectionOverlay()
@@ -6134,7 +6153,7 @@ void ScGridWindow::UpdateSelectionOverlay()
             const Color aHighlight(aSvtOptionsDrawinglayer.getHilightColor());
 
             sdr::overlay::OverlayObject* pOverlay = new sdr::overlay::OverlaySelection(
-                sdr::overlay::OVERLAY_TRANSPARENT,
+                sdr::overlay::OverlayType::Transparent,
                 aHighlight,
                 aRanges,
                 true);
@@ -6144,13 +6163,14 @@ void ScGridWindow::UpdateSelectionOverlay()
             mpOOSelection->append(*pOverlay);
 
             // notify the LibreOfficeKit too
-            updateLibreOfficeKitSelection(pViewData, pDoc->GetDrawLayer(), aPixelRects);
+            updateLibreOfficeKitSelection(pViewData, aPixelRects);
         }
     }
     else
     {
-        ScDocument* pDoc = pViewData->GetDocument();
-        pDoc->GetDrawLayer()->libreOfficeKitCallback(LOK_CALLBACK_TEXT_SELECTION, "EMPTY");
+        ScTabViewShell* pViewShell = pViewData->GetViewShell();
+        pViewShell->libreOfficeKitViewCallback(LOK_CALLBACK_TEXT_SELECTION, "EMPTY");
+        SfxLokHelper::notifyOtherViews(pViewShell, LOK_CALLBACK_TEXT_VIEW_SELECTION, "selection", "EMPTY");
     }
 
     if ( aOldMode != aDrawMode )
@@ -6188,9 +6208,9 @@ void ScGridWindow::UpdateAutoFillOverlay()
         ScDocument* pDoc = pViewData->GetDocument();
         bool bLayoutRTL = pDoc->IsLayoutRTL( nTab );
 
-        sal_Int32 nScale = GetDPIScaleFactor();
+        float fScaleFactor = GetDPIScaleFactor();
         // Size should be even
-        Size aFillHandleSize(6 * nScale, 6 * nScale);
+        Size aFillHandleSize(6 * fScaleFactor, 6 * fScaleFactor);
 
         Point aFillPos = pViewData->GetScrPos( nX, nY, eWhich, true );
         long nSizeXPix;
@@ -6208,10 +6228,10 @@ void ScGridWindow::UpdateAutoFillOverlay()
         Rectangle aFillRect(aFillPos, aFillHandleSize);
 
         // expand rect to increase hit area
-        mpAutoFillRect.reset(new Rectangle(aFillRect.Left()   - nScale,
-                                           aFillRect.Top()    - nScale,
-                                           aFillRect.Right()  + nScale,
-                                           aFillRect.Bottom() + nScale));
+        mpAutoFillRect.reset(new Rectangle(aFillRect.Left()   - fScaleFactor,
+                                           aFillRect.Top()    - fScaleFactor,
+                                           aFillRect.Right()  + fScaleFactor,
+                                           aFillRect.Bottom() + fScaleFactor));
 
         // #i70788# get the OverlayManager safely
         rtl::Reference<sdr::overlay::OverlayManager> xOverlayManager = getOverlayManager();
@@ -6230,7 +6250,7 @@ void ScGridWindow::UpdateAutoFillOverlay()
             aRanges.push_back(aRB);
 
             sdr::overlay::OverlayObject* pOverlay = new sdr::overlay::OverlaySelection(
-                sdr::overlay::OVERLAY_SOLID,
+                sdr::overlay::OverlayType::Solid,
                 aHandleColor,
                 aRanges,
                 false);
@@ -6357,7 +6377,7 @@ void ScGridWindow::UpdateDragRectOverlay()
             }
 
             sdr::overlay::OverlayObject* pOverlay = new sdr::overlay::OverlaySelection(
-                sdr::overlay::OVERLAY_INVERT,
+                sdr::overlay::OverlayType::Invert,
                 Color(COL_BLACK),
                 aRanges,
                 false);
@@ -6403,7 +6423,7 @@ void ScGridWindow::UpdateHeaderOverlay()
             aRanges.push_back(aRB);
 
             sdr::overlay::OverlayObject* pOverlay = new sdr::overlay::OverlaySelection(
-                sdr::overlay::OVERLAY_INVERT,
+                sdr::overlay::OverlayType::Invert,
                 Color(COL_BLACK),
                 aRanges,
                 false);
@@ -6470,7 +6490,7 @@ void ScGridWindow::UpdateShrinkOverlay()
             aRanges.push_back(aRB);
 
             sdr::overlay::OverlayObject* pOverlay = new sdr::overlay::OverlaySelection(
-                sdr::overlay::OVERLAY_INVERT,
+                sdr::overlay::OverlayType::Invert,
                 Color(COL_BLACK),
                 aRanges,
                 false);
@@ -6510,6 +6530,16 @@ void ScGridWindow::flushOverlayManager()
 
     if (xOverlayManager.is())
         xOverlayManager->flush();
+}
+
+ScViewData* ScGridWindow::getViewData()
+{
+    return pViewData;
+}
+
+FactoryFunction ScGridWindow::GetUITestFactory() const
+{
+    return ScGridWinUIObject::create;
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

@@ -136,7 +136,7 @@ const char *ToVertAlign( SdrTextVertAdjust eAdjust )
     }
 }
 
-void lcl_WriteAnchorVertex( sax_fastparser::FSHelperPtr rComments, Rectangle &aRect )
+void lcl_WriteAnchorVertex( sax_fastparser::FSHelperPtr const & rComments, Rectangle &aRect )
 {
     rComments->startElement( FSNS( XML_xdr, XML_col ), FSEND );
     rComments->writeEscaped( OUString::number( aRect.Left() ) );
@@ -258,7 +258,7 @@ void XclExpDffAnchorBase::SetFlags( const SdrObject& rSdrObj )
 void XclExpDffAnchorBase::SetSdrObject( const SdrObject& rSdrObj )
 {
     ImplSetFlags( rSdrObj );
-    ImplCalcAnchorRect( rSdrObj.GetCurrentBoundRect(), MAP_100TH_MM );
+    ImplCalcAnchorRect( rSdrObj.GetCurrentBoundRect(), MapUnit::Map100thMM );
 }
 
 void XclExpDffAnchorBase::WriteDffData( EscherEx& rEscherEx ) const
@@ -271,7 +271,7 @@ void XclExpDffAnchorBase::WriteDffData( EscherEx& rEscherEx ) const
 void XclExpDffAnchorBase::WriteData( EscherEx& rEscherEx, const Rectangle& rRect )
 {
     // the passed rectangle is in twips
-    ImplCalcAnchorRect( rRect, MAP_TWIP );
+    ImplCalcAnchorRect( rRect, MapUnit::MapTwip );
     WriteDffData( rEscherEx );
 }
 
@@ -327,7 +327,7 @@ void XclExpDffEmbeddedAnchor::ImplCalcAnchorRect( const Rectangle& rRect, MapUni
 XclExpDffNoteAnchor::XclExpDffNoteAnchor( const XclExpRoot& rRoot, const Rectangle& rRect ) :
     XclExpDffAnchorBase( rRoot, EXC_ESC_ANCHOR_SIZELOCKED )
 {
-    maAnchor.SetRect( rRoot, rRoot.GetCurrScTab(), rRect, MAP_100TH_MM );
+    maAnchor.SetRect( rRoot, rRoot.GetCurrScTab(), rRect, MapUnit::Map100thMM );
 }
 
 XclExpDffDropDownAnchor::XclExpDffDropDownAnchor( const XclExpRoot& rRoot, const ScAddress& rScPos ) :
@@ -370,7 +370,7 @@ XclExpMsoDrawingGroup::XclExpMsoDrawingGroup( XclEscherEx& rEscherEx ) :
         0x00, 0x08
     };
     mrEscherEx.AddAtom( sizeof( spnDffOpt ), ESCHER_OPT, 3, 3 );
-    rDffStrm.Write( spnDffOpt, sizeof( spnDffOpt ) );
+    rDffStrm.WriteBytes(spnDffOpt, sizeof(spnDffOpt));
 
     // SPLITMENUCOLORS contains colors in toolbar
     static const sal_uInt8 spnDffSplitMenuColors[] = {
@@ -378,7 +378,7 @@ XclExpMsoDrawingGroup::XclExpMsoDrawingGroup( XclEscherEx& rEscherEx ) :
         0x17, 0x00, 0x00, 0x08, 0xF7, 0x00, 0x00, 0x10
     };
     mrEscherEx.AddAtom( sizeof( spnDffSplitMenuColors ), ESCHER_SplitMenuColors, 0, 4 );
-    rDffStrm.Write( spnDffSplitMenuColors, sizeof( spnDffSplitMenuColors ) );
+    rDffStrm.WriteBytes(spnDffSplitMenuColors, sizeof(spnDffSplitMenuColors));
 
     // close the DGGCONTAINER
     mrEscherEx.CloseContainer();
@@ -459,7 +459,7 @@ XclExpControlHelper::~XclExpControlHelper()
 {
 }
 
-void XclExpControlHelper::ConvertSheetLinks( Reference< XShape > xShape )
+void XclExpControlHelper::ConvertSheetLinks( Reference< XShape > const & xShape )
 {
     mxCellLink.reset();
     mxSrcRange.reset();
@@ -531,7 +531,7 @@ void XclExpControlHelper::WriteFormulaSubRec( XclExpStream& rStrm, sal_uInt16 nS
 //delete for exporting OCX
 //#if EXC_EXP_OCX_CTRL
 
-XclExpOcxControlObj::XclExpOcxControlObj( XclExpObjectManager& rObjMgr, Reference< XShape > xShape,
+XclExpOcxControlObj::XclExpOcxControlObj( XclExpObjectManager& rObjMgr, Reference< XShape > const & xShape,
         const Rectangle* pChildAnchor, const OUString& rClassName, sal_uInt32 nStrmStart, sal_uInt32 nStrmSize ) :
     XclObj( rObjMgr, EXC_OBJTYPE_PICTURE, true ),
     XclExpControlHelper( rObjMgr.GetRoot() ),
@@ -636,7 +636,7 @@ void XclExpOcxControlObj::WriteSubRecs( XclExpStream& rStrm )
 
 //#else
 
-XclExpTbxControlObj::XclExpTbxControlObj( XclExpObjectManager& rRoot, Reference< XShape > xShape , const Rectangle* pChildAnchor ) :
+XclExpTbxControlObj::XclExpTbxControlObj( XclExpObjectManager& rRoot, Reference< XShape > const & xShape , const Rectangle* pChildAnchor ) :
     XclObj( rRoot, EXC_OBJTYPE_UNKNOWN, true ),
     XclMacroHelper( rRoot ),
     meEventType( EXC_TBX_EVENT_ACTION ),
@@ -1065,7 +1065,7 @@ void XclExpTbxControlObj::WriteSbs( XclExpStream& rStrm )
 
 //#endif
 
-XclExpChartObj::XclExpChartObj( XclExpObjectManager& rObjMgr, Reference< XShape > xShape, const Rectangle* pChildAnchor ) :
+XclExpChartObj::XclExpChartObj( XclExpObjectManager& rObjMgr, Reference< XShape > const & xShape, const Rectangle* pChildAnchor ) :
     XclObj( rObjMgr, EXC_OBJTYPE_CHART ),
     XclExpRoot( rObjMgr.GetRoot() ), mxShape( xShape )
 {
@@ -1193,13 +1193,12 @@ XclExpNote::XclExpNote( const XclExpRoot& rRoot, const ScAddress& rScPos,
                     SfxItemSet aItemSet = pCaption->GetMergedItemSet();
                     meTVA       = pCaption->GetTextVerticalAdjust();
                     meTHA       = pCaption->GetTextHorizontalAdjust();
-                    mbAutoScale = pCaption->GetFitToSize() != SDRTEXTFIT_NONE;
+                    mbAutoScale = pCaption->GetFitToSize() != SdrFitToSizeType::NONE;
                     mbLocked    = pCaption->IsMoveProtect() || pCaption->IsResizeProtect();
 
                     // AutoFill style would change if Postit.cxx object creation values are changed
                     OUString aCol(((XFillColorItem &)GETITEM(aItemSet, XFillColorItem , XATTR_FILLCOLOR)).GetValue());
                     mbAutoFill  = aCol.isEmpty() && (GETITEMVALUE(aItemSet, XFillStyleItem, XATTR_FILLSTYLE, sal_uLong) == drawing::FillStyle_SOLID);
-                    mbAutoLine  = true;
                     mbRowHidden = (rRoot.GetDoc().RowHidden(maScPos.Row(),maScPos.Tab()));
                     mbColHidden = (rRoot.GetDoc().ColHidden(maScPos.Col(),maScPos.Tab()));
                 }
@@ -1371,7 +1370,7 @@ XclMacroHelper::SetMacroLink( const OUString& rMacroName )
     return false;
 }
 
-XclExpShapeObj::XclExpShapeObj( XclExpObjectManager& rRoot, css::uno::Reference< css::drawing::XShape > xShape, ScDocument* pDoc ) :
+XclExpShapeObj::XclExpShapeObj( XclExpObjectManager& rRoot, css::uno::Reference< css::drawing::XShape > const & xShape, ScDocument* pDoc ) :
     XclObjAny( rRoot, xShape, pDoc ),
     XclMacroHelper( rRoot )
 {
@@ -1399,14 +1398,6 @@ XclExpComments::XclExpComments( SCTAB nTab, XclExpRecordList< XclExpNote >& rNot
     : mnTab( nTab ), mrNotes( rNotes )
 {
 }
-
-struct OUStringLess : public std::binary_function<OUString, OUString, bool>
-{
-    bool operator()(const OUString& x, const OUString& y) const
-    {
-        return x.compareTo( y ) < 0;
-    }
-};
 
 void XclExpComments::SaveXml( XclExpXmlStream& rStrm )
 {
@@ -1437,7 +1428,7 @@ void XclExpComments::SaveXml( XclExpXmlStream& rStrm )
 
     rComments->startElement( XML_authors, FSEND );
 
-    typedef std::set< OUString, OUStringLess > Authors;
+    typedef std::set<OUString> Authors;
     Authors aAuthors;
 
     size_t nNotes = mrNotes.GetSize();
@@ -1566,7 +1557,7 @@ void XclExpObjectManager::InitStream( bool bTempFile )
         if( mxTempFile->IsValid() )
         {
             mxTempFile->EnableKillingFile();
-            mxDffStrm.reset( ::utl::UcbStreamHelper::CreateStream( mxTempFile->GetURL(), STREAM_STD_READWRITE ) );
+            mxDffStrm.reset( ::utl::UcbStreamHelper::CreateStream( mxTempFile->GetURL(), StreamMode::STD_READWRITE ) );
         }
     }
 

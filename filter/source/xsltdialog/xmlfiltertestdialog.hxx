@@ -36,7 +36,7 @@ class XMLFilterTestDialog : public ModalDialog
 public:
     XMLFilterTestDialog(vcl::Window* pParent,
         const css::uno::Reference< css::uno::XComponentContext >& rxContext);
-    virtual ~XMLFilterTestDialog();
+    virtual ~XMLFilterTestDialog() override;
     virtual void dispose() override;
 
     void test( const filter_info_impl& rFilterInfo );
@@ -44,12 +44,11 @@ public:
     void updateCurrentDocumentButtonState( css::uno::Reference< css::lang::XComponent > * pRef = nullptr );
 
 private:
-    DECL_LINK_TYPED(ClickHdl_Impl, Button *, void );
+    DECL_LINK(ClickHdl_Impl, Button *, void );
 
     void onExportBrowse();
     void onExportCurrentDocument();
     void onImportBrowse();
-    void onImportRecentDocument();
     void initDialog();
 
     css::uno::Reference< css::lang::XComponent > getFrontMostDocument( const OUString& rServiceName );

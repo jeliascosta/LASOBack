@@ -76,9 +76,6 @@ void SfxStylesInfo_Impl::setModel(const css::uno::Reference< css::frame::XModel 
     m_xDoc = xModel;
 }
 
-static const char CMDURL_SPART [] = ".uno:StyleApply?Style:string=";
-static const char CMDURL_FPART2[] = "&FamilyName:string=";
-
 static const char CMDURL_STYLEPROT_ONLY[] = ".uno:StyleApply?";
 static const char CMDURL_SPART_ONLY    [] = "Style:string=";
 static const char CMDURL_FPART_ONLY    [] = "FamilyName:string=";
@@ -87,12 +84,10 @@ static const char STYLEPROP_UINAME[] = "DisplayName";
 
 OUString SfxStylesInfo_Impl::generateCommand(const OUString& sFamily, const OUString& sStyle)
 {
-    OUStringBuffer sCommand(1024);
-    sCommand.append(CMDURL_SPART );
-    sCommand.append(sStyle       );
-    sCommand.append(CMDURL_FPART2);
-    sCommand.append(sFamily      );
-    return sCommand.makeStringAndClear();
+    return ".uno:StyleApply?Style:string="
+           + sStyle
+           + "&FamilyName:string="
+           + sFamily;
 }
 
 bool SfxStylesInfo_Impl::parseStyleCommand(SfxStyleInfo_Impl& aStyle)
@@ -166,7 +161,7 @@ void SfxStylesInfo_Impl::getLabel4Style(SfxStyleInfo_Impl& aStyle)
 
 ::std::vector< SfxStyleInfo_Impl > SfxStylesInfo_Impl::getStyleFamilies()
 {
-    // Its an optional interface!
+    // It's an optional interface!
     css::uno::Reference< css::style::XStyleFamiliesSupplier > xModel(m_xDoc, css::uno::UNO_QUERY);
     if (!xModel.is())
         return ::std::vector< SfxStyleInfo_Impl >();
@@ -206,8 +201,6 @@ void SfxStylesInfo_Impl::getLabel4Style(SfxStyleInfo_Impl& aStyle)
 
 ::std::vector< SfxStyleInfo_Impl > SfxStylesInfo_Impl::getStyles(const OUString& sFamily)
 {
-    static const char PROP_UINAME[] = "DisplayName";
-
     css::uno::Sequence< OUString > lStyleNames;
     css::uno::Reference< css::style::XStyleFamiliesSupplier > xModel(m_xDoc, css::uno::UNO_QUERY_THROW);
     css::uno::Reference< css::container::XNameAccess > xFamilies = xModel->getStyleFamilies();
@@ -238,7 +231,7 @@ void SfxStylesInfo_Impl::getLabel4Style(SfxStyleInfo_Impl& aStyle)
             xStyleSet->getByName(aStyleInfo.sStyle) >>= xStyle;
             if (!xStyle.is())
                 continue;
-            xStyle->getPropertyValue(PROP_UINAME) >>= aStyleInfo.sLabel;
+            xStyle->getPropertyValue("DisplayName") >>= aStyleInfo.sLabel;
         }
         catch(const css::uno::RuntimeException&)
             { throw; }
@@ -258,16 +251,7 @@ SfxConfigFunctionListBox::SfxConfigFunctionListBox(vcl::Window* pParent, WinBits
     GetModel()->SetSortMode( SortAscending );
 }
 
-VCL_BUILDER_DECL_FACTORY(SfxConfigFunctionListBox)
-{
-    WinBits nWinBits = WB_TABSTOP;
-
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-       nWinBits |= WB_BORDER;
-
-    rRet = VclPtr<SfxConfigFunctionListBox>::Create(pParent, nWinBits);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(SfxConfigFunctionListBox, WB_TABSTOP)
 
 SfxConfigFunctionListBox::~SfxConfigFunctionListBox()
 {
@@ -398,16 +382,7 @@ SfxConfigGroupListBox::SfxConfigGroupListBox(vcl::Window* pParent, WinBits nStyl
     SetNodeBitmaps( pImp->m_collapsedImage, pImp->m_expandedImage );
 }
 
-VCL_BUILDER_DECL_FACTORY(SfxConfigGroupListBox)
-{
-    WinBits nWinBits = WB_TABSTOP;
-
-    OString sBorder = VclBuilder::extractCustomProperty(rMap);
-    if (!sBorder.isEmpty())
-       nWinBits |= WB_BORDER;
-
-    rRet = VclPtr<SfxConfigGroupListBox>::Create(pParent, nWinBits);
-}
+VCL_BUILDER_FACTORY_CONSTRUCTOR(SfxConfigGroupListBox, WB_TABSTOP)
 
 SfxConfigGroupListBox::~SfxConfigGroupListBox()
 {
@@ -701,7 +676,7 @@ void SfxConfigGroupListBox::Init(const css::uno::Reference< css::uno::XComponent
 
 Image SfxConfigGroupListBox::GetImage(
     const Reference< browse::XBrowseNode >& node,
-    Reference< XComponentContext > xCtx,
+    Reference< XComponentContext > const & xCtx,
     bool bIsRootNode
 )
 {
@@ -764,7 +739,7 @@ Image SfxConfigGroupListBox::GetImage(
 }
 
 Reference< XInterface  >
-SfxConfigGroupListBox::getDocumentModel( Reference< XComponentContext >& xCtx, OUString& docName )
+SfxConfigGroupListBox::getDocumentModel( Reference< XComponentContext > const & xCtx, OUString& docName )
 {
     Reference< XInterface > xModel;
     Reference< frame::XDesktop2 > desktop = frame::Desktop::create( xCtx );

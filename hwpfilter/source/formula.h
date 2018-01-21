@@ -29,24 +29,20 @@
 
 class Node;
 
-// DVO: remove DEBUG dependency
-// #ifndef DEBUG
 using namespace ::com::sun::star::xml::sax;
-// #endif
 
-class Formula
+class Formula final
 {
 public:
-    Formula(char *_eq, int _ishwpeq = 1)
-        : pList(NULL)
+    explicit Formula(char *_eq)
+        : pList(nullptr)
     {
         eq = _eq;
-        isHwpEQ = _ishwpeq;
         trim();
     }
-    virtual ~Formula(){ }
+    ~Formula(){ }
 
-    void setDocumentHandler(Reference < XDocumentHandler > xHandler )
+    void setDocumentHandler(Reference < XDocumentHandler > const & xHandler )
     {
           m_rxDocumentHandler = xHandler;
     }
@@ -80,7 +76,6 @@ private:
      Reference< XAttributeList > rList;
      AttributeListImpl *pList;
      char *eq;
-     int isHwpEQ;
 };
 
 #endif

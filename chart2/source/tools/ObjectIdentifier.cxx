@@ -271,22 +271,10 @@ ObjectIdentifier::ObjectIdentifier( const Any& rAny )
     }
 }
 
-ObjectIdentifier::~ObjectIdentifier()
-{
-}
-
 ObjectIdentifier::ObjectIdentifier( const ObjectIdentifier& rOID )
     :m_aObjectCID( rOID.m_aObjectCID )
     ,m_xAdditionalShape( rOID.m_xAdditionalShape )
 {
-
-}
-
-ObjectIdentifier& ObjectIdentifier::operator=( const ObjectIdentifier& rOID )
-{
-    m_aObjectCID = rOID.m_aObjectCID;
-    m_xAdditionalShape = rOID.m_xAdditionalShape;
-    return *this;
 }
 
 bool ObjectIdentifier::operator==( const ObjectIdentifier& rOID ) const
@@ -1169,8 +1157,7 @@ OUString ObjectIdentifier::createSeriesSubObjectStub( ObjectType eSubObjectType
                     , const OUString& rDragMethodServiceName
                     , const OUString& rDragParameterString )
 {
-    OUString aChildParticle( getStringForType( eSubObjectType ) );
-    aChildParticle+=("=");
+    OUString aChildParticle = getStringForType( eSubObjectType ) + ("=");
 
     return createClassifiedIdentifierForParticles(
             rSeriesParticle, aChildParticle

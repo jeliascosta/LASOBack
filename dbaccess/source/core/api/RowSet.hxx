@@ -42,6 +42,7 @@
 #include <com/sun/star/sdb/XRowsChangeBroadcaster.hpp>
 
 #include <cppuhelper/compbase12.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <comphelper/interfacecontainer2.hxx>
 #include <connectivity/paramwrapper.hxx>
 #include <connectivity/FValue.hxx>
@@ -64,7 +65,7 @@ namespace dbaccess
                                                     >   ORowSet_BASE1;
 
     class OTableContainer;
-    class ORowSet : public comphelper::OBaseMutex
+    class ORowSet : public cppu::BaseMutex
                     , public ORowSet_BASE1
                     , public ORowSetBase
                     , public ::comphelper::OPropertyArrayUsageHelper<ORowSet>
@@ -236,7 +237,7 @@ namespace dbaccess
         virtual bool isNew( ) override;
         virtual bool isPropertyChangeNotificationEnabled() const override;
 
-        virtual ~ORowSet();
+        virtual ~ORowSet() override;
 
     public:
         explicit ORowSet(const css::uno::Reference<css::uno::XComponentContext>&);
@@ -444,7 +445,7 @@ namespace dbaccess
 
     //  ORowSetClone
 
-    class ORowSetClone : public comphelper::OBaseMutex
+    class ORowSetClone : public cppu::BaseMutex
                          ,public OSubComponent
                          ,public ORowSetBase
                          ,public ::comphelper::OPropertyArrayUsageHelper < ORowSetClone >
@@ -465,7 +466,7 @@ namespace dbaccess
         virtual void SAL_CALL setFastPropertyValue_NoBroadcast(sal_Int32 nHandle,const css::uno::Any& rValue) throw (css::uno::Exception, std::exception) override;
     public:
         ORowSetClone( const css::uno::Reference<css::uno::XComponentContext>& _rContext, ORowSet& rParent, ::osl::Mutex* _pMutex );
-        virtual ~ORowSetClone();
+        virtual ~ORowSetClone() override;
 
     // css::lang::XTypeProvider
         virtual css::uno::Sequence< css::uno::Type > SAL_CALL getTypes() throw (css::uno::RuntimeException, std::exception) override;

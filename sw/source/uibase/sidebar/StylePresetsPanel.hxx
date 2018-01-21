@@ -14,7 +14,6 @@
 #include <com/sun/star/frame/XFrame.hpp>
 #include <com/sun/star/document/XUndoManager.hpp>
 
-#include <svx/sidebar/Popup.hxx>
 #include <svx/sidebar/PanelLayout.hxx>
 
 #include <sfx2/sidebar/ControllerItem.hxx>
@@ -70,14 +69,14 @@ private:
     StylePresetsPanel(vcl::Window* pParent,
                    const css::uno::Reference<css::frame::XFrame>& rxFrame);
 
-    virtual ~StylePresetsPanel();
+    virtual ~StylePresetsPanel() override;
     virtual void dispose() override;
 
     VclPtr<ValueSet> mpValueSet;
 
     std::vector<std::unique_ptr<TemplateEntry>> maTemplateEntries;
 
-    DECL_LINK_TYPED(DoubleClickHdl, ValueSet*, void);
+    DECL_LINK(DoubleClickHdl, ValueSet*, void);
 };
 
 }} // end of namespace sw::sidebar

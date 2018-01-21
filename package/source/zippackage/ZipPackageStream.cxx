@@ -139,17 +139,7 @@ void ZipPackageStream::setZipEntryOnLoading( const ZipEntry &rInEntry )
         m_bToBeCompressed = false;
 }
 
-void ZipPackageStream::CloseOwnStreamIfAny()
-{
-    if ( m_xStream.is() )
-    {
-        m_xStream->closeInput();
-        m_xStream.clear();
-        m_bHasSeekable = false;
-    }
-}
-
-uno::Reference< io::XInputStream > ZipPackageStream::GetOwnSeekStream()
+uno::Reference< io::XInputStream > const & ZipPackageStream::GetOwnSeekStream()
 {
     if ( !m_bHasSeekable && m_xStream.is() )
     {
@@ -187,7 +177,7 @@ uno::Reference< io::XInputStream > ZipPackageStream::GetRawEncrStreamNoHeaderCop
     // create temporary stream
     uno::Reference < io::XTempFile > xTempFile = io::TempFile::create(m_xContext);
     uno::Reference < io::XOutputStream > xTempOut = xTempFile->getOutputStream();
-    uno::Reference < io::XInputStream > xTempIn = xTempFile->getInputStream();;
+    uno::Reference < io::XInputStream > xTempIn = xTempFile->getInputStream();
     uno::Reference < io::XSeekable > xTempSeek( xTempOut, UNO_QUERY_THROW );
 
     // copy the raw stream to the temporary file starting from the current position
@@ -466,9 +456,10 @@ class DeflateThread: public comphelper::ThreadTask
     uno::Reference< io::XInputStream > mxInStream;
 
 public:
-    DeflateThread( ZipOutputEntry *pEntry,
+    DeflateThread( const std::shared_ptr<comphelper::ThreadTaskTag>& pTag, ZipOutputEntry *pEntry,
                    const uno::Reference< io::XInputStream >& xInStream )
-        : mpEntry(pEntry)
+        : comphelper::ThreadTask(pTag)
+        , mpEntry(pEntry)
         , mxInStream(xInStream)
     {}
 
@@ -664,7 +655,7 @@ bool ZipPackageStream::saveChild(
                 uno::Sequence < sal_Int8 > aSalt( 16 ), aVector( GetBlockSize() );
                 rtl_random_getBytes ( rRandomPool, aSalt.getArray(), 16 );
                 rtl_random_getBytes ( rRandomPool, aVector.getArray(), aVector.getLength() );
-                sal_Int32 nIterationCount = 1024;
+                sal_Int32 const nPBKDF2IterationCount = 100000;
 
                 if ( !m_bHaveOwnKey )
                 {
@@ -674,7 +665,7 @@ bool ZipPackageStream::saveChild(
 
                 setInitialisationVector ( aVector );
                 setSalt ( aSalt );
-                setIterationCount ( nIterationCount );
+                setIterationCount(nPBKDF2IterationCount);
             }
 
             // last property is digest, which is inserted later if we didn't have
@@ -801,7 +792,7 @@ bool ZipPackageStream::saveChild(
         uno::Reference< io::XSeekable > xSeek(xStream, uno::UNO_QUERY);
         // It's not worth to deflate jpegs to save ~1% in a slow process
         // Unfortunately, does not work for streams protected by password
-        if (xSeek.is() && msMediaType.endsWith("/jpeg") && !m_bToBeEncrypted)
+        if (xSeek.is() && msMediaType.endsWith("/jpeg") && !m_bToBeEncrypted && !m_bToBeCompressed)
         {
             ImplSetStoredData(*pTempEntry, xStream);
             xSeek->seek(0);
@@ -844,12 +835,12 @@ bool ZipPackageStream::saveChild(
                     // 2nd parameter is the time to wait between cleanups in 10th of a second.
                     // Both values may be added to the configuration settings if needed.
                     static sal_Int32 nAllowedThreads(comphelper::ThreadPool::getPreferredConcurrency() * 4);
-                    rZipOut.reduceScheduledThreadsToGivenNumberOrLess(nAllowedThreads, 1);
+                    rZipOut.reduceScheduledThreadsToGivenNumberOrLess(nAllowedThreads);
 
                     // Start a new thread deflating this zip entry
                     ZipOutputEntry *pZipEntry = new ZipOutputEntry(
                             m_xContext, *pTempEntry, this, bToBeEncrypted);
-                    rZipOut.addDeflatingThread( pZipEntry, new DeflateThread(pZipEntry, xStream) );
+                    rZipOut.addDeflatingThread( pZipEntry, new DeflateThread(rZipOut.getThreadTaskTag(), pZipEntry, xStream) );
                 }
                 else
                 {
@@ -904,7 +895,12 @@ void ZipPackageStream::successfullyWritten( ZipEntry *pEntry )
 {
     if ( !IsPackageMember() )
     {
-        CloseOwnStreamIfAny();
+        if ( m_xStream.is() )
+        {
+            m_xStream->closeInput();
+            m_xStream.clear();
+            m_bHasSeekable = false;
+        }
         SetPackageMember ( true );
     }
 
@@ -919,7 +915,7 @@ void ZipPackageStream::successfullyWritten( ZipEntry *pEntry )
     ZipPackageFolder::copyZipEntry( aEntry, *pEntry );
 
     // TODO/LATER: get rid of this hack ( the encrypted stream size property is changed during saving )
-    if ( IsEncrypted() )
+    if ( m_bIsEncrypted )
         setSize( m_nOwnStreamOrigSize );
 
     aEntry.nOffset *= -1;

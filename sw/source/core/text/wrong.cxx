@@ -23,7 +23,7 @@
 #include <osl/diagnose.h>
 
 SwWrongArea::SwWrongArea( const OUString& rType, WrongListType listType,
-        css::uno::Reference< css::container::XStringKeyMap > xPropertyBag,
+        css::uno::Reference< css::container::XStringKeyMap > const & xPropertyBag,
         sal_Int32 nPos,
         sal_Int32 nLen)
 : maType(rType), mxPropertyBag(xPropertyBag), mnPos(nPos), mnLen(nLen), mpSubList(nullptr)
@@ -33,7 +33,7 @@ SwWrongArea::SwWrongArea( const OUString& rType, WrongListType listType,
 }
 
 SwWrongArea::SwWrongArea( const OUString& rType,
-        css::uno::Reference< css::container::XStringKeyMap > xPropertyBag,
+        css::uno::Reference< css::container::XStringKeyMap > const & xPropertyBag,
         sal_Int32 nPos,
         sal_Int32 nLen,
         SwWrongList* pSubList)
@@ -540,7 +540,7 @@ void SwWrongList::InsertSubList( sal_Int32 nNewPos, sal_Int32 nNewLen, sal_uInt1
 }
 
 // New functions: Necessary because SwWrongList has been changed to use std::vector
-void SwWrongList::Insert(sal_uInt16 nWhere, std::vector<SwWrongArea>::iterator startPos, std::vector<SwWrongArea>::iterator endPos)
+void SwWrongList::Insert(sal_uInt16 nWhere, std::vector<SwWrongArea>::iterator startPos, std::vector<SwWrongArea>::iterator const & endPos)
 {
     std::vector<SwWrongArea>::iterator i = maList.begin();
     if ( nWhere >= maList.size() )
@@ -629,7 +629,7 @@ bool SwWrongList::LookForEntry( sal_Int32 nBegin, sal_Int32 nEnd ) {
 }
 
 void SwWrongList::Insert( const OUString& rType,
-                          css::uno::Reference< css::container::XStringKeyMap > xPropertyBag,
+                          css::uno::Reference< css::container::XStringKeyMap > const & xPropertyBag,
                           sal_Int32 nNewPos, sal_Int32 nNewLen )
 {
     std::vector<SwWrongArea>::iterator aIter = maList.begin();

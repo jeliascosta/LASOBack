@@ -182,16 +182,18 @@ namespace drawinglayer
 
         bool VclPixelProcessor2D::tryDrawPolygonStrokePrimitive2DDirect(const drawinglayer::primitive2d::PolygonStrokePrimitive2D& rSource, double fTransparency)
         {
-            basegfx::B2DPolygon aLocalPolygon(rSource.getB2DPolygon());
-
-            if(!aLocalPolygon.count())
+            if(!rSource.getB2DPolygon().count())
             {
                 // no geometry, done
                 return true;
             }
 
-            aLocalPolygon = basegfx::tools::simplifyCurveSegments(aLocalPolygon);
+            // get geometry data, prepare hairline data
+            basegfx::B2DPolygon aLocalPolygon(rSource.getB2DPolygon());
             basegfx::B2DPolyPolygon aHairLinePolyPolygon;
+
+            // simplify curve segments
+            aLocalPolygon = basegfx::tools::simplifyCurveSegments(aLocalPolygon);
 
             if(rSource.getStrokeAttribute().isDefault() || 0.0 == rSource.getStrokeAttribute().getFullDotDashLen())
             {
@@ -632,12 +634,12 @@ namespace drawinglayer
                             maBColorModifierStack))
                         {
                             // fallback to decomposition (MetaFile)
-                            process(rWrongSpellPrimitive.get2DDecomposition(getViewInformation2D()));
+                            process(rWrongSpellPrimitive);
                         }
                     }
                     else
                     {
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
                     }
                     break;
                 }
@@ -656,7 +658,7 @@ namespace drawinglayer
                     }
                     else
                     {
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
                     }
 
                     // restore DrawMode
@@ -679,7 +681,7 @@ namespace drawinglayer
                     }
                     else
                     {
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
                     }
 
                     // restore DrawMode
@@ -756,7 +758,7 @@ namespace drawinglayer
                         else
                         {
                             // use the primitive decomposition of the metafile
-                            process(rPolygonCandidate.get2DDecomposition(getViewInformation2D()));
+                            process(rPolygonCandidate);
                         }
                     }
                     break;
@@ -836,7 +838,7 @@ namespace drawinglayer
                     {
                         // use new Metafile decomposition
                         // TODO EMF+ stuffed into METACOMMENT support required
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
                     }
                     else
                     {
@@ -1029,7 +1031,7 @@ namespace drawinglayer
                         // DBG_UNHANDLED_EXCEPTION();
 
                         // process recursively and use the decomposition as Bitmap
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
                     }
 
                     break;
@@ -1061,7 +1063,7 @@ namespace drawinglayer
                         mnPolygonStrokePrimitive2D++;
 
                         // with AA there is no need to handle thin lines special
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
 
                         // leave PolygonStrokePrimitive2D
                         mnPolygonStrokePrimitive2D--;
@@ -1088,7 +1090,7 @@ namespace drawinglayer
                     {
                         // if AA is used (or ignore smoothing is on), there is no need to smooth
                         // hatch painting, use decomposition
-                        process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                        process(rCandidate);
                     }
                     else
                     {
@@ -1120,7 +1122,7 @@ namespace drawinglayer
                         mpOutputDevice->SetLineColor(Color(aHatchColor));
 
                         // get hatch style
-                        HatchStyle eHatchStyle(HATCH_SINGLE);
+                        HatchStyle eHatchStyle(HatchStyle::Single);
 
                         switch(rFillHatchAttributes.getStyle())
                         {
@@ -1130,12 +1132,12 @@ namespace drawinglayer
                             }
                             case attribute::HatchStyle::Double :
                             {
-                                eHatchStyle = HATCH_DOUBLE;
+                                eHatchStyle = HatchStyle::Double;
                                 break;
                             }
                             case attribute::HatchStyle::Triple :
                             {
-                                eHatchStyle = HATCH_TRIPLE;
+                                eHatchStyle = HatchStyle::Triple;
                                 break;
                             }
                         }
@@ -1195,12 +1197,12 @@ namespace drawinglayer
                     // (Not true, also used at least for the drawing of dragged column and row boundaries in SC.)
                     // Set OutDev to XOR and switch AA off (XOR does not work with AA)
                     mpOutputDevice->Push();
-                    mpOutputDevice->SetRasterOp( ROP_XOR );
+                    mpOutputDevice->SetRasterOp( RasterOp::Xor );
                     const AntialiasingFlags nAntiAliasing(mpOutputDevice->GetAntialiasing());
                     mpOutputDevice->SetAntialiasing(nAntiAliasing & ~AntialiasingFlags::EnableB2dDraw);
 
                     // process content recursively
-                    process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                    process(rCandidate);
 
                     // restore OutDev
                     mpOutputDevice->Pop();
@@ -1236,9 +1238,13 @@ namespace drawinglayer
                     if (!tryDrawBorderLinePrimitive2DDirect(rBorder))
                     {
                         if (rBorder.getStyle() == table::BorderLineStyle::DOUBLE)
-                            process(rBorder.createDecomposition(getViewInformation2D(), true));
+                        {
+                            primitive2d::Primitive2DContainer aContainer;
+                            rBorder.createDecomposition(aContainer, getViewInformation2D(), true);
+                            process(aContainer);
+                        }
                         else
-                            process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                            process(rCandidate);
                     }
 
                     mpOutputDevice->SetAntialiasing(nAntiAliasing);
@@ -1248,7 +1254,7 @@ namespace drawinglayer
                 {
                     SAL_INFO("drawinglayer", "default case for " << drawinglayer::primitive2d::idToString(rCandidate.getPrimitive2DID()));
                     // process recursively
-                    process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                    process(rCandidate);
                     break;
                 }
             }

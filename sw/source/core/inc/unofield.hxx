@@ -29,13 +29,12 @@
 #include <cppuhelper/implbase.hxx>
 
 #include <unobaseclass.hxx>
+#include <unocoll.hxx>
 
 class SwFieldType;
 class SwDoc;
 class SwFormatField;
-class SwField;
 class SwSetExpField;
-class SwTextAPIObject;
 
 typedef ::cppu::WeakImplHelper
 <   css::beans::XPropertySet
@@ -52,7 +51,7 @@ private:
     class Impl;
     ::sw::UnoImplPtr<Impl> m_pImpl;
 
-    virtual ~SwXFieldMaster();
+    virtual ~SwXFieldMaster() override;
 
     SwXFieldMaster(SwFieldType& rType, SwDoc * pDoc);
 
@@ -157,20 +156,20 @@ private:
     class Impl;
     ::sw::UnoImplPtr<Impl> m_pImpl;
 
-    virtual ~SwXTextField();
+    virtual ~SwXTextField() override;
 
     SwXTextField(SwFormatField& rFormat, SwDoc & rDoc);
 
     /// descriptor
-    SwXTextField(sal_uInt16 nServiceId, SwDoc* pDoc=nullptr);
+    SwXTextField(SwServiceType nServiceId, SwDoc* pDoc);
 
 public:
-    sal_uInt16 GetServiceId() const;
+    SwServiceType GetServiceId() const;
 
     /// @return an SwXTextField, either an already existing one or a new one
     static css::uno::Reference< css::text::XTextField>
         CreateXTextField(SwDoc * pDoc, SwFormatField const* pFormat,
-                sal_uInt16 nServiceId = 0xFFFF);
+                SwServiceType nServiceId = SwServiceType::Invalid);
 
     static const css::uno::Sequence< sal_Int8 > & getUnoTunnelId();
 
@@ -280,7 +279,7 @@ private:
     class Impl;
     ::sw::UnoImplPtr<Impl> m_pImpl;
 
-    virtual ~SwXFieldEnumeration();
+    virtual ~SwXFieldEnumeration() override;
 
 public:
     explicit SwXFieldEnumeration(SwDoc & rDoc);

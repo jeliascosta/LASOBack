@@ -74,7 +74,7 @@ void SdInsertPagesObjsDlg::Reset()
 {
     if( pMedium )
     {
-        m_pLbTree->SetSelectionMode( MULTIPLE_SELECTION );
+        m_pLbTree->SetSelectionMode( SelectionMode::Multiple );
 
         // transfer ownership of Medium
         m_pLbTree->Fill( mpDoc, pMedium, rName );
@@ -128,7 +128,7 @@ bool SdInsertPagesObjsDlg::IsRemoveUnnessesaryMasterPages() const
 /**
  * Enabled and selects end-color-LB
  */
-IMPL_LINK_NOARG_TYPED(SdInsertPagesObjsDlg, SelectObjectHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(SdInsertPagesObjsDlg, SelectObjectHdl, SvTreeListBox*, void)
 {
     if( m_pLbTree->IsLinkableSelected() )
         m_pCbxLink->Enable();

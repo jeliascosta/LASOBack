@@ -67,7 +67,6 @@ namespace drawinglayer
              */
             basegfx::BColor                                 maPrimitiveColor;
 
-            /// bitfield
             /// flag if shadow plane projection preparation leaded to valid results
             bool                                            mbShadowProjectionIsValid : 1;
 
@@ -93,13 +92,12 @@ namespace drawinglayer
                 const basegfx::B3DVector& rLightNormal,
                 double fShadowSlant,
                 const basegfx::B3DRange& rContained3DRange);
-            virtual ~Shadow3DExtractingProcessor();
+            virtual ~Shadow3DExtractingProcessor() override;
 
             /// data read access
             const primitive2d::Primitive2DContainer& getPrimitive2DSequence() const;
             const basegfx::B2DHomMatrix& getObjectTransformation() const { return maObjectTransformation; }
             const basegfx::B3DHomMatrix& getWorldToEye() const { return maWorldToEye; }
-            const basegfx::B3DHomMatrix& getEyeToView() const { return maEyeToView; }
         };
     } // end of namespace processor3d
 } // end of namespace drawinglayer

@@ -27,6 +27,8 @@
 #include <vcl/layout.hxx>
 #include <svx/checklbx.hxx>
 
+#include "scdllapi.h"
+
 namespace vcl { class Window; }
 class ScTableProtection;
 
@@ -34,11 +36,9 @@ class ScTableProtectionDlg : public ModalDialog
 {
 public:
     ScTableProtectionDlg() = delete;
-    explicit ScTableProtectionDlg(vcl::Window* pParent);
-    virtual ~ScTableProtectionDlg();
+    explicit SC_DLLPUBLIC ScTableProtectionDlg(vcl::Window* pParent);
+    virtual ~ScTableProtectionDlg() override;
     virtual void dispose() override;
-
-    virtual short Execute() override;
 
     void SetDialogData(const ScTableProtection& rData);
 
@@ -47,7 +47,7 @@ public:
 private:
     void Init();
 
-    void EnableOptionalWidgets(bool bEnable = true);
+    void EnableOptionalWidgets(bool bEnable);
 
     VclPtr<CheckBox>        m_pBtnProtect;
 
@@ -63,9 +63,9 @@ private:
     OUString         m_aSelectLockedCells;
     OUString         m_aSelectUnlockedCells;
 
-    DECL_LINK_TYPED( OKHdl, Button*, void );
-    DECL_LINK_TYPED( CheckBoxHdl, Button*, void );
-    DECL_LINK_TYPED( PasswordModifyHdl, Edit&, void );
+    DECL_LINK( OKHdl, Button*, void );
+    DECL_LINK( CheckBoxHdl, Button*, void );
+    DECL_LINK( PasswordModifyHdl, Edit&, void );
 };
 
 #endif

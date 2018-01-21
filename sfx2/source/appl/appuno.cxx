@@ -129,7 +129,6 @@ static char const sViewOnly[] = "ViewOnly";
 static char const sDontEdit[] = "DontEdit";
 static char const sSilent[] = "Silent";
 static char const sJumpMark[] = "JumpMark";
-static char const sFileName[] = "FileName";
 static char const sSalvagedFile[] = "SalvagedFile";
 static char const sStatusInd[] = "StatusIndicator";
 static char const sModel[] = "Model";
@@ -137,7 +136,6 @@ static char const sFrame[] = "Frame";
 static char const sViewData[] = "ViewData";
 static char const sFilterData[] = "FilterData";
 static char const sSelectionOnly[] = "SelectionOnly";
-static char const sFilterFlags[] = "FilterFlags";
 static char const sMacroExecMode[] = "MacroExecutionMode";
 static char const sUpdateDocMode[] = "UpdateDocMode";
 static char const sMinimized[] = "Minimized";
@@ -182,8 +180,6 @@ void TransformParameters( sal_uInt16 nSlotId, const uno::Sequence<beans::Propert
 
     if ( nSlotId == SID_OPENURL )
         nSlotId = SID_OPENDOC;
-    if ( nSlotId == SID_SAVEASURL )
-        nSlotId = SID_SAVEASDOC;
 
     sal_Int32 nCount = rArgs.getLength();
     if ( !nCount )
@@ -207,7 +203,7 @@ void TransformParameters( sal_uInt16 nSlotId, const uno::Sequence<beans::Propert
         }
 
         sal_uInt16 nWhich = rSet.GetPool()->GetWhich(nSlotId);
-        bool bConvertTwips = ( rSet.GetPool()->GetMetric( nWhich ) == SFX_MAPUNIT_TWIP );
+        bool bConvertTwips = ( rSet.GetPool()->GetMetric( nWhich ) == MapUnit::MapTwip );
         pItem->SetWhich( nWhich );
         sal_uInt16 nSubCount = pType->nAttribs;
 
@@ -324,7 +320,7 @@ void TransformParameters( sal_uInt16 nSlotId, const uno::Sequence<beans::Propert
         }
 
         sal_uInt16 nWhich = rSet.GetPool()->GetWhich(rArg.nSlotId);
-        bool bConvertTwips = ( rSet.GetPool()->GetMetric( nWhich ) == SFX_MAPUNIT_TWIP );
+        bool bConvertTwips = ( rSet.GetPool()->GetMetric( nWhich ) == MapUnit::MapTwip );
         pItem->SetWhich( nWhich );
         const SfxType* pType = rArg.pType;
         sal_uInt16 nSubCount = pType->nAttribs;
@@ -692,7 +688,7 @@ void TransformParameters( sal_uInt16 nSlotId, const uno::Sequence<beans::Propert
                     rSet.Put( stringList );
                 }
             }
-            else if ( aName == sFileName )
+            else if ( aName == "FileName" )
             {
                 OUString sVal;
                 bool bOK = ((rProp.Value >>= sVal) && !sVal.isEmpty());
@@ -764,7 +760,7 @@ void TransformParameters( sal_uInt16 nSlotId, const uno::Sequence<beans::Propert
                 if (bOK)
                     rSet.Put( SfxStringItem( SID_CHARSET, sVal ) );
             }
-            else if ( aName == sFilterFlags )
+            else if ( aName == "FilterFlags" )
             {
                 OUString sVal;
                 bool bOK = ((rProp.Value >>= sVal) && !sVal.isEmpty());
@@ -922,7 +918,7 @@ void TransformItems( sal_uInt16 nSlotId, const SfxItemSet& rSet, uno::Sequence<b
 
     if ( nSlotId == SID_OPENURL )
         nSlotId = SID_OPENDOC;
-    if ( nSlotId == SID_SAVEASURL || nSlotId == SID_SAVEASREMOTE )
+    if ( nSlotId == SID_SAVEASREMOTE )
         nSlotId = SID_SAVEASDOC;
 
     // find number of properties to avoid permanent reallocations in the sequence
@@ -1275,7 +1271,7 @@ void TransformItems( sal_uInt16 nSlotId, const SfxItemSet& rSet, uno::Sequence<b
     {
         // slot is a property
         sal_uInt16 nWhich = rSet.GetPool()->GetWhich(nSlotId);
-        bool bConvertTwips = ( rSet.GetPool()->GetMetric( nWhich ) == SFX_MAPUNIT_TWIP );
+        bool bConvertTwips = ( rSet.GetPool()->GetMetric( nWhich ) == MapUnit::MapTwip );
         const SfxPoolItem* pItem = rSet.GetItem<SfxPoolItem>(nWhich, false);
         if ( pItem ) //???
         {
@@ -1327,7 +1323,7 @@ void TransformItems( sal_uInt16 nSlotId, const SfxItemSet& rSet, uno::Sequence<b
     {
         const SfxFormalArgument &rArg = pSlot->GetFormalArgument( nArg );
         sal_uInt16 nWhich = rSet.GetPool()->GetWhich( rArg.nSlotId );
-        bool bConvertTwips = ( rSet.GetPool()->GetMetric( nWhich ) == SFX_MAPUNIT_TWIP );
+        bool bConvertTwips = ( rSet.GetPool()->GetMetric( nWhich ) == MapUnit::MapTwip );
         const SfxPoolItem* pItem = rSet.GetItem<SfxPoolItem>(nWhich, false);
         if ( pItem ) //???
         {
@@ -1672,7 +1668,7 @@ uno::Sequence< beans::PropertyValue > SAL_CALL
 }
 
 
-RequestFilterOptions::RequestFilterOptions( uno::Reference< frame::XModel > rModel,
+RequestFilterOptions::RequestFilterOptions( uno::Reference< frame::XModel > const & rModel,
                               const uno::Sequence< beans::PropertyValue >& rProperties )
 {
     OUString temp;
@@ -1753,24 +1749,22 @@ uno::Sequence< uno::Reference< task::XInteractionContinuation > >
 }
 
 RequestPackageReparation::RequestPackageReparation( const OUString& aName )
+    : mxImpl(new RequestPackageReparation_Impl( aName ))
 {
-    pImp = new RequestPackageReparation_Impl( aName );
-    pImp->acquire();
 }
 
 RequestPackageReparation::~RequestPackageReparation()
 {
-    pImp->release();
 }
 
 bool RequestPackageReparation::isApproved()
 {
-    return pImp->isApproved();
+    return mxImpl->isApproved();
 }
 
 css::uno::Reference < task::XInteractionRequest > RequestPackageReparation::GetRequest()
 {
-    return css::uno::Reference < task::XInteractionRequest >(pImp);
+    return mxImpl.get();
 }
 
 
@@ -1812,19 +1806,17 @@ uno::Sequence< uno::Reference< task::XInteractionContinuation > >
 }
 
 NotifyBrokenPackage::NotifyBrokenPackage( const OUString& aName )
+    : mxImpl(new NotifyBrokenPackage_Impl( aName ))
 {
-    pImp = new NotifyBrokenPackage_Impl( aName );
-    pImp->acquire();
 }
 
 NotifyBrokenPackage::~NotifyBrokenPackage()
 {
-    pImp->release();
 }
 
 css::uno::Reference < task::XInteractionRequest > NotifyBrokenPackage::GetRequest()
 {
-    return css::uno::Reference < task::XInteractionRequest >(pImp);
+    return mxImpl.get();
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

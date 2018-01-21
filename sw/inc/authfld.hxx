@@ -36,7 +36,7 @@ public:
     SwAuthEntry( const SwAuthEntry& rCopy );
     bool            operator==(const SwAuthEntry& rComp);
 
-    inline OUString         GetAuthorField(ToxAuthorityField ePos) const;
+    inline OUString const & GetAuthorField(ToxAuthorityField ePos) const;
     inline void             SetAuthorField(ToxAuthorityField ePos,
                                             const OUString& rField);
 
@@ -76,7 +76,7 @@ virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNew ) override
 
 public:
     SwAuthorityFieldType(SwDoc* pDoc);
-    virtual ~SwAuthorityFieldType();
+    virtual ~SwAuthorityFieldType() override;
 
     virtual SwFieldType* Copy()    const override;
 
@@ -160,7 +160,7 @@ public:
 
     SwAuthorityField(SwAuthorityFieldType* pType, const OUString& rFieldContents);
     SwAuthorityField(SwAuthorityFieldType* pType, sal_IntPtr nHandle);
-    virtual ~SwAuthorityField();
+    virtual ~SwAuthorityField() override;
 
     OUString            GetFieldText(ToxAuthorityField eField) const;
 
@@ -175,7 +175,7 @@ public:
     virtual OUString GetDescription() const override;
 };
 
-inline OUString SwAuthEntry::GetAuthorField(ToxAuthorityField ePos) const
+inline OUString const & SwAuthEntry::GetAuthorField(ToxAuthorityField ePos) const
 {
     SAL_WARN_IF(AUTH_FIELD_END <= ePos, "sw", "wrong index");
     return aAuthFields[ePos];

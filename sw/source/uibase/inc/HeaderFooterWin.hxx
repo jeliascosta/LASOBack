@@ -22,7 +22,7 @@ class SwHeaderFooterWin : public SwFrameMenuButtonBase
 {
     OUString              m_sLabel;
     bool                  m_bIsHeader;
-    PopupMenu*            m_pPopupMenu;
+    VclPtr<PopupMenu>     m_pPopupMenu;
     VclPtr<vcl::Window>   m_pLine;
     bool                  m_bIsAppearing;
     int                   m_nFadeRate;
@@ -30,7 +30,7 @@ class SwHeaderFooterWin : public SwFrameMenuButtonBase
 
 public:
     SwHeaderFooterWin( SwEditWin *pEditWin, const SwFrame *pFrame, bool bHeader );
-    virtual ~SwHeaderFooterWin( );
+    virtual ~SwHeaderFooterWin( ) override;
     virtual void dispose() override;
 
     void SetOffset( Point aOffset, long nXLineStart, long nXLineEnd );
@@ -50,7 +50,7 @@ public:
     void SetReadonly( bool bReadonly ) override;
 
 private:
-    DECL_LINK_TYPED( FadeHandler, Timer *, void );
+    DECL_LINK( FadeHandler, Timer *, void );
 };
 
 #endif

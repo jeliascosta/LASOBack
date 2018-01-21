@@ -57,6 +57,7 @@ endef
 
 COMMA :=,
 
+OPEN_PAREN :=(
 CLOSE_PAREN :=)
 
 gb_VERBOSE := $(verbose)
@@ -87,12 +88,14 @@ gb_DEBUGLEVEL := 1
 # make DEBUG=true should force -g
 ifeq ($(origin DEBUG),command line)
 ENABLE_DEBUGINFO_FOR := all
+ENABLE_SYMBOLS := TRUE
 endif
 endif
 ifneq ($(strip $(debug)),)
 gb_DEBUGLEVEL := 1
 ifeq ($(origin debug),command line)
 ENABLE_DEBUGINFO_FOR := all
+ENABLE_SYMBOLS := TRUE
 endif
 endif
 ifeq ($(gb_ENABLE_DBGUTIL),$(true))
@@ -112,17 +115,11 @@ ENABLE_DEBUGINFO_FOR := all
 endif
 endif
 
-ifeq ($(HARDLINKDELIVER),TRUE)
-gb_Deliver_HARDLINK := $(true)
-endif
-
 # note: ENABLE_CRASHDUMP turns on gb_SYMBOL
-ifeq ($(or $(ENABLE_SYMBOLS),$(enable_symbols)),FALSE)
-gb_SYMBOL := $(false)
-else
 ifneq ($(strip $(ENABLE_SYMBOLS)$(enable_symbols)$(ENABLE_CRASHDUMP)),)
 gb_SYMBOL := $(true)
-endif
+else
+gb_SYMBOL := $(false)
 endif
 
 ifneq ($(strip $(ENABLE_PCH)),)
@@ -287,6 +284,7 @@ include $(foreach class, \
 	PrecompiledHeaders \
 	Pyuno \
 	PythonTest \
+	UITest \
 	Rdb \
 	CppunitTest \
 	Jar \
@@ -316,6 +314,7 @@ include $(foreach class, \
 	AutoInstall \
 	PackageSet \
 	GeneratedPackage \
+	CompilerTest \
 ,$(GBUILDDIR)/$(class).mk)
 
 $(eval $(call gb_Helper_process_executable_registrations))

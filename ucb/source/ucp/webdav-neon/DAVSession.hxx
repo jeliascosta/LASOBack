@@ -75,6 +75,11 @@ public:
 
     // DAV methods
 
+    virtual void OPTIONS( const OUString & inPath,
+                          DAVOptions& rOptions,
+                          const DAVRequestEnvironment & rEnv )
+        throw( std::exception ) = 0;
+
     // allprop & named
     virtual void PROPFIND( const OUString & inPath,
                            const Depth inDepth,
@@ -118,6 +123,14 @@ public:
          const DAVRequestEnvironment & rEnv )
         throw( std::exception ) = 0;
 
+    // used as HEAD substitute when HEAD is not implemented on server
+    virtual void
+    GET0( const OUString & inPath,
+          const std::vector< OUString > & inHeaderNames,
+          DAVResource & ioResource,
+          const DAVRequestEnvironment & rEnv )
+         throw( std::exception ) = 0;
+
     virtual void
     GET( const OUString & inPath,
          css::uno::Reference< css::io::XOutputStream >& o,
@@ -154,13 +167,13 @@ public:
     virtual void COPY( const OUString & inSource,
                        const OUString & inDestination,
                        const DAVRequestEnvironment & rEnv,
-                       bool inOverwrite = false )
+                       bool inOverwrite )
         throw( std::exception ) = 0;
 
     virtual void MOVE( const OUString & inSource,
                        const OUString & inDestination,
                        const DAVRequestEnvironment & rEnv,
-                       bool inOverwrite = false )
+                       bool inOverwrite )
         throw( std::exception ) = 0;
 
     virtual void DESTROY( const OUString & inPath,

@@ -38,14 +38,14 @@ class TableRow : public TableRowBase
     friend class TableRowUndo;
 public:
     TableRow( const TableModelRef& xTableModel, sal_Int32 nRow, sal_Int32 nColumns );
-    virtual ~TableRow();
+    virtual ~TableRow() override;
 
     void dispose();
     void throwIfDisposed() const throw (css::uno::RuntimeException);
 
     TableRow& operator=( const TableRow& );
 
-    void insertColumns( sal_Int32 nIndex, sal_Int32 nCount, CellVector::iterator* pIter = nullptr );
+    void insertColumns( sal_Int32 nIndex, sal_Int32 nCount, CellVector::iterator* pIter );
     void removeColumns( sal_Int32 nIndex, sal_Int32 nCount );
     /// Reference to the table model containing this row.
     const TableModelRef& getModel() const;

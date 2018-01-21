@@ -764,12 +764,12 @@ sal_uInt16 SwAutoFormat::GetDigitLevel( const SwTextNode& rNd, sal_Int32& rPos,
                 }
 
                 if( pNumTypes )
-                    *pNumTypes += OUStringLiteral1<'0' + SVX_NUM_ARABIC>();
+                    *pNumTypes += OUStringLiteral1('0' + SVX_NUM_ARABIC);
 
                 eScan = eScan | CHG;
             }
             else if( pNumTypes && !(eScan & DIGIT) )
-                *pNumTypes += OUStringLiteral1<'0' + SVX_NUM_ARABIC>();
+                *pNumTypes += OUStringLiteral1('0' + SVX_NUM_ARABIC);
 
             eScan &= ~DELIM;        // remove Delim
             if( 0 != (eScan & ~CHG) && DIGIT != (eScan & ~CHG))
@@ -858,11 +858,11 @@ sal_uInt16 SwAutoFormat::GetDigitLevel( const SwTextNode& rNd, sal_Int32& rPos,
                 }
 
                 if( pNumTypes )
-                    *pNumTypes += OUString(cNumTyp);
+                    *pNumTypes += OUStringLiteral1(cNumTyp);
                 eScan = eScan | CHG;
             }
             else if( pNumTypes && !(eScan & eTmpScan) )
-                *pNumTypes += OUString(cNumTyp);
+                *pNumTypes += OUStringLiteral1(cNumTyp);
 
             eScan &= ~DELIM;        // remove Delim
 
@@ -956,9 +956,9 @@ CHECK_ROMAN_5:
                 nClosingParentheses++;
             // only if no numbers were read until here
             if( pPrefix && !( eScan & ( NO_DELIM | CHG )) )
-                *pPrefix += OUString(rText[nPos]);
+                *pPrefix += OUStringLiteral1(rText[nPos]);
             else if( pPostfix )
-                *pPostfix += OUString(rText[nPos]);
+                *pPostfix += OUStringLiteral1(rText[nPos]);
 
             if( NO_DELIM & eScan )
             {
@@ -1052,12 +1052,12 @@ bool SwAutoFormat::HasBreakAttr( const SwTextNode& rTextNd )
 
     const SfxPoolItem* pItem;
     if( SfxItemState::SET == pSet->GetItemState( RES_BREAK, false, &pItem )
-        && SVX_BREAK_NONE != static_cast<const SvxFormatBreakItem*>(pItem)->GetBreak() )
+        && SvxBreak::NONE != static_cast<const SvxFormatBreakItem*>(pItem)->GetBreak() )
         return true;
 
     if( SfxItemState::SET == pSet->GetItemState( RES_PAGEDESC, false, &pItem )
         && static_cast<const SwFormatPageDesc*>(pItem)->GetPageDesc()
-        && nsUseOnPage::PD_NONE != static_cast<const SwFormatPageDesc*>(pItem)->GetPageDesc()->GetUseOn() )
+        && UseOnPage::NONE != static_cast<const SwFormatPageDesc*>(pItem)->GetPageDesc()->GetUseOn() )
         return true;
     return false;
 }
@@ -1631,7 +1631,7 @@ void SwAutoFormat::BuildEnum( sal_uInt16 nLvl, sal_uInt16 nDigitLevel )
         {
             OUString sChgStr('\t');
             if( bChgBullet )
-                sChgStr = OUString( m_aFlags.cBullet ) + sChgStr;
+                sChgStr = OUStringLiteral1( m_aFlags.cBullet ) + sChgStr;
             m_pDoc->getIDocumentContentOperations().InsertString( m_aDelPam, sChgStr );
 
             SfxItemSet aSet( m_pDoc->GetAttrPool(), aTextNodeSetRange );
@@ -1976,8 +1976,8 @@ void SwAutoFormat::AutoCorrect( sal_Int32 nPos )
                                 m_aDelPam.DeleteMark();
                                 aFInfo.SetFrame( nullptr );
                             }
-                            //#125102# in case of the mode REDLINE_SHOW_DELETE the ** are still contained in pText
-                            if(0 == (m_pDoc->getIDocumentRedlineAccess().GetRedlineMode() & nsRedlineMode_t::REDLINE_SHOW_DELETE))
+                            //#125102# in case of the mode RedlineFlags::ShowDelete the ** are still contained in pText
+                            if(!(m_pDoc->getIDocumentRedlineAccess().GetRedlineFlags() & RedlineFlags::ShowDelete))
                                 nPos = m_aDelPam.GetPoint()->nContent.GetIndex() - 1;
                             // Was a character deleted before starting?
                             if (cBlank && cBlank != (*pText)[nSttPos - 1])
@@ -2148,15 +2148,15 @@ SwAutoFormat::SwAutoFormat( SwEditShell* pEdShell, SvxSwAutoFormatFlags& rFlags,
                          m_nEndNdIdx = m_aEndNdIdx.GetIndex(),
                          m_pDoc->GetDocShell() );
 
-    RedlineMode_t eRedlMode = m_pDoc->getIDocumentRedlineAccess().GetRedlineMode(), eOldMode = eRedlMode;
+    RedlineFlags eRedlMode = m_pDoc->getIDocumentRedlineAccess().GetRedlineFlags(), eOldMode = eRedlMode;
     if( m_aFlags.bWithRedlining )
     {
         m_pDoc->SetAutoFormatRedline( true );
-        eRedlMode = (RedlineMode_t)(nsRedlineMode_t::REDLINE_ON | nsRedlineMode_t::REDLINE_SHOW_INSERT);
+        eRedlMode = RedlineFlags::On | RedlineFlags::ShowInsert;
     }
     else
-      eRedlMode = (RedlineMode_t)(nsRedlineMode_t::REDLINE_SHOW_INSERT | nsRedlineMode_t::REDLINE_IGNORE);
-    m_pDoc->getIDocumentRedlineAccess().SetRedlineMode( eRedlMode );
+      eRedlMode = RedlineFlags::ShowInsert | RedlineFlags::Ignore;
+    m_pDoc->getIDocumentRedlineAccess().SetRedlineFlags( eRedlMode );
 
     // save undo state (might be turned off)
     bool const bUndoState = m_pDoc->GetIDocumentUndoRedo().DoesUndo();
@@ -2530,7 +2530,7 @@ SwAutoFormat::SwAutoFormat( SwEditShell* pEdShell, SvxSwAutoFormatFlags& rFlags,
 
     if( m_aFlags.bWithRedlining )
         m_pDoc->SetAutoFormatRedline( false );
-    m_pDoc->getIDocumentRedlineAccess().SetRedlineMode( eOldMode );
+    m_pDoc->getIDocumentRedlineAccess().SetRedlineFlags( eOldMode );
 
     // restore undo (in case it has been changed)
     m_pDoc->GetIDocumentUndoRedo().DoUndo(bUndoState);
@@ -2582,7 +2582,7 @@ void SwEditShell::AutoFormatBySplitNode()
 {
     SET_CURR_SHELL( this );
     SwPaM* pCursor = GetCursor();
-    if( !pCursor->IsMultiSelection() && pCursor->Move( fnMoveBackward, fnGoNode ) )
+    if( !pCursor->IsMultiSelection() && pCursor->Move( fnMoveBackward, GoInNode ) )
     {
         StartAllAction();
         StartUndo( UNDO_AUTOFORMAT );
@@ -2622,7 +2622,7 @@ void SwEditShell::AutoFormatBySplitNode()
             pCursor = GetCursor();
         }
         pCursor->DeleteMark();
-        pCursor->Move( fnMoveForward, fnGoNode );
+        pCursor->Move( fnMoveForward, GoInNode );
 
         EndUndo( UNDO_AUTOFORMAT );
         EndAllAction();

@@ -99,24 +99,16 @@ class MyWin : public WorkWindow
 public:
                  MyWin( vcl::Window* pParent, WinBits nWinStyle );
 
-    virtual void MouseMove( const MouseEvent& rMEvt ) override;
-    virtual void MouseButtonDown( const MouseEvent& rMEvt ) override;
-    virtual void MouseButtonUp( const MouseEvent& rMEvt ) override;
-    virtual void KeyInput( const KeyEvent& rKEvt ) override;
-    virtual void KeyUp( const KeyEvent& rKEvt ) override;
-    virtual void Paint( vcl::RenderContext& /*rRenderContext*/, const Rectangle& rRect ) override;
-    virtual void Resize() override;
-
     virtual bool Close() override;
-    virtual ~MyWin() { disposeOnce(); }
+    virtual ~MyWin() override { disposeOnce(); }
     virtual void dispose() override;
 
     void parseList( const OString& rList );
     static OString processCommand( const OString& rCommand );
 
-    DECL_LINK_TYPED( ListHdl, Button*, void );
-    DECL_LINK_TYPED( SelectHdl, ListBox&, void );
-    DECL_STATIC_LINK_TYPED( MyWin, QuitHdl, Button*, void );
+    DECL_LINK( ListHdl, Button*, void );
+    DECL_LINK( SelectHdl, ListBox&, void );
+    DECL_STATIC_LINK( MyWin, QuitHdl, Button*, void );
 };
 
 void Main()
@@ -245,17 +237,17 @@ OString MyWin::processCommand( const OString& rCommand )
     return aAnswer.makeStringAndClear();
 }
 
-IMPL_LINK_NOARG_TYPED( MyWin, ListHdl, Button*, void)
+IMPL_LINK_NOARG( MyWin, ListHdl, Button*, void)
 {
     parseList( processCommand( "list" ) );
 }
 
-IMPL_STATIC_LINK_NOARG_TYPED( MyWin, QuitHdl, Button*, void)
+IMPL_STATIC_LINK_NOARG( MyWin, QuitHdl, Button*, void)
 {
     processCommand( "quit" );
 }
 
-IMPL_LINK_NOARG_TYPED( MyWin, SelectHdl, ListBox&, void)
+IMPL_LINK_NOARG( MyWin, SelectHdl, ListBox&, void)
 {
     OUString aEntry = m_aSvpBitmaps->GetSelectEntry();
     sal_Int32 nPos = aEntry.indexOf( ": " );
@@ -266,7 +258,7 @@ IMPL_LINK_NOARG_TYPED( MyWin, SelectHdl, ListBox&, void)
         aCommand.append( OUStringToOString( aEntry.copy( nPos+2 ), RTL_TEXTENCODING_ASCII_US ) );
         OString aAnswer( processCommand( aCommand.makeStringAndClear() ) );
         SvMemoryStream aStream( aAnswer.getLength() );
-        aStream.Write( aAnswer.getStr(), aAnswer.getLength() );
+        aStream.WriteBytes( aAnswer.getStr(), aAnswer.getLength() );
         aStream.Seek( STREAM_SEEK_TO_BEGIN );
 
         Graphic aGraphicResult;
@@ -284,39 +276,5 @@ IMPL_LINK_NOARG_TYPED( MyWin, SelectHdl, ListBox&, void)
     }
 }
 
-void MyWin::MouseMove( const MouseEvent& rMEvt )
-{
-    WorkWindow::MouseMove( rMEvt );
-}
-
-void MyWin::MouseButtonDown( const MouseEvent& rMEvt )
-{
-    WorkWindow::MouseButtonDown( rMEvt );
-}
-
-void MyWin::MouseButtonUp( const MouseEvent& rMEvt )
-{
-    WorkWindow::MouseButtonUp( rMEvt );
-}
-
-void MyWin::KeyInput( const KeyEvent& rKEvt )
-{
-    WorkWindow::KeyInput( rKEvt );
-}
-
-void MyWin::KeyUp( const KeyEvent& rKEvt )
-{
-    WorkWindow::KeyUp( rKEvt );
-}
-
-void MyWin::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
-{
-    WorkWindow::Paint(rRenderContext, rRect);
-}
-
-void MyWin::Resize()
-{
-    WorkWindow::Resize();
-}
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

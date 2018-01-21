@@ -109,7 +109,7 @@ public:
     enum Mode { ALL, FROM, CUSTOM, PREVIEW };
 
 public:
-    AnimationSlideController( Reference< XIndexAccess > xSlides, Mode eMode );
+    AnimationSlideController( Reference< XIndexAccess > const & xSlides, Mode eMode );
 
     void setStartSlideNumber( sal_Int32 nSlideNumber ) { mnStartSlideNumber = nSlideNumber; }
     sal_Int32 getStartSlideIndex() const;
@@ -189,7 +189,7 @@ void AnimationSlideController::setPreviewNode( const Reference< XAnimationNode >
     mxPreviewNode = xPreviewNode;
 }
 
-AnimationSlideController::AnimationSlideController( Reference< XIndexAccess > xSlides, Mode eMode  )
+AnimationSlideController::AnimationSlideController( Reference< XIndexAccess > const & xSlides, Mode eMode  )
 :   meMode( eMode )
 ,   mnStartSlideNumber(-1)
 ,   mnSlideCount( 0 )
@@ -530,7 +530,7 @@ SlideshowImpl::SlideshowImpl( const Reference< XPresentation2 >& xPresentation, 
 
     mbUsePen = maPresSettings.mbMouseAsPen;
 
-    SdOptions* pOptions = SD_MOD()->GetSdOptions(DOCUMENT_TYPE_IMPRESS);
+    SdOptions* pOptions = SD_MOD()->GetSdOptions(DocumentType::Impress);
     if( pOptions )
     {
         mnUserPaintColor = pOptions->GetPresentationPenColor();
@@ -543,7 +543,7 @@ SlideshowImpl::~SlideshowImpl()
     SdModule *pModule = SD_MOD();
     //rhbz#806663 SlideshowImpl can outlive SdModule
     SdOptions* pOptions = pModule ?
-        pModule->GetSdOptions(DOCUMENT_TYPE_IMPRESS) : nullptr;
+        pModule->GetSdOptions(DocumentType::Impress) : nullptr;
     if( pOptions )
     {
         pOptions->SetPresentationPenColor(mnUserPaintColor);
@@ -675,7 +675,7 @@ void SAL_CALL SlideshowImpl::disposing()
         }
         else if( meAnimationMode == ANIMATIONMODE_PREVIEW )
         {
-            mpViewShell->ShowUIControls();
+            mpViewShell->ShowUIControls(true);
         }
     }
 
@@ -716,7 +716,7 @@ void SAL_CALL SlideshowImpl::disposing()
 
     if( mpShowWindow )
     {
-        mpShowWindow.clear();
+        mpShowWindow.disposeAndClear();
     }
 
     setActiveXToolbarsVisible( true );
@@ -886,12 +886,12 @@ bool SlideshowImpl::startShow( PresentationSettingsEx* pPresSettings )
 
         if( pStartPage )
         {
-            if( pStartPage->GetPageKind() == PK_NOTES )
+            if( pStartPage->GetPageKind() == PageKind::Notes )
             {
                 // we are in notes page mode, so get
                 // the corresponding draw page
                 const sal_uInt16 nPgNum = ( pStartPage->GetPageNum() - 2 ) >> 1;
-                pStartPage = mpDoc->GetSdPage( nPgNum, PK_STANDARD );
+                pStartPage = mpDoc->GetSdPage( nPgNum, PageKind::Standard );
             }
         }
 
@@ -907,7 +907,7 @@ bool SlideshowImpl::startShow( PresentationSettingsEx* pPresSettings )
 
             if( meAnimationMode != ANIMATIONMODE_SHOW )
             {
-                if( pStartPage->GetPageKind() == PK_STANDARD )
+                if( pStartPage->GetPageKind() == PageKind::Standard )
                 {
                     maPresSettings.mbAll = false;
                 }
@@ -1187,8 +1187,10 @@ bool SlideshowImpl::swipe(const CommandSwipeData &rSwipeData)
 {
     if (mbUsePen || mnContextMenuEvent)
         return false;
-
     double nVelocityX = rSwipeData.getVelocityX();
+    // tdf#108475 make it swipe only if some reasonable movement was involved
+    if (fabs(nVelocityX) < 50)
+        return false;
     if (nVelocityX > 0)
     {
         gotoPreviousSlide();
@@ -1385,7 +1387,7 @@ void SlideshowImpl::endPresentation()
         mnEndShowEvent = Application::PostUserEvent( LINK(this, SlideshowImpl, endPresentationHdl) );
 }
 
-IMPL_LINK_NOARG_TYPED(SlideshowImpl, endPresentationHdl, void*, void)
+IMPL_LINK_NOARG(SlideshowImpl, endPresentationHdl, void*, void)
 {
     mnEndShowEvent = nullptr;
 
@@ -1613,7 +1615,7 @@ sal_Int32 SlideshowImpl::getSlideNumberForBookmark( const OUString& rStrBookmark
         }
     }
 
-    if( (nPgNum == SDRPAGE_NOTFOUND) || bIsMasterPage || static_cast<SdPage*>(mpDoc->GetPage(nPgNum))->GetPageKind() != PK_STANDARD )
+    if( (nPgNum == SDRPAGE_NOTFOUND) || bIsMasterPage || static_cast<SdPage*>(mpDoc->GetPage(nPgNum))->GetPageKind() != PageKind::Standard )
         return -1;
 
     return ( nPgNum - 1) >> 1;
@@ -1692,7 +1694,7 @@ void SlideshowImpl::startUpdateTimer()
     This is used to unfreeze user input that was disabled after
     slide change to skip input that was buffered during slide
     transition preparation */
-IMPL_LINK_NOARG_TYPED(SlideshowImpl, ReadyForNextInputHdl, Timer *, void)
+IMPL_LINK_NOARG(SlideshowImpl, ReadyForNextInputHdl, Timer *, void)
 {
     mbInputFreeze = false;
 }
@@ -1701,7 +1703,7 @@ IMPL_LINK_NOARG_TYPED(SlideshowImpl, ReadyForNextInputHdl, Timer *, void)
     and not by using the timer, I will personally punish this
     person seriously, even if this person is me.
 */
-IMPL_LINK_NOARG_TYPED(SlideshowImpl, updateHdl, Timer *, void)
+IMPL_LINK_NOARG(SlideshowImpl, updateHdl, Timer *, void)
 {
     updateSlideShow();
 }
@@ -1835,7 +1837,7 @@ bool SlideshowImpl::keyInput(const KeyEvent& rKEvt)
             case KEY_7:
             case KEY_8:
             case KEY_9:
-                maCharBuffer += OUString( rKEvt.GetCharCode() );
+                maCharBuffer += OUStringLiteral1( rKEvt.GetCharCode() );
                 break;
 
             case KEY_PAGEUP:
@@ -1888,7 +1890,7 @@ bool SlideshowImpl::keyInput(const KeyEvent& rKEvt)
     return bRet;
 }
 
-IMPL_LINK_TYPED( SlideshowImpl, EventListenerHdl, VclSimpleEvent&, rSimpleEvent, void )
+IMPL_LINK( SlideshowImpl, EventListenerHdl, VclSimpleEvent&, rSimpleEvent, void )
 {
     if( !mxShow.is() || mbInputFreeze )
         return;
@@ -1974,7 +1976,7 @@ void SlideshowImpl::mouseButtonUp(const MouseEvent& rMEvt)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SlideshowImpl, ContextMenuHdl, void*, void)
+IMPL_LINK_NOARG(SlideshowImpl, ContextMenuHdl, void*, void)
 {
     mnContextMenuEvent = nullptr;
 
@@ -1985,7 +1987,7 @@ IMPL_LINK_NOARG_TYPED(SlideshowImpl, ContextMenuHdl, void*, void)
     if( !mbWasPaused )
         pause();
 
-    PopupMenu* pMenu = new PopupMenu( SdResId( RID_SLIDESHOW_CONTEXTMENU ) );
+    VclPtrInstance<PopupMenu> pMenu( SdResId( RID_SLIDESHOW_CONTEXTMENU ) );
 
     // Adding button to display if in Pen  mode
     pMenu->CheckItem( CM_PEN_MODE, mbUsePen);
@@ -2037,7 +2039,7 @@ IMPL_LINK_NOARG_TYPED(SlideshowImpl, ContextMenuHdl, void*, void)
             {
                 if( mpSlideController->isVisibleSlideNumber( nPageNumber ) )
                 {
-                    SdPage* pPage = mpDoc->GetSdPage((sal_uInt16)nPageNumber, PK_STANDARD);
+                    SdPage* pPage = mpDoc->GetSdPage((sal_uInt16)nPageNumber, PageKind::Standard);
                     if (pPage)
                     {
                         pPageMenu->InsertItem( (sal_uInt16)(CM_SLIDES + nPageNumber), pPage->GetName() );
@@ -2098,7 +2100,7 @@ IMPL_LINK_NOARG_TYPED(SlideshowImpl, ContextMenuHdl, void*, void)
 
     pMenu->SetSelectHdl( LINK( this, SlideshowImpl, ContextMenuSelectHdl ) );
     pMenu->Execute( mpShowWindow, maPopupMousePos );
-    delete pMenu;
+    pMenu.disposeAndClear();
 
     if( mxView.is() )
         mxView->ignoreNextMouseReleased();
@@ -2107,7 +2109,7 @@ IMPL_LINK_NOARG_TYPED(SlideshowImpl, ContextMenuHdl, void*, void)
         resume();
 }
 
-IMPL_LINK_TYPED( SlideshowImpl, ContextMenuSelectHdl, Menu *, pMenu, bool )
+IMPL_LINK( SlideshowImpl, ContextMenuSelectHdl, Menu *, pMenu, bool )
 {
     if( pMenu )
     {
@@ -2287,7 +2289,7 @@ Reference< XSlideShow > SlideshowImpl::createSlideShow()
 
 void SlideshowImpl::createSlideList( bool bAll, const OUString& rPresSlide )
 {
-    const sal_uInt16 nSlideCount = mpDoc->GetSdPageCount( PK_STANDARD );
+    const sal_uInt16 nSlideCount = mpDoc->GetSdPageCount( PageKind::Standard );
 
     if( nSlideCount )
     {
@@ -2320,7 +2322,7 @@ void SlideshowImpl::createSlideList( bool bAll, const OUString& rPresSlide )
                 for( nSlide = 0, nFirstVisibleSlide = -1;
                     ( nSlide < nSlideCount ) && ( -1 == nFirstVisibleSlide ); nSlide++ )
                 {
-                    SdPage* pTestSlide = mpDoc->GetSdPage( (sal_uInt16)nSlide, PK_STANDARD );
+                    SdPage* pTestSlide = mpDoc->GetSdPage( (sal_uInt16)nSlide, PageKind::Standard );
 
                     if( pTestSlide->GetName() == rPresSlide )
                     {
@@ -2339,7 +2341,7 @@ void SlideshowImpl::createSlideList( bool bAll, const OUString& rPresSlide )
 
             for( sal_Int32 i = 0; i < nSlideCount; i++ )
             {
-                bool bVisible = !( mpDoc->GetSdPage( (sal_uInt16)i, PK_STANDARD ) )->IsExcluded();
+                bool bVisible = !( mpDoc->GetSdPage( (sal_uInt16)i, PageKind::Standard ) )->IsExcluded();
                 if( bVisible || (eMode == AnimationSlideController::ALL) )
                     mpSlideController->insertSlideNumber( i, bVisible );
             }
@@ -2352,7 +2354,7 @@ void SlideshowImpl::createSlideList( bool bAll, const OUString& rPresSlide )
             {
                 sal_Int32 nSlide;
                 for( nSlide = 0; nSlide < nSlideCount; nSlide++ )
-                    if( rPresSlide == mpDoc->GetSdPage( (sal_uInt16) nSlide, PK_STANDARD )->GetName() )
+                    if( rPresSlide == mpDoc->GetSdPage( (sal_uInt16) nSlide, PageKind::Standard )->GetName() )
                         break;
 
                 if( nSlide < nSlideCount )
@@ -2365,7 +2367,7 @@ void SlideshowImpl::createSlideList( bool bAll, const OUString& rPresSlide )
             {
                 const sal_uInt16 nSdSlide = ( (*it)->GetPageNum() - 1 ) / 2;
 
-                if( !( mpDoc->GetSdPage( nSdSlide, PK_STANDARD ) )->IsExcluded())
+                if( !( mpDoc->GetSdPage( nSdSlide, PageKind::Standard ) )->IsExcluded())
                     mpSlideController->insertSlideNumber( nSdSlide );
             }
         }
@@ -2485,7 +2487,7 @@ void SlideshowImpl::setActiveXToolbarsVisible( bool bVisible )
                 try
                 {
                     Reference< frame::XLayoutManager > xLayoutManager;
-                    Reference< beans::XPropertySet > xFrameProps( pViewFrame->GetFrame().GetTopFrame().GetFrameInterface(), UNO_QUERY_THROW );
+                    Reference< beans::XPropertySet > xFrameProps( pViewFrame->GetFrame().GetFrameInterface(), UNO_QUERY_THROW );
                     if ( ( xFrameProps->getPropertyValue( "LayoutManager" )
                                 >>= xLayoutManager )
                       && xLayoutManager.is() )
@@ -2549,7 +2551,7 @@ void SAL_CALL SlideshowImpl::deactivate() throw (RuntimeException, std::exceptio
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SlideshowImpl, deactivateHdl, Timer *, void)
+IMPL_LINK_NOARG(SlideshowImpl, deactivateHdl, Timer *, void)
 {
     if( mbActive && mxShow.is() )
     {

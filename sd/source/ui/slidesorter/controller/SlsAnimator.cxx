@@ -99,7 +99,6 @@ void Animator::Dispose()
 
 Animator::AnimationId Animator::AddAnimation (
     const AnimationFunctor& rAnimation,
-    const sal_Int32 nDuration,
     const FinishFunctor& rFinishFunctor)
 {
     // When the animator is already disposed then ignore this call
@@ -112,7 +111,7 @@ Animator::AnimationId Animator::AddAnimation (
         new Animation(
             rAnimation,
             0,
-            nDuration / 1000.0,
+            300 / 1000.0,
             maElapsedTime.getElapsedTime(),
             ++mnNextAnimationId,
             rFinishFunctor));
@@ -212,7 +211,7 @@ void Animator::RequestNextFrame ()
     }
 }
 
-IMPL_LINK_NOARG_TYPED(Animator, TimeoutHandler, Idle *, void)
+IMPL_LINK_NOARG(Animator, TimeoutHandler, Idle *, void)
 {
     if (mbIsDisposed)
         return;

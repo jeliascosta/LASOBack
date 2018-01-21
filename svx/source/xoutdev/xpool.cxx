@@ -24,12 +24,10 @@
 #include <svx/svxids.hrc>
 #include <svl/itemset.hxx>
 
-XOutdevItemPool::XOutdevItemPool(
-    SfxItemPool* _pMaster,
-    sal_uInt16 nAttrStart,
-    sal_uInt16 nAttrEnd,
-    bool bLoadRefCounts)
-:   SfxItemPool("XOutdevItemPool", nAttrStart, nAttrEnd, nullptr, nullptr, bLoadRefCounts)
+XOutdevItemPool::XOutdevItemPool(SfxItemPool* _pMaster, bool bLoadRefCounts)
+    : SfxItemPool("XOutdevItemPool", SDRATTR_START, SDRATTR_END, nullptr, nullptr, bLoadRefCounts)
+    , mppLocalPoolDefaults(new SfxPoolItem*[SDRATTR_END - SDRATTR_START + 1])
+    , mpLocalItemInfos(new SfxItemInfo[SDRATTR_END - SDRATTR_START + 1])
 {
     // prepare some defaults
     const OUString aNullStr;
@@ -60,8 +58,6 @@ XOutdevItemPool::XOutdevItemPool(
     }
 
     // prepare PoolDefaults
-    mppLocalPoolDefaults = new SfxPoolItem*[GetLastWhich() - GetFirstWhich() + 1];
-
     mppLocalPoolDefaults[XATTR_LINESTYLE          -XATTR_START] = new XLineStyleItem;
     mppLocalPoolDefaults[XATTR_LINEDASH           -XATTR_START] = new XLineDashItem(this,aNullDash);
     mppLocalPoolDefaults[XATTR_LINEWIDTH          -XATTR_START] = new XLineWidthItem;
@@ -115,7 +111,6 @@ XOutdevItemPool::XOutdevItemPool(
     mppLocalPoolDefaults[XATTRSET_FILL - XATTR_START] = new XFillAttrSetItem(pSet);
 
     // create ItemInfos
-    mpLocalItemInfos = new SfxItemInfo[GetLastWhich() - GetFirstWhich() + 1];
     for(sal_uInt16 i(GetFirstWhich()); i <= GetLastWhich(); i++)
     {
         mpLocalItemInfos[i - XATTR_START]._nSID = 0;
@@ -180,22 +175,8 @@ SfxItemPool* XOutdevItemPool::Clone() const
 XOutdevItemPool::~XOutdevItemPool()
 {
     Delete();
-
-    // remove own static defaults
-    if(mppLocalPoolDefaults)
-    {
-        SfxPoolItem** ppDefaultItem = mppLocalPoolDefaults;
-        for(sal_uInt16 i(GetLastWhich() - GetFirstWhich() + 1); i; --i, ++ppDefaultItem)
-        {
-            if ( *ppDefaultItem ) // these parts might be already cleaned up from a derived class
-            {
-                SetRefCount( **ppDefaultItem, 0 );
-                delete *ppDefaultItem;
-            }
-        }
-
-        delete[] mppLocalPoolDefaults;
-    }
+    // release and delete static pool default items
+    ReleaseDefaults(true);
 
     if(mpLocalItemInfos)
     {

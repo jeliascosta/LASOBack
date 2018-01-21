@@ -39,6 +39,7 @@
 #include <libxml/catalog.h>
 
 #include <rtl/ustring.hxx>
+#include <rtl/character.hxx>
 #include <osl/thread.h>
 #include <osl/process.h>
 #include <osl/file.hxx>
@@ -92,7 +93,7 @@ namespace fs
         {
             OUString ustrSystemPath;
             osl::File::getSystemPathFromFileURL(data, ustrSystemPath);
-            return (wchar_t const *) ustrSystemPath.getStr();
+            return ustrSystemPath.getStr();
         }
 #endif
         std::string toUTF8() const
@@ -169,22 +170,9 @@ public:
     Stringtable *appl_helptexts;
     xmlDocPtr appl_doc;
 
-    HashSet *default_hidlist;
-    Hashtable *default_keywords;
-    Stringtable *default_helptexts;
-    xmlDocPtr default_doc;
-
     StreamTable() :
-        appl_hidlist(nullptr), appl_keywords(nullptr), appl_helptexts(nullptr), appl_doc(nullptr),
-        default_hidlist(nullptr), default_keywords(nullptr), default_helptexts(nullptr), default_doc(nullptr)
+        appl_hidlist(nullptr), appl_keywords(nullptr), appl_helptexts(nullptr), appl_doc(nullptr)
     {}
-    void dropdefault()
-    {
-        delete default_hidlist;
-        delete default_keywords;
-        delete default_helptexts;
-        if (default_doc) xmlFreeDoc(default_doc);
-    }
     void dropappl()
     {
         delete appl_hidlist;
@@ -195,7 +183,6 @@ public:
     ~StreamTable()
     {
         dropappl();
-        dropdefault();
     }
 };
 
@@ -249,7 +236,7 @@ private:
 
 inline char tocharlower(char c)
 {
-    return static_cast<char>(tolower(c));
+    return static_cast<char>(rtl::toAsciiLowerCase(c));
 }
 
 #endif

@@ -82,7 +82,7 @@ void FuText::StopEditMode()
         if(pCalcUndo)
         {
             const OUString aUndoStr = ScGlobal::GetRscString( STR_UNDO_EDITNOTE );
-            pUndoMgr->EnterListAction( aUndoStr, aUndoStr );
+            pUndoMgr->EnterListAction( aUndoStr, aUndoStr, 0, pViewShell->GetViewShellId() );
 
             /*  Note has been created before editing, if first undo action is
                 an insert action. Needed below to decide whether to drop the
@@ -106,7 +106,7 @@ void FuText::StopEditMode()
         below together with the cell note if the text is empty (independent of
         border and area formatting). It is possible to prevent automatic
         deletion by passing sal_True to this function. The return value changes
-        from SDRENDTEXTEDIT_DELETED to SDRENDTEXTEDIT_SHOULDBEDELETED in this
+        from SdrEndTextEditKind::Deleted to SdrEndTextEditKind::ShouldBeDeleted in this
         case. */
     /*SdrEndTextEditKind eResult =*/ pView->SdrEndTextEdit( pNote != nullptr );
 
@@ -160,7 +160,7 @@ void FuText::StopEditMode()
                 to deleted text. If the note has been created *and* is deleted,
                 the last undo action can be removed completely. Note: The
                 function LeaveListAction() removes the last action by itself,
-                if it is empty (when result is SDRENDTEXTEDIT_UNCHANGED). */
+                if it is empty (when result is SdrEndTextEditKind::Unchanged). */
             if( bNewNote && bDeleteNote )
             {
                 pUndoMgr->RemoveLastUndoAction();

@@ -33,7 +33,6 @@
 #include "Clipping.hxx"
 #include "servicenames_charttypes.hxx"
 #include "NumberFormatterWrapper.hxx"
-#include "ContainerHelper.hxx"
 #include "DataSeriesHelper.hxx"
 #include "RegressionCurveHelper.hxx"
 #include "VLegendSymbolFactory.hxx"
@@ -1252,6 +1251,15 @@ void VSeriesPlotter::createRegressionCurveEquationShapes(
         xEquationProperties->getPropertyValue(CHART_UNONAME_NUMFMT) >>= nNumberFormatKey;
         bool bResizeEquation = true;
         sal_Int32 nMaxIteration = 2;
+        if ( bShowEquation )
+        {
+            OUString aXName, aYName;
+            if ( !(xEquationProperties->getPropertyValue( "XName" ) >>= aXName) )
+                aXName = OUString( "x" );
+            if ( !(xEquationProperties->getPropertyValue( "YName" ) >>= aYName) )
+                aYName = OUString( "f(x)" );
+            xRegressionCurveCalculator->setXYNames( aXName, aYName );
+        }
 
         for ( sal_Int32 nCountIteration = 0; bResizeEquation && nCountIteration < nMaxIteration ; nCountIteration++ )
         {
@@ -1278,7 +1286,7 @@ void VSeriesPlotter::createRegressionCurveEquationShapes(
             }
             if( bShowCorrCoeff )
             {
-                aFormula.append( "R" + OUString( aSuperscriptFigures[2] ) + " = " );
+                aFormula.append( "R" + OUStringLiteral1( aSuperscriptFigures[2] ) + " = " );
                 double fR( xRegressionCurveCalculator->getCorrelationCoefficient());
                 if( m_apNumberFormatterWrapper.get())
                 {
@@ -2347,7 +2355,7 @@ Reference< drawing::XShape > VSeriesPlotter::createLegendSymbolForSeries(
 {
 
     LegendSymbolStyle eLegendSymbolStyle = this->getLegendSymbolStyle();
-    uno::Any aExplicitSymbol( this->getExplicitSymbol( rSeries ) );
+    uno::Any aExplicitSymbol( this->getExplicitSymbol( rSeries, -1 ) );
 
     VLegendSymbolFactory::tPropertyType ePropType =
         VLegendSymbolFactory::PROP_TYPE_FILLED_SERIES;

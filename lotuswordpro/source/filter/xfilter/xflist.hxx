@@ -74,7 +74,7 @@ class   XFList : public XFContentContainer
 public:
     XFList();
 
-    virtual ~XFList();
+    virtual ~XFList() override;
 
 public:
     /**
@@ -85,7 +85,7 @@ public:
     /**
      * @descr   Set whether to continue to number list.
      */
-    void    SetContinueNumber(bool bContinueNumber=false);
+    void    SetContinueNumber(bool bContinueNumber);
 
     /**
      * @descr   Output list object.
@@ -95,8 +95,6 @@ public:
 private:
     bool    m_bOrdered;
     bool    m_bContinueNumber;
-    XFListItem  *m_pHeader;
-
 };
 
 inline void XFList::SetOrdered(bool ordered)

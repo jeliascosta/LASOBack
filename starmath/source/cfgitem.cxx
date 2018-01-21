@@ -39,8 +39,6 @@
 using namespace com::sun::star::uno;
 using namespace com::sun::star::beans;
 
-static const char aRootName[] = "Office.Math";
-
 #define SYMBOL_LIST         "SymbolList"
 #define FONT_FORMAT_LIST    "FontFormatList"
 
@@ -332,7 +330,7 @@ const OUString SmFontFormatList::GetNewFontFormatId() const
 
 
 SmMathConfig::SmMathConfig() :
-    ConfigItem(OUString(aRootName))
+    ConfigItem(OUString("Office.Math"))
     , pFormat()
     , pOther()
     , pFontFormatList()
@@ -358,13 +356,6 @@ void SmMathConfig::SetOtherModified( bool bVal )
 void SmMathConfig::SetFormatModified( bool bVal )
 {
     bIsFormatModified = bVal;
-}
-
-
-void SmMathConfig::SetFontFormatListModified( bool bVal )
-{
-    if (pFontFormatList)
-        pFontFormatList->SetModified( bVal );
 }
 
 
@@ -974,7 +965,8 @@ void SmMathConfig::SetStandardFormat( const SmFormat &rFormat, bool bSaveFontFor
         if (bSaveFontFormatList)
         {
             // needed for SmFontTypeDialog's DefaultButtonClickHdl
-            SetFontFormatListModified( true );
+            if (pFontFormatList)
+                pFontFormatList->SetModified( true );
             SaveFontFormatList();
         }
     }
@@ -1196,7 +1188,7 @@ void SmMathConfig::ItemSetToConfig(const SfxItemSet &rSet)
             SetIgnoreSpacesRight( bVal );
 
             // reformat (displayed) formulas accordingly
-            Broadcast(SfxSimpleHint(HINT_FORMATCHANGED));
+            Broadcast(SfxHint(HINT_FORMATCHANGED));
         }
     }
     if (rSet.GetItemState(SID_SAVE_ONLY_USED_SYMBOLS, true, &pItem) == SfxItemState::SET)

@@ -93,11 +93,11 @@ public:
     ERRTYPE( sal_uInt32 nErr )   { nError = nErr; }
     ERRTYPE( const ERRTYPE & ) = default;
     ERRTYPE& operator = ( const ERRTYPE & rError );
-    operator sal_uInt32() const { return nError; }
+    sal_uInt32 GetError() const { return nError; }
     bool IsError() const     { return nError <= ERR_ERROREND; }
     bool IsOk() const        { return !IsError(); }
     bool IsWarning() const   { return nError >= ERR_WARNINGSTART && nError <= ERR_WARNINGEND;}
-    void Clear(){ nError = ERR_OK; }
+    void Clear()             { nError = ERR_OK; }
 };
 
 // Rsc Error
@@ -111,7 +111,7 @@ enum RscVerbosity
     RscVerbosityVerbose = 2
 };
 
-class RscError
+class RscError final
 {
     FILE *  fListing;
     RscVerbosity m_verbosity;
@@ -122,12 +122,11 @@ class RscError
     void ErrorFormat( const ERRTYPE& rError, RscTop * pClass,
                       const RscId & aId );
 public:
-    virtual ~RscError() {}
 
-    sal_uInt32  nErrors;// Anzahl der Fehler
+    sal_uInt32  nErrors;    // Number of errors
                     RscError( RscVerbosity _verbosity )
                         {
-                            fListing = NULL;
+                            fListing = nullptr;
                             nErrors = 0;
                             m_verbosity = _verbosity;
                         }
@@ -138,11 +137,11 @@ public:
     static void     StdErr( const char * );
     void            LstOut( const char * );
     void            Error( const ERRTYPE& rError, RscTop* pClass, const RscId &aId,
-                           const char * pMessage = NULL );
+                           const char * pMessage = nullptr );
     // Dieser Fehler sollte nur im Compilermodus auftreten,
     // das Programm wird mit exit() verlassen
     void            FatalError( const ERRTYPE& rError, const RscId &aId,
-                                const char * pMessage = NULL );
+                                const char * pMessage = nullptr );
 };
 
 #endif // INCLUDED_RSC_INC_RSCERROR_H

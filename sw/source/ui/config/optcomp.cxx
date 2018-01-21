@@ -34,6 +34,7 @@
 #include <sfx2/fcontnr.hxx>
 #include <svtools/treelistentry.hxx>
 #include <IDocumentSettingAccess.hxx>
+#include <vector>
 
 using namespace ::com::sun::star::beans;
 using namespace ::com::sun::star::document;
@@ -81,8 +82,6 @@ struct CompatibilityItem
         m_bProtectForm          ( _bProtectForm),
         m_bIsDefault            ( _bIsDefault ) {}
 };
-
-#include <vector>
 
 struct SwCompatibilityOptPage_Impl
 {
@@ -314,14 +313,14 @@ void SwCompatibilityOptPage::InitControls( const SfxItemSet& rSet )
     m_pFormattingLB->SetDropDownLineCount( m_pFormattingLB->GetEntryCount() );
 }
 
-IMPL_LINK_NOARG_TYPED(SwCompatibilityOptPage, SelectHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwCompatibilityOptPage, SelectHdl, ListBox&, void)
 {
     const sal_Int32 nPos = m_pFormattingLB->GetSelectEntryPos();
     sal_uLong nOptions = reinterpret_cast<sal_uLong>(m_pFormattingLB->GetEntryData( nPos ));
     SetCurrentOptions( nOptions );
 }
 
-IMPL_LINK_NOARG_TYPED(SwCompatibilityOptPage, UseAsDefaultHdl, Button*, void)
+IMPL_LINK_NOARG(SwCompatibilityOptPage, UseAsDefaultHdl, Button*, void)
 {
     ScopedVclPtrInstance<MessageDialog> aQuery(this, "QueryDefaultCompatDialog",
                                                "modules/swriter/ui/querydefaultcompatdialog.ui");

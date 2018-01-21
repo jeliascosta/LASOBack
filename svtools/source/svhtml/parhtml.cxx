@@ -1928,21 +1928,23 @@ bool HTMLParser::ParseMetaOptionsImpl(
             case HTML_O_CONTENT:
                 aContent = aOption.GetString();
                 break;
+            case HTML_O_CHARSET:
+                OString sValue(OUStringToOString(aOption.GetString(), RTL_TEXTENCODING_ASCII_US));
+                o_rEnc = GetExtendedCompatibilityTextEncoding(rtl_getTextEncodingFromMimeCharset(sValue.getStr()));
+                break;
         }
     }
 
     if ( bHTTPEquiv || HTML_META_DESCRIPTION != nAction )
     {
         // if it is not a Description, remove CRs and LFs from CONTENT
-        aContent = comphelper::string::remove(aContent, '\r');
-        aContent = comphelper::string::remove(aContent, '\n');
+        aContent = aContent.replaceAll("\r", "").replaceAll("\n", "");
     }
     else
     {
         // convert line endings for Description
         aContent = convertLineEnd(aContent, GetSystemLineEnd());
     }
-
 
     if ( bHTTPEquiv && i_pHTTPHeader )
     {

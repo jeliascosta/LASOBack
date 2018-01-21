@@ -51,7 +51,7 @@ namespace pcr
 
     public:
         explicit OControlFontDialog(const css::uno::Reference< css::uno::XComponentContext >& _rxContext);
-        virtual ~OControlFontDialog();
+        virtual ~OControlFontDialog() override;
 
         // XTypeProvider
         virtual css::uno::Sequence<sal_Int8> SAL_CALL getImplementationId(  ) throw(css::uno::RuntimeException, std::exception) override;
@@ -79,7 +79,6 @@ namespace pcr
     protected:
     // OGenericUnoDialog overridables
         virtual VclPtr<Dialog> createDialog(vcl::Window* _pParent) override;
-        virtual void    destroyDialog() override;
         virtual void    executedDialog(sal_Int16 _nExecutionResult) override;
     };
 

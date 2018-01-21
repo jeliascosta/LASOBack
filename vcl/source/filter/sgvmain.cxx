@@ -29,14 +29,6 @@
 #include "sgvspln.hxx"
 #include <unotools/ucbstreamhelper.hxx>
 
-#if defined OSL_BIGENDIAN
-
-#define SWAPPOINT(p) {  \
-    p.x=OSL_SWAPWORD(p.x); \
-    p.y=OSL_SWAPWORD(p.y); }
-
-#endif
-
 //  Restrictions:
 
 //  - area patterns are matched to the available ones in Starview.
@@ -785,7 +777,7 @@ void DrawObjkList( SvStream& rInp, OutputDevice& rOut )
                     ReadTextType( rInp, aText );
                     if (!rInp.GetError()) {
                         aText.Buffer=new UCHAR[aText.BufSize+1]; // add one for LookAhead at CK-separation
-                        rInp.Read(aText.Buffer, aText.BufSize);
+                        rInp.ReadBytes(aText.Buffer, aText.BufSize);
                         if (!rInp.GetError()) aText.Draw(rOut);
                         delete[] aText.Buffer;
                     }
@@ -802,10 +794,11 @@ void DrawObjkList( SvStream& rInp, OutputDevice& rOut )
                     ReadPolyType( rInp, aPoly );
                     if (!rInp.GetError()) {
                         aPoly.EckP=new PointType[aPoly.nPoints];
-                        rInp.Read(aPoly.EckP, 4*aPoly.nPoints);
-#if defined OSL_BIGENDIAN
-                        for(short i=0;i<aPoly.nPoints;i++) SWAPPOINT(aPoly.EckP[i]);
-#endif
+                        for (int i = 0; i < aPoly.nPoints; ++i)
+                        {
+                            rInp.ReadInt16(aPoly.EckP[i].x);
+                            rInp.ReadInt16(aPoly.EckP[i].y);
+                        }
                         if (!rInp.GetError()) aPoly.Draw(rOut);
                         delete[] aPoly.EckP;
                     }
@@ -815,10 +808,11 @@ void DrawObjkList( SvStream& rInp, OutputDevice& rOut )
                     ReadSplnType( rInp, aSpln );
                     if (!rInp.GetError()) {
                         aSpln.EckP=new PointType[aSpln.nPoints];
-                        rInp.Read(aSpln.EckP, 4*aSpln.nPoints);
-#if defined OSL_BIGENDIAN
-                        for(short i=0;i<aSpln.nPoints;i++) SWAPPOINT(aSpln.EckP[i]);
-#endif
+                        for (int i = 0; i < aSpln.nPoints; ++i)
+                        {
+                            rInp.ReadInt16(aSpln.EckP[i].x);
+                            rInp.ReadInt16(aSpln.EckP[i].y);
+                        }
                         if (!rInp.GetError()) aSpln.Draw(rOut);
                         delete[] aSpln.EckP;
                     }
@@ -905,7 +899,7 @@ bool SgfFilterSDrw( SvStream& rInp, SgfHeader&, SgfEntry&, GDIMetaFile& rMtf )
 
     rMtf.Stop();
     rMtf.WindStart();
-    MapMode aMap(MAP_10TH_MM,Point(),Fraction(1,4),Fraction(1,4));
+    MapMode aMap(MapUnit::Map10thMM,Point(),Fraction(1,4),Fraction(1,4));
     rMtf.SetPrefMapMode(aMap);
     rMtf.SetPrefSize(Size((sal_Int16)aPage.Paper.Size.x,(sal_Int16)aPage.Paper.Size.y));
     bRet=true;
@@ -914,10 +908,6 @@ bool SgfFilterSDrw( SvStream& rInp, SgfHeader&, SgfEntry&, GDIMetaFile& rMtf )
 
 bool SgfSDrwFilter(SvStream& rInp, GDIMetaFile& rMtf, const INetURLObject& _aIniPath )
 {
-#if OSL_DEBUG_LEVEL > 1 // check record size. New compiler possibly aligns different!
-    if (sizeof(ObjTextType)!=ObjTextTypeSize)  return false;
-#endif
-
     sal_uLong   nFileStart;        // offset of SgfHeaders. In general 0.
     SgfHeader   aHead;
     SgfEntry    aEntr;

@@ -68,7 +68,7 @@ namespace svxform
         css::uno::Reference< css::frame::XDispatchProvider>           m_xSlaveDispatcher;
         css::uno::Reference< css::frame::XDispatchProvider>           m_xMasterDispatcher;
 
-        virtual ~DispatchInterceptionMultiplexer();
+        virtual ~DispatchInterceptionMultiplexer() override;
 
     public:
         css::uno::Reference< css::frame::XDispatchProviderInterception> getIntercepted() const { return m_xIntercepted; }
@@ -78,9 +78,6 @@ namespace svxform
             const css::uno::Reference< css::frame::XDispatchProviderInterception>& _rToIntercept,
             DispatchInterceptor* _pMaster
         );
-
-        // UNO
-        DECLARE_UNO3_DEFAULTS(DispatchInterceptionMultiplexer, DispatchInterceptionMultiplexer_BASE)
 
         // css::frame::XDispatchProvider
         virtual css::uno::Reference< css::frame::XDispatch > SAL_CALL queryDispatch( const css::util::URL& aURL, const OUString& aTargetFrameName, sal_Int32 nSearchFlags ) throw(css::uno::RuntimeException, std::exception) override;

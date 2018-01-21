@@ -63,8 +63,8 @@ private:
 
 public:
 
-    SfxNewFileDialog(vcl::Window *pParent, sal_uInt16 nFlags = 0);
-    virtual ~SfxNewFileDialog();
+    SfxNewFileDialog(vcl::Window *pParent, sal_uInt16 nFlags);
+    virtual ~SfxNewFileDialog() override;
     virtual void dispose() override;
 
     // Returns false, when '- No -' is set as Template

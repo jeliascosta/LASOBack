@@ -256,7 +256,7 @@ requires = "%BASISPACKAGEPREFIX%PRODUCTVERSION-core %PACKAGEVERSION %PACKAGEVERS
 copyright = "2017 The Document Foundation"
 solariscopyright = "solariscopyrightfile"
 vendor = "The Document Foundation"
-description = "Online update modul for %PRODUCTNAME %PRODUCTVERSION"
+description = "Online update module for %PRODUCTNAME %PRODUCTVERSION"
 destpath = "/opt"
 packageversion = "%PACKAGEVERSION"
 End
@@ -331,7 +331,7 @@ requires = "%BASISPACKAGEPREFIX%PRODUCTVERSION-core %PACKAGEVERSION %PACKAGEVERS
 copyright = "2017 The Document Foundation"
 solariscopyright = "solariscopyrightfile"
 vendor = "The Document Foundation"
-description = "Mailcap module for %PRODUCTNAME %PRODUCTVERSION"
+description = "3rd party free fonts for %PRODUCTNAME %PRODUCTVERSION"
 destpath = "/opt"
 packageversion = "%PACKAGEVERSION"
 End
@@ -437,6 +437,21 @@ copyright = "2002 Dr Abhijit Das, 2002 Taneem Ahmed, 2008 Jamil Ahmed"
 solariscopyright = "solariscopyrightfile"
 vendor = "The Document Foundation"
 description = "Bn dictionary for %PRODUCTNAME %PRODUCTVERSION"
+destpath = "/opt"
+packageversion = "%PACKAGEVERSION"
+End
+
+Start
+module = "gid_Module_Root_Extension_Dictionary_Bo"
+solarispackagename = "%PACKAGEPREFIX%SOLARISBRANDPACKAGENAME%BRANDPACKAGEVERSION-dict-bo"
+solarisrequires = "%SOLSUREPACKAGEPREFIX%BRANDPACKAGEVERSION-ure, %BASISPACKAGEPREFIX%WITHOUTDOTPRODUCTVERSION-core, %PACKAGEPREFIX%SOLARISBRANDPACKAGENAME%BRANDPACKAGEVERSION"
+packagename = "%UNIXPACKAGENAME%BRANDPACKAGEVERSION-dict-bo"
+requires = "%UREPACKAGEPREFIX%BRANDPACKAGEVERSION-ure %PACKAGEVERSION %PACKAGEVERSION-%PACKAGEREVISION,%BASISPACKAGEPREFIX%PRODUCTVERSION-core %PACKAGEVERSION %PACKAGEVERSION-%PACKAGEREVISION,%UNIXPACKAGENAME%BRANDPACKAGEVERSION %PACKAGEVERSION %PACKAGEVERSION-%PACKAGEREVISION"
+linuxpatchrequires = ""
+copyright = "2016 Elie Roux"
+solariscopyright = "solariscopyrightfile"
+vendor = "The Document Foundation"
+description = "Bo dictionary for %PRODUCTNAME %PRODUCTVERSION"
 destpath = "/opt"
 packageversion = "%PACKAGEVERSION"
 End

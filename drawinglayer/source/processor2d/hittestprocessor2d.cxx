@@ -47,7 +47,6 @@ namespace drawinglayer
             mfDiscreteHitTolerance(0.0),
             mbHit(false),
             mbHitToleranceUsed(false),
-            mbUseInvisiblePrimitiveContent(true),
             mbHitTextOnly(bHitTextOnly)
         {
             // init hit tolerance
@@ -294,7 +293,7 @@ namespace drawinglayer
                             {
                                 // if line is mitered, use decomposition since mitered line
                                 // geometry may use more space than the geometry grown by half line width
-                                process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                                process(rCandidate);
                             }
                             else
                             {
@@ -506,10 +505,7 @@ namespace drawinglayer
 
                     if(!rChildren.empty())
                     {
-                        if(getUseInvisiblePrimitiveContent())
-                        {
-                            process(rChildren);
-                        }
+                        process(rChildren);
                     }
 
                     break;
@@ -539,7 +535,7 @@ namespace drawinglayer
                 default :
                 {
                     // process recursively
-                    process(rCandidate.get2DDecomposition(getViewInformation2D()));
+                    process(rCandidate);
 
                     break;
                 }

@@ -50,7 +50,7 @@ class SwAutoCompleteClient : public SwClient
 public:
     SwAutoCompleteClient(SwAutoCompleteWord& rToTell, SwDoc& rSwDoc);
     SwAutoCompleteClient(const SwAutoCompleteClient& rClient);
-    virtual ~SwAutoCompleteClient();
+    virtual ~SwAutoCompleteClient() override;
 
     SwAutoCompleteClient& operator=(const SwAutoCompleteClient& rClient);
 
@@ -84,9 +84,9 @@ class SwAutoCompleteString
 #endif
     SwDocPtrVector aSourceDocs;
     public:
-        SwAutoCompleteString(const OUString& rStr, sal_Int32 nPos, sal_Int32 nLen);
+        SwAutoCompleteString(const OUString& rStr, sal_Int32 nLen);
 
-        virtual ~SwAutoCompleteString();
+        virtual ~SwAutoCompleteString() override;
         void        AddDocument(const SwDoc& rDoc);
         //returns true if last document reference has been removed
         bool        RemoveDocument(const SwDoc& rDoc);
@@ -145,7 +145,7 @@ void SwAutoCompleteClient::Modify( const SfxPoolItem* pOld, const SfxPoolItem *)
     case RES_REMOVE_UNO_OBJECT:
     case RES_OBJECTDYING:
         if( static_cast<void*>(GetRegisteredIn()) == static_cast<const SwPtrMsgPoolItem *>(pOld)->pObject )
-            static_cast<SwModify*>(GetRegisteredIn())->Remove(this);
+            GetRegisteredIn()->Remove(this);
         pAutoCompleteWord->DocumentDying(*pDoc);
         break;
     }
@@ -176,8 +176,8 @@ void SwAutoCompleteWord_Impl::RemoveDocument(const SwDoc& rDoc)
 }
 
 SwAutoCompleteString::SwAutoCompleteString(
-            const OUString& rStr, sal_Int32 const nPos, sal_Int32 const nLen)
-    : editeng::IAutoCompleteString(rStr.copy(nPos, nLen))
+            const OUString& rStr, sal_Int32 const nLen)
+    : editeng::IAutoCompleteString(rStr.copy(0, nLen))
 {
 #if OSL_DEBUG_LEVEL > 0
     ++nSwAutoCompleteStringCount;
@@ -244,9 +244,8 @@ bool SwAutoCompleteWord::InsertWord( const OUString& rWord, SwDoc& rDoc )
             return false;
     }
 
-    OUString aNewWord(rWord);
-    aNewWord = comphelper::string::remove(aNewWord, CH_TXTATR_INWORD);
-    aNewWord = comphelper::string::remove(aNewWord, CH_TXTATR_BREAKWORD);
+    OUString aNewWord = rWord.replaceAll(OUStringLiteral1(CH_TXTATR_INWORD), "")
+                             .replaceAll(OUStringLiteral1(CH_TXTATR_BREAKWORD), "");
 
     pImpl->AddDocument(rDoc);
     bool bRet = false;
@@ -256,7 +255,7 @@ bool SwAutoCompleteWord::InsertWord( const OUString& rWord, SwDoc& rDoc )
 
     if( !bLockWordLst && nWrdLen >= nMinWrdLen )
     {
-        SwAutoCompleteString* pNew = new SwAutoCompleteString( aNewWord, 0, nWrdLen );
+        SwAutoCompleteString* pNew = new SwAutoCompleteString( aNewWord, nWrdLen );
         pNew->AddDocument(rDoc);
         std::pair<editeng::SortedAutoCompleteStrings::const_iterator, bool>
             aInsPair = m_WordList.insert(pNew);

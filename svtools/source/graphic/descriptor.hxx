@@ -68,14 +68,11 @@ class GraphicDescriptor : public ::cppu::OWeakAggObject,
 public:
 
     GraphicDescriptor();
-    virtual ~GraphicDescriptor() throw();
+    virtual ~GraphicDescriptor() throw() override;
 
     void init( const ::Graphic& rGraphic );
     void init( const OUString& rURL );
     void init( const css::uno::Reference< css::io::XInputStream >& rxIStm, const OUString& rURL );
-
-    static OUString getImplementationName_Static() throw();
-    static css::uno::Sequence< OUString >  getSupportedServiceNames_Static() throw();
 
 protected:
 
@@ -109,8 +106,6 @@ private:
     Size                    maSize100thMM;
     sal_uInt16              mnBitsPerPixel;
     bool                    mbTransparent;
-    bool                    mbAlpha;
-    bool                    mbAnimated;
 
     GraphicDescriptor( const GraphicDescriptor& rDescriptor ) = delete;
 

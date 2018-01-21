@@ -168,14 +168,7 @@ void LayoutMenu::implConstruct( DrawDocShell& rDocumentShell )
     InvalidateContent();
 
     Link<::sd::tools::EventMultiplexerEvent&,void> aEventListenerLink (LINK(this,LayoutMenu,EventMultiplexerListener));
-    mrBase.GetEventMultiplexer()->AddEventListener(aEventListenerLink,
-        ::sd::tools::EventMultiplexerEvent::EID_CURRENT_PAGE
-        | ::sd::tools::EventMultiplexerEvent::EID_SLIDE_SORTER_SELECTION
-        | ::sd::tools::EventMultiplexerEvent::EID_MAIN_VIEW_ADDED
-        | ::sd::tools::EventMultiplexerEvent::EID_MAIN_VIEW_REMOVED
-        | ::sd::tools::EventMultiplexerEvent::EID_CONFIGURATION_UPDATED
-        | ::sd::tools::EventMultiplexerEvent::EID_EDIT_MODE_NORMAL
-        | ::sd::tools::EventMultiplexerEvent::EID_EDIT_MODE_MASTER);
+    mrBase.GetEventMultiplexer()->AddEventListener(aEventListenerLink);
 
     Window::SetHelpId(HID_SD_TASK_PANE_PREVIEW_LAYOUTS);
     SetAccessibleName(SdResId(STR_TASKPANEL_LAYOUT_MENU_TITLE));
@@ -200,6 +193,8 @@ void LayoutMenu::dispose()
 {
     SAL_INFO("sd.ui", "destroying LayoutMenu at " << this);
     Dispose();
+    DragSourceHelper::dispose();
+    DropTargetHelper::dispose();
     ValueSet::dispose();
 }
 
@@ -367,7 +362,7 @@ int LayoutMenu::CalculateRowCount (const Size&, int nColumnCount)
     return nRowCount;
 }
 
-IMPL_LINK_NOARG_TYPED(LayoutMenu, ClickHandler, ValueSet*, void)
+IMPL_LINK_NOARG(LayoutMenu, ClickHandler, ValueSet*, void)
 {
     AssignLayoutToSelectedSlides( GetSelectedAutoLayout() );
 }
@@ -398,7 +393,7 @@ void LayoutMenu::AssignLayoutToSelectedSlides (AutoLayout aLayout)
             {
                 DrawViewShell* pDrawViewShell = static_cast<DrawViewShell*>(pMainViewShell);
                 if (pDrawViewShell != nullptr)
-                    if (pDrawViewShell->GetEditMode() == EM_MASTERPAGE)
+                    if (pDrawViewShell->GetEditMode() == EditMode::MasterPage)
                         bMasterPageMode = true;
                 break;
             }
@@ -542,22 +537,17 @@ void LayoutMenu::Fill()
     }
 
     Clear();
-    int n = 0;
     for (sal_uInt16 i=1; pInfo!=nullptr&&pInfo->mnBmpResId!=0; i++,pInfo++)
     {
         if ((WritingMode_TB_RL != pInfo->meWritingMode) || bVertical)
         {
             BitmapEx aBmp(SdResId(pInfo->mnBmpResId));
 
-            if (GetDPIScaleFactor() > 1)
-                aBmp.Scale(GetDPIScaleFactor(), GetDPIScaleFactor(), BmpScaleFlag::Fast);
-
             if (bRightToLeft && (WritingMode_TB_RL != pInfo->meWritingMode))
                 aBmp.Mirror (BmpMirrorFlags::Horizontal);
 
             InsertItem(i, Image(aBmp), SdResId (pInfo->mnStrResId));
             SetItemData (i, new AutoLayout(pInfo->maAutoLayout));
-            n++;
         }
     }
 
@@ -609,7 +599,7 @@ void LayoutMenu::Command (const CommandEvent& rEvent)
                 }
 
                 // Setup the menu.
-                std::shared_ptr<PopupMenu> pMenu (new PopupMenu(SdResId(RID_TASKPANE_LAYOUTMENU_POPUP)));
+                ScopedVclPtrInstance<PopupMenu> pMenu(SdResId(RID_TASKPANE_LAYOUTMENU_POPUP));
                 FloatingWindow* pMenuWindow = dynamic_cast<FloatingWindow*>(pMenu->GetWindow());
                 if (pMenuWindow != nullptr)
                     pMenuWindow->SetPopupModeFlags(
@@ -635,12 +625,12 @@ void LayoutMenu::Command (const CommandEvent& rEvent)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(LayoutMenu, StateChangeHandler, const OUString&, void)
+IMPL_LINK_NOARG(LayoutMenu, StateChangeHandler, const OUString&, void)
 {
     InvalidateContent();
 }
 
-IMPL_LINK_TYPED(LayoutMenu, OnMenuItemSelected, Menu*, pMenu, bool)
+IMPL_LINK(LayoutMenu, OnMenuItemSelected, Menu*, pMenu, bool)
 {
     if (pMenu == nullptr)
     {
@@ -704,25 +694,25 @@ void LayoutMenu::UpdateSelection()
         SetNoSelection();
 }
 
-IMPL_LINK_TYPED(LayoutMenu, EventMultiplexerListener, ::sd::tools::EventMultiplexerEvent&, rEvent, void)
+IMPL_LINK(LayoutMenu, EventMultiplexerListener, ::sd::tools::EventMultiplexerEvent&, rEvent, void)
 {
     switch (rEvent.meEventId)
     {
-        case ::sd::tools::EventMultiplexerEvent::EID_CURRENT_PAGE:
-        case ::sd::tools::EventMultiplexerEvent::EID_SLIDE_SORTER_SELECTION:
+        case EventMultiplexerEventId::CurrentPageChanged:
+        case EventMultiplexerEventId::SlideSortedSelection:
             if ( ! mbSelectionUpdatePending)
                 UpdateSelection();
             break;
 
-        case ::sd::tools::EventMultiplexerEvent::EID_MAIN_VIEW_ADDED:
+        case EventMultiplexerEventId::MainViewAdded:
             mbIsMainViewChangePending = true;
             break;
 
-        case ::sd::tools::EventMultiplexerEvent::EID_MAIN_VIEW_REMOVED:
+        case EventMultiplexerEventId::MainViewRemoved:
             HideFocus();
             break;
 
-        case ::sd::tools::EventMultiplexerEvent::EID_CONFIGURATION_UPDATED:
+        case EventMultiplexerEventId::ConfigurationUpdated:
             if (mbIsMainViewChangePending)
             {
                 mbIsMainViewChangePending = false;
@@ -731,12 +721,11 @@ IMPL_LINK_TYPED(LayoutMenu, EventMultiplexerListener, ::sd::tools::EventMultiple
             break;
 
         default:
-            /* Ignored */
             break;
     }
 }
 
-IMPL_LINK_TYPED(LayoutMenu, WindowEventHandler, VclWindowEvent&, rEvent, void)
+IMPL_LINK(LayoutMenu, WindowEventHandler, VclWindowEvent&, rEvent, void)
 {
     switch (rEvent.GetId())
     {

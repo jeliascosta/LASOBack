@@ -38,6 +38,7 @@ class SwNodeIndex;
 class SwNodeRange;
 class SwRedlineData;
 class SwRedlineSaveDatas;
+enum class RedlineFlags;
 
 namespace sw {
     class UndoRedoContext;
@@ -48,7 +49,8 @@ class SwUndo
     : public SfxUndoAction
 {
     SwUndoId const m_nId;
-    sal_uInt16 nOrigRedlineMode;
+    RedlineFlags nOrigRedlineFlags;
+    sal_Int32 m_nViewShellId;
 
 protected:
     bool bCacheComment;
@@ -75,12 +77,13 @@ protected:
     // the 4 methods that derived classes have to override
     // base implementation does nothing
     virtual void RepeatImpl( ::sw::RepeatContext & );
-    bool CanRepeatImpl( ::sw::RepeatContext & ) const;
 public: // should not be public, but ran into trouble in untbl.cxx
     virtual void UndoImpl( ::sw::UndoRedoContext & ) = 0;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) = 0;
 
 private:
+    /// Try to obtain the view shell ID of the current view.
+    static sal_Int32 CreateViewShellId(const SwDoc* pDoc);
     // SfxUndoAction
     virtual void Undo() override;
     virtual void Redo() override;
@@ -90,8 +93,8 @@ private:
     virtual bool CanRepeat(SfxRepeatTarget &) const override;
 
 public:
-    SwUndo(SwUndoId const nId);
-    virtual ~SwUndo();
+    SwUndo(SwUndoId const nId, const SwDoc* pDoc);
+    virtual ~SwUndo() override;
 
     /**
        Returns textual comment for this undo object.
@@ -104,10 +107,13 @@ public:
     */
     virtual OUString GetComment() const override;
 
+    /// See SfxUndoAction::GetViewShellId().
+    sal_Int32 GetViewShellId() const override;
+
     // UndoObject remembers which mode was turned on.
     // In Undo/Redo/Repeat this remembered mode is switched on.
-    sal_uInt16 GetRedlineMode() const { return nOrigRedlineMode; }
-    void SetRedlineMode( sal_uInt16 eMode ) { nOrigRedlineMode = eMode; }
+    RedlineFlags GetRedlineFlags() const { return nOrigRedlineFlags; }
+    void SetRedlineFlags( RedlineFlags eMode ) { nOrigRedlineFlags = eMode; }
 
     bool IsDelBox() const;
 
@@ -132,7 +138,7 @@ namespace nsDelContentType
 
 /// will DelContentIndex destroy a frame anchored at character at rAnchorPos?
 bool IsDestroyFrameAnchoredAtChar(SwPosition const & rAnchorPos,
-        SwPosition const & rStart, SwPosition const & rEnd, const SwDoc* doc,
+        SwPosition const & rStart, SwPosition const & rEnd,
         DelContentType const nDelContentType = nsDelContentType::DELCNT_ALL);
 
 // This class has to be inherited into an Undo-object if it saves content
@@ -149,7 +155,7 @@ protected:
     // MoveTo:      moves from the NodesArray into the UndoNodesArray.
     // MoveFrom:    moves from the UndoNodesArray into the NodesArray.
     static void MoveToUndoNds( SwPaM& rPam,
-                        SwNodeIndex* pNodeIdx = nullptr,
+                        SwNodeIndex* pNodeIdx,
                         sal_uLong* pEndNdIdx = nullptr, sal_Int32 * pEndCntIdx = nullptr );
     static void MoveFromUndoNds( SwDoc& rDoc, sal_uLong nNodeIdx,
                           SwPosition& rInsPos,
@@ -221,7 +227,7 @@ class SwUndoInserts : public SwUndo, public SwUndRng, private SwUndoSaveContent
 {
     SwTextFormatColl *pTextFormatColl, *pLastNdColl;
     std::vector<SwFrameFormat*>* pFrameFormats;
-    ::std::vector< std::shared_ptr<SwUndoInsLayFormat> > m_FlyUndos;
+    std::vector< std::shared_ptr<SwUndoInsLayFormat> > m_FlyUndos;
     SwRedlineData* pRedlData;
     bool bSttWasTextNd;
 protected:
@@ -232,7 +238,7 @@ protected:
 
     SwUndoInserts( SwUndoId nUndoId, const SwPaM& );
 public:
-    virtual ~SwUndoInserts();
+    virtual ~SwUndoInserts() override;
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;
@@ -273,7 +279,7 @@ protected:
     sal_uLong GetMvNodeCnt() const { return SwUndoSaveSection::GetMvNodeCnt(); }
 
 public:
-    virtual ~SwUndoFlyBase();
+    virtual ~SwUndoFlyBase() override;
 
 };
 
@@ -284,7 +290,7 @@ class SwUndoInsLayFormat : public SwUndoFlyBase
 public:
     SwUndoInsLayFormat( SwFrameFormat* pFormat, sal_uLong nNodeIdx, sal_Int32 nCntIdx );
 
-    virtual ~SwUndoInsLayFormat();
+    virtual ~SwUndoInsLayFormat() override;
 
     virtual void UndoImpl( ::sw::UndoRedoContext & ) override;
     virtual void RedoImpl( ::sw::UndoRedoContext & ) override;

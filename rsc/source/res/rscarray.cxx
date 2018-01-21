@@ -26,9 +26,8 @@
 #include <rscarray.hxx>
 #include <rscdb.hxx>
 
-RscInstNode::RscInstNode( sal_uInt32 nId )
+RscInstNode::RscInstNode(sal_uInt32 nId) : nTypeId(nId)
 {
-    nTypeId = nId;
 }
 
 RscInstNode::~RscInstNode()
@@ -47,10 +46,10 @@ sal_uInt32 RscInstNode::GetId() const
 
 RscArray::RscArray( Atom nId, sal_uInt32 nTypeId, RscTop * pSuper, RscEnum * pTypeCl )
     : RscTop( nId, nTypeId, pSuper )
+    , pTypeClass(pTypeCl)
+    , nOffInstData(RscTop::Size())
+    , nSize(nOffInstData + ALIGNED_SIZE(sizeof(RscArrayInst)))
 {
-    pTypeClass = pTypeCl;
-    nOffInstData = RscTop::Size();
-    nSize = nOffInstData + ALIGNED_SIZE( sizeof( RscArrayInst ) );
 }
 
 RscArray::~RscArray()
@@ -421,39 +420,6 @@ ERRTYPE RscArray::WriteRc( const RSCINST & rInst, RscWriteRc & rMem,
         aError = RscTop::WriteRc( rInst, rMem, pTC, nDeep, bExtra );
 
     return aError;
-}
-
-RscClassArray::RscClassArray( Atom nId, sal_uInt32 nTypeId, RscTop * pSuper,
-                              RscEnum * pTypeCl )
-    : RscArray( nId, nTypeId, pSuper, pTypeCl )
-{
-}
-
-RscClassArray::~RscClassArray()
-{
-}
-
-void RscClassArray::WriteSrcHeader( const RSCINST & rInst, FILE * fOutput,
-                                    RscTypCont * pTC, sal_uInt32 nTab,
-                                    const RscId & aId, const char * pName )
-{
-    RscArray::WriteSrcHeader( rInst, fOutput, pTC, nTab, aId, pName );
-}
-
-void RscClassArray::WriteSrc( const RSCINST & rInst, FILE * fOutput,
-                             RscTypCont * pTC, sal_uInt32 nTab,
-                                 const char * pVarName )
-{
-    RscArray::WriteSrc( rInst, fOutput, pTC, nTab, pVarName );
-}
-
-ERRTYPE RscClassArray::WriteRcHeader( const RSCINST & rInst, RscWriteRc & aMem,
-                                      RscTypCont * pTC, const RscId & aId,
-                                      sal_uInt32 nDeep, bool bExtra )
-{
-    // Eigenen Typ schreiben
-    return GetSuperClass()->WriteRcHeader( rInst, aMem, pTC, aId,
-                                           nDeep, bExtra );
 }
 
 RscLangArray::RscLangArray( Atom nId, sal_uInt32 nTypeId, RscTop * pSuper,

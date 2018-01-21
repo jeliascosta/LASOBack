@@ -70,14 +70,14 @@ struct SwTextSectionProperties_Impl
     OUString  m_sSectionFilter;
     OUString  m_sSectionRegion;
 
-    ::std::unique_ptr<SwFormatCol>               m_pColItem;
-    ::std::unique_ptr<SvxBrushItem>           m_pBrushItem;
-    ::std::unique_ptr<SwFormatFootnoteAtTextEnd>       m_pFootnoteItem;
-    ::std::unique_ptr<SwFormatEndAtTextEnd>       m_pEndItem;
-    ::std::unique_ptr<SvXMLAttrContainerItem> m_pXMLAttr;
-    ::std::unique_ptr<SwFormatNoBalancedColumns> m_pNoBalanceItem;
-    ::std::unique_ptr<SvxFrameDirectionItem>  m_pFrameDirItem;
-    ::std::unique_ptr<SvxLRSpaceItem>         m_pLRSpaceItem;
+    std::unique_ptr<SwFormatCol>                 m_pColItem;
+    std::unique_ptr<SvxBrushItem>             m_pBrushItem;
+    std::unique_ptr<SwFormatFootnoteAtTextEnd>         m_pFootnoteItem;
+    std::unique_ptr<SwFormatEndAtTextEnd>         m_pEndItem;
+    std::unique_ptr<SvXMLAttrContainerItem> m_pXMLAttr;
+    std::unique_ptr<SwFormatNoBalancedColumns> m_pNoBalanceItem;
+    std::unique_ptr<SvxFrameDirectionItem>    m_pFrameDirItem;
+    std::unique_ptr<SvxLRSpaceItem>           m_pLRSpaceItem;
 
     bool m_bDDE;
     bool m_bHidden;
@@ -112,7 +112,7 @@ public:
     const bool                  m_bIndexHeader;
     bool                        m_bIsDescriptor;
     OUString             m_sName;
-    ::std::unique_ptr<SwTextSectionProperties_Impl> m_pProps;
+    std::unique_ptr<SwTextSectionProperties_Impl> m_pProps;
 
     Impl(   SwXTextSection & rThis,
             SwSectionFormat *const pFormat, const bool bIndexHeader)
@@ -340,9 +340,9 @@ throw (lang::IllegalArgumentException, uno::RuntimeException, std::exception)
     SwSectionData aSect(eType, pDoc->GetUniqueSectionName(&m_pImpl->m_sName));
     aSect.SetCondition(m_pImpl->m_pProps->m_sCondition);
     aSect.SetLinkFileName(m_pImpl->m_pProps->m_sLinkFileName +
-        OUString(sfx2::cTokenSeparator) +
+        OUStringLiteral1(sfx2::cTokenSeparator) +
         m_pImpl->m_pProps->m_sSectionFilter +
-        OUString(sfx2::cTokenSeparator) +
+        OUStringLiteral1(sfx2::cTokenSeparator) +
         m_pImpl->m_pProps->m_sSectionRegion);
 
     aSect.SetHidden(m_pImpl->m_pProps->m_bHidden);
@@ -446,11 +446,11 @@ SwXTextSection::getAnchor() throw (uno::RuntimeException, std::exception)
             pIdx->GetNode().GetNodes().IsDocNodes() )
         {
             SwPaM aPaM(*pIdx);
-            aPaM.Move( fnMoveForward, fnGoContent );
+            aPaM.Move( fnMoveForward, GoInContent );
 
             const SwEndNode* pEndNode = pIdx->GetNode().EndOfSectionNode();
             SwPaM aEnd(*pEndNode);
-            aEnd.Move( fnMoveBackward, fnGoContent );
+            aEnd.Move( fnMoveBackward, GoInContent );
             xRet = SwXTextRange::CreateXTextRange(*pSectFormat->GetDoc(),
                 *aPaM.Start(), aEnd.Start());
         }
@@ -496,7 +496,7 @@ SwXTextSection::getPropertySetInfo() throw (uno::RuntimeException, std::exceptio
 }
 
 static void
-lcl_UpdateLinkType(SwSection & rSection, bool const bLinkUpdateAlways = true)
+lcl_UpdateLinkType(SwSection & rSection, bool const bLinkUpdateAlways)
 {
     if (rSection.GetType() == DDE_LINK_SECTION)
     {
@@ -512,8 +512,8 @@ lcl_UpdateLinkType(SwSection & rSection, bool const bLinkUpdateAlways = true)
 
 static void
 lcl_UpdateSection(SwSectionFormat *const pFormat,
-    ::std::unique_ptr<SwSectionData> const& pSectionData,
-    ::std::unique_ptr<SfxItemSet> const& pItemSet,
+    std::unique_ptr<SwSectionData> const& pSectionData,
+    std::unique_ptr<SfxItemSet> const& pItemSet,
     bool const bLinkModeChanged, bool const bLinkUpdateAlways = true)
 {
     if (pFormat)
@@ -563,12 +563,12 @@ throw (beans::UnknownPropertyException, beans::PropertyVetoException,
         throw uno::RuntimeException();
     }
 
-    ::std::unique_ptr<SwSectionData> const pSectionData(
+    std::unique_ptr<SwSectionData> const pSectionData(
         (pFormat) ? new SwSectionData(*pFormat->GetSection()) : nullptr);
 
     OUString const*const pPropertyNames = rPropertyNames.getConstArray();
     uno::Any const*const pValues = rValues.getConstArray();
-    ::std::unique_ptr<SfxItemSet> pItemSet;
+    std::unique_ptr<SfxItemSet> pItemSet;
     bool bLinkModeChanged = false;
     bool bLinkMode = false;
 
@@ -616,7 +616,7 @@ throw (beans::UnknownPropertyException, beans::PropertyVetoException,
                     if (!m_pProps->m_bDDE)
                     {
                         m_pProps->m_sLinkFileName =
-                            OUString(sfx2::cTokenSeparator) + OUString(sfx2::cTokenSeparator);
+                            OUStringLiteral1(sfx2::cTokenSeparator) + OUStringLiteral1(sfx2::cTokenSeparator);
                         m_pProps->m_bDDE = true;
                     }
                     m_pProps->m_sLinkFileName = comphelper::string::setToken(
@@ -628,7 +628,7 @@ throw (beans::UnknownPropertyException, beans::PropertyVetoException,
                     OUString sLinkFileName(pSectionData->GetLinkFileName());
                     if (pSectionData->GetType() != DDE_LINK_SECTION)
                     {
-                        sLinkFileName = OUString(sfx2::cTokenSeparator) + OUString(sfx2::cTokenSeparator);
+                        sLinkFileName = OUStringLiteral1(sfx2::cTokenSeparator) + OUStringLiteral1(sfx2::cTokenSeparator);
                         pSectionData->SetType(DDE_LINK_SECTION);
                     }
                     sLinkFileName = comphelper::string::setToken(sLinkFileName,
@@ -682,8 +682,8 @@ throw (beans::UnknownPropertyException, beans::PropertyVetoException,
                             aLink.FileURL, URIHelper::GetMaybeFileHdl())
                         : OUString());
                     const OUString sFileName(
-                        sTmp + OUString(sfx2::cTokenSeparator) +
-                        aLink.FilterName + OUString(sfx2::cTokenSeparator) +
+                        sTmp + OUStringLiteral1(sfx2::cTokenSeparator) +
+                        aLink.FilterName + OUStringLiteral1(sfx2::cTokenSeparator) +
                         pSectionData->GetLinkFileName().getToken(2, sfx2::cTokenSeparator));
                     pSectionData->SetLinkFileName(sFileName);
                     if (sFileName.getLength() < 3)
@@ -713,7 +713,7 @@ throw (beans::UnknownPropertyException, beans::PropertyVetoException,
                     for (sal_Int32 i = comphelper::string::getTokenCount(sSectLink, sfx2::cTokenSeparator);
                          i < 3; ++i)
                     {
-                        sSectLink += OUString(sfx2::cTokenSeparator);
+                        sSectLink += OUStringLiteral1(sfx2::cTokenSeparator);
                     }
                     sSectLink = comphelper::string::setToken(sSectLink, 2, sfx2::cTokenSeparator, sLink);
                     pSectionData->SetLinkFileName(sSectLink);
@@ -1473,10 +1473,10 @@ throw (beans::UnknownPropertyException, uno::RuntimeException, std::exception)
             static_cast<cppu::OWeakObject *>(this));
     }
 
-    ::std::unique_ptr<SwSectionData> const pSectionData(
+    std::unique_ptr<SwSectionData> const pSectionData(
         (pFormat) ? new SwSectionData(*pFormat->GetSection()) : nullptr);
 
-    ::std::unique_ptr<SfxItemSet> pNewAttrSet;
+    std::unique_ptr<SfxItemSet> pNewAttrSet;
     bool bLinkModeChanged = false;
 
     switch (pEntry->nWID)
@@ -1563,7 +1563,7 @@ throw (beans::UnknownPropertyException, uno::RuntimeException, std::exception)
         break;
         default:
         {
-            if (pEntry->nWID <= SFX_WHICH_MAX)
+            if (SfxItemPool::IsWhich(pEntry->nWID))
             {
                 if (pFormat)
                 {
@@ -1634,7 +1634,7 @@ throw (beans::UnknownPropertyException, lang::WrappedTargetException,
             ::sw::GetDefaultTextContentValue(aRet, OUString(), pEntry->nWID);
         break;
         default:
-        if(pFormat && pEntry->nWID <= SFX_WHICH_MAX)
+        if(pFormat && SfxItemPool::IsWhich(pEntry->nWID))
         {
             SwDoc *const pDoc = pFormat->GetDoc();
             const SfxPoolItem& rDefItem =

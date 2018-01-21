@@ -28,10 +28,10 @@
 namespace basctl
 {
 
-ObjectCatalog::ObjectCatalog (vcl::Window* pParent) :
-    DockingWindow(pParent),
-    aTitle(VclPtr<FixedText>::Create(this)),
-    aTree(VclPtr<TreeListBox>::Create(this, IDEResId(RID_TLB_MACROS)))
+ObjectCatalog::ObjectCatalog (vcl::Window* pParent)
+    : DockingWindow(pParent)
+    , aTitle(VclPtr<FixedText>::Create(this))
+    , aTree(VclPtr<TreeListBox>::Create(this, WB_TABSTOP))
 {
     SetHelpId("basctl:FloatingWindow:RID_BASICIDE_OBJCAT");
     SetText(IDEResId(RID_BASICIDE_OBJCAT).toString());
@@ -112,15 +112,15 @@ void ObjectCatalog::ArrangeWindows()
         aTitle->Hide();
     else
     {
-        Size aTitleSize = LogicToPixel(Size(3, 10), MAP_APPFONT);
+        Size aTitleSize = LogicToPixel(Size(3, 10), MapUnit::MapAppFont);
         aTitleSize.Width() = aSize.Width() - 2*aTitleSize.Width();
-        aTitle->SetPosPixel(LogicToPixel(Point(3, 3), MAP_APPFONT));
+        aTitle->SetPosPixel(LogicToPixel(Point(3, 3), MapUnit::MapAppFont));
         aTitle->SetSizePixel(aTitleSize);
         aTitle->Show();
     }
 
     // tree
-    Point const aTreePos = LogicToPixel(Point(3, bFloating ? 3 : 16), MAP_APPFONT);
+    Point const aTreePos = LogicToPixel(Point(3, bFloating ? 3 : 16), MapUnit::MapAppFont);
     long const nMargin = aTreePos.X();
     Size const aTreeSize(
         aSize.Width() - 2*nMargin,

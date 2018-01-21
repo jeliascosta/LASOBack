@@ -32,8 +32,8 @@
 using namespace ::com::sun::star;
 using namespace ::com::sun::star::uno;
 
-SwPageFootnoteInfoItem::SwPageFootnoteInfoItem( const sal_uInt16 nId, SwPageFootnoteInfo& rInfo) :
-    SfxPoolItem( nId ),
+SwPageFootnoteInfoItem::SwPageFootnoteInfoItem( SwPageFootnoteInfo& rInfo) :
+    SfxPoolItem( FN_PARAM_FTN_INFO ),
     aFootnoteInfo(rInfo)
 {
 }
@@ -59,11 +59,11 @@ bool SwPageFootnoteInfoItem::operator==( const SfxPoolItem& rAttr ) const
     return ( aFootnoteInfo == static_cast<const SwPageFootnoteInfoItem&>(rAttr).GetPageFootnoteInfo());
 }
 
-bool  SwPageFootnoteInfoItem::GetPresentation
+bool SwPageFootnoteInfoItem::GetPresentation
 (
     SfxItemPresentation /*ePres*/,
-    SfxMapUnit          eCoreUnit,
-    SfxMapUnit          ePresUnit,
+    MapUnit             eCoreUnit,
+    MapUnit             ePresUnit,
     OUString&           rText,
     const IntlWrapper*  pIntl
 )   const
@@ -221,8 +221,8 @@ bool SwPtrItem::operator==( const SfxPoolItem& rAttr ) const
 
 // SwUINumRuleItem for the NumTabPages of the FormatNumRule/Styleists
 
-SwUINumRuleItem::SwUINumRuleItem( const SwNumRule& rRul, const sal_uInt16 nId )
-    : SfxPoolItem( nId ), pRule( new SwNumRule( rRul ) )
+SwUINumRuleItem::SwUINumRuleItem( const SwNumRule& rRul )
+    : SfxPoolItem( FN_PARAM_ACT_NUMBER ), pRule( new SwNumRule( rRul ) )
 {
 }
 
@@ -251,7 +251,7 @@ bool SwUINumRuleItem::operator==( const SfxPoolItem& rAttr ) const
 bool SwUINumRuleItem::QueryValue( uno::Any& rVal, sal_uInt8 /*nMemberId*/ ) const
 {
     uno::Reference< container::XIndexReplace >xRules = new SwXNumberingRules(*pRule);
-    rVal.setValue(&xRules, cppu::UnoType<container::XIndexReplace>::get());
+    rVal <<= xRules;
     return true;
 }
 bool SwUINumRuleItem::PutValue( const uno::Any& rVal, sal_uInt8 /*nMemberId*/ )

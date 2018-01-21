@@ -234,11 +234,6 @@ CustomAnimationPresets::~CustomAnimationPresets()
 {
 }
 
-void CustomAnimationPresets::init()
-{
-    importResources();
-}
-
 Reference< XAnimationNode > implImportEffects( const Reference< XMultiServiceFactory >& xServiceFactory, const OUString& rPath )
 {
     Reference< XAnimationNode > xRootNode;
@@ -513,7 +508,7 @@ const OUString& CustomAnimationPresets::getUINameForProperty( const OUString& rP
     return translateName( rPresetId, maPropertyNameMap );
 }
 
-const OUString& CustomAnimationPresets::translateName( const OUString& rId, const UStringMap& rNameMap ) const
+const OUString& CustomAnimationPresets::translateName( const OUString& rId, const UStringMap& rNameMap )
 {
     UStringMap::const_iterator aIter( rNameMap.find( rId ) );
 
@@ -552,7 +547,7 @@ const CustomAnimationPresets& CustomAnimationPresets::getCustomAnimationPresets(
         if( !mpCustomAnimationPresets )
         {
             mpCustomAnimationPresets = new sd::CustomAnimationPresets();
-            mpCustomAnimationPresets->init();
+            mpCustomAnimationPresets->importResources();
         }
     }
 

@@ -24,6 +24,7 @@
 #include <vcl/builderfactory.hxx>
 #include <vcl/svapp.hxx>
 #include <vcl/settings.hxx>
+#include <uitest/uiobject.hxx>
 
 SvSimpleTableContainer::SvSimpleTableContainer(vcl::Window* pParent, WinBits nBits)
     : Control(pParent, nBits)
@@ -48,6 +49,11 @@ VCL_BUILDER_FACTORY_ARGS(SvSimpleTableContainer,
 void SvSimpleTableContainer::SetTable(SvSimpleTable* pTable)
 {
     m_pTable = pTable;
+}
+
+SvSimpleTable* SvSimpleTableContainer::GetTable()
+{
+    return m_pTable.get();
 }
 
 bool SvSimpleTableContainer::PreNotify( NotifyEvent& rNEvt )
@@ -82,6 +88,11 @@ void SvSimpleTableContainer::GetFocus()
     Control::GetFocus();
     if (m_pTable)
         m_pTable->GrabFocus();
+}
+
+FactoryFunction SvSimpleTableContainer::GetUITestFactory() const
+{
+    return SimpleTableUIObject::createFromContainer;
 }
 
 // SvSimpleTable ------------------------------------------------------------
@@ -179,11 +190,6 @@ void SvSimpleTable::SetTabs()
 
         aHeaderBar->SetItemSize( i, HEADERBAR_FULLSIZE ); // because no tab for last entry
     }
-}
-
-void SvSimpleTable::SetTabs(const long* pTabs, MapUnit eMapUnit)
-{
-    SvHeaderTabListBox::SetTabs(pTabs,eMapUnit);
 }
 
 void SvSimpleTable::Paint(vcl::RenderContext& rRenderContext, const Rectangle& rRect)
@@ -333,17 +339,6 @@ void SvSimpleTable::HBarClick()
     }
 }
 
-void SvSimpleTable::HBarStartDrag()
-{
-    if(!aHeaderBar->IsItemMode())
-    {
-        Rectangle aSizeRect(Point(0,0),
-            SvHeaderTabListBox::GetOutputSizePixel());
-        aSizeRect.Left()=-GetXOffset()+aHeaderBar->GetDragPos();
-        aSizeRect.Right()=-GetXOffset()+aHeaderBar->GetDragPos();
-        ShowTracking( aSizeRect, ShowTrackFlags::Split );
-    }
-}
 void SvSimpleTable::HBarDrag()
 {
     HideTracking();
@@ -371,7 +366,7 @@ void SvSimpleTable::HBarEndDrag()
         for(sal_uInt16 i=1;i<nPrivTabCount;i++)
         {
             nNewSize = static_cast< sal_uInt16 >( aHeaderBar->GetItemSize(i) ) + nPos;
-            SetTab( i, nNewSize, MAP_PIXEL );
+            SetTab( i, nNewSize, MapUnit::MapPixel );
             nPos = nNewSize;
         }
     }
@@ -388,15 +383,22 @@ void SvSimpleTable::Command( const CommandEvent& rCEvt )
     SvHeaderTabListBox::Command(rCEvt);
 }
 
-IMPL_LINK_TYPED( SvSimpleTable, StartDragHdl, HeaderBar*, pCtr, void)
+IMPL_LINK( SvSimpleTable, StartDragHdl, HeaderBar*, pCtr, void)
 {
     if(pCtr==aHeaderBar.get())
     {
-        HBarStartDrag();
+        if(!aHeaderBar->IsItemMode())
+        {
+            Rectangle aSizeRect(Point(0,0),
+                SvHeaderTabListBox::GetOutputSizePixel());
+            aSizeRect.Left()=-GetXOffset()+aHeaderBar->GetDragPos();
+            aSizeRect.Right()=-GetXOffset()+aHeaderBar->GetDragPos();
+            ShowTracking( aSizeRect, ShowTrackFlags::Split );
+        }
     }
 }
 
-IMPL_LINK_TYPED( SvSimpleTable, DragHdl, HeaderBar*, pCtr, void)
+IMPL_LINK( SvSimpleTable, DragHdl, HeaderBar*, pCtr, void)
 {
     if(pCtr==aHeaderBar.get())
     {
@@ -404,7 +406,7 @@ IMPL_LINK_TYPED( SvSimpleTable, DragHdl, HeaderBar*, pCtr, void)
     }
 }
 
-IMPL_LINK_TYPED( SvSimpleTable, EndDragHdl, HeaderBar*, pCtr, void)
+IMPL_LINK( SvSimpleTable, EndDragHdl, HeaderBar*, pCtr, void)
 {
     if(pCtr==aHeaderBar.get())
     {
@@ -412,7 +414,7 @@ IMPL_LINK_TYPED( SvSimpleTable, EndDragHdl, HeaderBar*, pCtr, void)
     }
 }
 
-IMPL_LINK_TYPED( SvSimpleTable, HeaderBarClick, HeaderBar*, pCtr, void)
+IMPL_LINK( SvSimpleTable, HeaderBarClick, HeaderBar*, pCtr, void)
 {
     if(pCtr==aHeaderBar.get())
     {
@@ -451,18 +453,18 @@ sal_Int32 SvSimpleTable::ColCompare(SvTreeListEntry* pLeft,SvTreeListEntry* pRig
 
     if(pLeftItem != nullptr && pRightItem != nullptr)
     {
-        sal_uInt16 nLeftKind = pLeftItem->GetType();
-        sal_uInt16 nRightKind = pRightItem->GetType();
+        SvLBoxItemType nLeftKind = pLeftItem->GetType();
+        SvLBoxItemType nRightKind = pRightItem->GetType();
 
-        if(nRightKind == SV_ITEM_ID_LBOXSTRING &&
-            nLeftKind == SV_ITEM_ID_LBOXSTRING )
+        if (nRightKind == SvLBoxItemType::String &&
+             nLeftKind == SvLBoxItemType::String)
             nCompare = aCollator.compareString( static_cast<SvLBoxString*>(pLeftItem)->GetText(),
                                     static_cast<SvLBoxString*>(pRightItem)->GetText());
     }
     return nCompare;
 }
 
-IMPL_LINK_TYPED( SvSimpleTable, CompareHdl, const SvSortData&, rData, sal_Int32)
+IMPL_LINK( SvSimpleTable, CompareHdl, const SvSortData&, rData, sal_Int32)
 {
     SvTreeListEntry* pLeft = const_cast<SvTreeListEntry*>(rData.pLeft);
     SvTreeListEntry* pRight = const_cast<SvTreeListEntry*>(rData.pRight);

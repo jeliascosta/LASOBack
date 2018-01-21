@@ -1064,7 +1064,7 @@ class GL2DRenderer : public IRenderer
 {
 public:
     explicit GL2DRenderer(ChartView* pView);
-    virtual ~GL2DRenderer();
+    virtual ~GL2DRenderer() override;
 
     virtual void update() override;
     virtual void clickedAt(const Point& rPos, sal_uInt16 nButton) override;
@@ -1270,7 +1270,7 @@ void ChartView::getMetaFile( const uno::Reference< io::XOutputStream >& xOutStre
     aProps[1].Name = "OutputStream";
     aProps[1].Value <<= xOutStream;
 
-    uno::Sequence< beans::PropertyValue > aFilterData(4);
+    uno::Sequence< beans::PropertyValue > aFilterData(8);
     aFilterData[0].Name = "ExportOnlyBackground";
     aFilterData[0].Value <<= false;
     aFilterData[1].Name = "HighContrast";
@@ -1284,17 +1284,15 @@ void ChartView::getMetaFile( const uno::Reference< io::XOutputStream >& xOutStre
     aFilterData[3].Value <<= uno::Reference< uno::XInterface >( m_xDrawPage, uno::UNO_QUERY );
 
     //#i75867# poor quality of ole's alternative view with 3D scenes and zoomfactors besides 100%
-    {
-        aFilterData.realloc( aFilterData.getLength()+4 );
-        aFilterData[4].Name = "ScaleXNumerator";
-        aFilterData[4].Value = uno::makeAny( m_nScaleXNumerator );
-        aFilterData[5].Name = "ScaleXDenominator";
-        aFilterData[5].Value = uno::makeAny( m_nScaleXDenominator );
-        aFilterData[6].Name = "ScaleYNumerator";
-        aFilterData[6].Value = uno::makeAny( m_nScaleYNumerator );
-        aFilterData[7].Name = "ScaleYDenominator";
-        aFilterData[7].Value = uno::makeAny( m_nScaleYDenominator );
-    }
+    aFilterData[4].Name = "ScaleXNumerator";
+    aFilterData[4].Value = uno::makeAny( m_nScaleXNumerator );
+    aFilterData[5].Name = "ScaleXDenominator";
+    aFilterData[5].Value = uno::makeAny( m_nScaleXDenominator );
+    aFilterData[6].Name = "ScaleYNumerator";
+    aFilterData[6].Value = uno::makeAny( m_nScaleYNumerator );
+    aFilterData[7].Name = "ScaleYDenominator";
+    aFilterData[7].Value = uno::makeAny( m_nScaleYDenominator );
+
 
     aProps[2].Name = "FilterData";
     aProps[2].Value <<= aFilterData;
@@ -1383,11 +1381,6 @@ sal_Bool SAL_CALL ChartView::isDataFlavorSupported( const datatransfer::DataFlav
 OUString SAL_CALL ChartView::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString ChartView::getImplementationName_Static()
-{
     return OUString(CHART_VIEW_SERVICE_IMPLEMENTATION_NAME);
 }
 
@@ -1400,13 +1393,7 @@ sal_Bool SAL_CALL ChartView::supportsService( const OUString& rServiceName )
 css::uno::Sequence< OUString > SAL_CALL ChartView::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
-}
-
-uno::Sequence< OUString > ChartView::getSupportedServiceNames_Static()
-{
-    uno::Sequence<OUString> aSNS { CHART_VIEW_SERVICE_NAME };
-    return aSNS;
+    return { CHART_VIEW_SERVICE_NAME };
 }
 
 ::basegfx::B3DHomMatrix createTransformationSceneToScreen(
@@ -1485,7 +1472,7 @@ void lcl_setDefaultWritingMode( const std::shared_ptr< DrawModelWrapper >& pDraw
                                             uno::Reference< beans::XPropertySet > xEmbeddedProps( xEmbeddedObjects->getByName( aNames[nN] ), uno::UNO_QUERY );
                                             if( xEmbeddedProps.is() )
                                             {
-                                                static OUString aChartCLSID = OUString( SvGlobalName( SO3_SCH_CLASSID ).GetHexName());
+                                                static OUString aChartCLSID = SvGlobalName( SO3_SCH_CLASSID ).GetHexName();
                                                 OUString aCLSID;
                                                 xEmbeddedProps->getPropertyValue( "CLSID" ) >>= aCLSID;
                                                 if( aCLSID.equals(aChartCLSID) )
@@ -2815,19 +2802,19 @@ void ChartView::Notify( SfxBroadcaster& /*rBC*/, const SfxHint& rHint )
     bool bShapeChanged = false;
     switch( pSdrHint->GetKind() )
     {
-         case HINT_OBJCHG:
+         case SdrHintKind::ObjectChange:
             bShapeChanged = true;
             break;
-        case HINT_OBJINSERTED:
+        case SdrHintKind::ObjectInserted:
             bShapeChanged = true;
             break;
-        case HINT_OBJREMOVED:
+        case SdrHintKind::ObjectRemoved:
             bShapeChanged = true;
             break;
-        case HINT_MODELCLEARED:
+        case SdrHintKind::ModelCleared:
             bShapeChanged = true;
             break;
-        case HINT_ENDEDIT:
+        case SdrHintKind::EndEdit:
             bShapeChanged = true;
             break;
         default:
@@ -3148,7 +3135,7 @@ void ChartView::setViewDirty()
     m_bViewDirty = true;
 }
 
-IMPL_LINK_NOARG_TYPED(ChartView, UpdateTimeBased, Timer *, void)
+IMPL_LINK_NOARG(ChartView, UpdateTimeBased, Timer *, void)
 {
     setViewDirty();
     update();
@@ -3350,7 +3337,7 @@ void ChartView::createShapes3D()
     if( pWindow->GetSizePixel().Width() == 0 || pWindow->GetSizePixel().Height() == 0 )
     {
         awt::Size aPageSize = mrChartModel.getVisualAreaSize( embed::Aspects::MSOLE_CONTENT );
-        Size aSize = pWindow->LogicToPixel( Size(aPageSize.Width,aPageSize.Height), MapUnit(MAP_100TH_MM) );
+        Size aSize = pWindow->LogicToPixel( Size(aPageSize.Width,aPageSize.Height), MapUnit(MapUnit::Map100thMM) );
         pWindow->SetSizePixel(aSize);
     }
     pWindow->Show();

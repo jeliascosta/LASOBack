@@ -30,7 +30,7 @@ class SVL_DLLPUBLIC CntUnencodedStringItem: public SfxPoolItem
 
 public:
 
-    CntUnencodedStringItem(sal_uInt16 which = 0): SfxPoolItem(which)
+    CntUnencodedStringItem(sal_uInt16 which): SfxPoolItem(which)
     {}
 
     CntUnencodedStringItem(sal_uInt16 which, const OUString & rTheValue):
@@ -41,15 +41,14 @@ public:
         SfxPoolItem(rItem), m_aValue(rItem.m_aValue)
     {}
 
-    virtual ~CntUnencodedStringItem() {}
+    virtual ~CntUnencodedStringItem() override {}
 
     virtual bool operator ==(const SfxPoolItem & rItem) const override;
 
     virtual bool GetPresentation(SfxItemPresentation,
-                                                SfxMapUnit, SfxMapUnit,
-                                                OUString & rText,
-                                                const IntlWrapper * = nullptr)
-        const override;
+                                 MapUnit, MapUnit,
+                                 OUString & rText,
+                                 const IntlWrapper * = nullptr) const override;
 
     virtual bool QueryValue(css::uno::Any& rVal,
                             sal_uInt8 nMemberId = 0) const override;

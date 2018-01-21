@@ -132,7 +132,7 @@ void AnnotationTextWindow::Paint( vcl::RenderContext& /*rRenderContext*/, const 
     if ( !bHighContrast )
     {
         DrawGradient(Rectangle(Point(0,0),PixelToLogic(GetSizePixel())),
-            Gradient(GradientStyle_LINEAR,mpAnnotationWindow->maColorLight,mpAnnotationWindow->maColor));
+            Gradient(GradientStyle::Linear,mpAnnotationWindow->maColorLight,mpAnnotationWindow->maColor));
      }
 
     if( mpOutlinerView )
@@ -226,16 +226,6 @@ void AnnotationTextWindow::Command( const CommandEvent& rCEvt )
     }
 }
 
-void AnnotationTextWindow::GetFocus()
-{
-    Window::GetFocus();
-}
-
-void AnnotationTextWindow::LoseFocus()
-{
-    Window::LoseFocus();
-}
-
 OUString AnnotationTextWindow::GetSurroundingText() const
 {
     if( mpOutlinerView )
@@ -327,7 +317,7 @@ void AnnotationWindow::InitControls()
     mpMeta->SetSettings(aSettings);
 
     mpOutliner = new ::Outliner(GetAnnotationPool(),OutlinerMode::TextObject);
-    Doc()->SetCalcFieldValueHdl( mpOutliner );
+    SdDrawDocument::SetCalcFieldValueHdl( mpOutliner );
     mpOutliner->SetUpdateMode( true );
     Rescale();
 
@@ -363,7 +353,7 @@ void AnnotationWindow::InitControls()
 
     Invalidate();
 
-    SetLanguage(GetLanguage());
+    SetLanguage(SvxLanguageItem( Doc()->GetLanguage( EE_CHAR_LANGUAGE ), SID_ATTR_LANGUAGE ));
 
     mpMeta->Show();
     mpVScrollbar->Show();
@@ -378,7 +368,7 @@ void AnnotationWindow::StartEdit()
 
 void AnnotationWindow::Rescale()
 {
-    MapMode aMode(MAP_100TH_MM);
+    MapMode aMode(MapUnit::Map100thMM);
     aMode.SetOrigin( Point() );
     mpOutliner->SetRefMapMode( aMode );
     SetMapMode( aMode );
@@ -449,11 +439,6 @@ void AnnotationWindow::DoResize()
 
 }
 
-void AnnotationWindow::SetSizePixel( const Size& rNewSize )
-{
-    Window::SetSizePixel(rNewSize);
-}
-
 void AnnotationWindow::SetScrollbar()
 {
     mpVScrollbar->SetThumbPos(mpOutlinerView->GetVisArea().Top());
@@ -503,15 +488,10 @@ long AnnotationWindow::GetPostItTextHeight()
     return mpOutliner ? LogicToPixel(mpOutliner->CalcTextSize()).Height() : 0;
 }
 
-IMPL_LINK_TYPED(AnnotationWindow, ScrollHdl, ScrollBar*, pScroll, void)
+IMPL_LINK(AnnotationWindow, ScrollHdl, ScrollBar*, pScroll, void)
 {
     long nDiff = getView()->GetEditView().GetVisArea().Top() - pScroll->GetThumbPos();
     getView()->Scroll( 0, nDiff );
-}
-
-SvxLanguageItem AnnotationWindow::GetLanguage()
-{
-    return SvxLanguageItem( Doc()->GetLanguage( EE_CHAR_LANGUAGE ), SID_ATTR_LANGUAGE );
 }
 
 TextApiObject* getTextApiObject( const Reference< XAnnotation >& xAnnotation )
@@ -678,9 +658,9 @@ void AnnotationWindow::Paint(vcl::RenderContext& rRenderContext, const Rectangle
             //draw button
             Gradient aGradient;
             if (mbMouseOverButton)
-                aGradient = Gradient(GradientStyle_LINEAR,ColorFromAlphaColor(80,maColorDark,maColor),ColorFromAlphaColor(15,maColorDark,maColor));
+                aGradient = Gradient(GradientStyle::Linear,ColorFromAlphaColor(80,maColorDark,maColor),ColorFromAlphaColor(15,maColorDark,maColor));
             else
-                aGradient = Gradient(GradientStyle_LINEAR,ColorFromAlphaColor(15,maColorDark,maColor),ColorFromAlphaColor(80,maColorDark,maColor));
+                aGradient = Gradient(GradientStyle::Linear,ColorFromAlphaColor(15,maColorDark,maColor),ColorFromAlphaColor(80,maColorDark,maColor));
             DrawGradient(maRectMetaButton,aGradient);
             //draw rect around button
             SetFillColor();

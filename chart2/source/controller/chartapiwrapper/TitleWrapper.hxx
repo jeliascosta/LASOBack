@@ -49,8 +49,8 @@ class TitleWrapper : public ::cppu::ImplInheritanceHelper<
 {
 public:
     TitleWrapper( ::chart::TitleHelper::eTitleType eTitleType,
-                  std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
-    virtual ~TitleWrapper();
+                  const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact );
+    virtual ~TitleWrapper() override;
 
     /// XServiceInfo declarations
     virtual OUString SAL_CALL getImplementationName()
@@ -59,9 +59,6 @@ public:
             throw( css::uno::RuntimeException, std::exception ) override;
     virtual css::uno::Sequence< OUString > SAL_CALL getSupportedServiceNames()
             throw( css::uno::RuntimeException, std::exception ) override;
-
-    static OUString getImplementationName_Static();
-    static css::uno::Sequence< OUString > getSupportedServiceNames_Static();
 
     //ReferenceSizePropertyProvider
     virtual void updateReferenceSize() override;

@@ -42,8 +42,7 @@ private:
 protected:
     using Window::ImplInit;
     SAL_DLLPRIVATE void     ImplInit( vcl::Window* pParent, WinBits nStyle );
-    SAL_DLLPRIVATE WinBits  ImplInitStyle( WinBits nStyle );
-    SAL_DLLPRIVATE void     ImplLoadRes( const ResId& rResId );
+    SAL_DLLPRIVATE static WinBits ImplInitStyle( WinBits nStyle );
     SAL_DLLPRIVATE void     ImplCalcEditHeight();
     SAL_DLLPRIVATE long     getMaxWidthScrollBarAndDownButton() const;
 
@@ -54,13 +53,11 @@ protected:
 
 public:
     explicit        ComboBox( vcl::Window* pParent, WinBits nStyle = 0 );
-    explicit        ComboBox( vcl::Window* pParent, const ResId& );
-    virtual         ~ComboBox();
+    virtual         ~ComboBox() override;
     virtual void    dispose() override;
 
     virtual void    Draw( OutputDevice* pDev, const Point& rPos, const Size& rSize, DrawFlags nFlags ) override;
     virtual void    Resize() override;
-    virtual bool    PreNotify( NotifyEvent& rNEvt ) override;
     virtual bool    Notify( NotifyEvent& rNEvt ) override;
     virtual void    StateChanged( StateChangedType nType ) override;
     virtual void    DataChanged( const DataChangedEvent& rDCEvt ) override;
@@ -74,8 +71,6 @@ public:
     virtual const Wallpaper& GetDisplayBackground() const override;
 
     virtual void    setPosSizePixel( long nX, long nY, long nWidth, long nHeight, PosSizeFlags nFlags = PosSizeFlags::All ) override;
-    void            SetPosSizePixel( const Point& rNewPos, const Size& rNewSize ) override
-                        { Edit::SetPosSizePixel( rNewPos, rNewSize ); }
 
     Rectangle       GetDropDownPosSizePixel() const;
 
@@ -117,7 +112,7 @@ public:
     void            DrawEntry( const UserDrawEvent& rEvt, bool bDrawImage, bool bDrawText, bool bDrawTextAtImagePos = false );
     void            SetBorderStyle( WindowBorderStyle nBorderStyle );
 
-    void            SetSeparatorPos( sal_Int32  n = COMBOBOX_ENTRY_NOTFOUND );
+    void            SetSeparatorPos( sal_Int32  n );
 
     void            EnableAutocomplete( bool bEnable, bool bMatchCase = false );
     bool            IsAutocompleteEnabled() const;
@@ -181,6 +176,8 @@ public:
     void setMaxWidthChars(sal_Int32 nWidth);
 
     virtual bool set_property(const OString &rKey, const OString &rValue) override;
+
+    virtual FactoryFunction GetUITestFactory() const override;
 };
 
 #endif  // _COMBOBOX_HXX

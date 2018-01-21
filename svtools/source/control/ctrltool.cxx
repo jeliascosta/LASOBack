@@ -441,8 +441,7 @@ OUString FontList::GetStyleName(const FontMetric& rInfo) const
     else
     {
         // Translate StyleName to localized name
-        OUString aCompareStyleName = aStyleName.toAsciiLowerCase();
-        aCompareStyleName = comphelper::string::remove(aCompareStyleName, ' ');
+        OUString aCompareStyleName = aStyleName.toAsciiLowerCase().replaceAll(" ", "");
         if (aCompareStyleName == "bold")
             aStyleName = maBold;
         else if (aCompareStyleName == "bolditalic")
@@ -748,7 +747,7 @@ const sal_IntPtr* FontList::GetSizeAry( const FontMetric& rInfo ) const
         return aStdSizeAry;
 
     MapMode aOldMapMode = pDevice->GetMapMode();
-    MapMode aMap( MAP_10TH_INCH, Point(), Fraction( 1, 72 ), Fraction( 1, 72 ) );
+    MapMode aMap( MapUnit::Map10thInch, Point(), Fraction( 1, 72 ), Fraction( 1, 72 ) );
     pDevice->SetMapMode( aMap );
 
     int nRealCount = 0;

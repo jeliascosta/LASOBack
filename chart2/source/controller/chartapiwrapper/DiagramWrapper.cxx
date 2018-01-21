@@ -41,7 +41,6 @@
 #include "WrappedSceneProperty.hxx"
 #include "WrappedGL3DProperties.hxx"
 #include "RelativePositionHelper.hxx"
-#include "ContainerHelper.hxx"
 #include "ControllerLockGuard.hxx"
 #include "ModifyListenerHelper.hxx"
 #include "DisposeHelper.hxx"
@@ -80,7 +79,6 @@ using ::osl::MutexGuard;
 
 namespace
 {
-static const char lcl_aServiceName[] = "com.sun.star.comp.chart.Diagram";
 
 enum
 {
@@ -140,9 +138,7 @@ enum
     PROP_DIAGRAM_DATATABLEHBORDER,
     PROP_DIAGRAM_DATATABLEVBORDER,
     PROP_DIAGRAM_DATATABLEOUTLINE,
-    PROP_DIAGRAM_EXTERNALDATA,
-
-    PROP_DIAGRAM_ROUNDED_EDGE
+    PROP_DIAGRAM_EXTERNALDATA
 };
 
 void lcl_AddPropertiesToVector(
@@ -628,10 +624,9 @@ namespace chart
 namespace wrapper
 {
 
-DiagramWrapper::DiagramWrapper(
-    std::shared_ptr< Chart2ModelContact > spChart2ModelContact ) :
-        m_spChart2ModelContact( spChart2ModelContact ),
-        m_aEventListenerContainer( m_aMutex )
+DiagramWrapper::DiagramWrapper(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
+    : m_spChart2ModelContact(spChart2ModelContact)
+    , m_aEventListenerContainer(m_aMutex)
 {
 }
 
@@ -1201,8 +1196,8 @@ void SAL_CALL DiagramWrapper::removeEventListener(
 class WrappedDataRowSourceProperty : public WrappedProperty
 {
 public:
-    explicit WrappedDataRowSourceProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
-    virtual ~WrappedDataRowSourceProperty();
+    explicit WrappedDataRowSourceProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
+    virtual ~WrappedDataRowSourceProperty() override;
 
     virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
                         throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
@@ -1218,7 +1213,7 @@ private: //member
     mutable Any                                 m_aOuterValue;
 };
 
-WrappedDataRowSourceProperty::WrappedDataRowSourceProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
+WrappedDataRowSourceProperty::WrappedDataRowSourceProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
             : WrappedProperty("DataRowSource",OUString())
             , m_spChart2ModelContact( spChart2ModelContact )
             , m_aOuterValue()
@@ -1303,8 +1298,8 @@ Any WrappedDataRowSourceProperty::getPropertyDefault( const Reference< beans::XP
 class WrappedStackingProperty : public WrappedProperty
 {
 public:
-    WrappedStackingProperty( StackMode eStackMode, std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
-    virtual ~WrappedStackingProperty();
+    WrappedStackingProperty(StackMode eStackMode, const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
+    virtual ~WrappedStackingProperty() override;
 
     virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
                         throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
@@ -1324,7 +1319,7 @@ std::shared_ptr< Chart2ModelContact >   m_spChart2ModelContact;
     mutable Any                             m_aOuterValue;
 };
 
-WrappedStackingProperty::WrappedStackingProperty( StackMode eStackMode, std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
+WrappedStackingProperty::WrappedStackingProperty(StackMode eStackMode, const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
             : WrappedProperty(OUString(),OUString())
             , m_spChart2ModelContact( spChart2ModelContact )
             , m_eStackMode( eStackMode )
@@ -1413,8 +1408,8 @@ Any WrappedStackingProperty::getPropertyDefault( const Reference< beans::XProper
 class WrappedDim3DProperty : public WrappedProperty
 {
 public:
-    explicit WrappedDim3DProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
-    virtual ~WrappedDim3DProperty();
+    explicit WrappedDim3DProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
+    virtual ~WrappedDim3DProperty() override;
 
     virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
                         throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
@@ -1430,7 +1425,7 @@ private: //member
     mutable Any                                 m_aOuterValue;
 };
 
-WrappedDim3DProperty::WrappedDim3DProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
+WrappedDim3DProperty::WrappedDim3DProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
             : WrappedProperty("Dim3D",OUString())
             , m_spChart2ModelContact( spChart2ModelContact )
             , m_aOuterValue()
@@ -1484,8 +1479,8 @@ Any WrappedDim3DProperty::getPropertyDefault( const Reference< beans::XPropertyS
 class WrappedVerticalProperty : public WrappedProperty
 {
 public:
-    explicit WrappedVerticalProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
-    virtual ~WrappedVerticalProperty();
+    explicit WrappedVerticalProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
+    virtual ~WrappedVerticalProperty() override;
 
     virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
                         throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
@@ -1501,7 +1496,7 @@ private: //member
     mutable Any                                 m_aOuterValue;
 };
 
-WrappedVerticalProperty::WrappedVerticalProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
+WrappedVerticalProperty::WrappedVerticalProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
             : WrappedProperty("Vertical",OUString())
             , m_spChart2ModelContact( spChart2ModelContact )
             , m_aOuterValue()
@@ -1560,8 +1555,8 @@ Any WrappedVerticalProperty::getPropertyDefault( const Reference< beans::XProper
 class WrappedNumberOfLinesProperty : public WrappedProperty
 {
 public:
-    explicit WrappedNumberOfLinesProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
-    virtual ~WrappedNumberOfLinesProperty();
+    explicit WrappedNumberOfLinesProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
+    virtual ~WrappedNumberOfLinesProperty() override;
 
     virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
                         throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
@@ -1580,7 +1575,7 @@ private: //member
     mutable Any                                 m_aOuterValue;
 };
 
-WrappedNumberOfLinesProperty::WrappedNumberOfLinesProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
+WrappedNumberOfLinesProperty::WrappedNumberOfLinesProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
             : WrappedProperty("NumberOfLines",OUString())
             , m_spChart2ModelContact( spChart2ModelContact )
             , m_aOuterValue( this->getPropertyDefault(nullptr) )
@@ -1714,8 +1709,8 @@ Any WrappedNumberOfLinesProperty::getPropertyDefault( const Reference< beans::XP
 class WrappedAttributedDataPointsProperty : public WrappedProperty
 {
 public:
-    explicit WrappedAttributedDataPointsProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
-    virtual ~WrappedAttributedDataPointsProperty();
+    explicit WrappedAttributedDataPointsProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
+    virtual ~WrappedAttributedDataPointsProperty() override;
 
     virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
                         throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
@@ -1731,7 +1726,7 @@ private: //member
     mutable Any                                 m_aOuterValue;
 };
 
-WrappedAttributedDataPointsProperty::WrappedAttributedDataPointsProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
+WrappedAttributedDataPointsProperty::WrappedAttributedDataPointsProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
             : WrappedProperty("AttributedDataPoints",OUString())
             , m_spChart2ModelContact( spChart2ModelContact )
             , m_aOuterValue()
@@ -1828,8 +1823,8 @@ Any WrappedAttributedDataPointsProperty::getPropertyDefault( const Reference< be
 class WrappedSolidTypeProperty : public WrappedProperty
 {
 public:
-    explicit WrappedSolidTypeProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
-    virtual ~WrappedSolidTypeProperty();
+    explicit WrappedSolidTypeProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
+    virtual ~WrappedSolidTypeProperty() override;
 
     virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
                         throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
@@ -1845,7 +1840,7 @@ private: //member
     mutable Any                                 m_aOuterValue;
 };
 
-WrappedSolidTypeProperty::WrappedSolidTypeProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
+WrappedSolidTypeProperty::WrappedSolidTypeProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
             : WrappedProperty( "SolidType", OUString() )
             , m_spChart2ModelContact( spChart2ModelContact )
             , m_aOuterValue()
@@ -1902,7 +1897,7 @@ class WrappedAutomaticSizeProperty : public WrappedProperty
 {
 public:
     WrappedAutomaticSizeProperty();
-    virtual ~WrappedAutomaticSizeProperty();
+    virtual ~WrappedAutomaticSizeProperty() override;
 
     virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
                         throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
@@ -1973,8 +1968,8 @@ Any WrappedAutomaticSizeProperty::getPropertyDefault( const Reference< beans::XP
 class WrappedIncludeHiddenCellsProperty : public WrappedProperty
 {
 public:
-    explicit WrappedIncludeHiddenCellsProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact );
-    virtual ~WrappedIncludeHiddenCellsProperty();
+    explicit WrappedIncludeHiddenCellsProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact);
+    virtual ~WrappedIncludeHiddenCellsProperty() override;
 
     virtual void setPropertyValue( const css::uno::Any& rOuterValue, const css::uno::Reference< css::beans::XPropertySet >& xInnerPropertySet ) const
                         throw (css::beans::UnknownPropertyException, css::beans::PropertyVetoException, css::lang::IllegalArgumentException, css::lang::WrappedTargetException, css::uno::RuntimeException) override;
@@ -1985,7 +1980,7 @@ private: //member
     std::shared_ptr< Chart2ModelContact >   m_spChart2ModelContact;
 };
 
-WrappedIncludeHiddenCellsProperty::WrappedIncludeHiddenCellsProperty( std::shared_ptr< Chart2ModelContact > spChart2ModelContact )
+WrappedIncludeHiddenCellsProperty::WrappedIncludeHiddenCellsProperty(const std::shared_ptr<Chart2ModelContact>& spChart2ModelContact)
             : WrappedProperty("IncludeHiddenCells","IncludeHiddenCells")
             , m_spChart2ModelContact( spChart2ModelContact )
 {
@@ -2071,31 +2066,10 @@ const std::vector< WrappedProperty* > DiagramWrapper::createWrappedProperties()
     return aWrappedProperties;
 }
 
-uno::Sequence< OUString > DiagramWrapper::getSupportedServiceNames_Static()
-{
-    uno::Sequence< OUString > aServices( 8 );
-    aServices[ 0 ] = "com.sun.star.chart.Diagram";
-    aServices[ 1 ] = "com.sun.star.xml.UserDefinedAttributesSupplier";
-    aServices[ 2 ] = "com.sun.star.chart.StackableDiagram";
-    aServices[ 3 ] = "com.sun.star.chart.ChartAxisXSupplier";
-    aServices[ 4 ] = "com.sun.star.chart.ChartAxisYSupplier";
-    aServices[ 5 ] = "com.sun.star.chart.ChartAxisZSupplier";
-    aServices[ 6 ] = "com.sun.star.chart.ChartTwoAxisXSupplier";
-    aServices[ 7 ] = "com.sun.star.chart.ChartTwoAxisYSupplier";
-
-    return aServices;
-}
-
-// implement XServiceInfo methods basing upon getSupportedServiceNames_Static
 OUString SAL_CALL DiagramWrapper::getImplementationName()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getImplementationName_Static();
-}
-
-OUString DiagramWrapper::getImplementationName_Static()
-{
-    return OUString(lcl_aServiceName);
+    return OUString("com.sun.star.comp.chart.Diagram");
 }
 
 sal_Bool SAL_CALL DiagramWrapper::supportsService( const OUString& rServiceName )
@@ -2107,7 +2081,16 @@ sal_Bool SAL_CALL DiagramWrapper::supportsService( const OUString& rServiceName 
 css::uno::Sequence< OUString > SAL_CALL DiagramWrapper::getSupportedServiceNames()
     throw( css::uno::RuntimeException, std::exception )
 {
-    return getSupportedServiceNames_Static();
+    return {
+        "com.sun.star.chart.Diagram",
+        "com.sun.star.xml.UserDefinedAttributesSupplier",
+        "com.sun.star.chart.StackableDiagram",
+        "com.sun.star.chart.ChartAxisXSupplier",
+        "com.sun.star.chart.ChartAxisYSupplier",
+        "com.sun.star.chart.ChartAxisZSupplier",
+        "com.sun.star.chart.ChartTwoAxisXSupplier",
+        "com.sun.star.chart.ChartTwoAxisYSupplier"
+    };
 }
 
 } //  namespace wrapper

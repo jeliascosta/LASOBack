@@ -84,7 +84,7 @@ void ScDocument::Broadcast( const ScHint& rHint )
 
 void ScDocument::BroadcastCells( const ScRange& rRange, sal_uInt32 nHint, bool bBroadcastSingleBroadcasters )
 {
-    ClearFormulaContext();
+    PrepareFormulaCalc();
 
     if (!pBASM)
         return;    // Clipboard or Undo
@@ -126,7 +126,7 @@ void ScDocument::BroadcastCells( const ScRange& rRange, sal_uInt32 nHint, bool b
             pTab->SetStreamValid(false);
     }
 
-    BroadcastUno(SfxSimpleHint(SC_HINT_DATACHANGED));
+    BroadcastUno(SfxHint(SC_HINT_DATACHANGED));
 }
 
 namespace {
@@ -456,8 +456,6 @@ void ScDocument::CalcFormulaTree( bool bOnlyForced, bool bProgressBar, bool bSet
                 else
                     pCell = nullptr;
             }
-            if ( ScProgress::IsUserBreak() )
-                pCell = nullptr;
         }
         if ( bProgress )
             ScProgress::DeleteInterpretProgress();
@@ -537,6 +535,21 @@ bool ScDocument::IsInFormulaTrack( ScFormulaCell* pCell ) const
     return pCell->GetPreviousTrack() || pFormulaTrack == pCell;
 }
 
+void ScDocument::FinalTrackFormulas( sal_uInt32 nHintId )
+{
+    mbTrackFormulasPending = false;
+    mbFinalTrackFormulas = true;
+    {
+        ScBulkBroadcast aBulk( GetBASM(), nHintId);
+        // Collect all pending formula cells in bulk.
+        TrackFormulas( nHintId );
+    }
+    // A final round not in bulk to track all remaining formula cells and their
+    // dependents that were collected during ScBulkBroadcast dtor.
+    TrackFormulas( nHintId );
+    mbFinalTrackFormulas = false;
+}
+
 /*
     The first is broadcasted,
     the ones that are created through this are appended to the Track by Notify.
@@ -545,6 +558,14 @@ bool ScDocument::IsInFormulaTrack( ScFormulaCell* pCell ) const
  */
 void ScDocument::TrackFormulas( sal_uInt32 nHintId )
 {
+    if (!pBASM)
+        return;
+
+    if (pBASM->IsInBulkBroadcast() && !IsFinalTrackFormulas() && nHintId == SC_HINT_DATACHANGED)
+    {
+        SetTrackFormulasPending();
+        return;
+    }
 
     if ( pFormulaTrack )
     {

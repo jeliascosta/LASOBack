@@ -43,18 +43,18 @@ class Gradient;
 #define GDI_METAFILE_END                ((size_t)0xFFFFFFFF)
 #define GDI_METAFILE_LABEL_NOTFOUND     ((size_t)0xFFFFFFFF)
 
-enum MtfConversion
+enum class MtfConversion
 {
-    MTF_CONVERSION_NONE = 0,
-    MTF_CONVERSION_1BIT_THRESHOLD = 1,
-    MTF_CONVERSION_8BIT_GREYS = 2
+    NONE = 0,
+    N1BitThreshold = 1,
+    N8BitGreys = 2
 };
 
 
 typedef Color (*ColorExchangeFnc)( const Color& rColor, const void* pColParam );
 typedef BitmapEx (*BmpExchangeFnc)( const BitmapEx& rBmpEx, const void* pBmpParam );
 
-class VCL_DLLPUBLIC GDIMetaFile
+class VCL_DLLPUBLIC GDIMetaFile final
 {
 private:
     ::std::vector< MetaAction* > m_aList;
@@ -85,29 +85,25 @@ private:
     SAL_DLLPRIVATE void                 ImplExchangeColors( ColorExchangeFnc pFncCol, const void* pColParam,
                                                             BmpExchangeFnc pFncBmp, const void* pBmpParam );
 
-    SAL_DLLPRIVATE Point                ImplGetRotatedPoint( const Point& rPt, const Point& rRotatePt,
+    SAL_DLLPRIVATE static Point         ImplGetRotatedPoint( const Point& rPt, const Point& rRotatePt,
                                                              const Size& rOffset, double fSin, double fCos );
-    SAL_DLLPRIVATE tools::Polygon       ImplGetRotatedPolygon( const tools::Polygon& rPoly, const Point& rRotatePt,
+    SAL_DLLPRIVATE static tools::Polygon ImplGetRotatedPolygon( const tools::Polygon& rPoly, const Point& rRotatePt,
                                                                const Size& rOffset, double fSin, double fCos );
-    SAL_DLLPRIVATE tools::PolyPolygon   ImplGetRotatedPolyPolygon( const tools::PolyPolygon& rPoly, const Point& rRotatePt,
+    SAL_DLLPRIVATE static tools::PolyPolygon ImplGetRotatedPolyPolygon( const tools::PolyPolygon& rPoly, const Point& rRotatePt,
                                                                    const Size& rOffset, double fSin, double fCos );
-    SAL_DLLPRIVATE void                 ImplAddGradientEx( GDIMetaFile& rMtf,
+    SAL_DLLPRIVATE static void          ImplAddGradientEx( GDIMetaFile& rMtf,
                                                            const OutputDevice& rMapDev,
                                                            const tools::PolyPolygon& rPolyPoly,
                                                            const Gradient& rGrad );
 
     SAL_DLLPRIVATE bool                 ImplPlayWithRenderer( OutputDevice* pOut, const Point& rPos, Size rLogicDestSize );
-    SAL_DLLPRIVATE void                 ImplDelegate2PluggableRenderer( const MetaCommentAction* pAct, OutputDevice* pOut );
-
-
-protected:
 
     void                                Linker( OutputDevice* pOut, bool bLink );
 
 public:
                     GDIMetaFile();
                     GDIMetaFile( const GDIMetaFile& rMtf );
-    virtual         ~GDIMetaFile();
+                    ~GDIMetaFile();
 
     GDIMetaFile&    operator=( const GDIMetaFile& rMtf );
     bool            operator==( const GDIMetaFile& rMtf ) const;
@@ -116,7 +112,7 @@ public:
     void            Clear();
     bool            Mirror( BmpMirrorFlags nMirrorFlags );
     void            Move( long nX, long nY );
-    // additional Move method getting specifics how to handle MapMode( MAP_PIXEL )
+    // additional Move method getting specifics how to handle MapMode( MapUnit::MapPixel )
     void            Move( long nX, long nY, long nDPIX, long nDPIY );
     void            Scale( double fScaleX, double fScaleY );
     void            Scale( const Fraction& rScaleX, const Fraction& rScaleY );
@@ -131,7 +127,7 @@ public:
     */
     Rectangle       GetBoundRect( OutputDevice& i_rReference, Rectangle* pHairline = nullptr ) const;
 
-    void            Adjust( short nLuminancePercent = 0, short nContrastPercent = 0,
+    void            Adjust( short nLuminancePercent, short nContrastPercent,
                             short nChannelRPercent = 0,  short nChannelGPercent = 0,
                             short nChannelBPercent = 0,  double fGamma = 1.0,
                             bool bInvert = false, bool msoBrightness = false );

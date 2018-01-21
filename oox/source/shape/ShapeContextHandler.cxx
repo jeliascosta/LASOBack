@@ -30,6 +30,7 @@
 #include <basegfx/matrix/b2dhommatrix.hxx>
 #include "oox/vml/vmldrawingfragment.hxx"
 #include "oox/vml/vmlshape.hxx"
+#include <oox/vml/vmlshapecontainer.hxx>
 #include <oox/token/namespaces.hxx>
 #include <oox/token/tokens.hxx>
 #include "oox/drawingml/themefragmenthandler.hxx"
@@ -77,7 +78,7 @@ ShapeContextHandler::~ShapeContextHandler()
 {
 }
 
-uno::Reference<xml::sax::XFastContextHandler> ShapeContextHandler::getLockedCanvasContext(sal_Int32 nElement)
+uno::Reference<xml::sax::XFastContextHandler> const & ShapeContextHandler::getLockedCanvasContext(sal_Int32 nElement)
 {
     if (!mxLockedCanvasContext.is())
     {
@@ -100,7 +101,7 @@ uno::Reference<xml::sax::XFastContextHandler> ShapeContextHandler::getLockedCanv
 /*
  * This method creates new ChartGraphicDataContext Object.
  */
-uno::Reference<xml::sax::XFastContextHandler> ShapeContextHandler::getChartShapeContext(sal_Int32 nElement)
+uno::Reference<xml::sax::XFastContextHandler> const & ShapeContextHandler::getChartShapeContext(sal_Int32 nElement)
 {
     if (!mxChartShapeContext.is())
     {
@@ -122,7 +123,7 @@ uno::Reference<xml::sax::XFastContextHandler> ShapeContextHandler::getChartShape
     return mxChartShapeContext;
 }
 
-uno::Reference<xml::sax::XFastContextHandler> ShapeContextHandler::getWpsContext(sal_Int32 nStartElement, sal_Int32 nElement)
+uno::Reference<xml::sax::XFastContextHandler> const & ShapeContextHandler::getWpsContext(sal_Int32 nStartElement, sal_Int32 nElement)
 {
     if (!mxWpsContext.is())
     {
@@ -148,7 +149,7 @@ uno::Reference<xml::sax::XFastContextHandler> ShapeContextHandler::getWpsContext
     return mxWpsContext;
 }
 
-uno::Reference<xml::sax::XFastContextHandler> ShapeContextHandler::getWpgContext(sal_Int32 nElement)
+uno::Reference<xml::sax::XFastContextHandler> const & ShapeContextHandler::getWpgContext(sal_Int32 nElement)
 {
     if (!mxWpgContext.is())
     {
@@ -168,7 +169,7 @@ uno::Reference<xml::sax::XFastContextHandler> ShapeContextHandler::getWpgContext
     return mxWpgContext;
 }
 
-uno::Reference<xml::sax::XFastContextHandler>
+uno::Reference<xml::sax::XFastContextHandler> const &
 ShapeContextHandler::getGraphicShapeContext(::sal_Int32 Element )
 {
     if (! mxGraphicShapeContext.is())
@@ -197,7 +198,7 @@ ShapeContextHandler::getGraphicShapeContext(::sal_Int32 Element )
     return mxGraphicShapeContext;
 }
 
-uno::Reference<xml::sax::XFastContextHandler>
+uno::Reference<xml::sax::XFastContextHandler> const &
 ShapeContextHandler::getDrawingShapeContext()
 {
     if (!mxDrawingFragmentHandler.is())
@@ -224,7 +225,7 @@ ShapeContextHandler::getDrawingShapeContext()
     return mxDrawingFragmentHandler;
 }
 
-uno::Reference<xml::sax::XFastContextHandler>
+uno::Reference<xml::sax::XFastContextHandler> const &
 ShapeContextHandler::getDiagramShapeContext()
 {
     if (!mxDiagramShapeContext.is())

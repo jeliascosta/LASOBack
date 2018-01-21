@@ -52,13 +52,12 @@ namespace calc
         OSL_PRECOND( m_xDocument.is(), "OCellListSource::OCellListSource: invalid document!" );
 
         // register our property at the base class
-        CellRangeAddress aInitialPropValue;
         registerPropertyNoMember(
             "CellRange",
             PROP_HANDLE_RANGE_ADDRESS,
             PropertyAttribute::BOUND | PropertyAttribute::READONLY,
-            cppu::UnoType<decltype(aInitialPropValue)>::get(),
-            &aInitialPropValue
+            cppu::UnoType<CellRangeAddress>::get(),
+            css::uno::Any(CellRangeAddress())
         );
     }
 
@@ -145,10 +144,8 @@ namespace calc
 
     Sequence< OUString > SAL_CALL OCellListSource::getSupportedServiceNames(  ) throw (RuntimeException, std::exception)
     {
-        Sequence< OUString > aServices( 2 );
-        aServices[ 0 ] = "com.sun.star.table.CellRangeListSource";
-        aServices[ 1 ] = "com.sun.star.form.binding.ListEntrySource";
-        return aServices;
+        return {"com.sun.star.table.CellRangeListSource",
+                "com.sun.star.form.binding.ListEntrySource"};
     }
 
     CellRangeAddress OCellListSource::getRangeAddress( ) const

@@ -111,17 +111,14 @@ namespace svt
         void    reset();
 
     private:
-        void    impl_updateAll( const VclWindowEvent& _rTriggerEvent );
         void    impl_update( const VclWindowEvent& _rTriggerEvent, vcl::Window& _rWindow );
 
-        DECL_LINK_TYPED( OnWindowEvent, VclWindowEvent&, void );
+        DECL_LINK( OnWindowEvent, VclWindowEvent&, void );
 
     private:
         DialogController( const DialogController& ) = delete;
         DialogController& operator=( const DialogController& ) = delete;
     };
-    typedef std::shared_ptr< DialogController > PDialogController;
-
 
     //= ControlDependencyManager
 
@@ -175,7 +172,7 @@ namespace svt
             @param _pController
                 the controller to add to the manager. Must not be <NULL/>.
         */
-        void    addController( const PDialogController& _pController );
+        void    addController( const std::shared_ptr<DialogController>& _pController );
 
     private:
         ControlDependencyManager( const ControlDependencyManager& ) = delete;

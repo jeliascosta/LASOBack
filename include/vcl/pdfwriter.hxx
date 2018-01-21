@@ -23,6 +23,7 @@
 
 #include <tools/gen.hxx>
 #include <tools/color.hxx>
+#include <rtl/strbuf.hxx>
 
 #include <vcl/dllapi.h>
 #include <vcl/vclenum.hxx>
@@ -341,12 +342,10 @@ public:
     struct CheckBoxWidget : public AnyWidget
     {
         bool                Checked;
-        bool                ButtonIsLeft;
 
         CheckBoxWidget()
                 : AnyWidget( vcl::PDFWriter::CheckBox ),
-                  Checked( false ),
-                  ButtonIsLeft( true )
+                  Checked( false )
         {}
 
         virtual AnyWidget* Clone() const override
@@ -359,14 +358,12 @@ public:
     {
         bool                Selected;
         sal_Int32           RadioGroup;
-        bool                ButtonIsLeft;
         OUString       OnValue; // the value of the radio button if it is selected
 
         RadioButtonWidget()
                 : AnyWidget( vcl::PDFWriter::RadioButton ),
                   Selected( false ),
-                  RadioGroup( 0 ),
-                  ButtonIsLeft( true )
+                  RadioGroup( 0 )
         {}
 
         virtual AnyWidget* Clone() const override
@@ -407,7 +404,6 @@ public:
     struct ListBoxWidget : public AnyWidget
     {
         bool                            DropDown;
-        bool                            Sort;
         bool                            MultiSelect;
         std::vector<OUString>      Entries;
         std::vector<sal_Int32>          SelectedEntries;
@@ -418,7 +414,6 @@ public:
         ListBoxWidget()
                 : AnyWidget( vcl::PDFWriter::ListBox ),
                   DropDown( false ),
-                  Sort( false ),
                   MultiSelect( false )
         {}
 
@@ -431,13 +426,11 @@ public:
     // note: PDF only supports dropdown comboboxes
     struct ComboBoxWidget : public AnyWidget
     {
-        bool                            Sort;
         std::vector<OUString>      Entries;
         // set the current value in AnyWidget::Text
 
         ComboBoxWidget()
-                : AnyWidget( vcl::PDFWriter::ComboBox ),
-                  Sort( false )
+                : AnyWidget( vcl::PDFWriter::ComboBox )
         {}
 
         virtual AnyWidget* Clone() const override
@@ -448,14 +441,8 @@ public:
 
     struct SignatureWidget: public AnyWidget
     {
-        // Use Sig prefix for members to avoid conflict with
-        // the Location member of the AnyWidget which specifies the coordinates
-        // of the signature
-        bool                             SigHidden;
-
         SignatureWidget()
-                : AnyWidget( vcl::PDFWriter::Signature ),
-                  SigHidden( true )
+                : AnyWidget( vcl::PDFWriter::Signature )
         {}
 
         virtual AnyWidget* Clone() const override
@@ -506,7 +493,6 @@ The following structure describes the permissions used in PDF security
     struct PDFEncryptionProperties
     {
 
-        bool Security128bit; // true to select 128 bit encryption, false for 40 bit
         //for both 40 and 128 bit security, see 3.5.2 PDF v 1.4 table 3.15, v 1.5 and v 1.6 table 3.20.
         bool CanPrintTheDocument;
         bool CanModifyTheContent;
@@ -531,7 +517,6 @@ The following structure describes the permissions used in PDF security
 
         //permission default set for 128 bit, accessibility only
         PDFEncryptionProperties() :
-            Security128bit              ( true ),
             CanPrintTheDocument         ( false ),
             CanModifyTheContent         ( false ),
             CanCopyOrExtract            ( false ),
@@ -562,6 +547,29 @@ The following structure describes the permissions used in PDF security
         DrawColor, DrawGreyscale
     };
 
+    /// Holds all information to be able to fill a PDF signature template.
+    struct VCL_DLLPUBLIC PDFSignContext
+    {
+        /// DER-encoded certificate buffer.
+        sal_Int8* m_pDerEncoded;
+        /// Length of m_pDerEncoded.
+        sal_Int32 m_nDerEncoded;
+        /// Bytes before the signature itself.
+        void* m_pByteRange1;
+        /// Length of m_pByteRange1.
+        sal_Int32 m_nByteRange1;
+        /// Bytes after the signature itself.
+        void* m_pByteRange2;
+        /// Length of m_pByteRange2.
+        sal_Int32 m_nByteRange2;
+        OUString m_aSignTSA;
+        OUString m_aSignPassword;
+        /// The signature (in PKCS#7 format) is written into this buffer.
+        OStringBuffer& m_rCMSHexBuffer;
+
+        PDFSignContext(OStringBuffer& rCMSHexBuffer);
+    };
+
     struct PDFWriterContext
     {
         /* must be a valid file: URL usable by osl */
@@ -589,7 +597,6 @@ The following structure describes the permissions used in PDF security
          */
         PDFWriter::ExportDataFormat     SubmitFormat;
         bool                            AllowDuplicateFieldNames;
-        bool                            FieldsUseSystemFonts;
         /* the following data members are used to customize the PDF viewer
            preferences
          */
@@ -625,7 +632,7 @@ The following structure describes the permissions used in PDF security
         OUString                        SignReason;
         OUString                        SignContact;
         css::lang::Locale               DocumentLocale; // defines the document default language
-        sal_uInt32                      DPIx, DPIy;     // how to handle MapMode( MAP_PIXEL )
+        sal_uInt32                      DPIx, DPIy;     // how to handle MapMode( MapUnit::MapPixel )
                                                         // 0 here specifies a default handling
         PDFWriter::ColorMode            ColorMode;
         css::uno::Reference< css::security::XCertificate> SignCertificate;
@@ -640,7 +647,6 @@ The following structure describes the permissions used in PDF security
                 Tagged( false ),
                 SubmitFormat( PDFWriter::FDF ),
                 AllowDuplicateFieldNames( false ),
-                FieldsUseSystemFonts( true ),
                 PDFDocumentMode( PDFWriter::ModeDefault ),
                 PDFDocumentAction( PDFWriter::ActionDefault ),
                 Zoom( 100 ),
@@ -684,7 +690,7 @@ The following structure describes the permissions used in PDF security
         Colors and other state information MUST
         be set again or are undefined.
     */
-    void NewPage( sal_Int32 nPageWidth = 0, sal_Int32 nPageHeight = 0, Orientation eOrientation = Inherit );
+    void NewPage( sal_Int32 nPageWidth, sal_Int32 nPageHeight, Orientation eOrientation = Inherit );
     /** Play a metafile like an outputdevice would do
     */
     struct PlayMetafileContext
@@ -736,7 +742,7 @@ The following structure describes the permissions used in PDF security
     void               IntersectClipRegion( const Rectangle& rRect );
     void               IntersectClipRegion( const basegfx::B2DPolyPolygon& rRegion );
 
-    void               SetLayoutMode( ComplexTextLayoutMode nMode );
+    void               SetLayoutMode( ComplexTextLayoutFlags nMode );
     void               SetDigitLanguage( LanguageType eLang );
 
     void               SetLineColor( const Color& rColor );
@@ -774,7 +780,7 @@ The following structure describes the permissions used in PDF security
                                          const OUString& rStr,
                                          sal_Int32 nIndex, sal_Int32 nLen );
     void                DrawText( const Rectangle& rRect,
-                                  const OUString& rStr, DrawTextFlags nStyle = DrawTextFlags::NONE );
+                                  const OUString& rStr, DrawTextFlags nStyle );
 
     void                DrawPixel( const Point& rPt, const Color& rColor );
     void                DrawPixel( const Point& rPt )
@@ -888,7 +894,7 @@ The following structure describes the permissions used in PDF security
     the destination id (to be used in SetLinkDest) or
     -1 if page id does not exist
     */
-    sal_Int32           CreateNamedDest( const OUString& sDestName, const Rectangle& rRect, sal_Int32 nPageNr = -1, DestAreaType eType = XYZ );
+    sal_Int32           CreateNamedDest( const OUString& sDestName, const Rectangle& rRect, sal_Int32 nPageNr, DestAreaType eType );
     /** Create a new destination to be used in a link
 
     @param rRect
@@ -905,7 +911,7 @@ The following structure describes the permissions used in PDF security
     the destination id (to be used in SetLinkDest) or
     -1 if page id does not exist
     */
-    sal_Int32           CreateDest( const Rectangle& rRect, sal_Int32 nPageNr = -1, DestAreaType eType = XYZ );
+    sal_Int32           CreateDest( const Rectangle& rRect, sal_Int32 nPageNr, DestAreaType eType );
     /** Create a new link on a page
 
     @param rRect
@@ -920,7 +926,7 @@ The following structure describes the permissions used in PDF security
     the link id (to be used in SetLinkDest, SetLinkURL) or
     -1 if page id does not exist
     */
-    sal_Int32           CreateLink( const Rectangle& rRect, sal_Int32 nPageNr = -1 );
+    sal_Int32           CreateLink( const Rectangle& rRect, sal_Int32 nPageNr );
 
     /** creates a destination which is not intended to be referred to by a link, but by a public destination Id.
 
@@ -944,7 +950,7 @@ The following structure describes the permissions used in PDF security
         @returns
             the internal destination Id.
     */
-    sal_Int32           RegisterDestReference( sal_Int32 nDestId, const Rectangle& rRect, sal_Int32 nPageNr = -1, DestAreaType eType = XYZ );
+    sal_Int32           RegisterDestReference( sal_Int32 nDestId, const Rectangle& rRect, sal_Int32 nPageNr, DestAreaType eType );
 
 
     /** Set the destination for a link
@@ -1011,7 +1017,7 @@ The following structure describes the permissions used in PDF security
         @returns
         the outline item id of the new item
     */
-    sal_Int32 CreateOutlineItem( sal_Int32 nParent = 0, const OUString& rText = OUString(), sal_Int32 nDestID = -1 );
+    sal_Int32 CreateOutlineItem( sal_Int32 nParent, const OUString& rText, sal_Int32 nDestID );
 
     /** Set an outline item's parent
 
@@ -1057,7 +1063,7 @@ The following structure describes the permissions used in PDF security
     number of page the note is on (as returned by NewPage)
     or -1 in which case the current page is used
     */
-    void CreateNote( const Rectangle& rRect, const PDFNote& rNote, sal_Int32 nPageNr = -1 );
+    void CreateNote( const Rectangle& rRect, const PDFNote& rNote, sal_Int32 nPageNr );
 
     /** begin a new logical structure element
 
@@ -1101,7 +1107,7 @@ The following structure describes the permissions used in PDF security
     @returns
     the new structure element's id for use in SetCurrentStructureElement
      */
-     sal_Int32 BeginStructureElement( enum StructElement eType, const OUString& rAlias = OUString() );
+     sal_Int32 BeginStructureElement( enum StructElement eType, const OUString& rAlias );
     /** end the current logical structure element
 
     Close the current structure element. The current element's
@@ -1209,7 +1215,7 @@ The following structure describes the permissions used in PDF security
         @param nPageNr
         the page number to apply the autoadvance time to; -1 denotes the current page
     */
-    void SetAutoAdvanceTime( sal_uInt32 nSeconds, sal_Int32 nPageNr = -1 );
+    void SetAutoAdvanceTime( sal_uInt32 nSeconds, sal_Int32 nPageNr );
 
     /** Sets the transitional effect to be applied when the current page gets shown.
 
@@ -1224,7 +1230,7 @@ The following structure describes the permissions used in PDF security
     @param nPageNr
     the page number to apply the effect to; -1 denotes the current page
     */
-    void SetPageTransition( PageTransition eType, sal_uInt32 nMilliSec, sal_Int32 nPageNr = -1 );
+    void SetPageTransition( PageTransition eType, sal_uInt32 nMilliSec, sal_Int32 nPageNr );
 
     /** create a new form control
 
@@ -1259,6 +1265,14 @@ The following structure describes the permissions used in PDF security
     */
     void AddStream( const OUString& rMimeType, PDFOutputStream* pStream );
 
+    /// Fill a PDF signature template.
+    static bool Sign(PDFSignContext& rContext);
+
+    /// Write rString as a PDF hex string into rBuffer.
+    static void AppendUnicodeTextString(const OUString& rString, OStringBuffer& rBuffer);
+
+    /// Get current date/time in PDF D:YYYYMMDDHHMMSS form.
+    static OString GetDateTime();
 };
 
 }

@@ -39,7 +39,7 @@ const int FIND_NO_RING      = 2;
 
 struct SwFindParas
 {
-    virtual int Find( SwPaM*, SwMoveFn, const SwPaM*, bool ) = 0;
+    virtual int Find( SwPaM*, SwMoveFnCollection const &, const SwPaM*, bool ) = 0;
     virtual bool IsReplaceMode() const = 0;
 
 protected:
@@ -81,7 +81,6 @@ class SW_DLLPUBLIC SwCursor : public SwPaM
     SwCursor(SwCursor const& rPaM) = delete;
 
 protected:
-    SwCursor_SavePos* CreateNewSavePos() const;
     void SaveState();
     void RestoreState();
 
@@ -95,7 +94,7 @@ protected:
 public:
     // single argument ctors shall be explicit.
     SwCursor( const SwPosition &rPos, SwPaM* pRing );
-    virtual ~SwCursor();
+    virtual ~SwCursor() override;
 
     /// this takes a second parameter, which indicates the Ring that
     /// the new cursor should be part of (may be null)
@@ -106,27 +105,27 @@ public:
     virtual SwCursor* Create( SwPaM* pRing = nullptr ) const;
 
     virtual short MaxReplaceArived(); //returns RET_YES/RET_CANCEL/RET_NO
-    virtual void SaveTableBoxContent( const SwPosition* pPos = nullptr );
+    virtual void SaveTableBoxContent( const SwPosition* pPos );
 
     void FillFindPos( SwDocPositions ePos, SwPosition& rPos ) const;
-    SwMoveFnCollection* MakeFindRange( SwDocPositions, SwDocPositions,
+    SwMoveFnCollection const & MakeFindRange( SwDocPositions, SwDocPositions,
                                         SwPaM* ) const;
 
     sal_uLong Find( const css::util::SearchOptions2& rSearchOpt,
                 bool bSearchInNotes,
                 SwDocPositions nStart, SwDocPositions nEnde,
                 bool& bCancel,
-                FindRanges = FND_IN_BODY,
+                FindRanges = FindRanges::InBody,
                 bool bReplace = false );
     sal_uLong Find( const SwTextFormatColl& rFormatColl,
                 SwDocPositions nStart, SwDocPositions nEnde,
                 bool& bCancel,
-                FindRanges = FND_IN_BODY,
+                FindRanges = FindRanges::InBody,
                 const SwTextFormatColl* pReplFormat = nullptr );
     sal_uLong Find( const SfxItemSet& rSet, bool bNoCollections,
                 SwDocPositions nStart, SwDocPositions nEnde,
                 bool& bCancel,
-                FindRanges = FND_IN_BODY,
+                FindRanges = FindRanges::InBody,
                 const css::util::SearchOptions2* pSearchOpt = nullptr,
                 const SfxItemSet* rReplSet = nullptr );
 
@@ -139,7 +138,7 @@ public:
     bool GoEndWord();
     bool GoNextWord();
     bool GoPrevWord();
-    bool SelectWord( SwViewShell* pViewShell, const Point* pPt = nullptr );
+    bool SelectWord( SwViewShell* pViewShell, const Point* pPt );
 
     // API versions of above functions (will be used with a different
     // WordType for the break iterator)
@@ -150,7 +149,7 @@ public:
     bool GoEndWordWT( sal_Int16 nWordType );
     bool GoNextWordWT( sal_Int16 nWordType );
     bool GoPrevWordWT( sal_Int16 nWordType );
-    bool SelectWordWT( SwViewShell* pViewShell, sal_Int16 nWordType, const Point* pPt = nullptr );
+    bool SelectWordWT( SwViewShell* pViewShell, sal_Int16 nWordType, const Point* pPt );
 
     enum SentenceMoveType
     {
@@ -168,8 +167,8 @@ public:
     virtual bool LeftRight( bool bLeft, sal_uInt16 nCnt, sal_uInt16 nMode,
         bool bAllowVisual, bool bSkipHidden, bool bInsertCursor );
     bool UpDown( bool bUp, sal_uInt16 nCnt, Point* pPt, long nUpDownX );
-    bool LeftRightMargin( bool bLeftMargin, bool bAPI = false );
-    bool IsAtLeftRightMargin( bool bLeftMargin, bool bAPI = false ) const;
+    bool LeftRightMargin( bool bLeftMargin, bool bAPI );
+    bool IsAtLeftRightMargin( bool bLeftMargin, bool bAPI ) const;
     bool SttEndDoc( bool bSttDoc );
     bool GoPrevNextCell( bool bNext, sal_uInt16 nCnt );
 
@@ -185,10 +184,10 @@ public:
     bool GotoNextFootnoteAnchor();
     bool GotoPrevFootnoteAnchor();
 
-    bool MovePara( SwWhichPara, SwPosPara );
-    bool MoveSection( SwWhichSection, SwPosSection );
-    bool MoveTable( SwWhichTable, SwPosTable );
-    bool MoveRegion( SwWhichRegion, SwPosRegion );
+    bool MovePara( SwWhichPara, SwMoveFnCollection const & );
+    bool MoveSection( SwWhichSection, SwMoveFnCollection const & );
+    bool MoveTable( SwWhichTable, SwMoveFnCollection const & );
+    bool MoveRegion( SwWhichRegion, SwMoveFnCollection const & );
 
     // Is there a selection of content in table?
     // Return value indicates if cursor remains at its old position.
@@ -240,7 +239,7 @@ public:
 };
 
 // internal, used by SwCursor::SaveState() etc.
-struct SwCursor_SavePos
+struct SwCursor_SavePos final
 {
     sal_uLong nNode;
     sal_Int32 nContent;
@@ -251,7 +250,7 @@ struct SwCursor_SavePos
         nContent( rCursor.GetPoint()->nContent.GetIndex() ),
         pNext( nullptr )
     {}
-    virtual ~SwCursor_SavePos() {}
+    ~SwCursor_SavePos() {}
 
     DECL_FIXEDMEMPOOL_NEWDEL( SwCursor_SavePos )
 };
@@ -271,9 +270,9 @@ protected:
     virtual bool IsSelOvrCheck(int eFlags) override;
 
 public:
-    SwTableCursor( const SwPosition &rPos, SwPaM* pRing = nullptr );
+    SwTableCursor( const SwPosition &rPos );
     SwTableCursor( SwTableCursor& );
-    virtual ~SwTableCursor();
+    virtual ~SwTableCursor() override;
 
     virtual bool LeftRight( bool bLeft, sal_uInt16 nCnt, sal_uInt16 nMode,
         bool bAllowVisual, bool bSkipHidden, bool bInsertCursor ) override;
@@ -301,6 +300,7 @@ public:
     }
 
     bool IsChgd() const { return m_bChanged; }
+    void SetChgd() { m_bChanged = true; }
 
     // Park table cursor at start node of boxes.
     void ParkCursor();

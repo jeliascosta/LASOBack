@@ -34,7 +34,7 @@
 #include <svx/svdpagv.hxx>
 
 
-//   Vorausdeklarationen
+//   forward declarations
 
 
 class OutlinerParaObject;
@@ -83,7 +83,7 @@ namespace sdr { namespace table {
 #define SDRUSERDATA_OBJTEXTLINK         (1)
 
 
-//   Hilfsklasse SdrTextObjGeoData
+//   helper class SdrTextObjGeoData
 
 
 class SdrTextObjGeoData : public SdrObjGeoData
@@ -94,7 +94,7 @@ public:
 };
 
 
-//   Hilfsklasse ImpSdrObjTextLinkUserData
+//   helper class ImpSdrObjTextLinkUserData
 
 
 class ImpSdrObjTextLinkUserData : public SdrObjUserData
@@ -110,7 +110,7 @@ class ImpSdrObjTextLinkUserData : public SdrObjUserData
 
 public:
     ImpSdrObjTextLinkUserData();
-    virtual ~ImpSdrObjTextLinkUserData();
+    virtual ~ImpSdrObjTextLinkUserData() override;
 
     virtual SdrObjUserData* Clone(SdrObject* pObj1) const override;
 };
@@ -179,33 +179,32 @@ private:
     friend class                SdrText;        // fuer ImpGetDrawOutliner
 
 protected:
-    // Das aRect ist gleichzeig auch das Rect vom RectObj und CircObj.
-    // Bei bTextFrame=sal_True wird der Text in dieses Rect hineinformatiert.
-    // Bei bTextFrame=sal_False wird der Text am Mittelpunkt des Rect zentriert.
+    // The "aRect" is also the rect of RectObj and CircObj.
+    // When bTextFrame=sal_True the text will be formatted into this rect
+    // When bTextFrame=sal_False the text will be centered around its middle
     Rectangle maRect;
 
-    // Der GeoStat enthaelt den Drehwinkel und einen Shearwinkel
+    // The GeoStat contains the rotation and shear angles
     GeoStat                     aGeo;
 
     // this is the active text
     SdrText*                    mpText;
 
-    // Hier merke ich mir die Ausmasse des Textes (n.i.)
+    // This contains the dimensions of the text
     Size                        aTextSize;
 
-    // Ein Outliner*, damit
-    // 1. das TextObj nicht von mehreren Views gleichzeitig editiert und
-    // 2. beim Streamen waerend des Editierens ein Flush() ausgefuehrt
-    // werden kann
+    // an Outliner*, so that
+    // 1. the TextObj won't be edited simultaneously by multiple views, and
+    // 2. when streaming while editing Flush() can be done
     SdrOutliner*                pEdtOutl;
 
-    // Moegliche Werte fuer eTextKind sind:
-    //     OBJ_TEXT         normaler Textrahmen
-    //     OBJ_TEXTEXT      Textfortsetzungsrahmen
-    //     OBJ_TITLETEXT    TitleText fuer StarDraw-Praesentation
-    //     OBJ_OUTLINETEXT  OutlineText fuer StarDraw-Praesentation
-    // eTextKind hat nur Bedeutung, wenn bTextFrame=sal_True, da es sich sonst
-    // um ein beschriftetes Grafikobjekt handelt.
+    // Possible values for eTextKind are:
+    //     OBJ_TEXT         regular text frame
+    //     OBJ_TEXTEXT      text continuation frame
+    //     OBJ_TITLETEXT    TitleText for presentations
+    //     OBJ_OUTLINETEXT  OutlineText for presentations
+    // eTextKind only has meaning when bTextFrame=sal_True, since otherwise
+    // we're dealing with a labeled graphical object
     SdrObjKind                  eTextKind;
 
     // For text editing in SW Header/Footer it is necessary to be
@@ -227,35 +226,28 @@ protected:
     SdrTextObj *mpNextInChain = nullptr;
     SdrTextObj *mpPrevInChain = nullptr;
 
-    // indicating the for its text to be chained to another text box
-    bool mbToBeChained : 1;
-
-    // Fuer beschriftete Zeichenobjekte ist bTextFrame=FALSE. Der Textblock
-    // wird dann hoizontal und vertikal an aRect zentriert. Bei bTextFrame=
-    // sal_True wird der Text in aRect hineinformatiert. Der eigentliche Textrahmen
-    // ist durch ein SdrRectObj mit bTextFrame=sal_True realisiert.
+    // For labeled graphical objects bTextFrame is FALSE. The block of text
+    // will then be centered horizontally and vertically on aRect.
+    // For bTextFalse=sal_True the text will be formatted into aRect.
+    // The actual text frame is realized by an SdrRectObj with
+    // bTextFrame=sal_True.
     bool                        bTextFrame : 1;
-    bool                        bPortionInfoChecked : 1; // Fuer Optimierung von Textobjekten
-    bool                        bNoShear : 1;            // Obj darf nicht gesheart werden   (->Graf+Ole+TextFrame)
-    bool                        bNoRotate : 1;           // Obj darf nicht gedreht werden    (->Ole)
-    bool                        bNoMirror : 1;           // Obj darf nicht gespiegelt werden (->Ole,TextFrame)
+    bool                        bPortionInfoChecked : 1; // to optimise text objects
+    bool                        bNoShear : 1;            // disable shearing   (->graphic+Ole+TextFrame)
+    bool                        bNoMirror : 1;           // disable mirroring (->Ole,TextFrame)
     bool                        bTextSizeDirty : 1;
 
     bool                        mbInEditMode : 1;   // Is this text object in edit mode?
 
-    // Fuer Objekt mit freier Groesse im Draw (Mengentext). Das Flag wird vom
-    // der App beim Create gesetzt.
-    // Wenn das Objekt dann spaeter in der Breite resized wird, wird
-    // AutoGrowWidth abgeschaltet (Hart auf sal_False attributiert). Das Flag wird
-    // dann ebenfalls auf sal_False gesetzt, sodass sich das Objekt anschliessend
-    // wie ein normales Textobjekt verhaelt.
-    // Resize in der Breite kann sein:
-    // - Interaktives Resize in Einfach- oder Mehrfachselektion
-    // - Positions+Groesse Dialog
+    // For objects with free size (flow text). The flag is set by the
+    // application on create. If the object width is later resized,
+    // AutoGrowWidth will be disabled (set to sal_False). This flag will
+    // then also be set to sal_False, so that the object behaves like a
+    // normal text object.
+    // Width resize can result from:
+    // - Interactive Resize in single or multiple selections
+    // - position/size dialog
     bool                        bDisableAutoWidthOnDragging : 1;
-
-    // Allow text suppression
-    bool                        mbTextHidden : 1;
 
     // Flag for allowing text animation. Default is sal_true.
     bool                        mbTextAnimationAllowed : 1;
@@ -315,34 +307,35 @@ protected:
     // and object sizes
     virtual void AdaptTextMinSize();
 
-    // Konstruktoren fuer beschriftete Zeichenobjekte
+    // constructors for labeled graphical objects
     SdrTextObj();
     SdrTextObj(const Rectangle& rNewRect);
 
-    // Konstruktoren fuer Textrahmen
+    // constructors for text frames
     SdrTextObj(SdrObjKind eNewTextKind);
     SdrTextObj(SdrObjKind eNewTextKind, const Rectangle& rNewRect);
 
-    virtual ~SdrTextObj();
+    virtual ~SdrTextObj() override;
 
 public:
 
     bool IsInEditMode() const { return mbInEditMode; }
 
-    // via eCharSet kann der CharSet der vorliegenden Datei uebergeben werden.
-    // Bei RTL_TEXTENCODING_DONTKNOW wird der CharSet der aktuellen Plattform verwendet.
-    // Derzeit unterstuetzt wird ASCII und RTF wobei ich die Unterscheidung
-    // selbst treffe. rFilterName ist noch ohne Bedeutung und muss leer gelassen
-    // werden.
-    // I.d.R. muss die App nur SetTextLink() rufen - der Rest geschieht von
-    // selbst (SfxLinkManager). Die Methode LoadText() kann ausserdem verwendet
-    // werden, um eine Datei in ein Textobjekt zu laden (ohne Verknuepfung).
-    // TextLinks koennen nicht editiert werden (allenfalls spaeter mal ReadOnly).
-    // Eine Attributierung kann nur am Textrahmen vollzogen werden.
+    // via eCharSet the character set of a file can be passed. For
+    // RTL_TEXTENCODING_DONTKNOW the platform's character set is used.
+    // Currently ASCII and RTF are supported and the differentiation is done
+    // internally.
+    // rFilterName has no meaning and must be empty
+    // Normally the application only has to call SetTextLink() - der
+    // remainer is automatic (SfxLinkManager).
+    // The LoadText() method can also be used to load a file into a text
+    // object (without linking.)
+    // TextLinks can't be edited (if needed later could be ReadOnly).
+    // Setting attributes can only be done on the text frame.
     void SetTextLink(const OUString& rFileName, const OUString& rFilterName, rtl_TextEncoding eCharSet);
     void ReleaseTextLink();
     bool IsLinkedText() const { return pPlusData!=nullptr && GetLinkUserData()!=nullptr; }
-    bool ReloadLinkedText(bool bForceLoad = false);
+    bool ReloadLinkedText(bool bForceLoad);
     bool LoadText(const OUString& rFileName, const OUString& rFilterName, rtl_TextEncoding eCharSet);
 
     virtual bool AdjustTextFrameWidthAndHeight(Rectangle& rR, bool bHgt = true, bool bWdt = true) const;
@@ -356,12 +349,10 @@ public:
     bool IsFitToSize() const;
 
     // Chaining
-    bool IsToBeChained() const;
     SdrTextObj *GetNextLinkInChain() const;
     void SetNextLinkInChain(SdrTextObj *);
     SdrTextObj *GetPrevLinkInChain() const;
     bool IsChainable() const;
-    void SetPreventChainable();
     bool GetPreventChainable() const;
     TextChain *GetTextChain() const;
 
@@ -370,8 +361,7 @@ public:
     // #i121917#
     virtual bool HasText() const override;
 
-    bool HasEditText() const;
-    bool IsTextEditActive() const { return (pEdtOutl != nullptr); }
+    bool IsTextEditActive() const { return pEdtOutl != nullptr; }
 
     /** returns the currently active text. */
     virtual SdrText* getActiveText() const;
@@ -397,17 +387,18 @@ public:
     void NbcSetText(SvStream& rInput, const OUString& rBaseURL, sal_uInt16 eFormat);
     void SetText(SvStream& rInput, const OUString& rBaseURL, sal_uInt16 eFormat);
 
-    // FitToSize und Fontwork wird bei GetTextSize() nicht berueksichtigt!
+    // FitToSize and Fontwork are not taken into account in GetTextSize()!
     virtual const Size& GetTextSize() const;
     void FitFrameToTextSize();
 
-    // Gleichzeitig wird der Text in den Outliner gesetzt (ggf.
-    // der des EditOutliners) und die PaperSize gesetzt.
-    virtual void TakeTextRect( SdrOutliner& rOutliner, Rectangle& rTextRect, bool bNoEditText = false,
-        Rectangle* pAnchorRect=nullptr, bool bLineWidth = true ) const;
+    // Simultaneously sets the text into the Outliner (possibly
+    // the one of the EditOutliner) and sets the PaperSize.
+    virtual void TakeTextRect( SdrOutliner& rOutliner, Rectangle& rTextRect, bool bNoEditText,
+        Rectangle* pAnchorRect, bool bLineWidth = true ) const;
     virtual void TakeTextAnchorRect(::Rectangle& rAnchorRect) const;
     const GeoStat& GetGeoStat() const { return aGeo; }
 
+    // get corner radius
     long GetEckenradius() const;
     virtual bool IsAutoGrowHeight() const;
     long GetMinTextFrameHeight() const;
@@ -419,20 +410,18 @@ public:
     SdrFitToSizeType GetFitToSize() const;
     const Rectangle &GetGeoRect() const;
 
-    // Feststellen, ob TextFontwork
+    // check if it's a TextFontwork
     virtual bool IsFontwork() const;
 
-    // Soll die Fontwork-Kontour versteckt werden?
+    // should the Fontwork contour be hidden?
     bool IsHideContour() const;
 
-    // Textfluss innerhalb Kontur
+    // text flow within contour
     bool IsContourTextFrame() const;
 
-    // Horizontale Textausrichtung
     SdrTextHorzAdjust GetTextHorizontalAdjust(const SfxItemSet& rSet) const;
     SdrTextHorzAdjust GetTextHorizontalAdjust() const;
 
-    // Vertikale Textausrichtung
     SdrTextVertAdjust GetTextVerticalAdjust(const SfxItemSet& rSet) const;
     SdrTextVertAdjust GetTextVerticalAdjust() const;
 
@@ -452,7 +441,7 @@ public:
     virtual void TakeObjInfo(SdrObjTransformInfoRec& rInfo) const override;
     virtual sal_uInt16 GetObjIdentifier() const override;
 
-    // Wird zur Bestimmung des Textankerbereichs benoetigt
+    // needed to determine text anchor area
     virtual void TakeUnrotatedSnapRect(Rectangle& rRect) const;
     virtual OUString TakeObjNameSingul() const override;
     virtual OUString TakeObjNamePlural() const override;
@@ -501,7 +490,7 @@ public:
     virtual void NbcSetOutlinerParaObject(OutlinerParaObject* pTextObject) override;
     void NbcSetOutlinerParaObjectForText( OutlinerParaObject* pTextObject, SdrText* pText );
     virtual OutlinerParaObject* GetOutlinerParaObject() const override;
-    virtual OutlinerParaObject* GetEditOutlinerParaObject() const;
+    OutlinerParaObject* GetEditOutlinerParaObject() const;
 
     virtual void NbcReformatText() override;
     virtual void ReformatText() override;

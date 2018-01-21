@@ -109,53 +109,6 @@ ScFilterDlg::ScFilterDlg(SfxBindings* pB, SfxChildWindow* pCW, vcl::Window* pPar
     pTimer = new Timer("ScFilterTimer");
     pTimer->SetTimeout( 50 ); // Wait 50ms
     pTimer->SetTimeoutHdl( LINK( this, ScFilterDlg, TimeOutHdl ) );
-
-    OUStringBuffer aBuf;
-
-    OUString sAccName = SC_RESSTR(RID_FILTER_OPERATOR);
-    aBuf.append(sAccName);
-    aBuf.append(" 1");
-    pLbConnect1->SetAccessibleName(aBuf.makeStringAndClear());
-    aBuf.append(sAccName);
-    aBuf.append(" 2");
-    pLbConnect2->SetAccessibleName(aBuf.makeStringAndClear());
-
-    sAccName = SC_RESSTR(RID_FILTER_FIELDNAME);
-    aBuf.append(sAccName);
-    aBuf.append(" 1");
-    pLbField1->SetAccessibleName(aBuf.makeStringAndClear());
-    aBuf.append(sAccName);
-    aBuf.append(" 2");
-    pLbField2->SetAccessibleName(aBuf.makeStringAndClear());
-    aBuf.append(sAccName);
-    aBuf.append(" 3");
-    pLbField3->SetAccessibleName(aBuf.makeStringAndClear());
-
-    sAccName = SC_RESSTR(RID_FILTER_CONDITION);
-    aBuf.append(sAccName);
-    aBuf.append(" 1");
-    pLbCond1->SetAccessibleName(aBuf.makeStringAndClear());
-    aBuf.append(sAccName);
-    aBuf.append(" 2");
-    pLbCond2->SetAccessibleName(aBuf.makeStringAndClear());
-    aBuf.append(sAccName);
-    aBuf.append(" 3");
-    pLbCond3->SetAccessibleName(aBuf.makeStringAndClear());
-
-    sAccName = SC_RESSTR(RID_FILTER_VALUE);
-    aBuf.append(sAccName);
-    aBuf.append(" 1");
-    pEdVal1->SetAccessibleName(aBuf.makeStringAndClear());
-    aBuf.append(sAccName);
-    aBuf.append(" 2");
-    pEdVal2->SetAccessibleName(aBuf.makeStringAndClear());
-    aBuf.append(sAccName);
-    aBuf.append(" 3");
-    pEdVal3->SetAccessibleName(aBuf.makeStringAndClear());
-
-    pLbCopyArea->SetAccessibleName(ScResId(STR_COPY_AREA_TO));
-    pEdCopyArea->SetAccessibleName(ScResId(STR_COPY_AREA_TO));
-
 }
 
 ScFilterDlg::~ScFilterDlg()
@@ -203,6 +156,10 @@ void ScFilterDlg::dispose()
     pBtnDestPers.clear();
     pFtDbAreaLabel.clear();
     pFtDbArea.clear();
+    maValueEdArr.clear();
+    maFieldLbArr.clear();
+    maCondLbArr.clear();
+    maConnLbArr.clear();
     ScAnyRefDlg::dispose();
 }
 
@@ -224,6 +181,11 @@ void ScFilterDlg::Init( const SfxItemSet& rArgSet )
     pLbConnect2->SetSelectHdl( LINK( this, ScFilterDlg, LbSelectHdl ) );
     pLbConnect3->SetSelectHdl( LINK( this, ScFilterDlg, LbSelectHdl ) );
     pLbConnect4->SetSelectHdl( LINK( this, ScFilterDlg, LbSelectHdl ) );
+
+    pLbField1->setMaxWidthChars(10);
+    pLbField2->setMaxWidthChars(10);
+    pLbField3->setMaxWidthChars(10);
+    pLbField4->setMaxWidthChars(10);
 
     pLbCond1->SetSelectHdl( LINK( this, ScFilterDlg, LbSelectHdl ) );
     pLbCond2->SetSelectHdl( LINK( this, ScFilterDlg, LbSelectHdl ) );
@@ -416,12 +378,13 @@ void ScFilterDlg::Init( const SfxItemSet& rArgSet )
         pEdVal4->Disable();
     }
 
-    if(pDoc!=nullptr &&
-        pDoc->GetChangeTrack()!=nullptr) pBtnCopyResult->Disable();
-    // Switch on modal mode
-//  SetDispatcherLock( true );
-    //@BugID 54702 Enable/disable only in Basic class
-//  SFX_APPWINDOW->Disable(false);      //! general method in ScAnyRefDlg
+    pEdVal1->setMaxWidthChars(10);
+    pEdVal2->setMaxWidthChars(10);
+    pEdVal3->setMaxWidthChars(10);
+    pEdVal4->setMaxWidthChars(10);
+
+    if (pDoc != nullptr && pDoc->GetChangeTrack() != nullptr)
+        pBtnCopyResult->Disable();
 }
 
 bool ScFilterDlg::Close()
@@ -704,7 +667,7 @@ bool ScFilterDlg::IsRefInputMode() const
 
 // Handler:
 
-IMPL_LINK_TYPED( ScFilterDlg, EndDlgHdl, Button*, pBtn, void )
+IMPL_LINK( ScFilterDlg, EndDlgHdl, Button*, pBtn, void )
 {
     if ( pBtn == pBtnOk )
     {
@@ -739,7 +702,7 @@ IMPL_LINK_TYPED( ScFilterDlg, EndDlgHdl, Button*, pBtn, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ScFilterDlg, MoreExpandedHdl, VclExpander&, void)
+IMPL_LINK_NOARG(ScFilterDlg, MoreExpandedHdl, VclExpander&, void)
 {
     if ( pExpander->get_expanded() )
         pTimer->Start();
@@ -752,7 +715,7 @@ IMPL_LINK_NOARG_TYPED(ScFilterDlg, MoreExpandedHdl, VclExpander&, void)
     }
 }
 
-IMPL_LINK_TYPED( ScFilterDlg, TimeOutHdl, Timer*, _pTimer, void )
+IMPL_LINK( ScFilterDlg, TimeOutHdl, Timer*, _pTimer, void )
 {
     // Check if RefInputMode is still true every 50ms
 
@@ -763,7 +726,7 @@ IMPL_LINK_TYPED( ScFilterDlg, TimeOutHdl, Timer*, _pTimer, void )
         pTimer->Start();
 }
 
-IMPL_LINK_TYPED( ScFilterDlg, LbSelectHdl, ListBox&, rLb, void )
+IMPL_LINK( ScFilterDlg, LbSelectHdl, ListBox&, rLb, void )
 {
     /*
      * Handle enable/disable logic depending on which ListBox was selected
@@ -1015,7 +978,7 @@ IMPL_LINK_TYPED( ScFilterDlg, LbSelectHdl, ListBox&, rLb, void )
     }
 }
 
-IMPL_LINK_TYPED( ScFilterDlg, CheckBoxHdl, Button*, pBox, void )
+IMPL_LINK( ScFilterDlg, CheckBoxHdl, Button*, pBox, void )
 {
     //  Column headers:
     //      Field list: Columnxx <-> column header string
@@ -1051,7 +1014,7 @@ IMPL_LINK_TYPED( ScFilterDlg, CheckBoxHdl, Button*, pBox, void )
     }
 }
 
-IMPL_LINK_TYPED( ScFilterDlg, ValModifyHdl, Edit&, rEd, void )
+IMPL_LINK( ScFilterDlg, ValModifyHdl, Edit&, rEd, void )
 {
     size_t nOffset = GetSliderPos();
     size_t i = 0;
@@ -1134,7 +1097,7 @@ IMPL_LINK_TYPED( ScFilterDlg, ValModifyHdl, Edit&, rEd, void )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(ScFilterDlg, ScrollHdl, ScrollBar*, void)
+IMPL_LINK_NOARG(ScFilterDlg, ScrollHdl, ScrollBar*, void)
 {
     SliderMoved();
 }

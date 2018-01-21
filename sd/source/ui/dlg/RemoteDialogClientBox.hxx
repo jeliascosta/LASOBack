@@ -59,7 +59,7 @@ struct ClientBoxEntry
     bool m_bActive :1;
     std::shared_ptr<ClientInfo> m_pClientInfo;
 
-    explicit ClientBoxEntry(std::shared_ptr<ClientInfo> pClientInfo);
+    explicit ClientBoxEntry(const std::shared_ptr<ClientInfo>& pClientInfo);
    ~ClientBoxEntry();
 
 };
@@ -77,7 +77,7 @@ public:
     {
         m_pParent = pParent;
     }
-    virtual ~ClientRemovedListener();
+    virtual ~ClientRemovedListener() override;
 
     // XEventListener
     virtual void SAL_CALL disposing(css::lang::EventObject const & evt)
@@ -105,7 +105,7 @@ class ClientBox : public Control
 
     VclPtr<ScrollBar> m_aScrollBar;
 
-    css::uno::Reference< ClientRemovedListener > m_xRemoveListener;
+    rtl::Reference< ClientRemovedListener > m_xRemoveListener;
 
     //This mutex is used for synchronizing access to m_vEntries.
     //Currently it is used to synchronize adding, removing entries and
@@ -125,12 +125,12 @@ class ClientBox : public Control
     bool HandleCursorKey( sal_uInt16 nKeyCode );
     void DeleteRemoved();
 
-    DECL_DLLPRIVATE_LINK_TYPED( ScrollHdl, ScrollBar*, void );
-    DECL_DLLPRIVATE_LINK_TYPED( DeauthoriseHdl, Button*, void );
+    DECL_LINK( ScrollHdl, ScrollBar*, void );
+    DECL_LINK( DeauthoriseHdl, Button*, void );
 
 public:
     ClientBox( vcl::Window* pParent, WinBits nStyle );
-    virtual ~ClientBox();
+    virtual ~ClientBox() override;
     virtual void dispose() override;
 
     void MouseButtonDown( const MouseEvent& rMEvt ) override;
@@ -147,7 +147,7 @@ public:
     void RecalcAll();
 
     void selectEntry( const long nPos );
-    long addEntry(const std::shared_ptr<ClientInfo>& pClientInfo);
+    void addEntry(const std::shared_ptr<ClientInfo>& pClientInfo);
     void clearEntries();
 
     OUString getPin();

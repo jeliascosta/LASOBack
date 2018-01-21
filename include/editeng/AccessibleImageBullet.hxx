@@ -51,10 +51,7 @@ namespace accessibility
         /// Create accessible object for given parent
         AccessibleImageBullet ( const css::uno::Reference< css::accessibility::XAccessible >& rParent );
 
-        virtual ~AccessibleImageBullet  ();
-
-        // XInterface
-        virtual css::uno::Any SAL_CALL queryInterface (const css::uno::Type & rType) throw (css::uno::RuntimeException, std::exception) override;
+        virtual ~AccessibleImageBullet  () override;
 
         // XAccessible
         virtual css::uno::Reference< css::accessibility::XAccessibleContext > SAL_CALL getAccessibleContext(  ) throw (css::uno::RuntimeException, std::exception) override;
@@ -145,15 +142,11 @@ namespace accessibility
         sal_Int32 GetParagraphIndex() const { return mnParagraphIndex; }
 
         /// Calls all Listener objects to tell them the change. Don't hold locks when calling this!
-        void FireEvent(const sal_Int16 nEventId, const css::uno::Any& rNewValue = css::uno::Any(), const css::uno::Any& rOldValue = css::uno::Any() ) const;
+        void FireEvent(const sal_Int16 nEventId, const css::uno::Any& rNewValue, const css::uno::Any& rOldValue = css::uno::Any() ) const;
 
     private:
         AccessibleImageBullet( const AccessibleImageBullet& ) = delete;
         AccessibleImageBullet& operator= ( const AccessibleImageBullet& ) = delete;
-
-        // syntactic sugar for FireEvent
-        void GotPropertyEvent( const css::uno::Any& rNewValue, const sal_Int16 nEventId ) const;
-        void LostPropertyEvent( const css::uno::Any& rOldValue, const sal_Int16 nEventId ) const;
 
         // maintain state set and send STATE_CHANGE events
         void SetState( const sal_Int16 nStateId );
@@ -180,8 +173,6 @@ namespace accessibility
             make sure SolarMutex is locked when calling this.
          */
         SvxViewForwarder&   GetViewForwarder() const;
-
-        const Point& GetEEOffset() const { return maEEOffset; }
 
         // the paragraph index in the edit engine (guarded by solar mutex)
         sal_Int32   mnParagraphIndex;

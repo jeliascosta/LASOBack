@@ -282,15 +282,14 @@ void SAL_CALL Window::removeEventListener( const uno::Reference< lang::XEventLis
 sal_Bool SAL_CALL Window::supportsService( const ::rtl::OUString& ServiceName )
     throw (uno::RuntimeException)
 {
-    return ServiceName.equalsAsciiL( RTL_CONSTASCII_STRINGPARAM ( AVMEDIA_MACAVF_WINDOW_SERVICENAME ) );
+    return ServiceName == AVMEDIA_MACAVF_WINDOW_SERVICENAME;
 }
 
 
 uno::Sequence< ::rtl::OUString > SAL_CALL Window::getSupportedServiceNames(  )
     throw (uno::RuntimeException)
 {
-    uno::Sequence< ::rtl::OUString > aRet { AVMEDIA_MACAVF_WINDOW_SERVICENAME };
-    return aRet;
+    return { AVMEDIA_MACAVF_WINDOW_SERVICENAME };
 }
 
 } // namespace macavf

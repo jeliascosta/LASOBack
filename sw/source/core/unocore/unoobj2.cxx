@@ -165,19 +165,18 @@ struct FrameClientSortListLess
 
 namespace
 {
-    void lcl_CollectFrameAtNodeWithLayout(SwDoc* pDoc, const SwContentFrame* pCFrame,
+    void lcl_CollectFrameAtNodeWithLayout(const SwContentFrame* pCFrame,
             FrameClientSortList_t& rFrames,
             const sal_uInt16 nAnchorType)
     {
         auto pObjs = pCFrame->GetDrawObjs();
         if(!pObjs)
             return;
-        const auto aTextBoxes = SwTextBoxHelper::findTextBoxes(pDoc);
         for(const auto pAnchoredObj : *pObjs)
         {
             SwFrameFormat& rFormat = pAnchoredObj->GetFrameFormat();
             // Filter out textboxes, which are not interesting at an UNO level.
-            if(aTextBoxes.find(&rFormat) != aTextBoxes.end())
+            if(SwTextBoxHelper::isTextBox(&rFormat, RES_FLYFRMFMT))
                 continue;
             if(rFormat.GetAnchor().GetAnchorId() == nAnchorType)
             {
@@ -211,7 +210,7 @@ void CollectFrameAtNode( const SwNodeIndex& rIdx,
         nullptr != (pCNd = rIdx.GetNode().GetContentNode()) &&
         nullptr != (pCFrame = pCNd->getLayoutFrame( pDoc->getIDocumentLayoutAccess().GetCurrentLayout())) )
     {
-        lcl_CollectFrameAtNodeWithLayout(pDoc, pCFrame, rFrames, nChkType);
+        lcl_CollectFrameAtNodeWithLayout(pCFrame, rFrames, nChkType);
     }
     else
     {
@@ -236,7 +235,7 @@ void CollectFrameAtNode( const SwNodeIndex& rIdx,
                 rFrames.push_back(entry);
             }
         }
-        ::std::sort(rFrames.begin(), rFrames.end(), FrameClientSortListLess());
+        std::sort(rFrames.begin(), rFrames.end(), FrameClientSortListLess());
     }
 }
 
@@ -324,7 +323,7 @@ void ClientModify(SwClient* pClient, const SfxPoolItem *pOld, const SfxPoolItem 
         // Is the move to the new one finished and will the old one be deleted?
         if( static_cast<const SwFormatChg*>(pNew)->pChangedFormat == pClient->GetRegisteredIn() &&
             static_cast<const SwFormatChg*>(pOld)->pChangedFormat->IsFormatInDTOR() )
-            static_cast<SwModify*>(pClient->GetRegisteredIn())->Remove(pClient);
+            pClient->GetRegisteredIn()->Remove(pClient);
         break;
     }
 }
@@ -453,7 +452,7 @@ struct SwXParagraphEnumerationImpl final : public SwXParagraphEnumeration
 
     SwXParagraphEnumerationImpl(
             uno::Reference< text::XText > const& xParent,
-            ::std::shared_ptr<SwUnoCursor> pCursor,
+            const std::shared_ptr<SwUnoCursor>& pCursor,
             const CursorType eType,
             SwStartNode const*const pStartNode, SwTable const*const pTable)
         : m_xParentText( xParent )
@@ -487,7 +486,7 @@ struct SwXParagraphEnumerationImpl final : public SwXParagraphEnumeration
         }
     }
 
-    virtual ~SwXParagraphEnumerationImpl()
+    virtual ~SwXParagraphEnumerationImpl() override
         { m_pCursor.reset(nullptr); }
     virtual void SAL_CALL release() throw () override
     {
@@ -515,7 +514,7 @@ struct SwXParagraphEnumerationImpl final : public SwXParagraphEnumeration
 
 SwXParagraphEnumeration* SwXParagraphEnumeration::Create(
     uno::Reference< text::XText > const& xParent,
-    const ::std::shared_ptr<SwUnoCursor>& pCursor,
+    const std::shared_ptr<SwUnoCursor>& pCursor,
     const CursorType eType,
     SwStartNode const*const pStartNode,
     SwTable const*const pTable)
@@ -590,11 +589,11 @@ SwXParagraphEnumerationImpl::NextElement_Impl() throw (container::NoSuchElementE
             (CURSOR_SELECTION_IN_TABLE != m_eCursorType)) && pTableNode)
         {
             aNewCursor->GetPoint()->nNode = pTableNode->EndOfSectionIndex();
-            aNewCursor->Move(fnMoveForward, fnGoNode);
+            aNewCursor->Move(fnMoveForward, GoInNode);
         }
         else
         {
-            aNewCursor->MovePara(fnParaNext, fnParaStart);
+            aNewCursor->MovePara(GoNextPara, fnParaStart);
         }
         if (m_nEndIndex < aNewCursor->Start()->nNode.GetIndex())
         {
@@ -613,7 +612,7 @@ SwXParagraphEnumerationImpl::NextElement_Impl() throw (container::NoSuchElementE
         {
             // this is a foreign table: go to end
             rUnoCursor.GetPoint()->nNode = pTableNode->EndOfSectionIndex();
-            if (!rUnoCursor.Move(fnMoveForward, fnGoNode))
+            if (!rUnoCursor.Move(fnMoveForward, GoInNode))
             {
                 return nullptr;
             }
@@ -626,7 +625,7 @@ SwXParagraphEnumerationImpl::NextElement_Impl() throw (container::NoSuchElementE
     // before AND after the movement...
     if (lcl_CursorIsInSection( &rUnoCursor, m_pOwnStartNode ) &&
         (m_bFirstParagraph || bInTable ||
-        (rUnoCursor.MovePara(fnParaNext, fnParaStart) &&
+        (rUnoCursor.MovePara(GoNextPara, fnParaStart) &&
             lcl_CursorIsInSection( &rUnoCursor, m_pOwnStartNode ))))
     {
         SwPosition* pStart = rUnoCursor.Start();
@@ -690,7 +689,7 @@ public:
     ::sw::mark::IMark * m_pMark;
 
     Impl(   SwDoc & rDoc, const enum RangePosition eRange,
-            SwFrameFormat *const pTableFormat = nullptr,
+            SwFrameFormat *const pTableFormat,
             const uno::Reference< text::XText > & xParent = nullptr)
         : SwClient()
         , m_rPropSet(*aSwMapProvider.GetPropertySet(PROPERTY_MAP_TEXT_CURSOR))
@@ -702,7 +701,7 @@ public:
     {
     }
 
-    virtual ~Impl()
+    virtual ~Impl() override
     {
         // Impl owns the bookmark; delete it here: SolarMutex is locked
         Invalidate();
@@ -795,7 +794,7 @@ void SwXTextRange::SetPositions(const SwPaM& rPam)
     m_pImpl->Invalidate();
     IDocumentMarkAccess* const pMA = m_pImpl->m_rDoc.getIDocumentMarkAccess();
     m_pImpl->m_pMark = pMA->makeMark(rPam, OUString(),
-                IDocumentMarkAccess::MarkType::UNO_BOOKMARK);
+        IDocumentMarkAccess::MarkType::UNO_BOOKMARK, sw::mark::InsertMode::New);
     m_pImpl->m_pMark->Add(m_pImpl.get());
 }
 
@@ -1508,7 +1507,7 @@ struct SwXTextRangesImpl final : public SwXTextRanges
     virtual SwUnoCursor* GetCursor() override
         { return &(*m_pUnoCursor); };
     void MakeRanges();
-    ::std::vector< uno::Reference< text::XTextRange > > m_Ranges;
+    std::vector< uno::Reference< text::XTextRange > > m_Ranges;
     sw::UnoCursorPointer m_pUnoCursor;
 };
 
@@ -1607,7 +1606,7 @@ struct SwXParaFrameEnumerationImpl final : public SwXParaFrameEnumeration
     virtual sal_Bool SAL_CALL hasMoreElements() throw (css::uno::RuntimeException, std::exception) override;
     virtual css::uno::Any SAL_CALL nextElement() throw (css::container::NoSuchElementException, css::lang::WrappedTargetException, css::uno::RuntimeException, std::exception) override;
 
-    SwXParaFrameEnumerationImpl(const SwPaM& rPaM, const enum ParaFrameMode eParaFrameMode, SwFrameFormat* const pFormat = nullptr);
+    SwXParaFrameEnumerationImpl(const SwPaM& rPaM, const enum ParaFrameMode eParaFrameMode, SwFrameFormat* const pFormat);
     virtual void SAL_CALL release() throw () override
     {
         SolarMutexGuard g;
@@ -1655,8 +1654,8 @@ SwXParaFrameEnumerationImpl::SwXParaFrameEnumerationImpl(
     {
         FrameClientSortList_t vFrames;
         ::CollectFrameAtNode(rPaM.GetPoint()->nNode, vFrames, false);
-        ::std::transform(vFrames.begin(), vFrames.end(),
-            ::std::back_inserter(m_vFrames),
+        std::transform(vFrames.begin(), vFrames.end(),
+            std::back_inserter(m_vFrames),
             [] (const FrameClientSortListEntry& rEntry) { return rEntry.pFrameClient; });
     }
     else if (pFormat)

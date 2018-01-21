@@ -155,7 +155,7 @@ namespace dbaui
         m_aControlDependencies.enableOnRadioCheck( *m_pSocketRadio, *m_pSocket );
         m_aControlDependencies.enableOnRadioCheck( *m_pNamedPipeRadio, *m_pNamedPipe );
 
-        m_aControlDependencies.addController( ::svt::PDialogController(
+        m_aControlDependencies.addController( std::shared_ptr<svt::DialogController>(
             new TextResetOperatorController( *m_pHostName, OUString("localhost") )
         ) );
 
@@ -169,12 +169,12 @@ namespace dbaui
 #endif
     }
 
-    IMPL_LINK_TYPED(MySQLNativeSettings, RadioToggleHdl, RadioButton&, rRadioButton, void)
+    IMPL_LINK(MySQLNativeSettings, RadioToggleHdl, RadioButton&, rRadioButton, void)
     {
         m_aControlModificationLink.Call(&rRadioButton);
     }
 
-    IMPL_LINK_TYPED(MySQLNativeSettings, EditModifyHdl, Edit&, rEdit, void)
+    IMPL_LINK(MySQLNativeSettings, EditModifyHdl, Edit&, rEdit, void)
     {
         m_aControlModificationLink.Call(&rEdit);
     }

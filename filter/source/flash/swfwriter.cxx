@@ -23,13 +23,12 @@
 #include <basegfx/matrix/b2dhommatrixtools.hxx>
 
 using namespace ::swf;
-using namespace ::std;
 using namespace ::com::sun::star::uno;
 using namespace ::com::sun::star::io;
 
 
-static MapMode aTWIPSMode( MAP_TWIP );
-static MapMode a100thmmMode( MAP_100TH_MM );
+static MapMode aTWIPSMode( MapUnit::MapTwip );
+static MapMode a100thmmMode( MapUnit::Map100thMM );
 
 static sal_Int32 map100thmm( sal_Int32 n100thMM )
 {
@@ -110,7 +109,7 @@ void ImplCopySvStreamToXOutputStream( SvStream& rIn, Reference< XOutputStream > 
     sal_uInt32 nSize = rIn.Tell();
     rIn.Seek( STREAM_SEEK_TO_BEGIN );
 
-    Sequence< sal_Int8 > aBuffer( min( nBufferSize, nSize ) );
+    Sequence< sal_Int8 > aBuffer( std::min( nBufferSize, nSize ) );
 
     while( nSize )
     {
@@ -120,7 +119,7 @@ void ImplCopySvStreamToXOutputStream( SvStream& rIn, Reference< XOutputStream > 
             aBuffer.realloc( nSize );
         }
 
-        sal_uInt32 nRead = rIn.Read( aBuffer.getArray(), nBufferSize );
+        sal_uInt32 nRead = rIn.ReadBytes(aBuffer.getArray(), nBufferSize);
         DBG_ASSERT( nRead == nBufferSize, "ImplCopySvStreamToXOutputStream failed!" );
         xOut->writeBytes( aBuffer );
 

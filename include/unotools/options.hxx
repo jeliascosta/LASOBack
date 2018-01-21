@@ -43,7 +43,7 @@ namespace utl {
     public:
         virtual ~ConfigurationListener();
 
-        virtual void ConfigurationChanged( ConfigurationBroadcaster* p, sal_uInt32 nHint=0 ) = 0;
+        virtual void ConfigurationChanged( ConfigurationBroadcaster* p, sal_uInt32 nHint ) = 0;
     };
     typedef ::std::vector< ConfigurationListener* > IMPL_ConfigurationListenerList;
 
@@ -78,14 +78,14 @@ class SAL_WARN_UNUSED UNOTOOLS_DLLPUBLIC Options
 public:
     Options();
 
-    virtual ~Options() = 0;
+    virtual ~Options() override = 0;
 
 private:
     Options(Options &) = delete;
     void operator =(Options &) = delete;
 
 protected:
-    virtual void ConfigurationChanged( ::utl::ConfigurationBroadcaster* p, sal_uInt32 nHint=0 ) override;
+    virtual void ConfigurationChanged( ::utl::ConfigurationBroadcaster* p, sal_uInt32 nHint ) override;
 };
 
 } }

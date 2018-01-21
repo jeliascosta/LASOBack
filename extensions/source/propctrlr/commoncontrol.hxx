@@ -23,7 +23,7 @@
 #include <com/sun/star/inspection/XPropertyControl.hpp>
 #include <com/sun/star/lang/DisposedException.hpp>
 #include <cppuhelper/compbase.hxx>
-#include <comphelper/broadcasthelper.hxx>
+#include <cppuhelper/basemutex.hxx>
 #include <tools/link.hxx>
 #include <vcl/window.hxx>
 #include <toolkit/helper/vclunohelper.hxx>
@@ -32,6 +32,7 @@
 class NotifyEvent;
 class Control;
 class ListBox;
+class SvxColorListBox;
 class Edit;
 
 namespace pcr
@@ -89,10 +90,11 @@ namespace pcr
         virtual vcl::Window* getVclWindow() = 0;
 
         /// may be used by derived classes, they forward the event to the PropCtrListener
-        DECL_LINK_TYPED( ModifiedHdl, ListBox&, void );
-        DECL_LINK_TYPED( EditModifiedHdl, Edit&, void );
-        DECL_LINK_TYPED( GetFocusHdl, Control&, void );
-        DECL_LINK_TYPED( LoseFocusHdl, Control&, void );
+        DECL_LINK( ModifiedHdl, ListBox&, void );
+        DECL_LINK( ColorModifiedHdl, SvxColorListBox&, void );
+        DECL_LINK( EditModifiedHdl, Edit&, void );
+        DECL_LINK( GetFocusHdl, Control&, void );
+        DECL_LINK( LoseFocusHdl, Control&, void );
     };
 
 
@@ -107,7 +109,7 @@ namespace pcr
             a class which is derived from vcl::Window
     */
     template < class TControlInterface, class TControlWindow >
-    class CommonBehaviourControl    :public ::comphelper::OBaseMutex
+    class CommonBehaviourControl    :public ::cppu::BaseMutex
                                     ,public ::cppu::WeakComponentImplHelper< TControlInterface >
                                     ,public CommonBehaviourControlHelper
     {
@@ -150,8 +152,9 @@ namespace pcr
         inline void impl_checkDisposed_throw();
     private:
         VclPtr<TControlWindow>         m_pControlWindow;
-        void implSetModifyHandler(std::true_type);
-        void implSetModifyHandler(std::false_type);
+        void implSetModifyHandler(const Edit&);
+        void implSetModifyHandler(const ListBox&);
+        void implSetModifyHandler(const SvxColorListBox&);
     };
 
 
@@ -161,11 +164,11 @@ namespace pcr
     inline CommonBehaviourControl< TControlInterface, TControlWindow >::CommonBehaviourControl ( sal_Int16 _nControlType, vcl::Window* _pParentWindow, WinBits _nWindowStyle, bool _bDoSetHandlers)
         :ComponentBaseClass( m_aMutex )
         ,CommonBehaviourControlHelper( _nControlType, *this )
-        ,m_pControlWindow( new TControlWindow( _pParentWindow, _nWindowStyle ) )
+        ,m_pControlWindow( VclPtr<TControlWindow>::Create( _pParentWindow, _nWindowStyle ) )
     {
         if ( _bDoSetHandlers )
         {
-            implSetModifyHandler(std::is_base_of<::Edit,TControlWindow>());
+            implSetModifyHandler(*m_pControlWindow);
             m_pControlWindow->SetGetFocusHdl( LINK( this, CommonBehaviourControlHelper, GetFocusHdl ) );
             m_pControlWindow->SetLoseFocusHdl( LINK( this, CommonBehaviourControlHelper, LoseFocusHdl ) );
         }
@@ -173,15 +176,21 @@ namespace pcr
     }
 
     template< class TControlInterface, class TControlWindow >
-    inline void CommonBehaviourControl< TControlInterface, TControlWindow >::implSetModifyHandler(std::true_type)
+    inline void CommonBehaviourControl< TControlInterface, TControlWindow >::implSetModifyHandler(const Edit&)
     {
         m_pControlWindow->SetModifyHdl( LINK( this, CommonBehaviourControlHelper, EditModifiedHdl ) );
     }
 
     template< class TControlInterface, class TControlWindow >
-    inline void CommonBehaviourControl< TControlInterface, TControlWindow >::implSetModifyHandler(std::false_type)
+    inline void CommonBehaviourControl< TControlInterface, TControlWindow >::implSetModifyHandler(const ListBox&)
     {
         m_pControlWindow->SetModifyHdl( LINK( this, CommonBehaviourControlHelper, ModifiedHdl ) );
+    }
+
+    template< class TControlInterface, class TControlWindow >
+    inline void CommonBehaviourControl< TControlInterface, TControlWindow >::implSetModifyHandler(const SvxColorListBox&)
+    {
+        m_pControlWindow->SetModifyHdl( LINK( this, CommonBehaviourControlHelper, ColorModifiedHdl ) );
     }
 
     template< class TControlInterface, class TControlWindow >

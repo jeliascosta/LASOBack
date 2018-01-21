@@ -74,7 +74,7 @@ private:
     OUString            maCommand;
     Reference< XFrame > mxFrame;
 
-                    DECL_LINK_TYPED(ImplModifyHdl, Idle *, void);
+                    DECL_LINK(ImplModifyHdl, Idle *, void);
 
 protected:
 
@@ -91,11 +91,8 @@ ImplGrafMetricField::ImplGrafMetricField( vcl::Window* pParent, const OUString& 
     maCommand( rCmd ),
     mxFrame( rFrame )
 {
-    Size aSize( GetTextWidth( "-100 %" ), GetTextHeight() );
-
-    aSize.Width() += 20;
-    aSize.Height() += 6;
-    SetSizePixel( aSize );
+    Size aSize(CalcMinimumSizeForText("-100 %"));
+    SetSizePixel(aSize);
 
     if ( maCommand == ".uno:GrafGamma" )
     {
@@ -130,7 +127,7 @@ void ImplGrafMetricField::Modify()
     maIdle.Start();
 }
 
-IMPL_LINK_NOARG_TYPED(ImplGrafMetricField, ImplModifyHdl, Idle *, void)
+IMPL_LINK_NOARG(ImplGrafMetricField, ImplModifyHdl, Idle *, void)
 {
     const sal_Int64 nVal = GetValue();
 
@@ -230,11 +227,12 @@ protected:
 public:
 
                             ImplGrafControl( vcl::Window* pParent, const OUString& rCmd, const Reference< XFrame >& rFrame );
-                            virtual ~ImplGrafControl();
+                            virtual ~ImplGrafControl() override;
     virtual void            dispose() override;
 
     void                    Update( const SfxPoolItem* pItem ) { maField->Update( pItem ); }
     void                    SetText( const OUString& rStr ) override { maField->SetText( rStr ); }
+    virtual void            Resize() override;
 };
 
 ImplGrafControl::ImplGrafControl(
@@ -299,6 +297,15 @@ void ImplGrafControl::GetFocus()
 {
     if (maField)
         maField->GrabFocus();
+}
+
+void ImplGrafControl::Resize()
+{
+    Size aFldSize(maField->GetSizePixel());
+    aFldSize.Width() = GetSizePixel().Width() - SYMBOL_TO_FIELD_OFFSET - maImage->GetSizePixel().Width();
+    maField->SetSizePixel(aFldSize);
+
+    Control::Resize();
 }
 
 class ImplGrafModeControl : public ListBox
@@ -657,16 +664,16 @@ void SvxGrafAttrHelper::ExecuteGrafAttr( SfxRequest& rReq, SdrView& rView )
                 SdrGrafObj* pObj = static_cast<SdrGrafObj*>( rMarkList.GetMark( 0 )->GetMarkedSdrObj() );
 
                 if( pObj && dynamic_cast<const SdrGrafObj*>( pObj) !=  nullptr &&
-                    ( pObj->GetGraphicType() != GRAPHIC_NONE ) &&
-                    ( pObj->GetGraphicType() != GRAPHIC_DEFAULT ) )
+                    ( pObj->GetGraphicType() != GraphicType::NONE ) &&
+                    ( pObj->GetGraphicType() != GraphicType::Default ) )
                 {
                     SfxItemSet          aGrfAttr( rPool, SDRATTR_GRAFCROP, SDRATTR_GRAFCROP, 0 );
-                    const SfxMapUnit    eOldMetric = rPool.GetMetric( 0 );
-                    const MapMode       aMap100( MAP_100TH_MM );
-                    const MapMode       aMapTwip( MAP_TWIP );
+                    const MapUnit       eOldMetric = rPool.GetMetric( 0 );
+                    const MapMode       aMap100( MapUnit::Map100thMM );
+                    const MapMode       aMapTwip( MapUnit::MapTwip );
 
                     aGrfAttr.Put(pObj->GetMergedItemSet());
-                    rPool.SetDefaultMetric( SFX_MAPUNIT_TWIP );
+                    rPool.SetDefaultMetric( MapUnit::MapTwip );
 
                     SfxItemSet  aCropDlgAttr( rPool,
                                             SDRATTR_GRAFCROP, SDRATTR_GRAFCROP,
@@ -700,7 +707,7 @@ void SvxGrafAttrHelper::ExecuteGrafAttr( SfxRequest& rReq, SdrView& rView )
                     assert(pFact && "Dialog creation failed!");
                     ::CreateTabPage fnCreatePage = pFact->GetTabPageCreatorFunc( RID_SVXPAGE_GRFCROP );
                     assert(fnCreatePage && "Dialog creation failed!");
-                    SfxTabPage* pTabPage = (*fnCreatePage)( aCropDialog->get_content_area(), &aCropDlgAttr );
+                    VclPtr<SfxTabPage> pTabPage = (*fnCreatePage)( aCropDialog->get_content_area(), &aCropDlgAttr );
 
                     pTabPage->SetText( aCropStr );
                     aCropDialog->SetTabPage( pTabPage );
@@ -833,8 +840,8 @@ void SvxGrafAttrHelper::GetGrafAttrState( SfxItemSet& rSet, SdrView& rView )
         SdrGrafObj* pGrafObj = dynamic_cast< SdrGrafObj* >( rMarkList.GetMark( i )->GetMarkedSdrObj() );
 
         if( !pGrafObj ||
-            ( pGrafObj->GetGraphicType() == GRAPHIC_NONE ) ||
-            ( pGrafObj->GetGraphicType() == GRAPHIC_DEFAULT  ))
+            ( pGrafObj->GetGraphicType() == GraphicType::NONE ) ||
+            ( pGrafObj->GetGraphicType() == GraphicType::Default  ))
         {
             bEnableColors = bEnableTransparency = bEnableCrop = false;
             break;

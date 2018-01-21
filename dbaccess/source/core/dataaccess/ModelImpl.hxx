@@ -66,6 +66,7 @@
 #include <connectivity/CommonTools.hxx>
 #include <cppuhelper/propshlp.hxx>
 #include <cppuhelper/weakref.hxx>
+#include <vcl/svapp.hxx>
 #include <sfx2/docmacromode.hxx>
 #include <sfx2/docstoragemodifylistener.hxx>
 #include <unotools/sharedunocomponent.hxx>
@@ -170,7 +171,7 @@ private:
     css::uno::WeakReference< css::frame::XModel >                     m_xModel;
     css::uno::WeakReference< css::sdbc::XDataSource >                 m_xDataSource;
 
-    DocumentStorageAccess*                                            m_pStorageAccess;
+    rtl::Reference<DocumentStorageAccess>                             m_pStorageAccess;
     ::comphelper::SharedMutex                                         m_aMutex;
     VosMutexFacade                                                    m_aMutexFacade;
     ::std::vector< TContentPtr >                                      m_aContainer;   // one for each ObjectType
@@ -182,7 +183,7 @@ private:
 
     SharedStorage                                                     m_xDocumentStorage;
     ::rtl::Reference< ::sfx2::DocumentStorageModifyListener >         m_pStorageModifyListener;
-    ODatabaseContext*                                                 m_pDBContext;
+    ODatabaseContext&                                                 m_rDBContext;
     DocumentEventsData                                                m_aDocumentEvents;
 
     ::comphelper::NamedValueCollection                                m_aMediaDescriptor;
@@ -383,10 +384,6 @@ public:
     static OUString
                     getObjectContainerStorageName( const ObjectType _eType );
 
-    /** revokes the data source registration at the database context
-    */
-    void            revokeDataSource() const;
-
     /** determines whether a given object storage contains macros
     */
     static bool     objectHasMacros(
@@ -569,9 +566,13 @@ private:
     Just put this guard onto the stack at the beginning of your method. Don't bother yourself
     with a MutexGuard, checks for being disposed, and the like.
 */
-class ModelMethodGuard : public ::osl::ResettableMutexGuard
+class ModelMethodGuard
 {
 private:
+    // to avoid deadlocks, lock SolarMutex too, and before the own osl::Mutex
+    SolarMutexResettableGuard m_SolarGuard;
+    ::osl::ResettableMutexGuard m_OslGuard;
+
     typedef ::osl::ResettableMutexGuard             BaseMutexGuard;
 
 public:
@@ -584,9 +585,22 @@ public:
             If the given component is already disposed
     */
     explicit ModelMethodGuard( const ModelDependentComponent& _component )
-        :BaseMutexGuard( _component.getMutex( ModelDependentComponent::GuardAccess() ) )
+        : m_OslGuard(_component.getMutex(ModelDependentComponent::GuardAccess()))
     {
         _component.checkDisposed();
+    }
+
+    void clear()
+    {
+        m_OslGuard.clear();
+        // note: this only releases *once* so may still be locked
+        m_SolarGuard.clear(); // SolarMutex last
+    }
+
+    void reset()
+    {
+        m_SolarGuard.reset(); // SolarMutex first
+        m_OslGuard.reset();
     }
 
     ~ModelMethodGuard()

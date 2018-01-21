@@ -73,12 +73,12 @@ namespace dbaui
             VclPtr<OTableEditorCtrl> m_pOwner;
 
         public:
-            ClipboardInvalidator(sal_uLong nTimeout,OTableEditorCtrl*);
+            explicit ClipboardInvalidator(OTableEditorCtrl*);
             ~ClipboardInvalidator();
             void Stop();
 
         protected:
-            DECL_LINK_TYPED(OnInvalidate, Timer*, void);
+            DECL_LINK(OnInvalidate, Timer*, void);
         };
 
         friend class OTableEditorCtrl::ClipboardInvalidator;
@@ -119,7 +119,7 @@ namespace dbaui
 
     public:
         explicit OTableEditorCtrl(vcl::Window* pParentWin);
-        virtual ~OTableEditorCtrl();
+        virtual ~OTableEditorCtrl() override;
         virtual void dispose() override;
         virtual bool CursorMoving(long nNewRow, sal_uInt16 nNewCol) override;
         SfxUndoManager& GetUndoManager() const;
@@ -147,7 +147,7 @@ namespace dbaui
 
         const ::std::shared_ptr<OTableRow>& GetActRow(){ return pActRow; }
         void CellModified( long nRow, sal_uInt16 nColId );
-        void SetReadOnly( bool bRead=true );
+        void SetReadOnly( bool bRead );
 
         virtual void Init() override;
         virtual void DeactivateCell(bool bUpdate = true) override;
@@ -171,11 +171,11 @@ namespace dbaui
         virtual void paste() override;
 
     private:
-        DECL_LINK_TYPED( DelayedCut, void*, void );
-        DECL_LINK_TYPED( DelayedPaste, void*, void );
-        DECL_LINK_TYPED( DelayedDelete, void*, void );
-        DECL_LINK_TYPED( DelayedInsNewRows, void*, void );
-        DECL_LINK_TYPED( InvalidateFieldType, void*, void );
+        DECL_LINK( DelayedCut, void*, void );
+        DECL_LINK( DelayedPaste, void*, void );
+        DECL_LINK( DelayedDelete, void*, void );
+        DECL_LINK( DelayedInsNewRows, void*, void );
+        DECL_LINK( InvalidateFieldType, void*, void );
 
         void InitCellController();
         sal_Int32 HasFieldName( const OUString& rFieldName );

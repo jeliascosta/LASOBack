@@ -86,7 +86,7 @@ SwFieldRefPage::SwFieldRefPage(vcl::Window* pParent, const SfxItemSet *const pCo
     m_pTypeLB->set_height_request(nHeight);
     m_pFormatLB->set_height_request(nHeight);
 
-    long nWidth = m_pTypeLB->LogicToPixel(Size(FIELD_COLUMN_WIDTH, 0), MapMode(MAP_APPFONT)).Width();
+    long nWidth = m_pTypeLB->LogicToPixel(Size(FIELD_COLUMN_WIDTH, 0), MapMode(MapUnit::MapAppFont)).Width();
     m_pTypeLB->set_width_request(nWidth);
     m_pFormatLB->set_width_request(nWidth);
     m_pSelection->set_width_request(nWidth*2);
@@ -129,7 +129,7 @@ void SwFieldRefPage::dispose()
     SwFieldPage::dispose();
 }
 
-IMPL_LINK_NOARG_TYPED(SwFieldRefPage, ModifyHdl_Impl, Edit&, void)
+IMPL_LINK_NOARG(SwFieldRefPage, ModifyHdl_Impl, Edit&, void)
 {
     OUString sFilter = comphelper::string::strip(m_pFilterED->GetText(), ' ');
     UpdateSubType(sFilter);
@@ -299,7 +299,7 @@ void SwFieldRefPage::Reset(const SfxItemSet* )
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwFieldRefPage, TypeHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwFieldRefPage, TypeHdl, ListBox&, void)
 {
     // save old ListBoxPos
     const sal_Int32 nOld = GetTypeSel();
@@ -438,11 +438,11 @@ IMPL_LINK_NOARG_TYPED(SwFieldRefPage, TypeHdl, ListBox&, void)
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SwFieldRefPage, SubTypeTreeListBoxHdl, SvTreeListBox*, void)
+IMPL_LINK_NOARG(SwFieldRefPage, SubTypeTreeListBoxHdl, SvTreeListBox*, void)
 {
     SubTypeHdl();
 }
-IMPL_LINK_NOARG_TYPED(SwFieldRefPage, SubTypeListBoxHdl, ListBox&, void)
+IMPL_LINK_NOARG(SwFieldRefPage, SubTypeListBoxHdl, ListBox&, void)
 {
     SubTypeHdl();
 }
@@ -588,11 +588,10 @@ void SwFieldRefPage::UpdateSubType(const OUString& filterString)
             bool bCertainTextNodeSelected( false );
             for ( size_t nOutlIdx = 0; nOutlIdx < maOutlineNodes.size(); ++nOutlIdx )
             {
-                SvTreeListEntry* pEntry = nullptr;
                 bool isSubstring = MatchSubstring(pIDoc->getOutlineText( nOutlIdx, true, true, false ), filterString);
                 if(isSubstring)
                 {
-                    pEntry = m_pSelectionToolTipLB->InsertEntry(
+                    SvTreeListEntry* pEntry = m_pSelectionToolTipLB->InsertEntry(
                     pIDoc->getOutlineText( nOutlIdx, true, true, false ) );
                     pEntry->SetUserData( reinterpret_cast<void*>(nOutlIdx) );
                     if ( ( IsFieldEdit() &&
@@ -620,11 +619,10 @@ void SwFieldRefPage::UpdateSubType(const OUString& filterString)
             bool bCertainTextNodeSelected( false );
             for ( size_t nNumItemIdx = 0; nNumItemIdx < maNumItems.size(); ++nNumItemIdx )
             {
-                SvTreeListEntry* pEntry = nullptr;
                 bool isSubstring = MatchSubstring(pIDoc->getListItemText( *maNumItems[nNumItemIdx] ), filterString);
                 if(isSubstring)
                 {
-                    pEntry = m_pSelectionToolTipLB->InsertEntry(
+                    SvTreeListEntry* pEntry = m_pSelectionToolTipLB->InsertEntry(
                     pIDoc->getListItemText( *maNumItems[nNumItemIdx] ) );
                     pEntry->SetUserData( reinterpret_cast<void*>(nNumItemIdx) );
                     if ( ( IsFieldEdit() &&
@@ -829,7 +827,7 @@ sal_Int32 SwFieldRefPage::FillFormatLB(sal_uInt16 nTypeId)
 }
 
 // Modify
-IMPL_LINK_NOARG_TYPED(SwFieldRefPage, ModifyHdl, Edit&, void)
+IMPL_LINK_NOARG(SwFieldRefPage, ModifyHdl, Edit&, void)
 {
     OUString aName(m_pNameED->GetText());
     const bool bEmptyName = aName.isEmpty();

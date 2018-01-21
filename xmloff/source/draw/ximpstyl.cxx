@@ -24,6 +24,7 @@
 #include <xmloff/xmluconv.hxx>
 #include "ximpnote.hxx"
 #include <tools/debug.hxx>
+#include <o3tl/make_unique.hxx>
 #include <osl/diagnose.h>
 
 #include <com/sun/star/lang/XMultiServiceFactory.hpp>
@@ -62,7 +63,7 @@ public:
                  ::std::vector< XMLPropertyState > &rProps,
                  const rtl::Reference < SvXMLImportPropertyMapper > &rMap );
 
-    virtual ~SdXMLDrawingPagePropertySetContext();
+    virtual ~SdXMLDrawingPagePropertySetContext() override;
 
     using SvXMLPropertySetContext::CreateChildContext;
     virtual SvXMLImportContext *CreateChildContext( sal_uInt16 nPrefix,
@@ -137,7 +138,7 @@ public:
         const css::uno::Reference< css::xml::sax::XAttributeList >& xAttrList,
         SvXMLStylesContext& rStyles,
         sal_uInt16 nFamily = XML_STYLE_FAMILY_SD_DRAWINGPAGE_ID);
-    virtual ~SdXMLDrawingPageStyleContext();
+    virtual ~SdXMLDrawingPageStyleContext() override;
 
     SvXMLImportContext * CreateChildContext(
         sal_uInt16 nPrefix,
@@ -260,7 +261,7 @@ void SdXMLDrawingPageStyleContext::FillPropertySet(
 
     rtl::Reference < SvXMLImportPropertyMapper > xImpPrMap =
         GetStyles()->GetImportPropertyMapper( GetFamily() );
-    DBG_ASSERT( xImpPrMap.is(), "There is the import prop mapper" );
+    SAL_WARN_IF( !xImpPrMap.is(), "xmloff", "There is the import prop mapper" );
     if( xImpPrMap.is() )
         xImpPrMap->FillPropertySet( GetProperties(), rPropSet, aContextIDs );
 
@@ -379,8 +380,7 @@ SdXMLPageMasterContext::SdXMLPageMasterContext(
     sal_uInt16 nPrfx,
     const OUString& rLName,
     const uno::Reference< xml::sax::XAttributeList>& xAttrList)
-:   SvXMLStyleContext(rImport, nPrfx, rLName, xAttrList, XML_STYLE_FAMILY_SD_PAGEMASTERCONEXT_ID),
-    mpPageMasterStyle( nullptr )
+:   SvXMLStyleContext(rImport, nPrfx, rLName, xAttrList, XML_STYLE_FAMILY_SD_PAGEMASTERCONEXT_ID)
 {
     // set family to something special at SvXMLStyleContext
     // for differences in search-methods
@@ -405,16 +405,6 @@ SdXMLPageMasterContext::SdXMLPageMasterContext(
     }
 }
 
-SdXMLPageMasterContext::~SdXMLPageMasterContext()
-{
-    // release remembered contexts, they are no longer needed
-    if(mpPageMasterStyle)
-    {
-        mpPageMasterStyle->ReleaseRef();
-        mpPageMasterStyle = nullptr;
-    }
-}
-
 SvXMLImportContext *SdXMLPageMasterContext::CreateChildContext(
     sal_uInt16 nPrefix,
     const OUString& rLocalName,
@@ -424,12 +414,9 @@ SvXMLImportContext *SdXMLPageMasterContext::CreateChildContext(
 
     if(nPrefix == XML_NAMESPACE_STYLE && IsXMLToken( rLocalName, XML_PAGE_LAYOUT_PROPERTIES) )
     {
-        pContext = new SdXMLPageMasterStyleContext(GetSdImport(), nPrefix, rLocalName, xAttrList);
-
-        // remember SdXMLPresentationPlaceholderContext for later evaluation
-        pContext->AddFirstRef();
-        DBG_ASSERT(!mpPageMasterStyle, "PageMasterStyle is set, there seem to be two of them (!)");
-        mpPageMasterStyle = static_cast<SdXMLPageMasterStyleContext*>(pContext);
+        DBG_ASSERT(!mxPageMasterStyle.is(), "PageMasterStyle is set, there seem to be two of them (!)");
+        mxPageMasterStyle.set(new SdXMLPageMasterStyleContext(GetSdImport(), nPrefix, rLocalName, xAttrList));
+        pContext = mxPageMasterStyle.get();
     }
 
     // call base class
@@ -465,10 +452,6 @@ SdXMLPresentationPageLayoutContext::SdXMLPresentationPageLayoutContext(
     }
 }
 
-SdXMLPresentationPageLayoutContext::~SdXMLPresentationPageLayoutContext()
-{
-}
-
 SvXMLImportContext *SdXMLPresentationPageLayoutContext::CreateChildContext(
     sal_uInt16 nPrefix,
     const OUString& rLocalName,
@@ -478,13 +461,13 @@ SvXMLImportContext *SdXMLPresentationPageLayoutContext::CreateChildContext(
 
     if(nPrefix == XML_NAMESPACE_PRESENTATION && IsXMLToken( rLocalName, XML_PLACEHOLDER ) )
     {
+        const rtl::Reference< SdXMLPresentationPlaceholderContext > xContext{
+            new SdXMLPresentationPlaceholderContext(GetSdImport(), nPrefix, rLocalName, xAttrList)};
         // presentation:placeholder inside style:presentation-page-layout context
-        pContext = new SdXMLPresentationPlaceholderContext(
-            GetSdImport(), nPrefix, rLocalName, xAttrList);
+        pContext = xContext.get();
 
         // remember SdXMLPresentationPlaceholderContext for later evaluation
-        pContext->AddFirstRef();
-        maList.push_back( static_cast<SdXMLPresentationPlaceholderContext*>(pContext) );
+        maList.push_back( xContext );
     }
 
     // call base class
@@ -501,7 +484,7 @@ void SdXMLPresentationPageLayoutContext::EndElement()
     // at the moment only use number of types used there
     if( !maList.empty() )
     {
-        SdXMLPresentationPlaceholderContext* pObj0 = maList[ 0 ];
+        SdXMLPresentationPlaceholderContext* pObj0 = maList[ 0 ].get();
         if( pObj0->GetName() == "handout" )
         {
             switch( maList.size() )
@@ -543,7 +526,7 @@ void SdXMLPresentationPageLayoutContext::EndElement()
                 }
                 case 2:
                 {
-                    SdXMLPresentationPlaceholderContext* pObj1 = maList[ 1 ];
+                    SdXMLPresentationPlaceholderContext* pObj1 = maList[ 1 ].get();
 
                     if( pObj1->GetName() == "subtitle" )
                     {
@@ -586,8 +569,8 @@ void SdXMLPresentationPageLayoutContext::EndElement()
                 }
                 case 3:
                 {
-                    SdXMLPresentationPlaceholderContext* pObj1 = maList[ 1 ];
-                    SdXMLPresentationPlaceholderContext* pObj2 = maList[ 2 ];
+                    SdXMLPresentationPlaceholderContext* pObj1 = maList[ 1 ].get();
+                    SdXMLPresentationPlaceholderContext* pObj2 = maList[ 2 ].get();
 
                     if( pObj1->GetName() == "outline" )
                     {
@@ -651,8 +634,8 @@ void SdXMLPresentationPageLayoutContext::EndElement()
                 }
                 case 4:
                 {
-                    SdXMLPresentationPlaceholderContext* pObj1 = maList[ 1 ];
-                    SdXMLPresentationPlaceholderContext* pObj2 = maList[ 2 ];
+                    SdXMLPresentationPlaceholderContext* pObj1 = maList[ 1 ].get();
+                    SdXMLPresentationPlaceholderContext* pObj2 = maList[ 2 ].get();
 
                     if( pObj1->GetName() == "object" )
                     {
@@ -673,7 +656,7 @@ void SdXMLPresentationPageLayoutContext::EndElement()
                 }
                 case 5:
                 {
-                    SdXMLPresentationPlaceholderContext* pObj1 = maList[ 1 ];
+                    SdXMLPresentationPlaceholderContext* pObj1 = maList[ 1 ].get();
 
                     if( pObj1->GetName() == "object" )
                     {
@@ -700,8 +683,6 @@ void SdXMLPresentationPageLayoutContext::EndElement()
         }
 
         // release remembered contexts, they are no longer needed
-        for ( size_t i = maList.size(); i > 0; )
-            maList[ --i ]->ReleaseRef();
         maList.clear();
     }
 }
@@ -868,8 +849,8 @@ void SdXMLMasterPageContext::EndElement()
     if(!msName.isEmpty() && GetSdImport().GetShapeImport()->GetStylesContext())
     {
         SvXMLImportContext* pContext = GetSdImport().GetShapeImport()->GetStylesContext();
-        if( dynamic_cast<const SdXMLStylesContext*>(pContext) !=  nullptr )
-            static_cast<SdXMLStylesContext*>(pContext)->SetMasterPageStyles(*this);
+        if (SdXMLStylesContext* pSdContext = dynamic_cast<SdXMLStylesContext*>(pContext))
+            pSdContext->SetMasterPageStyles(*this);
     }
 
     SdXMLGenericPageContext::EndElement();
@@ -943,14 +924,8 @@ SdXMLStylesContext::SdXMLStylesContext(
     mbIsAutoStyle(bIsAutoStyle)
 {
     Reference< uno::XComponentContext > xContext = rImport.GetComponentContext();
-    mpNumFormatter = new SvNumberFormatter( xContext, LANGUAGE_SYSTEM );
-    mpNumFmtHelper = new SvXMLNumFmtHelper( mpNumFormatter, xContext );
-}
-
-SdXMLStylesContext::~SdXMLStylesContext()
-{
-    delete mpNumFmtHelper;
-    delete mpNumFormatter;
+    mpNumFormatter = o3tl::make_unique<SvNumberFormatter>( xContext, LANGUAGE_SYSTEM );
+    mpNumFmtHelper = o3tl::make_unique<SvXMLNumFmtHelper>( mpNumFormatter.get(), xContext );
 }
 
 SvXMLStyleContext* SdXMLStylesContext::CreateStyleChildContext(
@@ -1071,12 +1046,6 @@ SvXMLStyleContext* SdXMLStylesContext::CreateDefaultStyleStyleChildContext(
     return pContext;
 }
 
-sal_uInt16 SdXMLStylesContext::GetFamily( const OUString& rFamily ) const
-{
-    // call base class
-    return SvXMLStylesContext::GetFamily(rFamily);
-}
-
 rtl::Reference< SvXMLImportPropertyMapper > SdXMLStylesContext::GetImportPropertyMapper(
     sal_uInt16 nFamily) const
 {
@@ -1137,18 +1106,15 @@ void SdXMLStylesContext::EndElement()
         for(sal_uInt32 a(0L); a < GetStyleCount(); a++)
         {
             const SvXMLStyleContext* pStyle = GetStyle(a);
-            if(pStyle && dynamic_cast<const XMLShapeStyleContext*>(pStyle) !=  nullptr)
+            if (const XMLShapeStyleContext* pDocStyle = dynamic_cast<const XMLShapeStyleContext*>(pStyle))
             {
-                const XMLShapeStyleContext* pDocStyle = static_cast<const XMLShapeStyleContext*>(pStyle);
-
                 SvXMLStylesContext* pStylesContext = GetSdImport().GetShapeImport()->GetStylesContext();
-                if( pStylesContext )
+                if (pStylesContext)
                 {
                     pStyle = pStylesContext->FindStyleChildContext(pStyle->GetFamily(), pStyle->GetParentName());
 
-                    if(pStyle && dynamic_cast<const XMLShapeStyleContext*>(pStyle) !=  nullptr)
+                    if (const XMLShapeStyleContext* pParentStyle = dynamic_cast<const XMLShapeStyleContext*>(pStyle))
                     {
-                        const XMLShapeStyleContext* pParentStyle = static_cast<const XMLShapeStyleContext*>(pStyle);
                         if(pParentStyle->GetStyle().is())
                         {
                             const_cast<XMLShapeStyleContext*>(pDocStyle)->SetStyle(pParentStyle->GetStyle());
@@ -1334,7 +1300,7 @@ void SdXMLStylesContext::ImpSetGraphicStyles( uno::Reference< container::XNameAc
                     {
                         rtl::Reference < XMLPropertySetMapper > xPrMap;
                         rtl::Reference < SvXMLImportPropertyMapper > xImpPrMap = GetImportPropertyMapper( nFamily );
-                        DBG_ASSERT( xImpPrMap.is(), "There is the import prop mapper" );
+                        SAL_WARN_IF( !xImpPrMap.is(), "xmloff", "There is the import prop mapper" );
                         if( xImpPrMap.is() )
                             xPrMap = xImpPrMap->getPropertySetMapper();
                         if( xPrMap.is() )
@@ -1445,10 +1411,9 @@ uno::Reference< container::XNameAccess > SdXMLStylesContext::getPageLayouts() co
     for(sal_uInt32 a(0L); a < GetStyleCount(); a++)
     {
         const SvXMLStyleContext* pStyle = GetStyle(a);
-        if(pStyle && dynamic_cast<const SdXMLPresentationPageLayoutContext*>(pStyle) !=  nullptr)
+        if (const SdXMLPresentationPageLayoutContext* pContext = dynamic_cast<const SdXMLPresentationPageLayoutContext*>(pStyle))
         {
-            xLayouts->insertByName( pStyle->GetName(), uno::makeAny(
-            (sal_Int32)static_cast<const SdXMLPresentationPageLayoutContext*>(pStyle)->GetTypeId() ) );
+            xLayouts->insertByName(pStyle->GetName(), uno::makeAny((sal_Int32)pContext->GetTypeId()));
         }
     }
 
@@ -1461,13 +1426,6 @@ SdXMLMasterStylesContext::SdXMLMasterStylesContext(
     const OUString& rLName)
 :   SvXMLImportContext( rImport, XML_NAMESPACE_OFFICE, rLName)
 {
-}
-
-SdXMLMasterStylesContext::~SdXMLMasterStylesContext()
-{
-    for ( size_t i = maMasterPageList.size(); i > 0; )
-        maMasterPageList[ --i ]->ReleaseRef();
-    maMasterPageList.clear();
 }
 
 SvXMLImportContext* SdXMLMasterStylesContext::CreateChildContext(
@@ -1505,16 +1463,16 @@ SvXMLImportContext* SdXMLMasterStylesContext::CreateChildContext(
                 uno::Reference< drawing::XShapes > xNewShapes(xNewMasterPage, uno::UNO_QUERY);
                 if(xNewShapes.is() && GetSdImport().GetShapeImport()->GetStylesContext())
                 {
-                    pContext = new SdXMLMasterPageContext(GetSdImport(),
-                        nPrefix, rLocalName, xAttrList, xNewShapes);
-
-                    pContext->AddFirstRef();
-                    maMasterPageList.push_back( static_cast<SdXMLMasterPageContext*>(pContext) );
+                    const rtl::Reference<SdXMLMasterPageContext> xContext{
+                        new SdXMLMasterPageContext(GetSdImport(),
+                            nPrefix, rLocalName, xAttrList, xNewShapes)};
+                    pContext = xContext.get();
+                    maMasterPageList.push_back(xContext);
                 }
             }
         }
     }
-    else    if(nPrefix == XML_NAMESPACE_STYLE
+    else if(nPrefix == XML_NAMESPACE_STYLE
         && IsXMLToken( rLocalName, XML_HANDOUT_MASTER ) )
     {
         uno::Reference< presentation::XHandoutMasterSupplier > xHandoutSupp( GetSdImport().GetModel(), uno::UNO_QUERY );

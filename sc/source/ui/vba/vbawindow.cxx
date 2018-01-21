@@ -33,6 +33,7 @@
 #include <com/sun/star/awt/XWindow.hpp>
 #include <com/sun/star/awt/XWindow2.hpp>
 #include <com/sun/star/awt/PosSize.hpp>
+#include <basic/sberrors.hxx>
 #include <cppuhelper/implbase.hxx>
 
 #include <docsh.hxx>
@@ -247,7 +248,7 @@ ScVbaWindow::Scroll( const uno::Any& Down, const uno::Any& Up, const uno::Any& T
 void SAL_CALL
 ScVbaWindow::SmallScroll( const uno::Any& Down, const uno::Any& Up, const uno::Any& ToRight, const uno::Any& ToLeft ) throw (uno::RuntimeException, std::exception)
 {
-    Scroll( Down, Up, ToRight, ToLeft );
+    Scroll( Down, Up, ToRight, ToLeft, false );
 }
 
 void SAL_CALL
@@ -307,7 +308,7 @@ ScVbaWindow::getCaption() throw (uno::RuntimeException, std::exception)
         if ( ( nCrudLen + nCrudIndex ) == sTitle.getLength() )
         {
             sTitle = sTitle.copy( 0, nCrudIndex );
-            uno::Reference< ScVbaWorkbook > workbook( new ScVbaWorkbook( uno::Reference< XHelperInterface >( Application(), uno::UNO_QUERY_THROW ), mxContext, m_xModel ) );
+            rtl::Reference< ScVbaWorkbook > workbook( new ScVbaWorkbook( uno::Reference< XHelperInterface >( Application(), uno::UNO_QUERY_THROW ), mxContext, m_xModel ) );
             OUString sName = workbook->getName();
             // rather bizarre hack to make sure the name behavior
             // is like XL
@@ -318,11 +319,10 @@ ScVbaWindow::getCaption() throw (uno::RuntimeException, std::exception)
 
             if ( !sTitle.equals( sName ) )
             {
-                static const char sDot[] = ".";
                 // starts with title
                 if ( sName.startsWith( sTitle ) )
                     // extension starts immediately after
-                    if ( sName.match( sDot, sTitle.getLength() ) )
+                    if ( sName.match( ".", sTitle.getLength() ) )
                         sTitle = sName;
             }
         }
@@ -439,7 +439,7 @@ ScVbaWindow::setWindowState( const uno::Any& _windowstate ) throw (uno::RuntimeE
 void
 ScVbaWindow::Activate() throw (css::uno::RuntimeException, std::exception)
 {
-    uno::Reference<ScVbaWorkbook> workbook( new ScVbaWorkbook( uno::Reference< XHelperInterface >( Application(), uno::UNO_QUERY_THROW ), mxContext, m_xModel ) );
+    rtl::Reference<ScVbaWorkbook> workbook( new ScVbaWorkbook( uno::Reference< XHelperInterface >( Application(), uno::UNO_QUERY_THROW ), mxContext, m_xModel ) );
 
     workbook->Activate();
 }
@@ -447,7 +447,7 @@ ScVbaWindow::Activate() throw (css::uno::RuntimeException, std::exception)
 void
 ScVbaWindow::Close( const uno::Any& SaveChanges, const uno::Any& FileName, const uno::Any& RouteWorkBook ) throw (uno::RuntimeException, std::exception)
 {
-    uno::Reference< ScVbaWorkbook > workbook( new ScVbaWorkbook( uno::Reference< XHelperInterface >( Application(), uno::UNO_QUERY_THROW ), mxContext, m_xModel ) );
+    rtl::Reference< ScVbaWorkbook > workbook( new ScVbaWorkbook( uno::Reference< XHelperInterface >( Application(), uno::UNO_QUERY_THROW ), mxContext, m_xModel ) );
     workbook->Close(SaveChanges, FileName, RouteWorkBook );
 }
 
@@ -861,7 +861,7 @@ double SAL_CALL ScVbaWindow::getTabRatio() throw (css::uno::RuntimeException, st
     ScTabViewShell* pViewShell = excel::getBestViewShell( m_xModel );
     if ( pViewShell && pViewShell->GetViewData().GetView() )
     {
-        double fRatio = pViewShell->GetViewData().GetView()->GetRelTabBarWidth();
+        double fRatio = ScTabView::GetRelTabBarWidth();
         if ( fRatio >= 0.0 && fRatio <= 1.0 )
             return fRatio;
     }

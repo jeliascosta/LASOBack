@@ -216,7 +216,7 @@ bool SwDoc::SplitDoc( sal_uInt16 eDocType, const OUString& rPath, bool bOutline,
 
     // Deactivate Undo/Redline in any case
     GetIDocumentUndoRedo().DoUndo(false);
-    getIDocumentRedlineAccess().SetRedlineMode_intern( (RedlineMode_t)(getIDocumentRedlineAccess().GetRedlineMode() & ~nsRedlineMode_t::REDLINE_ON));
+    getIDocumentRedlineAccess().SetRedlineFlags_intern( getIDocumentRedlineAccess().GetRedlineFlags() & ~RedlineFlags::On );
 
     OUString sExt = pFilter->GetSuffixes().getToken(0, ',');
     if( sExt.isEmpty() )
@@ -319,7 +319,7 @@ bool SwDoc::SplitDoc( sal_uInt16 eDocType, const OUString& rPath, bool bOutline,
                     utl::TempFile aTempFile2(sLeading, true, &sExt, &sPath);
                     sFileName = aTempFile2.GetURL();
                     SfxMedium* pTmpMed = new SfxMedium( sFileName,
-                                                STREAM_STD_READWRITE );
+                                                StreamMode::STD_READWRITE );
                     pTmpMed->SetFilter( pFilter );
 
                     // We need to have a Layout for the HTMLFilter, so that
@@ -359,11 +359,11 @@ bool SwDoc::SplitDoc( sal_uInt16 eDocType, const OUString& rPath, bool bOutline,
                             SwNodeIndex aEIdx( aTmp.GetPoint()->nNode );
 
                             // Try to move past the end
-                            if( !aTmp.Move( fnMoveForward, fnGoNode ) )
+                            if( !aTmp.Move( fnMoveForward, GoInNode ) )
                             {
                                 // well then, back to the beginning
                                 aTmp.Exchange();
-                                if( !aTmp.Move( fnMoveBackward, fnGoNode ))
+                                if( !aTmp.Move( fnMoveBackward, GoInNode ))
                                 {
                                     OSL_FAIL( "no more Nodes!" );
                                 }

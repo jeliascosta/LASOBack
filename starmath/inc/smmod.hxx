@@ -24,7 +24,6 @@
 #include <svl/lstner.hxx>
 #include <svtools/colorcfg.hxx>
 
-#include <tools/shl.hxx>
 #include "tools/rc.hxx"
 #include <sfx2/module.hxx>
 
@@ -56,12 +55,12 @@ class VirtualDevice;
 class SmResId : public ResId
 {
 public:
-    SmResId(sal_uInt16 nId);
+    explicit SmResId(sal_uInt16 nId);
 };
 
 #define SM_RESSTR(x) SmResId(x).toString()
 
-class SmLocalizedSymbolData : public Resource
+class SmLocalizedSymbolData
 {
     ResStringArray      aUiSymbolNamesAry;
     ResStringArray      aExportSymbolNamesAry;
@@ -101,8 +100,8 @@ private:
     static void InitInterface_Impl();
 
 public:
-    SmModule(SfxObjectFactory* pObjFact);
-    virtual ~SmModule();
+    explicit SmModule(SfxObjectFactory* pObjFact);
+    virtual ~SmModule() override;
 
     virtual void ConfigurationChanged( utl::ConfigurationBroadcaster*, sal_uInt32 ) override;
 
@@ -125,7 +124,7 @@ public:
     virtual VclPtr<SfxTabPage> CreateTabPage( sal_uInt16 nId, vcl::Window* pParent, const SfxItemSet& rSet ) override;
 };
 
-#define SM_MOD() ( *reinterpret_cast<SmModule**>(GetAppData(SHL_SM)) )
+#define SM_MOD() ( static_cast<SmModule*>(SfxApplication::GetModule(SfxToolsModule::Math)) )
 
 #endif // INCLUDED_STARMATH_INC_SMMOD_HXX
 

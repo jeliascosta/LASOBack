@@ -31,7 +31,7 @@ class SchOptionTabPage : public SfxTabPage
 {
 public:
     SchOptionTabPage(vcl::Window* pParent, const SfxItemSet& rInAttrs);
-    virtual ~SchOptionTabPage();
+    virtual ~SchOptionTabPage() override;
     virtual void dispose() override;
 
     static VclPtr<SfxTabPage> Create(vcl::Window* pParent, const SfxItemSet* rInAttrs);
@@ -62,7 +62,7 @@ private: //member
 
     VclPtr<CheckBox>    m_pCBIncludeHiddenCells;
 
-    DECL_LINK_TYPED(EnableHdl, Button*, void );
+    DECL_LINK(EnableHdl, Button*, void );
 
     sal_Int32   m_nAllSeriesAxisIndex;
 

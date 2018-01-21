@@ -239,7 +239,7 @@ public:
     virtual void SAL_CALL disposing(const css::lang::EventObject& Source) throw( css::uno::RuntimeException, std::exception ) override;
 
 protected:
-    virtual ~FormControllerImpl();
+    virtual ~FormControllerImpl() override;
 };
 
 SbaXDataBrowserController::FormControllerImpl::FormControllerImpl(SbaXDataBrowserController* _pOwner)
@@ -533,7 +533,6 @@ Any SAL_CALL SbaXDataBrowserController::queryInterface(const Type& _rType) throw
 SbaXDataBrowserController::SbaXDataBrowserController(const Reference< css::uno::XComponentContext >& _rM)
     :SbaXDataBrowserController_Base(_rM)
     ,m_nRowSetPrivileges(0)
-    ,m_pClipbordNotifier( nullptr )
     ,m_aAsyncGetCellFocus(LINK(this, SbaXDataBrowserController, OnAsyncGetCellFocus))
     ,m_aAsyncDisplayError( LINK( this, SbaXDataBrowserController, OnAsyncDisplayError ) )
     ,m_sStateSaveRecord(ModuleRes(RID_STR_SAVE_CURRENT_RECORD))
@@ -784,9 +783,8 @@ bool SbaXDataBrowserController::Construct(vcl::Window* pParent)
     m_aSystemClipboard = TransferableDataHelper::CreateFromSystemClipboard( getView() );
     m_aSystemClipboard.StartClipboardListening( );
 
-    m_pClipbordNotifier = new TransferableClipboardListener( LINK( this, SbaXDataBrowserController, OnClipboardChanged ) );
-    m_pClipbordNotifier->acquire();
-    m_pClipbordNotifier->AddRemoveListener( getView(), true );
+    m_pClipboardNotifier = new TransferableClipboardListener( LINK( this, SbaXDataBrowserController, OnClipboardChanged ) );
+    m_pClipboardNotifier->AddListener( getView() );
 
     // this call create the toolbox
     SbaXDataBrowserController_Base::Construct(pParent);
@@ -973,16 +971,6 @@ void SAL_CALL SbaXDataBrowserController::focusLost(const FocusEvent& e) throw( R
         SAL_WARN("dbaccess.ui", "SbaXDataBrowserController::focusLost : why is my control not commitable ?");
 }
 
-void SbaXDataBrowserController::disposingGridControl(const css::lang::EventObject& /*Source*/)
-{
-    removeControlListeners(getBrowserView()->getGridControl());
-}
-
-void SbaXDataBrowserController::disposingGridModel(const css::lang::EventObject& /*Source*/)
-{
-    removeModelListeners(getControlModel());
-}
-
 void SbaXDataBrowserController::disposingFormModel(const css::lang::EventObject& Source)
 {
     Reference< XPropertySet >  xSourceSet(Source.Source, UNO_QUERY);
@@ -1031,12 +1019,12 @@ void SbaXDataBrowserController::disposing(const EventObject& Source) throw( Runt
     {
         Reference< css::awt::XControl >  xSourceControl(Source.Source, UNO_QUERY);
         if (xSourceControl == getBrowserView()->getGridControl())
-            disposingGridControl(Source);
+            removeControlListeners(getBrowserView()->getGridControl());
     }
 
     // its model (the container of the columns) ?
     if (getControlModel() == Source.Source)
-        disposingGridModel(Source);
+        removeModelListeners(getControlModel());
 
     // the form's model ?
     if ((getRowSet() == Source.Source))
@@ -1194,12 +1182,11 @@ void SbaXDataBrowserController::disposing()
 
     removeModelListeners(getControlModel());
 
-    if ( getView() && m_pClipbordNotifier  )
+    if ( getView() && m_pClipboardNotifier.is()  )
     {
-        m_pClipbordNotifier->ClearCallbackLink();
-        m_pClipbordNotifier->AddRemoveListener( getView(), false );
-        m_pClipbordNotifier->release();
-        m_pClipbordNotifier = nullptr;
+        m_pClipboardNotifier->ClearCallbackLink();
+        m_pClipboardNotifier->RemoveListener( getView() );
+        m_pClipboardNotifier.clear();
     }
 
     if (getBrowserView())
@@ -1265,7 +1252,7 @@ void SbaXDataBrowserController::frameAction(const css::frame::FrameActionEvent& 
         }
 }
 
-IMPL_LINK_NOARG_TYPED( SbaXDataBrowserController, OnAsyncDisplayError, void*, void )
+IMPL_LINK_NOARG( SbaXDataBrowserController, OnAsyncDisplayError, void*, void )
 {
     if ( m_aCurrentError.isValid() )
     {
@@ -1383,7 +1370,7 @@ void SbaXDataBrowserController::resetted(const css::lang::EventObject& rEvent) t
 
 sal_Bool SbaXDataBrowserController::confirmDelete(const css::sdb::RowChangeEvent& /*aEvent*/) throw( RuntimeException, std::exception )
 {
-    if (ScopedVclPtrInstance<MessageDialog>(getBrowserView(), ModuleRes(STR_QUERY_BRW_DELETE_ROWS), VCL_MESSAGE_QUESTION, VCL_BUTTONS_YES_NO)->Execute() != RET_YES)
+    if (ScopedVclPtrInstance<MessageDialog>(getBrowserView(), ModuleRes(STR_QUERY_BRW_DELETE_ROWS), VclMessageType::Question, VCL_BUTTONS_YES_NO)->Execute() != RET_YES)
         return false;
 
     return true;
@@ -1580,8 +1567,8 @@ FeatureState SbaXDataBrowserController::GetState(sal_uInt16 nId) const
 
                 aReturn.bEnabled = true;
 
-                sal_Int16 nGridMode = getBrowserView()->getVclControl()->GetOptions();
-                aReturn.bChecked = nGridMode > DbGridControl::OPT_READONLY;
+                DbGridControlOptions nGridMode = getBrowserView()->getVclControl()->GetOptions();
+                aReturn.bChecked = nGridMode > DbGridControlOptions::Readonly;
             }
             break;
             case ID_BROWSER_FILTERED:
@@ -1757,18 +1744,17 @@ void SbaXDataBrowserController::ExecuteFilterSortCrit(bool bFilter)
     Reference< XSingleSelectQueryComposer > xParser = createParser_nothrow();
     try
     {
-        Reference< css::sdbcx::XColumnsSupplier> xSup = getColumnsSupplier();
         Reference< XConnection> xCon(xFormSet->getPropertyValue(PROPERTY_ACTIVE_CONNECTION),UNO_QUERY);
         if(bFilter)
         {
-            ScopedVclPtrInstance< DlgFilterCrit > aDlg( getBrowserView(), getORB(), xCon, xParser, xSup->getColumns() );
+            ScopedVclPtrInstance< DlgFilterCrit > aDlg( getBrowserView(), getORB(), xCon, xParser, m_xColumnsSupplier->getColumns() );
             if ( !aDlg->Execute() )
                 return; // if so we don't need to update the grid
             aDlg->BuildWherePart();
         }
         else
         {
-            ScopedVclPtrInstance< DlgOrderCrit > aDlg( getBrowserView(),xCon,xParser,xSup->getColumns() );
+            ScopedVclPtrInstance< DlgOrderCrit > aDlg( getBrowserView(),xCon,xParser, m_xColumnsSupplier->getColumns() );
             if(!aDlg->Execute())
             {
                 return; // if so we don't need to actualize the grid
@@ -1841,7 +1827,7 @@ void SbaXDataBrowserController::ExecuteSearch()
     Reference< css::util::XNumberFormatsSupplier >  xNFS(::dbtools::getNumberFormats(::dbtools::getConnection(m_xRowSet), true, getORB()));
 
     SvxAbstractDialogFactory* pFact = SvxAbstractDialogFactory::Create();
-    AbstractFmSearchDialog* pDialog = nullptr;
+    VclPtr<AbstractFmSearchDialog> pDialog;
     if ( pFact )
     {
         ::std::vector< OUString > aContextNames;
@@ -1855,7 +1841,7 @@ void SbaXDataBrowserController::ExecuteSearch()
         pDialog->SetFoundHandler( LINK( this, SbaXDataBrowserController, OnFoundData ) );
         pDialog->SetCanceledNotFoundHdl( LINK( this, SbaXDataBrowserController, OnCanceledNotFound ) );
         pDialog->Execute();
-        delete pDialog;
+        pDialog.disposeAndClear();
     }
 
     // restore the grid's normal operating state
@@ -1919,9 +1905,9 @@ void SbaXDataBrowserController::Execute(sal_uInt16 nId, const Sequence< Property
             break;
         case ID_BROWSER_EDITDOC:
         {
-            sal_Int16 nGridMode = getBrowserView()->getVclControl()->GetOptions();
-            if (nGridMode == DbGridControl::OPT_READONLY)
-                getBrowserView()->getVclControl()->SetOptions(DbGridControl::OPT_UPDATE | DbGridControl::OPT_INSERT | DbGridControl::OPT_DELETE);
+            DbGridControlOptions nGridMode = getBrowserView()->getVclControl()->GetOptions();
+            if (nGridMode == DbGridControlOptions::Readonly)
+                getBrowserView()->getVclControl()->SetOptions(DbGridControlOptions::Update | DbGridControlOptions::Insert | DbGridControlOptions::Delete);
                     // the options not supported by the data source will be removed automatically
             else
             {
@@ -1933,7 +1919,7 @@ void SbaXDataBrowserController::Execute(sal_uInt16 nId, const Sequence< Property
                 if (GetState(ID_BROWSER_UNDORECORD).bEnabled)
                     Execute(ID_BROWSER_UNDORECORD,Sequence<PropertyValue>());
 
-                getBrowserView()->getVclControl()->SetOptions(DbGridControl::OPT_READONLY);
+                getBrowserView()->getVclControl()->SetOptions(DbGridControlOptions::Readonly);
             }
             InvalidateFeature(ID_BROWSER_EDITDOC);
         }
@@ -2275,13 +2261,13 @@ void SbaXDataBrowserController::CellDeactivated()
     OnInvalidateClipboard( nullptr );
 }
 
-IMPL_LINK_NOARG_TYPED(SbaXDataBrowserController, OnClipboardChanged, TransferableDataHelper*, void)
+IMPL_LINK_NOARG(SbaXDataBrowserController, OnClipboardChanged, TransferableDataHelper*, void)
 {
     SolarMutexGuard aGuard;
     OnInvalidateClipboard( nullptr );
 }
 
-IMPL_LINK_TYPED(SbaXDataBrowserController, OnInvalidateClipboard, Timer*, _pTimer, void)
+IMPL_LINK(SbaXDataBrowserController, OnInvalidateClipboard, Timer*, _pTimer, void)
 {
     InvalidateFeature(ID_BROWSER_CUT);
     InvalidateFeature(ID_BROWSER_COPY);
@@ -2318,7 +2304,7 @@ Reference< XPropertySet >  SbaXDataBrowserController::getBoundField() const
     return xEmptyReturn;
 }
 
-IMPL_LINK_TYPED(SbaXDataBrowserController, OnSearchContextRequest, FmSearchContext&, rContext, sal_uInt32)
+IMPL_LINK(SbaXDataBrowserController, OnSearchContextRequest, FmSearchContext&, rContext, sal_uInt32)
 {
     Reference< css::container::XIndexAccess >  xPeerContainer(getBrowserView()->getGridControl(), UNO_QUERY);
 
@@ -2364,7 +2350,7 @@ IMPL_LINK_TYPED(SbaXDataBrowserController, OnSearchContextRequest, FmSearchConte
     return rContext.arrFields.size();
 }
 
-IMPL_LINK_TYPED(SbaXDataBrowserController, OnFoundData, FmFoundRecordInformation&, rInfo, void)
+IMPL_LINK(SbaXDataBrowserController, OnFoundData, FmFoundRecordInformation&, rInfo, void)
 {
     Reference< css::sdbcx::XRowLocate >  xCursor(getRowSet(), UNO_QUERY);
     OSL_ENSURE(xCursor.is(), "SbaXDataBrowserController::OnFoundData : xCursor is empty");
@@ -2399,7 +2385,7 @@ IMPL_LINK_TYPED(SbaXDataBrowserController, OnFoundData, FmFoundRecordInformation
     xGrid->setCurrentColumnPosition(nViewPos);
 }
 
-IMPL_LINK_TYPED(SbaXDataBrowserController, OnCanceledNotFound, FmFoundRecordInformation&, rInfo, void)
+IMPL_LINK(SbaXDataBrowserController, OnCanceledNotFound, FmFoundRecordInformation&, rInfo, void)
 {
     Reference< css::sdbcx::XRowLocate >  xCursor(getRowSet(), UNO_QUERY);
 
@@ -2429,7 +2415,7 @@ IMPL_LINK_TYPED(SbaXDataBrowserController, OnCanceledNotFound, FmFoundRecordInfo
     }
 }
 
-IMPL_LINK_NOARG_TYPED(SbaXDataBrowserController, OnAsyncGetCellFocus, void*, void)
+IMPL_LINK_NOARG(SbaXDataBrowserController, OnAsyncGetCellFocus, void*, void)
 {
     SbaGridControl* pVclGrid = getBrowserView() ? getBrowserView()->getVclControl() : nullptr;
     // if we have a controller, but the window for the controller doesn't have the focus, we correct this

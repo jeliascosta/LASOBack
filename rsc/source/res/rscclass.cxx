@@ -30,11 +30,10 @@
 
 RscClass::RscClass( Atom nId, sal_uInt32 nTypeId, RscTop * pSuperCl )
     : RscTop( nId, nTypeId, pSuperCl )
+    , nSuperSize(RscTop::Size())
+    , nSize(nSuperSize + ALIGNED_SIZE(sizeof(RscClassInst )))
+    , nEntries(0), pVarTypeList(nullptr)
 {
-    nEntries = 0;
-    pVarTypeList = nullptr;
-    nSuperSize = RscTop::Size();
-    nSize = nSuperSize + ALIGNED_SIZE( sizeof( RscClassInst ) );
 }
 
 void RscClass::Pre_dtor()
@@ -276,26 +275,6 @@ ERRTYPE RscClass::SetVariable( Atom nVarName,
         RscExit( 16 );
     }
     return ERR_OK;
-}
-
-ERRTYPE RscClass::SetVariable( Atom nVarName,
-                               RscTop * pClass,
-                               RSCINST * pDflt,
-                               RSCVAR nVarType,
-                               SfxStyleItem nMask,
-                               Atom nDataBaseName)
-{
-    return SetVariable(nVarName, pClass, pDflt, nVarType, (sal_uInt32)nMask, nDataBaseName);
-}
-
-ERRTYPE RscClass::SetVariable( Atom nVarName,
-                               RscTop * pClass,
-                               RSCINST * pDflt,
-                               RSCVAR nVarType,
-                               SfxSlotInfo nMask,
-                               Atom nDataBaseName)
-{
-    return SetVariable(nVarName, pClass, pDflt, nVarType, (sal_uInt32)nMask, nDataBaseName);
 }
 
 void RscClass::EnumVariables( void * pData, VarEnumCallbackProc pProc )
@@ -589,51 +568,7 @@ void RscClass::WriteSrc( const RSCINST & rInst,
     {
         if( !(VAR_HIDDEN & pVarTypeList[ i ].nVarType) )
         {
-            // hack for position and dimension
-            if( nRsc_XYMAPMODEId == pVarTypeList[ i ].nVarName ||
-                nRsc_WHMAPMODEId == pVarTypeList[ i ].nVarName )
-            {
-                if( !IsDflt( rInst.pData, i )  ||  // MapUnit
-                    !IsDflt( rInst.pData, i+1 ) || //X, Width
-                    !IsDflt( rInst.pData, i+2 ) )  //Y, Height
-                {
-                    // one value is no default
-                    for( n = 0; n < nTab; n++ )
-                        fputc( '\t', fOutput );
-
-                    if( nRsc_XYMAPMODEId == pVarTypeList[ i ].nVarName )
-                        fprintf( fOutput, "Pos = " );
-                    else
-                        fprintf( fOutput, "Size = " );
-
-                    if( !IsDflt( rInst.pData, i ) )
-                    {
-                        aTmpI = GetInstData( rInst.pData, i, true );
-                        aTmpI.pClass->WriteSrcHeader(
-                              aTmpI, fOutput, pTC, nTab, RscId(), pVarName );
-                    }
-
-                    fprintf( fOutput, "( " );
-                    aTmpI = GetInstData( rInst.pData, i+1, true );
-                    if( !aTmpI.IsInst() )
-                        aTmpI.pData = GetDfltData( i+1 );
-
-                    aTmpI.pClass->WriteSrcHeader( aTmpI, fOutput, pTC, nTab, RscId(), pVarName );
-
-                    fprintf( fOutput, ", " );
-                    aTmpI = GetInstData( rInst.pData, i+2, true );
-
-                    if( !aTmpI.IsInst() )
-                        aTmpI.pData = GetDfltData( i+2 );
-
-                    aTmpI.pClass->WriteSrcHeader(
-                              aTmpI, fOutput, pTC, nTab, RscId(), pVarName );
-                    fprintf( fOutput, " );\n" );
-                }
-                i += 2; // ignore _X, _Y or _Width, Height
-            }
-            else if( !IsDflt( rInst.pData, i )
-                     && !IsValueDflt( rInst.pData, i ) )
+            if( !IsDflt( rInst.pData, i ) && !IsValueDflt( rInst.pData, i ) )
             {
                 aTmpI = GetInstData( rInst.pData, i, true );
 
@@ -655,30 +590,6 @@ void RscClass::WriteSrc( const RSCINST & rInst,
     }
 
     return;
-}
-
-sal_Int32 RscClass::GetCorrectValues( const RSCINST & rInst,
-                                      sal_uInt32 nVarPos,
-                                      sal_uInt32 nTupelIdx,
-                                      RscTypCont * pTC)
-{
-    sal_Int32 nLang = 0;
-    sal_Int32 nBaseValue;
-
-    // retrieve base value
-    RSCINST aTmpI = GetInstData( rInst.pData, nVarPos, true );
-    aTmpI.pClass->GetNumber( aTmpI, &nBaseValue );
-
-    // retrieve language delta
-    aTmpI = rInst.pClass->GetVariable( rInst, nRsc_DELTALANG, RSCINST() );
-    if( aTmpI.IsInst() )
-    {
-        RscWriteRc aMem;
-        aTmpI.pClass->WriteRc( aTmpI, aMem, pTC, 0, false );
-        nLang = (sal_Int32)aMem.GetShort( nTupelIdx * sizeof(sal_uInt16) );
-    }
-
-    return nLang + nBaseValue;
 }
 
 ERRTYPE RscClass::WriteInstRc( const RSCINST & rInst,
@@ -711,35 +622,12 @@ ERRTYPE RscClass::WriteInstRc( const RSCINST & rInst,
             {
                 if( !IsDflt( rInst.pData, i ) )
                 {
-                    if( nRsc_X == pVarTypeList[ i ].nVarName )
-                    {
-                        sal_Int32 nVal = GetCorrectValues( rInst, i, 0, pTC );
-                        rMem.Put( nVal );
-                    }
-                    else if( nRsc_Y == pVarTypeList[ i ].nVarName )
-                    {
-                        sal_Int32 nVal = GetCorrectValues( rInst, i, 1, pTC );
-                        rMem.Put( nVal );
-                    }
-                    else if( nRsc_WIDTH == pVarTypeList[ i ].nVarName )
-                    {
-                        sal_Int32 nVal = GetCorrectValues( rInst, i, 2, pTC );
-                        rMem.Put( nVal );
-                    }
-                    else if( nRsc_HEIGHT == pVarTypeList[ i ].nVarName )
-                    {
-                        sal_Int32 nVal = GetCorrectValues( rInst, i, 3, pTC );
-                        rMem.Put( nVal );
-                    }
-                    else
-                    {
-                        aTmpI = GetInstData( rInst.pData, i, true );
-                        // set only for variable extradata with bExtra not false
-                        aError = aTmpI.pClass->
-                            WriteRcHeader( aTmpI, rMem, pTC,
-                                           RscId(), nDeep,
-                                           (nRsc_EXTRADATA == pVarTypeList[ i ].nVarName) && bExtra );
-                    }
+                    aTmpI = GetInstData( rInst.pData, i, true );
+                    // set only for variable extradata with bExtra not false
+                    aError = aTmpI.pClass->
+                        WriteRcHeader( aTmpI, rMem, pTC,
+                                       RscId(), nDeep,
+                                       (nRsc_EXTRADATA == pVarTypeList[ i ].nVarName) && bExtra );
                     sal_uInt32 nMask = rMem.GetLong( nMaskOff );
                     nMask |= pVarTypeList[ i ].nMask;
                     rMem.PutAt( nMaskOff, nMask );
@@ -833,8 +721,8 @@ ERRTYPE RscSysDepend::WriteRc( const RSCINST & rInst, RscWriteRc & rMem,
     return aError;
 }
 
-RscTupel::RscTupel( Atom nId, sal_uInt32 nTypeId, RscTop * pSuper )
-    : RscClass( nId, nTypeId, pSuper )
+RscTupel::RscTupel( Atom nId, sal_uInt32 nTypeId )
+    : RscClass( nId, nTypeId, nullptr )
 {
 }
 

@@ -15,6 +15,7 @@
 
 #include <com/sun/star/xml/dom/XDocument.hpp>
 #include <rtl/strbuf.hxx>
+#include <rtl/ref.hxx>
 #include <sax/fshelper.hxx>
 #include <tools/solar.h>
 
@@ -63,9 +64,9 @@ public:
     const Size* getFlyFrameSize();
     bool getTextFrameSyntax();
     bool getDMLTextFrameSyntax();
-    css::uno::Reference<sax_fastparser::FastAttributeList>& getFlyAttrList();
+    rtl::Reference<sax_fastparser::FastAttributeList>& getFlyAttrList();
     /// Attributes of the next v:textbox element.
-    css::uno::Reference<sax_fastparser::FastAttributeList>& getTextboxAttrList();
+    rtl::Reference<sax_fastparser::FastAttributeList>& getTextboxAttrList();
     OStringBuffer& getTextFrameStyle();
     /// Same, as DocxAttributeOutput::m_bBtLr, but for textframe rotation.
     bool getFrameBtLr();
@@ -77,12 +78,12 @@ public:
     bool IsDMLAndVMLDrawingOpen();
     bool IsParagraphHasDrawing();
     void setParagraphHasDrawing(bool bParagraphHasDrawing);
-    css::uno::Reference<sax_fastparser::FastAttributeList>& getFlyFillAttrList();
+    rtl::Reference<sax_fastparser::FastAttributeList>& getFlyFillAttrList();
     sax_fastparser::FastAttributeList* getFlyWrapAttrList();
     void setFlyWrapAttrList(sax_fastparser::FastAttributeList* pAttrList);
     /// Attributes of <wps:bodyPr>, used during DML export of text frames.
     sax_fastparser::FastAttributeList* getBodyPrAttrList();
-    css::uno::Reference<sax_fastparser::FastAttributeList>& getDashLineStyle();
+    rtl::Reference<sax_fastparser::FastAttributeList>& getDashLineStyle();
 
     void startDMLAnchorInline(const SwFrameFormat* pFrameFormat, const Size& rSize);
     void endDMLAnchorInline(const SwFrameFormat* pFrameFormat);
@@ -105,7 +106,7 @@ public:
     /// Writes text frame in VML format.
     void writeVMLTextFrame(ww8::Frame* pParentFrame, bool bTextBoxOnly = false);
     /// Is this a standalone TextFrame, or used as a TextBox of a shape?
-    bool isTextBox(const SwFrameFormat& rFrameFormat);
+    static bool isTextBox(const SwFrameFormat& rFrameFormat);
     /// Writes text from Textbox for <w:framePr>
     void writeOnlyTextOfFrame(ww8::Frame* pParentFrame);
     /// Writes the drawingML <a:ln> markup of a box item.

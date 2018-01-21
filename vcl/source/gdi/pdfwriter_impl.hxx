@@ -158,7 +158,7 @@ public:
         // (in PDF map mode, that is 10th of point)
         void appendMappedLength( sal_Int32 nLength, OStringBuffer& rBuffer, bool bVertical = true, sal_Int32* pOutLength = nullptr ) const;
         // the same for double values
-        void appendMappedLength( double fLength, OStringBuffer& rBuffer, bool bVertical = true, sal_Int32* pOutLength = nullptr, sal_Int32 nPrecision = 5 ) const;
+        void appendMappedLength( double fLength, OStringBuffer& rBuffer, bool bVertical = true, sal_Int32 nPrecision = 5 ) const;
         // appends LineInfo
         // returns false if too many dash array entry were created for
         // the implementation limits of some PDF readers
@@ -194,11 +194,9 @@ public:
         BitmapID    m_aID;
         BitmapEx    m_aBitmap;
         sal_Int32   m_nObject;
-        bool        m_bDrawMask;
 
         BitmapEmit()
             : m_nObject(0)
-            , m_bDrawMask(false)
         {
         }
     };
@@ -306,7 +304,6 @@ public:
 
         explicit FontEmit( sal_Int32 nID ) : m_nFontID( nID ) {}
     };
-    typedef std::list< FontEmit > FontEmitList;
     struct Glyph
     {
         sal_Int32   m_nFontID;
@@ -315,7 +312,7 @@ public:
     typedef std::map< sal_GlyphId, Glyph > FontMapping;
     struct FontSubset
     {
-        FontEmitList        m_aSubsets;
+        std::list< FontEmit >        m_aSubsets;
         FontMapping         m_aMapping;
     };
     typedef std::map< const PhysicalFontFace*, FontSubset > FontSubsetData;
@@ -357,7 +354,6 @@ public:
 
     struct PDFOutlineEntry
     {
-        sal_Int32                   m_nParentID;
         sal_Int32                   m_nObject;
         sal_Int32                   m_nParentObject;
         sal_Int32                   m_nNextObject;
@@ -367,8 +363,7 @@ public:
         sal_Int32                   m_nDestID;
 
         PDFOutlineEntry()
-                : m_nParentID( -1 ),
-                  m_nObject( 0 ),
+                : m_nObject( 0 ),
                   m_nParentObject( 0 ),
                   m_nNextObject( 0 ),
                   m_nPrevObject( 0 ),
@@ -639,7 +634,6 @@ private:
 
     sal_Int32                           m_nInheritedPageWidth;  // in inch/72
     sal_Int32                           m_nInheritedPageHeight; // in inch/72
-    PDFWriter::Orientation              m_eInheritedOrientation;
     sal_Int32                           m_nCurrentPage;
 
     sal_Int32                           m_nCatalogObject;
@@ -679,7 +673,7 @@ private:
         Color                            m_aOverlineColor;
         basegfx::B2DPolyPolygon          m_aClipRegion;
         bool                             m_bClipRegion;
-        ComplexTextLayoutMode            m_nLayoutMode;
+        ComplexTextLayoutFlags            m_nLayoutMode;
         LanguageType                     m_aDigitLanguage;
         sal_Int32                        m_nTransparentPercent;
         PushFlags                        m_nFlags;
@@ -703,7 +697,7 @@ private:
                 m_aTextLineColor( COL_TRANSPARENT ),
                 m_aOverlineColor( COL_TRANSPARENT ),
                 m_bClipRegion( false ),
-                m_nLayoutMode( TEXT_LAYOUT_DEFAULT ),
+                m_nLayoutMode( ComplexTextLayoutFlags::Default ),
                 m_aDigitLanguage( 0 ),
                 m_nTransparentPercent( 0 ),
                 m_nFlags( PushFlags::ALL ),
@@ -811,7 +805,7 @@ i12626
     /* writes all gradient patterns */
     bool emitGradients();
     /* writes a builtin font object and returns its objectid (or 0 in case of failure ) */
-    sal_Int32 emitBuiltinFont( const PdfBuiltinFontFace*, sal_Int32 nObject = -1 );
+    sal_Int32 emitBuiltinFont( const PdfBuiltinFontFace*, sal_Int32 nObject );
     /* writes a type1 embedded font object and returns its mapping from font ids to object ids (or 0 in case of failure ) */
     std::map< sal_Int32, sal_Int32 > emitEmbeddedFont( const PhysicalFontFace*, EmbedFont& );
     /* writes a type1 system font object and returns its mapping from font ids to object ids (or 0 in case of failure ) */
@@ -978,7 +972,7 @@ i12626
 
     static void computeDocumentIdentifier( std::vector< sal_uInt8 >& o_rIdentifier,
                                            const vcl::PDFWriter::PDFDocInfo& i_rDocInfo,
-                                           OString& o_rCString1,
+                                           const OString& i_rCString1,
                                            OString& o_rCString2
                                           );
     static sal_Int32 computeAccessPermissions( const vcl::PDFWriter::PDFEncryptionProperties& i_rProperties,
@@ -1014,7 +1008,7 @@ public:
     OutputDevice* getReferenceDevice();
 
     /* document structure */
-    sal_Int32 newPage( sal_Int32 nPageWidth , sal_Int32 nPageHeight, PDFWriter::Orientation eOrientation );
+    void newPage( sal_Int32 nPageWidth , sal_Int32 nPageHeight, PDFWriter::Orientation eOrientation );
     bool emit();
     const std::set< PDFWriter::ErrorCode > & getErrors() const { return m_aErrors;}
     void insertError( PDFWriter::ErrorCode eErr ) { m_aErrors.insert( eErr ); }
@@ -1112,7 +1106,7 @@ public:
 
     bool intersectClipRegion( const basegfx::B2DPolyPolygon& rRegion );
 
-    void setLayoutMode( ComplexTextLayoutMode nLayoutMode )
+    void setLayoutMode( ComplexTextLayoutFlags nLayoutMode )
     {
         m_aGraphicsStack.front().m_nLayoutMode = nLayoutMode;
         m_aGraphicsStack.front().m_nUpdateFlags |= GraphicsState::updateLayoutMode;
@@ -1171,7 +1165,7 @@ public:
     void emitComment( const char* pComment );
 
     //--->i56629 named destinations
-    sal_Int32 createNamedDest( const OUString& sDestName, const Rectangle& rRect, sal_Int32 nPageNr = -1, PDFWriter::DestAreaType eType = PDFWriter::XYZ );
+    sal_Int32 createNamedDest( const OUString& sDestName, const Rectangle& rRect, sal_Int32 nPageNr, PDFWriter::DestAreaType eType );
 
     //--->i59651
     //emits output intent
@@ -1181,21 +1175,21 @@ public:
     sal_Int32   emitDocumentMetadata();
 
     // links
-    sal_Int32 createLink( const Rectangle& rRect, sal_Int32 nPageNr = -1 );
-    sal_Int32 createDest( const Rectangle& rRect, sal_Int32 nPageNr = -1, PDFWriter::DestAreaType eType = PDFWriter::XYZ );
-    sal_Int32 registerDestReference( sal_Int32 nDestId, const Rectangle& rRect, sal_Int32 nPageNr = -1, PDFWriter::DestAreaType eType = PDFWriter::XYZ );
-    sal_Int32 setLinkDest( sal_Int32 nLinkId, sal_Int32 nDestId );
-    sal_Int32 setLinkURL( sal_Int32 nLinkId, const OUString& rURL );
-    void setLinkPropertyId( sal_Int32 nLinkId, sal_Int32 nPropertyId );
+    sal_Int32 createLink( const Rectangle& rRect, sal_Int32 nPageNr );
+    sal_Int32 createDest( const Rectangle& rRect, sal_Int32 nPageNr, PDFWriter::DestAreaType eType );
+    sal_Int32 registerDestReference( sal_Int32 nDestId, const Rectangle& rRect, sal_Int32 nPageNr, PDFWriter::DestAreaType eType );
+    void      setLinkDest( sal_Int32 nLinkId, sal_Int32 nDestId );
+    void      setLinkURL( sal_Int32 nLinkId, const OUString& rURL );
+    void      setLinkPropertyId( sal_Int32 nLinkId, sal_Int32 nPropertyId );
 
     // outline
-    sal_Int32 createOutlineItem( sal_Int32 nParent = 0, const OUString& rText = OUString(), sal_Int32 nDestID = -1 );
-    sal_Int32 setOutlineItemParent( sal_Int32 nItem, sal_Int32 nNewParent );
-    sal_Int32 setOutlineItemText( sal_Int32 nItem, const OUString& rText );
-    sal_Int32 setOutlineItemDest( sal_Int32 nItem, sal_Int32 nDestID );
+    sal_Int32 createOutlineItem( sal_Int32 nParent, const OUString& rText, sal_Int32 nDestID );
+    void      setOutlineItemParent( sal_Int32 nItem, sal_Int32 nNewParent );
+    void      setOutlineItemText( sal_Int32 nItem, const OUString& rText );
+    void      setOutlineItemDest( sal_Int32 nItem, sal_Int32 nDestID );
 
     // notes
-    void createNote( const Rectangle& rRect, const PDFNote& rNote, sal_Int32 nPageNr = -1 );
+    void createNote( const Rectangle& rRect, const PDFNote& rNote, sal_Int32 nPageNr );
     // structure elements
     sal_Int32 beginStructureElement( PDFWriter::StructElement eType, const OUString& rAlias );
     void endStructureElement();
@@ -1207,8 +1201,8 @@ public:
     void setAlternateText( const OUString& rText );
 
     // transitional effects
-    void setAutoAdvanceTime( sal_uInt32 nSeconds, sal_Int32 nPageNr = -1 );
-    void setPageTransition( PDFWriter::PageTransition eType, sal_uInt32 nMilliSec, sal_Int32 nPageNr = -1 );
+    void setAutoAdvanceTime( sal_uInt32 nSeconds, sal_Int32 nPageNr );
+    void setPageTransition( PDFWriter::PageTransition eType, sal_uInt32 nMilliSec, sal_Int32 nPageNr );
 
     // controls
     sal_Int32 createControl( const PDFWriter::AnyWidget& rControl, sal_Int32 nPageNr = -1 );
