@@ -12133,7 +12133,11 @@ if test -z "$WITH_LANG" -o "$WITH_LANG" = "en-US"; then
     AC_MSG_RESULT([en-US])
 else
     AC_MSG_RESULT([$WITH_LANG])
-    GIT_NEEDED_SUBMODULES="translations $GIT_NEEDED_SUBMODULES"
+    #ADD LIBRAS
+    if test ! -d "translations"; then
+    	GIT_NEEDED_SUBMODULES="translations $GIT_NEEDED_SUBMODULES"
+    fi
+    #END LIBRAS
 fi
 # check that the list is valid
 for lang in $WITH_LANG; do
