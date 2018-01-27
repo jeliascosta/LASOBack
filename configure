@@ -40391,7 +40391,11 @@ $as_echo "en-US" >&6; }
 else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $WITH_LANG" >&5
 $as_echo "$WITH_LANG" >&6; }
-    GIT_NEEDED_SUBMODULES="translations $GIT_NEEDED_SUBMODULES"
+    #ADD LIBRAS
+    if test ! -d "translations"; then
+    	GIT_NEEDED_SUBMODULES="translations $GIT_NEEDED_SUBMODULES"
+    fi
+    #END LIBRAS
 fi
 # check that the list is valid
 for lang in $WITH_LANG; do

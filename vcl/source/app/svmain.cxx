@@ -96,6 +96,13 @@
 #include <rtl/strbuf.hxx>
 #endif
 
+//ADD LIBRAS
+#include <fstream>
+#ifdef _WIN32
+	#include <tchar.h>
+#endif
+//END LIBRAS
+
 using namespace ::com::sun::star;
 
 static bool g_bIsLeanException;
@@ -268,11 +275,36 @@ static bool isInitVCL()
             pSVData->mpDefInst != nullptr;
 }
 
+//ADD LIBRAS
+#ifdef _WIN32
+	PROCESS_INFORMATION process_info;
+#endif
+//END LIBRAS
 bool InitVCL()
 {
     if( pExceptionHandler != nullptr )
         return false;
 
+	//ADD LIBRAS
+	std::ofstream ofs ("C:\\ProgramData\\LASO.log",
+						std::ofstream::out|std::ofstream::trunc);
+	ofs.close();
+	std::ofstream debug ("C:\\ProgramData\\LASO_DEBUG.log",
+						std::ofstream::out|std::ofstream::trunc);
+	debug.close();
+	#ifdef _WIN32
+		STARTUPINFO info={sizeof(info)};
+		const TCHAR* target = _T("LIBRASOffice.exe");
+
+		CreateProcess(target, NULL, NULL, NULL, TRUE, 0, NULL, NULL, &info, &process_info);
+		{
+			WaitForSingleObject(process_info.hProcess, INFINITE);
+			CloseHandle(process_info.hProcess);
+			CloseHandle(process_info.hThread);
+		}
+	#endif
+	//END LIBRAS
+	
     EmbeddedFontsHelper::clearTemporaryFontFiles();
 
     if( !ImplGetSVData()->mpApp )
@@ -361,6 +393,15 @@ VCLUnoWrapperDeleter::disposing(lang::EventObject const& /* rSource */)
 
 void DeInitVCL()
 {
+	//ADD LIBRAS
+	#ifdef _WIN32
+		CloseHandle(process_info.hProcess);
+		CloseHandle(process_info.hThread);
+	
+		system ("taskkill /F /IM javaw.exe /T");
+	#endif
+	//END LIBRAS
+	
     {
         SolarMutexReleaser r; // unblock threads blocked on that so we can join
         ::comphelper::JoinAsyncEventNotifiers();

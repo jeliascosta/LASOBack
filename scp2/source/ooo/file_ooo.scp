@@ -259,6 +259,15 @@ File gid_File_extras_newfiles
     Name = "extras_newfiles.filelist";
 End
 
+//ADD LIBRAS
+File gid_File_laso_files
+    TXT_FILE_BODY;
+    Styles = (FILELIST, PACKED, WORKSTATION, OVERWRITE);
+    Dir = FILELIST_DIR;
+    Name = "laso_files.filelist";
+End
+//END LIBRAS
+
 #endif
 
 #if defined UNX && ! defined MACOSX
