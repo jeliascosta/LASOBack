@@ -2146,12 +2146,6 @@ void Menu::ImplCallHighlight(sal_uInt16 nItem)
     if ( pData )
         nSelectedId = pData->nId;
 	//ADD_LIBRAS
-	std::ofstream debug (DBG_LASO_LOG_PATH,
-						std::ofstream::out|std::ofstream::app);
-	debug << "MANIPULANDO MENU Highlight()" << std::endl;
-	debug << this->GetItemText(nSelectedId).replaceAll( "~", "" ) << std::endl;
-    debug.close();
-	//ADD_LIBRAS
 	std::ofstream lasolog (LASO_LOG_PATH,
 						std::ofstream::out|std::ofstream::app);
 	lasolog << this->GetItemText(nSelectedId).replaceAll( "~", "" ) << std::endl;
