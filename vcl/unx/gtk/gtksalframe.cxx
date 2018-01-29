@@ -2865,6 +2865,7 @@ gboolean GtkSalFrame::signalMotion( GtkWidget*, GdkEventMotion* pEvent, gpointer
 
 gboolean GtkSalFrame::signalCrossing( GtkWidget*, GdkEventCrossing* pEvent, gpointer frame )
 {
+
     GtkSalFrame* pThis = static_cast<GtkSalFrame*>(frame);
     SalMouseEvent aEvent;
     aEvent.mnTime   = pEvent->time;

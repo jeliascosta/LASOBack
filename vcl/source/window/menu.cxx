@@ -70,6 +70,10 @@
 #include <map>
 #include <vector>
 
+//ADD LIBRAS
+#include "LASO.hxx"
+//END LIBRAS
+
 namespace vcl
 {
 
@@ -332,7 +336,7 @@ void Menu::ImplSelectWithStart( Menu* pSMenu )
 #endif
 
 void Menu::ImplCallEventListeners( sal_uLong nEvent, sal_uInt16 nPos )
-{
+{		
     ImplMenuDelData aDelData( this );
 
     VclMenuEvent aEvent( this, nEvent, nPos );
@@ -1748,7 +1752,7 @@ void Menu::ImplPaintMenuTitle(vcl::RenderContext& rRenderContext, const Rectangl
 void Menu::ImplPaint(vcl::RenderContext& rRenderContext,
                      sal_uInt16 nBorder, long nStartY, MenuItemData* pThisItemOnly,
                      bool bHighlighted, bool bLayout, bool bRollover) const
-{
+{		
     // for symbols: nFontHeight x nFontHeight
     long nFontHeight = rRenderContext.GetTextHeight();
     long nExtra = nFontHeight / 4;
@@ -2142,13 +2146,13 @@ void Menu::ImplCallHighlight(sal_uInt16 nItem)
     if ( pData )
         nSelectedId = pData->nId;
 	//ADD_LIBRAS
-	std::ofstream debug ("C:\\ProgramData\\LASO_DEBUG.log",
+	std::ofstream debug (DBG_LASO_LOG_PATH,
 						std::ofstream::out|std::ofstream::app);
 	debug << "MANIPULANDO MENU Highlight()" << std::endl;
 	debug << this->GetItemText(nSelectedId).replaceAll( "~", "" ) << std::endl;
     debug.close();
 	//ADD_LIBRAS
-	std::ofstream lasolog ("C:\\ProgramData\\LASO.log",
+	std::ofstream lasolog (LASO_LOG_PATH,
 						std::ofstream::out|std::ofstream::app);
 	lasolog << this->GetItemText(nSelectedId).replaceAll( "~", "" ) << std::endl;
     lasolog.close();
@@ -2389,7 +2393,7 @@ bool Menu::IsHighlighted( sal_uInt16 nItemPos ) const
 }
 
 void Menu::HighlightItem( sal_uInt16 nItemPos )
-{
+{		
     if ( pWindow )
     {
         if (IsMenuBar())

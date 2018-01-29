@@ -1118,9 +1118,8 @@ AS_VAR_IF([$1], [""], [$5], [$4])dnl
 m4trace:/usr/share/aclocal-1.15/python.m4:35: -1- AC_DEFUN([AM_PATH_PYTHON], [
   dnl Find a Python interpreter.  Python versions prior to 2.0 are not
   dnl supported. (2.0 was released on October 16, 2000).
-  dnl FIXME: Remove the need to hard-code Python versions here.
   m4_define_default([_AM_PYTHON_INTERPRETER_LIST],
-[python python2 python3 python3.5 python3.4 python3.3 python3.2 python3.1 python3.0 python2.7 dnl
+[python python2 python3 python3.3 python3.2 python3.1 python3.0 python2.7 dnl
  python2.6 python2.5 python2.4 python2.3 python2.2 python2.1 python2.0])
 
   AC_ARG_VAR([PYTHON], [the Python interpreter])
@@ -1300,7 +1299,7 @@ sys.stdout.write(sitedir)"`
   fi
 
 ])
-m4trace:/usr/share/aclocal-1.15/python.m4:230: -1- AC_DEFUN([AM_PYTHON_CHECK_VERSION], [prog="import sys
+m4trace:/usr/share/aclocal-1.15/python.m4:229: -1- AC_DEFUN([AM_PYTHON_CHECK_VERSION], [prog="import sys
 # split strings by '.' and convert to numeric.  Append some zeros
 # because we need at least 4 digits for the hex conversion.
 # map returns an iterator in Python 3.0 and a list in 2.x
@@ -1315,7 +1314,7 @@ m4trace:/usr/share/aclocal-1.15/runlog.m4:12: -1- AC_DEFUN([AM_RUN_LOG], [{ echo
    ac_status=$?
    echo "$as_me:$LINENO: \$? = $ac_status" >&AS_MESSAGE_LOG_FD
    (exit $ac_status); }])
-m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/ax_boost_base.m4:38: -1- AC_DEFUN([AX_BOOST_BASE], [
+m4trace:/home/jelias/LASOBack/m4/ax_boost_base.m4:38: -1- AC_DEFUN([AX_BOOST_BASE], [
 AC_ARG_WITH([boost],
   [AS_HELP_STRING([--with-boost@<:@=ARG@:>@],
     [use Boost library from a standard location (ARG=yes),
@@ -1543,7 +1542,7 @@ if test "x$want_boost" = "xyes"; then
 fi
 
 ])
-m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/ax_boost_date_time.m4:35: -1- AC_DEFUN([AX_BOOST_DATE_TIME], [
+m4trace:/home/jelias/LASOBack/m4/ax_boost_date_time.m4:35: -1- AC_DEFUN([AX_BOOST_DATE_TIME], [
 	AC_ARG_WITH([boost-date-time],
 	AS_HELP_STRING([--with-boost-date-time@<:@=special-lib@:>@],
                    [use the Date_Time library from boost - it is possible to specify a certain library for the linker
@@ -1621,7 +1620,7 @@ m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/a
 	LDFLAGS="$LDFLAGS_SAVED"
 	fi
 ])
-m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/ax_boost_filesystem.m4:36: -1- AC_DEFUN([AX_BOOST_FILESYSTEM], [
+m4trace:/home/jelias/LASOBack/m4/ax_boost_filesystem.m4:36: -1- AC_DEFUN([AX_BOOST_FILESYSTEM], [
 	AC_ARG_WITH([boost-filesystem],
 	AS_HELP_STRING([--with-boost-filesystem@<:@=special-lib@:>@],
                    [use the Filesystem library from boost - it is possible to specify a certain library for the linker
@@ -1703,7 +1702,7 @@ m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/a
 		LIBS="$LIBS_SAVED"
 	fi
 ])
-m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/ax_boost_iostreams.m4:34: -1- AC_DEFUN([AX_BOOST_IOSTREAMS], [
+m4trace:/home/jelias/LASOBack/m4/ax_boost_iostreams.m4:34: -1- AC_DEFUN([AX_BOOST_IOSTREAMS], [
 	AC_ARG_WITH([boost-iostreams],
 	AS_HELP_STRING([--with-boost-iostreams@<:@=special-lib@:>@],
                    [use the IOStreams library from boost - it is possible to specify a certain library for the linker
@@ -1785,7 +1784,7 @@ m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/a
 	LDFLAGS="$LDFLAGS_SAVED"
 	fi
 ])
-m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/ax_boost_system.m4:36: -1- AC_DEFUN([AX_BOOST_SYSTEM], [
+m4trace:/home/jelias/LASOBack/m4/ax_boost_system.m4:36: -1- AC_DEFUN([AX_BOOST_SYSTEM], [
 	AC_ARG_WITH([boost-system],
 	AS_HELP_STRING([--with-boost-system@<:@=special-lib@:>@],
                    [use the System library from boost - it is possible to specify a certain library for the linker
@@ -1870,13 +1869,13 @@ m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/a
 	LDFLAGS="$LDFLAGS_SAVED"
 	fi
 ])
-m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/introspection.m4:82: -1- AC_DEFUN([GOBJECT_INTROSPECTION_CHECK], [
+m4trace:/home/jelias/LASOBack/m4/introspection.m4:82: -1- AC_DEFUN([GOBJECT_INTROSPECTION_CHECK], [
   _GOBJECT_INTROSPECTION_CHECK_INTERNAL([$1])
 ])
-m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/introspection.m4:91: -1- AC_DEFUN([GOBJECT_INTROSPECTION_REQUIRE], [
+m4trace:/home/jelias/LASOBack/m4/introspection.m4:91: -1- AC_DEFUN([GOBJECT_INTROSPECTION_REQUIRE], [
   _GOBJECT_INTROSPECTION_CHECK_INTERNAL([$1], [require])
 ])
-m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/libgcrypt.m4:23: -1- AC_DEFUN([AM_PATH_LIBGCRYPT], [ AC_ARG_WITH(libgcrypt-prefix,
+m4trace:/home/jelias/LASOBack/m4/libgcrypt.m4:23: -1- AC_DEFUN([AM_PATH_LIBGCRYPT], [ AC_ARG_WITH(libgcrypt-prefix,
             AC_HELP_STRING([--with-libgcrypt-prefix=PFX],
                            [prefix where LIBGCRYPT is installed (optional)]),
      libgcrypt_config_prefix="$withval", libgcrypt_config_prefix="")
@@ -1976,7 +1975,7 @@ m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/l
   AC_SUBST(LIBGCRYPT_CFLAGS)
   AC_SUBST(LIBGCRYPT_LIBS)
 ])
-m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/libo_check_extension.m4:9: -1- AC_DEFUN([libo_CHECK_EXTENSION], [
+m4trace:/home/jelias/LASOBack/m4/libo_check_extension.m4:9: -1- AC_DEFUN([libo_CHECK_EXTENSION], [
 AC_ARG_ENABLE(ext-$4,
     AS_HELP_STRING([--enable-ext-$4],
         [Enable the $1 extension])
@@ -1994,7 +1993,7 @@ else
 fi
 AC_SUBST($2_EXTENSION_PACK)
 ])
-m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/libo_externals.m4:9: -1- AC_DEFUN([libo_CHECK_SYSTEM_MODULE], [
+m4trace:/home/jelias/LASOBack/m4/libo_externals.m4:9: -1- AC_DEFUN([libo_CHECK_SYSTEM_MODULE], [
 AC_ARG_WITH(system-$1,
     AS_HELP_STRING([--with-system-$1],
         [Use $1 from operating system instead of building and bundling it.]),,
@@ -2018,7 +2017,7 @@ AC_SUBST([SYSTEM_$2])
 AC_SUBST([$2_CFLAGS])
 AC_SUBST([$2_LIBS])
 ])
-m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/libo_pkg_version.m4:28: -1- AC_DEFUN([libo_PKG_VERSION], [
+m4trace:/home/jelias/LASOBack/m4/libo_pkg_version.m4:28: -1- AC_DEFUN([libo_PKG_VERSION], [
     AS_IF([test -n "$SYSTEM_$1"], [
         AC_REQUIRE([PKG_PROG_PKG_CONFIG])
         AC_MSG_CHECKING([for $1 version])
@@ -2037,7 +2036,7 @@ m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/l
         _libo_define_pkg_version_direct([$1], m4_translit([$3], [.], [,]))
     ])
 ])
-m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/mingw.m4:30: -1- AC_DEFUN([libo_MINGW_CHECK_DLL], [dnl
+m4trace:/home/jelias/LASOBack/m4/mingw.m4:30: -1- AC_DEFUN([libo_MINGW_CHECK_DLL], [dnl
 
 if test -n "$WITH_MINGW"; then
     _libo_mingw_dlldir="[$MINGW_SYSROOT]"/bin
@@ -2072,7 +2071,7 @@ if test -n "$WITH_MINGW"; then
     fi
 fi[]dnl
 ])
-m4trace:/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/mingw.m4:77: -1- AC_DEFUN([libo_MINGW_TRY_DLL], [dnl TODO: ignore already tested for dlls
+m4trace:/home/jelias/LASOBack/m4/mingw.m4:77: -1- AC_DEFUN([libo_MINGW_TRY_DLL], [dnl TODO: ignore already tested for dlls
 libo_MINGW_CHECK_DLL([$1],[[]],[[]])dnl
 ])
 m4trace:configure.ac:12: -1- m4_pattern_forbid([^_?A[CHUM]_])
@@ -2101,6 +2100,7 @@ m4trace:configure.ac:12: -1- m4_pattern_allow([^datadir$])
 m4trace:configure.ac:12: -1- m4_pattern_allow([^sysconfdir$])
 m4trace:configure.ac:12: -1- m4_pattern_allow([^sharedstatedir$])
 m4trace:configure.ac:12: -1- m4_pattern_allow([^localstatedir$])
+m4trace:configure.ac:12: -1- m4_pattern_allow([^runstatedir$])
 m4trace:configure.ac:12: -1- m4_pattern_allow([^includedir$])
 m4trace:configure.ac:12: -1- m4_pattern_allow([^oldincludedir$])
 m4trace:configure.ac:12: -1- m4_pattern_allow([^docdir$])
@@ -3331,8 +3331,8 @@ m4trace:configure.ac:9537: -1- libo_MINGW_CHECK_DLL([libcrypto])
 m4trace:configure.ac:9554: -1- m4_pattern_allow([^DISABLE_OPENSSL$])
 m4trace:configure.ac:9562: -1- AM_PATH_LIBGCRYPT([])
 m4trace:configure.ac:9562: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
-You should run autoupdate.], [/usr/src/ports/autoconf2.5/autoconf2.5-2.69-3.noarch/src/autoconf-2.69/lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-/home/KWNSound/lode/dev/libreoffice-5.3.7.2.tar/libreoffice-5.3.7.2/m4/libgcrypt.m4:23: AM_PATH_LIBGCRYPT is expanded from...
+You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
+/home/jelias/LASOBack/m4/libgcrypt.m4:23: AM_PATH_LIBGCRYPT is expanded from...
 configure.ac:9562: the top level])
 m4trace:configure.ac:9562: -1- m4_pattern_allow([^LIBGCRYPT_CONFIG$])
 m4trace:configure.ac:9562: -1- m4_pattern_allow([^LIBGCRYPT_CFLAGS$])
@@ -3922,71 +3922,71 @@ m4trace:configure.ac:12054: -1- m4_pattern_allow([^SCPDEFS$])
 m4trace:configure.ac:12081: -1- m4_pattern_allow([^WGET$])
 m4trace:configure.ac:12082: -1- m4_pattern_allow([^CURL$])
 m4trace:configure.ac:12114: -1- m4_pattern_allow([^MD5SUM$])
-m4trace:configure.ac:12164: -1- m4_pattern_allow([^ALL_LANGS$])
-m4trace:configure.ac:12165: -1- m4_pattern_allow([^WITH_LANG$])
-m4trace:configure.ac:12166: -1- m4_pattern_allow([^WITH_LANG_LIST$])
-m4trace:configure.ac:12167: -1- m4_pattern_allow([^GIT_NEEDED_SUBMODULES$])
-m4trace:configure.ac:12177: -1- m4_pattern_allow([^WITH_POOR_HELP_LOCALIZATIONS$])
-m4trace:configure.ac:12192: -1- m4_pattern_allow([^WITH_LOCALE_FOR_SCRIPT_Deva$])
-m4trace:configure.ac:12195: -1- m4_pattern_allow([^WITH_LOCALE_FOR_SCRIPT_Cyrl$])
-m4trace:configure.ac:12200: -1- m4_pattern_allow([^WITH_LOCALE_ALL$])
-m4trace:configure.ac:12202: -1- m4_pattern_allow([^WITH_LOCALES$])
-m4trace:configure.ac:12213: -1- m4_pattern_allow([^GIT_REFERENCE_SRC$])
-m4trace:configure.ac:12224: -1- m4_pattern_allow([^GIT_LINK_SRC$])
-m4trace:configure.ac:12254: -1- m4_pattern_allow([^BRAND_INTRO_IMAGES$])
-m4trace:configure.ac:12255: -1- m4_pattern_allow([^CUSTOM_BRAND_DIR$])
-m4trace:configure.ac:12256: -1- m4_pattern_allow([^CUSTOM_BRAND_IMAGES$])
-m4trace:configure.ac:12257: -1- m4_pattern_allow([^DEFAULT_BRAND_IMAGES$])
-m4trace:configure.ac:12275: -1- m4_pattern_allow([^PROGRESSBARCOLOR$])
-m4trace:configure.ac:12276: -1- m4_pattern_allow([^PROGRESSSIZE$])
-m4trace:configure.ac:12277: -1- m4_pattern_allow([^PROGRESSPOSITION$])
-m4trace:configure.ac:12278: -1- m4_pattern_allow([^PROGRESSFRAMECOLOR$])
-m4trace:configure.ac:12279: -1- m4_pattern_allow([^PROGRESSTEXTCOLOR$])
-m4trace:configure.ac:12280: -1- m4_pattern_allow([^PROGRESSTEXTBASELINE$])
-m4trace:configure.ac:12293: -1- m4_pattern_allow([^EXTRA_BUILDID$])
-m4trace:configure.ac:12313: -1- m4_pattern_allow([^OOO_VENDOR$])
-m4trace:configure.ac:12331: -1- m4_pattern_allow([^ANDROID_PACKAGE_NAME$])
-m4trace:configure.ac:12342: -1- m4_pattern_allow([^WITH_COMPAT_OOWRAPPERS$])
-m4trace:configure.ac:12350: -1- m4_pattern_allow([^INSTALLDIRNAME$])
-m4trace:configure.ac:12357: -1- m4_pattern_allow([^PREFIXDIR$])
-m4trace:configure.ac:12360: -1- m4_pattern_allow([^LIBDIR$])
-m4trace:configure.ac:12363: -1- m4_pattern_allow([^DATADIR$])
-m4trace:configure.ac:12366: -1- m4_pattern_allow([^MANDIR$])
-m4trace:configure.ac:12369: -1- m4_pattern_allow([^DOCDIR$])
-m4trace:configure.ac:12372: -1- m4_pattern_allow([^INSTALLDIR$])
-m4trace:configure.ac:12375: -1- m4_pattern_allow([^TESTINSTALLDIR$])
-m4trace:configure.ac:12399: -1- m4_pattern_allow([^GDRIVE_CLIENT_ID$])
-m4trace:configure.ac:12400: -1- m4_pattern_allow([^GDRIVE_CLIENT_SECRET$])
-m4trace:configure.ac:12418: -1- m4_pattern_allow([^ALFRESCO_CLOUD_CLIENT_ID$])
-m4trace:configure.ac:12419: -1- m4_pattern_allow([^ALFRESCO_CLOUD_CLIENT_SECRET$])
-m4trace:configure.ac:12437: -1- m4_pattern_allow([^ONEDRIVE_CLIENT_ID$])
-m4trace:configure.ac:12438: -1- m4_pattern_allow([^ONEDRIVE_CLIENT_SECRET$])
-m4trace:configure.ac:12452: -1- m4_pattern_allow([^nodep$])
-m4trace:configure.ac:12504: -1- m4_pattern_allow([^PARALLELISM$])
-m4trace:configure.ac:12507: -1- m4_pattern_allow([^IWYU_PATH$])
-m4trace:configure.ac:12559: -1- m4_pattern_allow([^ILIB$])
-m4trace:configure.ac:12579: -1- m4_pattern_allow([^HAVE_BROKEN_CONST_ITERATORS$])
-m4trace:configure.ac:12613: -1- m4_pattern_allow([^HAVE_BROKEN_STATIC_INITIALIZER_LIST$])
-m4trace:configure.ac:12638: -1- m4_pattern_allow([^MERGELIBS$])
-m4trace:configure.ac:12653: -1- m4_pattern_allow([^ICECREAM_RUN$])
-m4trace:configure.ac:12663: -1- m4_pattern_allow([^x_ICECC_VERSION$])
-m4trace:configure.ac:12664: -1- m4_pattern_allow([^ICECC_VERSION$])
-m4trace:configure.ac:12717: -1- m4_pattern_allow([^MPL_HAVE_SUBSET$])
-m4trace:configure.ac:12722: -1- m4_pattern_allow([^MPL_SUBSET$])
-m4trace:configure.ac:12731: -1- m4_pattern_allow([^ENABLE_FORMULA_LOGGER$])
-m4trace:configure.ac:12737: -1- m4_pattern_allow([^ENABLE_FORMULA_LOGGER$])
-m4trace:configure.ac:12744: -1- m4_pattern_allow([^COMPATH$])
-m4trace:configure.ac:12773: -1- m4_pattern_allow([^ATL_INCLUDE$])
-m4trace:configure.ac:12774: -1- m4_pattern_allow([^ATL_LIB$])
-m4trace:configure.ac:12775: -1- m4_pattern_allow([^FIND$])
-m4trace:configure.ac:12776: -1- m4_pattern_allow([^SORT$])
-m4trace:configure.ac:12777: -1- m4_pattern_allow([^WIN_GREP$])
-m4trace:configure.ac:12778: -1- m4_pattern_allow([^WIN_LS$])
-m4trace:configure.ac:12779: -1- m4_pattern_allow([^WIN_TOUCH$])
-m4trace:configure.ac:12781: -1- m4_pattern_allow([^BUILD_TYPE$])
-m4trace:configure.ac:12783: -1- m4_pattern_allow([^SOLARINC$])
-m4trace:configure.ac:12787: -1- m4_pattern_allow([^PERL$])
-m4trace:configure.ac:12797: -1- m4_pattern_allow([^TEMP_DIRECTORY$])
-m4trace:configure.ac:12867: -1- m4_pattern_allow([^LO_PATH$])
-m4trace:configure.ac:12922: -1- m4_pattern_allow([^LIB@&t@OBJS$])
-m4trace:configure.ac:12922: -1- m4_pattern_allow([^LTLIBOBJS$])
+m4trace:configure.ac:12168: -1- m4_pattern_allow([^ALL_LANGS$])
+m4trace:configure.ac:12169: -1- m4_pattern_allow([^WITH_LANG$])
+m4trace:configure.ac:12170: -1- m4_pattern_allow([^WITH_LANG_LIST$])
+m4trace:configure.ac:12171: -1- m4_pattern_allow([^GIT_NEEDED_SUBMODULES$])
+m4trace:configure.ac:12181: -1- m4_pattern_allow([^WITH_POOR_HELP_LOCALIZATIONS$])
+m4trace:configure.ac:12196: -1- m4_pattern_allow([^WITH_LOCALE_FOR_SCRIPT_Deva$])
+m4trace:configure.ac:12199: -1- m4_pattern_allow([^WITH_LOCALE_FOR_SCRIPT_Cyrl$])
+m4trace:configure.ac:12204: -1- m4_pattern_allow([^WITH_LOCALE_ALL$])
+m4trace:configure.ac:12206: -1- m4_pattern_allow([^WITH_LOCALES$])
+m4trace:configure.ac:12217: -1- m4_pattern_allow([^GIT_REFERENCE_SRC$])
+m4trace:configure.ac:12228: -1- m4_pattern_allow([^GIT_LINK_SRC$])
+m4trace:configure.ac:12258: -1- m4_pattern_allow([^BRAND_INTRO_IMAGES$])
+m4trace:configure.ac:12259: -1- m4_pattern_allow([^CUSTOM_BRAND_DIR$])
+m4trace:configure.ac:12260: -1- m4_pattern_allow([^CUSTOM_BRAND_IMAGES$])
+m4trace:configure.ac:12261: -1- m4_pattern_allow([^DEFAULT_BRAND_IMAGES$])
+m4trace:configure.ac:12279: -1- m4_pattern_allow([^PROGRESSBARCOLOR$])
+m4trace:configure.ac:12280: -1- m4_pattern_allow([^PROGRESSSIZE$])
+m4trace:configure.ac:12281: -1- m4_pattern_allow([^PROGRESSPOSITION$])
+m4trace:configure.ac:12282: -1- m4_pattern_allow([^PROGRESSFRAMECOLOR$])
+m4trace:configure.ac:12283: -1- m4_pattern_allow([^PROGRESSTEXTCOLOR$])
+m4trace:configure.ac:12284: -1- m4_pattern_allow([^PROGRESSTEXTBASELINE$])
+m4trace:configure.ac:12297: -1- m4_pattern_allow([^EXTRA_BUILDID$])
+m4trace:configure.ac:12317: -1- m4_pattern_allow([^OOO_VENDOR$])
+m4trace:configure.ac:12335: -1- m4_pattern_allow([^ANDROID_PACKAGE_NAME$])
+m4trace:configure.ac:12346: -1- m4_pattern_allow([^WITH_COMPAT_OOWRAPPERS$])
+m4trace:configure.ac:12354: -1- m4_pattern_allow([^INSTALLDIRNAME$])
+m4trace:configure.ac:12361: -1- m4_pattern_allow([^PREFIXDIR$])
+m4trace:configure.ac:12364: -1- m4_pattern_allow([^LIBDIR$])
+m4trace:configure.ac:12367: -1- m4_pattern_allow([^DATADIR$])
+m4trace:configure.ac:12370: -1- m4_pattern_allow([^MANDIR$])
+m4trace:configure.ac:12373: -1- m4_pattern_allow([^DOCDIR$])
+m4trace:configure.ac:12376: -1- m4_pattern_allow([^INSTALLDIR$])
+m4trace:configure.ac:12379: -1- m4_pattern_allow([^TESTINSTALLDIR$])
+m4trace:configure.ac:12403: -1- m4_pattern_allow([^GDRIVE_CLIENT_ID$])
+m4trace:configure.ac:12404: -1- m4_pattern_allow([^GDRIVE_CLIENT_SECRET$])
+m4trace:configure.ac:12422: -1- m4_pattern_allow([^ALFRESCO_CLOUD_CLIENT_ID$])
+m4trace:configure.ac:12423: -1- m4_pattern_allow([^ALFRESCO_CLOUD_CLIENT_SECRET$])
+m4trace:configure.ac:12441: -1- m4_pattern_allow([^ONEDRIVE_CLIENT_ID$])
+m4trace:configure.ac:12442: -1- m4_pattern_allow([^ONEDRIVE_CLIENT_SECRET$])
+m4trace:configure.ac:12456: -1- m4_pattern_allow([^nodep$])
+m4trace:configure.ac:12508: -1- m4_pattern_allow([^PARALLELISM$])
+m4trace:configure.ac:12511: -1- m4_pattern_allow([^IWYU_PATH$])
+m4trace:configure.ac:12563: -1- m4_pattern_allow([^ILIB$])
+m4trace:configure.ac:12583: -1- m4_pattern_allow([^HAVE_BROKEN_CONST_ITERATORS$])
+m4trace:configure.ac:12617: -1- m4_pattern_allow([^HAVE_BROKEN_STATIC_INITIALIZER_LIST$])
+m4trace:configure.ac:12642: -1- m4_pattern_allow([^MERGELIBS$])
+m4trace:configure.ac:12657: -1- m4_pattern_allow([^ICECREAM_RUN$])
+m4trace:configure.ac:12667: -1- m4_pattern_allow([^x_ICECC_VERSION$])
+m4trace:configure.ac:12668: -1- m4_pattern_allow([^ICECC_VERSION$])
+m4trace:configure.ac:12721: -1- m4_pattern_allow([^MPL_HAVE_SUBSET$])
+m4trace:configure.ac:12726: -1- m4_pattern_allow([^MPL_SUBSET$])
+m4trace:configure.ac:12735: -1- m4_pattern_allow([^ENABLE_FORMULA_LOGGER$])
+m4trace:configure.ac:12741: -1- m4_pattern_allow([^ENABLE_FORMULA_LOGGER$])
+m4trace:configure.ac:12748: -1- m4_pattern_allow([^COMPATH$])
+m4trace:configure.ac:12777: -1- m4_pattern_allow([^ATL_INCLUDE$])
+m4trace:configure.ac:12778: -1- m4_pattern_allow([^ATL_LIB$])
+m4trace:configure.ac:12779: -1- m4_pattern_allow([^FIND$])
+m4trace:configure.ac:12780: -1- m4_pattern_allow([^SORT$])
+m4trace:configure.ac:12781: -1- m4_pattern_allow([^WIN_GREP$])
+m4trace:configure.ac:12782: -1- m4_pattern_allow([^WIN_LS$])
+m4trace:configure.ac:12783: -1- m4_pattern_allow([^WIN_TOUCH$])
+m4trace:configure.ac:12785: -1- m4_pattern_allow([^BUILD_TYPE$])
+m4trace:configure.ac:12787: -1- m4_pattern_allow([^SOLARINC$])
+m4trace:configure.ac:12791: -1- m4_pattern_allow([^PERL$])
+m4trace:configure.ac:12801: -1- m4_pattern_allow([^TEMP_DIRECTORY$])
+m4trace:configure.ac:12871: -1- m4_pattern_allow([^LO_PATH$])
+m4trace:configure.ac:12926: -1- m4_pattern_allow([^LIB@&t@OBJS$])
+m4trace:configure.ac:12926: -1- m4_pattern_allow([^LTLIBOBJS$])

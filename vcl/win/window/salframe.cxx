@@ -4732,7 +4732,7 @@ static bool ImplHandleMenuSelect( HWND hWnd, WPARAM wParam, LPARAM lParam )
 
     if( hMenu )
     {
-        // hMenu must be saved, as it is not passed in WM_COMMAND which always occurs after a selection
+		// hMenu must be saved, as it is not passed in WM_COMMAND which always occurs after a selection
         // if a menu is closed due to a command selection then hMenu is NULL, but WM_COMMAND comes later
         // so we must not overwrite it in this case
         pFrame->mSelectedhMenu = hMenu;

@@ -97,9 +97,13 @@
 #endif
 
 //ADD LIBRAS
+#include "LASO.hxx"
 #include <fstream>
 #ifdef _WIN32
 	#include <tchar.h>
+#endif
+#ifdef LINUX
+	#include <cstdlib>
 #endif
 //END LIBRAS
 
@@ -286,13 +290,17 @@ bool InitVCL()
         return false;
 
 	//ADD LIBRAS
-	std::ofstream ofs ("C:\\ProgramData\\LASO.log",
+	std::ofstream ofs (LASO_LOG_PATH,
 						std::ofstream::out|std::ofstream::trunc);
 	ofs.close();
-	std::ofstream debug ("C:\\ProgramData\\LASO_DEBUG.log",
+	std::ofstream debug (DBG_LASO_LOG_PATH,
 						std::ofstream::out|std::ofstream::trunc);
 	debug.close();
+	#ifdef LINUX
+		system("xterm&");
+	#endif
 	#ifdef _WIN32
+
 		STARTUPINFO info={sizeof(info)};
 		const TCHAR* target = _T("LIBRASOffice.exe");
 

@@ -34,6 +34,10 @@
 #include "salframe.hxx"
 #include "svdata.hxx"
 
+//ADD LIBRAS
+#include "LASO.hxx"
+//END LIBRAS
+
 #define HELPWINSTYLE_QUICK      0
 #define HELPWINSTYLE_BALLOON    1
 
@@ -709,7 +713,7 @@ void LASO_PrintHelpTextToPipeFile(const OUString& rHelpText, char *extra){
 		lastHelpText = rHelpText;
 		//sprintf(log_line, "%s%s\n", OUStringToOString( lastHelpText, RTL_TEXTENCODING_UTF8 ).pData->buffer, extra);
      	//Caminho absoluto do log no Windows
-     	std::ofstream lasoLog ("C:\\ProgramData\\LASO.log", std::ofstream::app);
+     	std::ofstream lasoLog (LASO_LOG_PATH, std::ofstream::app);
 	    lasoLog << rHelpText << std::endl;
 	    lasoLog.close();
 	}

@@ -223,7 +223,7 @@ Size MenuBarWindow::MinCloseButtonSize()
 }
 
 IMPL_LINK_NOARG(MenuBarWindow, CloseHdl, ToolBox *, void)
-{
+{			
     if( ! pMenu )
         return;
 
@@ -284,6 +284,7 @@ IMPL_LINK( MenuBarWindow, ShowHideListener, VclWindowEvent&, rEvent, void )
 
 void MenuBarWindow::ImplCreatePopup( bool bPreSelectFirst )
 {
+	
     MenuItemData* pItemData = pMenu ? pMenu->GetItemList()->GetDataFromPos( nHighlightedItem ) : nullptr;
     if ( pItemData )
     {
@@ -575,7 +576,7 @@ static void ImplAddNWFSeparator(vcl::RenderContext& rRenderContext, const Size& 
 }
 
 void MenuBarWindow::HighlightItem(vcl::RenderContext& rRenderContext, sal_uInt16 nPos)
-{
+{		
     if (!pMenu)
         return;
 

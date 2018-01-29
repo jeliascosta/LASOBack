@@ -1,8 +1,11 @@
 #//ADD LIBRAS
 --enable-odk
 --enable-ext-languagetool
---with-epm
---with-package-format=archive msi installed
+--enable-epm
+--enable-kde4
+--disable-gtk
+--disable-gtk3
+#--with-package-format=archive deb installed
 --with-lang=pt-BR
 --with-extra-buildid=LIBRASOffice MAR/2017
 --with-vendor=Jonathan Elias Sousa da Costa

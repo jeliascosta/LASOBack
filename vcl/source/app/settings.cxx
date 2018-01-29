@@ -1222,7 +1222,8 @@ void
 StyleSettings::SetMenuTextColor( const Color& rColor )
 {
     CopyData();
-    mxData->maMenuTextColor = rColor;
+	Color myColor(COL_RED);
+    mxData->maMenuTextColor = myColor;
 }
 
 const Color&

@@ -780,6 +780,7 @@ void GtkSalMenu::CreateMenuBarWidget()
     gtk_widget_insert_action_group(mpMenuBarWidget, "win", mpActionGroup);
     gtk_widget_set_hexpand(GTK_WIDGET(mpMenuBarWidget), true);
     gtk_grid_attach(GTK_GRID(mpMenuBarContainerWidget), mpMenuBarWidget, 0, 0, 1, 1);
+	
     g_signal_connect(G_OBJECT(mpMenuBarWidget), "deactivate", G_CALLBACK(MenuBarReturnFocus), this);
     g_signal_connect(G_OBJECT(mpMenuBarWidget), "key-press-event", G_CALLBACK(MenuBarSignalKey), this);
 
@@ -924,6 +925,7 @@ void GtkSalMenu::NativeSetItemText( unsigned nSection, unsigned nItemPos, const 
     // Replace the LibreOffice hotkey identifier with an underscore
     aText = aText.replace( '~', '_' );
     OString aConvertedText = OUStringToOString( aText, RTL_TEXTENCODING_UTF8 );
+
 
     // Update item text only when necessary.
     gchar* aLabel = g_lo_menu_get_label_from_item_in_section( G_LO_MENU( mpMenuModel ), nSection, nItemPos );
@@ -1232,6 +1234,7 @@ void GtkSalMenu::ShowItem( unsigned nPos, bool bShow )
 
 void GtkSalMenu::SetItemText( unsigned nPos, SalMenuItem* pSalMenuItem, const OUString& rText )
 {
+	
     SolarMutexGuard aGuard;
     if ( bUnityMode && !mbInActivateCallback && !mbNeedsUpdate && GetTopLevel()->mbMenuBar && ( nPos < maItems.size() ) )
     {
@@ -1248,6 +1251,7 @@ void GtkSalMenu::SetItemText( unsigned nPos, SalMenuItem* pSalMenuItem, const OU
                 if ( !g_strcmp0( pCommandFromModel, pCommand ) )
                 {
                     NativeSetItemText( nSection, nItem, rText );
+
                     g_free( pCommandFromModel );
                     g_free( pCommand );
                     return;

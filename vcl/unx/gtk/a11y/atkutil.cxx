@@ -627,6 +627,7 @@ void WindowEventHandler(void *, VclSimpleEvent& rEvent)
             break;
 
         case VCLEVENT_MENU_HIGHLIGHT:
+
             if (const VclMenuEvent* pMenuEvent = dynamic_cast<const VclMenuEvent*>(&rEvent))
             {
                 handle_menu_highlighted(pMenuEvent);
@@ -637,6 +638,7 @@ void WindowEventHandler(void *, VclSimpleEvent& rEvent)
                 if (xAccessible.is())
                     atk_wrapper_focus_tracker_notify_when_idle(xAccessible);
             }
+
             break;
 
         case VCLEVENT_TOOLBOX_HIGHLIGHT:
