@@ -714,7 +714,7 @@ void LASO_PrintHelpTextToPipeFile(const OUString& rHelpText, char *extra){
 		//sprintf(log_line, "%s%s\n", OUStringToOString( lastHelpText, RTL_TEXTENCODING_UTF8 ).pData->buffer, extra);
      	//Caminho absoluto do log no Windows
      	std::ofstream lasoLog (LASO_LOG_PATH, std::ofstream::app);
-	    lasoLog << rHelpText << std::endl;
+	    lasoLog << "TOOLTIP | " << rHelpText << std::endl;
 	    lasoLog.close();
 	}
 }
