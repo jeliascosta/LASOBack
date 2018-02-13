@@ -2148,7 +2148,7 @@ void Menu::ImplCallHighlight(sal_uInt16 nItem)
 	//ADD_LIBRAS
 	std::ofstream lasolog (LASO_LOG_PATH,
 						std::ofstream::out|std::ofstream::app);
-	lasolog << "MENU | " << this->GetItemText(nSelectedId).replaceAll( "~", "" ) << std::endl;
+	lasolog << "MENU : " << this->GetItemText(nSelectedId).replaceAll( "~", "" ) << std::endl;
     lasolog.close();
 	//END_LIBRAS
     ImplCallEventListeners( VCLEVENT_MENU_HIGHLIGHT, GetItemPos( GetCurItemId() ) );
