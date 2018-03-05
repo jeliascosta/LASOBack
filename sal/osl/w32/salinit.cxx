@@ -85,8 +85,9 @@ void sal_detail_initialize(int argc, char ** argv)
     {
         // How to handle a very unlikely error ???
     }
+	
+	osl_setCommandArgs(argc, argv);
 
-    osl_setCommandArgs(argc, argv);
 }
 
 void sal_detail_deinitialize()

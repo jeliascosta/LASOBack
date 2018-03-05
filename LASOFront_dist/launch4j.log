@@ -1,0 +1,32 @@
+
+
+Version:	3.10
+CmdLine:	C:\cygwin\home\KWNSound\lode\dev\LASOBack\LASOFront_dist\LIBRASOffice.exe --l4j-debug
+WOW64:		yes
+Create mutex:	LASO_MUTEX
+Working dir:	C:\cygwin\home\KWNSound\lode\dev\LASOBack\LASOFront_dist\.
+Java min ver:	1.7.0
+Java max ver:	
+64-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+32-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8
+Check launcher:	C:\Program Files (x86)\Java\jre1.8.0_161\bin\javaw.exe (OK)
+Match:		1.8
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8.0_161
+Check launcher:	C:\Program Files (x86)\Java\jre1.8.0_161\bin\javaw.exe (OK)
+Match:		1.8.0_161
+64-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+32-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+Check:		SOFTWARE\JavaSoft\Java Development Kit\1.8
+Ignore:		1.8
+Check:		SOFTWARE\JavaSoft\Java Development Kit\1.8.0_161
+Ignore:		1.8.0_161
+64-bit search:	SOFTWARE\JavaSoft\JRE...
+32-bit search:	SOFTWARE\JavaSoft\JRE...
+64-bit search:	SOFTWARE\JavaSoft\JDK...
+32-bit search:	SOFTWARE\JavaSoft\JDK...
+Runtime used:	1.8.0_161 (32-bit)
+Launcher:	C:\Program Files (x86)\Java\jre1.8.0_161\bin\javaw.exe
+Launcher args:	-jar "C:\cygwin\home\KWNSound\lode\dev\LASOBack\LASOFront_dist\LIBRASOffice.exe"
+Args length:	80/32768 chars
+Exit code:	0
