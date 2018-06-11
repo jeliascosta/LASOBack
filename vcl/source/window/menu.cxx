@@ -69,6 +69,7 @@
 
 #include <map>
 #include <vector>
+#include <fstream>
 
 namespace vcl
 {
