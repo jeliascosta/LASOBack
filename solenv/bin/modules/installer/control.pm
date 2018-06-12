@@ -100,9 +100,9 @@ sub check_system_path
     {
         @needed_files_in_path = ("zip.exe", "msiinfo.exe", "msidb.exe", "uuidgen", "makecab.exe", "msitran.exe", "expand.exe");
     }
-    elsif ($installer::globals::isunix && $installer::globals::packageformat eq 'msi')
+    elsif ($installer::globals::isunix && $installer::globals::packageformat)
     {
-        @needed_files_in_path = ("zip", "msiinfo.exe", "msidb.exe", "uuidgen", "makecab.exe", "msitran.exe", "cabextract");
+        @needed_files_in_path = ("zip"); #Verificar linha 70.
     }
     elsif ($installer::globals::iswin)
     {
