@@ -6,6 +6,6 @@
 --with-extra-buildid=LIBRASOffice 1.0 alpha
 --with-vendor=Laboratorio de Informatica para Educacao da UFRJ
 --with-build-version=Desenvolvido por Jonathan Elias
---with-product-name=LIBRASOffice
+#--with-product-name=LIBRASOffice
 #--with-package-version=1.0
 #//END LIBRAS
